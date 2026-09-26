@@ -94,11 +94,10 @@ abstract class AppDatabase : RoomDatabase() {
          * had ZERO callers anywhere in the codebase, so the table was never
          * populated. The only reader was `LegacyDb.queryGalleryTags` called once
          * from `DownloadListInfosExecutor.searchTagList` — which always got
-         * null back and handled it as "no cache, no match". Meanwhile, real
-         * tag data for LRR archives is populated directly into
-         * `DownloadInfo.tgList` by `LRRArchive.toGalleryInfo()` from the LRR
-         * API response, not via this cache table. The cache path was severed
-         * during the LRR conversion and never reconnected.
+         * null back and handled it as "no cache, no match". (Its replacement,
+         * a `DownloadInfo.tgList` field, was never populated either; the
+         * Downloads search now matches `DownloadInfo.simpleTags`.) The cache
+         * path was severed during the LRR conversion and never reconnected.
          *
          * Deleting this table also lets us remove the last meaningful
          * `@JvmStatic blockingDb` bridge (`LegacyDb.queryGalleryTags`), bringing

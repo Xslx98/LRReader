@@ -105,18 +105,11 @@ class DownloadInfo {
     // ── Transient, non-persisted helpers ──
 
     /**
-     * Display tags; populated by the repository layer from the
-     * decoded Archive's flat tag list.
+     * Tags as `namespace:value` strings; populated by the repository layer
+     * from the decoded Archive. Also what the Downloads search matches.
      */
     @JvmField
     var simpleTags: Array<String>? = null
-
-    /**
-     * Search-side tag list, read by
-     * [com.lanraragi.reader.sync.DownloadListInfosExecutor.matchTag].
-     */
-    @JvmField
-    var tgList: ArrayList<String>? = null
 
     /**
      * Cached size of the on-disk download directory; filled lazily by
