@@ -465,6 +465,11 @@ class DownloadsScene : ToolbarScene(),
         collectFlow(viewLifecycleOwner, viewModel.filterSearchDone) {
             if (!isAdded) return@collectFlow
             updateAdapter()
+            // The downloadList collector skips updates while searching, so the
+            // count in the title and the empty view must be refreshed here.
+            updateTitle()
+            updatePaginationIndicator()
+            updateView()
         }
 
         // ── Observe DownloadInfoListener events from ViewModel (sealed dispatch) ──
