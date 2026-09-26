@@ -51,7 +51,7 @@ class HistoryInfo {
     @JvmField
     var time: Long = 0
 
-    /** Display tags; populated by the mapper from Archive.flatTags. */
+    /** Display tags as `namespace:value` strings; populated by the mapper from Archive.tags. */
     @JvmField
     var simpleTags: Array<String>? = null
 }
