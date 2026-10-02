@@ -514,7 +514,7 @@
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$val success = jsonObj["success"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0</ID>
     <ID>UnreachableCode:LRRSearchApi.kt$LRRSearchApi$lrrJson.decodeFromString&lt;LRRSearchResult&gt;(body)</ID>
     <ID>UnreachableCode:LRRSearchApi.kt$LRRSearchApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
-    <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$ServerCapabilityCache.setTracksProgress(baseUrl, info.serverTracksProgress)</ID>
+    <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$ServerCapabilityCache.recordServerInfo(baseUrl, info)</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$info</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$val info = lrrJson.decodeFromString&lt;LRRServerInfo&gt;(body)</ID>
