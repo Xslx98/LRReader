@@ -8,6 +8,10 @@ import com.lanraragi.reader.dao.HistoryStatsRow
  * deliberately explainable — no progress weighting), structural namespaces
  * are excluded (metadata, not taste — triage decision, including language),
  * and results group into the three decided top lists.
+ *
+ * The built-in exclusion list is a floor; callers union in the active
+ * server's admin-configured `excluded_namespaces` (same semantics LANraragi
+ * applies to its own tag statistics) so the page matches the server's view.
  */
 object TagPreferenceCalculator {
 
@@ -29,7 +33,11 @@ object TagPreferenceCalculator {
     private const val SERIES_LIMIT = 5
     private const val MISC_LIMIT = 10
 
-    fun compute(rows: List<HistoryStatsRow>): TagPreference {
+    /**
+     * @param serverExcludedNamespaces admin-configured namespaces from
+     *   `/api/info` (already lowercase), dropped in addition to the built-in set.
+     */
+    fun compute(rows: List<HistoryStatsRow>, serverExcludedNamespaces: Set<String> = emptySet()): TagPreference {
         val counts = HashMap<Pair<String, String>, Int>()
         for (row in rows) {
             val tags = row.archive?.tags ?: continue
@@ -38,7 +46,7 @@ object TagPreferenceCalculator {
             // up front so the merged group counts a same-named tag once even
             // when an archive carries it under both namespaces.
             val distinct = tags.asSequence()
-                .filter { (ns, _) -> ns !in EXCLUDED_NAMESPACES }
+                .filter { (ns, _) -> ns !in EXCLUDED_NAMESPACES && ns.lowercase() !in serverExcludedNamespaces }
                 .flatMap { (ns, values) ->
                     val canonical = if (ns == "parody") "series" else ns
                     values.asSequence().map { canonical to it }
