@@ -58,6 +58,19 @@ class LRRServerInfoTest {
     }
 
     @Test
+    fun parseExcludedNamespaces() {
+        val json = """{"name": "T", "version": "0.9.81", "excluded_namespaces": ["date_added", "source", "timestamp"]}"""
+        val info = lrrJson.decodeFromString<LRRServerInfo>(json)
+        assertEquals(listOf("date_added", "source", "timestamp"), info.excludedNamespaces)
+    }
+
+    @Test
+    fun excludedNamespaces_defaultsToEmptyOnOlderServers() {
+        val info = lrrJson.decodeFromString<LRRServerInfo>("""{"name": "Old", "version": "0.8.0"}""")
+        assertTrue(info.excludedNamespaces.isEmpty())
+    }
+
+    @Test
     fun parseWithMissingOptionalFields() {
         val json = """{"name": "Minimal", "version": "0.9.0"}"""
         val info = lrrJson.decodeFromString<LRRServerInfo>(json)
