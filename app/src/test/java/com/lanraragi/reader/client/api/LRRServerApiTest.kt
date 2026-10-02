@@ -77,6 +77,18 @@ class LRRServerApiTest {
     }
 
     @Test
+    fun getServerInfo_cachesExcludedNamespaces() = runTest {
+        // excluded_namespaces feeds the offline reading-stats exclusions; it must be
+        // recorded per server (normalized) whenever /api/info is observed.
+        ServerCapabilityCache.clear()
+        server.enqueue(MockResponse().setBody("""{"name":"T","version":"0.9.81","excluded_namespaces":["Date_Added"," source ",""]}"""))
+
+        LRRServerApi.getServerInfo(client, baseUrl)
+
+        assertEquals(setOf("date_added", "source"), ServerCapabilityCache.excludedNamespaces(baseUrl))
+    }
+
+    @Test
     fun getServerInfo_httpError() = runTest {
         // retryOnFailure does 2 retries + 1 initial = 3 total
         repeat(3) {

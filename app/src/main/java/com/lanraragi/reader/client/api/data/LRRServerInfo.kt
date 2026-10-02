@@ -13,8 +13,7 @@ import kotlinx.serialization.Serializable
  * means future server fields are tolerated without a client release.
  *
  * Spec fields not yet surfaced in UI (add when needed): `version_desc`,
- * `authenticated_progress`, `total_pages_read`, `total_archives`,
- * `excluded_namespaces`.
+ * `authenticated_progress`, `total_pages_read`, `total_archives`.
  */
 @Serializable
 class LRRServerInfo {
@@ -29,6 +28,13 @@ class LRRServerInfo {
     @JvmField @SerialName("server_resizes_images") @Serializable(with = FlexibleBooleanSerializer::class) var serverResizesImages: Boolean = false
     @JvmField @SerialName("server_tracks_progress") @Serializable(with = FlexibleBooleanSerializer::class) var serverTracksProgress: Boolean = false
     @JvmField @SerialName("cache_last_cleared") var cacheLastCleared: Long = 0
+
+    /**
+     * Tag namespaces the admin excluded from suggestions and statistics
+     * (`excluded_namespaces`, 0.9.8+). Empty when the server predates the
+     * field or nothing is configured.
+     */
+    @JvmField @SerialName("excluded_namespaces") var excludedNamespaces: List<String> = emptyList()
 
     override fun toString(): String =
         "LRRServerInfo{name='$name', version='$version ($versionName)', hasPassword=$hasPassword}"

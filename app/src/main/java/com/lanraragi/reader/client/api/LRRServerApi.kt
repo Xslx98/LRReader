@@ -60,6 +60,7 @@ object LRRServerApi {
                     // Record the progress-tracking capability so updateProgress can
                     // honor the spec's "check /api/info first" guidance per server.
                     ServerCapabilityCache.setTracksProgress(baseUrl, info.serverTracksProgress)
+                    ServerCapabilityCache.setExcludedNamespaces(baseUrl, info.excludedNamespaces)
                     info
                 }
             }
