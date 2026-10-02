@@ -48,6 +48,25 @@ class TagPreferenceCalculatorTest {
     }
 
     @Test
+    fun serverExcludedNamespaces_alsoDropped_caseInsensitively() {
+        // The admin excluded "artist" and "misc" server-side; the local stats
+        // page must agree instead of surfacing namespaces the server hides.
+        val stats = TagPreferenceCalculator.compute(
+            listOf(
+                rowWithTags(
+                    "a".repeat(40),
+                    mapOf("artist" to listOf("alice"), "Misc" to listOf("full color"), "series" to listOf("touhou")),
+                )
+            ),
+            serverExcludedNamespaces = setOf("artist", "misc"),
+        )
+
+        assertTrue(stats.artists.isEmpty())
+        assertTrue(stats.misc.isEmpty())
+        assertEquals(listOf("touhou"), stats.series.map { it.tag })
+    }
+
+    @Test
     fun countsOncePerArchive_groupsAndOrdersDeterministically() {
         val rows = listOf(
             rowWithTags("a".repeat(40), mapOf("artist" to listOf("alice"), "misc" to listOf("full color"))),

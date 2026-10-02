@@ -31,7 +31,8 @@ import org.robolectric.annotation.Config
 /**
  * [ReadingStatsViewModel] against a populated in-memory Room DB (issue #18
  * acceptance): totals, per-server breakdown with resolved names, fully
- * offline (repositories only — no client involved at all).
+ * offline (repositories only — the server-exclusions provider is pinned so no
+ * client is involved at all).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -76,8 +77,14 @@ class ReadingStatsViewModelTest {
         db.close()
     }
 
-    private fun archive(arcid: String, profileId: Long, pagecount: Int, progress: Int) = Archive(
-        arcid = arcid, title = "t-$arcid", tags = emptyMap(), pagecount = pagecount,
+    private fun archive(
+        arcid: String,
+        profileId: Long,
+        pagecount: Int,
+        progress: Int,
+        tags: Map<String, List<String>> = emptyMap(),
+    ) = Archive(
+        arcid = arcid, title = "t-$arcid", tags = tags, pagecount = pagecount,
         progress = progress, extension = "zip", filename = "f.zip", thumbnailUrl = "",
         rating = 0f, isnew = false, lastreadtime = 100L, summary = null,
         serverProfileId = profileId,
@@ -92,7 +99,7 @@ class ReadingStatsViewModelTest {
         historyRepo.putHistoryInfo(archive("a".repeat(40), homeId, pagecount = 10, progress = 10))
         historyRepo.putHistoryInfo(archive("b".repeat(40), homeId, pagecount = 20, progress = 5))
 
-        val vm = ReadingStatsViewModel()
+        val vm = ReadingStatsViewModel(serverExcludedNamespaces = { emptySet() })
         vm.load()
         // load() hops to Dispatchers.IO; wait until the Unconfined resume lands.
         // Wait on the exact asserted condition (isLoading reset happens AFTER the
@@ -105,5 +112,29 @@ class ReadingStatsViewModelTest {
         assertEquals(15L, stats.totalPagesRead)
         assertEquals("Home", stats.perServer.single().serverName)
         assertEquals(false, vm.isLoading.value)
+    }
+
+    @Test
+    fun load_appliesServerExcludedNamespacesToTagPreference() = runBlocking {
+        // The provider's result (the active server's excluded_namespaces) must
+        // reach the tag-preference derivation, not just the built-in set.
+        val historyRepo = HistoryRepository(db.archiveLocalStateDao(), db)
+        val homeId = db.miscDao().insertServerProfile(
+            ServerProfile(name = "Home", url = "https://home.example", isActive = true)
+        )
+        historyRepo.putHistoryInfo(
+            archive(
+                "a".repeat(40), homeId, pagecount = 10, progress = 10,
+                tags = mapOf("artist" to listOf("alice"), "series" to listOf("touhou")),
+            )
+        )
+
+        val vm = ReadingStatsViewModel(serverExcludedNamespaces = { setOf("artist") })
+        vm.load()
+        awaitUntil { vm.tagPreference.value != null && !vm.isLoading.value }
+
+        val pref = vm.tagPreference.value!!
+        assertEquals(emptyList<String>(), pref.artists.map { it.tag })
+        assertEquals(listOf("touhou"), pref.series.map { it.tag })
     }
 }
