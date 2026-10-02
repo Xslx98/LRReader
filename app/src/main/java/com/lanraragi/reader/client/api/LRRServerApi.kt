@@ -57,10 +57,9 @@ object LRRServerApi {
                     val body = response.body?.string()
                         ?: throw LRREmptyBodyException()
                     val info = lrrJson.decodeFromString<LRRServerInfo>(body)
-                    // Record the progress-tracking capability so updateProgress can
-                    // honor the spec's "check /api/info first" guidance per server.
-                    ServerCapabilityCache.setTracksProgress(baseUrl, info.serverTracksProgress)
-                    ServerCapabilityCache.setExcludedNamespaces(baseUrl, info.excludedNamespaces)
+                    // Record per-server facts (progress capability, excluded namespaces)
+                    // so later calls can honor the spec's "check /api/info first" guidance.
+                    ServerCapabilityCache.recordServerInfo(baseUrl, info)
                     info
                 }
             }

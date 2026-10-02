@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.client.api.data.LRRServerInfo
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -38,6 +39,12 @@ object ServerCapabilityCache {
     /** Installed once at app boot; tests leave it null and stay in-memory. */
     fun attachStore(store: Store?) {
         this.store = store
+    }
+
+    /** Single entry point for everything `/api/info` teaches us about [baseUrl]. */
+    fun recordServerInfo(baseUrl: String, info: LRRServerInfo) {
+        setTracksProgress(baseUrl, info.serverTracksProgress)
+        setExcludedNamespaces(baseUrl, info.excludedNamespaces)
     }
 
     fun setTracksProgress(baseUrl: String, value: Boolean) {
