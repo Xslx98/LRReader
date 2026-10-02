@@ -51,17 +51,12 @@ class GalleryUploadHelper(private val mCallback: Callback) {
     }
 
     /**
-     * Launch file picker for archive upload (ZIP, RAR, CBZ, CB7, etc.).
+     * Launch file picker for archive upload (ZIP, RAR, CBZ, CB7, CBW, etc.).
      */
     fun showUploadFilePicker() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
-        val mimeTypes = arrayOf(
-            "application/zip", "application/x-rar-compressed",
-            "application/x-7z-compressed", "application/x-tar",
-            "application/gzip", "application/octet-stream"
-        )
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, UPLOAD_MIME_TYPES)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         try {
             mCallback.pickArchive(
@@ -162,5 +157,18 @@ class GalleryUploadHelper(private val mCallback: Callback) {
 
     companion object {
         private const val TAG = "GalleryUploadHelper"
+
+        /**
+         * SAF picker whitelist. Archive containers plus XML: LANraragi accepts
+         * `.cbw` ComicBookWeb files (XML listing remote page URLs), which
+         * providers report as `application/xml` or `text/xml`.
+         */
+        @JvmField
+        val UPLOAD_MIME_TYPES = arrayOf(
+            "application/zip", "application/x-rar-compressed",
+            "application/x-7z-compressed", "application/x-tar",
+            "application/gzip", "application/octet-stream",
+            "application/xml", "text/xml"
+        )
     }
 }
