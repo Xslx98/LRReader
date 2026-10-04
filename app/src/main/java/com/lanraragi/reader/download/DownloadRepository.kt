@@ -23,7 +23,6 @@ import androidx.annotation.VisibleForTesting
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel
-import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.mapper.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CompletableDeferred
@@ -551,18 +550,6 @@ class DownloadRepository(
         val snapshot = info.snapshot()
         enqueueDbWrite("Failed to persist download info") {
             ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(snapshot)
-        }
-    }
-
-    /** Persist [info] to the history table on a background thread. */
-    fun persistHistory(info: DownloadInfo) {
-        val archive = info.toArchive()
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist history info arcid=${info.arcid}", e)
-            }
         }
     }
 

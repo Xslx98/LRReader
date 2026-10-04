@@ -298,7 +298,8 @@ class DownloadManager(
             // position is 0 — not list.size - 1, which pointed at the wrong row.
             eventBus.forEachListener { it.onAdd(info, list, 0) }
             scheduler.ensureDownload()
-            repo.persistHistory(info)
+            // No history row here: starting a download is not reading. History
+            // is written by reader sessions only (audit 2026-10-04 C03).
         }
     }
 
