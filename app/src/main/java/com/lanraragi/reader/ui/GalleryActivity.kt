@@ -279,10 +279,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // Reader entry counts as reading: ensure history-subsystem
         // membership for the archive so per-archive state (intra-page
         // scroll fraction, etc.) lands on a row that the history
-        // queries can see. The reader can be launched directly from
-        // the downloads list (DownloadGalleryOpenHelper) which
-        // bypasses the detail page and therefore never calls
-        // HistoryRepository.putHistoryInfo. Fire-and-forget on the
+        // queries can see. This is the only place a single archive enters
+        // history: opening its detail page or starting its download is
+        // not reading (audit 2026-10-04). Fire-and-forget on the
         // app-wide IO scope.
         mArchive?.let { archive ->
             ServiceRegistry.coroutineModule.ioScope.launch {
