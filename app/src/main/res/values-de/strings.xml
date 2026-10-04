@@ -498,7 +498,7 @@
     <string name="settings_download_clean_redundancy_done">Reinigung abgeschlossen. %d Datei(en) wurde(n) gelöscht.</string>
     <string name="settings_advanced">Erweiterte Optionen</string>
     <string name="settings_advanced_save_crash_log">Crash-Bericht speichern</string>
-    <string name="settings_advanced_save_crash_log_summary">Der Bericht hilft dem Entwickler dabei, Fehler schnell zu beheben.</string>
+    <string name="settings_advanced_save_crash_log_summary">Nur auf diesem Gerät gespeichert, nie hochgeladen. Wird beim Teilen der Diagnosedaten mitgesendet.</string>
     <string name="settings_advanced_dump_logcat">Logcat-Protokoll speichern</string>
     <string name="settings_advanced_dump_logcat_summary">Logcat-Protokolldatei auf externem Speicher speichern</string>
     <string name="settings_advanced_dump_logcat_failed">Speichern gescheitert</string>

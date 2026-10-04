@@ -550,7 +550,7 @@
 
     <string name="settings_advanced">高级</string>
     <string name="settings_advanced_save_crash_log">应用崩溃时保存错误日志</string>
-    <string name="settings_advanced_save_crash_log_summary">错误日志可以帮助开发者修正问题</string>
+    <string name="settings_advanced_save_crash_log_summary">仅保存在本机，不会上传；分享诊断信息时一并附上</string>
     <string name="settings_advanced_dump_logcat">导出日志</string>
     <string name="settings_advanced_dump_logcat_summary">保存日志至外置存储器</string>
     <string name="settings_advanced_dump_logcat_failed">导出日志失败</string>

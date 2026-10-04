@@ -1012,6 +1012,8 @@ class MainActivity : StageActivity(),
     @SuppressLint("RtlHardcoded")
     override fun onSceneViewCreated(scene: SceneFragment, savedInstanceState: Bundle?) {
         super.onSceneViewCreated(scene, savedInstanceState)
+        // Breadcrumb for crash reports and the diagnostics bundle (audit C06).
+        com.lanraragi.reader.diagnostics.DiagLog.i("Scene", scene.javaClass.simpleName)
 
         val rightDrawer = mRightDrawer ?: return
         val drawerLayout = mDrawerLayout ?: return

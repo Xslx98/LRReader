@@ -100,8 +100,12 @@ object AppConfig {
     @JvmStatic
     fun getExternalDataDir(): File? = getDirInExternalAppDir(DATA)
 
+    /**
+     * App-private crash, non-fatal and exit-reason reports (audit 2026-10-04 C06).
+     * Was `Android/data/.../crash`, which users on API 30+ cannot open.
+     */
     @JvmStatic
-    fun getExternalCrashDir(): File? = getDirInExternalAppDir(CRASH)
+    fun getCrashDir(): File? = if (::sContext.isInitialized) getFilesDir(CRASH) else null
 
     @JvmStatic
     fun getTempDir(): File? {

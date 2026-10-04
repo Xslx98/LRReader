@@ -546,7 +546,7 @@
 
     <string name="settings_advanced">ขั้นสูง</string>
     <string name="settings_advanced_save_crash_log">บันทึกข้อผิดพลาดเมื่อเกิด crash</string>
-    <string name="settings_advanced_save_crash_log_summary">การบันทึกข้อผิดพลาดจาก crash จะช่วยให้ผู้พัฒนาหาและแก้ไขบัคต่างๆได้ง่าย</string>
+    <string name="settings_advanced_save_crash_log_summary">บันทึกไว้ในอุปกรณ์นี้เท่านั้น ไม่มีการอัปโหลด และจะรวมอยู่เมื่อคุณแชร์ข้อมูลวินิจฉัย</string>
     <string name="settings_advanced_dump_logcat">สร้าง Logcat</string>
     <string name="settings_advanced_dump_logcat_summary">บันทึก Logcat ไปที่พื้นที่จัดเก็บภายนอก</string>
     <string name="settings_advanced_dump_logcat_failed">การสร้าง Logcat เกิดข้อผิดพลาด</string>

@@ -2,6 +2,7 @@ package com.lanraragi.reader.module
 
 import android.util.Log
 import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.Crash
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,8 +30,13 @@ import kotlinx.coroutines.flow.asSharedFlow
  *   as root coroutines do.
  * - The handler is for **logging/cleanup only** — "you cannot recover from the
  *   exception in the CoroutineExceptionHandler" (official docs).
+ *
+ * @param nonFatalSink receives every exception that reaches [exceptionHandler];
+ *   production writes a non-fatal report (audit 2026-10-04 C06 / STAB-02).
  */
-class CoroutineModule : ICoroutineModule {
+class CoroutineModule(
+    private val nonFatalSink: (Throwable) -> Unit = Crash::saveNonFatal,
+) : ICoroutineModule {
 
     private val tag = "CoroutineModule"
 
@@ -53,6 +59,11 @@ class CoroutineModule : ICoroutineModule {
     override val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         Log.e(tag, "Uncaught coroutine exception", throwable)
         Analytics.recordException(throwable)
+        try {
+            nonFatalSink(throwable)
+        } catch (e: Throwable) {
+            Log.e(tag, "Record non-fatal report", e)
+        }
         _uncaughtErrors.tryEmit(throwable)
     }
 

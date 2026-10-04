@@ -667,7 +667,7 @@
 
     <string name="settings_advanced">Advanced</string>
     <string name="settings_advanced_save_crash_log">Save crash log when app crashes</string>
-    <string name="settings_advanced_save_crash_log_summary">Crash logs help developers fix bugs</string>
+    <string name="settings_advanced_save_crash_log_summary">Saved on this device only, never uploaded. Included when you share diagnostics.</string>
     <string name="settings_advanced_dump_logcat">Dump logcat</string>
     <string name="settings_advanced_dump_logcat_summary">Save logcat to external storage</string>
     <string name="settings_advanced_dump_logcat_failed">Dump logcat failed</string>

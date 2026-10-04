@@ -98,6 +98,9 @@ class LRReaderApplication : RecordingApplication() {
     @SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped
     override fun onCreate() {
         instance = this
+        // First: the crash handler below writes into AppConfig.getCrashDir(), and a
+        // crash in any later initialiser must still leave a report (audit C06).
+        AppConfig.initialize(this)
 
         // Touch AppModule.bootScope so that bootCEH/bootScope/activeProfileIdDeferred
         // are constructed before any other initialization that might want to launch
@@ -178,7 +181,6 @@ class LRReaderApplication : RecordingApplication() {
             com.lanraragi.reader.client.api.PrefsServerCapabilityStore(Settings.getPreferences())
         )
         trace("LRRApp.ReadableTime.init") { ReadableTime.initialize(this) }
-        trace("LRRApp.AppConfig.init") { AppConfig.initialize(this) }
         // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
         // SpiderDen.initialize(this);
         trace("LRRApp.LegacyDb.init") { LegacyDb.initialize(this) }

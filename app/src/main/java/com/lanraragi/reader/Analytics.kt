@@ -31,5 +31,6 @@ object Analytics {
     @JvmStatic
     fun recordException(e: Throwable) {
         Log.e(LOG_TAG, "Unexpected error raised", e)
+        com.lanraragi.reader.diagnostics.DiagLog.e(LOG_TAG, "Unexpected error raised", e)
     }
 }

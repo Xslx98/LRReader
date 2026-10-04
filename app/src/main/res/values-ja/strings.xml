@@ -503,7 +503,7 @@
     <string name="settings_download_clean_redundancy_done">%d 件のファイルを削除しました</string>
     <string name="settings_advanced">その他の設定</string>
     <string name="settings_advanced_save_crash_log">クラッシュレポートを保存する</string>
-    <string name="settings_advanced_save_crash_log_summary">クラッシュレポートはバグの修正に役立ちます</string>
+    <string name="settings_advanced_save_crash_log_summary">この端末にのみ保存され、アップロードされません。診断情報を共有すると含まれます。</string>
     <string name="settings_advanced_dump_logcat">ログをエクスポート</string>
     <string name="settings_advanced_dump_logcat_summary">ログを内部ストレージに保存します</string>
     <string name="settings_advanced_dump_logcat_failed">ログをエクスポートできませんでした</string>

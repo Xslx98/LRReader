@@ -16,147 +16,179 @@
 
 package com.lanraragi.reader
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.Debug
+import android.util.Log
 import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.framework.lib.yorozuya.OSUtils
 import com.lanraragi.framework.scene.StageActivity
 import com.lanraragi.framework.util.PackageUtils
-import com.lanraragi.framework.util.ReadableTime
-import java.io.File
-import java.io.FileWriter
-import java.io.IOException
-import java.io.PrintWriter
+import com.lanraragi.reader.diagnostics.CrashLogStore
+import com.lanraragi.reader.diagnostics.DiagLog
+import com.lanraragi.reader.settings.PrivacySettings
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 
+/**
+ * Writes crash and non-fatal reports into the app-private [CrashLogStore]
+ * (audit 2026-10-04 C06). Reports carry no device serial, build host or build
+ * user (STAB-23) and end with the recent [DiagLog] lines as breadcrumbs.
+ */
 object Crash {
 
-    private fun avoidNull(str: String?): String {
-        return str ?: "null"
-    }
+    private const val TAG = "Crash"
+    private const val BREADCRUMB_LINES = 60
+    private const val SIGNATURE_FRAMES = 4
+    private const val MAX_NON_FATAL_PER_PROCESS = 20
 
-    @SuppressLint("HardwareIds")
-    @Throws(IOException::class)
-    private fun collectInfo(context: Context, fw: FileWriter) {
-        try {
-            val pm = context.packageManager
-            val pi = pm.getPackageInfo(context.packageName, 0)
-            if (pi != null) {
-                val versionName = pi.versionName ?: "null"
-                val versionCode = pi.versionCode.toString()
-                fw.write("======== PackageInfo ========\r\n")
-                fw.write("PackageName="); fw.write(pi.packageName); fw.write("\r\n")
-                fw.write("VersionName="); fw.write(versionName); fw.write("\r\n")
-                fw.write("VersionCode="); fw.write(versionCode); fw.write("\r\n")
-                val signature = PackageUtils.getSignature(context, pi.packageName)
-                fw.write("Signature="); fw.write(signature ?: "null"); fw.write("\r\n")
-                fw.write("\r\n")
-            }
-        } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
-            fw.write("======== PackageInfo ========\r\n")
-            fw.write("Can't get package information\r\n")
-            fw.write("\r\n")
-        }
-
-        // Runtime
-        var topActivityClazzName = "null"
-        var topSceneClazzName = "null"
-        try {
-            val topActivity = (context.applicationContext as LRReaderApplication).topActivity
-            if (topActivity != null) {
-                topActivityClazzName = topActivity.javaClass.name
-                if (topActivity is StageActivity) {
-                    val clazz = topActivity.topSceneClass
-                    if (clazz != null) {
-                        topSceneClazzName = clazz.name
-                    }
-                }
-            }
-        } catch (e: Throwable) {
-            System.err.println("Crash collectInfo: retrieve top activity: ${e.message}")
-        }
-        fw.write("======== Runtime ========\r\n")
-        fw.write("TopActivity="); fw.write(avoidNull(topActivityClazzName)); fw.write("\r\n")
-        fw.write("TopScene="); fw.write(avoidNull(topSceneClazzName)); fw.write("\r\n")
-        fw.write("\r\n")
-
-        // Device info
-        fw.write("======== DeviceInfo ========\r\n")
-        fw.write("BOARD="); fw.write(Build.BOARD); fw.write("\r\n")
-        fw.write("BOOTLOADER="); fw.write(Build.BOOTLOADER); fw.write("\r\n")
-        @Suppress("DEPRECATION")
-        fw.write("CPU_ABI="); fw.write(Build.CPU_ABI); fw.write("\r\n")
-        @Suppress("DEPRECATION")
-        fw.write("CPU_ABI2="); fw.write(Build.CPU_ABI2); fw.write("\r\n")
-        fw.write("DEVICE="); fw.write(Build.DEVICE); fw.write("\r\n")
-        fw.write("DISPLAY="); fw.write(Build.DISPLAY); fw.write("\r\n")
-        fw.write("FINGERPRINT="); fw.write(Build.FINGERPRINT); fw.write("\r\n")
-        fw.write("HARDWARE="); fw.write(Build.HARDWARE); fw.write("\r\n")
-        fw.write("HOST="); fw.write(Build.HOST); fw.write("\r\n")
-        fw.write("ID="); fw.write(Build.ID); fw.write("\r\n")
-        fw.write("MANUFACTURER="); fw.write(Build.MANUFACTURER); fw.write("\r\n")
-        fw.write("MODEL="); fw.write(Build.MODEL); fw.write("\r\n")
-        fw.write("PRODUCT="); fw.write(Build.PRODUCT); fw.write("\r\n")
-        fw.write("RADIO="); fw.write(Build.getRadioVersion()); fw.write("\r\n")
-        @Suppress("DEPRECATION")
-        fw.write("SERIAL="); fw.write(Build.SERIAL); fw.write("\r\n")
-        fw.write("TAGS="); fw.write(Build.TAGS); fw.write("\r\n")
-        fw.write("TYPE="); fw.write(Build.TYPE); fw.write("\r\n")
-        fw.write("USER="); fw.write(Build.USER); fw.write("\r\n")
-        fw.write("CODENAME="); fw.write(Build.VERSION.CODENAME); fw.write("\r\n")
-        fw.write("INCREMENTAL="); fw.write(Build.VERSION.INCREMENTAL); fw.write("\r\n")
-        fw.write("RELEASE="); fw.write(Build.VERSION.RELEASE); fw.write("\r\n")
-        fw.write("SDK="); fw.write(Build.VERSION.SDK_INT.toString()); fw.write("\r\n")
-        fw.write("MEMORY="); fw.write(
-            FileUtils.humanReadableByteCount(OSUtils.getAppAllocatedMemory(), false)
-        ); fw.write("\r\n")
-        fw.write("MEMORY_NATIVE="); fw.write(
-            FileUtils.humanReadableByteCount(Debug.getNativeHeapAllocatedSize(), false)
-        ); fw.write("\r\n")
-        fw.write("MEMORY_MAX="); fw.write(
-            FileUtils.humanReadableByteCount(OSUtils.getAppMaxMemory(), false)
-        ); fw.write("\r\n")
-        fw.write("MEMORY_TOTAL="); fw.write(
-            FileUtils.humanReadableByteCount(OSUtils.getTotalMemory(), false)
-        ); fw.write("\r\n")
-        fw.write("\r\n")
-    }
-
-    private fun getThrowableInfo(t: Throwable, fw: FileWriter) {
-        val printWriter = PrintWriter(fw)
-        t.printStackTrace(printWriter)
-        var cause = t.cause
-        while (cause != null) {
-            cause.printStackTrace(printWriter)
-            cause = cause.cause
-        }
-    }
+    /** Non-fatal signatures already written by this process (one file per distinct bug). */
+    private val nonFatalSeen: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     @JvmStatic
+    fun store(): CrashLogStore? = AppConfig.getCrashDir()?.let { CrashLogStore(it) }
+
+    /** The process is about to die on [t]. */
+    @JvmStatic
     fun saveCrashLog(context: Context, t: Throwable) {
-        val dir = AppConfig.getExternalCrashDir() ?: return
+        save(context, CrashLogStore.Kind.CRASH, t)
+    }
 
-        val nowString = ReadableTime.getFilenamableTime(System.currentTimeMillis())
-        val fileName = "crash-$nowString.log"
-        val file = File(dir, fileName)
+    /**
+     * [t] reached a coroutine exception handler: the app survives, but the
+     * failed job silently did nothing (STAB-02). Each distinct stack is
+     * written once per process; honours the "save crash log" switch.
+     */
+    @JvmStatic
+    fun saveNonFatal(context: Context, t: Throwable) {
+        if (!saveEnabled()) return
+        if (nonFatalSeen.size >= MAX_NON_FATAL_PER_PROCESS) return
+        if (!nonFatalSeen.add(signature(t))) return
+        save(context, CrashLogStore.Kind.NON_FATAL, t)
+    }
 
-        var fw: FileWriter? = null
-        try {
-            fw = FileWriter(file)
-            fw.write("TIME="); fw.write(nowString); fw.write("\r\n")
-            fw.write("\r\n")
-            collectInfo(context, fw)
-            fw.write("======== CrashInfo ========\r\n")
-            getThrowableInfo(t, fw)
-            fw.write("\r\n")
-            fw.flush()
-        } catch (e: Exception) {
-            System.err.println("Crash saveCrashLog: write crash file: ${e.message}")
-            file.delete()
-        } finally {
-            IOUtils.closeQuietly(fw)
+    private val nonFatalWriter = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "crash-nonfatal").apply { isDaemon = true }
+    }
+
+    /**
+     * Context-free entry for [com.lanraragi.reader.module.CoroutineModule]'s
+     * handler, which may run on Main: the report is written on a background
+     * thread, and any failure while writing it is logged, never rethrown.
+     */
+    @JvmStatic
+    fun saveNonFatal(t: Throwable) {
+        val app = appOrNull()
+        if (app == null) return
+        nonFatalWriter.execute {
+            try {
+                saveNonFatal(app, t)
+            } catch (e: Throwable) {
+                Log.e(TAG, "Write non-fatal report", e)
+            }
         }
+    }
+
+    // Boot-scope failures can arrive before Settings is initialised: record them.
+    private fun saveEnabled(): Boolean = try {
+        PrivacySettings.getSaveCrashLog()
+    } catch (e: RuntimeException) {
+        Log.w(TAG, "Crash-log switch unreadable; saving anyway", e)
+        true
+    }
+
+    private fun appOrNull(): Context? = try {
+        LRReaderApplication.instance
+    } catch (e: UninitializedPropertyAccessException) {
+        Log.w(TAG, "No application instance for a non-fatal report", e)
+        null
+    }
+
+    private fun save(context: Context, kind: CrashLogStore.Kind, t: Throwable) {
+        val store = store()
+        if (store == null) {
+            Log.e(TAG, "No crash directory; dropping ${kind.name} report")
+            return
+        }
+        try {
+            val report = buildReport(
+                header = collectInfo(context),
+                threadName = Thread.currentThread().name,
+                t = t,
+                breadcrumbs = DiagLog.ring.tail(BREADCRUMB_LINES),
+            )
+            store.write(kind, report)
+        } catch (e: Exception) {
+            Log.e(TAG, "Write ${kind.name} report", e)
+        }
+    }
+
+    /** Groups repeats of one bug: exception class plus the top frames. */
+    internal fun signature(t: Throwable): String =
+        t.javaClass.name + t.stackTrace.take(SIGNATURE_FRAMES).joinToString(prefix = "@") { it.toString() }
+
+    internal fun buildReport(
+        header: String,
+        threadName: String,
+        t: Throwable,
+        breadcrumbs: List<String>,
+    ): String = buildString {
+        append(header)
+        append("======== CrashInfo ========\n")
+        append("Thread=").append(threadName).append('\n')
+        // stackTraceToString already walks the cause chain; never loop causes again.
+        append(t.stackTraceToString())
+        append('\n')
+        append("======== Recent events ========\n")
+        if (breadcrumbs.isEmpty()) append("(none)\n")
+        breadcrumbs.forEach { append(it).append('\n') }
+    }
+
+    private fun collectInfo(context: Context): String = buildString {
+        append("TIME=").append(System.currentTimeMillis()).append('\n').append('\n')
+        append("======== PackageInfo ========\n")
+        append("PackageName=").append(context.packageName).append('\n')
+        append("VersionName=").append(BuildConfig.VERSION_NAME).append('\n')
+        append("VersionCode=").append(BuildConfig.VERSION_CODE).append('\n')
+        append("BuildType=").append(BuildConfig.BUILD_TYPE).append('\n')
+        append("Signature=").append(PackageUtils.getSignature(context, context.packageName)).append('\n')
+        append('\n')
+
+        var topActivity = "null"
+        var topScene = "null"
+        try {
+            val activity = (context.applicationContext as LRReaderApplication).topActivity
+            if (activity != null) {
+                topActivity = activity.javaClass.name
+                if (activity is StageActivity) topScene = activity.topSceneClass?.name ?: "null"
+            }
+        } catch (e: Throwable) {
+            Log.e(TAG, "Retrieve top activity", e)
+        }
+        append("======== Runtime ========\n")
+        append("TopActivity=").append(topActivity).append('\n')
+        append("TopScene=").append(topScene).append('\n')
+        append('\n')
+
+        append("======== DeviceInfo ========\n")
+        append("MANUFACTURER=").append(Build.MANUFACTURER).append('\n')
+        append("MODEL=").append(Build.MODEL).append('\n')
+        append("DEVICE=").append(Build.DEVICE).append('\n')
+        append("PRODUCT=").append(Build.PRODUCT).append('\n')
+        append("BOARD=").append(Build.BOARD).append('\n')
+        append("HARDWARE=").append(Build.HARDWARE).append('\n')
+        append("ABIS=").append(Build.SUPPORTED_ABIS.joinToString(",")).append('\n')
+        append("FINGERPRINT=").append(Build.FINGERPRINT).append('\n')
+        append("RELEASE=").append(Build.VERSION.RELEASE).append('\n')
+        append("SDK=").append(Build.VERSION.SDK_INT).append('\n')
+        append("MEMORY=").append(FileUtils.humanReadableByteCount(OSUtils.getAppAllocatedMemory(), false))
+            .append('\n')
+        append("MEMORY_NATIVE=")
+            .append(FileUtils.humanReadableByteCount(Debug.getNativeHeapAllocatedSize(), false)).append('\n')
+        append("MEMORY_MAX=").append(FileUtils.humanReadableByteCount(OSUtils.getAppMaxMemory(), false))
+            .append('\n')
+        append("MEMORY_TOTAL=").append(FileUtils.humanReadableByteCount(OSUtils.getTotalMemory(), false))
+            .append('\n')
+        append('\n')
     }
 }

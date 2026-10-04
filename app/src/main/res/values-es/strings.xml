@@ -575,7 +575,7 @@
 
     <string name="settings_advanced">Avanzado</string>
     <string name="settings_advanced_save_crash_log">Guardar registro de fallos cuando la aplicación falla</string>
-    <string name="settings_advanced_save_crash_log_summary">Los registros de fallos ayudan a los desarrolladores a corregir errores</string>
+    <string name="settings_advanced_save_crash_log_summary">Se guarda solo en este dispositivo y nunca se sube. Se incluye al compartir el diagnóstico.</string>
     <string name="settings_advanced_dump_logcat">Guardado de logcat</string>
     <string name="settings_advanced_dump_logcat_summary">Guardar logcat en almacenamiento externo</string>
     <string name="settings_advanced_dump_logcat_failed">Guardado de logcat fallido</string>

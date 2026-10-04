@@ -553,7 +553,7 @@
 
     <string name="settings_advanced">고급</string>
     <string name="settings_advanced_save_crash_log">앱 충돌 시 로그 저장</string>
-    <string name="settings_advanced_save_crash_log_summary">충돌 로그는 개발자가 버그를 수정하는 데 도움이 됩니다.</string>
+    <string name="settings_advanced_save_crash_log_summary">이 기기에만 저장되며 업로드되지 않습니다. 진단 정보를 공유할 때 포함됩니다.</string>
     <string name="settings_advanced_dump_logcat">로그캣 덤프</string>
     <string name="settings_advanced_dump_logcat_summary">외부 저장소에 로그캣 저장</string>
     <string name="settings_advanced_dump_logcat_failed">로그캣을 덤프하지 못했습니다.</string>

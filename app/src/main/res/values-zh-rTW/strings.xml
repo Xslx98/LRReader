@@ -549,7 +549,7 @@
 
     <string name="settings_advanced">進階</string>
     <string name="settings_advanced_save_crash_log">應用崩潰時儲存錯誤日誌</string>
-    <string name="settings_advanced_save_crash_log_summary">錯誤日誌可以幫助開發者修正問題</string>
+    <string name="settings_advanced_save_crash_log_summary">僅儲存在本機，不會上傳；分享診斷資訊時一併附上</string>
     <string name="settings_advanced_dump_logcat">傾印log</string>
     <string name="settings_advanced_dump_logcat_summary">儲存log紀錄至外接儲存裝置中</string>
     <string name="settings_advanced_dump_logcat_failed">無法傾印log紀錄</string>

@@ -571,7 +571,7 @@
 
     <string name="settings_advanced">Avancé</string>
     <string name="settings_advanced_save_crash_log">Enrégistrer le rapport crash</string>
-    <string name="settings_advanced_save_crash_log_summary">Les rapports crash aident le développeur à correcter les bugs</string>
+    <string name="settings_advanced_save_crash_log_summary">Enregistré uniquement sur cet appareil, jamais envoyé. Inclus lorsque vous partagez le diagnostic.</string>
     <string name="settings_advanced_dump_logcat">Sauvegarder le journal logcat</string>
     <string name="settings_advanced_dump_logcat_summary">Sauvegarder le journal logcat au stockage externe</string>
     <string name="settings_advanced_dump_logcat_failed">Echec de sauvegarde</string>

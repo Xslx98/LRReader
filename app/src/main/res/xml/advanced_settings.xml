@@ -18,7 +18,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <com.lanraragi.framework.preference.SwitchPreference
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:key="save_crash_log"
         android:summary="@string/settings_advanced_save_crash_log_summary"
         android:title="@string/settings_advanced_save_crash_log" />
