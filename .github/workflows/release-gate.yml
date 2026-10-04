@@ -1,0 +1,73 @@
+name: Release gate
+
+# Runs on every version tag. The release skill publishes the (draft) GitHub
+# Release only after this run is green: v1.27.0 and v1.27.1 were published
+# while CI on their release commit was still running.
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Tag must match versionName and versionCode
+        run: |
+          set -euo pipefail
+          TAG="$GITHUB_REF_NAME"
+          NAME=$(sed -nE 's/^[[:space:]]*versionName "([^"]+)".*/\1/p' app/build.gradle | head -1)
+          CODE=$(sed -nE 's/^[[:space:]]*versionCode ([0-9]+).*/\1/p' app/build.gradle | head -1)
+          if [ "$TAG" != "v$NAME" ]; then
+            echo "::error::tag $TAG does not match versionName $NAME"
+            exit 1
+          fi
+          IFS=. read -r MAJOR MINOR PATCH <<< "$NAME"
+          EXPECTED=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          if [ "$CODE" != "$EXPECTED" ]; then
+            echo "::error::versionCode $CODE is not MAJOR*10000+MINOR*100+PATCH = $EXPECTED"
+            exit 1
+          fi
+          echo "OK: $TAG = versionName $NAME, versionCode $CODE"
+
+      - name: Tagged commit must be on main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_SHA is not on main"
+            exit 1
+          fi
+
+      - name: Build & Test must pass on the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # The push of the release commit started its own Build & Test run;
+          # wait for it instead of building twice.
+          for _ in $(seq 1 100); do
+            RUN=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --commit "$GITHUB_SHA" \
+              --event push --limit 1 --json status,conclusion,url \
+              --jq '.[0] | "\(.status) \(.conclusion) \(.url)"')
+            set -- $RUN
+            if [ "${1:-}" = "completed" ]; then
+              if [ "${2:-}" = "success" ]; then
+                echo "OK: Build & Test passed on $GITHUB_SHA ($3)"
+                exit 0
+              fi
+              echo "::error::Build & Test on $GITHUB_SHA concluded '${2:-}': $3"
+              exit 1
+            fi
+            sleep 30
+          done
+          echo "::error::Build & Test on $GITHUB_SHA did not finish within 50 minutes"
+          exit 1
