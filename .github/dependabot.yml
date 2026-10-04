@@ -1,0 +1,12 @@
+# Only GitHub Actions are updated automatically. Gradle dependencies are bumped
+# by hand: kotlin, ksp and room must move in lockstep, which single-dependency
+# PRs cannot do (see gradle/libs.versions.toml).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
