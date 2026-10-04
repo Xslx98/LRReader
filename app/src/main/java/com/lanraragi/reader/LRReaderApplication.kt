@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
+import com.lanraragi.reader.download.DownloadDirMarkerBackfill
 import com.lanraragi.reader.download.DownloadDirMigration
 import com.lanraragi.reader.download.DuplicateDirPointerRepair
 import com.lanraragi.reader.spider.SpiderDen
@@ -388,6 +389,15 @@ class LRReaderApplication : RecordingApplication() {
                 if (!prefs.getBoolean(DuplicateDirPointerRepair.PREF_DONE, false)) {
                     DuplicateDirPointerRepair(ServiceRegistry.dataModule.downloadDbRepository).run()
                     prefs.edit { putBoolean(DuplicateDirPointerRepair.PREF_DONE, true) }
+                }
+                // After the rename pass, so markers land in the final directories.
+                if (prefs.getBoolean(DownloadDirMigration.PREF_DONE, false) &&
+                    !prefs.getBoolean(DownloadDirMarkerBackfill.PREF_DONE, false)
+                ) {
+                    val complete = DownloadDirMarkerBackfill(ServiceRegistry.dataModule.downloadDbRepository) { arcid, rootUri ->
+                        SpiderDen.findGalleryDownloadDir(arcid, rootUri)
+                    }.run()
+                    if (complete) prefs.edit { putBoolean(DownloadDirMarkerBackfill.PREF_DONE, true) }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Download dir migration failed; will retry next boot")

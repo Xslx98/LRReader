@@ -2,6 +2,7 @@ package com.lanraragi.reader.download
 
 import android.content.Context
 import android.util.Log
+import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
@@ -232,6 +233,13 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 noMedia.createNewFile()
             } catch (e: IOException) {
                 Log.w(TAG, "Failed to create .nomedia file", e)
+            }
+        }
+        // Self-describing directory (audit C05): names the arcid on disk, since
+        // the title-based directory name alone cannot be traced back to it.
+        UniFile.fromFile(downloadDir)?.let { dir ->
+            if (!DownloadDirMarker.write(dir, DownloadDirMarker.of(info, total))) {
+                Log.w(TAG, "Failed to write the download dir marker")
             }
         }
 
