@@ -469,6 +469,48 @@ class ServerListViewModelTest {
         assertEquals("Keep", vm.profiles.value[0].name)
     }
 
+    /**
+     * Audit 2026-10-04 C02: deleting the active profile used to clear only its
+     * per-profile key. The global session kept the URL and key, and the auth
+     * interceptor's active-server fallback kept sending that key to the
+     * deleted server's host.
+     */
+    @Test
+    fun deleteProfile_activeProfile_clearsGlobalSession() {
+        val id = insertProfile("Retired NAS", "http://192.168.1.50:3000", isActive = true)
+        val profile = ServerProfile(
+            id = id, name = "Retired NAS", url = "http://192.168.1.50:3000", isActive = true
+        )
+        LRRAuthManager.setApiKeyForProfile(id, "nas-key")
+        LRRAuthManager.setServerUrl(profile.url)
+        LRRAuthManager.setApiKey("nas-key")
+        LRRAuthManager.setActiveProfileId(id)
+
+        val vm = ServerListViewModel()
+        vm.deleteProfile(profile)
+
+        awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.isEmpty() }
+        assertEquals(null, LRRAuthManager.getApiKey())
+        assertEquals(null, LRRAuthManager.getServerUrl())
+        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+    }
+
+    @Test
+    fun deleteProfile_inactiveProfile_keepsActiveSession() {
+        val activeId = insertProfile("Home", "http://192.168.1.10:3000", isActive = true)
+        val otherId = insertProfile("Other", "https://other.example")
+        LRRAuthManager.setServerUrl("http://192.168.1.10:3000")
+        LRRAuthManager.setApiKey("home-key")
+        LRRAuthManager.setActiveProfileId(activeId)
+
+        val vm = ServerListViewModel()
+        vm.deleteProfile(ServerProfile(id = otherId, name = "Other", url = "https://other.example"))
+
+        awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.size == 1 }
+        assertEquals("home-key", LRRAuthManager.getApiKey())
+        assertEquals(activeId, LRRAuthManager.getActiveProfileId())
+    }
+
     @Test
     fun deleteProfile_secureStorageUnavailable_emitsSecureStorageError() {
         val id = insertProfile("Test", "https://test.com")

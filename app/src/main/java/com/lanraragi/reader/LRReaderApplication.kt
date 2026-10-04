@@ -198,6 +198,10 @@ class LRReaderApplication : RecordingApplication() {
                 if (activeProfile != null) {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                     resolvedId = activeProfile.id
+                } else {
+                    // Repair installs where the active profile was deleted before
+                    // the session was cleared on delete (audit 2026-10-04 C02).
+                    LRRAuthManager.clearSessionIfActiveProfileGone(allProfiles.map { it.id })
                 }
             } catch (e: com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException) {
                 Log.w(TAG, "KeyStore unavailable during profile load", e)

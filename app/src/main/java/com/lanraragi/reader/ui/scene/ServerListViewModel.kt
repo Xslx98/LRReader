@@ -125,8 +125,13 @@ class ServerListViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     fun deleteProfile(profile: ServerProfile) {
+        val wasActive = profile.isActive || LRRAuthManager.getActiveProfileId() == profile.id
         try {
             LRRAuthManager.clearApiKeyForProfile(profile.id)
+            // The active profile's URL and key are also mirrored into the global
+            // session that the auth interceptor falls back to. Clear it before
+            // the row goes, or the deleted server keeps receiving the key.
+            if (wasActive) LRRAuthManager.clearActiveSession()
         } catch (e: LRRSecureStorageUnavailableException) {
             _uiEvent.tryEmit(ServerListUiEvent.SecureStorageError)
             return
@@ -142,6 +147,15 @@ class ServerListViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete profile", e)
+            }
+            if (wasActive) {
+                // Same as a profile switch: the deleted server's thumbnails and
+                // details must not show up under whatever is picked next.
+                try {
+                    withContext(Dispatchers.IO) { ServiceRegistry.clearAllCaches() }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Cache clear after deleting the active profile failed", e)
+                }
             }
             // A continue-reading shortcut pointing at the deleted profile is
             // now a dead end — drop it (issue #16). The widget re-renders from
