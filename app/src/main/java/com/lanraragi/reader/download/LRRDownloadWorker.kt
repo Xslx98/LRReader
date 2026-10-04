@@ -47,7 +47,40 @@ import java.util.concurrent.atomic.AtomicInteger
  * Reports progress via [SpiderQueen.OnSpiderListener] so DownloadManager
  * can update UI without any changes to its notification pipeline.
  */
-class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
+class LRRDownloadWorker(
+    context: Context,
+    private val info: DownloadInfo,
+    private val env: Env = Env.Production,
+) {
+
+    /**
+     * What the worker needs from the rest of the app. [Production] reads
+     * [ServiceRegistry] and [SpiderDen]; tests substitute a MockWebServer
+     * client and a temp directory (audit C09).
+     */
+    interface Env {
+        suspend fun serverUrl(info: DownloadInfo): String
+        suspend fun downloadDir(info: DownloadInfo): File?
+        fun isNetworkAvailable(): Boolean
+        val listClient: OkHttpClient
+        val pageClient: OkHttpClient
+
+        object Production : Env {
+            override suspend fun serverUrl(info: DownloadInfo): String =
+                resolveSourceBaseUrl(info.serverProfileId, ServiceRegistry.dataModule.profileLookupCache)
+
+            override suspend fun downloadDir(info: DownloadInfo): File? = allocateDownloadDir(info)
+
+            override fun isNetworkAvailable(): Boolean = ServiceRegistry.networkModule.networkMonitor.isAvailable
+
+            override val listClient: OkHttpClient get() = ServiceRegistry.networkModule.longReadClient
+
+            // Shared page-streaming client (no call cap, no HTTP cache) — see
+            // INetworkModule.pageStreamClient for the rationale.
+            override val pageClient: OkHttpClient get() = ServiceRegistry.networkModule.pageStreamClient
+        }
+    }
+
 
     private val context: Context = context.applicationContext
     private val arcId: String = checkNotNull(info.arcid) { "DownloadInfo.arcid must not be null" }
@@ -56,7 +89,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
      * Resolved at the start of [doDownload] so the cache has time to
      * hydrate from Room and the worker can route by [DownloadInfo.serverProfileId]
      * instead of always pointing at the active profile. See
-     * [resolveServerUrl] for the fallback semantics.
+     * [resolveSourceBaseUrl] for the fallback semantics.
      */
     private lateinit var serverUrl: String
 
@@ -103,8 +136,19 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
     @Volatile
     private var cancelled = false
 
+    /** Set when a permanent failure ends the archive early (audit C21). */
+    @Volatile
+    private var aborted = false
+
+    /** The reason of the latest page that was given up on, if any. */
+    @Volatile
+    internal var failureReason: DownloadFailureReason? = null
+        private set
+
     fun start() {
         cancelled = false
+        aborted = false
+        failureReason = null
         job = scope.launch {
             try {
                 doDownload()
@@ -151,7 +195,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         // Failing to resolve means the source profile was deleted while
         // the download was queued — surface a localised error and stop.
         try {
-            serverUrl = resolveServerUrl()
+            serverUrl = env.serverUrl(info)
         } catch (e: OrphanProfileException) {
             Log.w(TAG, "Source profile ${e.profileId} no longer exists for arcid $arcId")
             listener?.run {
@@ -165,10 +209,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
             return
         }
 
-        val client = ServiceRegistry.networkModule.okHttpClient
-        // Shared page-streaming client (no call cap, no HTTP cache) — see
-        // INetworkModule.pageStreamClient for the rationale.
-        val pageClient = ServiceRegistry.networkModule.pageStreamClient
+        val pageClient = env.pageClient
 
         // Step 1: Extract archive to get page list. Retry across network outages
         // (bounded by waitBudget); genuine failures (non-network) stop the download.
@@ -176,7 +217,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         while (pagePaths == null && !cancelled) {
             try {
                 pagePaths = LRRArchiveApi.getFileList(
-                    ServiceRegistry.networkModule.longReadClient,
+                    env.listClient,
                     serverUrl,
                     arcId
                 )
@@ -192,7 +233,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 // completed download is never flipped to FAILED — and a fully
                 // local archive finishes instantly even while offline.
                 if (!cancelled && reportIfLocallyComplete()) return
-                if (!cancelled && !networkMonitor.isAvailable) {
+                if (!cancelled && !env.isNetworkAvailable()) {
                     if (BuildConfig.DEBUG) Log.w(TAG, "Extract failed: network down, waiting", e)
                     if (!waitForNetworkIfDown()) {
                         listener?.run {
@@ -219,7 +260,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         listener?.onGetPages(total)
 
         // Step 2: Prepare download directory
-        val downloadDir = getDownloadDir()
+        val downloadDir = env.downloadDir(info)
         if (downloadDir == null) {
             listener?.run {
                 onPageFailure(0, "Cannot create download directory", 0, 0, total)
@@ -259,7 +300,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         val downloaded = AtomicInteger(0)
 
         try {
-            OrderedPageWindow.run(scope, total, PARALLEL_PAGES, { cancelled }) { i ->
+            OrderedPageWindow.run(scope, total, PARALLEL_PAGES, { cancelled || aborted }) { i ->
                 val pagePath = resolvedPagePaths[i]
                 val pageFile = DownloadPageNaming.pageFile(downloadDir, i, pagePath)
 
@@ -274,12 +315,12 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
                 var success = false
                 var attempt = 0
-                while (!cancelled && !success) {
+                while (!cancelled && !aborted && !success) {
                     try {
                         downloadPage(pageClient, pagePath, pageFile, i, total)
                         if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
                             if (pageFile.exists()) pageFile.delete()
-                            throw IOException("Downloaded file too small or missing")
+                            throw CorruptPageException("Downloaded file too small or missing")
                         }
                         success = true
                     } catch (e: Exception) {
@@ -291,7 +332,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                         // propagates.
                         if (e is CancellationException) throw e
                         if (cancelled) break
-                        if (!networkMonitor.isAvailable) {
+                        if (!env.isNetworkAvailable()) {
                             // Network-induced failure: pause and wait for the
                             // network instead of consuming a retry. Loop to
                             // re-attempt the same page once it returns.
@@ -306,17 +347,32 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                                 break
                             }
                         } else {
-                            // Genuine error (HTTP 4xx, corrupt image, etc.).
+                            // Genuine error: PageRetryPolicy decides (audit C21).
                             attempt++
                             Log.e(TAG, "Failed to download page $i (attempt $attempt)", e)
-                            if (attempt >= MAX_RETRY) {
-                                listener?.onPageFailure(
-                                    i, e.message ?: "Unknown error",
-                                    finished.get(), downloaded.get(), total
-                                )
-                                break
-                            }
                             if (pageFile.exists()) pageFile.delete()
+                            when (val decision = PageRetryPolicy.decide(e, attempt)) {
+                                is PageRetryPolicy.Decision.Retry -> delay(decision.delayMillis)
+                                is PageRetryPolicy.Decision.Fail -> {
+                                    failureReason = decision.reason
+                                    listener?.onPageFailure(
+                                        i, e.message ?: "Unknown error",
+                                        finished.get(), downloaded.get(), total
+                                    )
+                                    break
+                                }
+                                is PageRetryPolicy.Decision.Abort -> {
+                                    // No other page can succeed either: stop
+                                    // claiming pages and end the archive.
+                                    failureReason = decision.reason
+                                    aborted = true
+                                    listener?.onPageFailure(
+                                        i, e.message ?: "Unknown error",
+                                        finished.get(), downloaded.get(), total
+                                    )
+                                    break
+                                }
+                            }
                         }
                     }
                 }
@@ -371,14 +427,14 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
      * give up (budget exhausted) or it was already a non-network failure.
      */
     private suspend fun waitForNetworkIfDown(): Boolean {
-        if (networkMonitor.isAvailable) return false // genuine (non-network) failure
+        if (env.isNetworkAvailable()) return false // genuine (non-network) failure
         if (waitingPages.getAndIncrement() == 0) {
             onNetworkWaitEvent?.invoke(NetworkWaitEvent.WAITING)
         }
         val resumed = try {
             waitBudget.awaitNetworkOrExpire(networkMonitor.isAvailableFlow)
         } finally {
-            if (waitingPages.decrementAndGet() == 0 && networkMonitor.isAvailable) {
+            if (waitingPages.decrementAndGet() == 0 && env.isNetworkAvailable()) {
                 onNetworkWaitEvent?.invoke(NetworkWaitEvent.RESUMED)
             }
         }
@@ -420,7 +476,9 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
 
             call.execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw IOException("HTTP ${response.code}")
+                    throw HttpStatusException(
+                        response.code, PageRetryPolicy.parseRetryAfter(response.header("Retry-After"))
+                    )
                 }
 
                 // if/throw, not `?: throw`: detektMain flags every statement
@@ -437,7 +495,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 val source = body.source()
                 val header = peekHeader(source)
                 if (!validateImageHeader(header, header.size)) {
-                    throw IOException("Downloaded data is not a valid image")
+                    throw CorruptPageException("Downloaded data is not a valid image")
                 }
 
                 // Stream body → disk via Okio (OkHttp already exposes its
@@ -530,43 +588,37 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
         try {
             source.peek().readByteArray(HEADER_PEEK_BYTES.toLong())
         } catch (e: EOFException) {
-            throw IOException("Response too small to validate as image", e)
+            throw CorruptPageException("Response too small to validate as image", e)
         }
-
-    private suspend fun resolveServerUrl(): String =
-        resolveSourceBaseUrl(
-            info.serverProfileId,
-            ServiceRegistry.dataModule.profileLookupCache,
-        )
-
-    /**
-     * The archive's download directory, allocated (with its pointer) on
-     * first use. There is deliberately no fallback location: a second
-     * naming rule outside [SpiderDen] produced unpointed, undeduplicated
-     * directories the reader never found. A null result fails the download
-     * with a reason instead.
-     */
-    private suspend fun getDownloadDir(): File? {
-        try {
-            val uniDir = SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title) ?: return null
-            val uri = uniDir.uri
-            if ("file" == uri.scheme) {
-                return File(uri.path ?: return null)
-            }
-            Log.w(TAG, "Download root is not a file:// directory; cannot download")
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to allocate the gallery download dir", e)
-        }
-        return null
-    }
 
     companion object {
         private const val TAG = "LRRDownloadWorker"
+
+        /**
+         * The archive's download directory, allocated (with its pointer) on
+         * first use. There is deliberately no fallback location: a second
+         * naming rule outside [SpiderDen] produced unpointed, undeduplicated
+         * directories the reader never found. A null result fails the download
+         * with a reason instead.
+         */
+        private suspend fun allocateDownloadDir(info: DownloadInfo): File? {
+            try {
+                val uniDir = SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title) ?: return null
+                val uri = uniDir.uri
+                if ("file" == uri.scheme) {
+                    return File(uri.path ?: return null)
+                }
+                Log.w(TAG, "Download root is not a file:// directory; cannot download")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to allocate the gallery download dir", e)
+            }
+            return null
+        }
+
         private const val BUFFER_SIZE = 262144         // 256KB — reduces syscall overhead on LAN
         // Same floor as the reader (see ReaderPageCache.MIN_IMAGE_SIZE);
         // internal so LocalArchiveVerifier applies it like the resume skip.
         internal const val MIN_IMAGE_SIZE = ReaderPageCache.MIN_IMAGE_SIZE
-        private const val MAX_RETRY = 2                // Try up to 2 times per page
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
         /** Settle delay after the network returns before re-attempting, so a
          *  rapidly flapping link cannot hot-spin the download→fail→wait→resume
