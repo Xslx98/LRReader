@@ -2,6 +2,7 @@ package com.lanraragi.reader.download
 
 import android.content.Context
 import android.util.Log
+import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
@@ -26,11 +27,13 @@ import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okio.BufferedSource
 import okio.EOFException
 import okio.buffer
 import okio.sink
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -234,6 +237,15 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 Log.w(TAG, "Failed to create .nomedia file", e)
             }
         }
+        // Temp files of pages interrupted by a killed process (audit C47).
+        DownloadTempSweeper.sweep(downloadDir)
+        // Self-describing directory (audit C05): names the arcid on disk, since
+        // the title-based directory name alone cannot be traced back to it.
+        UniFile.fromFile(downloadDir)?.let { dir ->
+            if (!DownloadDirMarker.write(dir, DownloadDirMarker.of(info, total))) {
+                Log.w(TAG, "Failed to write the download dir marker")
+            }
+        }
 
         // Step 3: Download pages through an ordered sliding window.
         // LANraragi's /api/archives/:id/page supports concurrent requests and
@@ -411,7 +423,10 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                     throw IOException("HTTP ${response.code}")
                 }
 
-                val body = response.body ?: throw IOException("Empty response body")
+                // if/throw, not `?: throw`: detektMain flags every statement
+                // after an elvis-Nothing as UnreachableCode.
+                val body = response.body
+                if (body == null) throw IOException("Empty response body")
                 contentLength = body.contentLength()
 
                 // Validate image magic bytes in-stream: peek the first 16
@@ -420,13 +435,7 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 // Saves a post-write disk re-read and aborts corrupt
                 // responses before a tmp file is even flushed.
                 val source = body.source()
-                val header = try {
-                    source.peek().readByteArray(HEADER_PEEK_BYTES.toLong())
-                } catch (e: EOFException) {
-                    throw IOException(
-                        "Response too small to validate as image", e
-                    )
-                }
+                val header = peekHeader(source)
                 if (!validateImageHeader(header, header.size)) {
                     throw IOException("Downloaded data is not a valid image")
                 }
@@ -435,7 +444,8 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                 // body as a BufferedSource; going through `byteStream()` +
                 // `FileOutputStream` incurred an extra adapter + byte[]
                 // copy for every chunk).
-                tmpFile.sink().buffer().use { sink ->
+                val tmpOut = FileOutputStream(tmpFile)
+                tmpOut.sink().buffer().use { sink ->
                     // Coalesce progress notifications: each post hops to
                     // the main thread via DownloadEventBus, so emitting one
                     // per 256 KB chunk (~160/s on LAN gigabit with 8
@@ -481,11 +491,11 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
                             index, contentLength, totalRead, pendingDelta
                         )
                     }
-                    // sink.close() (via use{}) flushes buffered segments to
-                    // the underlying FileOutputStream, which in turn flushes
-                    // to the OS buffer cache. Explicit fsync remains
-                    // omitted: rename-after-close is sufficient for download
-                    // integrity; the OS flushes to disk on its own schedule.
+                    // fsync before the rename (audit C47): without it a power
+                    // loss can leave a renamed but empty page file, which a
+                    // FINISH download never re-checks.
+                    sink.flush()
+                    tmpOut.fd.sync()
                 }
             }
 
@@ -510,6 +520,18 @@ class LRRDownloadWorker(context: Context, private val info: DownloadInfo) {
             }
         }
     }
+
+    /**
+     * The first [HEADER_PEEK_BYTES] of the response, without consuming them.
+     * A helper rather than an inline `try { } catch { throw }`, which makes
+     * detektMain flag every following statement as UnreachableCode.
+     */
+    private fun peekHeader(source: BufferedSource): ByteArray =
+        try {
+            source.peek().readByteArray(HEADER_PEEK_BYTES.toLong())
+        } catch (e: EOFException) {
+            throw IOException("Response too small to validate as image", e)
+        }
 
     private suspend fun resolveServerUrl(): String =
         resolveSourceBaseUrl(

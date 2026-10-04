@@ -55,6 +55,7 @@ import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.AppDatabase
+import com.lanraragi.reader.dao.DatabaseQuarantine
 import com.lanraragi.reader.module.AppModule
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.ui.scene.AnalyticsScene
@@ -704,17 +705,18 @@ class MainActivity : StageActivity(),
     }
 
     /**
-     * Delete `eh.db` (plus its `-journal`, `-wal`, `-shm` siblings handled
-     * by the framework) on IO, then trigger a process restart so the next
-     * `AppDatabase.getInstance` call rebuilds an empty schema.
+     * Move `eh.db` (plus its `-journal`, `-wal`, `-shm` siblings) aside to
+     * `eh.db.broken-<millis>` on IO, then trigger a process restart so the
+     * next `AppDatabase.getInstance` call rebuilds an empty schema. The old
+     * file is kept for manual recovery (audit C04).
      */
     private fun resetDatabaseAndRestart() {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    applicationContext.deleteDatabase(AppDatabase.DB_NAME)
+                    DatabaseQuarantine.quarantine(applicationContext.getDatabasePath(AppDatabase.DB_NAME))
                 } catch (t: Throwable) {
-                    Log.e(TAG, "deleteDatabase failed during boot-failure reset", t)
+                    Log.e(TAG, "database quarantine failed during boot-failure reset", t)
                 }
             }
             triggerRebirth()

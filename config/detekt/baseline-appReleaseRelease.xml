@@ -486,9 +486,7 @@
     <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$val obj = lrrJson.parseToJsonElement(body).jsonObject</ID>
     <ID>UnreachableCode:LRRDatabaseApi.kt$LRRDatabaseApi$lrrJson.decodeFromString&lt;List&lt;LRRTagStat&gt;&gt;(body)</ID>
     <ID>UnreachableCode:LRRDatabaseApi.kt$LRRDatabaseApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
-    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$contentLength = body.contentLength()</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false</ID>
-    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if (!validateImageHeader(header, header.size)) { throw IOException("Downloaded data is not a valid image") }</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if ("file" != uni.uri.scheme) return false</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if (BuildConfig.DEBUG) { Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish") }</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if (pagecount &lt;= 0) return false</ID>
@@ -496,12 +494,9 @@
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$onFinish(pagecount, 0, pagecount)</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$onGetPages(pagecount)</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$return true</ID>
-    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$tmpFile.sink().buffer().use { sink -&gt; // Coalesce progress notifications: each post hops to // the main thread via DownloadEventBus, so emitting one // per 256 KB chunk (~160/s on LAN gigabit with 8 // parallel pages) was starving the UI. Accumulate // bytes locally and flush at most every // PROGRESS_NOTIFY_INTERVAL_MS, plus a final flush when // the stream ends. var pendingDelta = 0 var lastNotifyNanos = System.nanoTime() val intervalNanos = PROGRESS_NOTIFY_INTERVAL_MS * 1_000_000L while (true) { if (cancelled) { tmpFile.delete() throw IOException("Cancelled") } val read = source.read(sink.buffer, BUFFER_SIZE.toLong()) if (read == -1L) break sink.emitCompleteSegments() totalRead += read pendingDelta += read.toInt() if (totalRead &gt; MAX_PAGE_SIZE) { tmpFile.delete() throw IOException( "Page exceeds maximum size limit (${MAX_PAGE_SIZE / 1024 / 1024} MB)" ) } if (contentLength &gt; 0) { val now = System.nanoTime() if (now - lastNotifyNanos &gt;= intervalNanos) { listener?.onPageDownload( index, contentLength, totalRead, pendingDelta ) pendingDelta = 0 lastNotifyNanos = now } } } // Final flush so the last partial interval isn't lost // (e.g. small pages that finish before the first tick). if (contentLength &gt; 0 &amp;&amp; pendingDelta &gt; 0) { listener?.onPageDownload( index, contentLength, totalRead, pendingDelta ) } // sink.close() (via use{}) flushes buffered segments to // the underlying FileOutputStream, which in turn flushes // to the OS buffer cache. Explicit fsync remains // omitted: rename-after-close is sufficient for download // integrity; the OS flushes to disk on its own schedule. }</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val body = response.body ?: throw IOException("Empty response body")</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val dir = File(uni.uri.path ?: return false)</ID>
-    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val header = try { source.peek().readByteArray(HEADER_PEEK_BYTES.toLong()) } catch (e: EOFException) { throw IOException( "Response too small to validate as image", e ) }</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val pagecount = runCatching { ServiceRegistry.dataModule.historyRepository .getArchiveSnapshot(arcId, info.serverProfileId)?.pagecount }.getOrNull() ?: return false</ID>
-    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val source = body.source()</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val uni = runCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false</ID>
     <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$val client = ServiceRegistry.networkModule.okHttpClient</ID>
     <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$val url = serverUrlDeferred.await() ?: return@sync</ID>
