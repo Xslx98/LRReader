@@ -208,7 +208,9 @@ class LRReaderApplication : RecordingApplication() {
                     LRRAuthManager.clearSessionIfActiveProfileGone(allProfiles.map { it.id })
                 }
             } catch (e: com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException) {
-                Log.w(TAG, "KeyStore unavailable during profile load", e)
+                // Log.e, not Log.w: R8 cannot strip a Throwable-carrying Log.w
+                // from this coroutine body, and the CI DEX check forbids it.
+                Log.e(TAG, "KeyStore unavailable during profile load", e)
                 // KeyStore unavailable — markReauthIfProfilesUnprotected already flagged
                 // it (or initialize() did), and MainActivity will surface the dialog.
             } catch (e: Exception) {
