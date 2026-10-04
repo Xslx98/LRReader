@@ -31,6 +31,18 @@ class DownloadResumeBannerTest {
     }
 
     @Test
+    fun storageFull_takesPrecedenceAndIsClearedByResume() {
+        DownloadResumeBanner.markTimedOut("t", "Timed out")
+        DownloadResumeBanner.markStorageFull("a", "Title A")
+        DownloadResumeBanner.markStorageFull("b", "Title B")
+        DownloadResumeBanner.markResumed("b")
+
+        assertEquals(DownloadResumeBanner.Snapshot.StorageFull(listOf("a"), 1), DownloadResumeBanner.consume())
+        // One-shot: everything was consumed with it.
+        assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
+    }
+
+    @Test
     fun consume_none_whenNothingRecorded() {
         assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
     }

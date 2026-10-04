@@ -53,6 +53,8 @@ class LRRDownloadWorkerTest {
 
     private var pageCount = 3
 
+    private var usable = Long.MAX_VALUE
+
     private var filesAnswer: () -> MockResponse? = { null }
 
     @Before
@@ -112,6 +114,7 @@ class LRRDownloadWorkerTest {
             override fun isNetworkAvailable() = true
             override val listClient = client
             override val pageClient = client
+            override fun usableBytes(dir: File) = usable
         }
         worker = LRRDownloadWorker(ApplicationProvider.getApplicationContext(), info, env)
         worker.listener = object : SpiderQueen.OnSpiderListener {
@@ -189,6 +192,30 @@ class LRRDownloadWorkerTest {
         assertEquals(2, r.finished)
         assertEquals(2, hits(3))
         assertEquals(DownloadFailureReason.CORRUPT, worker.failureReason)
+    }
+
+    @Test
+    fun lowFreeSpace_abortsBeforeAnyPageRequest() {
+        usable = LRRDownloadWorker.MIN_FREE_BYTES - 1
+
+        val r = run()
+
+        assertEquals(0, r.finished)
+        assertEquals(DownloadFailureReason.NO_SPACE, worker.failureReason)
+        assertEquals(0, pageHits.size)
+    }
+
+    @Test
+    fun lowFreeSpace_stillFinishesAnArchiveAlreadyOnDisk() {
+        run()
+        pageHits.clear()
+        usable = 0
+
+        val r = run()
+
+        assertEquals(3, r.finished)
+        assertEquals(null, worker.failureReason)
+        assertEquals(0, pageHits.size)
     }
 
     @Test

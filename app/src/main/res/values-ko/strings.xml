@@ -251,6 +251,9 @@
         <item quantity="other">다운로드 %d개가 중단되었습니다</item>
     </plurals>
     <string name="download_resume_resume_action">재개</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="other">저장 공간 부족: 다운로드 %d개가 일시 중지되었습니다. 공간을 확보한 후 다시 시작하세요.</item>
+    </plurals>
     <string name="remember_download_label">다운로드 레이블 기억</string>
     <string name="default_download_label">기본 다운로드 레이블</string>
     <string name="added_to_download_list">다운로드 목록에 추가됨</string>

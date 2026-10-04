@@ -1,6 +1,7 @@
 package com.lanraragi.reader.download
 
 import android.content.Context
+import android.os.storage.StorageManager
 import android.util.Log
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.BuildConfig
@@ -65,6 +66,9 @@ class LRRDownloadWorker(
         val listClient: OkHttpClient
         val pageClient: OkHttpClient
 
+        /** Bytes that can still be allocated on the volume holding [dir]. */
+        fun usableBytes(dir: File): Long
+
         object Production : Env {
             override suspend fun serverUrl(info: DownloadInfo): String =
                 resolveSourceBaseUrl(info.serverProfileId, ServiceRegistry.dataModule.profileLookupCache)
@@ -78,6 +82,16 @@ class LRRDownloadWorker(
             // Shared page-streaming client (no call cap, no HTTP cache) — see
             // INetworkModule.pageStreamClient for the rationale.
             override val pageClient: OkHttpClient get() = ServiceRegistry.networkModule.pageStreamClient
+
+            // getAllocatableBytes also counts cache the system may clear for us.
+            // If the volume cannot be queried, never block the download on it.
+            override fun usableBytes(dir: File): Long = try {
+                val storage = ServiceRegistry.appModule.getContext().getSystemService(StorageManager::class.java)
+                storage.getAllocatableBytes(storage.getUuidForPath(dir))
+            } catch (e: IOException) {
+                Log.w(TAG, "Free-space query failed", e)
+                Long.MAX_VALUE
+            }
         }
     }
 
@@ -312,6 +326,19 @@ class LRRDownloadWorker(
                     val f = finished.incrementAndGet()
                     val d = downloaded.incrementAndGet()
                     listener?.onPageSuccess(i, f, d, total)
+                    return@run
+                }
+
+                // Free-space floor (audit C21): stop before the disk is truly
+                // full, so Room and the rest of the system keep room to write.
+                // Checked only for pages that still need downloading, so an
+                // archive already complete on disk is never blocked.
+                if (env.usableBytes(downloadDir) < MIN_FREE_BYTES) {
+                    if (!aborted) {
+                        failureReason = DownloadFailureReason.NO_SPACE
+                        aborted = true
+                        listener?.onPageFailure(i, "Storage full", finished.get(), downloaded.get(), total)
+                    }
                     return@run
                 }
 
@@ -622,6 +649,8 @@ class LRRDownloadWorker(
         // Same floor as the reader (see ReaderPageCache.MIN_IMAGE_SIZE);
         // internal so LocalArchiveVerifier applies it like the resume skip.
         internal const val MIN_IMAGE_SIZE = ReaderPageCache.MIN_IMAGE_SIZE
+        /** Below this much free space no further page is downloaded (audit C21). */
+        internal const val MIN_FREE_BYTES = 64L * 1024 * 1024
         private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
         /** Settle delay after the network returns before re-attempting, so a
          *  rapidly flapping link cannot hot-spin the download→fail→wait→resume

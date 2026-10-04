@@ -783,6 +783,14 @@ class MainActivity : StageActivity(),
                     startScene(Announcer(DownloadsScene::class.java))
                 }.show()
             }
+            is DownloadResumeBanner.Snapshot.StorageFull -> showRequeueSnackbar(
+                host,
+                resources.getQuantityString(
+                    R.plurals.download_resume_storage_full_snackbar, snapshot.count, snapshot.count
+                ),
+                R.string.download_resume_resume_action,
+                snapshot.arcids,
+            )
             is DownloadResumeBanner.Snapshot.TimedOut -> showRequeueSnackbar(
                 host,
                 resources.getQuantityString(

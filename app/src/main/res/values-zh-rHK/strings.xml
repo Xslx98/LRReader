@@ -281,6 +281,9 @@
         <item quantity="other">%d 個下載被中斷</item>
     </plurals>
     <string name="download_resume_resume_action">恢復</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="other">儲存空間已滿：已暫停 %d 個下載。請釋放空間後繼續。</item>
+    </plurals>
     <string name="remember_download_label">記住下載標籤</string>
     <string name="default_download_label">預設下載標籤</string>
     <string name="added_to_download_list">已新增至下載列表</string>

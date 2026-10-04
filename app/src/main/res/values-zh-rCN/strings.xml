@@ -243,6 +243,9 @@
         <item quantity="other">%d 个下载被中断</item>
     </plurals>
     <string name="download_resume_resume_action">恢复</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="other">存储空间已满：已暂停 %d 个下载。请释放空间后恢复。</item>
+    </plurals>
     <string name="remember_download_label">记住下载标签</string>
     <string name="default_download_label">默认下载标签</string>
     <string name="added_to_download_list">已添加至下载列表</string>

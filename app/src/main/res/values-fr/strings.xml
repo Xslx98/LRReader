@@ -250,6 +250,11 @@
         <item quantity="many">%d téléchargements ont été interrompus</item>
     </plurals>
     <string name="download_resume_resume_action">Reprendre</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="one">Stockage plein : %d téléchargement en pause. Libérez de l\'espace, puis reprenez.</item>
+        <item quantity="other">Stockage plein : %d téléchargements en pause. Libérez de l\'espace, puis reprenez.</item>
+        <item quantity="many">Stockage plein : %d téléchargements en pause. Libérez de l\'espace, puis reprenez.</item>
+    </plurals>
     <string name="remember_download_label">Enregistrer le label de téléchargement</string>
     <string name="default_download_label">Label de téléchargement par défaut</string>
     <string name="added_to_download_list">Ajouté à la liste de téléchargement</string>

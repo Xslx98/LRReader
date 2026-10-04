@@ -235,6 +235,22 @@ internal class DownloadScheduler(
     /**
      * Stop all downloads: clear the wait list and stop all active downloads.
      */
+    /**
+     * Stops every running and queued download (state NONE, resumable) after
+     * [failed] hit a full disk, and records them all — [failed] included — for
+     * the "storage full" banner, whose action re-queues them (audit C21).
+     */
+    private fun pauseQueueForStorage(failed: DownloadInfo) {
+        val affected = buildList {
+            add(failed)
+            addAll(activeTasks)
+            addAll(waitList)
+        }
+        stopAllDownload()
+        for (di in affected) DownloadResumeBanner.markStorageFull(di.arcid, di.title)
+        eventBus.forEachListener { it.onUpdateAll() }
+    }
+
     fun stopAllDownload() {
         assertMainThread()
         // Stop all in wait list
@@ -449,6 +465,13 @@ internal class DownloadScheduler(
                     eventBus.forEachListener {
                         it.onUpdate(info, list, waitList)
                     }
+                }
+                // Storage full (audit C21): every other queued or running
+                // download would fail the same way, one by one. Pause them all
+                // resumably instead and offer a single "Resume" once space is freed.
+                if (info.failureReason == DownloadFailureReason.NO_SPACE) {
+                    pauseQueueForStorage(info)
+                    return
                 }
                 // Start next download
                 ensureDownload()

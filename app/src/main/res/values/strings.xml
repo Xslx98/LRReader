@@ -342,6 +342,10 @@
         <item quantity="other">%d downloads were interrupted</item>
     </plurals>
     <string name="download_resume_resume_action">Resume</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="one">Storage full: %d download paused. Free up space, then resume.</item>
+        <item quantity="other">Storage full: %d downloads paused. Free up space, then resume.</item>
+    </plurals>
     <string name="remember_download_label">Remember download label</string>
     <string name="default_download_label">Default download label</string>
     <string name="added_to_download_list">Added to download list</string>

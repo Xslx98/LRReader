@@ -204,6 +204,10 @@
         <item quantity="other">%d Downloads wurden unterbrochen</item>
     </plurals>
     <string name="download_resume_resume_action">Fortsetzen</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="one">Speicher voll: %d Download angehalten. Platz freigeben, dann fortsetzen.</item>
+        <item quantity="other">Speicher voll: %d Downloads angehalten. Platz freigeben, dann fortsetzen.</item>
+    </plurals>
     <string name="remember_download_label">Download-Etikette merken</string>
     <string name="default_download_label">Standard-Download-Etikette</string>
     <string name="added_to_download_list">Zu Download-Liste hinzugefügt</string>
