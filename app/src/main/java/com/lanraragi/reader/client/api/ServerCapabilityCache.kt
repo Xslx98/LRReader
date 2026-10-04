@@ -32,6 +32,7 @@ object ServerCapabilityCache {
 
     private val tracksProgress = ConcurrentHashMap<String, Boolean>()
     private val excludedNamespaces = ConcurrentHashMap<String, Set<String>>()
+    private val serverSummaries = ConcurrentHashMap<String, String>()
 
     @Volatile
     private var store: Store? = null
@@ -44,8 +45,22 @@ object ServerCapabilityCache {
     /** Single entry point for everything `/api/info` teaches us about [baseUrl]. */
     fun recordServerInfo(baseUrl: String, info: LRRServerInfo) {
         setTracksProgress(baseUrl, info.serverTracksProgress)
+        serverSummaries[baseUrl] = com.lanraragi.reader.diagnostics.Redactor.redact(summarize(info))
         setExcludedNamespaces(baseUrl, info.excludedNamespaces)
     }
+
+    /**
+     * One line describing the last `/api/info` seen for [baseUrl] in this process,
+     * for the diagnostics bundle (audit 2026-10-04 C06). Leaves out the server
+     * name and MOTD, which are user text; null if the server was not contacted.
+     */
+    fun describeServerInfo(baseUrl: String): String? = serverSummaries[baseUrl]
+
+    internal fun summarize(info: LRRServerInfo): String =
+        "version=${info.version} (${info.versionName}), hasPassword=${info.hasPassword}, " +
+            "nofun=${info.nofunMode}, debug=${info.debugMode}, resizes=${info.serverResizesImages}, " +
+            "tracksProgress=${info.serverTracksProgress}, archivesPerPage=${info.archivesPerPage}, " +
+            "excludedNamespaces=${info.excludedNamespaces.size}"
 
     fun setTracksProgress(baseUrl: String, value: Boolean) {
         tracksProgress[baseUrl] = value
@@ -78,6 +93,7 @@ object ServerCapabilityCache {
     /** Drops in-memory facts only; an attached [Store] keeps its contents. */
     fun clear() {
         tracksProgress.clear()
+        serverSummaries.clear()
         excludedNamespaces.clear()
     }
 }

@@ -39,7 +39,6 @@ object AppConfig {
     private const val ARCHIVER = "archiver"
     private const val IMAGE = "image"
     private const val PARSE_ERROR = "parse_error"
-    private const val LOGCAT = "logcat"
     private const val DATA = "data"
     private const val CRASH = "crash"
 
@@ -93,9 +92,6 @@ object AppConfig {
 
     @JvmStatic
     fun getExternalParseErrorDir(): File? = getDirInExternalAppDir(PARSE_ERROR)
-
-    @JvmStatic
-    fun getExternalLogcatDir(): File? = getDirInExternalAppDir(LOGCAT)
 
     @JvmStatic
     fun getExternalDataDir(): File? = getDirInExternalAppDir(DATA)

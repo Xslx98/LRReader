@@ -24,9 +24,9 @@
         android:title="@string/settings_advanced_save_crash_log" />
 
     <Preference
-        android:key="dump_logcat"
-        android:summary="@string/settings_advanced_dump_logcat_summary"
-        android:title="@string/settings_advanced_dump_logcat"
+        android:key="share_diagnostics"
+        android:summary="@string/settings_advanced_share_diagnostics_summary"
+        android:title="@string/settings_advanced_share_diagnostics"
         app:allowDividerAbove="true" />
 
     <Preference

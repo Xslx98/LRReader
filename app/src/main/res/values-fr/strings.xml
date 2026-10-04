@@ -572,10 +572,9 @@
     <string name="settings_advanced">Avancé</string>
     <string name="settings_advanced_save_crash_log">Enrégistrer le rapport crash</string>
     <string name="settings_advanced_save_crash_log_summary">Enregistré uniquement sur cet appareil, jamais envoyé. Inclus lorsque vous partagez le diagnostic.</string>
-    <string name="settings_advanced_dump_logcat">Sauvegarder le journal logcat</string>
-    <string name="settings_advanced_dump_logcat_summary">Sauvegarder le journal logcat au stockage externe</string>
-    <string name="settings_advanced_dump_logcat_failed">Echec de sauvegarde</string>
-    <string name="settings_advanced_dump_logcat_to">Fiche sauvegardé à %s</string>
+    <string name="settings_advanced_share_diagnostics">Partager le diagnostic</string>
+    <string name="settings_advanced_share_diagnostics_summary">Rapports de plantage, journaux récents et versions de l’app et du serveur dans un zip. L’adresse du serveur et les clés sont retirées ; rien n’est envoyé sans votre choix.</string>
+    <string name="settings_advanced_share_diagnostics_failed">Impossible de créer le fichier de diagnostic</string>
     <!-- Message -->
 
     <string name="settings_advanced_clear_memory_cache">Vider le cache du stockage</string>

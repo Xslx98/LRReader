@@ -499,10 +499,9 @@
     <string name="settings_advanced">Erweiterte Optionen</string>
     <string name="settings_advanced_save_crash_log">Crash-Bericht speichern</string>
     <string name="settings_advanced_save_crash_log_summary">Nur auf diesem Gerät gespeichert, nie hochgeladen. Wird beim Teilen der Diagnosedaten mitgesendet.</string>
-    <string name="settings_advanced_dump_logcat">Logcat-Protokoll speichern</string>
-    <string name="settings_advanced_dump_logcat_summary">Logcat-Protokolldatei auf externem Speicher speichern</string>
-    <string name="settings_advanced_dump_logcat_failed">Speichern gescheitert</string>
-    <string name="settings_advanced_dump_logcat_to">Protokolldatei wurde auf %s gespeichert.</string>
+    <string name="settings_advanced_share_diagnostics">Diagnosedaten teilen</string>
+    <string name="settings_advanced_share_diagnostics_summary">Absturzberichte, aktuelle Protokolle und App-/Serverversionen als ZIP. Serveradresse und Schlüssel werden entfernt; gesendet wird nur, wohin du es teilst.</string>
+    <string name="settings_advanced_share_diagnostics_failed">Diagnosedatei konnte nicht erstellt werden</string>
     <string name="license">Open Source-Lizenzen</string>
     <string name="let_me_select">Manuell auswählen</string>
     <string name="guide_gallery_left">Seiten umblättern</string>

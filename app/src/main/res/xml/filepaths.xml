@@ -33,6 +33,11 @@
         name="updates"
         path="updates" />
 
+    <!-- The "Share diagnostics" zip (DiagnosticsCollector), rebuilt on every share. -->
+    <cache-path
+        name="diagnostics"
+        path="diagnostics" />
+
     <!-- Temp page images shared from the reader via FileProvider.getUriForFile()
          in GalleryImageOperations.shareImage() (AppConfig.getExternalTempDir()). -->
     <external-files-path

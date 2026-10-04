@@ -668,10 +668,9 @@
     <string name="settings_advanced">Advanced</string>
     <string name="settings_advanced_save_crash_log">Save crash log when app crashes</string>
     <string name="settings_advanced_save_crash_log_summary">Saved on this device only, never uploaded. Included when you share diagnostics.</string>
-    <string name="settings_advanced_dump_logcat">Dump logcat</string>
-    <string name="settings_advanced_dump_logcat_summary">Save logcat to external storage</string>
-    <string name="settings_advanced_dump_logcat_failed">Dump logcat failed</string>
-    <string name="settings_advanced_dump_logcat_to">Logcat dumped to %s</string>
+    <string name="settings_advanced_share_diagnostics">Share diagnostics</string>
+    <string name="settings_advanced_share_diagnostics_summary">Crash reports, recent logs and app/server versions as a zip. Server address and keys are removed; nothing is sent unless you choose where.</string>
+    <string name="settings_advanced_share_diagnostics_failed">Could not create the diagnostics file</string>
     <string name="settings_advanced_clear_memory_cache">Clear memory cache</string>
     <string name="settings_advanced_clear_memory_cache_summary">Clear thumb, gallery info memory cache</string>
     <string name="settings_advanced_read_cache_size">Read cache size</string>

@@ -16,16 +16,20 @@
 
 package com.lanraragi.reader.ui.fragment
 
+import android.content.ActivityNotFoundException
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
-import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.diagnostics.DiagnosticsCollector
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.framework.util.LogCat
-import com.lanraragi.framework.util.ReadableTime
-import java.io.File
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import java.io.IOException
 
 class AdvancedFragment : BasePreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
@@ -33,11 +37,11 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.advanced_settings)
 
-        val dumpLogcat = findPreference<Preference>(KEY_DUMP_LOGCAT)
+        val shareDiagnostics = findPreference<Preference>(KEY_SHARE_DIAGNOSTICS)
         val clearMemoryCache = findPreference<Preference>(KEY_CLEAR_MEMORY_CACHE)
         val appLanguage = findPreference<Preference>(KEY_APP_LANGUAGE)
 
-        dumpLogcat?.onPreferenceClickListener = this
+        shareDiagnostics?.onPreferenceClickListener = this
         clearMemoryCache?.onPreferenceClickListener = this
 
         appLanguage?.onPreferenceChangeListener = this
@@ -49,7 +53,7 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
 
     override fun onPreferenceClick(preference: Preference): Boolean {
         return when (preference.key) {
-            KEY_DUMP_LOGCAT -> dumpLogcat()
+            KEY_SHARE_DIAGNOSTICS -> shareDiagnostics(preference)
             KEY_CLEAR_MEMORY_CACHE -> clearMemoryCache()
             else -> false
         }
@@ -61,23 +65,41 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
         return false
     }
 
-    private fun dumpLogcat(): Boolean {
-        var ok: Boolean
-        var file: File? = null
-        val dir = AppConfig.getExternalLogcatDir()
-        if (dir != null) {
-            file = File(dir, "logcat-" + ReadableTime.getFilenamableTime(System.currentTimeMillis()) + ".txt")
-            ok = LogCat.save(file)
-        } else {
-            ok = false
+    /**
+     * Zips the local reports, redacted events/logcat and a settings/queue summary
+     * and hands it to the share sheet (audit 2026-10-04 C06, ruling R2). Nothing
+     * leaves the device unless the user picks a target.
+     */
+    private fun shareDiagnostics(preference: Preference): Boolean {
+        val context = requireContext().applicationContext
+        val downloads = DiagnosticsCollector.downloadSummary()
+        preference.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
+            val build = ServiceRegistry.coroutineModule.ioScope.async {
+                try {
+                    DiagnosticsCollector.build(context, downloads)
+                } catch (e: IOException) {
+                    Log.e(TAG, "Build diagnostics bundle", e)
+                    null
+                }
+            }
+            val file = try {
+                build.await()
+            } finally {
+                preference.isEnabled = true
+            }
+            if (file == null) {
+                Toast.makeText(context, R.string.settings_advanced_share_diagnostics_failed, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val title = getString(R.string.settings_advanced_share_diagnostics)
+            try {
+                startActivity(DiagnosticsCollector.shareIntent(context, file, title))
+            } catch (e: ActivityNotFoundException) {
+                Log.e(TAG, "No share target for diagnostics", e)
+                Toast.makeText(context, R.string.settings_advanced_share_diagnostics_failed, Toast.LENGTH_SHORT).show()
+            }
         }
-        val resources = resources
-        Toast.makeText(
-            activity,
-            if (ok) resources.getString(R.string.settings_advanced_dump_logcat_to, file!!.path)
-            else resources.getString(R.string.settings_advanced_dump_logcat_failed),
-            Toast.LENGTH_SHORT
-        ).show()
         return true
     }
 
@@ -100,7 +122,8 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
     }
 
     companion object {
-        private const val KEY_DUMP_LOGCAT = "dump_logcat"
+        private const val TAG = "AdvancedFragment"
+        private const val KEY_SHARE_DIAGNOSTICS = "share_diagnostics"
         private const val KEY_CLEAR_MEMORY_CACHE = "clear_memory_cache"
         private const val KEY_APP_LANGUAGE = "app_language"
     }

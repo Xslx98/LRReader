@@ -551,10 +551,9 @@
     <string name="settings_advanced">高级</string>
     <string name="settings_advanced_save_crash_log">应用崩溃时保存错误日志</string>
     <string name="settings_advanced_save_crash_log_summary">仅保存在本机，不会上传；分享诊断信息时一并附上</string>
-    <string name="settings_advanced_dump_logcat">导出日志</string>
-    <string name="settings_advanced_dump_logcat_summary">保存日志至外置存储器</string>
-    <string name="settings_advanced_dump_logcat_failed">导出日志失败</string>
-    <string name="settings_advanced_dump_logcat_to">已保存日志至 %s</string>
+    <string name="settings_advanced_share_diagnostics">分享诊断信息</string>
+    <string name="settings_advanced_share_diagnostics_summary">将崩溃报告、近期日志和应用/服务器版本打包为 zip。服务器地址和密钥已移除；只有你选择分享对象时才会发出。</string>
+    <string name="settings_advanced_share_diagnostics_failed">无法生成诊断文件</string>
     <string name="settings_advanced_clear_memory_cache">清理内存缓存</string>
     <string name="settings_advanced_clear_memory_cache_summary">清理缩略图、画廊信息的内存缓存</string>
     <string name="settings_advanced_read_cache_size">阅读缓存大小</string>
