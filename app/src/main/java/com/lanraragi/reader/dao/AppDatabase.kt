@@ -65,7 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
          * On-disk file name of the Room database. Used by [getInstance] when
          * building the singleton, and by recovery paths (e.g. the boot-failure
          * "reset database" entry in [com.lanraragi.reader.ui.MainActivity]) that
-         * need to delete the file via `Context.deleteDatabase(DB_NAME)`.
+         * move the file aside via [DatabaseQuarantine].
          */
         const val DB_NAME = "eh.db"
 
@@ -75,16 +75,21 @@ abstract class AppDatabase : RoomDatabase() {
         @JvmStatic
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    DB_NAME
-                )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
-                    .build()
-                    .also { INSTANCE = it }
+                INSTANCE ?: build(context, DB_NAME).also { INSTANCE = it }
             }
         }
+
+        /**
+         * Builds the on-disk database. Corruption is routed through
+         * [QuarantiningOpenHelperFactory], so a corrupt file is renamed aside
+         * instead of deleted by the platform default (audit C04).
+         */
+        @VisibleForTesting
+        internal fun build(context: Context, name: String): AppDatabase =
+            Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, name)
+                .openHelperFactory(QuarantiningOpenHelperFactory())
+                .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
+                .build()
 
         /**
          * v17 → v18: Drop the Gallery_Tags table.
