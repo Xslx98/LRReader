@@ -407,7 +407,6 @@
     <ID>UnreachableCode:DailyReadingAggregateRecorder.kt$DailyReadingAggregateRecorder$ServiceRegistry.coroutineModule.ioScope.launch { try { record(AppDatabase.getInstance(app), end, LocalDate.now().toEpochDay()) } catch (e: Exception) { Log.w(TAG, "daily aggregate write failed") } }</ID>
     <ID>UnreachableCode:DailyReadingAggregateRecorder.kt$DailyReadingAggregateRecorder$record(AppDatabase.getInstance(app), end, LocalDate.now().toEpochDay())</ID>
     <ID>UnreachableCode:DailyReadingAggregateRecorder.kt$DailyReadingAggregateRecorder$val app = runCatching { com.lanraragi.reader.LRReaderApplication.instance }.getOrNull() ?: return</ID>
-    <ID>UnreachableCode:DirGalleryProvider.kt$DirGalleryProvider$LRRArchiveApi.updateProgress(client, url, id, page0 + 1)</ID>
     <ID>UnreachableCode:DirGalleryProvider.kt$DirGalleryProvider$processRequest(request, totalPages)</ID>
     <ID>UnreachableCode:DirGalleryProvider.kt$DirGalleryProvider$remove(request.index)</ID>
     <ID>UnreachableCode:DirGalleryProvider.kt$DirGalleryProvider$val client = ServiceRegistry.networkModule.okHttpClient</ID>
@@ -504,7 +503,6 @@
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val pagecount = runCatching { ServiceRegistry.dataModule.historyRepository .getArchiveSnapshot(arcId, info.serverProfileId)?.pagecount }.getOrNull() ?: return false</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val source = body.source()</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val uni = runCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false</ID>
-    <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$LRRArchiveApi.updateProgress(client, url, arcId, page0 + 1)</ID>
     <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$val client = ServiceRegistry.networkModule.okHttpClient</ID>
     <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$val url = serverUrlDeferred.await() ?: return@sync</ID>
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$if (success != 1) { val error = jsonObj["error"]?.jsonPrimitive?.content ?: "Download queue failed" throw IOException(error) }</ID>

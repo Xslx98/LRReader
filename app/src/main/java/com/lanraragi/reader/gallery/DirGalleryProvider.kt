@@ -187,11 +187,15 @@ class DirGalleryProvider : GalleryProvider2 {
     /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
     private val progressSyncer = ReadingProgressSyncer(
         ServiceRegistry.coroutineModule.ioScope
-    ) sync@{ page0 ->
-        val url = serverUrlDeferred.await() ?: return@sync
-        val id = arcId ?: return@sync
-        val client = ServiceRegistry.networkModule.okHttpClient
-        LRRArchiveApi.updateProgress(client, url, id, page0 + 1)
+    ) { page0 ->
+        val url = serverUrlDeferred.await()
+        val id = arcId
+        if (url != null && id != null) {
+            val client = ServiceRegistry.networkModule.okHttpClient
+            ArchiveProgressOutbox.tracked(url, id, page0) {
+                LRRArchiveApi.updateProgress(client, url, id, page0 + 1)
+            }
+        }
     }
 
     /**

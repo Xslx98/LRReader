@@ -37,6 +37,7 @@ import com.lanraragi.framework.content.RecordingApplication
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.module.AppModule
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lanraragi.reader.client.api.LRRClientProvider
@@ -163,6 +164,9 @@ class LRReaderApplication : RecordingApplication() {
             com.lanraragi.framework.network.StatusCodeException.initialize(this)
         }
         trace("LRRApp.Settings.init") { Settings.initialize(this) }
+        // Single-archive progress PUTs that failed are kept here until the
+        // network returns (audit 2026-10-04 C20); flushed below.
+        com.lanraragi.reader.gallery.ArchiveProgressOutbox.install(this)
         // Before any DownloadManager exists: its first load records the queue a
         // killed process left behind, which must reach disk (A47).
         com.lanraragi.reader.download.DownloadResumeBanner.interruptedStore =
@@ -282,6 +286,13 @@ class LRReaderApplication : RecordingApplication() {
         trace("LRRApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
+        // Push reading progress that failed offline, at start and on every
+        // return of connectivity (audit 2026-10-04 C20).
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            ServiceRegistry.networkModule.networkMonitor.isAvailableFlow
+                .filter { it }
+                .collect { com.lanraragi.reader.gallery.ArchiveProgressOutbox.flushToServers() }
+        }
         // Eagerly start the profile snapshot collector. Interceptors and the
         // download worker need a populated snapshot before their first read;
         // touching the lazy here kicks off the Room flow on app scope.

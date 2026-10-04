@@ -96,10 +96,14 @@ class LRRGalleryProvider(
     /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
     private val progressSyncer = ReadingProgressSyncer(
         ServiceRegistry.coroutineModule.ioScope
-    ) sync@{ page0 ->
-        val url = serverUrlDeferred.await() ?: return@sync
-        val client = ServiceRegistry.networkModule.okHttpClient
-        LRRArchiveApi.updateProgress(client, url, arcId, page0 + 1)
+    ) { page0 ->
+        val url = serverUrlDeferred.await()
+        if (url != null) {
+            val client = ServiceRegistry.networkModule.okHttpClient
+            ArchiveProgressOutbox.tracked(url, arcId, page0) {
+                LRRArchiveApi.updateProgress(client, url, arcId, page0 + 1)
+            }
+        }
     }
 
     @Volatile
