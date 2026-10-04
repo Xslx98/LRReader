@@ -291,6 +291,16 @@ class LRReaderApplication : RecordingApplication() {
         trace("LRRApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
+        // ANRs and native crashes of earlier processes never reach the JVM handler;
+        // the system keeps their exit reasons (API 30+). Audit 2026-10-04 C06 / R5.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            val store = Crash.store()
+            if (store != null && PrivacySettings.getSaveCrashLog()) {
+                com.lanraragi.reader.diagnostics.ExitInfoRecorder.recordAtBoot(
+                    this@LRReaderApplication, store, Settings.getPreferences()
+                )
+            }
+        }
         // Push reading progress that failed offline, at start and on every
         // return of connectivity (audit 2026-10-04 C20).
         ServiceRegistry.coroutineModule.ioScope.launch {
