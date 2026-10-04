@@ -11,7 +11,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url "https://jitpack.io" }
+        maven {
+            url "https://jitpack.io"
+            // Only the GitHub-built com.github.* libraries come from JitPack; every
+            // other group must never be looked up there (dependency confusion).
+            content { includeGroupByRegex "com\\.github\\..*" }
+        }
     }
 }
 rootProject.name = "LRReader"

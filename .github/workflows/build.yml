@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Read-only by default; a job that needs more asks for it.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   # Every commit on main gets a full result: a later push used to cancel the
@@ -17,9 +21,9 @@ jobs:
   validate-metadata:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Validate Fastlane Supply Metadata
-        uses: ashutoshgngwr/validate-fastlane-supply-metadata@v2.0.0
+        uses: ashutoshgngwr/validate-fastlane-supply-metadata@c8857fdbbd3e00f9a5cbe8604bcecfa95ce8fef8 # v2.1.0
 
   build:
     runs-on: ubuntu-latest
@@ -28,13 +32,16 @@ jobs:
     # runs locally, so a push cannot go red on a check that was skipped there.
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The baseline check diffs against the previous commit of a push.
           fetch-depth: 0
 
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
       - name: Setup JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: 'temurin'
           java-version: 21
@@ -44,6 +51,9 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew app:assembleAppReleaseDebug
+
+      - name: JitPack AARs must match the committed backups
+        run: bash scripts/ci/check-jitpack-aars.sh
 
       - name: Room schema must be committed
         # KSP rewrites app/schemas/<version>.json on every build; a diff here
@@ -85,35 +95,35 @@ jobs:
 
       - name: Upload Test Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: test-reports
           path: app/build/reports/tests/
 
       - name: Upload Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: coverage-report
           path: app/build/reports/jacoco/
 
       - name: Upload Lint Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: lint-reports
           path: app/build/reports/lint-results-*.html
 
       - name: Upload Detekt Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: detekt-reports
           path: app/build/reports/detekt/
 
       - name: Upload APK
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: Build
           path: ./app/build/outputs/apk/
@@ -124,13 +134,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: 'temurin'
           java-version: 21
           cache: gradle
+      # Gradle's own action replaces the third-party one that ran with
+      # contents: write.
       - name: Dependency Submission
-        uses: mikepenz/gradle-dependency-submission@v1
-        with:
-          gradle-build-module: ":app"
+        uses: gradle/actions/dependency-submission@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0

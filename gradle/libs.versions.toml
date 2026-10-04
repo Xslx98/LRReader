@@ -49,8 +49,8 @@ robolectric = "4.16.1"
 junit = "4.13.2"
 joor = "0.9.15"
 
-# --- JitPack (commit-hash pinned, no auto-upgrade) ---
-# These use commit hashes or non-semver tags — Dependabot/Renovate cannot auto-bump.
+# --- JitPack (no auto-upgrade) ---
+# Pinned by tag or commit hash; Dependabot/Renovate cannot bump them.
 # Track manually; see ROADMAP for fork plan.
 advrecyclerview = "1.0.0"
 spinkit = "1.4.0"
@@ -94,7 +94,10 @@ junit = { module = "junit:junit", version.ref = "junit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 joor = { module = "org.jooq:joor", version.ref = "joor" }
 
-# --- JitPack (pinned by commit hash — no version.ref) ---
+# --- JitPack (no version.ref) ---
+# drawerlayout and Pagination_Sxj are pinned by commit hash, the rest by tag.
+# The tagged com.github.seven332 AARs are checked byte for byte against
+# libs/seven332-backup/ in CI (scripts/ci/check-jitpack-aars.sh).
 seven332-android-resource = { module = "com.github.seven332:android-resource", version = "0.1.0" }
 seven332-drawerlayout = { module = "com.github.seven332:drawerlayout", version = "ea2bb388f0" }
 seven332-easyrecyclerview = { module = "com.github.seven332:easyrecyclerview", version = "0.1.1" }
