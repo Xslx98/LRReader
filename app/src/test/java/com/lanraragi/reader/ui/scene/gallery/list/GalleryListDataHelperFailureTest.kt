@@ -44,6 +44,7 @@ class GalleryListDataHelperFailureTest {
         override fun showActionFab() {}
         override fun getString(resId: Int): String = "no servers"
         override fun exitMultiSelect() {}
+        override fun onSearchLoaded(params: GalleryListViewModel.SearchParams) {}
     }
 
     @Test

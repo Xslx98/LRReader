@@ -152,7 +152,8 @@ class GalleryListScene : BaseScene(),
     internal lateinit var downloadManager: DownloadManager
         private set
 
-    private lateinit var viewModel: GalleryListViewModel
+    internal lateinit var viewModel: GalleryListViewModel
+        private set
 
     /*---------------
      Extracted helpers — internal visibility for GalleryListHelperFactory
