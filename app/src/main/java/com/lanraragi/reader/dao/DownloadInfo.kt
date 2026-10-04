@@ -15,6 +15,7 @@
  */
 package com.lanraragi.reader.dao
 
+import com.lanraragi.reader.download.DownloadFailureReason
 import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 
@@ -128,6 +129,15 @@ class DownloadInfo {
      */
     @JvmField
     var tankMissingCount: Int = 0
+
+    /**
+     * Why the last run of this download failed (audit C21), shown on the
+     * card and in the completion notification. Set by the scheduler when a
+     * run ends FAILED, cleared when the next run starts; in memory only,
+     * never persisted, so a FAILED row loaded at boot has none.
+     */
+    @JvmField
+    var failureReason: DownloadFailureReason? = null
 
     /**
      * Refresh display fields from a re-fetched [Archive]. Called from

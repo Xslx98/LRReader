@@ -2,6 +2,7 @@ package com.lanraragi.reader.download
 
 import android.system.ErrnoException
 import android.system.OsConstants
+import com.lanraragi.reader.client.api.LRRHttpException
 import java.io.IOException
 import java.io.InterruptedIOException
 import kotlin.math.min
@@ -69,15 +70,19 @@ object PageRetryPolicy {
 
     fun classify(e: Throwable): DownloadFailureReason = when {
         isNoSpace(e) -> DownloadFailureReason.NO_SPACE
-        e is HttpStatusException -> when (e.code) {
-            401, 403 -> DownloadFailureReason.AUTH
-            404, 410 -> DownloadFailureReason.NOT_FOUND
-            408, 429 -> DownloadFailureReason.SERVER
-            in 500..599 -> DownloadFailureReason.SERVER
-            else -> DownloadFailureReason.UNKNOWN
-        }
+        e is HttpStatusException -> forStatus(e.code)
+        // The page-list call goes through the API layer's ensureSuccess.
+        e is LRRHttpException -> forStatus(e.code)
         e is CorruptPageException -> DownloadFailureReason.CORRUPT
         e is IOException -> DownloadFailureReason.NETWORK
+        else -> DownloadFailureReason.UNKNOWN
+    }
+
+    private fun forStatus(code: Int): DownloadFailureReason = when (code) {
+        401, 403 -> DownloadFailureReason.AUTH
+        404, 410 -> DownloadFailureReason.NOT_FOUND
+        408, 429 -> DownloadFailureReason.SERVER
+        in 500..599 -> DownloadFailureReason.SERVER
         else -> DownloadFailureReason.UNKNOWN
     }
 

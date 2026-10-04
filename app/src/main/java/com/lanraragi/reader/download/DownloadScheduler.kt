@@ -90,6 +90,7 @@ internal class DownloadScheduler(
         val maxConcurrent = DownloadSettings.getConcurrentDownloads()
         while (activeTasks.size < maxConcurrent && waitList.isNotEmpty()) {
             val info = waitList.removeAt(0)
+            info.failureReason = null
             val worker = LRRDownloadWorker(context, info)
             activeTasks.add(info)
             activeWorkers[info] = worker
@@ -319,7 +320,8 @@ internal class DownloadScheduler(
             val taskInfo: DownloadInfo,
             val finished: Int,
             val downloaded: Int,
-            val total: Int
+            val total: Int,
+            val failureReason: DownloadFailureReason? = null
         ) : DownloadEvent
         data class OnNetworkWait(val taskInfo: DownloadInfo, val waiting: Boolean) : DownloadEvent
         data class OnNetworkTimeout(val taskInfo: DownloadInfo) : DownloadEvent
@@ -428,6 +430,7 @@ internal class DownloadScheduler(
                 } else {
                     DownloadState.FINISH
                 }
+                info.failureReason = if (info.state == DownloadState.FAILED) event.failureReason else null
                 // Mirror final values into tracker, then drop the live entry
                 // (download is no longer active → progress not live).
                 progressTracker.update(
@@ -513,7 +516,7 @@ internal class DownloadScheduler(
         }
 
         override fun onFinish(finished: Int, downloaded: Int, total: Int) {
-            post(DownloadEvent.OnFinish(mInfo, finished, downloaded, total))
+            post(DownloadEvent.OnFinish(mInfo, finished, downloaded, total, mWorker.failureReason))
         }
 
         override fun onGetImageSuccess(index: Int, image: Image) {

@@ -53,6 +53,8 @@ class LRRDownloadWorkerTest {
 
     private var pageCount = 3
 
+    private var filesAnswer: () -> MockResponse? = { null }
+
     @Before
     fun setUp() {
         val context: Context = ApplicationProvider.getApplicationContext()
@@ -64,6 +66,7 @@ class LRRDownloadWorkerTest {
                 val path = request.path.orEmpty()
                 if (request.method == "HEAD") return MockResponse()
                 if (path.endsWith("/files")) {
+                    filesAnswer()?.let { return it }
                     val pages = (1..pageCount).joinToString(",") { "\"./page?path=$it.jpg\"" }
                     return MockResponse().setBody("""{"pages":[$pages]}""")
                 }
@@ -186,6 +189,17 @@ class LRRDownloadWorkerTest {
         assertEquals(2, r.finished)
         assertEquals(2, hits(3))
         assertEquals(DownloadFailureReason.CORRUPT, worker.failureReason)
+    }
+
+    @Test
+    fun pageListNotFound_failsWithNotFoundReason() {
+        filesAnswer = { MockResponse().setResponseCode(404).setBody("""{"success":0,"error":"gone"}""") }
+
+        val r = run()
+
+        assertEquals(0, r.total)
+        assertEquals(DownloadFailureReason.NOT_FOUND, worker.failureReason)
+        assertEquals(0, pageHits.size)
     }
 
     private companion object {

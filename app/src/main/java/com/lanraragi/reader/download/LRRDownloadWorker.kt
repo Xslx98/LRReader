@@ -236,6 +236,7 @@ class LRRDownloadWorker(
                 if (!cancelled && !env.isNetworkAvailable()) {
                     if (BuildConfig.DEBUG) Log.w(TAG, "Extract failed: network down, waiting", e)
                     if (!waitForNetworkIfDown()) {
+                        failureReason = DownloadFailureReason.NETWORK
                         listener?.run {
                             onPageFailure(0, "Network timeout", 0, 0, 0)
                             onFinish(0, 0, 0)
@@ -245,6 +246,7 @@ class LRRDownloadWorker(
                     // network returned -- loop and retry getFileList
                 } else {
                     Log.e(TAG, "Failed to extract archive", e)
+                    failureReason = PageRetryPolicy.classify(e)
                     listener?.run {
                         onPageFailure(0, "Extract failed: ${e.message}", 0, 0, 0)
                         onFinish(0, 0, 0)
@@ -340,6 +342,7 @@ class LRRDownloadWorker(
                             if (pageFile.exists()) pageFile.delete()
                             val resumed = waitForNetworkIfDown()
                             if (!resumed) {
+                                failureReason = DownloadFailureReason.NETWORK
                                 listener?.onPageFailure(
                                     i, e.message ?: "Network timeout",
                                     finished.get(), downloaded.get(), total

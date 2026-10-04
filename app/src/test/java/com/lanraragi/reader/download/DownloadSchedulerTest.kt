@@ -369,6 +369,45 @@ class DownloadSchedulerTest {
     }
 
     @Test
+    fun dispatchEvent_onFinish_failed_keepsWorkerReason() {
+        // Audit C21: the reason travels with OnFinish onto the row for the card/notification.
+        val info = makeInfo(7L)
+        scheduler.activeTasks.add(info)
+        info.state = DownloadState.DOWNLOAD
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnFinish(
+                taskInfo = info, finished = 3, downloaded = 3, total = 10,
+                failureReason = DownloadFailureReason.NO_SPACE,
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(DownloadState.FAILED, info.state)
+        assertEquals(DownloadFailureReason.NO_SPACE, info.failureReason)
+    }
+
+    @Test
+    fun dispatchEvent_onFinish_success_clearsReason() {
+        // A page that failed once and then succeeded leaves no reason behind.
+        val info = makeInfo(8L)
+        info.failureReason = DownloadFailureReason.AUTH
+        scheduler.activeTasks.add(info)
+        info.state = DownloadState.DOWNLOAD
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnFinish(
+                taskInfo = info, finished = 10, downloaded = 10, total = 10,
+                failureReason = DownloadFailureReason.SERVER,
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(DownloadState.FINISH, info.state)
+        assertNull(info.failureReason)
+    }
+
+    @Test
     fun dispatchEvent_onGetPages_updatesProgressTracker() {
         val info = makeInfo(2L)
         scheduler.activeTasks.add(info)

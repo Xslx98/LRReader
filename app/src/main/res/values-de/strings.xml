@@ -134,6 +134,12 @@
         <item quantity="other">%d wurden noch nicht abgeschlossen</item>
     </plurals>
     <string name="download_state_finish">Abgeschlossen</string>
+    <string name="download_failure_no_space">Speicher voll</string>
+    <string name="download_failure_auth">Zugriff verweigert – API-Schlüssel prüfen</string>
+    <string name="download_failure_not_found">Auf dem Server nicht gefunden</string>
+    <string name="download_failure_server">Serverfehler</string>
+    <string name="download_failure_network">Verbindungsfehler</string>
+    <string name="download_failure_corrupt">Ungültige Bilddaten</string>
     <string name="download_state_tank_incomplete">Unvollständig (%1$d/%2$d Archive)</string>
     <string name="download_sort_list">Sortieren</string>
     <string name="download_filter_by_status">Nach Status filtern</string>

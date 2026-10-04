@@ -604,7 +604,8 @@ class DownloadService : Service(), DownloadListener {
         } else {
             finish = info.state == DownloadState.FINISH
             arcid = info.arcid
-            title = info.title
+            // A failed archive names its reason in the "Failed: …" line (audit C21).
+            title = info.title?.let { if (finish) it else withFailureReason(resources, it, info.failureReason) }
         }
         val previous = sItemStateArray[arcid]
         if (previous == null) { // Not contain

@@ -176,6 +176,12 @@
         <item quantity="many">%d non complets</item>
     </plurals>
     <string name="download_state_finish">Complet</string>
+    <string name="download_failure_no_space">Stockage plein</string>
+    <string name="download_failure_auth">Accès refusé : vérifiez la clé API</string>
+    <string name="download_failure_not_found">Introuvable sur le serveur</string>
+    <string name="download_failure_server">Erreur du serveur</string>
+    <string name="download_failure_network">Erreur de connexion</string>
+    <string name="download_failure_corrupt">Données d\'image non valides</string>
     <string name="download_state_tank_incomplete">Incomplet (%1$d/%2$d archives)</string>
     <string name="stat_509_alert_title">Erreur 509</string>
     <string name="stat_509_alert_text">Votre limite d\'obtention d\'images est atteinte. Arrêtez le téléchargement et réessayez plus tard.</string>
