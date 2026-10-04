@@ -83,11 +83,14 @@ abstract class AppDatabase : RoomDatabase() {
          * Builds the on-disk database. Corruption is routed through
          * [QuarantiningOpenHelperFactory], so a corrupt file is renamed aside
          * instead of deleted by the platform default (audit C04).
+         * [DownloadArcidGuard] installs the download-arcid uniqueness
+         * triggers on every open (audit C45).
          */
         @VisibleForTesting
         internal fun build(context: Context, name: String): AppDatabase =
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, name)
                 .openHelperFactory(QuarantiningOpenHelperFactory())
+                .addCallback(DownloadArcidGuard)
                 .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
                 .build()
 
