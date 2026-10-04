@@ -76,6 +76,8 @@
     <string name="settings_about_auto_check_for_updates_summary">Einmal täglich auf GitHub nach neuen Versionen suchen</string>
     <string name="update_snackbar_text">Neue Version %1$s verfügbar</string>
     <string name="update_snackbar_action">Anzeigen</string>
+    <string name="update_advisory_title">Bekanntes Problem in dieser Version</string>
+    <string name="update_advisory_details">Details</string>
     <string name="update_ignore">Ignorieren</string>
     <string name="gallery_list_search_bar_hint">LANraragi durchsuchen</string>
     <string name="gallery_list_empty_hit">Die Welt ist so groß und der Panda sitzt ganz allein</string>

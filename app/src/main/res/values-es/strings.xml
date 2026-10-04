@@ -94,6 +94,8 @@
     <string name="settings_about_auto_check_for_updates_summary">Buscar nuevas versiones en GitHub una vez al día</string>
     <string name="update_snackbar_text">Nueva versión %1$s disponible</string>
     <string name="update_snackbar_action">Ver</string>
+    <string name="update_advisory_title">Problema conocido en esta versión</string>
+    <string name="update_advisory_details">Detalles</string>
     <string name="update_ignore">Ignorar</string>
 
     <!-- Gallery List -->

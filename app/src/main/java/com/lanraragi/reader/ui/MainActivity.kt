@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import android.content.Context
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.annotation.VisibleForTesting
 import android.net.ConnectivityManager
@@ -36,6 +37,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
+import androidx.core.net.toUri
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.hippo.drawerlayout.DrawerLayout
@@ -101,6 +103,7 @@ import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import java.io.File
 import com.lanraragi.reader.settings.UpdateSettings
 import com.lanraragi.reader.updater.AppUpdater
+import com.lanraragi.reader.updater.UpdateAdvisories
 import com.lanraragi.reader.updater.GhRelease
 import com.lanraragi.reader.ui.dialog.UpdateDialog
 
@@ -883,6 +886,45 @@ class MainActivity : StageActivity(),
             }
             // UpToDate / NetworkError / Skipped — auto path is silent for all of these.
             // AppUpdater handles throttle, skip-version, and putUpdateTime internally.
+            // Advisories share the update check's toggle and daily throttle:
+            // Skipped means no network round trip today.
+            if (result !is AppUpdater.UpdateResult.Skipped) maybeShowAdvisory()
+        }
+    }
+
+    /**
+     * Shows the first unseen advisory.json notice for this version, once
+     * (audit C46): the only way to warn users of a bad build, since Android
+     * cannot roll an app back.
+     */
+    private suspend fun maybeShowAdvisory() {
+        val advisories = withContext(Dispatchers.IO) {
+            UpdateAdvisories.fetch(ServiceRegistry.networkModule.okHttpClient)
+        }
+        val locale = resources.configuration.locales[0]
+        val advisory = UpdateAdvisories.pick(
+            advisories, BuildConfig.VERSION_CODE, UpdateSettings.getSeenAdvisories(), locale
+        )
+        if (advisory != null && !isFinishing && !isDestroyed) {
+            UpdateSettings.markAdvisorySeen(advisory.id)
+            val builder = AlertDialog.Builder(this)
+                .setTitle(R.string.update_advisory_title)
+                .setMessage(advisory.messageFor(locale))
+                .setPositiveButton(android.R.string.ok, null)
+            val url = advisory.safeUrl
+            if (url != null) {
+                builder.setNeutralButton(R.string.update_advisory_details) { _, _ -> openAdvisoryUrl(url) }
+            }
+            builder.show()
+        }
+    }
+
+    @SuppressLint("UnsafeImplicitIntentLaunch")
+    private fun openAdvisoryUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+        } catch (e: ActivityNotFoundException) {
+            Log.e(TAG, "No browser for the advisory link", e)
         }
     }
 

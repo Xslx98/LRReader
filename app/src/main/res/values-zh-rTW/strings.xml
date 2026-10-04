@@ -93,6 +93,8 @@
     <string name="settings_about_auto_check_for_updates_summary">每日自動檢查 GitHub 是否有新版本</string>
     <string name="update_snackbar_text">發現新版本 %1$s</string>
     <string name="update_snackbar_action">查看</string>
+    <string name="update_advisory_title">此版本的已知問題</string>
+    <string name="update_advisory_details">詳情</string>
     <string name="update_ignore">忽略</string>
 
     <!-- Gallery List -->

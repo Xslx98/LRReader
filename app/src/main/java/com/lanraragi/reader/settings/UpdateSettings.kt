@@ -68,4 +68,16 @@ object UpdateSettings {
     fun putUpdateTime(updateTime: Long) {
         Settings.putLong(KEY_LAST_UPDATE_TIME, updateTime)
     }
+
+    // --- Update advisories already shown (audit C46) ---
+    private const val KEY_SEEN_ADVISORIES = "seen_update_advisories"
+
+    /** Ids of advisory.json entries already shown on this install. */
+    @JvmStatic
+    fun getSeenAdvisories(): Set<String> =
+        Settings.getString(KEY_SEEN_ADVISORIES, null)?.split(',')?.filter { it.isNotBlank() }?.toSet().orEmpty()
+
+    @JvmStatic
+    fun markAdvisorySeen(id: String) =
+        Settings.putString(KEY_SEEN_ADVISORIES, (getSeenAdvisories() + id).joinToString(","))
 }

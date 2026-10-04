@@ -99,6 +99,8 @@
     <string name="settings_about_auto_check_for_updates_summary">하루에 한 번 GitHub에서 새 버전 확인</string>
     <string name="update_snackbar_text">새 버전 %1$s 사용 가능</string>
     <string name="update_snackbar_action">보기</string>
+    <string name="update_advisory_title">이 버전의 알려진 문제</string>
+    <string name="update_advisory_details">자세히</string>
     <string name="update_ignore">무시</string>
 
     <!-- Gallery List -->
