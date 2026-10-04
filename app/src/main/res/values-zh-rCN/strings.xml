@@ -177,6 +177,12 @@
         <item quantity="other">%d 未完成</item>
     </plurals>
     <string name="download_state_finish">已完成</string>
+    <string name="download_failure_no_space">存储空间已满</string>
+    <string name="download_failure_auth">访问被拒绝——请检查 API 密钥</string>
+    <string name="download_failure_not_found">服务器上找不到</string>
+    <string name="download_failure_server">服务器错误</string>
+    <string name="download_failure_network">连接错误</string>
+    <string name="download_failure_corrupt">图片数据无效</string>
     <string name="download_state_tank_incomplete">不完整（%1$d/%2$d 本）</string>
     <string name="stat_509_alert_title">509 警告</string>
     <string name="stat_509_alert_text">图片配额已用尽。请停止下载，休息一下。</string>
@@ -237,6 +243,9 @@
         <item quantity="other">%d 个下载被中断</item>
     </plurals>
     <string name="download_resume_resume_action">恢复</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="other">存储空间已满：已暂停 %d 个下载。请释放空间后恢复。</item>
+    </plurals>
     <string name="remember_download_label">记住下载标签</string>
     <string name="default_download_label">默认下载标签</string>
     <string name="added_to_download_list">已添加至下载列表</string>

@@ -183,6 +183,12 @@
         <item quantity="other">%d ที่ไม่เสร็จ</item>
     </plurals>
     <string name="download_state_finish">เสร็จ</string>
+    <string name="download_failure_no_space">พื้นที่จัดเก็บเต็ม</string>
+    <string name="download_failure_auth">การเข้าถึงถูกปฏิเสธ — ตรวจสอบคีย์ API</string>
+    <string name="download_failure_not_found">ไม่พบบนเซิร์ฟเวอร์</string>
+    <string name="download_failure_server">ข้อผิดพลาดของเซิร์ฟเวอร์</string>
+    <string name="download_failure_network">ข้อผิดพลาดในการเชื่อมต่อ</string>
+    <string name="download_failure_corrupt">ข้อมูลรูปภาพไม่ถูกต้อง</string>
     <string name="download_state_tank_incomplete">ไม่สมบูรณ์ (%1$d/%2$d ไฟล์)</string>
     <string name="download_sort_list">เรียงลำดับ</string>
     <string name="download_filter_by_status">กรองตามสถานะ</string>
@@ -241,6 +247,9 @@
         <item quantity="other">การดาวน์โหลด %d รายการถูกขัดจังหวะ</item>
     </plurals>
     <string name="download_resume_resume_action">ดำเนินการต่อ</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="other">พื้นที่จัดเก็บเต็ม: หยุดการดาวน์โหลด %d รายการชั่วคราว ล้างพื้นที่แล้วดำเนินการต่อ</item>
+    </plurals>
     <string name="remember_download_label">จดจำป้ายชื่อดาวน์โหลด</string>
     <string name="default_download_label">ป้ายชื่อดาวน์โหลดเริ่มต้น</string>
     <string name="added_to_download_list">เพิ่มเข้าในรายการดาวน์โหลดแล้ว</string>

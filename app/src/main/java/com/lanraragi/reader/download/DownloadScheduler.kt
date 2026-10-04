@@ -90,6 +90,7 @@ internal class DownloadScheduler(
         val maxConcurrent = DownloadSettings.getConcurrentDownloads()
         while (activeTasks.size < maxConcurrent && waitList.isNotEmpty()) {
             val info = waitList.removeAt(0)
+            info.failureReason = null
             val worker = LRRDownloadWorker(context, info)
             activeTasks.add(info)
             activeWorkers[info] = worker
@@ -234,6 +235,22 @@ internal class DownloadScheduler(
     /**
      * Stop all downloads: clear the wait list and stop all active downloads.
      */
+    /**
+     * Stops every running and queued download (state NONE, resumable) after
+     * [failed] hit a full disk, and records them all — [failed] included — for
+     * the "storage full" banner, whose action re-queues them (audit C21).
+     */
+    private fun pauseQueueForStorage(failed: DownloadInfo) {
+        val affected = buildList {
+            add(failed)
+            addAll(activeTasks)
+            addAll(waitList)
+        }
+        stopAllDownload()
+        for (di in affected) DownloadResumeBanner.markStorageFull(di.arcid, di.title)
+        eventBus.forEachListener { it.onUpdateAll() }
+    }
+
     fun stopAllDownload() {
         assertMainThread()
         // Stop all in wait list
@@ -319,7 +336,8 @@ internal class DownloadScheduler(
             val taskInfo: DownloadInfo,
             val finished: Int,
             val downloaded: Int,
-            val total: Int
+            val total: Int,
+            val failureReason: DownloadFailureReason? = null
         ) : DownloadEvent
         data class OnNetworkWait(val taskInfo: DownloadInfo, val waiting: Boolean) : DownloadEvent
         data class OnNetworkTimeout(val taskInfo: DownloadInfo) : DownloadEvent
@@ -428,6 +446,7 @@ internal class DownloadScheduler(
                 } else {
                     DownloadState.FINISH
                 }
+                info.failureReason = if (info.state == DownloadState.FAILED) event.failureReason else null
                 // Mirror final values into tracker, then drop the live entry
                 // (download is no longer active → progress not live).
                 progressTracker.update(
@@ -446,6 +465,13 @@ internal class DownloadScheduler(
                     eventBus.forEachListener {
                         it.onUpdate(info, list, waitList)
                     }
+                }
+                // Storage full (audit C21): every other queued or running
+                // download would fail the same way, one by one. Pause them all
+                // resumably instead and offer a single "Resume" once space is freed.
+                if (info.failureReason == DownloadFailureReason.NO_SPACE) {
+                    pauseQueueForStorage(info)
+                    return
                 }
                 // Start next download
                 ensureDownload()
@@ -513,7 +539,7 @@ internal class DownloadScheduler(
         }
 
         override fun onFinish(finished: Int, downloaded: Int, total: Int) {
-            post(DownloadEvent.OnFinish(mInfo, finished, downloaded, total))
+            post(DownloadEvent.OnFinish(mInfo, finished, downloaded, total, mWorker.failureReason))
         }
 
         override fun onGetImageSuccess(index: Int, image: Image) {

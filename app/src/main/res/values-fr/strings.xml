@@ -176,6 +176,12 @@
         <item quantity="many">%d non complets</item>
     </plurals>
     <string name="download_state_finish">Complet</string>
+    <string name="download_failure_no_space">Stockage plein</string>
+    <string name="download_failure_auth">Accès refusé : vérifiez la clé API</string>
+    <string name="download_failure_not_found">Introuvable sur le serveur</string>
+    <string name="download_failure_server">Erreur du serveur</string>
+    <string name="download_failure_network">Erreur de connexion</string>
+    <string name="download_failure_corrupt">Données d\'image non valides</string>
     <string name="download_state_tank_incomplete">Incomplet (%1$d/%2$d archives)</string>
     <string name="stat_509_alert_title">Erreur 509</string>
     <string name="stat_509_alert_text">Votre limite d\'obtention d\'images est atteinte. Arrêtez le téléchargement et réessayez plus tard.</string>
@@ -244,6 +250,11 @@
         <item quantity="many">%d téléchargements ont été interrompus</item>
     </plurals>
     <string name="download_resume_resume_action">Reprendre</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="one">Stockage plein : %d téléchargement en pause. Libérez de l\'espace, puis reprenez.</item>
+        <item quantity="other">Stockage plein : %d téléchargements en pause. Libérez de l\'espace, puis reprenez.</item>
+        <item quantity="many">Stockage plein : %d téléchargements en pause. Libérez de l\'espace, puis reprenez.</item>
+    </plurals>
     <string name="remember_download_label">Enregistrer le label de téléchargement</string>
     <string name="default_download_label">Label de téléchargement par défaut</string>
     <string name="added_to_download_list">Ajouté à la liste de téléchargement</string>

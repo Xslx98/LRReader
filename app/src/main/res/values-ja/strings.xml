@@ -148,6 +148,12 @@
         <item quantity="other">%d 未完成</item>
     </plurals>
     <string name="download_state_finish">ダウンロード完了</string>
+    <string name="download_failure_no_space">ストレージの空き容量がありません</string>
+    <string name="download_failure_auth">アクセス拒否 — API キーを確認してください</string>
+    <string name="download_failure_not_found">サーバー上に見つかりません</string>
+    <string name="download_failure_server">サーバーエラー</string>
+    <string name="download_failure_network">接続エラー</string>
+    <string name="download_failure_corrupt">無効な画像データ</string>
     <string name="download_state_tank_incomplete">不完全（%1$d/%2$d 冊）</string>
     <string name="stat_509_alert_title">509 エラー</string>
     <string name="stat_509_alert_text">ダウンロード制限に達しました。しばらくしてからもう一度やり直してください。</string>
@@ -208,6 +214,9 @@
         <item quantity="other">%d 件のダウンロードが中断されました</item>
     </plurals>
     <string name="download_resume_resume_action">再開</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="other">ストレージがいっぱいです：%d 件のダウンロードを一時停止しました。空き容量を確保してから再開してください。</item>
+    </plurals>
     <string name="remember_download_label">ダウンロードラベルを記憶する</string>
     <string name="default_download_label">デフォルトのダウンロードラベル</string>
     <string name="added_to_download_list">ダウンロードリストに追加しました</string>

@@ -270,6 +270,13 @@
         <item quantity="other">%d incomplete</item>
     </plurals>
     <string name="download_state_finish">Done</string>
+    <string name="download_failure_no_space">Storage full</string>
+    <string name="download_failure_auth">Access denied — check the API key</string>
+    <string name="download_failure_not_found">Not found on the server</string>
+    <string name="download_failure_server">Server error</string>
+    <string name="download_failure_network">Connection error</string>
+    <string name="download_failure_corrupt">Invalid image data</string>
+    <string name="download_failure_with_reason" translatable="false">%1$s · %2$s</string>
     <string name="download_state_tank_incomplete" tools:ignore="PluralsCandidate">Incomplete (%1$d/%2$d archives)</string>
     <string name="stat_509_alert_title">509 Alert</string>
     <string name="stat_509_alert_text">Image limit has been reached. Please stop download and have a relax.</string>
@@ -335,6 +342,10 @@
         <item quantity="other">%d downloads were interrupted</item>
     </plurals>
     <string name="download_resume_resume_action">Resume</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="one">Storage full: %d download paused. Free up space, then resume.</item>
+        <item quantity="other">Storage full: %d downloads paused. Free up space, then resume.</item>
+    </plurals>
     <string name="remember_download_label">Remember download label</string>
     <string name="default_download_label">Default download label</string>
     <string name="added_to_download_list">Added to download list</string>

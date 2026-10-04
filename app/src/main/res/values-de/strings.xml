@@ -134,6 +134,12 @@
         <item quantity="other">%d wurden noch nicht abgeschlossen</item>
     </plurals>
     <string name="download_state_finish">Abgeschlossen</string>
+    <string name="download_failure_no_space">Speicher voll</string>
+    <string name="download_failure_auth">Zugriff verweigert – API-Schlüssel prüfen</string>
+    <string name="download_failure_not_found">Auf dem Server nicht gefunden</string>
+    <string name="download_failure_server">Serverfehler</string>
+    <string name="download_failure_network">Verbindungsfehler</string>
+    <string name="download_failure_corrupt">Ungültige Bilddaten</string>
     <string name="download_state_tank_incomplete">Unvollständig (%1$d/%2$d Archive)</string>
     <string name="download_sort_list">Sortieren</string>
     <string name="download_filter_by_status">Nach Status filtern</string>
@@ -198,6 +204,10 @@
         <item quantity="other">%d Downloads wurden unterbrochen</item>
     </plurals>
     <string name="download_resume_resume_action">Fortsetzen</string>
+    <plurals name="download_resume_storage_full_snackbar">
+        <item quantity="one">Speicher voll: %d Download angehalten. Platz freigeben, dann fortsetzen.</item>
+        <item quantity="other">Speicher voll: %d Downloads angehalten. Platz freigeben, dann fortsetzen.</item>
+    </plurals>
     <string name="remember_download_label">Download-Etikette merken</string>
     <string name="default_download_label">Standard-Download-Etikette</string>
     <string name="added_to_download_list">Zu Download-Liste hinzugefügt</string>

@@ -369,6 +369,76 @@ class DownloadSchedulerTest {
     }
 
     @Test
+    fun dispatchEvent_onFinish_failed_keepsWorkerReason() {
+        // Audit C21: the reason travels with OnFinish onto the row for the card/notification.
+        val info = makeInfo(7L)
+        scheduler.activeTasks.add(info)
+        info.state = DownloadState.DOWNLOAD
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnFinish(
+                taskInfo = info, finished = 3, downloaded = 3, total = 10,
+                failureReason = DownloadFailureReason.NO_SPACE,
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(DownloadState.FAILED, info.state)
+        assertEquals(DownloadFailureReason.NO_SPACE, info.failureReason)
+    }
+
+    @Test
+    fun dispatchEvent_onFinish_success_clearsReason() {
+        // A page that failed once and then succeeded leaves no reason behind.
+        val info = makeInfo(8L)
+        info.failureReason = DownloadFailureReason.AUTH
+        scheduler.activeTasks.add(info)
+        info.state = DownloadState.DOWNLOAD
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnFinish(
+                taskInfo = info, finished = 10, downloaded = 10, total = 10,
+                failureReason = DownloadFailureReason.SERVER,
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(DownloadState.FINISH, info.state)
+        assertNull(info.failureReason)
+    }
+
+    @Test
+    fun dispatchEvent_onFinish_noSpace_pausesWholeQueueForStorageBanner() {
+        // Audit C21: a full disk pauses everything resumably instead of failing
+        // each queued download in turn, and offers one "Resume".
+        DownloadResumeBanner.clear()
+        val failed = makeInfo(9L)
+        scheduler.activeTasks.add(failed)
+        failed.state = DownloadState.DOWNLOAD
+        val waiting = makeInfo(10L)
+        scheduler.waitList.add(waiting)
+
+        scheduler.dispatchEvent(
+            DownloadScheduler.DownloadEvent.OnFinish(
+                taskInfo = failed, finished = 2, downloaded = 2, total = 10,
+                failureReason = DownloadFailureReason.NO_SPACE,
+            )
+        )
+        ShadowLooper.idleMainLooper()
+
+        assertEquals(DownloadState.FAILED, failed.state)
+        assertEquals(DownloadState.NONE, waiting.state)
+        assertTrue(scheduler.waitList.isEmpty())
+        assertTrue(scheduler.activeTasks.isEmpty())
+        val snapshot = DownloadResumeBanner.consume()
+        assertTrue("snapshot $snapshot", snapshot is DownloadResumeBanner.Snapshot.StorageFull)
+        assertEquals(
+            setOf(failed.arcid, waiting.arcid),
+            (snapshot as DownloadResumeBanner.Snapshot.StorageFull).arcids.toSet()
+        )
+    }
+
+    @Test
     fun dispatchEvent_onGetPages_updatesProgressTracker() {
         val info = makeInfo(2L)
         scheduler.activeTasks.add(info)

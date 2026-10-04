@@ -63,6 +63,7 @@ import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.download.ProgressSnapshot
+import com.lanraragi.reader.download.withFailureReason
 import com.lanraragi.reader.client.api.isTankoubonId
 import java.util.concurrent.CompletableFuture
 
@@ -322,7 +323,7 @@ class DownloadAdapter(
                         R.plurals.download_state_failed_2, info.legacy, info.legacy
                     )
                 }
-                bindState(holder, info, text)
+                bindState(holder, info, withFailureReason(resources, text, info.failureReason))
             }
             DownloadState.FINISH -> bindState(holder, info, resources.getString(R.string.download_state_finish))
         }
