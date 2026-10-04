@@ -47,12 +47,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @SuppressLint("UnspecifiedImmutableFlag")
 class DownloadService : Service(), DownloadListener {
@@ -238,33 +234,26 @@ class DownloadService : Service(), DownloadListener {
         //    consumer just re-checks whether to stop, otherwise the
         //    placeholder notification and the wakelocks taken in onCreate
         //    would be held indefinitely.
-        ensureCommandConsumer()
-        commands.trySend(intent)
+        commands.submit(intent, startId)
         return START_STICKY
     }
 
-    private val commands = Channel<Intent?>(Channel.UNLIMITED)
-    private var commandConsumer: Job? = null
+    /** startId of the last command the queue finished; see [checkStopSelf]. */
+    private var lastHandledStartId = NO_START_ID
 
-    private fun ensureCommandConsumer() {
-        if (commandConsumer != null) return
+    private val commands: DownloadCommandQueue<Intent?> by lazy {
         val dm = mDownloadManager
-        commandConsumer = serviceScope.launch {
-            awaitDownloadManagerInit(dm)
-            for (intent in commands) {
-                withContext(Dispatchers.Main) {
-                    if (intent == null) {
-                        checkStopSelf()
-                    } else {
-                        try {
-                            handleIntent(intent)
-                        } catch (e: NullPointerException) {
-                            Log.e(TAG, "Unexpected NPE in handleIntent — intent=$intent", e)
-                        }
-                    }
-                }
-            }
-        }
+        DownloadCommandQueue(
+            scope = serviceScope,
+            handlerDispatcher = Dispatchers.Main,
+            awaitReady = { awaitDownloadManagerInit(dm) },
+            handle = ::handleIntent,
+            onError = { intent, e -> Log.e(TAG, "Download command failed — intent=$intent", e) },
+            afterEach = { startId ->
+                lastHandledStartId = startId
+                checkStopSelf()
+            },
+        )
     }
 
     /**
@@ -325,7 +314,6 @@ class DownloadService : Service(), DownloadListener {
     private fun handleIntent(intent: Intent?) {
         val action = intent?.action
         if (action == null) {
-            checkStopSelf()
             return
         }
         val dm = mDownloadManager
@@ -380,7 +368,6 @@ class DownloadService : Service(), DownloadListener {
                 }
             }
         }
-        checkStopSelf()
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -785,8 +772,9 @@ class DownloadService : Service(), DownloadListener {
 
     private fun checkStopSelf() {
         if (mDownloadManager?.isIdle != false) {
-//            stopForeground(true);
-            stopSelf()
+            // Only the last handled start may stop the service: a newer
+            // command still queued keeps it alive (audit C08).
+            stopSelfResult(lastHandledStartId)
         }
     }
 
@@ -929,6 +917,8 @@ class DownloadService : Service(), DownloadListener {
         const val KEY_ARCID: String = "arcid"
         const val KEY_ARCID_LIST: String = "arcid_list"
 
+        // startIds begin at 1, and a negative id would mean "stop regardless".
+        private const val NO_START_ID = 0
         private const val ID_DOWNLOADING = 1
         private const val ID_DOWNLOADED = 2
         private const val ID_509 = 3
