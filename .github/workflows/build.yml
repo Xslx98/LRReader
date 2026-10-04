@@ -128,6 +128,52 @@ jobs:
           name: Build
           path: ./app/build/outputs/apk/
 
+  release-smoke:
+    # Installs and runs the minified, signed release build on an x86_64
+    # emulator (scripts/ci/smoke-release.sh). The unit tests above run the
+    # debug build only; R8 keep-rule mistakes crash only the release build.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup JDK
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: 'temurin'
+          java-version: 21
+          cache: gradle
+
+      - name: Build signed release with a throwaway key
+        # The real signing key never leaves the maintainer's machine; this
+        # APK exists only to be run on the emulator below.
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/smoke.jks" -alias smoke \
+            -keyalg RSA -keysize 2048 -validity 1 -storepass smokepass -keypass smokepass \
+            -dname "CN=LRReader CI smoke"
+          chmod +x ./gradlew
+          RELEASE_STORE_FILE="$RUNNER_TEMP/smoke.jks" RELEASE_STORE_PASSWORD=smokepass \
+            RELEASE_KEY_ALIAS=smoke RELEASE_KEY_PASSWORD=smokepass \
+            ./gradlew :app:assembleAppReleaseRelease -PsmokeX86
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run release smoke on an emulator
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: bash scripts/ci/smoke-release.sh app/build/outputs/apk/appRelease/release/app-appRelease-release.apk
+
   dependency-submission:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
