@@ -28,7 +28,7 @@ import com.lanraragi.reader.domain.Archive
  */
 class HistoryRepository(
     private val dao: ArchiveLocalStateDao,
-    @Suppress("UNUSED_PARAMETER") database: AppDatabase,
+    private val database: AppDatabase,
 ) {
 
     suspend fun getHistoryLazyList(): List<HistoryInfo> {
@@ -115,6 +115,16 @@ class HistoryRepository(
         } else {
             dao.clearAllHistoryAndPruneEmptyRows()
         }
+    }
+
+    /**
+     * Purge what a deleted profile leaves behind locally: reading history,
+     * local favourites and the daily reading-stats aggregates. Downloads are
+     * kept (audit 2026-10-04 C22).
+     */
+    suspend fun purgeDeletedProfile(profileId: Long) {
+        dao.clearReadingStateForProfileAndPruneEmptyRows(profileId)
+        database.statsDao().deleteDailyAggregatesForProfile(profileId)
     }
 
     /**

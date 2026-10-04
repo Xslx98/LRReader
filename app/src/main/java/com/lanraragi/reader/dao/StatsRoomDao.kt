@@ -33,4 +33,7 @@ interface StatsRoomDao {
 
     @Query("SELECT * FROM DAILY_READING_AGGREGATE ORDER BY EPOCH_DAY DESC")
     suspend fun getAllDailyAggregates(): List<DailyReadingAggregate>
+
+    @Query("DELETE FROM DAILY_READING_AGGREGATE WHERE SERVER_PROFILE_ID = :profileId")
+    suspend fun deleteDailyAggregatesForProfile(profileId: Long)
 }

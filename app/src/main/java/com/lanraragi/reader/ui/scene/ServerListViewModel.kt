@@ -144,6 +144,10 @@ class ServerListViewModel : ViewModel() {
                     // search history must not linger.
                     ServiceRegistry.dataModule.searchHistoryRepository
                         .deleteAllForProfile(profile.id)
+                    // Likewise its reading history, local favourites and stats
+                    // aggregates (audit 2026-10-04 C22). Downloads stay listed.
+                    ServiceRegistry.dataModule.historyRepository
+                        .purgeDeletedProfile(profile.id)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete profile", e)
