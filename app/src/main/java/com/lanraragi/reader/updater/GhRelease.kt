@@ -65,4 +65,6 @@ data class GhReleaseAsset(
     @SerialName("browser_download_url") val browserDownloadUrl: String = "",
     @SerialName("size") val size: Long = 0L,
     @SerialName("content_type") val contentType: String = "",
+    // "sha256:<hex>"; GitHub reports it for every release asset uploaded since mid-2025.
+    @SerialName("digest") val digest: String? = null,
 )

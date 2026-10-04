@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -11,6 +12,13 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
+import java.security.MessageDigest
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okio.Buffer
 
 /**
  * Unit tests for [DownloadProgress] percent math + [ApkDownloader.targetFile] path generation.
@@ -96,5 +104,93 @@ class ApkDownloadTest {
         assertTrue("expected ${parent.absolutePath} to exist", parent.exists())
         assertTrue("expected ${parent.absolutePath} to be a directory", parent.isDirectory)
         assertEquals("updates", parent.name)
+    }
+
+    @Test
+    fun targetFileSanitisesTheNameAndDropsStaleApks() {
+        val dir = File(context.cacheDir, "updates").apply { mkdirs() }
+        val stale = File(dir, "LRReader-v1.20.0.apk").apply { writeText("old") }
+        val release = GhRelease(tagName = "v1.28.0", assets = listOf(GhReleaseAsset(name = "../evil.apk")))
+
+        val dest = ApkDownloader.targetFile(context, release)
+
+        assertEquals(ApkIntegrity.FALLBACK_NAME, dest!!.name)
+        assertEquals(dir.canonicalFile, dest.parentFile!!.canonicalFile)
+        assertFalse("stale APK must be removed", stale.exists())
+    }
+
+    // ── ApkDownloader.download (audit C46) ────────────────────────────
+
+    private fun serve(body: ByteArray): MockWebServer = MockWebServer().apply {
+        enqueue(MockResponse().setBody(Buffer().write(body)))
+        start()
+    }
+
+    private fun sha256(bytes: ByteArray) =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+    private fun runDownload(server: MockWebServer, asset: GhReleaseAsset, dest: File): List<DownloadProgress> =
+        runBlocking {
+            ApkDownloader.download(asset, dest, OkHttpClient(), isTrustedUrl = { true }).toList()
+        }.also { server.shutdown() }
+
+    @Test
+    fun downloadMatchingSizeAndDigest_succeedsAndKeepsTheFile() {
+        val apk = ByteArray(300_000) { it.toByte() }
+        val server = serve(apk)
+        val dest = File(context.cacheDir, "ok.apk")
+        val asset = GhReleaseAsset(
+            browserDownloadUrl = server.url("/a.apk").toString(), size = apk.size.toLong(),
+            digest = "sha256:${sha256(apk)}",
+        )
+
+        val events = runDownload(server, asset, dest)
+
+        assertEquals(DownloadProgress.Success, events.last())
+        assertTrue(dest.readBytes().contentEquals(apk))
+    }
+
+    @Test
+    fun downloadWithWrongDigest_failsAndDeletesTheFile() {
+        val apk = ByteArray(1_000) { 7 }
+        val server = serve(apk)
+        val dest = File(context.cacheDir, "bad.apk")
+        val asset = GhReleaseAsset(
+            browserDownloadUrl = server.url("/a.apk").toString(), size = apk.size.toLong(),
+            digest = "sha256:" + "00".repeat(32),
+        )
+
+        val events = runDownload(server, asset, dest)
+
+        assertTrue(events.last() is DownloadProgress.Failed)
+        assertFalse(dest.exists())
+    }
+
+    @Test
+    fun downloadWithWrongSize_failsAndDeletesTheFile() {
+        val apk = ByteArray(1_000) { 7 }
+        val server = serve(apk)
+        val dest = File(context.cacheDir, "short.apk")
+        val asset = GhReleaseAsset(browserDownloadUrl = server.url("/a.apk").toString(), size = 2_000)
+
+        val events = runDownload(server, asset, dest)
+
+        assertTrue(events.last() is DownloadProgress.Failed)
+        assertFalse(dest.exists())
+    }
+
+    @Test
+    fun downloadFromUntrustedUrl_failsWithoutARequest() {
+        val server = serve(ByteArray(10))
+        val asset = GhReleaseAsset(browserDownloadUrl = server.url("/a.apk").toString())
+
+        val events = runBlocking {
+            ApkDownloader.download(asset, File(context.cacheDir, "x.apk"), OkHttpClient()).toList()
+        }
+
+        val failed = events.single() as DownloadProgress.Failed
+        assertTrue(failed.cause is SecurityException)
+        assertEquals(0, server.requestCount)
+        server.shutdown()
     }
 }

@@ -9,13 +9,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.flowOf
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -50,29 +53,56 @@ object ApkDownloader {
     /**
      * Compute the target [File] for downloading [release]'s APK asset into
      * `context.cacheDir/updates/<asset-name>`. Creates the `updates/` subdir if missing.
-     * Returns null if [release] has no APK asset or if the directory cannot be created.
+     * The name is reduced to a safe `.apk` file name ([ApkIntegrity.safeFileName]) and any
+     * other file there (an earlier update's APK) is deleted. Returns null if [release] has no
+     * APK asset or if the directory cannot be created.
      */
     fun targetFile(context: Context, release: GhRelease): File? {
-        val name = release.apkAsset?.name ?: return null
+        val asset = release.apkAsset
         val dir = File(context.cacheDir, "updates")
-        if (!dir.isDirectory && !dir.mkdirs()) return null
+        if (asset == null || (!dir.isDirectory && !dir.mkdirs())) return null
+        val name = ApkIntegrity.safeFileName(asset.name)
+        dir.listFiles()?.forEach { if (it.name != name) it.delete() }
         return File(dir, name)
     }
 
     /**
-     * Download from [url] to [dest]. Overwrites any existing file at [dest].
+     * Download [asset] to [dest]. Overwrites any existing file at [dest].
      *
      * Async via OkHttp [Call.enqueue] + [callbackFlow]:
      *   collect{} starts → enqueue posts the call to OkHttp's dispatcher → onResponse fires
      *   on OkHttp pool thread → stream-read body into dest, trySend InProgress @ 256 KB →
      *   trySend Success + close(). On any failure: trySend Failed + close(). On caller
      *   cancellation: awaitClose → call.cancel() + delete partial file.
+     *
+     * Audit C46: a URL outside this repository's release downloads fails at once, and a
+     * file whose size or SHA-256 differs from [asset]'s is reported as Failed and deleted
+     * instead of being handed to the installer.
+     *
+     * The whole APK (15-25 MB) streams inside one call; the default [client] is the shared
+     * large-file client, which has no call cap, so a slow link can't abort it mid-stream
+     * (see INetworkModule.largeFileClient).
      */
-    fun download(url: String, dest: File): Flow<DownloadProgress> = callbackFlow {
-        // The whole APK (15-25 MB) streams inside this single call; the shared
-        // large-file client has no call cap so a slow link can't abort it
-        // mid-stream (see INetworkModule.largeFileClient).
-        val client = ServiceRegistry.networkModule.largeFileClient
+    fun download(
+        asset: GhReleaseAsset,
+        dest: File,
+        client: OkHttpClient = ServiceRegistry.networkModule.largeFileClient,
+        isTrustedUrl: (String) -> Boolean = ApkIntegrity::isTrustedUrl,
+    ): Flow<DownloadProgress> {
+        val url = asset.browserDownloadUrl
+        return if (isTrustedUrl(url)) {
+            verifiedDownload(asset, url, dest, client)
+        } else {
+            flowOf(DownloadProgress.Failed(SecurityException("Untrusted update URL: $url")))
+        }
+    }
+
+    private fun verifiedDownload(
+        asset: GhReleaseAsset,
+        url: String,
+        dest: File,
+        client: OkHttpClient,
+    ): Flow<DownloadProgress> = callbackFlow {
         val request = Request.Builder().url(url).build()
         val call = client.newCall(request)
         // Tracks whether we reached Success cleanly. Read from awaitClose to decide whether
@@ -102,6 +132,7 @@ object ApkDownloader {
                         val totalBytes = body.contentLength()  // may be -1 for chunked
                         var downloaded = 0L
                         var lastEmit = 0L
+                        val sha256 = MessageDigest.getInstance("SHA-256")
 
                         body.byteStream().use { input ->
                             FileOutputStream(dest).use { output ->
@@ -111,6 +142,7 @@ object ApkDownloader {
                                     val read = input.read(buffer)
                                     if (read < 0) break
                                     output.write(buffer, 0, read)
+                                    sha256.update(buffer, 0, read)
                                     downloaded += read
                                     if (downloaded - lastEmit >= EMIT_INTERVAL_BYTES || lastEmit == 0L) {
                                         trySend(DownloadProgress.InProgress(downloaded, totalBytes))
@@ -118,6 +150,10 @@ object ApkDownloader {
                                     }
                                 }
                             }
+                        }
+                        val hex = sha256.digest().joinToString("") { "%02x".format(it) }
+                        ApkIntegrity.mismatch(downloaded, hex, asset.size, asset.digest)?.let {
+                            throw IOException("Update APK rejected: $it")
                         }
                         if (!call.isCanceled()) {
                             // Mark success BEFORE the final emissions so awaitClose, if it

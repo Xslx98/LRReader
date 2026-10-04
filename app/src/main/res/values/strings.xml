@@ -181,6 +181,8 @@
     <string name="settings_about_auto_check_for_updates_summary">Check GitHub for new versions once a day</string>
     <string name="update_snackbar_text">New version %1$s available</string>
     <string name="update_snackbar_action">View</string>
+    <string name="update_advisory_title">Known issue in this version</string>
+    <string name="update_advisory_details">Details</string>
     <string name="update_ignore">Ignore</string>
 
     <!-- Gallery List -->

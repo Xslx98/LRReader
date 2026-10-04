@@ -98,6 +98,8 @@
     <string name="settings_about_auto_check_for_updates_summary">ตรวจสอบเวอร์ชั่นใหม่บน GitHub วันละครั้ง</string>
     <string name="update_snackbar_text">มีเวอร์ชั่นใหม่ %1$s</string>
     <string name="update_snackbar_action">ดู</string>
+    <string name="update_advisory_title">ปัญหาที่ทราบในเวอร์ชันนี้</string>
+    <string name="update_advisory_details">รายละเอียด</string>
     <string name="update_ignore">ข้ามไป</string>
 
     <!-- Gallery List -->

@@ -111,8 +111,8 @@ object UpdateDialog {
     private fun startDownload(activity: Activity, release: GhRelease) {
         if (!isActivityAlive(activity)) return
         val dest = ApkDownloader.targetFile(activity, release)
-        val url = release.apkAsset?.browserDownloadUrl
-        if (dest == null || url.isNullOrBlank()) {
+        val asset = release.apkAsset
+        if (dest == null || asset == null || asset.browserDownloadUrl.isBlank()) {
             showDownloadFailedDialog(activity, release)
             return
         }
@@ -138,7 +138,7 @@ object UpdateDialog {
             .create()
 
         val job = scope.launch {
-            ApkDownloader.download(url, dest).collect { progress ->
+            ApkDownloader.download(asset, dest).collect { progress ->
                 when (progress) {
                     is DownloadProgress.InProgress -> {
                         val pct = progress.percent.coerceIn(0, 100)

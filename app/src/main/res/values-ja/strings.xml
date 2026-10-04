@@ -81,6 +81,8 @@
     <string name="settings_about_auto_check_for_updates_summary">1日1回 GitHub で新しいバージョンを確認します</string>
     <string name="update_snackbar_text">新しいバージョン %1$s が利用可能です</string>
     <string name="update_snackbar_action">表示</string>
+    <string name="update_advisory_title">このバージョンの既知の問題</string>
+    <string name="update_advisory_details">詳細</string>
     <string name="update_ignore">無視</string>
     <!-- Gallery List -->
     <string name="gallery_list_search_bar_hint">LANraragi を検索</string>
