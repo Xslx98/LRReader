@@ -179,7 +179,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (archive != null) {
                 mArchive = archive
                 mArcid = archive.arcid
-                viewModel.recordHistory(archive)
+                // Opening the detail page is browsing, not reading: no history
+                // row here. The reader records history when a session starts
+                // (audit 2026-10-04, user ruling extending C03).
             }
         }
     }

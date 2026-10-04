@@ -371,4 +371,57 @@ class LRRAuthManagerTest {
         LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L))
         assertFalse(LRRAuthManager.isNeedsReauthentication())
     }
+
+    // -- Audit 2026-10-04 C02: deleting the active profile ---------------
+
+    @Test
+    fun clearActiveSession_forgetsGlobalCredentials() {
+        LRRAuthManager.setServerUrl("http://192.168.1.50:3000")
+        LRRAuthManager.setApiKey("old-key")
+        LRRAuthManager.setServerName("Old NAS")
+        LRRAuthManager.setActiveProfileId(7L)
+        LRRAuthManager.setAllowCleartext(true)
+        LRRAuthManager.setApiKeyForProfile(8L, "other-profile-key")
+        val before = LRRAuthManager.serverConfigVersion
+
+        LRRAuthManager.clearActiveSession()
+
+        assertNull(LRRAuthManager.getServerUrl())
+        assertNull(LRRAuthManager.getApiKey())
+        assertNull(LRRAuthManager.getServerName())
+        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+        assertFalse(LRRAuthManager.isConfigured())
+        assertTrue(LRRAuthManager.serverConfigVersion > before)
+        // Other profiles' keys are not part of the active session.
+        assertEquals("other-profile-key", LRRAuthManager.getApiKeyForProfile(8L))
+    }
+
+    @Test
+    fun clearSessionIfActiveProfileGone_clearsWhenActiveRowIsMissing() {
+        LRRAuthManager.setServerUrl("http://192.168.1.50:3000")
+        LRRAuthManager.setApiKey("old-key")
+        LRRAuthManager.setActiveProfileId(7L)
+
+        assertTrue(LRRAuthManager.clearSessionIfActiveProfileGone(listOf(1L, 2L)))
+
+        assertNull(LRRAuthManager.getApiKey())
+        assertNull(LRRAuthManager.getServerUrl())
+    }
+
+    @Test
+    fun clearSessionIfActiveProfileGone_keepsLiveAndLegacySessions() {
+        LRRAuthManager.setServerUrl("http://192.168.1.50:3000")
+        LRRAuthManager.setApiKey("key")
+
+        // Legacy single-server setup: no active profile id at all.
+        LRRAuthManager.setActiveProfileId(0L)
+        assertFalse(LRRAuthManager.clearSessionIfActiveProfileGone(emptyList()))
+
+        // The active profile still exists.
+        LRRAuthManager.setActiveProfileId(2L)
+        assertFalse(LRRAuthManager.clearSessionIfActiveProfileGone(listOf(1L, 2L)))
+
+        assertEquals("key", LRRAuthManager.getApiKey())
+        assertEquals("http://192.168.1.50:3000", LRRAuthManager.getServerUrl())
+    }
 }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.view.View
+import androidx.annotation.VisibleForTesting
 import androidx.paging.PagingSource
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
@@ -53,6 +54,13 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
 
         /** Settle an in-flight merge-into-tankoubon animation before positions change. */
         fun cancelTankMerge() {}
+
+        /**
+         * The list now shows the results of [params] (the exact `/api/search`
+         * inputs of the load that just landed). The reading context that drives
+         * "continue to the next archive" must re-issue this query, not a default.
+         */
+        fun onSearchLoaded(params: GalleryListViewModel.SearchParams)
     }
 
     override fun getPageData(taskId: Int, type: Int, page: Int) {
@@ -77,6 +85,12 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
 
         val sortBy = callback.getSortBy()
         val sortOrder = callback.getSortOrder()
+        val issued = GalleryListViewModel.SearchParams(
+            filter = filter,
+            category = categoryId,
+            sortby = sortBy,
+            order = sortOrder,
+        )
 
         // Every refresh restarts at page 0; a stale chain from the previous
         // result set must not leak into the new one.
@@ -109,7 +123,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
                     is PagingSource.LoadResult.Page -> {
                         withContext(Dispatchers.Main) {
                             onGetPagingSourceSuccess(
-                                loadResult.data, taskId, page, loadResult.nextKey
+                                loadResult.data, taskId, page, loadResult.nextKey, issued
                             )
                         }
                     }
@@ -188,8 +202,10 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
     }
 
     private fun onGetPagingSourceSuccess(
-        data: List<Archive>, taskId: Int, page: Int, nextOffset: Int?
+        data: List<Archive>, taskId: Int, page: Int, nextOffset: Int?,
+        issued: GalleryListViewModel.SearchParams,
     ) {
+        recordLoadedSearch(taskId, issued)
         if (isCurrentTask(taskId)) {
             pageOffsets.recordLoaded(page, nextOffset)
             setEmptyString(callback.getString(R.string.gallery_list_empty_hit))
@@ -198,6 +214,15 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
             val nextPage = if (hasMore) page + 1 else 0
             onGetPageData(taskId, totalPages, nextPage, data)
         }
+    }
+
+    /**
+     * Report the query behind a landed load, but only for the current task: a
+     * superseded load must not overwrite the inputs of the list on screen.
+     */
+    @VisibleForTesting
+    internal fun recordLoadedSearch(taskId: Int, issued: GalleryListViewModel.SearchParams) {
+        if (isCurrentTask(taskId)) callback.onSearchLoaded(issued)
     }
 
     private fun onGetFailure(e: Exception, taskId: Int) {

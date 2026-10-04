@@ -232,6 +232,12 @@ interface ArchiveLocalStateDao {
     )
     suspend fun clearHistorySubsystemsForProfile(profileId: Long)
 
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET FAVORITE_TIME = NULL " +
+            "WHERE FAVORITE_TIME IS NOT NULL AND SERVER_PROFILE_ID = :profileId"
+    )
+    suspend fun clearFavoriteSubsystemsForProfile(profileId: Long)
+
     /**
      * Trim history: clear the history subsystem on every row that
      * isn't in the top [maxCount] by HISTORY_TIME desc. Pair with
@@ -569,6 +575,18 @@ interface ArchiveLocalStateDao {
     @Transaction
     suspend fun clearHistoryForProfileAndPruneEmptyRows(profileId: Long) {
         clearHistorySubsystemsForProfile(profileId)
+        deleteAllEmptyRows()
+    }
+
+    /**
+     * A deleted profile's reading history and local favourites, in one
+     * transaction. Download rows stay: their files are still on disk and the
+     * delete dialog promises they remain listed.
+     */
+    @Transaction
+    suspend fun clearReadingStateForProfileAndPruneEmptyRows(profileId: Long) {
+        clearHistorySubsystemsForProfile(profileId)
+        clearFavoriteSubsystemsForProfile(profileId)
         deleteAllEmptyRows()
     }
 

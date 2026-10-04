@@ -224,6 +224,27 @@ class DownloadManagerTest {
         assertTrue(notifications.contains("add:tok_2001"))
     }
 
+    /**
+     * Audit 2026-10-04 C03 (user ruling): starting a download is not reading.
+     * It used to write a history row and trim history to 100 per profile, so a
+     * bulk download evicted the user's real reading history.
+     */
+    @Test
+    fun startDownload_doesNotWriteReadingHistory() {
+        val gallery = DownloadInfo().apply {
+            arcid = "tok_2010"
+            title = "Downloaded, not read"
+        }
+
+        manager.startDownload(gallery.toArchive(), null)
+
+        val dao = db.archiveLocalStateDao()
+        awaitUntil(message = "download row was never persisted") {
+            runBlocking { dao.getAllDownloads() }.any { it.arcid == "tok_2010" }
+        }
+        assertTrue(runBlocking { dao.getAllHistory() }.none { it.arcid == "tok_2010" })
+    }
+
     @Test
     fun startDownload_existingDownload_restartsIt() {
         // Add a download first with STATE_NONE via addDownload

@@ -9,7 +9,11 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
+import com.lanraragi.reader.dao.ArchiveLocalState
+import com.lanraragi.reader.dao.DailyReadingAggregate
+import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.MiscRoomDao
+import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.dao.ServerProfile
@@ -85,7 +89,7 @@ class ServerListViewModelTest {
             override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
             override val profileRepository get() = ProfileRepository(db.miscDao())
             override val profileLookupCache get() = throw NotImplementedError("not needed")
-            override val historyRepository get() = throw NotImplementedError("not needed")
+            override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
             override val quickSearchRepository get() = throw NotImplementedError("not needed")
             override val favoritesRepository get() = throw NotImplementedError("not needed")
             override val downloadDbRepository get() = throw NotImplementedError("not needed")
@@ -126,7 +130,7 @@ class ServerListViewModelTest {
         override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
         override val profileRepository get() = repo
         override val profileLookupCache get() = throw NotImplementedError("not needed")
-        override val historyRepository get() = throw NotImplementedError("not needed")
+        override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
         override val quickSearchRepository get() = throw NotImplementedError("not needed")
         override val favoritesRepository get() = throw NotImplementedError("not needed")
         override val downloadDbRepository get() = throw NotImplementedError("not needed")
@@ -467,6 +471,89 @@ class ServerListViewModelTest {
         awaitUntil { vm.profiles.value.size == 1 }
 
         assertEquals("Keep", vm.profiles.value[0].name)
+    }
+
+    /**
+     * Audit 2026-10-04 C02: deleting the active profile used to clear only its
+     * per-profile key. The global session kept the URL and key, and the auth
+     * interceptor's active-server fallback kept sending that key to the
+     * deleted server's host.
+     */
+    @Test
+    fun deleteProfile_activeProfile_clearsGlobalSession() {
+        val id = insertProfile("Retired NAS", "http://192.168.1.50:3000", isActive = true)
+        val profile = ServerProfile(
+            id = id, name = "Retired NAS", url = "http://192.168.1.50:3000", isActive = true
+        )
+        LRRAuthManager.setApiKeyForProfile(id, "nas-key")
+        LRRAuthManager.setServerUrl(profile.url)
+        LRRAuthManager.setApiKey("nas-key")
+        LRRAuthManager.setActiveProfileId(id)
+
+        val vm = ServerListViewModel()
+        vm.deleteProfile(profile)
+
+        awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.isEmpty() }
+        assertEquals(null, LRRAuthManager.getApiKey())
+        assertEquals(null, LRRAuthManager.getServerUrl())
+        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+    }
+
+    /**
+     * Audit 2026-10-04 C22: a deleted profile's reading history, local
+     * favourites and stats aggregates are purged; its download rows and other
+     * profiles' data stay.
+     */
+    @Test
+    fun deleteProfile_purgesReadingStateButKeepsDownloads() {
+        val gone = insertProfile("Gone", "https://gone.example")
+        val kept = insertProfile("Kept", "https://kept.example")
+        LRRAuthManager.setApiKeyForProfile(gone, "k")
+        val dao = db.archiveLocalStateDao()
+        val stats = db.statsDao()
+        runBlocking {
+            dao.upsert(ArchiveLocalState(arcid = "read", serverProfileId = gone, archiveJson = "{}", historyTime = 1L))
+            dao.upsert(ArchiveLocalState(arcid = "fav", serverProfileId = gone, archiveJson = "{}", favoriteTime = 1L))
+            dao.upsert(
+                ArchiveLocalState(
+                    arcid = "dl", serverProfileId = gone, archiveJson = "{}",
+                    downloadState = DownloadState.FINISH, downloadTime = 1L, historyTime = 1L,
+                )
+            )
+            dao.upsert(ArchiveLocalState(arcid = "other", serverProfileId = kept, archiveJson = "{}", historyTime = 1L))
+            stats.insertDailyAggregateIfAbsent(DailyReadingAggregate(epochDay = 1, serverProfileId = gone, pagesRead = 5))
+            stats.insertDailyAggregateIfAbsent(DailyReadingAggregate(epochDay = 1, serverProfileId = kept, pagesRead = 7))
+        }
+
+        val vm = ServerListViewModel()
+        vm.deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example"))
+
+        awaitUntil { runBlocking { stats.getDailyAggregatesForProfile(gone) }.isEmpty() }
+        runBlocking {
+            assertEquals(null, dao.loadByArcidAndProfile("read", gone))
+            assertEquals(null, dao.loadByArcidAndProfile("fav", gone))
+            val download = dao.loadByArcidAndProfile("dl", gone)
+            assertEquals(DownloadState.FINISH, download?.downloadState)
+            assertEquals(null, download?.historyTime)
+            assertTrue(dao.loadByArcidAndProfile("other", kept)?.historyTime != null)
+            assertEquals(1, stats.getDailyAggregatesForProfile(kept).size)
+        }
+    }
+
+    @Test
+    fun deleteProfile_inactiveProfile_keepsActiveSession() {
+        val activeId = insertProfile("Home", "http://192.168.1.10:3000", isActive = true)
+        val otherId = insertProfile("Other", "https://other.example")
+        LRRAuthManager.setServerUrl("http://192.168.1.10:3000")
+        LRRAuthManager.setApiKey("home-key")
+        LRRAuthManager.setActiveProfileId(activeId)
+
+        val vm = ServerListViewModel()
+        vm.deleteProfile(ServerProfile(id = otherId, name = "Other", url = "https://other.example"))
+
+        awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.size == 1 }
+        assertEquals("home-key", LRRAuthManager.getApiKey())
+        assertEquals(activeId, LRRAuthManager.getActiveProfileId())
     }
 
     @Test

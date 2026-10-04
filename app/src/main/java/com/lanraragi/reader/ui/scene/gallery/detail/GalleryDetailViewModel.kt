@@ -637,23 +637,6 @@ class GalleryDetailViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     /**
-     * Records [archive] in the history table. Fire-and-forget; runs on
-     * [Dispatchers.IO].
-     */
-    fun recordHistory(archive: Archive) {
-        viewModelScope.launch(Dispatchers.IO) {
-            // viewModelScope has no CoroutineExceptionHandler, so an
-            // unguarded Room failure here (constraint, disk full, locked DB)
-            // would crash the app during normal browsing. Swallow + log.
-            try {
-                ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
-            } catch (e: Exception) {
-                android.util.Log.e(TAG, "Failed to record history", e)
-            }
-        }
-    }
-
-    /**
      * Persists [info] to the downloads table. Fire-and-forget; runs on [Dispatchers.IO].
      */
     fun persistDownloadInfo(info: DownloadInfo) {

@@ -442,6 +442,46 @@ object LRRAuthManager {
     }
 
     /**
+     * Forget the active server session: URL, API key, name, cleartext flag and
+     * active profile id. Called when the active profile is deleted. The
+     * per-profile key store is untouched. Without this, [LRRAuthInterceptor]'s
+     * active-server fallback kept attaching the deleted server's key to its
+     * host (audit 2026-10-04 C02).
+     */
+    @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
+    fun clearActiveSession() {
+        val prefs = requireSecurePrefs("clearActiveSession")
+        prefs.edit {
+            remove(KEY_SERVER_URL)
+            remove(KEY_API_KEY)
+            remove(KEY_SERVER_NAME)
+            remove(KEY_ALLOW_CLEARTEXT)
+            putLong(KEY_ACTIVE_PROFILE_ID, 0L)
+        }
+        sActiveProfileId = 0L
+        sPlainPrefs?.edit { putBoolean(KEY_CONFIGURED_HINT, false) }
+        bumpServerConfigVersion()
+    }
+
+    /**
+     * Boot repair: if the stored active profile id names a profile that no
+     * longer exists in [existingProfileIds], the active session belongs to a
+     * deleted server — clear it. An id of 0 (legacy single-server setups that
+     * pre-date profiles) is left alone.
+     *
+     * @return true when the session was cleared
+     */
+    @JvmStatic
+    @Throws(LRRSecureStorageUnavailableException::class)
+    fun clearSessionIfActiveProfileGone(existingProfileIds: Collection<Long>): Boolean {
+        val active = getActiveProfileId()
+        if (active == 0L || active in existingProfileIds) return false
+        clearActiveSession()
+        return true
+    }
+
+    /**
      * @return true if encryption was unavailable during initialize() and the user
      *         should be prompted to re-enter their API key.
      */
