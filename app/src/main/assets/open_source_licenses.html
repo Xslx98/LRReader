@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<!--
+  Hand-maintained list of what ships in the APK. When a runtime dependency is
+  added to app/build.gradle, add it here too: OpenSourceLicensesAssetTest fails
+  for any `implementation libs.*` module missing from this page.
+  LicenseActivity marks the root element class="dark" in night mode (the theme is
+  always Light, so the WebView never reports prefers-color-scheme: dark).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open-source licenses</title>
+<style>
+:root { --fg: #212121; --muted: #616161; --link: #1565c0; --rule: #e0e0e0; }
+:root.dark { --fg: #e6e6e6; --muted: #a8a8a8; --link: #82b1ff; --rule: #3a3a3a; }
+@media (prefers-color-scheme: dark) {
+  :root { --fg: #e6e6e6; --muted: #a8a8a8; --link: #82b1ff; --rule: #3a3a3a; }
+}
+html { background: transparent; color: var(--fg); }
+body { margin: 0; padding: 16px; font: 15px/1.5 sans-serif; overflow-wrap: anywhere; }
+h1 { font-size: 20px; margin: 0 0 8px; }
+h2 { font-size: 16px; margin: 24px 0 4px; padding-top: 12px; border-top: 1px solid var(--rule); }
+p { margin: 8px 0; }
+ul { margin: 4px 0; padding-left: 20px; }
+li { margin: 2px 0; }
+a { color: var(--link); }
+small, .m { color: var(--muted); }
+.mit { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>LR Reader</h1>
+<p>LR Reader is free software, licensed under the
+<a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License v3.0</a>.
+Source code: <a href="https://github.com/Xslx98/LRReader">github.com/Xslx98/LRReader</a>.</p>
+
+<h2>Based on</h2>
+<ul>
+<li><b>EhViewer</b> &mdash; Copyright 2014-2019 Hippo Seven. Apache License 2.0.<br>
+<a href="https://github.com/seven332/EhViewer">github.com/seven332/EhViewer</a></li>
+<li><b>EhViewer_CN_SXJ</b> &mdash; Copyright 2020-2024 xiaojieonly. GPL-3.0.<br>
+<a href="https://github.com/xiaojieonly/Ehviewer_CN_SXJ">github.com/xiaojieonly/Ehviewer_CN_SXJ</a></li>
+<li><b>EhViewer</b> (native image helpers) &mdash; Copyright 2024 Tarsin Norbin. GPL-3.0.<br>
+<a href="https://github.com/FooIbar/EhViewer">github.com/FooIbar/EhViewer</a></li>
+<li><b>Android Open Source Project</b> (adapted framework classes) &mdash; Apache License 2.0.</li>
+</ul>
+
+<h2>Libraries &mdash; Apache License 2.0</h2>
+<ul>
+<li><b>AndroidX</b> &mdash; Activity, AppCompat, Biometric, CardView, Core KTX, Fragment,
+Lifecycle, Paging, Preference, RecyclerView, Room, Security Crypto.
+<small>The Android Open Source Project</small><br>
+<span class="m">androidx.activity, androidx.appcompat, androidx.biometric, androidx.cardview,
+androidx.core, androidx.fragment, androidx.lifecycle, androidx.paging, androidx.preference,
+androidx.recyclerview, androidx.room, androidx.security</span></li>
+<li><b>Material Components for Android</b> <small>Google &middot; com.google.android.material</small></li>
+<li><b>Tink</b> <small>Google &middot; com.google.crypto.tink</small></li>
+<li><b>Gson</b> <small>Google &middot; com.google.code.gson</small></li>
+<li><b>Kotlin standard library</b> <small>JetBrains &middot; org.jetbrains.kotlin</small></li>
+<li><b>kotlinx.coroutines</b> <small>JetBrains &middot; org.jetbrains.kotlinx:kotlinx-coroutines</small></li>
+<li><b>kotlinx.serialization</b> <small>JetBrains &middot; org.jetbrains.kotlinx:kotlinx-serialization</small></li>
+<li><b>OkHttp</b> and <b>Okio</b> <small>Square &middot; com.squareup.okhttp3, com.squareup.okio</small></li>
+<li><b>Advanced RecyclerView</b> <small>Haruki Hasegawa &middot; com.h6ah4i.android.widget.advrecyclerview</small></li>
+<li><b>Pagination_Sxj</b> <small>xiaojieonly &middot; com.github.xiaojieonly:Pagination_Sxj</small></li>
+<li><b>Hippo Seven libraries</b> &mdash; android-resource, DrawerLayout, EasyRecyclerView, Hotspot,
+RefreshLayout, Ripple, StreamPipe, Yorozuya, Yorozuya-Collect, Yorozuya-Thread.
+<small>Copyright 2015-2017 Hippo Seven &middot; com.github.seven332;
+Yorozuya-Collect includes code Copyright 2014-2015 Markus Junginger, greenrobot</small><br>
+<a href="https://github.com/seven332">github.com/seven332</a></li>
+</ul>
+<p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use these
+files except in compliance with the License. You may obtain a copy of the License at
+<a href="https://www.apache.org/licenses/LICENSE-2.0">apache.org/licenses/LICENSE-2.0</a>.
+Unless required by applicable law or agreed to in writing, software distributed under the
+License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+either express or implied.</p>
+
+<h2>Libraries &mdash; MIT License</h2>
+<ul>
+<li><b>Android-SpinKit</b> <small>Copyright 2016 ybq &middot; com.github.ybq:Android-SpinKit</small></li>
+<li><b>GIFLIB</b> (GIF decoder, bundled source) <small>Copyright 1997 Eric S. Raymond</small></li>
+</ul>
+<p class="mit">Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+<p class="mit">The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+<p class="mit">THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+
+</body>
+</html>

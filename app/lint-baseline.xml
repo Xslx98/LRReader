@@ -388,17 +388,6 @@
 
     <issue
         id="NewerVersionAvailable"
-        message="A newer version of com.jaredsburrows.license than 0.9.9 is available: 0.9.91"
-        errorLine1="license-plugin = &quot;0.9.9&quot;"
-        errorLine2="                 ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="44"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
         message="A newer version of com.squareup.okhttp3:mockwebserver than 4.12.0 is available: 5.5.0"
         errorLine1="okhttp = &quot;4.12.0&quot;"
         errorLine2="         ~~~~~~~~">
