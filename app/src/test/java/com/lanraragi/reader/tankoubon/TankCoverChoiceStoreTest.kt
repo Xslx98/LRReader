@@ -59,4 +59,16 @@ class TankCoverChoiceStoreTest {
         store.remove("TANK_1")
         assertNull(store.get("TANK_1"))
     }
+
+    @Test
+    fun `removeProfile drops only that profile's choices`() {
+        val store = TankCoverChoiceStore(MemoryStorage())
+        store.put("TANK_1", TankCoverChoiceStore.Choice(a, 2, 7L))
+        store.put("TANK_2", TankCoverChoiceStore.Choice(b, 0, 8L))
+
+        store.removeProfile(7L)
+
+        assertNull(store.get("TANK_1"))
+        assertEquals(TankCoverChoiceStore.Choice(b, 0, 8L), store.get("TANK_2"))
+    }
 }

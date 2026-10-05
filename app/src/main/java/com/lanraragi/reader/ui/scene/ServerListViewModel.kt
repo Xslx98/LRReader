@@ -7,9 +7,12 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.ui.ContinueReadingShortcut
+import com.lanraragi.reader.gallery.ArchiveProgressOutbox
+import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
+import com.lanraragi.reader.client.api.ServerCapabilityCache
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -148,18 +151,17 @@ class ServerListViewModel : ViewModel() {
                     // aggregates (audit 2026-10-04 C22). Downloads stay listed.
                     ServiceRegistry.dataModule.historyRepository
                         .purgeDeletedProfile(profile.id)
+                    purgeServerState(profile)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete profile", e)
             }
-            if (wasActive) {
-                // Same as a profile switch: the deleted server's thumbnails and
-                // details must not show up under whatever is picked next.
-                try {
-                    withContext(Dispatchers.IO) { ServiceRegistry.clearAllCaches() }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Cache clear after deleting the active profile failed", e)
-                }
+            // The deleted server's thumbnails and details must not linger on
+            // disk or show up under whatever is picked next (audit SEC-16).
+            try {
+                withContext(Dispatchers.IO) { ServiceRegistry.clearAllCaches() }
+            } catch (e: Exception) {
+                Log.e(TAG, "Cache clear after deleting a profile failed", e)
             }
             // A continue-reading shortcut pointing at the deleted profile is
             // now a dead end — drop it (issue #16). The widget re-renders from
@@ -415,6 +417,18 @@ class ServerListViewModel : ViewModel() {
                 _uiEvent.emit(ServerListUiEvent.AddConnectionFailed(e))
             }
         }
+    }
+
+    /**
+     * Per-server state outside Room that a deleted profile leaves behind
+     * (audit SEC-16): capability facts, pending progress PUTs, tank cover
+     * choices. Base URLs are stored without a trailing slash.
+     */
+    private fun purgeServerState(profile: ServerProfile) {
+        val baseUrl = profile.url.removeSuffix("/")
+        ServerCapabilityCache.forget(baseUrl)
+        ArchiveProgressOutbox.dropServer(baseUrl)
+        TankCoverChoiceStore.default.removeProfile(profile.id)
     }
 
     companion object {

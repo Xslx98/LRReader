@@ -18,6 +18,9 @@ class ServerCapabilityCacheTest {
         override fun saveExcludedNamespaces(baseUrl: String, namespaces: Set<String>) {
             saved[baseUrl] = namespaces
         }
+        override fun forget(baseUrl: String) {
+            saved.remove(baseUrl)
+        }
     }
 
     @Before
@@ -83,5 +86,21 @@ class ServerCapabilityCacheTest {
         )
         ServerCapabilityCache.clear()
         assertNull(ServerCapabilityCache.describeServerInfo("http://a"))
+    }
+
+    @Test
+    fun forget_dropsMemoryAndPersistedFactsForThatServerOnly() {
+        val store = FakeStore()
+        ServerCapabilityCache.attachStore(store)
+        ServerCapabilityCache.setExcludedNamespaces("http://gone", listOf("x"))
+        ServerCapabilityCache.setExcludedNamespaces("http://kept", listOf("y"))
+        ServerCapabilityCache.setTracksProgress("http://gone", true)
+
+        ServerCapabilityCache.forget("http://gone")
+
+        assertNull(ServerCapabilityCache.tracksProgress("http://gone"))
+        assertNull(store.saved["http://gone"])
+        assertNull(ServerCapabilityCache.excludedNamespaces("http://gone"))
+        assertEquals(setOf("y"), ServerCapabilityCache.excludedNamespaces("http://kept"))
     }
 }

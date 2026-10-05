@@ -146,6 +146,13 @@ object ArchiveProgressOutbox {
         )
     }
 
+    /** Drops every pending page for [baseUrl] (its profile was deleted, audit SEC-16). */
+    fun dropServer(baseUrl: String) {
+        val p = prefs ?: return
+        val keys = entries().filter { it.baseUrl == baseUrl }.map { key(it.baseUrl, it.arcid) }
+        if (keys.isNotEmpty()) p.edit { keys.forEach { remove(it) } }
+    }
+
     /** A live session may have queued a newer page meanwhile: keep that one. */
     private fun removeIfUnchanged(entry: Entry) {
         val p = prefs ?: return

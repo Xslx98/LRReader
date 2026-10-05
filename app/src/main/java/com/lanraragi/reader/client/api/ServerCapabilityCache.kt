@@ -29,6 +29,9 @@ object ServerCapabilityCache {
     interface Store {
         fun loadExcludedNamespaces(baseUrl: String): Set<String>?
         fun saveExcludedNamespaces(baseUrl: String, namespaces: Set<String>)
+
+        /** Drops what is kept for [baseUrl] (its profile was deleted). */
+        fun forget(baseUrl: String)
     }
 
     private val tracksProgress = ConcurrentHashMap<String, Boolean>()
@@ -90,6 +93,14 @@ object ServerCapabilityCache {
     fun excludedNamespaces(baseUrl: String): Set<String>? =
         excludedNamespaces[baseUrl]
             ?: store?.loadExcludedNamespaces(baseUrl)?.also { excludedNamespaces[baseUrl] = it }
+
+    /** Drops every fact about [baseUrl], persisted ones included (audit SEC-16). */
+    fun forget(baseUrl: String) {
+        tracksProgress.remove(baseUrl)
+        serverSummaries.remove(baseUrl)
+        excludedNamespaces.remove(baseUrl)
+        store?.forget(baseUrl)
+    }
 
     /** Drops in-memory facts only; an attached [Store] keeps its contents. */
     fun clear() {
