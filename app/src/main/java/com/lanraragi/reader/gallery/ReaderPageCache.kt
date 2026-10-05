@@ -405,7 +405,8 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         pageIndex: Int,
         awaitInflightWarmMs: Long = 0L,
     ): Image? {
-        if (awaitInflightWarmMs > 0L) {
+        // A slot already holding this page needs no wait for an in-flight warm.
+        if (awaitInflightWarmMs > 0L && !hasWarmSlot(arcid, pageIndex)) {
             val warmJob = activeWarmups[arcid]
             if (warmJob != null && warmJob.isActive) {
                 Log.i(TAG, "[WARM] consume awaiting in-flight warm arcid=$arcid timeoutMs=$awaitInflightWarmMs")
@@ -449,6 +450,13 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         }
     }
 
+    /** True when the slot holds an unexpired decode of [arcid]:[pageIndex]. */
+    fun hasWarmSlot(arcid: String, pageIndex: Int): Boolean = synchronized(slotLock) {
+        val slot = decodedSlot
+        slot != null && slot.arcid == arcid && slot.pageIndex == pageIndex &&
+            System.currentTimeMillis() <= slot.expiresAt
+    }
+
     /**
      * Awaits [warm] on behalf of a screen-scoped caller and cancels it when
      * the caller is cancelled first: a warm runs on the app scope, so
@@ -462,6 +470,10 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
             warm.cancel()
         }
     }
+
+    @androidx.annotation.VisibleForTesting
+    internal fun storeDecodedSlotForTest(arcid: String, pageIndex: Int, image: Image) =
+        storeDecodedSlot(arcid, pageIndex, image)
 
     /**
      * Park [image] for [arcid]:[pageIndex]. Replaces (and recycles)
@@ -588,6 +600,11 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
      * (clamped to valid range) using the same cache directory and file naming
      * as the reader, producing immediate cache hits when the reader opens.
      *
+     * A warm already running for [arcId] (the detail page's, when the
+     * reader opens from it) is awaited first, and the centre page is not
+     * decoded again when the slot already holds it (audit C18: the reader
+     * open used to repeat the 10-30 MB decode).
+     *
      * @param centerPage 0-indexed reading progress page
      * @return Job that can be cancelled to abort the preload
      */
@@ -597,11 +614,13 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         serverUrl: String,
         centerPage: Int
     ): Job {
+        val previous = activeWarmups[arcId]?.takeIf { it.isActive }
         // CoroutineStart.LAZY so the Job is registered in
         // activeWarmups before it begins running. See [warmDir] for
         // the same pattern.
         val job = ServiceRegistry.coroutineModule.ioScope.launch(start = CoroutineStart.LAZY) {
             try {
+            previous?.join()
             val appContext = context.applicationContext
             ensureCacheDir(appContext, arcId)
 
@@ -638,7 +657,9 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
                 // Decode-warm the *center* page only: it's the one the
                 // reader will display first, and decoding its neighbours
                 // would bloat memory before they're actually visible.
-                if (pageIndex == centerPage) {
+                if (pageIndex == centerPage && hasWarmSlot(arcId, centerPage)) {
+                    Log.i(TAG, "[WARM] preloadForDetail slot already warm arcid=$arcId page=$centerPage")
+                } else if (pageIndex == centerPage) {
                     val decodeStart = System.currentTimeMillis()
                     try {
                         val decoded = withContext(

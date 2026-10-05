@@ -1,5 +1,7 @@
 package com.lanraragi.reader.gallery
 
+import android.graphics.Bitmap
+import com.lanraragi.framework.lib.image.Image
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,5 +44,16 @@ class ReaderPageCacheWarmOwnershipTest {
         withTimeout(5_000) { owner.cancelAndJoin() }
         withTimeout(5_000) { warm.join() }
         assertTrue(warm.isCancelled)
+    }
+
+    @Test
+    fun warm_slot_is_reported_only_for_its_archive_and_page() {
+        val image = Image.create(Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888))!!
+        ReaderPageCache.storeDecodedSlotForTest(arcid, 3, image)
+
+        assertTrue(ReaderPageCache.hasWarmSlot(arcid, 3))
+        assertFalse(ReaderPageCache.hasWarmSlot(arcid, 4))
+        assertFalse(ReaderPageCache.hasWarmSlot("b".repeat(40), 3))
+        assertFalse("a check must not consume or recycle the slot", image.isRecycled)
     }
 }
