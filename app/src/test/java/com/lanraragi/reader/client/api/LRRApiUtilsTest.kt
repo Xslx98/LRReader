@@ -166,11 +166,27 @@ class LRRApiUtilsTest {
     }
 
     @Test
-    fun resolvePageUrl_alreadyAbsoluteUrlPassesThrough() {
+    fun resolvePageUrl_absoluteUrlOnTheSameServerPassesThrough() {
         assertEquals(
-            "http://other:9000/api/x",
-            resolvePageUrl("http://host:3000", "http://other:9000/api/x")
+            "http://host:3000/api/x",
+            resolvePageUrl("http://host:3000", "http://host:3000/api/x")
         )
+    }
+
+    // Audit C48 / SEC-08: a server-supplied URL must stay on that server.
+    @Test(expected = IOException::class)
+    fun resolvePageUrl_absoluteUrlOnAnotherOriginIsRefused() {
+        resolvePageUrl("http://host:3000", "http://other:9000/api/x")
+    }
+
+    @Test(expected = IOException::class)
+    fun resolvePageUrl_absoluteUrlWithAnotherSchemeIsRefused() {
+        resolvePageUrl("http://host:3000", "https://host:3000/api/x")
+    }
+
+    @Test(expected = IOException::class)
+    fun resolvePageUrl_dotDotCannotLeaveTheBasePath() {
+        resolvePageUrl("http://host/lrr", "../admin/api/x")
     }
 
     @Test
