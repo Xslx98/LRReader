@@ -144,6 +144,24 @@ class TankoubonsViewModelTest {
     }
 
     @Test
+    fun loadTankoubons_reopenedList_doesNotReprobeConfirmedCovers() {
+        val dispatcher = probeDispatcher(
+            pageJson(1, tankJson("TANK_0000000001", "Alpha", archiveCount = 1)),
+            probeCode = 200
+        )
+        server.dispatcher = dispatcher
+        TankoubonsViewModel().loadTankoubons()
+        awaitUntil { dispatcher.probePaths.size == 1 }
+
+        // A new screen (new ViewModel) on the same server.
+        val vm2 = TankoubonsViewModel()
+        vm2.loadTankoubons()
+        awaitUntil { vm2.tanks.value.size == 1 }
+        Thread.sleep(300)
+        assertEquals(1, dispatcher.probePaths.size)
+    }
+
+    @Test
     fun loadTankoubons_failure_leavesCoverCacheStampUntouched() {
         server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
 
