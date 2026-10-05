@@ -114,4 +114,19 @@ class TagTranslationDatabaseTest {
         assertEquals(true, english.contains("artist:asanagi"))
         assertEquals(true, english.contains("location:japan"))
     }
+
+    // Audit C26 / SEC-11: the length prefix of the third-party file is untrusted.
+    @Test(expected = java.io.IOException::class)
+    fun `negative length prefix is rejected as a corrupt dataset`() {
+        TagTranslationDatabase("bad", Buffer().writeInt(-1))
+    }
+
+    @Test
+    fun `oversized length prefix is rejected before allocating`() {
+        val e = runCatching {
+            TagTranslationDatabase("bad", Buffer().writeInt(TagTranslationDatabase.MAX_DATASET_BYTES + 1))
+        }.exceptionOrNull()
+        // Not an EOFException from reading a body that was never there.
+        assertEquals(true, e?.message?.contains("out of range"))
+    }
 }

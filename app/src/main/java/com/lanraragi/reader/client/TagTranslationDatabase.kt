@@ -68,7 +68,13 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
     private val tagList: List<TagEntry> by lazy { initTagList(String(tags, StandardCharsets.UTF_8)) }
 
     init {
+        // The length prefix comes from a third-party file (audit C26 /
+        // SEC-11): a negative or huge value must fail as a corrupt dataset,
+        // not as NegativeArraySizeException or an OOM on every launch.
         val totalBytes = source.readInt()
+        if (totalBytes !in 0..MAX_DATASET_BYTES) {
+            throw java.io.IOException("Tag dataset length out of range: $totalBytes")
+        }
         tags = ByteArray(totalBytes)
         source.readFully(tags)
     }
@@ -206,6 +212,9 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
 
     companion object {
         private val TAG = TagTranslationDatabase::class.java.simpleName
+
+        /** Upper bound for the dataset body; the real file is a few MB. */
+        internal const val MAX_DATASET_BYTES = 32 * 1024 * 1024
 
         @JvmField
         val NAMESPACE_TO_PREFIX: Map<String, String> = mapOf(
