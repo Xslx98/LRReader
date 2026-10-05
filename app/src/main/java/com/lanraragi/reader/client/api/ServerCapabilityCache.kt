@@ -14,8 +14,9 @@ import java.util.concurrent.ConcurrentHashMap
  *   explicitly says to check `/api/info` before calling that endpoint. Read by
  *   [LRRArchiveApi.updateProgress].
  * - `excluded_namespaces`: tag namespaces the admin excluded from suggestions
- *   and statistics. The server already filters its own `/api/database/stats`;
- *   this copy lets the offline reading-stats page apply the same exclusions to
+ *   and statistics. The server filters `/api/database/stats` only when asked
+ *   (`hide_excluded_namespaces`, sent by [LRRDatabaseApi.getTagStats]); this
+ *   copy lets the offline reading-stats page apply the same exclusions to
  *   locally stored tag snapshots. Backed by an optional [Store] so the value
  *   survives process death (an `/api/info` round-trip only happens on connect).
  *

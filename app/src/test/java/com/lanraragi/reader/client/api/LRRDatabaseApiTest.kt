@@ -58,7 +58,8 @@ class LRRDatabaseApiTest {
 
         val req = server.awaitRequest()
         assertEquals("GET", req.method)
-        assertEquals("/api/database/stats", req.path)
+        assertEquals("/api/database/stats", req.requestUrl!!.encodedPath)
+        assertEquals("true", req.requestUrl!!.queryParameter("hide_excluded_namespaces"))
     }
 
     @Test
