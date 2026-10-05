@@ -81,6 +81,7 @@
     <string name="update_downloading_title">正在下載 %1$s</string>
     <string name="update_download_failed">下載失敗，請重試或在瀏覽器中開啟</string>
     <string name="update_install_permission_needed">需要授予「安裝未知應用程式」權限來完成更新，請開啟系統設定</string>
+    <string name="update_signer_mismatch">此更新的簽署金鑰與已安裝的應用程式不同，未予安裝。</string>
     <string name="update_open_settings">開啟設定</string>
     <string name="update_open_in_browser">在瀏覽器中開啟</string>
     <string name="settings_about_check_for_updates">檢查更新</string>

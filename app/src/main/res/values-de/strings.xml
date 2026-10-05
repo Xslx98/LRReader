@@ -64,6 +64,7 @@
     <string name="update_downloading_title">Lade %1$s herunter</string>
     <string name="update_download_failed">Download fehlgeschlagen. Erneut versuchen oder im Browser öffnen.</string>
     <string name="update_install_permission_needed">LR Reader benötigt die Berechtigung, Updates zu installieren. Öffne die Systemeinstellungen, um sie zu erteilen.</string>
+    <string name="update_signer_mismatch">Dieses Update ist mit einem anderen Schlüssel signiert als die installierte App und wurde nicht installiert.</string>
     <string name="update_open_settings">Einstellungen öffnen</string>
     <string name="update_open_in_browser">Im Browser öffnen</string>
     <string name="settings_about_check_for_updates">Auf Updates prüfen</string>

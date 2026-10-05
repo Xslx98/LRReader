@@ -20,6 +20,7 @@ import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.UpdateSettings
 import com.lanraragi.reader.updater.ApkDownloader
+import com.lanraragi.reader.updater.ApkSigner
 import com.lanraragi.reader.updater.DownloadProgress
 import com.lanraragi.reader.updater.GhRelease
 import kotlinx.coroutines.launch
@@ -183,6 +184,17 @@ object UpdateDialog {
      * registers an observer to auto-retry on return.
      */
     private fun installApp(activity: Activity, apkFile: File) {
+        if (!ApkSigner.matchesInstalled(activity, apkFile)) {
+            // Another key: the installer would refuse it anyway (audit SEC-12).
+            apkFile.delete()
+            if (isActivityAlive(activity)) {
+                AlertDialog.Builder(activity)
+                    .setMessage(R.string.update_signer_mismatch)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+            }
+            return
+        }
         if (!activity.packageManager.canRequestPackageInstalls()) {
             showInstallPermissionDialog(activity, apkFile)
             return

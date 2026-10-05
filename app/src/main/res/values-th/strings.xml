@@ -86,6 +86,7 @@
     <string name="update_downloading_title">กำลังดาวน์โหลด %1$s</string>
     <string name="update_download_failed">ดาวน์โหลดล้มเหลว ลองอีกครั้งหรือเปิดในเบราว์เซอร์</string>
     <string name="update_install_permission_needed">LR Reader ต้องการสิทธิ์ในการติดตั้งอัพเดต เปิดการตั้งค่าระบบเพื่ออนุญาต</string>
+    <string name="update_signer_mismatch">การอัปเดตนี้ลงนามด้วยคีย์ที่ต่างจากแอปที่ติดตั้งอยู่ จึงไม่ได้ติดตั้ง</string>
     <string name="update_open_settings">เปิดการตั้งค่า</string>
     <string name="update_open_in_browser">เปิดในเบราว์เซอร์</string>
     <string name="settings_about_check_for_updates">ตรวจสอบการอัพเดต</string>
