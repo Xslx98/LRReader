@@ -9,7 +9,7 @@ apply plugin: "jacoco"
 android {
     namespace 'com.lanraragi.reader'
     testNamespace 'com.lanraragi.reader.debug'
-    compileSdk 35
+    compileSdk 36
 
     flavorDimensions "distribute"
     productFlavors {
@@ -21,7 +21,7 @@ android {
     defaultConfig {
         applicationId "com.lanraragi.reader"
         minSdkVersion 28
-        targetSdkVersion 35
+        targetSdkVersion 36
         // versionCode = MAJOR * 10000 + MINOR * 100 + PATCH
         versionCode 12701
         versionName "1.27.1"

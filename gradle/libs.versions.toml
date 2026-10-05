@@ -12,12 +12,12 @@ kotlin = "2.3.21"
 ksp = "2.3.9"
 
 # --- AndroidX ---
-activity = "1.10.1"
+activity = "1.13.0"
 appcompat = "1.7.1"
 biometric = "1.1.0"
 cardview = "1.0.0"
-# Capped at 1.16.0: core-ktx 1.17+ requires compileSdk 36 (project is 35).
-core-ktx = "1.16.0"
+# Capped at 1.18.0: core-ktx 1.19+ requires compileSdk 37 and AGP 9.
+core-ktx = "1.18.0"
 fragment = "1.8.9"
 lifecycle = "2.11.0"
 paging = "3.5.0"
