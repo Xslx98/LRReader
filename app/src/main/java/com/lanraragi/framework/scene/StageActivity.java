@@ -16,13 +16,13 @@
 
 package com.lanraragi.framework.scene;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -33,6 +33,7 @@ import com.lanraragi.reader.R;
 import com.lanraragi.reader.ui.BaseActivity;
 import com.lanraragi.framework.lib.yorozuya.AssertUtils;
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator;
+import com.lanraragi.framework.util.BackDispatch;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,6 +61,16 @@ public abstract class StageActivity extends BaseActivity {
     private final AtomicInteger mIdGenerator = new AtomicInteger();
 
     private int mStageId = IntIdGenerator.INVALID_ID;
+
+    // Always enabled: every scene decides what back means (pop, collapse a
+    // search bar, double-press exit), so the system never finishes the
+    // activity on its own. Subclasses hook in through onInterceptBack().
+    private final OnBackPressedCallback mBackCallback = new OnBackPressedCallback(true) {
+        @Override
+        public void handleOnBackPressed() {
+            dispatchBack();
+        }
+    };
 
     private final SceneViewComparator mSceneViewComparator = new SceneViewComparator();
 
@@ -184,6 +195,7 @@ public abstract class StageActivity extends BaseActivity {
     @Override
     protected final void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getOnBackPressedDispatcher().addCallback(this, mBackCallback);
 
         if (savedInstanceState != null) {
             mStageId = savedInstanceState.getInt(KEY_STAGE_ID, IntIdGenerator.INVALID_ID);
@@ -593,25 +605,36 @@ public abstract class StageActivity extends BaseActivity {
         onTransactScene();
     }
 
-    @SuppressLint("MissingSuperCall")
-    @Override
-    public void onBackPressed() {
+    /**
+     * Back handling before the scene stack sees it (e.g. closing a drawer).
+     *
+     * @return {@code true} when consumed
+     */
+    protected boolean onInterceptBack() {
+        return false;
+    }
+
+    /** One back event: {@link #onInterceptBack()}, then the top scene's {@code onBackPressed}. */
+    void dispatchBack() {
+        if (onInterceptBack()) {
+            return;
+        }
         int size = mSceneTagList.size();
         if (size == 0) {
             // No scene on the stack (e.g. a URL-error finish path) — fall back to the
             // default back behavior instead of indexing an empty list.
-            super.onBackPressed();
+            BackDispatch.passThrough(getOnBackPressedDispatcher(), mBackCallback);
             return;
         }
         String tag = mSceneTagList.get(size - 1);
         SceneFragment scene;
         Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
         if (fragment == null) {
-            Log.e(TAG, "onBackPressed: Can't find scene by tag: " + tag);
+            Log.e(TAG, "dispatchBack: Can't find scene by tag: " + tag);
             return;
         }
         if (!(fragment instanceof SceneFragment)) {
-            Log.e(TAG, "onBackPressed: The fragment is not SceneFragment");
+            Log.e(TAG, "dispatchBack: The fragment is not SceneFragment");
             return;
         }
 

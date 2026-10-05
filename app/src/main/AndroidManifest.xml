@@ -48,6 +48,7 @@
     <application
         android:name="com.lanraragi.reader.LRReaderApplication"
         android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"

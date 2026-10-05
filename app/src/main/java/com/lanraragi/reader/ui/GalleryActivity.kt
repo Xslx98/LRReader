@@ -32,6 +32,7 @@ import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
@@ -78,6 +79,7 @@ import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.framework.lib.glgallery.SimpleAdapter
 import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.framework.util.BackDispatch
 import com.lanraragi.framework.util.SystemUiHelper
 import com.lanraragi.framework.widget.ColorView
 import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
@@ -382,6 +384,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // Locked: BaseActivity handed off to the lock screen (this intent is
         // stashed to resume after unlock). Build nothing.
         if (isFinishing) return
+        onBackPressedDispatcher.addCallback(this, backCallback)
         // StrictMode policies are installed app-wide (debug only) in
         // LRReaderApplication. The block that used to sit here installed an EMPTY
         // VmPolicy (detectFileUriExposure() was called after build()) — a
@@ -718,20 +721,22 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         super.onDestroy()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
+    // Always enabled: leaving the reader must carry the result archive back.
+    private val backCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() = handleBack()
+    }
+
+    internal fun handleBack() {
         if (mStampOverlay?.placing == true) {
             mStampOps?.exitPlacementMode()
-            return
-        }
-        if (mContinuation?.isShowing == true) {
+        } else if (mContinuation?.isShowing == true) {
             mContinuation?.hide()
-            return
+        } else {
+            val intent = Intent()
+            intent.putExtra(EXTRA_RESULT_ARCHIVE, mArchive)
+            setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, intent)
+            BackDispatch.passThrough(onBackPressedDispatcher, backCallback)
         }
-        val intent = Intent()
-        intent.putExtra(EXTRA_RESULT_ARCHIVE, mArchive)
-        setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, intent)
-        super.onBackPressed()
     }
 
     override fun onStop() {
