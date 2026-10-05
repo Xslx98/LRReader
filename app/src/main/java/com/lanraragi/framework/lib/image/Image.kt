@@ -42,6 +42,14 @@ class Image private constructor(
     private var mStickerBitmap: Bitmap? = null  // Cached bitmap for non-BitmapDrawable texImage
     private var mReferences = 0
 
+    // Animated pages (audit 2026-10-04 C13): one software render per frame, not
+    // one per uploaded tile, at the drawable's own frame interval.
+    private val mFrameDirty = java.util.concurrent.atomic.AtomicBoolean(true)
+    private var mCanvas: Canvas? = null
+
+    @Volatile
+    private var mNextFrameDelayMs: Long = DEFAULT_FRAME_DELAY_MS
+
     val animated: Boolean
     val width: Int
     val height: Int
@@ -149,6 +157,7 @@ class Image private constructor(
             ?: initDrawable.intrinsicWidth
         height = (initDrawable as? BitmapDrawable)?.bitmap?.height
             ?: initDrawable.intrinsicHeight
+        if (animated) initDrawable.callback = FrameClock()
     }
 
     val isRecycled: Boolean
@@ -170,6 +179,7 @@ class Image private constructor(
         mBitmap = null
         mStickerBitmap?.recycle()
         mStickerBitmap = null
+        mCanvas = null
         release()
     }
 
@@ -187,7 +197,30 @@ class Image private constructor(
         prepareBitmap()
         val bitmap = mBitmap ?: return
         val drawable = mDrawableRef.get() ?: return
-        drawable.draw(Canvas(bitmap))
+        if (!mFrameDirty.getAndSet(false)) return
+        val canvas = mCanvas ?: Canvas(bitmap).also { mCanvas = it }
+        bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
+        drawable.draw(canvas)
+    }
+
+    /** The animation loop moved to the next frame; the next tile upload re-renders it. */
+    fun advanceFrame() {
+        mFrameDirty.set(true)
+    }
+
+    /**
+     * On a software canvas AnimatedImageDrawable schedules its own next frame via
+     * scheduleSelf; capturing that time gives the real frame interval (it was a
+     * hard-coded 10 ms, redrawing ~100 times a second).
+     */
+    private inner class FrameClock : Drawable.Callback {
+        override fun invalidateDrawable(who: Drawable) = Unit
+
+        override fun scheduleDrawable(who: Drawable, what: Runnable, `when`: Long) {
+            mNextFrameDelayMs = `when` - android.os.SystemClock.uptimeMillis()
+        }
+
+        override fun unscheduleDrawable(who: Drawable, what: Runnable) = Unit
     }
 
     @Synchronized
@@ -269,11 +302,7 @@ class Image private constructor(
     }
 
     val delay: Int
-        get() {
-            if (animated)
-                return 10
-            return 0
-        }
+        get() = if (animated) frameDelay(mNextFrameDelayMs) else 0
 
     @get:SuppressWarnings("deprecation")
     val isOpaque: Boolean
@@ -284,6 +313,13 @@ class Image private constructor(
     companion object {
         private const val TAG = "Image"
         internal const val OOM_RETRY_MULTIPLIER = 2
+        internal const val DEFAULT_FRAME_DELAY_MS = 100L
+        internal const val MIN_FRAME_DELAY_MS = 16L
+        internal const val MAX_FRAME_DELAY_MS = 1000L
+
+        /** Next-frame wait for an animated page: the drawable's interval, at most 60 fps. */
+        internal fun frameDelay(scheduledMs: Long): Int =
+            scheduledMs.coerceIn(MIN_FRAME_DELAY_MS, MAX_FRAME_DELAY_MS).toInt()
         var screenWidth: Int = 0
         var screenHeight: Int = 0
 
