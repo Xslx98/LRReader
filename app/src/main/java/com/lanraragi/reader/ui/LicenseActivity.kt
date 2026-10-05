@@ -17,8 +17,13 @@
 package com.lanraragi.reader.ui
 
 import android.os.Bundle
+import android.text.Html
+import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.webkit.WebView
+import android.widget.ScrollView
+import android.widget.TextView
 import com.lanraragi.reader.R
 
 class LicenseActivity : ToolbarActivity() {
@@ -28,11 +33,41 @@ class LicenseActivity : ToolbarActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        mWebView = WebView(this)
-        mWebView!!.loadUrl("file:///android_asset/open_source_licenses.html")
-        setContentView(mWebView!!)
+        setContentView(createWebView() ?: createTextFallback())
 
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
+    }
+
+    /**
+     * WebView construction throws while the WebView provider is updating or
+     * disabled (MissingWebViewPackageException / AndroidRuntimeException);
+     * fall back to plain text instead of crashing (audit 2026-10-04 C34 /
+     * STAB-21).
+     */
+    private fun createWebView(): View? = try {
+        WebView(this).also {
+            it.loadUrl("file:///android_asset/$ASSET")
+            mWebView = it
+        }
+    } catch (e: RuntimeException) {
+        Log.e(TAG, "WebView unavailable; showing licenses as text", e)
+        null
+    }
+
+    private fun createTextFallback(): View {
+        val html = try {
+            assets.open(ASSET).bufferedReader().use { it.readText() }
+        } catch (e: java.io.IOException) {
+            Log.e(TAG, "Read $ASSET", e)
+            ""
+        }
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val textView = TextView(this).apply {
+            setPadding(padding, padding, padding, padding)
+            setTextIsSelectable(true)
+            text = Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT)
+        }
+        return ScrollView(this).apply { addView(textView) }
     }
 
     override fun onDestroy() {
@@ -49,5 +84,10 @@ class LicenseActivity : ToolbarActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    companion object {
+        private const val TAG = "LicenseActivity"
+        private const val ASSET = "open_source_licenses.html"
     }
 }

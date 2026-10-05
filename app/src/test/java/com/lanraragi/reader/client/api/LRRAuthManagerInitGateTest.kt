@@ -132,4 +132,45 @@ class LRRAuthManagerInitGateTest {
             scope.cancel()
         }
     }
+
+    /**
+     * Audit 2026-10-04 C34 / STAB-15: a hung init no longer blocks readers
+     * forever. The first reader gives up after the timeout and sees defaults;
+     * later readers do not wait again; the gate still opens normally afterwards.
+     */
+    @Test(timeout = 20_000)
+    fun hungInit_readersGiveUpAfterTimeout_thenSeeValueOnceGateOpens() {
+        val scheduler = TestCoroutineScheduler()
+        val scope = CoroutineScope(
+            StandardTestDispatcher(scheduler) +
+                CoroutineExceptionHandler { _, t -> println("contained: $t") }
+        )
+        try {
+            LRRAuthManager.scheduleInitialize(ctx, scope) // never advanced: init "hangs"
+            LRRAuthManager.initTimeoutMs = 200
+
+            val first = CountDownLatch(1)
+            var observed: String? = "sentinel"
+            thread(isDaemon = true) {
+                observed = LRRAuthManager.getServerUrl()
+                first.countDown()
+            }
+            assertTrue("reader must give up after the timeout", first.await(5, TimeUnit.SECONDS))
+            assertNull(observed)
+
+            val started = System.nanoTime()
+            LRRAuthManager.getServerUrl()
+            assertTrue(
+                "later readers must not wait again",
+                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started) < 150
+            )
+
+            val prefs = ctx.getSharedPreferences("lrr_gate_timeout_test", Context.MODE_PRIVATE)
+            prefs.edit().putString("server_url", "http://10.0.0.8:3000").commit()
+            LRRAuthManager.initializeForTesting(prefs)
+            assertEquals("http://10.0.0.8:3000", LRRAuthManager.getServerUrl())
+        } finally {
+            scope.cancel()
+        }
+    }
 }

@@ -14,6 +14,7 @@ import androidx.security.crypto.MasterKey
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -44,6 +45,7 @@ class LRRSecureStorageUnavailableException(message: String) : IOException(messag
 object LRRAuthManager {
 
     private const val TAG = "LRRAuthManager"
+    private const val INIT_TIMEOUT_MS = 10_000L
     private const val PREF_NAME = "lrr_auth_encrypted"
     private const val PLAIN_PREF_NAME = "lrr_auth_plain"
     private const val KEY_WAS_CONFIGURED = "was_configured"
@@ -168,6 +170,14 @@ object LRRAuthManager {
     @Volatile
     private var sInitLatch = CountDownLatch(1)
 
+    /** Set once a reader gave up waiting; later readers stop blocking. */
+    @Volatile
+    private var sInitTimedOut = false
+
+    /** How long [awaitInit] waits for the gate. Tests shorten it. */
+    @Volatile
+    internal var initTimeoutMs: Long = INIT_TIMEOUT_MS
+
     /**
      * Gate every read/write of [sPrefs]/[sPlainPrefs]/[sActiveProfileId]/
      * [sNeedsReauthentication] behind async initialization (INF-9):
@@ -182,7 +192,17 @@ object LRRAuthManager {
     private fun awaitInit() {
         if (sInitDone) return
         if (!sInitScheduled) return
-        sInitLatch.await()
+        if (sInitTimedOut) return
+        // Bounded (audit 2026-10-04 C34 / STAB-15): a hung KeyStore binder call must
+        // not block every reader forever. After the timeout readers see the
+        // uninitialised defaults (as if storage were unavailable) until the gate opens.
+        if (!sInitLatch.await(initTimeoutMs, TimeUnit.MILLISECONDS)) {
+            sInitTimedOut = true
+            Log.e(TAG, "Secure storage init still pending after $initTimeoutMs ms; continuing without it")
+            com.lanraragi.reader.diagnostics.DiagLog.e(
+                TAG, "Secure storage init still pending after $initTimeoutMs ms; continuing without it"
+            )
+        }
     }
 
     /**
@@ -215,6 +235,8 @@ object LRRAuthManager {
     internal fun resetInitGateForTesting() {
         sInitScheduled = false
         sInitDone = false
+        sInitTimedOut = false
+        initTimeoutMs = INIT_TIMEOUT_MS
         sInitLatch = CountDownLatch(1)
     }
 
