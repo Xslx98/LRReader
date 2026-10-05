@@ -25,19 +25,25 @@ object TankCategoryPromotion {
         }
     }
 
+    /** A static category with its member ids as a set (lists hold up to ~100k ids). */
+    private class StaticCat(val id: String, val members: Set<String>)
+
     /** Static categories with an id, in server order. */
-    fun static(categories: List<LRRCategory>): List<LRRCategory> =
-        categories.filter { !it.isDynamic() && !it.id.isNullOrEmpty() }
+    private fun static(categories: List<LRRCategory>): List<StaticCat> =
+        categories.mapNotNull { cat ->
+            val id = cat.id
+            if (cat.isDynamic() || id.isNullOrEmpty()) null else StaticCat(id, cat.archives.toHashSet())
+        }
 
     /** Static category ids containing [id]. */
     fun categoriesOf(categories: List<LRRCategory>, id: String): List<String> =
-        static(categories).filter { id in it.archives }.map { it.id!! }
+        static(categories).filter { id in it.members }.map { it.id }
 
     /** Add member(s): the tank joins every static category containing a new member that it is not in yet. */
     fun onAdd(categories: List<LRRCategory>, tankId: String, newMemberIds: Collection<String>): Changes {
         val add = static(categories)
-            .filter { cat -> tankId !in cat.archives && newMemberIds.any { it in cat.archives } }
-            .map { it.id!! }
+            .filter { cat -> tankId !in cat.members && newMemberIds.any { it in cat.members } }
+            .map { it.id }
         return Changes(add, emptyList())
     }
 
@@ -55,11 +61,11 @@ object TankCategoryPromotion {
         val remaining = memberIdsBefore.filter { it !in removedIds }
         val remove = static(categories)
             .filter { cat ->
-                tankId in cat.archives &&
-                    memberIdsBefore.any { it in cat.archives } &&
-                    remaining.none { it in cat.archives }
+                tankId in cat.members &&
+                    memberIdsBefore.any { it in cat.members } &&
+                    remaining.none { it in cat.members }
             }
-            .map { it.id!! }
+            .map { it.id }
         return Changes(emptyList(), remove)
     }
 
@@ -72,11 +78,11 @@ object TankCategoryPromotion {
         val add = ArrayList<String>()
         val remove = ArrayList<String>()
         for (cat in static(categories)) {
-            val hasTank = tankId in cat.archives
-            val hasMember = memberIds.any { it in cat.archives }
+            val hasTank = tankId in cat.members
+            val hasMember = memberIds.any { it in cat.members }
             when {
-                hasMember && !hasTank -> add.add(cat.id!!)
-                !hasMember && hasTank -> remove.add(cat.id!!)
+                hasMember && !hasTank -> add.add(cat.id)
+                !hasMember && hasTank -> remove.add(cat.id)
             }
         }
         return Changes(add, remove)
