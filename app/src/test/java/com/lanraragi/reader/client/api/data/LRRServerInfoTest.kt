@@ -36,6 +36,17 @@ class LRRServerInfoTest {
     }
 
     @Test
+    fun nullForADefaultedFieldTakesTheDefault() {
+        // A server that sends null for a non-nullable field must not fail /api/info.
+        val json = """{"name":"x","archives_per_page":null,"excluded_namespaces":null,"cache_last_cleared":null}"""
+        val info = lrrJson.decodeFromString<LRRServerInfo>(json)
+        assertEquals("x", info.name)
+        assertEquals(100, info.archivesPerPage)
+        assertEquals(emptyList<String>(), info.excludedNamespaces)
+        assertEquals(0L, info.cacheLastCleared)
+    }
+
+    @Test
     fun parseIntegerBooleansFromOlderServers() {
         // Older LRR servers serialize these flags as integers (0/1) rather than
         // JSON booleans; the OpenAPI ServerInfo schema documents both. They must

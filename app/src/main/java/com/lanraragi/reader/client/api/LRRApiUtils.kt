@@ -94,8 +94,15 @@ private fun isOnServer(url: okhttp3.HttpUrl, baseDir: okhttp3.HttpUrl): Boolean 
 internal fun ByteArray.toHexLower(): String =
     joinToString("") { "%02x".format(it.toInt() and 0xFF) }
 
-/** Shared Json instance with lenient parsing. */
-internal val lrrJson = Json { ignoreUnknownKeys = true }
+/**
+ * Shared Json instance with lenient parsing: unknown keys are skipped, and a null
+ * or unknown enum value for a property with a default takes the default instead of
+ * failing the whole response (audit C47).
+ */
+internal val lrrJson = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+}
 
 /** Shared JSON media type constant. */
 internal val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaTypeOrNull()
