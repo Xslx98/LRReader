@@ -760,6 +760,7 @@
     <string name="lrr_plaintext_refused">API キーの送信を拒否しました: サーバー URL が無効か、スキームが一致しません</string>
     <string name="lrr_cleartext_refused_error">アプリのポリシーにより HTTP 平文リクエストが拒否されました。サーバー設定で「このサーバーを HTTP 平文で信頼する」を有効にするか、HTTPS を使用してください。</string>
     <string name="lrr_allow_cleartext_label">このサーバーを HTTP 平文で信頼する（LAN のみ）</string>
+    <string name="lrr_unencrypted_connection">暗号化なし（HTTP）</string>
     <string name="lrr_allow_cleartext_helper">サーバー URL が http:// の場合に必要です。信頼できる LAN ネットワークでのみ有効にしてください。</string>
     <string name="lrr_allow_cleartext_required">HTTP 平文通信には明示的な同意が必要です。チェックボックスをオンにするか、HTTPS を使用してください。</string>
     <string-array name="lrr_sort_by_entries">

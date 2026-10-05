@@ -856,6 +856,7 @@
     <string name="lrr_plaintext_refused">已拒绝发送 API 密钥：服务器 URL 无效或协议不匹配</string>
     <string name="lrr_cleartext_refused_error">应用策略已拒绝 HTTP 明文请求。请在服务器设置中启用「信任此服务器的 HTTP 明文连接」，或改用 HTTPS。</string>
     <string name="lrr_allow_cleartext_label">信任此服务器的 HTTP 明文连接（仅限局域网）</string>
+    <string name="lrr_unencrypted_connection">未加密（HTTP）</string>
     <string name="lrr_allow_cleartext_helper">当服务器地址使用 http:// 时需要启用。请仅在受信任的局域网中开启。</string>
     <string name="lrr_allow_cleartext_required">使用 HTTP 明文连接需要明确授权。请勾选复选框或改用 HTTPS。</string>
     <string name="lrr_save_and_connect">保存并连接</string>

@@ -879,6 +879,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_plaintext_refused">Envío de clave API rechazado: la URL del servidor es inválida o el esquema no coincide</string>
     <string name="lrr_cleartext_refused_error">Solicitud HTTP sin cifrar rechazada por la política de la aplicación. Habilite \"Confiar en este servidor por HTTP sin cifrar\" en la configuración del servidor o use HTTPS.</string>
     <string name="lrr_allow_cleartext_label">Confiar en este servidor por HTTP sin cifrar (solo LAN)</string>
+    <string name="lrr_unencrypted_connection">Sin cifrar (HTTP)</string>
     <string name="lrr_allow_cleartext_helper">Necesario cuando la URL del servidor usa http://. Active solo en redes LAN de confianza.</string>
     <string name="lrr_allow_cleartext_required">HTTP sin cifrar requiere consentimiento explícito. Marque la casilla o use HTTPS.</string>
     <string-array name="lrr_sort_by_entries">

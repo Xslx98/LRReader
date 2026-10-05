@@ -883,6 +883,7 @@ Cette action est irréversible.</string>
     <string name="lrr_plaintext_refused">Envoi de la clé API refusé : URL du serveur invalide ou schéma non concordant</string>
     <string name="lrr_cleartext_refused_error">Requête HTTP en clair refusée par la politique de l\'application. Activez « Faire confiance à ce serveur en HTTP non chiffré » dans les paramètres du serveur ou utilisez HTTPS.</string>
     <string name="lrr_allow_cleartext_label">Faire confiance à ce serveur en HTTP non chiffré (LAN uniquement)</string>
+    <string name="lrr_unencrypted_connection">Non chiffré (HTTP)</string>
     <string name="lrr_allow_cleartext_helper">Requis lorsque l\'URL du serveur utilise http://. N\'activez que sur les réseaux LAN de confiance.</string>
     <string name="lrr_allow_cleartext_required">Le HTTP non chiffré nécessite un consentement explicite. Cochez la case ou utilisez HTTPS.</string>
     <string-array name="lrr_sort_by_entries">

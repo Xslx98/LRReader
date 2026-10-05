@@ -48,6 +48,13 @@ object LRRUrlHelper {
     // ─────────────────────────────────────────────
 
     /**
+     * True when [url] is plain HTTP: the API key travels unencrypted, which
+     * the server list and the drawer header show (audit C27, ruling R11).
+     */
+    @JvmStatic
+    fun isUnencrypted(url: String): Boolean = url.trim().lowercase().startsWith("http://")
+
+    /**
      * Check if the URL points to a private / LAN address.
      *
      * A host counts as LAN only when it is `localhost`, an mDNS `*.local`

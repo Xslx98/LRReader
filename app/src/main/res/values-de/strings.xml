@@ -783,6 +783,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_plaintext_refused">API-Schlüsselübertragung abgelehnt: Server-URL ungültig oder Schema stimmt nicht überein</string>
     <string name="lrr_cleartext_refused_error">Unverschlüsselte HTTP-Anfrage von der App-Richtlinie abgelehnt. Aktivieren Sie „Diesem Server über unverschlüsseltes HTTP vertrauen" in den Servereinstellungen oder verwenden Sie HTTPS.</string>
     <string name="lrr_allow_cleartext_label">Diesem Server über unverschlüsseltes HTTP vertrauen (nur LAN)</string>
+    <string name="lrr_unencrypted_connection">Unverschlüsselt (HTTP)</string>
     <string name="lrr_allow_cleartext_helper">Erforderlich, wenn die Server-URL http:// verwendet. Nur in vertrauenswürdigen LAN-Netzwerken aktivieren.</string>
     <string name="lrr_allow_cleartext_required">Unverschlüsseltes HTTP erfordert ausdrückliche Zustimmung. Aktivieren Sie das Kontrollkästchen oder verwenden Sie HTTPS.</string>
     <string-array name="lrr_sort_by_entries">

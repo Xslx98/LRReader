@@ -60,6 +60,7 @@ import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DatabaseQuarantine
 import com.lanraragi.reader.module.AppModule
 import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.AnalyticsScene
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.ServerConfigScene
@@ -625,10 +626,16 @@ class MainActivity : StageActivity(),
         val host = parsed?.host.orEmpty()
         val port = parsed?.port?.takeIf { it != 80 && it != 443 }
         val hostPort = if (port != null) "$host:$port" else host
-        return if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
+        val line = if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
             profile.name
         } else {
             "${profile.name} · $hostPort"
+        }
+        // Plain HTTP: say so where the active server is always visible (audit C27).
+        return if (LRRUrlHelper.isUnencrypted(profile.url)) {
+            "$line · ${getString(R.string.lrr_unencrypted_connection)}"
+        } else {
+            line
         }
     }
 

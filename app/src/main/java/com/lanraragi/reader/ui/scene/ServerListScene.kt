@@ -294,6 +294,8 @@ class ServerListScene : BaseScene() {
             val profile = mProfiles[position]
             holder.name.text = profile.name
             holder.url.text = profile.url
+            holder.unencrypted.visibility =
+                if (LRRUrlHelper.isUnencrypted(profile.url)) View.VISIBLE else View.GONE
 
             // Highlight the currently active/connected server. Colors resolve from
             // the ACTIVITY THEME (manual in-app setting), never from -night
@@ -334,6 +336,7 @@ class ServerListScene : BaseScene() {
         val name: TextView = itemView.findViewById(R.id.server_name)
         val url: TextView = itemView.findViewById(R.id.server_url)
         val activeIcon: ImageView = itemView.findViewById(R.id.icon_active)
+        val unencrypted: TextView = itemView.findViewById(R.id.server_unencrypted)
     }
 
     // ===== DiffUtil =====
