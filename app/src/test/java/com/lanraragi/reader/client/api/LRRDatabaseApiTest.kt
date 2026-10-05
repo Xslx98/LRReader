@@ -111,4 +111,18 @@ class LRRDatabaseApiTest {
             // LRREmptyBodyException or serialization error — both acceptable
         }
     }
+
+    @Test
+    fun getTagStats_bodyDeclaredOverCap_isRejected() = runTest {
+        server.enqueue(
+            MockResponse().setBody("[]")
+                .setHeader("Content-Length", (MAX_JSON_BODY_BYTES + 1).toString())
+        )
+        try {
+            LRRDatabaseApi.getTagStats(client, baseUrl)
+            fail("Should have thrown")
+        } catch (e: LRRBodyTooLargeException) {
+            assertEquals(MAX_JSON_BODY_BYTES, e.limit)
+        }
+    }
 }

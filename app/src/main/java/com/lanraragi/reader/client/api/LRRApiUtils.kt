@@ -7,16 +7,22 @@ import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.serializer
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Response
+import java.io.FilterInputStream
 import java.io.IOException
+import java.io.InputStream
 import javax.net.ssl.SSLException
 
 /**
@@ -100,6 +106,59 @@ class LRREmptyBodyException : IOException()
 
 /** Thrown when a required field is missing from the server's JSON response. */
 class LRRMissingFieldException(field: String) : IOException("Missing field: $field")
+
+/**
+ * Upper bound for a JSON body decoded by [decodeJsonBody]. The largest
+ * response the app reads is `/api/database/stats`: ~10-20 MB of JSON for a
+ * 100k-archive library with per-archive unique tags (audit C41).
+ */
+internal const val MAX_JSON_BODY_BYTES: Long = 32L * 1024 * 1024
+
+/** Thrown when a JSON body is larger than the decode cap; permanent, never retried. */
+class LRRBodyTooLargeException(val limit: Long) : IOException("Response body exceeds $limit bytes")
+
+/**
+ * Decode the response body as JSON straight from the byte stream, so a large
+ * list never exists as one UTF-16 String next to its object graph. The body
+ * is cut off at [maxBytes] (declared Content-Length or bytes actually read).
+ */
+internal inline fun <reified T> decodeJsonBody(response: Response, maxBytes: Long = MAX_JSON_BODY_BYTES): T =
+    decodeJsonBody(response, serializer<T>(), maxBytes)
+
+@OptIn(ExperimentalSerializationApi::class)
+internal fun <T> decodeJsonBody(response: Response, deserializer: DeserializationStrategy<T>, maxBytes: Long): T {
+    val body = response.body ?: throw LRREmptyBodyException()
+    if (body.contentLength() > maxBytes) throw LRRBodyTooLargeException(maxBytes)
+    return CappedInputStream(body.byteStream(), maxBytes).use { lrrJson.decodeFromStream(deserializer, it) }
+}
+
+/** Throws [LRRBodyTooLargeException] once more than [limit] bytes have been read. */
+private class CappedInputStream(input: InputStream, private val limit: Long) : FilterInputStream(input) {
+    private var count = 0L
+
+    override fun read(): Int {
+        val b = super.read()
+        if (b >= 0) add(1)
+        return b
+    }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int {
+        val n = super.read(b, off, len)
+        if (n > 0) add(n.toLong())
+        return n
+    }
+
+    override fun skip(n: Long): Long {
+        val skipped = super.skip(n)
+        if (skipped > 0) add(skipped)
+        return skipped
+    }
+
+    private fun add(n: Long) {
+        count += n
+        if (count > limit) throw LRRBodyTooLargeException(limit)
+    }
+}
 
 /**
  * Thrown by [LRRAuthInterceptor] when the configured server URL is malformed
@@ -305,6 +364,7 @@ private fun isPermanentFailure(e: IOException): Boolean = when {
     e is LRRHttpException && e.code in 400..499 -> true
     e is LRRCleartextRefusedException -> true
     e is LRRPlaintextRefusedException -> true
+    e is LRRBodyTooLargeException -> true
     e is SSLException -> true
     else -> false
 }

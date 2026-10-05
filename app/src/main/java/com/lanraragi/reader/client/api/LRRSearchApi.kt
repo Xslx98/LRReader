@@ -62,9 +62,7 @@ object LRRSearchApi {
                     LRRSearchResult()
                 } else {
                     ensureSuccess(response)
-                    val body = response.body?.string()
-                        ?: throw LRREmptyBodyException()
-                    lrrJson.decodeFromString<LRRSearchResult>(body)
+                    decodeJsonBody<LRRSearchResult>(response)
                 }
             }
         }
@@ -103,9 +101,7 @@ object LRRSearchApi {
             .build()
         client.newCall(request).await().use { response ->
             ensureSuccess(response)
-            val body = response.body?.string()
-                ?: throw LRREmptyBodyException()
-            lrrJson.decodeFromString<LRRSearchResult>(body)
+            decodeJsonBody<LRRSearchResult>(response)
         }
     }
 

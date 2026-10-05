@@ -480,12 +480,9 @@
     <ID>UnreachableCode:LRRArchiveApi.kt$LRRArchiveApi$val jsonObj = Json.parseToJsonElement(body).jsonObject</ID>
     <ID>UnreachableCode:LRRArchiveApi.kt$LRRArchiveApi$val pages = jsonObj["pages"]?.jsonArray ?: throw LRRMissingFieldException("pages")</ID>
     <ID>UnreachableCode:LRRArchiveApi.kt$LRRArchiveApi$val success = jsonObj["success"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0</ID>
-    <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$lrrJson.decodeFromString&lt;List&lt;LRRCategory&gt;&gt;(body)</ID>
     <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$obj["category_id"]?.jsonPrimitive?.content ?: throw LRRMissingFieldException("category_id")</ID>
     <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$val obj = lrrJson.parseToJsonElement(body).jsonObject</ID>
-    <ID>UnreachableCode:LRRDatabaseApi.kt$LRRDatabaseApi$lrrJson.decodeFromString&lt;List&lt;LRRTagStat&gt;&gt;(body)</ID>
-    <ID>UnreachableCode:LRRDatabaseApi.kt$LRRDatabaseApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if ("file" != uni.uri.scheme) return false</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if (BuildConfig.DEBUG) { Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish") }</ID>
@@ -505,8 +502,6 @@
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$val jsonObj = Json.parseToJsonElement(body).jsonObject</ID>
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$val success = jsonObj["success"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0</ID>
-    <ID>UnreachableCode:LRRSearchApi.kt$LRRSearchApi$lrrJson.decodeFromString&lt;LRRSearchResult&gt;(body)</ID>
-    <ID>UnreachableCode:LRRSearchApi.kt$LRRSearchApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$ServerCapabilityCache.recordServerInfo(baseUrl, info)</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$info</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
@@ -520,8 +515,6 @@
     <ID>UnreachableCode:LRRStampApi.kt$LRRStampApi$val parsed = lrrJson.decodeFromString&lt;AddStampResult&gt;(body)</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$if (parsed.success != 1) throw IOException(parsed.error ?: "create_tankoubon failed")</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$lrrJson.decodeFromString&lt;ArchiveTankoubonsResult&gt;(body).tankoubons</ID>
-    <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$lrrJson.decodeFromString&lt;TankoubonFullResult&gt;(body)</ID>
-    <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$lrrJson.decodeFromString&lt;TankoubonListResult&gt;(body)</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$parsed.tankoubonId ?: throw LRRMissingFieldException("tankoubon_id")</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$val parsed = lrrJson.decodeFromString&lt;CreateTankoubonResult&gt;(body)</ID>

@@ -41,9 +41,7 @@ object LRRCategoryApi {
                 .build()
             client.newCall(request).await().use { response ->
                 ensureSuccess(response)
-                val body = response.body?.string()
-                    ?: throw LRREmptyBodyException()
-                lrrJson.decodeFromString<List<LRRCategory>>(body)
+                decodeJsonBody<List<LRRCategory>>(response)
             }
         }
     }
