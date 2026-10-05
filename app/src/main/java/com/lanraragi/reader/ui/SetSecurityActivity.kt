@@ -22,6 +22,7 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.CheckBox
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricManager
@@ -35,7 +36,7 @@ import kotlinx.coroutines.launch
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.settings.AppLockGate
-import com.lanraragi.reader.settings.PatternRules
+import com.lanraragi.reader.settings.PatternConfirmFlow
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
@@ -57,6 +58,8 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
     private var mCancel: View? = null
     private var mSet: View? = null
     private var mFingerprint: CheckBox? = null
+    private var mTip: TextView? = null
+    private val confirmFlow = PatternConfirmFlow()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,6 +70,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         mCancel = ViewUtils.`$$`(this, R.id.cancel)
         mSet = ViewUtils.`$$`(this, R.id.set)
         mFingerprint = ViewUtils.`$$`(this, R.id.fingerprint_checkbox) as CheckBox
+        mTip = ViewUtils.`$$`(this, R.id.tip) as TextView
 
         // Pattern is stored as a hash and cannot be recovered for display.
         // The view starts empty regardless of whether a pattern was previously set.
@@ -119,20 +123,26 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         } else if (v === mSet) {
             val patternView = mPatternView ?: return
             if (mFingerprint != null) {
-                when (PatternRules.decide(patternView.cellSize)) {
-                    PatternRules.Decision.CLEAR -> savePattern("")
-                    PatternRules.Decision.SAVE -> savePattern(patternView.patternString)
-                    PatternRules.Decision.TOO_SHORT -> {
-                        patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
-                        Toast.makeText(
-                            this,
-                            getString(R.string.set_pattern_too_short),
-                            Toast.LENGTH_SHORT,
-                        ).show()
+                when (val step = confirmFlow.onSet(patternView.cellSize, patternView.patternString)) {
+                    PatternConfirmFlow.Step.Clear -> savePattern("")
+                    is PatternConfirmFlow.Step.Save -> savePattern(step.pattern)
+                    PatternConfirmFlow.Step.TooShort -> rejectDraw(patternView, R.string.set_pattern_too_short)
+                    PatternConfirmFlow.Step.ConfirmNext -> {
+                        patternView.clearPattern()
+                        mTip?.setText(R.string.set_pattern_confirm)
+                    }
+                    PatternConfirmFlow.Step.Mismatch -> {
+                        rejectDraw(patternView, R.string.set_pattern_mismatch)
+                        mTip?.setText(R.string.set_pattern_protection_tip)
                     }
                 }
             }
         }
+    }
+
+    private fun rejectDraw(patternView: LockPatternView, message: Int) {
+        patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
+        Toast.makeText(this, getString(message), Toast.LENGTH_SHORT).show()
     }
 
     private fun savePattern(security: String) {

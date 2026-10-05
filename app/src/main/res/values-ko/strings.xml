@@ -283,6 +283,8 @@
     <string name="set_pattern_protection">패턴 보호 사용</string>
     <string name="set_pattern_protection_tip">패턴 보호를 사용하려면 패턴을 그리세요.\n비워두면 패턴 보호가 해제됩니다.</string>
     <string name="set_pattern_too_short">4개 이상의 점을 연결하세요</string>
+    <string name="set_pattern_confirm">확인을 위해 같은 패턴을 다시 그리세요</string>
+    <string name="set_pattern_mismatch">패턴이 일치하지 않습니다. 새 패턴을 그리세요.</string>
     <string name="set">지정</string>
     <string name="enable_fingerprint">지문으로 잠금 해제 허용</string>
 

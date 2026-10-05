@@ -375,6 +375,8 @@
     <string name="set_pattern_protection">Set pattern protection</string>
     <string name="set_pattern_protection_tip">Draw a pattern to set pattern protection\nLeave blank to clear pattern protection</string>
     <string name="set_pattern_too_short">Connect at least 4 dots</string>
+    <string name="set_pattern_confirm">Draw the same pattern again to confirm</string>
+    <string name="set_pattern_mismatch">The patterns do not match. Draw a new pattern.</string>
     <string name="set">Set</string>
     <string name="enable_fingerprint">Also allow fingerprint unlock</string>
 

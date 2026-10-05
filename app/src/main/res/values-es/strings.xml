@@ -289,6 +289,8 @@
     <string name="set_pattern_protection">Establecer protección por patrón</string>
     <string name="set_pattern_protection_tip">Dibuje un patrón para establecer la protección por patrón\nDeje en blanco para quitar la protección por patrón</string>
     <string name="set_pattern_too_short">Conecta al menos 4 puntos</string>
+    <string name="set_pattern_confirm">Vuelve a dibujar el mismo patrón para confirmar</string>
+    <string name="set_pattern_mismatch">Los patrones no coinciden. Dibuja un patrón nuevo.</string>
     <string name="set">Establecer</string>
     <string name="enable_fingerprint">También permitir desbloqueo con huella digital</string>
 

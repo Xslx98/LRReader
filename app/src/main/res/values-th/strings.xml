@@ -282,6 +282,8 @@
     <string name="set_pattern_protection">ตั้้งการป้องกันแบบรูปแบบ</string>
     <string name="set_pattern_protection_tip">ลากรูปแบบเพื่อตั้งค่าการป้องกันแบบรูปแบบ\nเว้นว้างไว้เพื่อลบการป้องกันแบบรูปแบบ</string>
     <string name="set_pattern_too_short">เชื่อมต่ออย่างน้อย 4 จุด</string>
+    <string name="set_pattern_confirm">วาดรูปแบบเดิมอีกครั้งเพื่อยืนยัน</string>
+    <string name="set_pattern_mismatch">รูปแบบไม่ตรงกัน โปรดวาดรูปแบบใหม่</string>
     <string name="set">กำหนด</string>
     <string name="enable_fingerprint">อนุญาตใช้สแกนลายนิ้วมือเพื่อปลดล็อกเช่นกัน</string>
 
