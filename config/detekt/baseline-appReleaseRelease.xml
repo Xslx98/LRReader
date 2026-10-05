@@ -41,7 +41,6 @@
     <ID>CyclomaticComplexMethod:ReaderPageCache.kt$ReaderPageCache$@Throws(IOException::class) fun downloadToFile( client: OkHttpClient, url: String, cacheFile: File, pageIndex: Int = 0, progressCallback: ProgressCallback? = null, onCallCreated: ((Call) -&gt; Unit)? = null )</ID>
     <ID>CyclomaticComplexMethod:ReaderPageCache.kt$ReaderPageCache$fun validateImageFile(file: File): Boolean</ID>
     <ID>CyclomaticComplexMethod:SearchBar.kt$SearchBar$private fun updateSuggestions(scrollToTop: Boolean = true)</ID>
-    <ID>CyclomaticComplexMethod:TagTranslationDatabase.kt$TagTranslationDatabase.Companion$@JvmStatic fun update(context: Context)</ID>
     <ID>DoubleMutabilityForCollection:AppDrawerLayout.kt$AppDrawerLayout$private var mAboveSnackViewList: MutableList&lt;View&gt;? = null</ID>
     <ID>DoubleMutabilityForCollection:ArchiveCoverStamps.kt$ArchiveCoverStamps$@Volatile private var loaded: MutableMap&lt;String, Long&gt;? = null</ID>
     <ID>DoubleMutabilityForCollection:DownloadRepository.kt$DownloadRepository$var list = getInfoListForLabel(info.label)</ID>
