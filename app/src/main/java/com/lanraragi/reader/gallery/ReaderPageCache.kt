@@ -10,6 +10,7 @@ import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
+import com.lanraragi.reader.util.CacheBudget
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,7 +56,6 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
      * files only appear under their final name via an atomic rename.
      */
     const val MIN_IMAGE_SIZE = 16L
-    const val MAX_TOTAL_CACHE_BYTES = 500L * 1024L * 1024L // 500MB total limit
     private const val DETAIL_PRELOAD_RADIUS = 1 // Pages before and after the progress page
 
     /**
@@ -293,9 +293,10 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
 
     /**
      * Evict oldest archive cache directories until total size is within limit.
-     * Uses SharedPreferences access time as LRU indicator.
+     * Uses SharedPreferences access time as LRU indicator. The default limit
+     * is 500 MB, smaller when the cache quota is ([CacheBudget]).
      */
-    fun cleanupOldCaches(context: Context, maxTotalBytes: Long = MAX_TOTAL_CACHE_BYTES) {
+    fun cleanupOldCaches(context: Context, maxTotalBytes: Long = CacheBudget.readerPages(context)) {
         val appContext = context.applicationContext
         val parentDir = File(appContext.cacheDir, CACHE_PARENT)
         if (!parentDir.exists() || !parentDir.isDirectory) return

@@ -32,7 +32,7 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
     }
 
     override val cache: Cache by lazy {
-        Cache(File(context.cacheDir, "http_cache"), 200L * 1024L * 1024L)
+        Cache(File(context.cacheDir, "http_cache"), com.lanraragi.reader.util.CacheBudget.http(context))
     }
 
     override val proxySelector: AppProxySelector by lazy { AppProxySelector() }
