@@ -69,10 +69,7 @@
 
 
     <string name="press_twice_exit">Presione una vez más para salir</string>
-    <string name="analytics_explain">¿Le importaría si el desarrollador recopila información de su dispositivo y su uso? Ayudará mucho al desarrollador.&lt;br&gt;&lt;br&gt;El servicio de análisis de datos es proporcionado por Google Analytics for Firebase. Su política de privacidad se puede encontrar en &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;Si acepta unirse al análisis de datos, se recopilará información de su dispositivo y su uso, incluida pero no limitada a la versión de la API de Android, modelo del equipo, residencia de idioma, versión de la aplicación, tiempo de conversión, tiempos de función. El desarrollador promete que esta información NO se recopilará, incluido el número de teléfono, dirección de correo electrónico, IMEI.&lt;br&gt;&lt;br&gt;Su información no se recopilará hasta que acepte unirse al análisis de datos.&lt;br&gt;&lt;br&gt;La información recopilada será analizada por Google Analytics for Firebase. El informe de análisis solo puede ser visto por el desarrollador de esta aplicación.</string>
     <string name="get_it">Entendido</string>
-    <string name="accept">Aceptar</string>
-    <string name="reject">Rechazar</string>
 
 
     <!-- Select scene -->
@@ -291,6 +288,7 @@
     <!-- Set Security -->
     <string name="set_pattern_protection">Establecer protección por patrón</string>
     <string name="set_pattern_protection_tip">Dibuje un patrón para establecer la protección por patrón\nDeje en blanco para quitar la protección por patrón</string>
+    <string name="set_pattern_too_short">Conecta al menos 4 puntos</string>
     <string name="set">Establecer</string>
     <string name="enable_fingerprint">También permitir desbloqueo con huella digital</string>
 
@@ -879,6 +877,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_plaintext_refused">Envío de clave API rechazado: la URL del servidor es inválida o el esquema no coincide</string>
     <string name="lrr_cleartext_refused_error">Solicitud HTTP sin cifrar rechazada por la política de la aplicación. Habilite \"Confiar en este servidor por HTTP sin cifrar\" en la configuración del servidor o use HTTPS.</string>
     <string name="lrr_allow_cleartext_label">Confiar en este servidor por HTTP sin cifrar (solo LAN)</string>
+    <string name="lrr_unencrypted_connection">Sin cifrar (HTTP)</string>
     <string name="lrr_allow_cleartext_helper">Necesario cuando la URL del servidor usa http://. Active solo en redes LAN de confianza.</string>
     <string name="lrr_allow_cleartext_required">HTTP sin cifrar requiere consentimiento explícito. Marque la casilla o use HTTPS.</string>
     <string-array name="lrr_sort_by_entries">

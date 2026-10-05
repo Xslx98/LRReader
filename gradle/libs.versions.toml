@@ -25,15 +25,15 @@ preference = "1.2.1"
 recyclerview = "1.4.0"
 room = "2.8.4"
 # Upgraded from 1.1.0-alpha06 to stable 1.1.0 (released 2025-07-30).
-# Note: library deprecated in 1.1.0-beta01 — future migration to DataStore+Tink planned.
+# Deprecated in 1.1.0-beta01. Since audit 2026-10-04 C49 credentials live in KeystoreSecurePrefs;
+# this library is kept ONLY to read the legacy EncryptedSharedPreferences store once on upgrade
+# (LRRAuthManager.migrateLegacyStore). Remove it once no supported upgrade path predates v1.28.
 # Ref: https://developer.android.com/jetpack/androidx/releases/security
 security-crypto = "1.1.0"
 test-core = "1.7.0"
 
 # --- Google ---
 material = "1.14.0"
-firebase-crashlytics-plugin = "3.0.7"
-google-services = "4.5.0"
 
 # --- Kotlin/JetBrains ---
 coroutines = "1.11.0"
@@ -109,10 +109,8 @@ pagination-sxj = { module = "com.github.xiaojieonly:Pagination_Sxj", version = "
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-plugin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

@@ -119,4 +119,13 @@ class LRRUrlHelperLanAddressTest {
         assertFalse(LRRUrlHelper.isInsecureWanUrl("http://localhost:3000"))
     @Test fun insecureWan_httpDotLocal_secure() =
         assertFalse(LRRUrlHelper.isInsecureWanUrl("http://myserver.local:3000"))
+
+    // Audit C27 (ruling R11): the "unencrypted" label follows the scheme only.
+    @Test
+    fun isUnencrypted_followsTheScheme() {
+        assertTrue(LRRUrlHelper.isUnencrypted("http://192.168.1.10:3000"))
+        assertTrue(LRRUrlHelper.isUnencrypted(" HTTP://lrr.example.com"))
+        assertFalse(LRRUrlHelper.isUnencrypted("https://lrr.example.com"))
+        assertFalse(LRRUrlHelper.isUnencrypted("lrr.example.com"))
+    }
 }

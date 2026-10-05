@@ -187,14 +187,11 @@ class ServerListViewModelTest {
     }
 
     @Test
-    fun testAndAddProfile_resolvesHttp_persistsCleartextAllowedSoProfileStaysUsable() {
-        // A profile that resolves to plain HTTP must be persisted with
-        // allowCleartext = true regardless of the gate flag, or the production
-        // LRRCleartextRejectionInterceptor refuses every request to it. The
-        // gate flag governs only the WAN-leak refusal (covered in
-        // LRRUrlHelperConnectTest); the persisted flag must track the resolved
-        // scheme. Passing allowCleartext = false here (LAN, gate-exempt) proves
-        // the saved flag is not simply the passed-in value.
+    fun testAndAddProfile_resolvesHttpOnLan_persistsOnlyTheUserConsent() {
+        // Audit C27 (ruling R11): the persisted flag is the user's consent,
+        // not the resolved scheme. A LAN HTTP profile added without ticking
+        // the box stays usable because the interceptor admits LAN hosts
+        // (LRRCleartextRejectionInterceptorTest / InterceptorProfilePathTest).
         server.enqueue(
             MockResponse().setResponseCode(200)
                 .setBody("""{"name":"Mock","version":"0.9.8","archives_per_page":100}""")
@@ -210,7 +207,7 @@ class ServerListViewModelTest {
         }
 
         val saved = runBlocking { db.miscDao().getAllServerProfiles() }.first { it.url == url }
-        assertTrue("HTTP-resolved profile must persist allowCleartext=true", saved.allowCleartext)
+        assertFalse("no consent given, none may be recorded", saved.allowCleartext)
     }
 
     @Test

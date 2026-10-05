@@ -210,7 +210,7 @@ class ServerListViewModel : ViewModel() {
             ) {
                 is LRRUrlHelper.ConnectResult.Success ->
                     saveEditedProfile(
-                        profile, position, newName, r.resolvedUrl, newKey, r.usedHttpFallback
+                        profile, position, newName, r.resolvedUrl, newKey, r.usedHttpFallback, allowCleartext
                     )
                 is LRRUrlHelper.ConnectResult.Failure ->
                     _uiEvent.tryEmit(ServerListUiEvent.EditConnectionFailed(r.error))
@@ -224,18 +224,18 @@ class ServerListViewModel : ViewModel() {
         newName: String,
         resolvedUrl: String,
         newKey: String,
-        usedHttpFallback: Boolean
+        usedHttpFallback: Boolean,
+        allowCleartext: Boolean
     ) {
-        // The persisted cleartext flag tracks the resolved scheme: an HTTP
-        // resolution must be allowed cleartext or LRRCleartextRejectionInterceptor
-        // refuses the profile's traffic; an HTTPS resolution needs no grant. The
-        // gate already enforced the user's consent for a WAN downgrade.
+        // The persisted cleartext flag is the user's consent from the dialog
+        // (audit C27, ruling R11); LAN hosts need none — the interceptor
+        // admits them like the connect gate does.
         val updated = ServerProfile(
             id = profile.id,
             name = newName,
             url = resolvedUrl,
             isActive = profile.isActive,
-            allowCleartext = resolvedUrl.lowercase().startsWith("http://")
+            allowCleartext = allowCleartext
         )
         val isActive = profile.isActive
         viewModelScope.launch {
@@ -327,7 +327,7 @@ class ServerListViewModel : ViewModel() {
                 )
             ) {
                 is LRRUrlHelper.ConnectResult.Success ->
-                    performAddProfile(name, r.resolvedUrl, finalKey, r.info, r.usedHttpFallback)
+                    performAddProfile(name, r.resolvedUrl, finalKey, r.info, r.usedHttpFallback, allowCleartext)
                 is LRRUrlHelper.ConnectResult.Failure ->
                     _uiEvent.tryEmit(ServerListUiEvent.AddConnectionFailed(r.error))
             }
@@ -339,15 +339,12 @@ class ServerListViewModel : ViewModel() {
         resolvedUrl: String,
         finalKey: String?,
         info: LRRServerInfo,
-        usedHttpFallback: Boolean
+        usedHttpFallback: Boolean,
+        allowCleartext: Boolean
     ) {
-        // The persisted cleartext flag tracks the resolved scheme, not the
-        // gate opt-in: a profile that resolved to HTTP must be allowed
-        // cleartext or LRRCleartextRejectionInterceptor refuses all its
-        // traffic; an HTTPS profile needs no cleartext grant. The gate
-        // (connectWithFallback's allowCleartext) already refused any
-        // unconsented WAN-cleartext resolution before reaching here.
-        val savedAllowCleartext = resolvedUrl.lowercase().startsWith("http://")
+        // The persisted cleartext flag is the user's consent (audit C27,
+        // ruling R11), not the resolved scheme; LAN hosts need none.
+        val savedAllowCleartext = allowCleartext
 
         viewModelScope.launch {
             try {

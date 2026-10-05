@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.settings.AppLockGate
+import com.lanraragi.reader.settings.PatternRules
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
@@ -118,12 +119,18 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         } else if (v === mSet) {
             val patternView = mPatternView ?: return
             if (mFingerprint != null) {
-                val security = if (patternView.cellSize <= 1) {
-                    ""
-                } else {
-                    patternView.patternString
+                when (PatternRules.decide(patternView.cellSize)) {
+                    PatternRules.Decision.CLEAR -> savePattern("")
+                    PatternRules.Decision.SAVE -> savePattern(patternView.patternString)
+                    PatternRules.Decision.TOO_SHORT -> {
+                        patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
+                        Toast.makeText(
+                            this,
+                            getString(R.string.set_pattern_too_short),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
                 }
-                savePattern(security)
             }
         }
     }

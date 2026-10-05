@@ -66,10 +66,7 @@
     <string name="gallery_gl_fallback_toast">OpenGL non disponible, impossible d\'afficher la galerie</string>
 
     <string name="press_twice_exit">Appuyez encore une fois pour quitter</string>
-    <string name="analytics_explain">Ça vous dérange si le développeur rassemble vos informations de l\'appareil et votre usage de l\'application ? Les informations sont très utiles pour le développeur.&lt;br&gt;&lt;br&gt;L\'analyse de données est fournie par Google Analytics for Firebase. Sa politique de confidentialité se trouve à &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;Si vous acceptez d\'aider l\'analyse données, vos informations de l\'appareil seront rassemblées, y compris, mais sans s\'y limiter, votre version API Android, modèle de l\'appareil, les durées de sessions et usages.&lt;br&gt;&lt;br&gt;Le développeur vous promet à ne rassembler AUCUNE donnée à moins que vous ne l\'acceptiez.&lt;br&gt;&lt;br&gt;Les données rassemblées seront analysées à l\'aide de  Google Analytics for Firebase. Le rapport d\'analyse ne peut être lu que par le développeur de l\'application.</string>
     <string name="get_it">Compris</string>
-    <string name="accept">Accepter</string>
-    <string name="reject">Rejéter</string>
 
 
     <!-- Select scene -->
@@ -291,6 +288,7 @@
     <!-- Set Security -->
     <string name="set_pattern_protection">Définir le modèle de déverrouillage</string>
     <string name="set_pattern_protection_tip">Dessinez un modèle pour définir le modèle de déverrouillage\nContinuer sans rien dessiner pour effacer le modèle</string>
+    <string name="set_pattern_too_short">Reliez au moins 4 points</string>
     <string name="set">Définir</string>
     <string name="enable_fingerprint">Permettre le déverrouillage avec l\'empreinte digitale</string>
 
@@ -883,6 +881,7 @@ Cette action est irréversible.</string>
     <string name="lrr_plaintext_refused">Envoi de la clé API refusé : URL du serveur invalide ou schéma non concordant</string>
     <string name="lrr_cleartext_refused_error">Requête HTTP en clair refusée par la politique de l\'application. Activez « Faire confiance à ce serveur en HTTP non chiffré » dans les paramètres du serveur ou utilisez HTTPS.</string>
     <string name="lrr_allow_cleartext_label">Faire confiance à ce serveur en HTTP non chiffré (LAN uniquement)</string>
+    <string name="lrr_unencrypted_connection">Non chiffré (HTTP)</string>
     <string name="lrr_allow_cleartext_helper">Requis lorsque l\'URL du serveur utilise http://. N\'activez que sur les réseaux LAN de confiance.</string>
     <string name="lrr_allow_cleartext_required">Le HTTP non chiffré nécessite un consentement explicite. Cochez la case ou utilisez HTTPS.</string>
     <string-array name="lrr_sort_by_entries">

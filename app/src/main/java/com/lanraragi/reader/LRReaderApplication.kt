@@ -415,10 +415,6 @@ class LRReaderApplication : RecordingApplication() {
             }
         }
 
-        if (PrivacySettings.getEnableAnalytics()) {
-            Analytics.start(this)
-        }
-
         // Re-prompt the security pattern whenever the whole app returns from
         // background. ProcessLifecycleOwner debounces by ~700 ms, so config
         // changes (rotation), the notification shade, BiometricPrompt, and
@@ -454,9 +450,9 @@ class LRReaderApplication : RecordingApplication() {
             }
 
             try {
-                AppConfig.deleteOldParseErrorFiles()
+                AppConfig.purgeLegacyParseErrorDir()
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to delete old parse error files", e)
+                Log.e(TAG, "Failed to delete the legacy parse error dir", e)
             }
 
             // Migrate downloads from old app-private path to user-visible location.

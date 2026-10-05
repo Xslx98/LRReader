@@ -21,6 +21,7 @@ import android.os.Bundle
 import androidx.preference.Preference
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
+import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.settings.AppearanceSettings
 
 class AppearanceFragment : BasePreferenceFragmentCompat(),
@@ -32,10 +33,12 @@ class AppearanceFragment : BasePreferenceFragmentCompat(),
         val theme = findPreference<Preference>(AppearanceSettings.KEY_THEME)
         val themeAutoSwitch = findPreference<Preference>(AppearanceSettings.KEY_THEME_AUTO_SWITCH)
         val listMode = findPreference<Preference>(AppearanceSettings.KEY_LIST_MODE)
+        val tagTranslations = findPreference<Preference>(AppearanceSettings.KEY_SHOW_TAG_TRANSLATIONS)
 
         theme?.onPreferenceChangeListener = this
         themeAutoSwitch?.onPreferenceChangeListener = this
         listMode?.onPreferenceChangeListener = this
+        tagTranslations?.onPreferenceChangeListener = this
     }
 
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
@@ -53,6 +56,13 @@ class AppearanceFragment : BasePreferenceFragmentCompat(),
                 AppearanceSettings.getDarkModeStatus(requireContext())
             )
             (requireActivity().application as LRReaderApplication).recreate()
+            return true
+        } else if (AppearanceSettings.KEY_SHOW_TAG_TRANSLATIONS == key && java.lang.Boolean.TRUE == newValue) {
+            // The dataset is only fetched while translations are on (audit
+            // C26): fetch it now rather than on the next launch. Posted so the
+            // new value is persisted before update() reads it.
+            val appContext = requireContext().applicationContext
+            listView.post { TagTranslationDatabase.update(appContext) }
             return true
         }
         return true

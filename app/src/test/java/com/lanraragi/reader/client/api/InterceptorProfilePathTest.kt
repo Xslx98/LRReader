@@ -137,6 +137,17 @@ class InterceptorProfilePathTest {
         assertRefused<LRRPlaintextRefusedException>(authClient, "http://user:pw@$host:$port/api/info")
     }
 
+    // Audit C48 / SEC-08: same host:port but outside the profile's base path —
+    // another app on the host, or a server URL escaping its instance.
+    @Test
+    fun auth_pathOutsideTheProfileBasePath_getsNoKey() {
+        addProfile("http://$host:$port/lrr-a", key = "profile-key")
+
+        sendThroughMock(authClient, "http://$host:$port/other-app/api/info")
+
+        assertNull(server.awaitRequest().getHeader("Authorization"))
+    }
+
     @Test
     fun auth_profileWithoutAKey_passesThroughUnauthenticated() {
         addProfile("http://$host:$port", key = null)
@@ -158,10 +169,24 @@ class InterceptorProfilePathTest {
     }
 
     @Test
-    fun cleartext_profileWithoutConsent_isRefused() {
+    fun cleartext_wanProfileWithoutConsent_isRefused() {
+        // Refused before any connection: the gate is an application interceptor.
+        addProfile("http://lrr.example.com:$port", key = null, allowCleartext = false)
+
+        assertRefused<LRRCleartextRefusedException>(cleartextClient, "http://lrr.example.com:$port/api/info")
+    }
+
+    /**
+     * Audit C27 (ruling R11): allowCleartext is the user's consent only; a LAN
+     * host needs none, exactly as in the connect gate.
+     */
+    @Test
+    fun cleartext_lanProfileWithoutConsent_passes() {
         addProfile("http://$host:$port", key = null, allowCleartext = false)
 
-        assertRefused<LRRCleartextRefusedException>(cleartextClient, "http://$host:$port/api/info")
+        sendThroughMock(cleartextClient, "http://$host:$port/api/info")
+
+        server.awaitRequest()
     }
 
     @Test

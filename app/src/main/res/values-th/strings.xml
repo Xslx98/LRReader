@@ -73,10 +73,7 @@
 
 
     <string name="press_twice_exit">กดสองครั้งเพื่อออก</string>
-    <string name="analytics_explain">จะว่าอะไรไหมถ้านักพัฒนาจะขออนุญาตรวบรวมข้อมูลอุปกรณ์และประวัติการใช้งานแอปนี้ของคุณ? มันจะช่วยนักพัฒนาอย่างมากเลยนะ&lt;br&gt;&lt;br&gt;บริการวิเคราะห์ข้อมูลที่เราใช้นั้นเป็นบริการของ Google Analytics สำหรับ Firebase ในส่วนของนโยบายความเป็นส่วนตัวเราใช้ตามที่อยู่ในลิงค์ &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;&lt;br&gt;&lt;br&gt;ถ้าคุณยินยอมการส่งข้อมูลวิเคราะห์นี้ ทั้งข้อมูลอุปกรณ์และประวัติการใช้งานแอปนี้ของคุณจะถูกจัดเก็บ รวมไปถึงแต่ไม่จำกัดเพียงแค่เวอร์ชั่น API ของ Android, แบบจำลองอุปกรณ์, ภาษาของผู้ใช้, เวอร์ชั่นของแอปพลิเคชั่น, เวลาในการใช้งาน, และจำนวนฟังก์ชั่นที่ใช้ นักพัฒนาขอให้คำมั่นสัญญาว่าเราจะไม่เก็บข้อมูลส่วนตัวของผู้ใช้ไม่ว่าจะเบอร์มือถือ, อีเมล, และหมายเลข IMEI&lt;br&gt;&lt;br&gt;ข้อมูลของคุณจะไม่ถูกจัดเก็บจนกว่าจะกดปุ่ม \'ยินยอม\' ให้จัดเก็บเพื่อนำมาวิเคราะห์ข้อมูล&lt;br&gt;&lt;br&gt;การจัดเก็บข้อมูลจะถูกวิเคราะห์โดยบริการ Google Analytics สำหรับ Firebase รายงานการวิเคราะห์ข้อมูลจะสามารถดูได้เพียงนักพัฒนาของแอปนี้เพียงคนเดียวเท่านั้น</string>
     <string name="get_it">เข้าใจแล้ว ไม่ต้องแสดงอีก</string>
-    <string name="accept">ยินยอม</string>
-    <string name="reject">ไม่ยินยอม</string>
 
 
     <!-- Select scene -->
@@ -284,6 +281,7 @@
     <!-- Set Security -->
     <string name="set_pattern_protection">ตั้้งการป้องกันแบบรูปแบบ</string>
     <string name="set_pattern_protection_tip">ลากรูปแบบเพื่อตั้งค่าการป้องกันแบบรูปแบบ\nเว้นว้างไว้เพื่อลบการป้องกันแบบรูปแบบ</string>
+    <string name="set_pattern_too_short">เชื่อมต่ออย่างน้อย 4 จุด</string>
     <string name="set">กำหนด</string>
     <string name="enable_fingerprint">อนุญาตใช้สแกนลายนิ้วมือเพื่อปลดล็อกเช่นกัน</string>
 
@@ -824,6 +822,7 @@
     <string name="lrr_plaintext_refused">ปฏิเสธการส่งคีย์ API: URL ของเซิร์ฟเวอร์ไม่ถูกต้องหรือสคีมไม่ตรงกัน</string>
     <string name="lrr_cleartext_refused_error">คำขอ HTTP แบบข้อความธรรมดาถูกปฏิเสธโดยนโยบายแอป เปิดใช้งาน \"เชื่อถือเซิร์ฟเวอร์นี้ผ่าน HTTP แบบข้อความธรรมดา\" ในการตั้งค่าเซิร์ฟเวอร์ หรือใช้ HTTPS</string>
     <string name="lrr_allow_cleartext_label">เชื่อถือเซิร์ฟเวอร์นี้ผ่าน HTTP แบบข้อความธรรมดา (LAN เท่านั้น)</string>
+    <string name="lrr_unencrypted_connection">ไม่เข้ารหัส (HTTP)</string>
     <string name="lrr_allow_cleartext_helper">จำเป็นเมื่อ URL ของเซิร์ฟเวอร์ใช้ http:// เปิดใช้งานเฉพาะในเครือข่าย LAN ที่เชื่อถือได้เท่านั้น</string>
     <string name="lrr_allow_cleartext_required">HTTP แบบข้อความธรรมดาต้องได้รับความยินยอมอย่างชัดแจ้ง ทำเครื่องหมายในช่องหรือใช้ HTTPS</string>
     <string-array name="lrr_sort_by_entries">

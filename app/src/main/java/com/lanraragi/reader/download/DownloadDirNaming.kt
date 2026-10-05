@@ -24,8 +24,19 @@ object DownloadDirNaming {
      */
     fun baseName(arcid: String, title: String?): String {
         val sanitised = title?.let { FileUtils.sanitizeFilename(it) }.orEmpty().trim()
-        return if (sanitised.all { it == '.' }) arcid else sanitised
+        return if (sanitised.all { it == '.' }) safeFallback(arcid) else sanitised
     }
+
+    /**
+     * The arcid is server data too (audit C48 / SEC-09): it goes through the
+     * same sanitiser and segment check before naming a directory.
+     */
+    private fun safeFallback(arcid: String): String {
+        val name = FileUtils.sanitizeFilename(arcid).trim()
+        return if (isSafeName(name) && !name.all { it == '.' }) name else FALLBACK_NAME
+    }
+
+    private const val FALLBACK_NAME = "archive"
 
     /**
      * Whether [name] is a single child segment of the download root. A

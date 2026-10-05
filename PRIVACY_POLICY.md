@@ -1,6 +1,6 @@
 # Privacy Policy - LR Reader | 隐私政策
 
-**生效日期 | Effective Date:** 2026-10-04
+**生效日期 | Effective Date:** 2026-10-05
 
 LR Reader（以下简称"本应用"）是一个开源的 LANraragi Android 客户端，用于连接用户自建的漫画/档案管理服务器。本隐私政策说明应用如何处理您的数据。
 
@@ -8,24 +8,25 @@ LR Reader ("the App") is an open-source Android client for LANraragi, a self-hos
 
 ## 数据收集 | Data Collection
 
-**LR Reader 不收集、传输或在外部服务器存储任何个人数据。**
+**本应用的开发者不收集、也不接收您的任何个人数据。** 本应用没有自己的服务器，也不包含分析、广告或崩溃上报 SDK。
 
-**LR Reader does not collect, transmit, or store any personal data on external servers.**
+**The App's developer does not collect or receive any personal data from you.** The App has no server of its own and contains no analytics, advertising or crash-reporting SDK.
 
-所有数据仅保留在您的设备或您配置的 LANraragi 服务器上。
+您的数据保存在您的设备和您配置的 LANraragi 服务器上。本应用会联系的其他地址见下方「网络通信」。
 
-All data remains on your device or on the LANraragi server that you configure.
+Your data stays on your device and on the LANraragi server(s) you configure. The other addresses the App contacts are listed under "Network Communication" below.
 
 ## 本地存储的数据 | Data Stored Locally
 
-本应用仅在您的设备上存储以下数据：
+本应用在您的设备上存储以下数据：
 
-The App stores the following data only on your device:
+The App stores the following data on your device:
 
-- **服务器连接信息 / Server connection details** (URL, API key) - 通过 Android EncryptedSharedPreferences 加密存储 / encrypted via EncryptedSharedPreferences
-- **阅读历史和偏好设置 / Reading history and preferences** - 存储在本地 SQLite 数据库中 / stored in a local SQLite database
-- **缓存图像 / Cached images** - 用于提升性能的临时文件，自动清理 / temporary files, automatically cleaned up
-- **头像和背景图片 / Avatar and background images** - 用户自定义的个人资料图片 / user-customized profile images
+- **服务器连接信息 / Server connection details** (URL, API key) - API 密钥与应用锁图案使用保存在 Android 密钥库（Android Keystore）中的密钥加密存储 / the API key and the app-lock pattern are stored encrypted with a key kept in the Android Keystore
+- **阅读历史、进度与偏好设置 / Reading history, progress and preferences** - 存储在本地数据库与设置中 / stored in a local database and in the app settings
+- **下载的档案 / Downloaded archives** - 保存在您选择的下载位置，直到您删除 / kept in the download location you choose until you delete them
+- **缓存 / Caches** - 阅读页面、缩略图和网络响应的缓存，大小有上限并随系统分配的缓存配额缩小，可在系统的应用信息中清除，系统空间不足时也可能自动清理 / caches of reader pages, thumbnails and network responses; their sizes are capped and shrink with the cache quota the system grants, they can be cleared from the system app info screen, and the system may clear them when storage runs low
+- **标签翻译数据 / Tag translation data** - 仅在显示标签翻译时下载（见下文）/ downloaded only while tag translations are shown (see below)
 - **崩溃与诊断报告 / Crash and diagnostic reports** - 默认开启，仅保存在应用私有目录（每类最近 5 份），可在「设置 → 高级」关闭；内容为错误堆栈、设备型号与系统版本、应用版本及近期脱敏事件，不含服务器地址、API 密钥或档案标题 / on by default, kept only in the app-private directory (the newest 5 of each kind) and can be turned off in Settings → Advanced; they contain error stack traces, device model and OS version, app version and recent redacted events, never server addresses, API keys or archive titles
 
 ## 诊断信息分享 | Sharing Diagnostics
@@ -36,23 +37,35 @@ The App never uploads reports on its own. Only when you tap "Share diagnostics" 
 
 ## 网络通信 | Network Communication
 
-本应用仅与您明确配置的 LANraragi 服务器通信。不会向任何第三方服务、分析平台或广告网络发送数据。
+本应用会联系以下地址。除您自己的服务器外，这些请求会让 GitHub（及相应仓库的所有者）看到您的 IP 地址和请求时间，但不包含您的服务器信息、API 密钥或阅读内容。
 
-The App communicates only with the LANraragi server(s) you explicitly configure. No data is sent to any third-party services, analytics platforms, or advertising networks.
+The App contacts the following addresses. Apart from your own servers, these requests show your IP address and the time of the request to GitHub (and to the owner of the repository involved); none of them carries your server details, API keys or reading content.
+
+1. **您配置的 LANraragi 服务器 / The LANraragi server(s) you configure** - 浏览、阅读、下载和同步。使用 `http://` 地址时，API 密钥与阅读活动以明文传输，应用会将此类服务器标记为「未加密（HTTP）」/ browsing, reading, downloading and syncing. With an `http://` address the API key and reading activity travel unencrypted; the App labels such servers "Unencrypted (HTTP)".
+2. **更新检查 / Update check** (`api.github.com`, `raw.githubusercontent.com/Xslx98/LRReader`) - 默认开启，每天最多一次查询本项目的最新版本及更新公告（advisory.json）；可在「设置 → 更新与支持 → 自动检查更新」关闭。只有在您确认更新后，才会从 GitHub（`github.com`、`objects.githubusercontent.com`）下载安装包 / on by default: at most once a day the App asks for this project's latest release and its update notices (advisory.json); turn it off in Settings → About → Auto-check for updates. The installer is downloaded from GitHub (`github.com`, `objects.githubusercontent.com`) only after you accept an update.
+3. **标签翻译数据集 / Tag translation dataset** (`raw.githubusercontent.com/xiaojieonly/EhTagTranslation`) - 第三方仓库。仅当系统语言为中文且开启了「显示标签翻译」时下载，每天最多检查一次 / a third-party repository. Downloaded only when the system language is Chinese and "Show tag translations" is on, checked at most once a day.
+
+本应用不会向任何分析平台或广告网络发送数据。
+
+The App sends no data to any analytics platform or advertising network.
 
 ## 权限 | Permissions
 
 | 权限 / Permission | 用途 / Purpose |
 |---|---|
-| `INTERNET` | 连接您的 LANraragi 服务器 / Connect to your LANraragi server |
-| `CAMERA` | 拍照设置头像（可选）/ Take photos for avatar (optional) |
-| `FOREGROUND_SERVICE` | 后台下载档案 / Download archives in background |
+| `INTERNET` | 连接您的服务器及上文列出的地址 / Connect to your servers and the addresses listed above |
+| `ACCESS_NETWORK_STATE` | 判断网络是否可用、是否为计费网络，以暂停或恢复下载 / Detect connectivity and metered networks to pause or resume downloads |
+| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC` | 在后台下载档案 / Download archives in the background |
+| `POST_NOTIFICATIONS` | 显示下载进度通知 / Show download progress notifications |
+| `WAKE_LOCK` | 下载过程中保持 CPU 运行 / Keep the CPU awake while downloading |
+| `USE_BIOMETRIC` | 用指纹解锁应用锁（可选）/ Unlock the app lock with a fingerprint (optional) |
+| `REQUEST_INSTALL_PACKAGES` | 安装您确认下载的应用更新 / Install an app update you chose to download |
 
 ## 第三方服务 | Third-Party Services
 
-LR Reader 未集成任何第三方分析、崩溃报告或广告 SDK。
+本应用未集成任何第三方分析、崩溃上报或广告 SDK。上文「网络通信」列出了本应用会联系的全部第三方地址。
 
-LR Reader does not integrate any third-party analytics, crash reporting, or advertising SDKs.
+The App does not integrate any third-party analytics, crash-reporting or advertising SDK. "Network Communication" above lists every third-party address the App contacts.
 
 ## 儿童隐私 | Children's Privacy
 
@@ -76,6 +89,6 @@ Any changes will be reflected in this document with an updated effective date.
 
 ## 联系方式 | Contact
 
-如有隐私相关问题，请在项目的 GitHub 仓库中提交 Issue。
+如有隐私相关问题，请在项目的 GitHub 仓库中提交 Issue；安全问题请按 SECURITY.md 的说明私下报告。
 
-For privacy-related questions, please open an issue on the project's GitHub repository.
+For privacy-related questions, please open an issue on the project's GitHub repository; report security problems privately as described in SECURITY.md.

@@ -6,19 +6,16 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
-import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.settings.PrivacySettings
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.launch
 
-class PrivacyFragment : BasePreferenceFragmentCompat(), Preference.OnPreferenceChangeListener {
+class PrivacyFragment : BasePreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.privacy_settings)
-        findPreference<Preference>(PrivacySettings.KEY_ENABLE_ANALYTICS)?.onPreferenceChangeListener = this
         findPreference<Preference>(KEY_CLEAR_SEARCH_HISTORY)?.setOnPreferenceClickListener {
             confirmClearSearchHistory()
             true
@@ -56,17 +53,6 @@ class PrivacyFragment : BasePreferenceFragmentCompat(), Preference.OnPreferenceC
                 R.string.settings_privacy_pattern_protection_set
             }
         )
-    }
-
-    override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
-        val key = preference.key
-        if (PrivacySettings.KEY_ENABLE_ANALYTICS == key) {
-            if (newValue is Boolean && newValue) {
-                activity?.let { Analytics.start(it) }
-            }
-            return true
-        }
-        return true
     }
 
     companion object {

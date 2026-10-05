@@ -16,6 +16,7 @@
 package com.lanraragi.reader.client
 
 import com.lanraragi.reader.BuildConfig
+import androidx.annotation.VisibleForTesting
 import android.content.Context
 import android.util.Base64
 import android.util.Pair
@@ -29,7 +30,9 @@ import com.lanraragi.framework.util.ExceptionUtils
 import android.util.Log
 import com.lanraragi.framework.util.TextUrl
 import com.lanraragi.reader.client.api.await
+import com.lanraragi.reader.settings.AppearanceSettings
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -65,7 +68,13 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
     private val tagList: List<TagEntry> by lazy { initTagList(String(tags, StandardCharsets.UTF_8)) }
 
     init {
+        // The length prefix comes from a third-party file (audit C26 /
+        // SEC-11): a negative or huge value must fail as a corrupt dataset,
+        // not as NegativeArraySizeException or an OOM on every launch.
         val totalBytes = source.readInt()
+        if (totalBytes !in 0..MAX_DATASET_BYTES) {
+            throw java.io.IOException("Tag dataset length out of range: $totalBytes")
+        }
         tags = ByteArray(totalBytes)
         source.readFully(tags)
     }
@@ -204,6 +213,9 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
     companion object {
         private val TAG = TagTranslationDatabase::class.java.simpleName
 
+        /** Upper bound for the dataset body; the real file is a few MB. */
+        internal const val MAX_DATASET_BYTES = 32 * 1024 * 1024
+
         @JvmField
         val NAMESPACE_TO_PREFIX: Map<String, String> = mapOf(
             "rows" to "n:",
@@ -296,7 +308,8 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
         // Network-check throttle (24h persisted success TTL + 15min in-memory
         // attempt TTL). Lazily bound to the application context's prefs.
         @Volatile
-        private var updateThrottle: TagDbUpdateThrottle? = null
+        @VisibleForTesting
+        internal var updateThrottle: TagDbUpdateThrottle? = null
 
         private fun getUpdateThrottle(context: Context): TagDbUpdateThrottle {
             return updateThrottle ?: TagDbUpdateThrottle(
@@ -400,19 +413,95 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
             }
         }
 
-        @JvmStatic
-        fun update(context: Context) {
-            val urls = getMetadata(context)
-            if (urls == null || urls.size != 4) {
-                // Clear tags if it's not possible
-                instance = null
-                return
-            }
+        /**
+         * Whether the dataset may be fetched from its third-party host
+         * (raw.githubusercontent.com). Only while translations are shown,
+         * which [AppearanceSettings.getShowTagTranslations] already limits to
+         * a Chinese system locale (audit C26, ruling R10). Test seam.
+         */
+        @VisibleForTesting
+        internal var remoteFetchAllowed: () -> Boolean = { AppearanceSettings.getShowTagTranslations() }
 
+        /**
+         * Remote half of [update]: fetch the sha1, then the data when it
+         * changed, verify and swap the files in. Runs only behind the
+         * [remoteFetchAllowed] gate and the throttle.
+         */
+        private suspend fun fetchRemote(dir: File, urls: Array<String>, throttle: TagDbUpdateThrottle) {
             val sha1Name = urls[0]
             val sha1Url = urls[1]
             val dataName = urls[2]
             val dataUrl = urls[3]
+            val sha1File = File(dir, sha1Name)
+            val dataFile = File(dir, dataName)
+
+            // The translation DB files are multi-MB; the shared
+            // large-file client has no call cap so a slow link can't
+            // abort the download mid-stream (see INetworkModule).
+            val client = ServiceRegistry.networkModule.largeFileClient
+
+            // Save new sha1
+            val tempSha1File = File(dir, "$sha1Name.tmp")
+            if (!save(client, sha1Url, tempSha1File)) {
+                FileUtils.delete(tempSha1File)
+                return
+        }
+
+        // Check new sha1 and current data
+        if (checkData(tempSha1File, dataFile)) {
+            // The data is the same
+            FileUtils.delete(tempSha1File)
+            throttle.recordSuccess()
+            return
+        }
+
+        // Save new data
+        val tempDataFile = File(dir, "$dataName.tmp")
+        if (!save(client, dataUrl, tempDataFile)) {
+            FileUtils.delete(tempDataFile)
+            return
+        }
+
+        // Check new sha1 and new data
+        if (!checkData(tempSha1File, tempDataFile)) {
+            FileUtils.delete(tempSha1File)
+            FileUtils.delete(tempDataFile)
+            return
+        }
+
+        // Replace current sha1 and current data with new sha1 and new data
+        FileUtils.delete(sha1File)
+        FileUtils.delete(dataFile)
+        tempSha1File.renameTo(sha1File)
+        tempDataFile.renameTo(dataFile)
+
+        // Read new TagTranslationDatabase
+        try {
+            dataFile.source().buffer().use { source ->
+                instance = TagTranslationDatabase(dataName, source)
+            }
+            throttle.recordSuccess()
+        } catch (e: java.io.IOException) {
+            // Throwable-arg Log.w survives R8's strip; gate it.
+            if (BuildConfig.DEBUG) Log.w(TAG, "Failed to read updated tag database", e)
+        }
+        }
+
+        /**
+         * Loads the local dataset and, when [remoteFetchAllowed] and the
+         * throttle permit, checks the remote copy. Returns the background job.
+         */
+        @JvmStatic
+        fun update(context: Context): Job? {
+            val urls = getMetadata(context)
+            if (urls == null || urls.size != 4) {
+                // Clear tags if it's not possible
+                instance = null
+                return null
+            }
+
+            val sha1Name = urls[0]
+            val dataName = urls[2]
 
             // Clear tags if name is different
             val tmp = instance
@@ -422,7 +511,7 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
 
             val throttle = getUpdateThrottle(context)
 
-            ServiceRegistry.coroutineModule.ioScope.launch {
+            return ServiceRegistry.coroutineModule.ioScope.launch {
                 if (!updateInFlight.compareAndSet(false, true)) return@launch
 
                 try {
@@ -449,62 +538,14 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
                         }
                     }
 
-                    // Network check is throttled: local load above always runs
-                    // (memory state must be rebuilt after process death), but
-                    // GitHub is consulted at most once per TTL window.
-                    if (!throttle.shouldAttempt()) return@launch
+                    // Network check is gated and throttled: local load above
+                    // always runs (memory state must be rebuilt after process
+                    // death), but GitHub is consulted only while translations
+                    // are shown, and at most once per TTL window.
+                    if (!remoteFetchAllowed() || !throttle.shouldAttempt()) return@launch
                     throttle.recordAttempt()
 
-                    // The translation DB files are multi-MB; the shared
-                    // large-file client has no call cap so a slow link can't
-                    // abort the download mid-stream (see INetworkModule).
-                    val client = ServiceRegistry.networkModule.largeFileClient
-
-                    // Save new sha1
-                    val tempSha1File = File(dir, "$sha1Name.tmp")
-                    if (!save(client, sha1Url, tempSha1File)) {
-                        FileUtils.delete(tempSha1File)
-                        return@launch
-                    }
-
-                    // Check new sha1 and current data
-                    if (checkData(tempSha1File, dataFile)) {
-                        // The data is the same
-                        FileUtils.delete(tempSha1File)
-                        throttle.recordSuccess()
-                        return@launch
-                    }
-
-                    // Save new data
-                    val tempDataFile = File(dir, "$dataName.tmp")
-                    if (!save(client, dataUrl, tempDataFile)) {
-                        FileUtils.delete(tempDataFile)
-                        return@launch
-                    }
-
-                    // Check new sha1 and new data
-                    if (!checkData(tempSha1File, tempDataFile)) {
-                        FileUtils.delete(tempSha1File)
-                        FileUtils.delete(tempDataFile)
-                        return@launch
-                    }
-
-                    // Replace current sha1 and current data with new sha1 and new data
-                    FileUtils.delete(sha1File)
-                    FileUtils.delete(dataFile)
-                    tempSha1File.renameTo(sha1File)
-                    tempDataFile.renameTo(dataFile)
-
-                    // Read new TagTranslationDatabase
-                    try {
-                        dataFile.source().buffer().use { source ->
-                            instance = TagTranslationDatabase(dataName, source)
-                        }
-                        throttle.recordSuccess()
-                    } catch (e: java.io.IOException) {
-                        // Throwable-arg Log.w survives R8's strip; gate it.
-                        if (BuildConfig.DEBUG) Log.w(TAG, "Failed to read updated tag database", e)
-                    }
+                    fetchRemote(dir, urls, throttle)
                 } finally {
                     updateInFlight.set(false)
                 }

@@ -30,8 +30,8 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 
 /**
- * Thrown by [LRRAuthManager] setters when the Android KeyStore / EncryptedSharedPreferences
- * backing store is unavailable (e.g., after device migration or KeyStore corruption).
+ * Thrown by [LRRAuthManager] setters when the Android KeyStore-backed credential
+ * store is unavailable (e.g., after device migration or KeyStore corruption).
  *
  * Callers that write credentials MUST handle this exception and surface a user-visible
  * error — silently swallowing it leaves users believing their changes were saved.
@@ -40,13 +40,20 @@ class LRRSecureStorageUnavailableException(message: String) : IOException(messag
 
 /**
  * Manages LANraragi server connection settings (server URL and API key).
- * Stores credentials in EncryptedSharedPreferences for security.
+ * Stores credentials in [KeystoreSecurePrefs] (AES-GCM values under an
+ * AndroidKeyStore key). Installs from before audit C49 kept them in the
+ * deprecated EncryptedSharedPreferences; [initialize] copies them over once.
  */
 object LRRAuthManager {
 
     private const val TAG = "LRRAuthManager"
     private const val INIT_TIMEOUT_MS = 10_000L
+    /** Legacy EncryptedSharedPreferences file, read once by [migrateLegacyStore]. */
     private const val PREF_NAME = "lrr_auth_encrypted"
+    private const val SECURE_PREF_NAME = "lrr_auth_secure"
+    private const val KEYSTORE_ALIAS_SECURE_PREFS = "lrr_secure_prefs_key"
+    /** Plain-prefs flag: the legacy store was copied (or there was none). */
+    private const val KEY_SECURE_STORE_MIGRATED = "secure_store_v2"
     private const val PLAIN_PREF_NAME = "lrr_auth_plain"
     private const val KEY_WAS_CONFIGURED = "was_configured"
 
@@ -261,32 +268,35 @@ object LRRAuthManager {
             .getSharedPreferences(PLAIN_PREF_NAME, Context.MODE_PRIVATE)
         sPlainPrefs = plainPrefs
         try {
-            val masterKey = MasterKey.Builder(context.applicationContext)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build()
-            sPrefs = EncryptedSharedPreferences.create(
-                context.applicationContext,
-                PREF_NAME,
-                masterKey,
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            val secure = KeystoreSecurePrefs.open(
+                context.applicationContext.getSharedPreferences(SECURE_PREF_NAME, Context.MODE_PRIVATE),
+                KeystoreValueCipher(KEYSTORE_ALIAS_SECURE_PREFS),
             )
+            if (!plainPrefs.getBoolean(KEY_SECURE_STORE_MIGRATED, false)) {
+                migrateLegacyStore(context.applicationContext, secure)
+                plainPrefs.edit(commit = true) { putBoolean(KEY_SECURE_STORE_MIGRATED, true) }
+                deleteLegacyStore(context.applicationContext)
+            }
+            sPrefs = secure
         } catch (e: GeneralSecurityException) {
             Log.e(TAG, "KeyStore unavailable — credentials will not persist this session", e)
-            // DO NOT wipe the encrypted SP file here. The values are AES-GCM
-            // ciphertext (base64-encoded in the underlying xml) and have no
+            // DO NOT wipe the secure store (or the legacy one) here. The values
+            // are AES-GCM ciphertext (base64 in the underlying xml) and have no
             // plaintext leakage risk. Wiping makes a transient KeyStore
             // failure (system update, biometric re-enroll, etc.) permanently
             // destroy the user's API keys; preserving the blobs lets them
-            // become readable again once KeyStore recovers on a later launch.
-            // If the failure is permanent (e.g., MasterKey regenerated and
-            // the old key is gone), [markReauthIfProfilesUnprotected] will
-            // detect missing-per-profile entries on the next session.
+            // become readable again once KeyStore recovers on a later launch,
+            // and an unfinished legacy migration is retried then too.
             sPrefs = null
             // Only prompt reauth if the user had previously configured a server
             sNeedsReauthentication = plainPrefs.getBoolean(KEY_WAS_CONFIGURED, false)
         } catch (e: IOException) {
-            Log.e(TAG, "I/O error initializing EncryptedSharedPreferences — credentials will not persist", e)
+            Log.e(TAG, "I/O error initializing the secure store — credentials will not persist", e)
+            sPrefs = null
+            sNeedsReauthentication = plainPrefs.getBoolean(KEY_WAS_CONFIGURED, false)
+        } catch (e: java.security.ProviderException) {
+            // KeyStore failures some devices report as a runtime exception.
+            Log.e(TAG, "KeyStore provider failure — credentials will not persist this session", e)
             sPrefs = null
             sNeedsReauthentication = plainPrefs.getBoolean(KEY_WAS_CONFIGURED, false)
         }
@@ -310,6 +320,47 @@ object LRRAuthManager {
                 putBoolean(KEY_LOCK_ENABLED, hasPatternIn(prefs))
                 putBoolean(KEY_CONFIGURED_HINT, !prefs.getString(KEY_SERVER_URL, null).isNullOrEmpty())
             }
+        }
+    }
+
+    /**
+     * Copy every entry of the legacy EncryptedSharedPreferences store into
+     * [target] (audit C49 / SEC-17). A store that cannot be opened right now
+     * (KeyStore hiccup) throws, nothing is marked migrated and the next
+     * launch retries — the same outcome the old init had for that failure.
+     */
+    @Throws(GeneralSecurityException::class, IOException::class)
+    private fun migrateLegacyStore(context: Context, target: SharedPreferences) {
+        if (!legacyStoreFile(context).exists()) return
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        val legacy = EncryptedSharedPreferences.create(
+            context,
+            PREF_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+        if (!SecurePrefsMigration.copyAll(legacy, target)) {
+            throw IOException("Writing the migrated secure store failed")
+        }
+    }
+
+    private fun legacyStoreFile(context: Context) =
+        java.io.File(context.applicationInfo.dataDir, "shared_prefs/$PREF_NAME.xml")
+
+    /** Drop the legacy file and its master key once their content lives in the new store. */
+    private fun deleteLegacyStore(context: Context) {
+        context.deleteSharedPreferences(PREF_NAME)
+        try {
+            val keyStore = KeyStore.getInstance("AndroidKeyStore")
+            keyStore.load(null)
+            if (keyStore.containsAlias(MasterKey.DEFAULT_MASTER_KEY_ALIAS)) {
+                keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete the legacy credential master key", e)
         }
     }
 
@@ -840,7 +891,7 @@ object LRRAuthManager {
     @JvmStatic
     fun isConfiguredFast(): Boolean = configuredHint() ?: isConfigured()
 
-    /** False when EncryptedSharedPreferences could not be opened this process. */
+    /** False when the secure credential store could not be opened this process. */
     @JvmStatic
     fun isSecureStorageAvailable(): Boolean {
         awaitInit()
@@ -858,16 +909,14 @@ object LRRAuthManager {
         awaitInit()
         sProfileKeyCache.clear()
         sPrefs = null
-        context.applicationContext.deleteSharedPreferences(PREF_NAME)
+        val appContext = context.applicationContext
+        appContext.deleteSharedPreferences(SECURE_PREF_NAME)
         try {
-            val keyStore = KeyStore.getInstance("AndroidKeyStore")
-            keyStore.load(null)
-            if (keyStore.containsAlias(MasterKey.DEFAULT_MASTER_KEY_ALIAS)) {
-                keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
-            }
+            KeystoreValueCipher(KEYSTORE_ALIAS_SECURE_PREFS).deleteKey()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to delete the credential master key", e)
+            Log.e(TAG, "Failed to delete the credential key", e)
         }
+        deleteLegacyStore(appContext)
         deletePatternKeystoreKey()
         fastPlainPrefs()?.edit(commit = true) {
             putBoolean(KEY_LOCK_ENABLED, false)

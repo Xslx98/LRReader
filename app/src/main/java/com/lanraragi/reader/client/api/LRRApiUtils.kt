@@ -54,23 +54,36 @@ internal fun parseBaseUrl(baseUrl: String): okhttp3.HttpUrl {
  * drops its last segment, either way producing `http://host/api/...` and
  * 404ing every page while the `addPathSegments`-built endpoints keep
  * working. Instead, strip the `./`/`/` prefix and resolve against the
- * base treated as a directory, which preserves the sub-path. An
- * already-absolute URL passes through untouched. Resolution keeps the
- * link's existing encoding (no re-encoding).
+ * base treated as a directory, which preserves the sub-path. Resolution
+ * keeps the link's existing encoding (no re-encoding).
+ *
+ * The page URL comes from the server, so it must stay on that server
+ * (audit C48 / SEC-08): an absolute URL is accepted only with the server's
+ * scheme, host and port, and no form may leave the base path (`../`
+ * escapes). Anything else is refused with [IOException] instead of being
+ * fetched — possibly with another profile's key.
  */
 internal fun resolvePageUrl(serverUrl: String, pagePath: String): String {
-    // Full absolute URL: pass through.
-    pagePath.toHttpUrlOrNull()?.let { return it.toString() }
     val base = parseBaseUrl(serverUrl)
-    val relative = pagePath.removePrefix("./").removePrefix("/")
     val baseDir = if (base.encodedPath.endsWith("/")) {
         base
     } else {
         base.newBuilder().encodedPath(base.encodedPath + "/").build()
     }
-    return baseDir.resolve(relative)?.toString()
+    val absolute = pagePath.toHttpUrlOrNull()
+    val resolved = absolute
+        ?: baseDir.resolve(pagePath.removePrefix("./").removePrefix("/"))
         ?: throw IOException("Cannot resolve page path '$pagePath' against $serverUrl")
+    if (!isOnServer(resolved, baseDir)) {
+        throw IOException("Page URL outside the server refused: $pagePath")
+    }
+    return resolved.toString()
 }
+
+/** Same scheme, host and port as [baseDir], and a path under it. */
+private fun isOnServer(url: okhttp3.HttpUrl, baseDir: okhttp3.HttpUrl): Boolean =
+    url.scheme == baseDir.scheme && url.host == baseDir.host && url.port == baseDir.port &&
+        url.encodedPath.startsWith(baseDir.encodedPath)
 
 /**
  * Lowercase hex rendering shared by the SHA-1 fingerprint helpers

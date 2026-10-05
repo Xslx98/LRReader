@@ -88,7 +88,24 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     // ---- Path management ----
 
     fun getCacheDir(context: Context, arcId: String): File =
-        File(context.applicationContext.cacheDir, "$CACHE_PARENT/$arcId")
+        File(context.applicationContext.cacheDir, "$CACHE_PARENT/${cacheDirName(arcId)}")
+
+    private fun isIdChar(c: Char): Boolean = c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c == '_' || c == '-'
+
+    /**
+     * The arcid comes from the server and reaches mkdirs() before any API
+     * call validates it (audit C48 / SEC-09): a well-formed id names its
+     * directory as before; anything else (`../..`, separators) is replaced
+     * by its SHA-1 so it can never leave the cache root.
+     */
+    internal fun cacheDirName(arcId: String): String =
+        if (arcId.isNotEmpty() && arcId.all(::isIdChar)) {
+            arcId
+        } else {
+            java.security.MessageDigest.getInstance("SHA-1")
+                .digest(arcId.toByteArray(Charsets.UTF_8))
+                .joinToString("") { "%02x".format(it) }
+        }
 
     fun getCacheFile(context: Context, arcId: String, pageIndex: Int): File =
         File(getCacheDir(context, arcId), "page_$pageIndex")

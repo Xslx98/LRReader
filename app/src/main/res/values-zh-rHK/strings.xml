@@ -103,10 +103,7 @@
 
 
     <string name="press_twice_exit">再按一次退出</string>
-    <string name="analytics_explain">您同意讓開發者收集您的裝置資訊與使用情況嗎？這將對開發有很大幫助。&lt;br&gt;&lt;br&gt;數據統計服務由 Google Analytics for Firebase 提供，其隱私政策可在 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 查看。&lt;br&gt;&lt;br&gt;若您同意參與數據統計，您的裝置資訊與應用程式使用情況將會被記錄，其包括但不限於：Android API 版本、裝置型號、語言所在地、本應用程式版本、會話時長、應用功能使用次數。開發者承諾以下資訊並不會被記錄：電話號碼、電郵地址、IMEI。&lt;br&gt;&lt;br&gt;在您同意參與數據統計之前，您的資訊不會被記錄。&lt;br&gt;&lt;br&gt;被記錄的數據會交由 Google Analytics for Firebase 分析，分析報告僅可被本應用程式開發者存取。</string>
     <string name="get_it">知道了</string>
-    <string name="accept">接受</string>
-    <string name="reject">拒絕</string>
 
 
     <!-- Select scene -->
@@ -315,6 +312,7 @@
     <!-- Set Security -->
     <string name="set_pattern_protection">設定圖形解鎖</string>
     <string name="set_pattern_protection_tip">繪製圖案來設定圖形解鎖\n留空來取消圖案保護</string>
+    <string name="set_pattern_too_short">請至少連接 4 個點</string>
     <string name="set">設定</string>
     <string name="enable_fingerprint">啟用指紋解鎖</string>
 
@@ -840,6 +838,7 @@
     <string name="lrr_plaintext_refused">已拒絕傳送 API 金鑰：伺服器 URL 無效或協定不符</string>
     <string name="lrr_cleartext_refused_error">應用程式政策已拒絕 HTTP 明文請求。請喺伺服器設定入面啟用「信任呢個伺服器嘅 HTTP 明文連線」，或者改用 HTTPS。</string>
     <string name="lrr_allow_cleartext_label">信任呢個伺服器嘅 HTTP 明文連線（僅限區域網路）</string>
+    <string name="lrr_unencrypted_connection">未加密（HTTP）</string>
     <string name="lrr_allow_cleartext_helper">當伺服器網址使用 http:// 時需要啟用。請只喺受信任嘅區域網路入面開啟。</string>
     <string name="lrr_allow_cleartext_required">使用 HTTP 明文連線需要明確授權。請剔選核取方塊或者改用 HTTPS。</string>
     <string-array name="lrr_sort_by_entries">

@@ -74,10 +74,7 @@
 
 
     <string name="press_twice_exit">한 번 더 누르면 종료됩니다.</string>
-    <string name="analytics_explain">앱 개발자에게 기기 및 사용 정보를 보내시겠습니까? 앱 개발에 굉장한 도움이 됩니다. &lt;br&gt;&lt;br&gt;데이터 분석 서비스는 Google Analytics for Firebase를 사용하며, 개인 정보 보호 정책은 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 에서 확인하실 수 있습니다.&lt;br&gt;&lt;br&gt;데이터 분석을 허용하면 사용자의 기기 및 앱 사용 정보가 수집됩니다. 전화번호나 이메일 주소, IMEI와 같은 개인 정보는 수집하지 않습니다.&lt;br&gt;&lt;br&gt;데이터 분석을 허용하기 전까지는 정보를 수집하지 않습니다.&lt;br&gt;&lt;br&gt;수집한 정보는 Google Analytics for Firebase에 의해 분석됩니다. 분석된 정보는 이 애플리케이션의 개발자만 볼 수 있습니다.</string>
     <string name="get_it">알겠습니다</string>
-    <string name="accept">동의</string>
-    <string name="reject">거부</string>
 
 
     <!-- Select scene -->
@@ -285,6 +282,7 @@
     <!-- Set Security -->
     <string name="set_pattern_protection">패턴 보호 사용</string>
     <string name="set_pattern_protection_tip">패턴 보호를 사용하려면 패턴을 그리세요.\n비워두면 패턴 보호가 해제됩니다.</string>
+    <string name="set_pattern_too_short">4개 이상의 점을 연결하세요</string>
     <string name="set">지정</string>
     <string name="enable_fingerprint">지문으로 잠금 해제 허용</string>
 
@@ -831,6 +829,7 @@
     <string name="lrr_plaintext_refused">API 키 전송이 거부되었습니다: 서버 URL이 잘못되었거나 스키마가 일치하지 않습니다</string>
     <string name="lrr_cleartext_refused_error">앱 정책에 의해 HTTP 평문 요청이 거부되었습니다. 서버 설정에서 \"이 서버를 HTTP 평문으로 신뢰\"를 활성화하거나 HTTPS를 사용하세요.</string>
     <string name="lrr_allow_cleartext_label">이 서버를 HTTP 평문으로 신뢰 (LAN 전용)</string>
+    <string name="lrr_unencrypted_connection">암호화되지 않음(HTTP)</string>
     <string name="lrr_allow_cleartext_helper">서버 URL이 http://를 사용하는 경우 필요합니다. 신뢰할 수 있는 LAN 네트워크에서만 활성화하세요.</string>
     <string name="lrr_allow_cleartext_required">HTTP 평문 연결은 명시적 동의가 필요합니다. 체크박스를 선택하거나 HTTPS를 사용하세요.</string>
     <string-array name="lrr_sort_by_entries">
