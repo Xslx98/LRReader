@@ -67,6 +67,7 @@ class SecurityScene : SolidScene(),
     private fun dismissAfterUnlock() {
         if (ehContext == null || !isAdded) return
         AppLockGate.markUnlocked()
+        (activity as? com.lanraragi.reader.ui.BaseActivity)?.onAppUnlocked()
         // Capture context + resume intent BEFORE finishing — finish()
         // detaches this fragment so ehContext may turn null right after.
         val ctx = ehContext

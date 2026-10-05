@@ -29,6 +29,7 @@ import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
+import com.lanraragi.reader.settings.SecureWindowPolicy
 import com.lanraragi.reader.settings.SecuritySettings
 
 abstract class BaseActivity : AppCompatActivity() {
@@ -70,15 +71,9 @@ abstract class BaseActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Re-check on resume to handle setting changes while app is running
-        if (SecuritySettings.getEnabledSecurity()) {
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-            )
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
+        // Re-check on resume to handle setting changes while app is running;
+        // a locked app on API < 33 stays secure until the lock is passed.
+        applySecureFlag(resumedAndUnlocked = !AppLockGate.isLocked())
         // With an app lock set, the recents thumbnail must not show the last
         // screen. Unlike FLAG_SECURE this keeps screenshots working.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -87,6 +82,35 @@ abstract class BaseActivity : AppCompatActivity() {
         onForegroundLockCheck()
     }
 
+
+    override fun onPause() {
+        // API < 33 with an app lock: hide the window before the recents
+        // snapshot is taken (audit C48 / SEC-14).
+        applySecureFlag(resumedAndUnlocked = false)
+        super.onPause()
+    }
+
+    /** The lock was just passed in this resumed activity: lift the lock-only FLAG_SECURE. */
+    fun onAppUnlocked() {
+        applySecureFlag(resumedAndUnlocked = true)
+    }
+
+    private fun applySecureFlag(resumedAndUnlocked: Boolean) {
+        val secure = SecureWindowPolicy.wantsSecureFlag(
+            sdkInt = Build.VERSION.SDK_INT,
+            userSecureMode = SecuritySettings.getEnabledSecurity(),
+            lockEnabled = SecuritySettings.isLockEnabled(),
+            resumedAndUnlocked = resumedAndUnlocked,
+        )
+        if (secure) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
 
     /**
      * True for the Activity that hosts the lock screen itself (MainActivity).
