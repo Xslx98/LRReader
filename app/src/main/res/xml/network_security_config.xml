@@ -13,15 +13,18 @@
   WHERE THE REAL CLEARTEXT POLICY LIVES:
 
   The authoritative cleartext gate is `LRRCleartextRejectionInterceptor`
-  (see app/src/main/java/com/lanraragi/reader/client/lrr/). It throws
-  LRRCleartextRefusedException for any HTTP request that is NOT directed
-  at the currently-configured active LANraragi server, AND additionally
-  requires that profile's `allowCleartext` flag to be true (per-profile
-  user opt-in via the ServerListScene add/edit dialog).
+  (client/api/). It refuses an HTTP request unless its host:port and scheme
+  belong to a configured profile (or, before the profile cache is loaded, to
+  the active server) AND either the user consented to plain HTTP for that
+  profile (`allowCleartext`, the "trust this server over plain HTTP" box) or
+  the host is a LAN address (`LRRUrlHelper.isLanAddress`: localhost, *.local,
+  and private / link-local / 100.64/10 IP literals).
 
-  Net effect at runtime: cleartext only goes out to one specific host,
-  and only when the user explicitly ticked "trust this server over plain
-  HTTP" when they created or edited the profile.
+  Net effect at runtime: cleartext goes only to configured servers — any of
+  them, not just the active one — and a LAN server needs no consent. On a
+  foreign network that reuses the same private range, the API key is sent in
+  the clear to whatever answers at that address; the UI labels such profiles
+  "Unencrypted (HTTP)" (audit 2026-10-04 C27 / SEC-21).
 
   TRUST ANCHORS (release vs debug):
     base-config       → system CAs only
@@ -29,8 +32,8 @@
 
   Release builds do NOT trust user-installed CAs. If you need to point a
   release build at a self-signed HTTPS LANraragi server, install the CA
-  via the system trust store. (A future branch — `security/server-ca-import`
-  — will add an in-app CA import flow.)
+  via the system trust store. There is no in-app CA import or certificate
+  pinning yet (audit C27 phase 2).
 -->
 <network-security-config>
 
