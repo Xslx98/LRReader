@@ -58,7 +58,7 @@ static void clampEdgesIntoBorder(char *buf, int buf_w, int buf_h,
     }
 }
 
-bool copyPixels(const void *src, int src_w, int src_h, int src_x, int src_y,
+bool copyPixels(const void *src, int src_w, int src_h, int src_row_bytes, int src_x, int src_y,
                  void *dst, int dst_w, int dst_h, int dst_x, int dst_y,
                  int width, int height) {
     int left;
@@ -121,7 +121,8 @@ bool copyPixels(const void *src, int src_w, int src_h, int src_x, int src_y,
 
     // Init
     line_stride = (size_t) (width * 4);
-    src_stride = src_w * 4;
+    // Rows may be padded: use the bitmap's stride, not width * 4 (audit C14).
+    src_stride = src_row_bytes;
     src_pos = src_y * src_stride + src_x * 4;
     dst_pos = 0;
 
@@ -152,11 +153,18 @@ Java_com_lanraragi_framework_lib_image_Image_nativeTexImage(JNIEnv *env, jclass 
         return;
     AndroidBitmapInfo info;
     void *pixels = NULL;
-    AndroidBitmap_lockPixels(env, bitmap, &pixels);
-    AndroidBitmap_getInfo(env, bitmap, &info);
+    // Audit 2026-10-04 C14 / STAB-06: a failed lock left pixels NULL and memcpy
+    // crashed the process; a non-RGBA_8888 bitmap was copied as 4 bytes per
+    // pixel. Bail out instead (Image.kt converts other configs before upload).
+    if (AndroidBitmap_getInfo(env, bitmap, &info) != ANDROID_BITMAP_RESULT_SUCCESS)
+        return;
+    if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888 || info.stride < info.width * 4)
+        return;
+    if (AndroidBitmap_lockPixels(env, bitmap, &pixels) != ANDROID_BITMAP_RESULT_SUCCESS || pixels == NULL)
+        return;
     // Zero tile buffer to prevent stale data in border/uncovered regions
     memset(tile_buffer, 0, (size_t)(width * height * 4));
-    copyPixels(pixels, info.width, info.height, offset_x, offset_y, tile_buffer, width, height, 0, 0, width, height);
+    copyPixels(pixels, info.width, info.height, (int) info.stride, offset_x, offset_y, tile_buffer, width, height, 0, 0, width, height);
     AndroidBitmap_unlockPixels(env, bitmap);
     // Compute actual content rect inside tile_buffer and clamp edge pixels
     // outwards so GL_LINEAR border sampling stays opaque (no seam line).

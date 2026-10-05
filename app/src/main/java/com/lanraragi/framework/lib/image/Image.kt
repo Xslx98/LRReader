@@ -40,6 +40,7 @@ class Image private constructor(
     private val mDrawableRef = AtomicReference<Drawable?>(null)
     private var mBitmap: Bitmap? = null
     private var mStickerBitmap: Bitmap? = null  // Cached bitmap for non-BitmapDrawable texImage
+    private var mUploadCopy: Bitmap? = null  // ARGB_8888 copy of an F16/1010102/565 page (audit C14)
     private var mReferences = 0
 
     // Animated pages (audit 2026-10-04 C13): one software render per frame, not
@@ -180,6 +181,8 @@ class Image private constructor(
         mStickerBitmap?.recycle()
         mStickerBitmap = null
         mCanvas = null
+        mUploadCopy?.recycle()
+        mUploadCopy = null
         release()
     }
 
@@ -261,7 +264,15 @@ class Image private constructor(
                 if (drawable is BitmapDrawable) {
                     val bmp = drawable.bitmap
                     if (bmp == null || bmp.isRecycled) return  // Bitmap already recycled
-                    bmp
+                    if (needsArgb8888Copy(bmp.config)) {
+                        // The native upload copies 4 bytes per pixel; 16-bit PNG or
+                        // 10-bit AVIF/HEIF pages decode to other configs.
+                        mUploadCopy?.takeIf { !it.isRecycled }
+                            ?: bmp.copy(Bitmap.Config.ARGB_8888, false).also { mUploadCopy = it }
+                            ?: return
+                    } else {
+                        bmp
+                    }
                 } else {
                     // Cache the sticker bitmap to avoid re-creating per tile
                     var cached = mStickerBitmap
@@ -313,6 +324,10 @@ class Image private constructor(
     companion object {
         private const val TAG = "Image"
         internal const val OOM_RETRY_MULTIPLIER = 2
+
+        /** Bitmaps the native tile upload cannot read directly (it requires RGBA_8888). */
+        internal fun needsArgb8888Copy(config: Bitmap.Config?): Boolean = config != Bitmap.Config.ARGB_8888
+
         internal const val DEFAULT_FRAME_DELAY_MS = 100L
         internal const val MIN_FRAME_DELAY_MS = 16L
         internal const val MAX_FRAME_DELAY_MS = 1000L
@@ -324,7 +339,7 @@ class Image private constructor(
         var screenHeight: Int = 0
 
         init {
-            // Self-load like GifHandler: nativeTexImage is an external fun and
+            // Self-load: nativeTexImage is an external fun and
             // JNI binds lazily on first call — without this, the GL reader
             // crashes with UnsatisfiedLinkError on the GLThread (caught by AVD
             // smoke after the eager Native.initialize() loader was removed).
