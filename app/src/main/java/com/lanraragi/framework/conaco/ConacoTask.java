@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 
 import com.lanraragi.framework.beerbelly.SimpleDiskCache;
+import com.lanraragi.framework.util.ExceptionUtils;
 import com.hippo.streampipe.InputStreamPipe;
 import com.hippo.streampipe.OutputStreamPipe;
 
@@ -45,6 +46,29 @@ import okhttp3.ResponseBody;
 public class ConacoTask<V> {
 
     private static final String TAG = ConacoTask.class.getSimpleName();
+
+    interface Work<T> {
+        T get();
+    }
+
+    /**
+     * Runs a task body on the executor thread. A runtime exception (revoked SAF
+     * grant, closed disk cache, ...) used to escape to the thread's uncaught
+     * handler and kill the app; now it is logged and the task completes with
+     * null, like any other miss (audit 2026-10-04 C34 / STAB-12). Fatal VM errors
+     * still propagate.
+     */
+    @Nullable
+    static <T> T guardWork(Work<T> work) {
+        try {
+            return work.get();
+        } catch (Throwable t) {
+            ExceptionUtils.throwIfFatal(t);
+            Log.e(TAG, "Conaco task failed", t);
+            com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "Conaco task failed", t);
+            return null;
+        }
+    }
 
     private final int mId;
     private final WeakReference<Unikery<V>> mUnikeryWeakReference;
@@ -234,7 +258,7 @@ public class ConacoTask<V> {
 
         @Override
         public void run() {
-            V value = doWork();
+            V value = guardWork(this::doWork);
             new Handler(Looper.getMainLooper()).post(() -> onComplete(value));
         }
 
@@ -363,7 +387,7 @@ public class ConacoTask<V> {
 
         @Override
         public void run() {
-            V value = doWork();
+            V value = guardWork(this::doWork);
             mMainHandler.post(() -> onComplete(value));
         }
 

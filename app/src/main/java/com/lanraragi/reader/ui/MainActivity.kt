@@ -794,6 +794,14 @@ class MainActivity : StageActivity(),
                 R.string.download_resume_resume_action,
                 snapshot.arcids,
             )
+            is DownloadResumeBanner.Snapshot.SystemLimited -> showRequeueSnackbar(
+                host,
+                resources.getQuantityString(
+                    R.plurals.download_resume_system_limit_snackbar, snapshot.count, snapshot.count
+                ),
+                R.string.download_resume_resume_action,
+                snapshot.arcids,
+            )
             is DownloadResumeBanner.Snapshot.TimedOut -> showRequeueSnackbar(
                 host,
                 resources.getQuantityString(
@@ -1012,6 +1020,8 @@ class MainActivity : StageActivity(),
     @SuppressLint("RtlHardcoded")
     override fun onSceneViewCreated(scene: SceneFragment, savedInstanceState: Bundle?) {
         super.onSceneViewCreated(scene, savedInstanceState)
+        // Breadcrumb for crash reports and the diagnostics bundle (audit C06).
+        com.lanraragi.reader.diagnostics.DiagLog.i("Scene", scene.javaClass.simpleName)
 
         val rightDrawer = mRightDrawer ?: return
         val drawerLayout = mDrawerLayout ?: return

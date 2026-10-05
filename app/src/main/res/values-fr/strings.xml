@@ -167,6 +167,7 @@
 
     <!-- Download -->
     <string name="no_download_info">Vos téléchargements s\'afficheront ici</string>
+    <string name="downloads_load_failed">Impossible de charger vos téléchargements. Touchez pour réessayer.</string>
     <string name="download_state_none">En veille</string>
     <string name="download_state_wait">En attente</string>
     <string name="download_state_downloading">Téléchargement en cours</string>
@@ -256,6 +257,11 @@
         <item quantity="one">Stockage plein : %d téléchargement en pause. Libérez de l\'espace, puis reprenez.</item>
         <item quantity="other">Stockage plein : %d téléchargements en pause. Libérez de l\'espace, puis reprenez.</item>
         <item quantity="many">Stockage plein : %d téléchargements en pause. Libérez de l\'espace, puis reprenez.</item>
+    </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="one">Limite du système : %d téléchargement en pause. Gardez l’app ouverte et reprenez.</item>
+        <item quantity="many">Limite du système : %d téléchargements en pause. Gardez l’app ouverte et reprenez.</item>
+        <item quantity="other">Limite du système : %d téléchargements en pause. Gardez l’app ouverte et reprenez.</item>
     </plurals>
     <string name="remember_download_label">Enregistrer le label de téléchargement</string>
     <string name="default_download_label">Label de téléchargement par défaut</string>
@@ -571,11 +577,10 @@
 
     <string name="settings_advanced">Avancé</string>
     <string name="settings_advanced_save_crash_log">Enrégistrer le rapport crash</string>
-    <string name="settings_advanced_save_crash_log_summary">Les rapports crash aident le développeur à correcter les bugs</string>
-    <string name="settings_advanced_dump_logcat">Sauvegarder le journal logcat</string>
-    <string name="settings_advanced_dump_logcat_summary">Sauvegarder le journal logcat au stockage externe</string>
-    <string name="settings_advanced_dump_logcat_failed">Echec de sauvegarde</string>
-    <string name="settings_advanced_dump_logcat_to">Fiche sauvegardé à %s</string>
+    <string name="settings_advanced_save_crash_log_summary">Enregistré uniquement sur cet appareil, jamais envoyé. Inclus lorsque vous partagez le diagnostic.</string>
+    <string name="settings_advanced_share_diagnostics">Partager le diagnostic</string>
+    <string name="settings_advanced_share_diagnostics_summary">Rapports de plantage, journaux récents et versions de l’app et du serveur dans un zip. L’adresse du serveur et les clés sont retirées ; rien n’est envoyé sans votre choix.</string>
+    <string name="settings_advanced_share_diagnostics_failed">Impossible de créer le fichier de diagnostic</string>
     <!-- Message -->
 
     <string name="settings_advanced_clear_memory_cache">Vider le cache du stockage</string>

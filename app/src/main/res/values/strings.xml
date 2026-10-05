@@ -262,6 +262,7 @@
     <!-- Download -->
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="no_download_info">Download items will be shown here</string>
+    <string name="downloads_load_failed">Couldn\'t load your downloads. Tap to retry.</string>
     <string name="download_state_none">Idle</string>
     <string name="download_state_wait">Waiting</string>
     <string name="download_state_downloading">Downloading</string>
@@ -347,6 +348,10 @@
     <plurals name="download_resume_storage_full_snackbar">
         <item quantity="one">Storage full: %d download paused. Free up space, then resume.</item>
         <item quantity="other">Storage full: %d downloads paused. Free up space, then resume.</item>
+    </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="one">System limit: %d download paused. Keep the app open and resume.</item>
+        <item quantity="other">System limit: %d downloads paused. Keep the app open and resume.</item>
     </plurals>
     <string name="remember_download_label">Remember download label</string>
     <string name="default_download_label">Default download label</string>
@@ -667,11 +672,10 @@
 
     <string name="settings_advanced">Advanced</string>
     <string name="settings_advanced_save_crash_log">Save crash log when app crashes</string>
-    <string name="settings_advanced_save_crash_log_summary">Crash logs help developers fix bugs</string>
-    <string name="settings_advanced_dump_logcat">Dump logcat</string>
-    <string name="settings_advanced_dump_logcat_summary">Save logcat to external storage</string>
-    <string name="settings_advanced_dump_logcat_failed">Dump logcat failed</string>
-    <string name="settings_advanced_dump_logcat_to">Logcat dumped to %s</string>
+    <string name="settings_advanced_save_crash_log_summary">Saved on this device only, never uploaded. Included when you share diagnostics.</string>
+    <string name="settings_advanced_share_diagnostics">Share diagnostics</string>
+    <string name="settings_advanced_share_diagnostics_summary">Crash reports, recent logs and app/server versions as a zip. Server address and keys are removed; nothing is sent unless you choose where.</string>
+    <string name="settings_advanced_share_diagnostics_failed">Could not create the diagnostics file</string>
     <string name="settings_advanced_clear_memory_cache">Clear memory cache</string>
     <string name="settings_advanced_clear_memory_cache_summary">Clear thumb, gallery info memory cache</string>
     <string name="settings_advanced_read_cache_size">Read cache size</string>

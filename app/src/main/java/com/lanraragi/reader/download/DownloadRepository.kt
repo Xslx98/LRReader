@@ -31,6 +31,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Collections
 
@@ -90,6 +93,15 @@ class DownloadRepository(
     @Volatile
     internal var initialized = false
 
+    private val _loadError = MutableStateFlow<Throwable?>(null)
+
+    /**
+     * Set when the load from Room failed (audit 2026-10-04 C34 / STAB-13). The
+     * in-memory lists are then empty although the database may hold downloads,
+     * so the Downloads screen shows an error with Retry instead of "no downloads".
+     */
+    val loadError: StateFlow<Throwable?> = _loadError.asStateFlow()
+
     // ═══════════════════════════════════════════════════════════
     // Thread helpers
     // ═══════════════════════════════════════════════════════════
@@ -137,15 +149,37 @@ class DownloadRepository(
         scope.launch {
             try {
                 loadDataFromDb(onComplete)
+            } catch (e: CancellationException) {
+                Log.e(TAG, "Download data load cancelled", e)
+                finishFailedLoad(onComplete)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load download data from DB", e)
-                runOnMainThread {
-                    initialized = true
-                    initDeferred.complete(Unit)
-                    onComplete()
-                }
+                com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "Failed to load download data from DB", e)
+                com.lanraragi.reader.Crash.saveNonFatal(e)
+                _loadError.value = e
+                finishFailedLoad(onComplete)
             }
         }
+    }
+
+    /** Marks the load finished (empty) so awaiters never hang. */
+    private fun finishFailedLoad(onComplete: () -> Unit) {
+        runOnMainThread {
+            initialized = true
+            initDeferred.complete(Unit)
+            onComplete()
+        }
+    }
+
+    /**
+     * Load again after a failed [startLoading]; no-op when the last load succeeded.
+     * Rows already in memory (added since the failure) are kept, not duplicated.
+     */
+    fun retryLoading(onComplete: () -> Unit) {
+        assertMainThread()
+        if (_loadError.value == null) return
+        _loadError.value = null
+        startLoading(onComplete)
     }
 
     /**
@@ -215,22 +249,28 @@ class DownloadRepository(
      * Must be called on the main thread.
      */
     internal fun publishLoadedData(loaded: LoadedDownloadData) {
-        labelList.addAll(loaded.labels)
-        labelList.addAll(loaded.extraSavedLabels)
+        // Merge rather than append: after a failed first load ([retryLoading]) the
+        // user may already have added downloads that are both in memory and in Room.
+        val knownLabels = labelList.mapTo(HashSet()) { it.label }
+        (loaded.labels + loaded.extraSavedLabels).filterTo(labelList) { knownLabels.add(it.label) }
         labelSet.addAll(loaded.labelStrings)
 
-        allInfoList.addAll(loaded.allInfoList)
-        for (info in loaded.allInfoList) {
+        val fresh = loaded.allInfoList.filterTo(ArrayList()) { it.arcid !in allInfoMap }
+        allInfoList.addAll(fresh)
+        for (info in fresh) {
             allInfoMap[info.arcid] = info
         }
+        val freshSet = Collections.newSetFromMap(java.util.IdentityHashMap<DownloadInfo, Boolean>())
+        freshSet.addAll(fresh)
 
         for ((label, list) in loaded.labelToInfoList) {
+            val add = list.filter { it in freshSet }
             if (label == null) {
                 // null-label downloads go into the dedicated defaultInfoList,
                 // which getInfoListForLabel(null) returns.
-                defaultInfoList.addAll(list)
+                defaultInfoList.addAll(add)
             } else {
-                labelInfoMap[label] = list
+                labelInfoMap.getOrPut(label) { ArrayList() }.addAll(add)
             }
         }
 

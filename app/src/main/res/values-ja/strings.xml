@@ -141,6 +141,7 @@
     <!-- Gallery Previews -->
     <!-- Download -->
     <string name="no_download_info">ダウンロードタスクはここに表示されます</string>
+    <string name="downloads_load_failed">ダウンロードを読み込めませんでした。タップして再試行</string>
     <string name="download_state_none">一時停止中</string>
     <string name="download_state_wait">待機中</string>
     <string name="download_state_downloading">ダウンロード中</string>
@@ -218,6 +219,9 @@
     <string name="download_resume_resume_action">再開</string>
     <plurals name="download_resume_storage_full_snackbar">
         <item quantity="other">ストレージがいっぱいです：%d 件のダウンロードを一時停止しました。空き容量を確保してから再開してください。</item>
+    </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="other">システムの制限により %d 件のダウンロードを一時停止しました。アプリを開いたまま再開してください。</item>
     </plurals>
     <string name="remember_download_label">ダウンロードラベルを記憶する</string>
     <string name="default_download_label">デフォルトのダウンロードラベル</string>
@@ -503,11 +507,10 @@
     <string name="settings_download_clean_redundancy_done">%d 件のファイルを削除しました</string>
     <string name="settings_advanced">その他の設定</string>
     <string name="settings_advanced_save_crash_log">クラッシュレポートを保存する</string>
-    <string name="settings_advanced_save_crash_log_summary">クラッシュレポートはバグの修正に役立ちます</string>
-    <string name="settings_advanced_dump_logcat">ログをエクスポート</string>
-    <string name="settings_advanced_dump_logcat_summary">ログを内部ストレージに保存します</string>
-    <string name="settings_advanced_dump_logcat_failed">ログをエクスポートできませんでした</string>
-    <string name="settings_advanced_dump_logcat_to">ログを「%s」にエクスポートしました</string>
+    <string name="settings_advanced_save_crash_log_summary">この端末にのみ保存され、アップロードされません。診断情報を共有すると含まれます。</string>
+    <string name="settings_advanced_share_diagnostics">診断情報を共有</string>
+    <string name="settings_advanced_share_diagnostics_summary">クラッシュレポート、最近のログ、アプリとサーバーのバージョンを zip にまとめます。サーバーのアドレスとキーは除去され、共有先を選ばない限り送信されません。</string>
+    <string name="settings_advanced_share_diagnostics_failed">診断ファイルを作成できませんでした</string>
     <string name="settings_advanced_clear_memory_cache">メモリキャッシュを消去する</string>
     <string name="settings_advanced_clear_memory_cache_summary">サムネイルとギャラリー情報のメモリキャッシュをクリアします</string>
     <string name="settings_advanced_read_cache_size">閲覧キャッシュのサイズ</string>

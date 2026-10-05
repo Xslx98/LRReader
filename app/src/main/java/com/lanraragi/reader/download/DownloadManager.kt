@@ -207,6 +207,14 @@ class DownloadManager(
         val rating: Float,
     )
 
+    /** Non-null while the download list failed to load from the database (audit C34). */
+    val loadError: kotlinx.coroutines.flow.StateFlow<Throwable?> get() = repo.loadError
+
+    /** Retries a failed load; listeners get onReload() as on a normal start. */
+    fun retryLoading() {
+        repo.retryLoading { eventBus.forEachListener { it.onReload() } }
+    }
+
     suspend fun awaitInitAsync(timeoutMs: Long = 10_000L) {
         if (repo.initialized) return
         check(Looper.myLooper() != Looper.getMainLooper()) { "awaitInitAsync() must not be called on the main thread" }
@@ -498,11 +506,20 @@ class DownloadManager(
      * foreground shows the "downloads timed out — retry" snackbar with a
      * one-tap re-queue.
      */
-    fun pauseAllForSystemBudget() {
+    fun pauseAllForSystemBudget() = pauseAllActive(DownloadResumeBanner::markTimedOut)
+
+    /**
+     * The system refused the foreground service (Android 12+ background-start
+     * limits, an OEM block): downloads would stall unprotected, so pause them
+     * resumably and offer them back as "system limit" (audit 2026-10-04 C34 / STAB-14).
+     */
+    fun pauseAllForSystemLimit() = pauseAllActive(DownloadResumeBanner::markSystemLimited)
+
+    private fun pauseAllActive(mark: (String, String?) -> Unit) {
         repo.assertMainThread()
         for (di in repo.allInfoList) {
             if (di.state == DownloadState.WAIT || di.state == DownloadState.DOWNLOAD) {
-                DownloadResumeBanner.markTimedOut(di.arcid, di.title)
+                mark(di.arcid, di.title)
             }
         }
         stopAllDownload()

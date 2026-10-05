@@ -176,6 +176,7 @@
 
     <!-- Download -->
     <string name="no_download_info">รายการดาวน์โหลดจะอยู่ตรงนี้</string>
+    <string name="downloads_load_failed">โหลดรายการดาวน์โหลดไม่สำเร็จ แตะเพื่อลองใหม่</string>
     <string name="download_state_none">Idle</string>
     <string name="download_state_wait">กำลังรอ</string>
     <string name="download_state_downloading">กำลังดาวน์โหลด</string>
@@ -251,6 +252,9 @@
     <string name="download_resume_resume_action">ดำเนินการต่อ</string>
     <plurals name="download_resume_storage_full_snackbar">
         <item quantity="other">พื้นที่จัดเก็บเต็ม: หยุดการดาวน์โหลด %d รายการชั่วคราว ล้างพื้นที่แล้วดำเนินการต่อ</item>
+    </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="other">ข้อจำกัดของระบบ: หยุดการดาวน์โหลด %d รายการชั่วคราว เปิดแอปไว้แล้วดำเนินการต่อ</item>
     </plurals>
     <string name="remember_download_label">จดจำป้ายชื่อดาวน์โหลด</string>
     <string name="default_download_label">ป้ายชื่อดาวน์โหลดเริ่มต้น</string>
@@ -546,11 +550,10 @@
 
     <string name="settings_advanced">ขั้นสูง</string>
     <string name="settings_advanced_save_crash_log">บันทึกข้อผิดพลาดเมื่อเกิด crash</string>
-    <string name="settings_advanced_save_crash_log_summary">การบันทึกข้อผิดพลาดจาก crash จะช่วยให้ผู้พัฒนาหาและแก้ไขบัคต่างๆได้ง่าย</string>
-    <string name="settings_advanced_dump_logcat">สร้าง Logcat</string>
-    <string name="settings_advanced_dump_logcat_summary">บันทึก Logcat ไปที่พื้นที่จัดเก็บภายนอก</string>
-    <string name="settings_advanced_dump_logcat_failed">การสร้าง Logcat เกิดข้อผิดพลาด</string>
-    <string name="settings_advanced_dump_logcat_to">Logcat ถูกสร้างอยู่ที่ %s</string>
+    <string name="settings_advanced_save_crash_log_summary">บันทึกไว้ในอุปกรณ์นี้เท่านั้น ไม่มีการอัปโหลด และจะรวมอยู่เมื่อคุณแชร์ข้อมูลวินิจฉัย</string>
+    <string name="settings_advanced_share_diagnostics">แชร์ข้อมูลวินิจฉัย</string>
+    <string name="settings_advanced_share_diagnostics_summary">รวมรายงานข้อขัดข้อง บันทึกล่าสุด และเวอร์ชันแอป/เซิร์ฟเวอร์เป็นไฟล์ zip โดยลบที่อยู่เซิร์ฟเวอร์และคีย์ออก และจะไม่ส่งไปไหนจนกว่าคุณจะเลือกปลายทาง</string>
+    <string name="settings_advanced_share_diagnostics_failed">ไม่สามารถสร้างไฟล์ข้อมูลวินิจฉัยได้</string>
     <string name="settings_advanced_clear_memory_cache">ลบไฟล์ขยะในหน่วยความจำ</string>
     <string name="settings_advanced_clear_memory_cache_summary">ลบภาพตัวอย่าง และข้อมูลแกลเลอรี่ที่มีการเก็บข้อมูลไว้</string>
     <string name="settings_advanced_read_cache_size">ขนาดในการเก็บไฟล์ชั่วคราวเพื่ออ่าน</string>

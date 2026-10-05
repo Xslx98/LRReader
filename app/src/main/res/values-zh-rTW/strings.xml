@@ -173,6 +173,7 @@
 
     <!-- Download -->
     <string name="no_download_info">下載的物件將會顯示在此</string>
+    <string name="downloads_load_failed">無法載入下載清單，點按重試</string>
     <string name="download_state_none">閒置中</string>
     <string name="download_state_wait">等待中</string>
     <string name="download_state_downloading">下載中</string>
@@ -233,6 +234,9 @@
     <string name="download_resume_resume_action">恢復</string>
     <plurals name="download_resume_storage_full_snackbar">
         <item quantity="other">儲存空間已滿：已暫停 %d 個下載。請釋放空間後繼續。</item>
+    </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="other">受系統限制，已暫停 %d 個下載。請保持應用程式開啟後繼續。</item>
     </plurals>
     <string name="remember_download_label">記住下載標籤</string>
     <string name="default_download_label">預設下載標籤</string>
@@ -549,11 +553,10 @@
 
     <string name="settings_advanced">進階</string>
     <string name="settings_advanced_save_crash_log">應用崩潰時儲存錯誤日誌</string>
-    <string name="settings_advanced_save_crash_log_summary">錯誤日誌可以幫助開發者修正問題</string>
-    <string name="settings_advanced_dump_logcat">傾印log</string>
-    <string name="settings_advanced_dump_logcat_summary">儲存log紀錄至外接儲存裝置中</string>
-    <string name="settings_advanced_dump_logcat_failed">無法傾印log紀錄</string>
-    <string name="settings_advanced_dump_logcat_to">已儲存log紀錄至 %s</string>
+    <string name="settings_advanced_save_crash_log_summary">僅儲存在本機，不會上傳；分享診斷資訊時一併附上</string>
+    <string name="settings_advanced_share_diagnostics">分享診斷資訊</string>
+    <string name="settings_advanced_share_diagnostics_summary">將當機報告、近期記錄及應用程式／伺服器版本打包為 zip。伺服器位址和金鑰已移除；只有你選擇分享對象時才會傳送。</string>
+    <string name="settings_advanced_share_diagnostics_failed">無法產生診斷檔案</string>
     <string name="settings_advanced_clear_memory_cache">清除記憶體快取</string>
     <string name="settings_advanced_clear_memory_cache_summary">清除縮圖、圖庫詳細資料的記憶體快取</string>
     <string name="settings_advanced_read_cache_size">閱讀快取大小</string>

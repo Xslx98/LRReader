@@ -122,4 +122,17 @@ class DownloadResumeBannerTest {
         assertTrue(DownloadResumeBanner.consume() is DownloadResumeBanner.Snapshot.TimedOut)
         assertEquals(DownloadResumeBanner.Snapshot.Interrupted(listOf("a"), 1), DownloadResumeBanner.consume())
     }
+
+    @Test
+    fun systemLimited_comesAfterStorageFull_beforeTimedOut_andIsClearedByResume() {
+        DownloadResumeBanner.markTimedOut("t", "Timed out")
+        DownloadResumeBanner.markSystemLimited("s", "S")
+        DownloadResumeBanner.markSystemLimited("r", "R")
+        DownloadResumeBanner.markResumed("r")
+        assertEquals(DownloadResumeBanner.Snapshot.SystemLimited(listOf("s"), 1), DownloadResumeBanner.consume())
+
+        DownloadResumeBanner.markSystemLimited("s", "S")
+        DownloadResumeBanner.markStorageFull("f", "F")
+        assertEquals(DownloadResumeBanner.Snapshot.StorageFull(listOf("f"), 1), DownloadResumeBanner.consume())
+    }
 }

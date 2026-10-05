@@ -168,6 +168,7 @@
 
     <!-- Download -->
     <string name="no_download_info">Las galerías descargadas se mostrarán acá</string>
+    <string name="downloads_load_failed">No se pudieron cargar tus descargas. Toca para reintentar.</string>
     <string name="download_state_wait">Esperando</string>
     <string name="download_state_downloading">Descargando</string>
     <string name="download_state_downloaded">Descargado</string>
@@ -259,6 +260,11 @@
         <item quantity="one">Almacenamiento lleno: %d descarga en pausa. Libera espacio y reanuda.</item>
         <item quantity="many">Almacenamiento lleno: %d descargas en pausa. Libera espacio y reanuda.</item>
         <item quantity="other">Almacenamiento lleno: %d descargas en pausa. Libera espacio y reanuda.</item>
+    </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="one">Límite del sistema: %d descarga en pausa. Mantén la app abierta y reanuda.</item>
+        <item quantity="many">Límite del sistema: %d descargas en pausa. Mantén la app abierta y reanuda.</item>
+        <item quantity="other">Límite del sistema: %d descargas en pausa. Mantén la app abierta y reanuda.</item>
     </plurals>
     <string name="remember_download_label">Recordar etiqueta de descarga</string>
     <string name="default_download_label">Etiqueta predeterminada de descarga</string>
@@ -575,11 +581,10 @@
 
     <string name="settings_advanced">Avanzado</string>
     <string name="settings_advanced_save_crash_log">Guardar registro de fallos cuando la aplicación falla</string>
-    <string name="settings_advanced_save_crash_log_summary">Los registros de fallos ayudan a los desarrolladores a corregir errores</string>
-    <string name="settings_advanced_dump_logcat">Guardado de logcat</string>
-    <string name="settings_advanced_dump_logcat_summary">Guardar logcat en almacenamiento externo</string>
-    <string name="settings_advanced_dump_logcat_failed">Guardado de logcat fallido</string>
-    <string name="settings_advanced_dump_logcat_to">Logcat guardado en %s</string>
+    <string name="settings_advanced_save_crash_log_summary">Se guarda solo en este dispositivo y nunca se sube. Se incluye al compartir el diagnóstico.</string>
+    <string name="settings_advanced_share_diagnostics">Compartir diagnóstico</string>
+    <string name="settings_advanced_share_diagnostics_summary">Informes de fallos, registros recientes y versiones de la app y del servidor en un zip. Se quitan la dirección del servidor y las claves; solo se envía adonde tú elijas.</string>
+    <string name="settings_advanced_share_diagnostics_failed">No se pudo crear el archivo de diagnóstico</string>
     <string name="settings_advanced_clear_memory_cache">Borrar caché de memoria</string>
     <string name="settings_advanced_clear_memory_cache_summary">Borrar vistas previas, información de galería y caché de memoria</string>
     <string name="settings_advanced_read_cache_size">Tamaño del caché (archivos temporales)</string>

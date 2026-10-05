@@ -140,6 +140,10 @@ class DownloadsScene : ToolbarScene(),
      ---------------*/
     private lateinit var mRecyclerView: MyEasyRecyclerView
     private var mViewTransition: ViewTransition? = null
+    private var mTip: TextView? = null
+
+    /** Last [com.lanraragi.reader.download.DownloadManager.loadError] (audit C34 / STAB-13). */
+    private var mLoadError: Throwable? = null
     private lateinit var mFabLayout: FabLayout
     private var mAdapter: RecyclerView.Adapter<*>? = null
     private var mOriginalAdapter: DownloadAdapter? = null
@@ -332,6 +336,7 @@ class DownloadsScene : ToolbarScene(),
         mPaginationIndicator?.setPerPageCountChoices(viewModel.perPageCountChoices, mPaginationHelper?.getPageSizePos(viewModel.pageSize.value) ?: 0)
 
         mViewTransition = ViewTransition(content, tip)
+        mTip = tip
 
         val resources = context.resources
 
@@ -431,6 +436,13 @@ class DownloadsScene : ToolbarScene(),
         super.onViewCreated(view, savedInstanceState)
         updateTitle()
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
+
+        // A failed load from the database must not look like "no downloads":
+        // the tip shows the error and retries on tap (audit 2026-10-04 C34).
+        collectFlow(viewLifecycleOwner, viewModel.downloadManager.loadError) { error ->
+            mLoadError = error
+            updateView()
+        }
 
         // Subscribe to the structural list StateFlow (Room Flow, label-
         // filtered). Transient progress flows separately via progressMap
@@ -541,6 +553,7 @@ class DownloadsScene : ToolbarScene(),
         }
 
         mViewTransition = null
+        mTip = null
         mAdapter = null
         mOriginalAdapter = null
     }
@@ -577,6 +590,16 @@ class DownloadsScene : ToolbarScene(),
 
     fun updateView() {
         val viewTransition = mViewTransition ?: return
+        val tip = mTip
+        if (mLoadError != null && tip != null) {
+            tip.setText(R.string.downloads_load_failed)
+            tip.setOnClickListener { viewModel.downloadManager.retryLoading() }
+            viewTransition.showView(1)
+            return
+        }
+        tip?.setText(R.string.no_download_info)
+        tip?.setOnClickListener(null)
+        tip?.isClickable = false
         if (mList.isNullOrEmpty()) {
             viewTransition.showView(1)
         } else {

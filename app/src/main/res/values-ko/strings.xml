@@ -178,6 +178,7 @@
 
     <!-- Download -->
     <string name="no_download_info">다운로드한 항목이 여기에 표시됩니다.</string>
+    <string name="downloads_load_failed">다운로드 목록을 불러오지 못했습니다. 탭하여 다시 시도하세요.</string>
     <string name="download_state_none">유휴 상태</string>
     <string name="download_state_wait">대기 중</string>
     <string name="download_state_downloading">다운로드 중</string>
@@ -255,6 +256,9 @@
     <string name="download_resume_resume_action">재개</string>
     <plurals name="download_resume_storage_full_snackbar">
         <item quantity="other">저장 공간 부족: 다운로드 %d개가 일시 중지되었습니다. 공간을 확보한 후 다시 시작하세요.</item>
+    </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="other">시스템 제한으로 다운로드 %d개가 일시 중지되었습니다. 앱을 연 상태에서 다시 시작하세요.</item>
     </plurals>
     <string name="remember_download_label">다운로드 레이블 기억</string>
     <string name="default_download_label">기본 다운로드 레이블</string>
@@ -553,11 +557,10 @@
 
     <string name="settings_advanced">고급</string>
     <string name="settings_advanced_save_crash_log">앱 충돌 시 로그 저장</string>
-    <string name="settings_advanced_save_crash_log_summary">충돌 로그는 개발자가 버그를 수정하는 데 도움이 됩니다.</string>
-    <string name="settings_advanced_dump_logcat">로그캣 덤프</string>
-    <string name="settings_advanced_dump_logcat_summary">외부 저장소에 로그캣 저장</string>
-    <string name="settings_advanced_dump_logcat_failed">로그캣을 덤프하지 못했습니다.</string>
-    <string name="settings_advanced_dump_logcat_to">%s 경로에 로그캣을 저장했습니다.</string>
+    <string name="settings_advanced_save_crash_log_summary">이 기기에만 저장되며 업로드되지 않습니다. 진단 정보를 공유할 때 포함됩니다.</string>
+    <string name="settings_advanced_share_diagnostics">진단 정보 공유</string>
+    <string name="settings_advanced_share_diagnostics_summary">충돌 보고서, 최근 로그, 앱/서버 버전을 zip으로 묶습니다. 서버 주소와 키는 제거되며, 공유 대상을 선택하지 않으면 전송되지 않습니다.</string>
+    <string name="settings_advanced_share_diagnostics_failed">진단 파일을 만들 수 없습니다</string>
     <string name="settings_advanced_clear_memory_cache">메모리 캐시 삭제</string>
     <string name="settings_advanced_clear_memory_cache_summary">섬네일, 갤러리 정보 메모리 캐시 삭제</string>
     <string name="settings_advanced_read_cache_size">읽기 캐시 크기</string>

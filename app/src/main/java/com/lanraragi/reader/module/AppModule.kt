@@ -78,7 +78,7 @@ class AppModule(private val context: Context) : IAppModule {
 
         /**
          * Boot-time [CoroutineExceptionHandler] used by [bootScope]. Reports uncaught
-         * exceptions to [Crash.saveCrashLog] and [Analytics.recordException], with
+         * exceptions to [Crash.saveNonFatal] and [Analytics.recordException], with
          * try/catch protection so a failure inside the handler can never crash the app.
          *
          * Production sites use [bootCEH]; tests build their own via [createBootCEH] with
@@ -94,7 +94,7 @@ class AppModule(private val context: Context) : IAppModule {
                     Log.w(BOOT_TAG, "Retrieve LRReaderApplication instance for crash log", e)
                     null
                 }
-                if (ctx != null) Crash.saveCrashLog(ctx, t)
+                if (ctx != null) Crash.saveNonFatal(ctx, t)
             },
             recordException = { t -> Analytics.recordException(t) },
         )

@@ -1,6 +1,6 @@
 # Privacy Policy - LR Reader | 隐私政策
 
-**生效日期 | Effective Date:** 2026-03-25
+**生效日期 | Effective Date:** 2026-10-04
 
 LR Reader（以下简称"本应用"）是一个开源的 LANraragi Android 客户端，用于连接用户自建的漫画/档案管理服务器。本隐私政策说明应用如何处理您的数据。
 
@@ -26,6 +26,13 @@ The App stores the following data only on your device:
 - **阅读历史和偏好设置 / Reading history and preferences** - 存储在本地 SQLite 数据库中 / stored in a local SQLite database
 - **缓存图像 / Cached images** - 用于提升性能的临时文件，自动清理 / temporary files, automatically cleaned up
 - **头像和背景图片 / Avatar and background images** - 用户自定义的个人资料图片 / user-customized profile images
+- **崩溃与诊断报告 / Crash and diagnostic reports** - 默认开启，仅保存在应用私有目录（每类最近 5 份），可在「设置 → 高级」关闭；内容为错误堆栈、设备型号与系统版本、应用版本及近期脱敏事件，不含服务器地址、API 密钥或档案标题 / on by default, kept only in the app-private directory (the newest 5 of each kind) and can be turned off in Settings → Advanced; they contain error stack traces, device model and OS version, app version and recent redacted events, never server addresses, API keys or archive titles
+
+## 诊断信息分享 | Sharing Diagnostics
+
+本应用不会自动上传任何报告。只有当您在「设置 → 高级」点击「分享诊断信息」并选择分享目标时，才会生成一个 zip 文件交给系统分享面板。该文件包含上述报告、本应用进程的近期日志、应用/数据库/服务器版本、下载队列统计（数量与失败原因）以及脱敏后的设置；服务器地址（仅保留 http/https 与是否为局域网）、API 密钥、密码、下载路径与标签均已移除。
+
+The App never uploads reports on its own. Only when you tap "Share diagnostics" in Settings → Advanced and pick a share target does it build a zip file and hand it to the system share sheet. The file contains the reports above, this app's recent log lines, app/database/server versions, download-queue counts (totals and failure reasons) and redacted settings; the server address (only http/https and LAN yes/no are kept), API keys, passwords, download paths and labels are removed.
 
 ## 网络通信 | Network Communication
 

@@ -29,8 +29,10 @@ object PrivacySettings {
     fun putEnableAnalytics(value: Boolean) = Settings.putBoolean(KEY_ENABLE_ANALYTICS, value)
 
     // --- Save Crash Log ---
+    // On by default since audit 2026-10-04 C06 (ruling R1): reports stay in the
+    // app-private dir, newest 5 per kind, and leave only via "Share diagnostics".
     private const val KEY_SAVE_CRASH_LOG = "save_crash_log"
-    private const val DEFAULT_SAVE_CRASH_LOG = false
+    private const val DEFAULT_SAVE_CRASH_LOG = true
 
     @JvmStatic
     fun getSaveCrashLog(): Boolean = Settings.getBoolean(KEY_SAVE_CRASH_LOG, DEFAULT_SAVE_CRASH_LOG)

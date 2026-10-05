@@ -62,4 +62,26 @@ class ServerCapabilityCacheTest {
         ServerCapabilityCache.excludedNamespaces("http://a")
         assertEquals(1, store.loads)
     }
+
+    @Test
+    fun describeServerInfo_summarizesWithoutNameOrMotd() {
+        assertNull(ServerCapabilityCache.describeServerInfo("http://a"))
+        val info = com.lanraragi.reader.client.api.data.LRRServerInfo().apply {
+            name = "Alice's library"
+            motd = "welcome http://10.0.0.3"
+            version = "0.9.50"
+            versionName = "Lovely Day"
+            hasPassword = true
+            excludedNamespaces = listOf("source")
+        }
+        ServerCapabilityCache.recordServerInfo("http://a", info)
+        val line = ServerCapabilityCache.describeServerInfo("http://a")!!
+        assertEquals(
+            "version=0.9.50 (Lovely Day), hasPassword=true, nofun=false, debug=false, resizes=false, " +
+                "tracksProgress=false, archivesPerPage=100, excludedNamespaces=1",
+            line,
+        )
+        ServerCapabilityCache.clear()
+        assertNull(ServerCapabilityCache.describeServerInfo("http://a"))
+    }
 }

@@ -41,11 +41,14 @@ object DownloadResumeBanner {
         data class Interrupted(val arcids: List<String>, val count: Int) : Snapshot
         /** The disk filled up; these downloads were paused and can be re-queued once space is freed. */
         data class StorageFull(val arcids: List<String>, val count: Int) : Snapshot
+        /** The system refused the foreground service; these downloads were paused (audit C34). */
+        data class SystemLimited(val arcids: List<String>, val count: Int) : Snapshot
     }
 
     private val paused = LinkedHashMap<String, String>()   // arcid -> title
     private val timedOut = LinkedHashMap<String, String>() // arcid -> title
     private val storageFull = LinkedHashMap<String, String>() // arcid -> title
+    private val systemLimited = LinkedHashMap<String, String>() // arcid -> title
 
     @Synchronized
     fun markPaused(arcid: String, title: String?) {
@@ -62,6 +65,7 @@ object DownloadResumeBanner {
         // ghost "N downloads timed out" Snackbar on the next foreground.
         timedOut.remove(arcid)
         storageFull.remove(arcid)
+        systemLimited.remove(arcid)
         val interrupted = interruptedStore.load()
         if (arcid in interrupted) interruptedStore.save(interrupted - arcid)
     }
@@ -81,6 +85,14 @@ object DownloadResumeBanner {
         storageFull[arcid] = title ?: arcid
     }
 
+    /** Record a download paused because the system refused the foreground service (audit C34). */
+    @Synchronized
+    fun markSystemLimited(arcid: String, title: String?) {
+        paused.remove(arcid)
+        timedOut.remove(arcid)
+        systemLimited[arcid] = title ?: arcid
+    }
+
     @Synchronized
     fun markTimedOut(arcid: String, title: String?) {
         paused.remove(arcid)
@@ -89,7 +101,7 @@ object DownloadResumeBanner {
 
     /**
      * Read the current state and clear it (one-shot). Precedence: StorageFull (the
-     * user must act first), then TimedOut, then Interrupted, then Paused. Interrupted downloads not shown this time are
+     * user must act first), then SystemLimited, then TimedOut, then Interrupted, then Paused. Interrupted downloads not shown this time are
      * kept for the next foreground.
      */
     @Synchronized
@@ -97,6 +109,7 @@ object DownloadResumeBanner {
         val interrupted = interruptedStore.load()
         val snapshot = when {
             storageFull.isNotEmpty() -> Snapshot.StorageFull(storageFull.keys.toList(), storageFull.size)
+            systemLimited.isNotEmpty() -> Snapshot.SystemLimited(systemLimited.keys.toList(), systemLimited.size)
             timedOut.isNotEmpty() -> Snapshot.TimedOut(timedOut.keys.toList(), timedOut.size)
             interrupted.isNotEmpty() -> {
                 interruptedStore.save(emptySet())
@@ -108,6 +121,7 @@ object DownloadResumeBanner {
         paused.clear()
         timedOut.clear()
         storageFull.clear()
+        systemLimited.clear()
         return snapshot
     }
 
@@ -116,6 +130,7 @@ object DownloadResumeBanner {
         paused.clear()
         timedOut.clear()
         storageFull.clear()
+        systemLimited.clear()
         interruptedStore.save(emptySet())
     }
 }
