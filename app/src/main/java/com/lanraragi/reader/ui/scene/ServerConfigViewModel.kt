@@ -112,7 +112,7 @@ class ServerConfigViewModel : ViewModel() {
                 )
             ) {
                 is LRRUrlHelper.ConnectResult.Success ->
-                    onConnectSuccess(r.resolvedUrl, r.info, candidateKey, navigateOnSuccess)
+                    onConnectSuccess(r.resolvedUrl, r.info, candidateKey, navigateOnSuccess, allowCleartext)
                 is LRRUrlHelper.ConnectResult.Failure -> onConnectFailure(r.error)
             }
         }
@@ -126,16 +126,15 @@ class ServerConfigViewModel : ViewModel() {
         resolvedUrl: String,
         info: LRRServerInfo,
         apiKey: String?,
-        navigateOnSuccess: Boolean
+        navigateOnSuccess: Boolean,
+        allowCleartext: Boolean
     ) {
         try {
             withContext(Dispatchers.IO) {
-                // The persisted cleartext flag tracks the resolved scheme (as on
-                // the add/edit paths): an HTTP resolution must be allowed
-                // cleartext or the interceptor refuses its traffic; an HTTPS
-                // resolution needs no grant. The gate already refused any
-                // unconsented WAN-cleartext resolution before reaching here.
-                val savedAllowCleartext = resolvedUrl.lowercase().startsWith("http://")
+                // The persisted cleartext flag is the user's consent (as on the
+                // add/edit paths, audit C27 ruling R11); LAN hosts need none —
+                // the interceptor admits them like the connect gate does.
+                val savedAllowCleartext = allowCleartext
 
                 // Room first: create or update the active profile row. A failure
                 // here is reported below with the live global auth still on the

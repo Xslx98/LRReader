@@ -17,9 +17,11 @@ import okhttp3.Response
  *
  *   - HTTPS                                                              → allow
  *   - HTTP, host:port matches a configured profile, scheme matches,
- *     and that profile's allowCleartext == true                          → allow
+ *     and that profile's allowCleartext == true (the user's explicit
+ *     consent) or the host is a LAN address ([LRRUrlHelper.isLanAddress],
+ *     the same rule the connect gate applies)                            → allow
  *   - HTTP, host:port matches a configured profile, scheme matches,
- *     but allowCleartext == false                                        → reject
+ *     no consent and not a LAN address                                   → reject
  *   - HTTP, host:port matches a configured profile, scheme differs       → reject
  *   - HTTP, no profile matches host:port (cache empty / cold-start) →
  *     fall back to legacy active-only check against [LRRAuthManager]
@@ -77,7 +79,7 @@ class LRRCleartextRejectionInterceptor : Interceptor {
                 "Cleartext request refused: configured profile is HTTPS, request is HTTP."
             )
         }
-        if (!match.profile.allowCleartext) {
+        if (!cleartextPermitted(match.profile.allowCleartext, url)) {
             throw LRRCleartextRefusedException(
                 "Cleartext request refused: profile does not allow plain HTTP."
             )
@@ -119,7 +121,7 @@ class LRRCleartextRejectionInterceptor : Interceptor {
             )
         }
 
-        if (!LRRAuthManager.getAllowCleartext()) {
+        if (!cleartextPermitted(LRRAuthManager.getAllowCleartext(), url)) {
             throw LRRCleartextRefusedException(
                 "Cleartext request refused: profile does not allow plain HTTP."
             )
@@ -127,4 +129,11 @@ class LRRCleartextRejectionInterceptor : Interceptor {
 
         return chain.proceed(request)
     }
+
+    /**
+     * `allowCleartext` records only the user's consent (audit C27, ruling
+     * R11); LAN hosts need none, exactly as in [LRRUrlHelper.connectWithFallback].
+     */
+    private fun cleartextPermitted(consented: Boolean, url: HttpUrl): Boolean =
+        consented || LRRUrlHelper.isLanAddress(url.toString())
 }

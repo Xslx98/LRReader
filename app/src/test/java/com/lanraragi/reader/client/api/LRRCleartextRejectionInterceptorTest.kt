@@ -154,10 +154,21 @@ class LRRCleartextRejectionInterceptorTest {
     }
 
     @Test
-    fun http_request_to_active_host_is_refused_when_flag_false() {
-        LRRAuthManager.setServerUrl("http://lrr.local:3000")
+    fun http_request_to_active_wan_host_is_refused_when_flag_false() {
+        LRRAuthManager.setServerUrl("http://lrr.example.com:3000")
         LRRAuthManager.setAllowCleartext(false)
-        executeAndExpectRefused("http://lrr.local:3000/api/info", "flag false")
+        executeAndExpectRefused("http://lrr.example.com:3000/api/info", "flag false")
+    }
+
+    /** Audit C27 (ruling R11): a LAN host needs no consent flag. */
+    @Test
+    fun http_request_to_active_lan_host_passes_without_flag() {
+        LRRAuthManager.setServerUrl("http://192.168.1.10:3000")
+        LRRAuthManager.setAllowCleartext(false)
+        val req = Request.Builder().url("http://192.168.1.10:3000/api/info").build()
+        val chain = FakeChain(req)
+        LRRCleartextRejectionInterceptor().intercept(chain)
+        assertSame(req, chain.proceededRequest)
     }
 
     @Test
