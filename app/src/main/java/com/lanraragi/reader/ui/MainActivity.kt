@@ -61,7 +61,6 @@ import com.lanraragi.reader.dao.DatabaseQuarantine
 import com.lanraragi.reader.module.AppModule
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRUrlHelper
-import com.lanraragi.reader.ui.scene.AnalyticsScene
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.ServerConfigScene
 import com.lanraragi.reader.ui.scene.ServerListScene
@@ -155,7 +154,6 @@ class MainActivity : StageActivity(),
         init {
             registerLaunchMode(SecurityScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
 
-            registerLaunchMode(AnalyticsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(ServerConfigScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(ServerListScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
             registerLaunchMode(GalleryListScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
@@ -176,7 +174,6 @@ class MainActivity : StageActivity(),
 
             // Scene factory registrations (replaces reflection-based newInstance())
             SceneFactory.register(SecurityScene::class.java.name) { SecurityScene() }
-            SceneFactory.register(AnalyticsScene::class.java.name) { AnalyticsScene() }
             SceneFactory.register(ServerConfigScene::class.java.name) { ServerConfigScene() }
             SceneFactory.register(ServerListScene::class.java.name) { ServerListScene() }
             SceneFactory.register(GalleryListScene::class.java.name) { GalleryListScene() }

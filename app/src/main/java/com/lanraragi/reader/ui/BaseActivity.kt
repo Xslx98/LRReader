@@ -25,7 +25,6 @@ import android.view.WindowManager
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
 import com.lanraragi.framework.content.ContextLocalWrapper
-import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
@@ -63,10 +62,6 @@ abstract class BaseActivity : AppCompatActivity() {
         if (!hostsLockScreen() && AppLockGate.isLocked()) {
             redirectToLockScreen()
         }
-
-        // Analytics stub (Firebase removed)
-        @Suppress("UNUSED_EXPRESSION")
-        Analytics.isEnabled
     }
 
     override fun onResume() {

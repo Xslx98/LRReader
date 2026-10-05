@@ -75,7 +75,6 @@
 }
 
 # === Suppress warnings for optional dependencies ===
--dontwarn com.google.firebase.**
 -dontwarn javax.annotation.**
 -dontwarn org.codehaus.mojo.**
 -dontwarn net.sqlcipher.**

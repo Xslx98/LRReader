@@ -415,10 +415,6 @@ class LRReaderApplication : RecordingApplication() {
             }
         }
 
-        if (PrivacySettings.getEnableAnalytics()) {
-            Analytics.start(this)
-        }
-
         // Re-prompt the security pattern whenever the whole app returns from
         // background. ProcessLifecycleOwner debounces by ~700 ms, so config
         // changes (rotation), the notification shade, BiometricPrompt, and

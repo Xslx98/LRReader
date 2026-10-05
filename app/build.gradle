@@ -5,10 +5,6 @@ apply plugin: "org.jetbrains.kotlin.plugin.serialization"
 apply plugin: "com.google.devtools.ksp"
 apply plugin: "io.gitlab.arturbosch.detekt"
 apply plugin: "jacoco"
-if (file('google-services.json').exists()) {
-    apply plugin: 'com.google.gms.google-services'
-    apply plugin: 'com.google.firebase.crashlytics'
-}
 
 android {
     namespace 'com.lanraragi.reader'

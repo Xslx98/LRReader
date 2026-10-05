@@ -32,8 +32,6 @@ test-core = "1.7.0"
 
 # --- Google ---
 material = "1.14.0"
-firebase-crashlytics-plugin = "3.0.7"
-google-services = "4.5.0"
 
 # --- Kotlin/JetBrains ---
 coroutines = "1.11.0"
@@ -109,10 +107,8 @@ pagination-sxj = { module = "com.github.xiaojieonly:Pagination_Sxj", version = "
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-plugin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

@@ -31,7 +31,6 @@ import androidx.annotation.IdRes
 import androidx.annotation.StringRes
 import androidx.annotation.StyleRes
 import com.hippo.drawerlayout.DrawerLayout
-import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.framework.scene.SceneFragment
 import com.lanraragi.framework.util.AppHelper
@@ -279,11 +278,6 @@ abstract class BaseScene : SceneFragment() {
         if (activity != null && view != null) {
             AppHelper.showSoftInput(activity, view, true)
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Analytics.onSceneView(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

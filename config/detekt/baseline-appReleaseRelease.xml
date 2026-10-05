@@ -568,8 +568,6 @@
     <ID>UnreachableCode:TankMergeAnimator.kt$TankMergeAnimator$setImageBitmap(bitmap)</ID>
     <ID>UnreachableCode:TankMergeAnimator.kt$TankMergeAnimator$val bitmap = runCatching { Bitmap.createBitmap(snapshot, clipped.left, clipped.top, clipped.width(), clipped.height()) }.getOrNull() ?: return null</ID>
     <ID>UnsafeCallOnNullableType:AdvancedFragment.kt$AdvancedFragment$file!!</ID>
-    <ID>UnsafeCallOnNullableType:AnalyticsScene.kt$AnalyticsScene$mAccept!!</ID>
-    <ID>UnsafeCallOnNullableType:AnalyticsScene.kt$AnalyticsScene$mReject!!</ID>
     <ID>UnsafeCallOnNullableType:AppDrawerLayout.kt$AppDrawerLayout$mAboveSnackViewList!!</ID>
     <ID>UnsafeCallOnNullableType:AppDrawerLayout.kt$AppDrawerLayout.Behavior$view!!</ID>
     <ID>UnsafeCallOnNullableType:AppNavigationView.kt$AppNavigationView$mPaint!!</ID>
