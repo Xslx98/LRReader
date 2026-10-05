@@ -11,6 +11,7 @@ import com.lanraragi.reader.client.api.toHexLower
 import com.lanraragi.reader.callBack.DownloadSearchCallback
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.framework.util.FileUtils
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.download.DownloadInfoListener
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import com.lanraragi.reader.download.DownloadState
 import java.util.concurrent.CompletableFuture
@@ -60,8 +62,13 @@ sealed interface DownloadUiEvent {
  *
  * The Scene observes [StateFlow] properties and updates the UI accordingly.
  * View references, adapters, dialog display, and navigation remain in the Scene.
+ *
+ * @param computeDispatcher runs the O(N) grouping and label filter of every
+ *   downloads-list emission off the main thread (audit C17).
  */
-class DownloadsViewModel : ViewModel(), DownloadInfoListener {
+class DownloadsViewModel(
+    private val computeDispatcher: CoroutineDispatcher = Dispatchers.Default,
+) : ViewModel(), DownloadInfoListener {
 
     /**
      * The app's [DownloadManager] singleton. Exposed so [DownloadsScene]
@@ -131,19 +138,23 @@ class DownloadsViewModel : ViewModel(), DownloadInfoListener {
                 ServiceRegistry.dataModule.downloadDbRepository.observeTankGroups(),
             ) { allDownloads, groups ->
                 TankDownloadGrouping.group(allDownloads, groups)
-            }.collectLatest { grouped ->
-                _tankMembers.value = grouped.tankMembers
-                val label = _currentLabel.value
-                val filtered = if (label == null) {
-                    grouped.display.filter { it.label == null }
-                } else {
-                    grouped.display.filter { it.label == label }
-                }
-                // The active search applies to every emission, or the next
-                // table change would republish the whole label list.
-                _downloadList.value = applySearch(filtered)
-                _backList.value = filtered
             }
+                // Grouping and the label filter are O(N) over every download
+                // row and used to run on Main for each emission (audit C17).
+                // The rows are fresh Room decodes, not the main-thread-owned
+                // DownloadManager objects, so reading them here is safe.
+                .flowOn(computeDispatcher)
+                .collectLatest { grouped ->
+                    _tankMembers.value = grouped.tankMembers
+                    val label = _currentLabel.value
+                    val filtered = withContext(computeDispatcher) {
+                        grouped.display.filter { it.label == label }
+                    }
+                    // The active search applies to every emission, or the next
+                    // table change would republish the whole label list.
+                    _downloadList.value = applySearch(filtered)
+                    _backList.value = filtered
+                }
         }
     }
 

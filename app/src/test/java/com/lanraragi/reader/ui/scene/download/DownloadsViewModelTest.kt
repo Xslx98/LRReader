@@ -24,6 +24,7 @@ import com.lanraragi.reader.containedTestScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -132,7 +133,9 @@ class DownloadsViewModelTest {
         runBlocking { manager.awaitInitAsync() }
         ShadowLooper.idleMainLooper()
 
-        vm = DownloadsViewModel()
+        // Unconfined like the decode dispatcher above: list state is asserted
+        // synchronously after ShadowLooper idling.
+        vm = DownloadsViewModel(computeDispatcher = Dispatchers.Unconfined)
     }
 
     @After
@@ -322,6 +325,36 @@ class DownloadsViewModelTest {
         assertEquals(3, snap.downloaded)
         assertEquals(10, snap.total)
         assertEquals(7777L, snap.remaining)
+    }
+
+    /**
+     * Audit 2026-10-04 C17: grouping and the label filter of every emission
+     * run on the injected compute dispatcher (Default in production), not Main.
+     */
+    @Test
+    fun `list grouping and label filter run on the compute dispatcher`() = runBlocking {
+        val dispatches = java.util.concurrent.atomic.AtomicInteger()
+        val recording = object : kotlinx.coroutines.CoroutineDispatcher() {
+            override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) {
+                dispatches.incrementAndGet()
+                block.run()
+            }
+        }
+        val computeVm = DownloadsViewModel(computeDispatcher = recording)
+        try {
+            val info = DownloadInfo().apply {
+                arcid = "c"; title = "C"; label = null; state = DownloadState.NONE; time = 3L
+            }
+            computeVm.downloadManager.addDownloadInfo(info.toArchive(), null)
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+
+            assertTrue(computeVm.downloadList.value.any { it.arcid == "c" })
+            assertTrue("compute dispatcher never used", dispatches.get() >= 2)
+        } finally {
+            computeVm.downloadManager.removeDownloadInfoListener(computeVm)
+            computeVm.viewModelScope.cancel()
+        }
     }
 
     @Test
