@@ -176,18 +176,39 @@ class SearchBar : CardView,
 
     private var lrrSuggestJob: Job? = null
 
-    private fun scheduleLrrSuggestions(text: String, exclude: Set<String>) {
+    /**
+     * Tag suggestions — the translation dataset ([translationKeyword], when
+     * set) first, then the server's tags — are linear scans over tens of
+     * thousands of entries, so they run debounced on [Dispatchers.Default]
+     * and are appended when ready (audit C36).
+     */
+    private fun scheduleTagSuggestions(text: String, translationKeyword: String?) {
         lrrSuggestJob?.cancel()
         if (text.isEmpty()) return
         // The view tree's lifecycle scope: the work ends with the screen.
         val scope = findViewTreeLifecycleOwner()?.lifecycleScope ?: return
+        val translationDb = if (translationKeyword != null) TagTranslationDatabase.getInstance(context) else null
         lrrSuggestJob = scope.launch {
             delay(LRR_SUGGEST_DEBOUNCE_MS)
-            val tags = withContext(Dispatchers.Default) { LRRTagCache.suggest(text) }
+            val (hints, tags) = withContext(Dispatchers.Default) {
+                val hints = if (translationDb != null && translationKeyword != null) {
+                    translationDb.suggest(translationKeyword)
+                } else {
+                    emptyList()
+                }
+                hints to LRRTagCache.suggest(text)
+            }
             run {
                 // Typed on meanwhile: a newer run owns the list.
                 if (mEditText.text?.toString() != text) return@run
                 var added = false
+                // Track keywords already added to avoid duplicates between local and server tags
+                val exclude = HashSet<String>()
+                for (hint in hints) {
+                    exclude.add(hint.second.lowercase())
+                    mSuggestionList.add(TagSuggestion(if (showTranslation) hint.first else null, hint.second))
+                    added = true
+                }
                 for (tag in tags) {
                     val ns = tag.namespace
                     val fullTag = if (ns.isNullOrEmpty()) tag.text else "$ns:${tag.text}"
@@ -238,11 +259,8 @@ class SearchBar : CardView,
             }
         }
 
-        // Track keywords already added to avoid duplicates between local and server tags
-        val existingTagKeys = mutableSetOf<String>()
-
-        val ehTagDatabase = TagTranslationDatabase.getInstance(getContext())
-        if (!TextUtils.isEmpty(text) && ehTagDatabase != null) {
+        var translationKeyword: String? = null
+        if (!TextUtils.isEmpty(text)) {
             val s = text.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()
             if (s.isNotEmpty()) {
                 var keyword = ""
@@ -258,25 +276,13 @@ class SearchBar : CardView,
                     }
                 }
                 keyword = keyword.trim()
-
-                if (keyword.isNotEmpty()) {
-                    val searchHints = ehTagDatabase.suggest(keyword)
-
-                    for (searchHint in searchHints) {
-                        existingTagKeys.add(searchHint.second.lowercase())
-                        if (showTranslation) {
-                            mSuggestionList.add(TagSuggestion(searchHint.first, searchHint.second))
-                        } else {
-                            mSuggestionList.add(TagSuggestion(null, searchHint.second))
-                        }
-                    }
-                }
+                if (keyword.isNotEmpty()) translationKeyword = keyword
             }
         }
 
-        // LRR server tag suggestions: scanning the whole server tag list is
-        // done off the main thread, debounced, and appended when ready.
-        scheduleLrrSuggestions(text, existingTagKeys.toHashSet())
+        // Translation-dataset and server tag suggestions: off the main
+        // thread, debounced, appended when ready.
+        scheduleTagSuggestions(text, translationKeyword)
 
         if (mSuggestionList.isEmpty()) {
             removeListHeader()
