@@ -277,7 +277,7 @@
 
     <!-- Set Security -->
     <string name="set_pattern_protection">設定圖形解鎖</string>
-    <string name="set_pattern_protection_tip">繪製圖案來設定繪圖解鎖\n留白以取消圖案保護</string>
+    <string name="set_pattern_protection_tip">繪製圖案來設定繪圖解鎖\n留白以取消圖案保護\n\n應用程式鎖只保護應用程式本身：已下載的檔案仍可透過電腦或檔案管理員讀取。</string>
     <string name="set_pattern_too_short">請至少連接 4 個點</string>
     <string name="set_pattern_confirm">請再次繪製相同的圖案以確認</string>
     <string name="set_pattern_mismatch">兩次圖案不一致，請重新繪製圖案。</string>

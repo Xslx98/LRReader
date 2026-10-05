@@ -374,7 +374,7 @@
 
     <!-- Set Security -->
     <string name="set_pattern_protection">Set pattern protection</string>
-    <string name="set_pattern_protection_tip">Draw a pattern to set pattern protection\nLeave blank to clear pattern protection</string>
+    <string name="set_pattern_protection_tip">Draw a pattern to set pattern protection\nLeave blank to clear pattern protection\n\nThe lock hides the app only: downloaded files stay readable from a computer or a file manager.</string>
     <string name="set_pattern_too_short">Connect at least 4 dots</string>
     <string name="set_pattern_confirm">Draw the same pattern again to confirm</string>
     <string name="set_pattern_mismatch">The patterns do not match. Draw a new pattern.</string>

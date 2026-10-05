@@ -229,7 +229,7 @@
     <string name="clear_all">Verlaufdaten löschen</string>
     <string name="clear_all_history">Leseverlauf dieses Servers löschen?</string>
     <string name="set_pattern_protection">Sperrmuster festlegen</string>
-    <string name="set_pattern_protection_tip">Zeichne ein Muster, um es als Sperrmuster festzulegen.\nLasse frei, um das Sperrmuster zu entfernen.</string>
+    <string name="set_pattern_protection_tip">Zeichne ein Muster, um es als Sperrmuster festzulegen.\nLasse frei, um das Sperrmuster zu entfernen.\n\nDie Sperre schützt nur die App: Heruntergeladene Dateien bleiben über einen Computer oder Dateimanager lesbar.</string>
     <string name="set_pattern_too_short">Mindestens 4 Punkte verbinden</string>
     <string name="set_pattern_confirm">Zeichne dasselbe Muster zur Bestätigung erneut</string>
     <string name="set_pattern_mismatch">Die Muster stimmen nicht überein. Zeichne ein neues Muster.</string>

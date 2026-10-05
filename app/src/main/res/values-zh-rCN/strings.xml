@@ -274,7 +274,7 @@
 
     <!-- Set Security -->
     <string name="set_pattern_protection">设置图案保护</string>
-    <string name="set_pattern_protection_tip">绘制图案来设置图案保护\n留空来取消图案保护</string>
+    <string name="set_pattern_protection_tip">绘制图案来设置图案保护\n留空来取消图案保护\n\n应用锁只保护应用本身：已下载的文件仍可通过电脑或文件管理器读取。</string>
     <string name="set_pattern_too_short">请至少连接 4 个点</string>
     <string name="set_pattern_confirm">请再次绘制相同的图案以确认</string>
     <string name="set_pattern_mismatch">两次图案不一致，请重新绘制图案。</string>
