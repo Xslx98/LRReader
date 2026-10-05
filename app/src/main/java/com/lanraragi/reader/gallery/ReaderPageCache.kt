@@ -11,15 +11,21 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.util.CacheBudget
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -194,6 +200,39 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     /** Progress callback for download progress reporting. */
     fun interface ProgressCallback {
         fun onProgress(index: Int, percent: Float)
+    }
+
+    /**
+     * [downloadToFile] whose HTTP call is cancelled with the calling
+     * coroutine: the blocking socket read ignores coroutine cancellation,
+     * so a cancelled preload used to finish every page it had started
+     * (audit C18). Throws [IOException] when cut off.
+     */
+    internal fun CoroutineScope.downloadCancellable(
+        client: OkHttpClient,
+        url: String,
+        cacheFile: File,
+        pageIndex: Int = 0,
+    ) {
+        val job = coroutineContext.job
+        val callRef = AtomicReference<Call?>()
+        // ATOMIC: the watcher's finally runs even if cancellation lands first.
+        val watcher = launch(start = CoroutineStart.ATOMIC) {
+            try {
+                awaitCancellation()
+            } finally {
+                callRef.get()?.cancel()
+            }
+        }
+        try {
+            downloadToFile(client, url, cacheFile, pageIndex, onCallCreated = { call ->
+                callRef.set(call)
+                // Cancelled before the call existed: the watcher saw null.
+                if (!job.isActive) call.cancel()
+            })
+        } finally {
+            watcher.cancel()
+        }
     }
 
     /**
@@ -642,12 +681,16 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
             val end = (centerPage + DETAIL_PRELOAD_RADIUS).coerceAtMost(pages.size - 1)
 
             for (pageIndex in start..end) {
+                // Left the detail page: stop between pages too (audit C18).
+                ensureActive()
                 val cacheFile = getCacheFile(appContext, arcId, pageIndex)
                 if (!(cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE)) {
                     try {
                         val pageUrl = resolvePageUrl(serverUrl, pages[pageIndex])
-                        downloadToFile(pageClient, pageUrl, cacheFile, pageIndex)
+                        downloadCancellable(pageClient, pageUrl, cacheFile, pageIndex)
                         Log.d(TAG, "Detail preloaded page $pageIndex for $arcId")
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.d(TAG, "Detail preload page $pageIndex failed: ${e.message}")
                         continue
@@ -679,6 +722,8 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
                         } else {
                             Log.i(TAG, "[WARM] preloadForDetail decode null arcid=$arcId page=$centerPage")
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.w(TAG, "[WARM] preloadForDetail decode-warm $centerPage failed: ${e.message}")
                     }
