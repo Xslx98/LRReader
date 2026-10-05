@@ -923,4 +923,10 @@
     <string name="cd_clear_search">清除搜索</string>
     <string name="appwidget_continue_reading_description">一键继续阅读上次看的档案</string>
     <string name="appwidget_continue_reading_empty">暂无最近阅读</string>
+    <string name="biometric_prompt_pattern_set">验证身份以将图案绑定到生物识别</string>
+    <string name="biometric_prompt_pattern_verify">验证身份以确认图案</string>
+    <string name="lrr_offline_error">无网络连接</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="other">尝试次数过多，请在 %d 秒后重试。</item>
+    </plurals>
 </resources>

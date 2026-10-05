@@ -959,4 +959,12 @@ Cette action est irréversible.</string>
     <string name="cd_clear_search">Effacer la recherche</string>
     <string name="appwidget_continue_reading_description">Reprendre en un geste la dernière archive lue</string>
     <string name="appwidget_continue_reading_empty">Aucune lecture récente</string>
+    <string name="biometric_prompt_pattern_set">Authentifiez-vous pour associer le schéma à la sécurité biométrique</string>
+    <string name="biometric_prompt_pattern_verify">Authentifiez-vous pour vérifier le schéma</string>
+    <string name="lrr_offline_error">Aucune connexion réseau</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="one">Trop de tentatives échouées. Réessayez dans %d seconde.</item>
+        <item quantity="many">Trop de tentatives échouées. Réessayez dans %d secondes.</item>
+        <item quantity="other">Trop de tentatives échouées. Réessayez dans %d secondes.</item>
+    </plurals>
 </resources>

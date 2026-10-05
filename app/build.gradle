@@ -48,7 +48,7 @@ android {
     lint {
         abortOnError true
         checkReleaseBuilds true
-        disable 'MissingTranslation', 'ExtraTranslation', 'PropertyEscape'
+        disable 'ExtraTranslation', 'PropertyEscape'
         baseline = file("lint-baseline.xml")
     }
 

@@ -859,4 +859,11 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="cd_clear_search">Suche löschen</string>
     <string name="appwidget_continue_reading_description">Zuletzt gelesenes Archiv mit einem Tipp fortsetzen</string>
     <string name="appwidget_continue_reading_empty">Keine letzte Lektüre</string>
+    <string name="biometric_prompt_pattern_set">Authentifizieren, um das Muster an die biometrische Sicherheit zu binden</string>
+    <string name="biometric_prompt_pattern_verify">Authentifizieren, um das Muster zu bestätigen</string>
+    <string name="lrr_offline_error">Keine Netzwerkverbindung</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="one">Zu viele Fehlversuche. Erneut versuchen in %d Sekunde.</item>
+        <item quantity="other">Zu viele Fehlversuche. Erneut versuchen in %d Sekunden.</item>
+    </plurals>
 </resources>

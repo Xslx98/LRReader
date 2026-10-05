@@ -907,4 +907,10 @@
     <string name="cd_clear_search">清除搜尋</string>
     <string name="appwidget_continue_reading_description">一鍵繼續閱讀上次看的檔案</string>
     <string name="appwidget_continue_reading_empty">暫無最近閱讀</string>
+    <string name="biometric_prompt_pattern_set">驗證身分以將圖案綁定到生物辨識</string>
+    <string name="biometric_prompt_pattern_verify">驗證身分以確認圖案</string>
+    <string name="lrr_offline_error">沒有網路連線</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="other">嘗試次數過多，請在 %d 秒後重試。</item>
+    </plurals>
 </resources>

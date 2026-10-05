@@ -907,4 +907,10 @@
     <string name="cd_clear_search">검색 지우기</string>
     <string name="appwidget_continue_reading_description">마지막으로 읽은 아카이브를 한 번에 이어 읽기</string>
     <string name="appwidget_continue_reading_empty">최근 읽은 항목 없음</string>
+    <string name="biometric_prompt_pattern_set">패턴을 생체 인증에 연결하려면 인증하세요</string>
+    <string name="biometric_prompt_pattern_verify">패턴을 확인하려면 인증하세요</string>
+    <string name="lrr_offline_error">네트워크 연결 없음</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="other">시도 횟수가 너무 많습니다. %d초 후에 다시 시도하세요.</item>
+    </plurals>
 </resources>
