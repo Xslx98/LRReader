@@ -450,9 +450,9 @@ class LRReaderApplication : RecordingApplication() {
             }
 
             try {
-                AppConfig.deleteOldParseErrorFiles()
+                AppConfig.purgeLegacyParseErrorDir()
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to delete old parse error files", e)
+                Log.e(TAG, "Failed to delete the legacy parse error dir", e)
             }
 
             // Migrate downloads from old app-private path to user-visible location.
