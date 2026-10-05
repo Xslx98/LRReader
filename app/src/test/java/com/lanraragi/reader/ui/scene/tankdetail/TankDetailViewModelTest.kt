@@ -84,6 +84,12 @@ class TankDetailViewModelTest {
     /** `metadata.tags` of every PUT /api/tankoubons/{id} the mock received. */
     private val putTags = CopyOnWriteArrayList<String>()
 
+    /** GET /api/categories requests (the full list; the heart should not need it). */
+    private val fullCategoryListRequests = AtomicInteger(0)
+
+    @Volatile
+    private var archiveCategoriesStatus = 200
+
     @Volatile
     private var categoriesJson = """[
         {"id":"SET_STATIC","name":"Favs","archives":["$TANK"],"pinned":"0","search":""},
@@ -126,8 +132,18 @@ class TankDetailViewModelTest {
                     // HEAD (cover probes) must not carry a body, or it corrupts the connection.
                     path.startsWith("/api/tankoubons/$TANK/thumbnail") ->
                         if (request.method == "HEAD") MockResponse() else MockResponse().setBody("x")
+                    path.startsWith("/api/archives/$TANK/categories") ->
+                        if (archiveCategoriesStatus == 200) {
+                            MockResponse().setBody(
+                                """{"operation":"find_arc_categories","success":1,"categories":[""" +
+                                    """{"id":"SET_STATIC","name":"Favs","archives":["$TANK"],"pinned":"0","search":""}]}"""
+                            )
+                        } else {
+                            MockResponse().setResponseCode(archiveCategoriesStatus)
+                        }
                     path.startsWith("/api/categories") ->
                         if (categoriesStatus == 200) {
+                            fullCategoryListRequests.incrementAndGet()
                             MockResponse().setBody(categoriesJson)
                         } else {
                             MockResponse().setResponseCode(categoriesStatus)
@@ -290,11 +306,29 @@ class TankDetailViewModelTest {
         val fav = vm.favoriteState.value!!
         assertTrue(fav.isFavorited)
         assertEquals("Favs", fav.name)
+        // Audit C16: the per-id endpoint answers; the full list is never fetched.
+        assertEquals(0, fullCategoryListRequests.get())
+    }
+
+    @Test
+    fun load_heartFallsBackToFullListWhenServerRejectsTankId() {
+        // Servers before 0.9.81 validate the path id as a 40-char arcid.
+        archiveCategoriesStatus = 400
+        val vm = newVm()
+        vm.load()
+        awaitSettled(vm)
+        awaitUntil { vm.favoriteState.value != null }
+
+        val fav = vm.favoriteState.value!!
+        assertTrue(fav.isFavorited)
+        assertEquals("Favs", fav.name)
+        assertEquals(1, fullCategoryListRequests.get())
     }
 
     @Test
     fun load_categoriesFailureIsNonFatal() {
         categoriesStatus = 500
+        archiveCategoriesStatus = 500
         val vm = newVm()
         vm.load()
         awaitSettled(vm)

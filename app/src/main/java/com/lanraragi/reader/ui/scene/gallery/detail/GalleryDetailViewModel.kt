@@ -721,11 +721,12 @@ class GalleryDetailViewModel : ViewModel() {
                     sourceBaseUrl = serverUrl,
                 )
 
-                // Query LANraragi categories to determine favorite status.
+                // Query the categories holding this archive (per-archive
+                // endpoint, not the full list) for the favourite heart.
                 // Failure here is non-fatal — keep the previously known
                 // favorite state rather than blanking it.
                 try {
-                    val categories = LRRCategoryApi.getCategories(client, serverUrl)
+                    val categories = LRRCategoryApi.getArchiveCategories(client, serverUrl, arcid)
                     val matchedNames = mutableListOf<String>()
                     for (cat in categories) {
                         if (!cat.isDynamic() && cat.archives.contains(arcid)) {
