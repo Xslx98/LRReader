@@ -449,8 +449,18 @@ class GalleryDetailViewModel : ViewModel() {
     // Detail-page reading preload
     // -------------------------------------------------------------------------
 
-    /** Background job that preloads reading pages from the detail page. */
+    /**
+     * Background job that preloads reading pages from the detail page. It
+     * owns the app-scope warm it awaits ([ReaderPageCache.joinOwned]), so
+     * cancelling it stops the server extraction, downloads and decode too.
+     */
     private var detailPreloadJob: Job? = null
+
+    /** The user left the detail page: stop its reading preload (audit C18). */
+    fun cancelReadingPreload() {
+        detailPreloadJob?.cancel()
+        detailPreloadJob = null
+    }
 
     /**
      * Warm up the reader before the user taps "open". For downloaded
@@ -464,8 +474,12 @@ class GalleryDetailViewModel : ViewModel() {
      */
     private fun triggerReadingPreload(arcId: String) {
         detailPreloadJob?.cancel()
+        val archive = _detailLoaded.replayCache.firstOrNull()?.archive
+        if (archive != null) startReadingPreload(arcId, archive)
+    }
+
+    private fun startReadingPreload(arcId: String, archive: Archive) {
         val context = ServiceRegistry.appModule.getContext()
-        val archive = _detailLoaded.replayCache.firstOrNull()?.archive ?: return
 
         // Same offline-reconcile math as GalleryOpenHelper and the Dir seed
         // (the old timestamp-blind maxOf heuristic could warm a page the
@@ -493,7 +507,7 @@ class GalleryDetailViewModel : ViewModel() {
                             "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage"
                         )
                     }
-                    ReaderPageCache.warmDir(context, arcId, uniFile, startPage).join()
+                    ReaderPageCache.joinOwned(ReaderPageCache.warmDir(context, arcId, uniFile, startPage))
                     return@launch
                 }
             }
@@ -511,7 +525,7 @@ class GalleryDetailViewModel : ViewModel() {
                     "[WARM] detailVM LRR trigger arcid=$arcId page=$startPage"
                 )
             }
-            ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage).join()
+            ReaderPageCache.joinOwned(ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage))
         }
     }
 

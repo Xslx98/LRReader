@@ -450,6 +450,20 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     }
 
     /**
+     * Awaits [warm] on behalf of a screen-scoped caller and cancels it when
+     * the caller is cancelled first: a warm runs on the app scope, so
+     * cancelling only the caller's `join()` left the server extraction,
+     * page downloads and decode running after the user left (audit C18).
+     */
+    suspend fun joinOwned(warm: Job) {
+        try {
+            warm.join()
+        } finally {
+            warm.cancel()
+        }
+    }
+
+    /**
      * Park [image] for [arcid]:[pageIndex]. Replaces (and recycles)
      * any previously-stored slot — there is intentionally only one
      * slot to bound memory.
