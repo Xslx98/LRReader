@@ -291,6 +291,7 @@
     <!-- Set Security -->
     <string name="set_pattern_protection">Définir le modèle de déverrouillage</string>
     <string name="set_pattern_protection_tip">Dessinez un modèle pour définir le modèle de déverrouillage\nContinuer sans rien dessiner pour effacer le modèle</string>
+    <string name="set_pattern_too_short">Reliez au moins 4 points</string>
     <string name="set">Définir</string>
     <string name="enable_fingerprint">Permettre le déverrouillage avec l\'empreinte digitale</string>
 

@@ -232,6 +232,7 @@
     <string name="clear_all_history">Leseverlauf dieses Servers löschen?</string>
     <string name="set_pattern_protection">Sperrmuster festlegen</string>
     <string name="set_pattern_protection_tip">Zeichne ein Muster, um es als Sperrmuster festzulegen.\nLasse frei, um das Sperrmuster zu entfernen.</string>
+    <string name="set_pattern_too_short">Mindestens 4 Punkte verbinden</string>
     <string name="set">Festlegen</string>
     <string name="enable_fingerprint">Mit Fingerabdrücke entsperren</string>
     <string name="page_menu_title">Seite %d</string>

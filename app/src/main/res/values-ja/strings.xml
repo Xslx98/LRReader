@@ -244,6 +244,7 @@
     <!-- Set Security -->
     <string name="set_pattern_protection">パターン保護を設定</string>
     <string name="set_pattern_protection_tip">パターンを描いてパターン保護を設定します。\n空白のまま続行してパターン保護をクリアします。</string>
+    <string name="set_pattern_too_short">4 個以上の点をつないでください</string>
     <string name="set">設定</string>
     <string name="enable_fingerprint">指紋でロックを解除</string>
     <!-- UConfig Activity -->
