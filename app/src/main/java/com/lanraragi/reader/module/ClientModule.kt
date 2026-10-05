@@ -29,6 +29,9 @@ class ClientModule(
         // hits the server-keying enables. The 30-minute TTL bounds staleness.
         ServiceRegistry.registerCacheable(ReaderPageCache)
         ServiceRegistry.registerCacheable(PageThumbnailCache)
+        // Memory pressure (audit C12); the reader GalleryProvider registers itself.
+        com.lanraragi.reader.util.MemoryTrim.register(ReaderPageCache)
+        com.lanraragi.reader.util.MemoryTrim.register(PageThumbnailCache)
     }
 
     override val imageBitmapHelper: ImageBitmapHelper by lazy {
@@ -68,16 +71,11 @@ class ClientModule(
         // Tier thresholds (per-app heap limit from Runtime.maxMemory())
         private const val TIER_LOW = 512 * MB      // < 512MB heap
         private const val TIER_MID = 1024 * MB      // < 1GB heap
-        private const val TIER_HIGH = 3072 * MB     // < 3GB heap
 
-        // Memory cache sizes per tier — kept conservative on low-end heaps
-        // because the previous 16 MB ceiling on a 256 MB heap was 6.25% of
-        // total app memory, large enough to push the heap toward GC pressure
-        // when paired with adapter Bitmaps and Glide-style decode buffers.
-        private const val CACHE_LOW = 8 * MB        // low-end devices
-        private const val CACHE_MID = 32 * MB       // mid-range
-        private const val CACHE_HIGH = 80 * MB      // flagships
-        private const val CACHE_ULTRA = 128 * MB    // high-memory flagships
+        private const val THUMB_RAM_FRACTION = 16
+        private const val THUMB_MIN = 32 * MB
+        private const val THUMB_MAX = 96 * MB
+        private const val THUMB_LOW_RAM = 16 * MB
 
         // Disk cache sizes per tier — small devices typically also have
         // limited internal storage, so cap thumbnail cache aggressively
@@ -86,27 +84,25 @@ class ClientModule(
         private const val DISK_MID = 160 * MB
         private const val DISK_HIGH = 320 * MB
 
-        internal fun memoryCacheMaxSize(): Int =
-            tieredCacheSize(Runtime.getRuntime().maxMemory()).toInt()
+        internal fun memoryCacheMaxSize(): Int = thumbMemoryCacheSize(
+            com.lanraragi.framework.lib.yorozuya.OSUtils.getTotalMemory(),
+            com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
+        ).toInt()
+
+        /**
+         * Thumbnail memory cache from total RAM (audit 2026-10-04 C19 / PERF-07):
+         * RAM/16 within 32..96 MB, 16 MB on low-RAM devices. Keying it on
+         * Runtime.maxMemory() put nearly every device in the 32 MB tier because
+         * largeHeap makes maxMemory ~512 MB everywhere; covers are hardware
+         * bitmaps, so the Java heap was never the limit.
+         */
+        internal fun thumbMemoryCacheSize(totalMemBytes: Long, lowRam: Boolean): Long {
+            if (lowRam) return THUMB_LOW_RAM
+            return (totalMemBytes / THUMB_RAM_FRACTION).coerceIn(THUMB_MIN, THUMB_MAX)
+        }
 
         internal fun diskCacheMaxSize(): Int =
             tieredDiskCacheSize(Runtime.getRuntime().maxMemory()).toInt()
-
-        /**
-         * Returns the image memory cache size for the given per-app heap limit.
-         *
-         * Tiers:
-         * - `maxMemoryBytes < 512MB` → 8 MB
-         * - `maxMemoryBytes < 1 GB`  → 32 MB
-         * - `maxMemoryBytes < 3 GB`  → 80 MB
-         * - `maxMemoryBytes >= 3 GB` → 128 MB
-         */
-        internal fun tieredCacheSize(maxMemoryBytes: Long): Long = when {
-            maxMemoryBytes < TIER_LOW -> CACHE_LOW
-            maxMemoryBytes < TIER_MID -> CACHE_MID
-            maxMemoryBytes < TIER_HIGH -> CACHE_HIGH
-            else -> CACHE_ULTRA
-        }
 
         /**
          * Returns the image disk cache size for the given per-app heap limit.

@@ -19,10 +19,7 @@ add_library( # Sets the name of the library.
         "lrreader"
         # Sets the library as a shared library.
         SHARED
-        image.c
-        gif/native-lib.cpp
-        gif/dgif_lib.c
-        gif/gifalloc.c)
+        image.c)
 
 # Size-optimize: JNI entry points keep default visibility via JNIEXPORT,
 # everything else is hidden; unreferenced sections are GC'd at link time.

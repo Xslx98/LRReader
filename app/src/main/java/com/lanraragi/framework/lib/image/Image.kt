@@ -33,12 +33,23 @@ class Image private constructor(
     val hardware: Boolean = false,
     targetWidth: Int = 0,
     targetHeight: Int = 0,
+    /** Extra sampling factor; 2 on the retry after an OutOfMemoryError (audit C11). */
+    sampleMultiplier: Int = 1,
     val release: () -> Unit? = {},
 ) {
     private val mDrawableRef = AtomicReference<Drawable?>(null)
     private var mBitmap: Bitmap? = null
     private var mStickerBitmap: Bitmap? = null  // Cached bitmap for non-BitmapDrawable texImage
+    private var mUploadCopy: Bitmap? = null  // ARGB_8888 copy of an F16/1010102/565 page (audit C14)
     private var mReferences = 0
+
+    // Animated pages (audit 2026-10-04 C13): one software render per frame, not
+    // one per uploaded tile, at the drawable's own frame interval.
+    private val mFrameDirty = java.util.concurrent.atomic.AtomicBoolean(true)
+    private var mCanvas: Canvas? = null
+
+    @Volatile
+    private var mNextFrameDelayMs: Long = DEFAULT_FRAME_DELAY_MS
 
     val animated: Boolean
     val width: Int
@@ -51,6 +62,7 @@ class Image private constructor(
             if (fileSize > 10485760) {
                 simpleSize = (fileSize / 10485760 + 1).toInt()
             }
+            if (sampleMultiplier > 1) simpleSize = (simpleSize ?: 1) * sampleMultiplier
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val src = ImageDecoder.createSource(
                     source.channel.map(
@@ -78,7 +90,7 @@ class Image private constructor(
                                     screenWidth, screenHeight
                                 )
                             }
-                            val sampleSize = max(fitSize, simpleSize ?: 1)
+                            val sampleSize = max(fitSize * sampleMultiplier, simpleSize ?: 1)
                             if (Log.isLoggable(TAG, Log.DEBUG)) {
                                 Log.d(
                                     TAG,
@@ -146,6 +158,7 @@ class Image private constructor(
             ?: initDrawable.intrinsicWidth
         height = (initDrawable as? BitmapDrawable)?.bitmap?.height
             ?: initDrawable.intrinsicHeight
+        if (animated) initDrawable.callback = FrameClock()
     }
 
     val isRecycled: Boolean
@@ -167,6 +180,9 @@ class Image private constructor(
         mBitmap = null
         mStickerBitmap?.recycle()
         mStickerBitmap = null
+        mCanvas = null
+        mUploadCopy?.recycle()
+        mUploadCopy = null
         release()
     }
 
@@ -184,7 +200,30 @@ class Image private constructor(
         prepareBitmap()
         val bitmap = mBitmap ?: return
         val drawable = mDrawableRef.get() ?: return
-        drawable.draw(Canvas(bitmap))
+        if (!mFrameDirty.getAndSet(false)) return
+        val canvas = mCanvas ?: Canvas(bitmap).also { mCanvas = it }
+        bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
+        drawable.draw(canvas)
+    }
+
+    /** The animation loop moved to the next frame; the next tile upload re-renders it. */
+    fun advanceFrame() {
+        mFrameDirty.set(true)
+    }
+
+    /**
+     * On a software canvas AnimatedImageDrawable schedules its own next frame via
+     * scheduleSelf; capturing that time gives the real frame interval (it was a
+     * hard-coded 10 ms, redrawing ~100 times a second).
+     */
+    private inner class FrameClock : Drawable.Callback {
+        override fun invalidateDrawable(who: Drawable) = Unit
+
+        override fun scheduleDrawable(who: Drawable, what: Runnable, `when`: Long) {
+            mNextFrameDelayMs = `when` - android.os.SystemClock.uptimeMillis()
+        }
+
+        override fun unscheduleDrawable(who: Drawable, what: Runnable) = Unit
     }
 
     @Synchronized
@@ -225,7 +264,15 @@ class Image private constructor(
                 if (drawable is BitmapDrawable) {
                     val bmp = drawable.bitmap
                     if (bmp == null || bmp.isRecycled) return  // Bitmap already recycled
-                    bmp
+                    if (needsArgb8888Copy(bmp.config)) {
+                        // The native upload copies 4 bytes per pixel; 16-bit PNG or
+                        // 10-bit AVIF/HEIF pages decode to other configs.
+                        mUploadCopy?.takeIf { !it.isRecycled }
+                            ?: bmp.copy(Bitmap.Config.ARGB_8888, false).also { mUploadCopy = it }
+                            ?: return
+                    } else {
+                        bmp
+                    }
                 } else {
                     // Cache the sticker bitmap to avoid re-creating per tile
                     var cached = mStickerBitmap
@@ -266,11 +313,7 @@ class Image private constructor(
     }
 
     val delay: Int
-        get() {
-            if (animated)
-                return 10
-            return 0
-        }
+        get() = if (animated) frameDelay(mNextFrameDelayMs) else 0
 
     @get:SuppressWarnings("deprecation")
     val isOpaque: Boolean
@@ -280,11 +323,23 @@ class Image private constructor(
 
     companion object {
         private const val TAG = "Image"
+        internal const val OOM_RETRY_MULTIPLIER = 2
+
+        /** Bitmaps the native tile upload cannot read directly (it requires RGBA_8888). */
+        internal fun needsArgb8888Copy(config: Bitmap.Config?): Boolean = config != Bitmap.Config.ARGB_8888
+
+        internal const val DEFAULT_FRAME_DELAY_MS = 100L
+        internal const val MIN_FRAME_DELAY_MS = 16L
+        internal const val MAX_FRAME_DELAY_MS = 1000L
+
+        /** Next-frame wait for an animated page: the drawable's interval, at most 60 fps. */
+        internal fun frameDelay(scheduledMs: Long): Int =
+            scheduledMs.coerceIn(MIN_FRAME_DELAY_MS, MAX_FRAME_DELAY_MS).toInt()
         var screenWidth: Int = 0
         var screenHeight: Int = 0
 
         init {
-            // Self-load like GifHandler: nativeTexImage is an external fun and
+            // Self-load: nativeTexImage is an external fun and
             // JNI binds lazily on first call — without this, the GL reader
             // crashes with UnsatisfiedLinkError on the GLThread (caught by AVD
             // smoke after the eager Native.initialize() loader was removed).
@@ -297,10 +352,26 @@ class Image private constructor(
             }
         }
 
+        /**
+         * Screen size for reader sampling. Called synchronously at boot and again on
+         * every configuration change (audit 2026-10-04 C11: it used to run async, so
+         * early decodes saw 0x0 and decoded at full size, and it never followed
+         * rotation or fold/unfold). Reads the display, not the application
+         * resources, whose configuration is frozen at process start.
+         */
         @JvmStatic
         fun initialize(context: android.content.Context) {
-            screenWidth = context.resources.displayMetrics.widthPixels
-            screenHeight = context.resources.displayMetrics.heightPixels
+            val metrics = android.util.DisplayMetrics()
+            val display = context.getSystemService(android.hardware.display.DisplayManager::class.java)
+                ?.getDisplay(android.view.Display.DEFAULT_DISPLAY)
+            if (display != null) {
+                @Suppress("DEPRECATION")
+                display.getRealMetrics(metrics)
+            } else {
+                metrics.setTo(context.resources.displayMetrics)
+            }
+            screenWidth = metrics.widthPixels
+            screenHeight = metrics.heightPixels
         }
 
         /**
@@ -321,15 +392,10 @@ class Image private constructor(
         }
 
         @JvmStatic
-        fun decode(stream: FileInputStream, hardware: Boolean = true): Image? {
-            try {
-                return Image(stream, hardware = hardware)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Analytics.recordException(e)
-                return null
+        fun decode(stream: FileInputStream, hardware: Boolean = true): Image? =
+            retryOnOutOfMemory(rewind = { stream.channel.position(0) }) { multiplier ->
+                Image(stream, hardware = hardware, sampleMultiplier = multiplier)
             }
-        }
 
         /**
          * Decode with a target-size hint: the result is sampled so both
@@ -343,18 +409,38 @@ class Image private constructor(
             targetWidth: Int,
             targetHeight: Int,
         ): Image? {
-            try {
-                return Image(
+            return retryOnOutOfMemory(rewind = { stream.channel.position(0) }) { multiplier ->
+                Image(
                     stream,
                     hardware = hardware,
                     targetWidth = targetWidth,
                     targetHeight = targetHeight,
+                    sampleMultiplier = multiplier,
                 )
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Analytics.recordException(e)
-                return null
             }
+        }
+
+        /**
+         * Runs [attempt] at sample multiplier 1; on OutOfMemoryError rewinds and
+         * retries once at [OOM_RETRY_MULTIPLIER] (audit 2026-10-04 C11, user ruling:
+         * no general pixel cap). A second OOM or any exception yields null, which
+         * callers already show as "decode failed" instead of a spinner forever.
+         */
+        internal fun <T> retryOnOutOfMemory(rewind: () -> Unit, attempt: (Int) -> T): T? {
+            for (multiplier in intArrayOf(1, OOM_RETRY_MULTIPLIER)) {
+                try {
+                    if (multiplier > 1) rewind()
+                    return attempt(multiplier)
+                } catch (e: OutOfMemoryError) {
+                    Log.e(TAG, "Decode ran out of memory at sample x$multiplier", e)
+                    com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "Decode OOM at sample x$multiplier", e)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Decode failed", e)
+                    Analytics.recordException(e)
+                    return null
+                }
+            }
+            return null
         }
 
         @JvmStatic

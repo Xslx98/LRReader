@@ -47,7 +47,8 @@
 # serializer() lookups in this codebase); the library ships consumer rules.
 
 # === Native JNI entry points (liblrreader.so) ===
--keep class com.lanraragi.framework.util.GifHandler { *; }
+# Only Image.nativeTexImage remains (the GIF decoder was removed, audit C14); the
+# default proguard-android-optimize.txt already keeps native method names.
 
 # Custom views/preferences referenced in XML need no manual keeps: AGP feeds
 # R8 the AAPT2-generated rules (build/intermediates/aapt_proguard_file/...),

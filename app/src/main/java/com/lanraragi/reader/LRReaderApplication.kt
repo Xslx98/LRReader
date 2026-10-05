@@ -333,11 +333,10 @@ class LRReaderApplication : RecordingApplication() {
 
         // Defer heavy JNI/native initialization to background thread.
         // These are not needed until the user actually opens a gallery or downloads.
-        // libehviewer.so needs no eager load: its only consumer (GifHandler)
-        // loads it in its own static initializer on first use.
+        // Image.initialize is cheap and must run before any decode (audit C11).
+        Image.initialize(this)
         ServiceRegistry.coroutineModule.ioScope.launch {
             BitmapUtils.initialize(this@LRReaderApplication)
-            Image.initialize(this@LRReaderApplication)
         }
 
         // One-time http_cache purge (audit #29): thumbnails used to be
@@ -542,8 +541,15 @@ class LRReaderApplication : RecordingApplication() {
         CommonOperations.ensureNoMediaFile(UniFile.fromFile(AppConfig.getExternalTempDir()))
     }
 
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Rotation, fold/unfold, multi-window: keep reader sampling current (audit C11).
+        Image.initialize(this)
+    }
+
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
+        com.lanraragi.reader.util.MemoryTrim.dispatch(level)
         if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             ServiceRegistry.clientModule.clearMemoryCache()
             ServiceRegistry.dataModule.clearArchiveDetailCache()
