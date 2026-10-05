@@ -365,9 +365,10 @@ class TankoubonsViewModel : ViewModel() {
             if (r.result.isEmpty() || all.size >= r.total) break
             page++
         }
-        // Fresh server truth in hand — revalidate covers. Must precede the
-        // callers' _tanks publication so cover binds already see the new stamp.
-        TankCoverCacheStamp.bump()
+        // Fresh server truth in hand — re-key the covers of tanks whose
+        // member list changed. Must precede the callers' _tanks publication
+        // so cover binds already see the new stamps.
+        for (tank in all) TankCoverCacheStamp.observe(tank.id, tank.archives)
         TankListCache.put(serverUrl, all)
         return ArrayList(all)
     }

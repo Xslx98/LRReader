@@ -22,7 +22,7 @@ object LRRCacheKeyFactory {
      * Cover thumbnail key. The trailing number is the cover stamp: for an
      * archive its [ArchiveCoverStamps] stamp (0 until the app changes the
      * cover, so untouched archives keep their historical key); for a folded
-     * `TANK_` row the process-wide [TankCoverCacheStamp], so list rows
+     * `TANK_` row its [TankCoverCacheStamp], so list rows
      * revalidate the tank cover like the tank screens do.
      */
     @JvmStatic

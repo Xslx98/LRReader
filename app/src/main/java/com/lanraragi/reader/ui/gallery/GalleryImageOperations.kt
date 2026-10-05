@@ -399,7 +399,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
                     when (target) {
                         is CoverTarget.Tank -> {
                             LRRTankoubonApi.updateTankThumbnail(client, url, target.tankId, globalPage1 = page + 1)
-                            TankCoverCacheStamp.bump()
+                            TankCoverCacheStamp.bump(target.tankId)
                             (provider as? TankGalleryProvider)?.locateMember(page)?.let { (arcid, page0) ->
                                 TankCoverChoiceStore.default.put(
                                     target.tankId,

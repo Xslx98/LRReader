@@ -259,7 +259,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 // Fresh server truth — revalidate the cover. Must precede the
                 // publications below: their collectors re-bind the cover and
                 // must already see the new stamp.
-                TankCoverCacheStamp.bump()
+                TankCoverCacheStamp.revalidate(tankId, full.archives)
                 _tankName.value = full.name
                 _progress.value = full.progress
                 _members.value = mapped
@@ -353,7 +353,7 @@ class TankoubonDetailViewModel : ViewModel() {
     private suspend fun putCoverQuietly(client: OkHttpClient, url: String, page1: Int) {
         try {
             LRRTankoubonApi.updateTankThumbnail(client, url, tankId, page1)
-            TankCoverCacheStamp.bump()
+            TankCoverCacheStamp.bump(tankId)
         } catch (e: CancellationException) {
             throw e
         } catch (ignored: Exception) {
@@ -410,7 +410,7 @@ class TankoubonDetailViewModel : ViewModel() {
                 LRRTankoubonApi.updateTankThumbnail(client, url, tankId, page1)
                 // The cover now exists server-side — drop the stand-in.
                 coverFallbackMember = null
-                TankCoverCacheStamp.bump()
+                TankCoverCacheStamp.bump(tankId)
                 _members.value.getOrNull(memberIndex)?.let { member ->
                     coverChoices.put(tankId, TankCoverChoiceStore.Choice(member.arcid, page0, profileId))
                 }

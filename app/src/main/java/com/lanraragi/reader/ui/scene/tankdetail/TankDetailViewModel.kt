@@ -401,7 +401,7 @@ class TankDetailViewModel : ViewModel() {
         val fallback = resolveCoverFallback(client, url, members)
         // Fresh server truth — revalidate the cover before publishing so the
         // header bind already sees the new stamp.
-        TankCoverCacheStamp.bump()
+        TankCoverCacheStamp.revalidate(tankId, full.archives)
         return TankDetailState(
             tankId = tankId,
             profileId = profileId,

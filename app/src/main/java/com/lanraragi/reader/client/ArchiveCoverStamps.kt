@@ -29,9 +29,9 @@ object ArchiveCoverStamps {
         loaded = initial?.toMutableMap()
     }
 
-    /** Cover stamp for [arcid]; a `TANK_` id answers the process-wide [TankCoverCacheStamp]. */
+    /** Cover stamp for [arcid]; a `TANK_` id answers its [TankCoverCacheStamp]. */
     fun get(arcid: String): Long =
-        if (isTankoubonId(arcid)) TankCoverCacheStamp.value else map()[arcid] ?: 0L
+        if (isTankoubonId(arcid)) TankCoverCacheStamp.get(arcid) else map()[arcid] ?: 0L
 
     @Synchronized
     fun bump(arcid: String) {
@@ -42,8 +42,8 @@ object ArchiveCoverStamps {
 
     /**
      * [url] with `ts=<stamp>` appended when the cover may have changed: an
-     * archive whose cover the app changed, or any tank row (the tank stamp
-     * moves on every tank fetch and cover write).
+     * archive whose cover the app changed, or any tank row (tank stamps are
+     * never 0, see [TankCoverCacheStamp]).
      */
     fun bust(url: String, arcid: String): String {
         val stamp = get(arcid)
