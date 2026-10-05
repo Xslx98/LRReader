@@ -3,7 +3,6 @@ package com.lanraragi.reader.module
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * Abstraction over [CoroutineModule] to allow ServiceRegistry consumers to depend on the
@@ -16,7 +15,7 @@ interface ICoroutineModule {
 
     /**
      * Exception handler installed on all scopes managed by this module. Logs, reports to
-     * Analytics, and emits on [uncaughtErrors]. May be added to `lifecycleScope.launch()`
+     * Analytics and writes a non-fatal report. May be added to `lifecycleScope.launch()`
      * sites that want the same handling.
      */
     val exceptionHandler: CoroutineExceptionHandler
@@ -50,12 +49,6 @@ interface ICoroutineModule {
      * all providers (Dir / LRR / Archive) and the detail-page warmup.
      */
     val decoderDispatcher: CoroutineDispatcher
-
-    /**
-     * Observable stream of uncaught coroutine exceptions. UI layers can subscribe to
-     * surface error notifications.
-     */
-    val uncaughtErrors: SharedFlow<Throwable>
 
     /** Cancels all scopes managed by this module. */
     fun destroy()
