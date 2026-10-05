@@ -351,7 +351,7 @@ class GalleryListViewModel : ViewModel() {
     }
 
     /**
-     * Batch download is main-thread queueing: [DownloadManager.startDownload]
+     * Batch download is main-thread queueing: [DownloadManager.startDownloads]
      * asserts the main thread and is itself asynchronous, so no IO hop or
      * fault isolation is needed here. Rows already FINISH are gated out
      * ([DownloadEntryGate]) instead of re-queued — arcid is a content hash,
@@ -364,7 +364,8 @@ class GalleryListViewModel : ViewModel() {
             DownloadEntryGate.disposition(downloadManager.getDownloadState(it.arcid)) ==
                 DownloadEntryGate.Disposition.ALREADY_LOCAL
         }
-        toQueue.forEach { downloadManager.startDownload(it, null) }
+        // One batch write + one list refresh for the whole selection (audit C17).
+        downloadManager.startDownloads(toQueue, null)
         _batchResultEvent.tryEmit(
             BatchResult(
                 BatchOp.Download,

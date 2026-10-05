@@ -265,10 +265,63 @@ class DownloadManager(
 
     fun startDownload(archive: Archive, label: String?) {
         repo.assertMainThread()
+        when (val staged = stageDownload(archive, label)) {
+            is StagedStart.Restarted -> {
+                val existing = staged.info
+                repo.persistInfo(existing)
+                val list = repo.getInfoListForLabel(existing.label)
+                if (list != null) eventBus.forEachListener { it.onUpdate(existing, list, scheduler.waitList) }
+                scheduler.ensureDownload()
+            }
+            is StagedStart.Added -> {
+                repo.persistInfo(staged.info)
+                // Inserted at index 0 (newest-first), so the listener
+                // position is 0 — not list.size - 1, which pointed at the wrong row.
+                eventBus.forEachListener { it.onAdd(staged.info, staged.list, 0) }
+                scheduler.ensureDownload()
+            }
+            null -> Unit
+        }
+    }
+
+    /**
+     * Batch form of [startDownload] for "download selected": the in-memory
+     * lists change once per archive as before, but the rows are written in
+     * ONE transaction, listeners get one [DownloadInfoListener.onUpdateAll]
+     * and the scheduler is kicked once. 300 archives used to mean ~600
+     * single-row writes, each re-running the downloads observer (audit C17).
+     */
+    fun startDownloads(archives: List<Archive>, label: String?) {
+        repo.assertMainThread()
+        val changed = ArrayList<DownloadInfo>(archives.size)
+        for (archive in archives) {
+            when (val staged = stageDownload(archive, label)) {
+                is StagedStart.Restarted -> changed.add(staged.info)
+                is StagedStart.Added -> changed.add(staged.info)
+                null -> Unit
+            }
+        }
+        if (changed.isEmpty()) return
+        repo.persistInfoBatch(changed)
+        eventBus.forEachListener { it.onUpdateAll() }
+        scheduler.ensureDownload()
+    }
+
+    private sealed class StagedStart {
+        class Restarted(val info: DownloadInfo) : StagedStart()
+        class Added(val info: DownloadInfo, val list: List<DownloadInfo>) : StagedStart()
+    }
+
+    /**
+     * In-memory half of starting [archive]: re-queues an existing row or
+     * inserts a new one into the lists and the wait list. Persisting,
+     * listeners and the scheduler kick are the caller's. Null = nothing to do.
+     */
+    private fun stageDownload(archive: Archive, label: String?): StagedStart? {
         // Restarting a download clears any stale "paused/timed out" resume-banner entry,
         // otherwise the next foreground would show a ghost banner for an active download.
         DownloadResumeBanner.markResumed(archive.arcid)
-        for (active in scheduler.activeTasks) { if (active.arcid == archive.arcid) return }
+        if (scheduler.activeTasks.any { it.arcid == archive.arcid }) return null
         // Enforces the composite-key download invariant ("<=1 download row per
         // arcid"): an arcid already present is re-used, never re-added under a
         // second profile. arcid is a content hash, so a mirror copy on another
@@ -280,35 +333,29 @@ class DownloadManager(
             // cleanup removes such rows, but guard the narrow window where an
             // old row still exists in this session.
             val uri = existing.archiveUri
-            if (uri != null && uri.startsWith("content://")) return
-            if (existing.state != DownloadState.WAIT) {
-                existing.state = DownloadState.WAIT
-                scheduler.waitList.add(existing)
-                repo.persistInfo(existing)
-                val list = repo.getInfoListForLabel(existing.label)
-                if (list != null) eventBus.forEachListener { it.onUpdate(existing, list, scheduler.waitList) }
-                scheduler.ensureDownload()
-            }
-        } else {
-            val info = archive.toDownloadInfoView().apply {
-                this.label = label
-                state = DownloadState.WAIT
-                time = System.currentTimeMillis()
-                downloadRootUri = DownloadSettings.getCurrentDownloadRootUri()
-            }
-            val list = repo.getInfoListForLabel(info.label) ?: run { Log.e(TAG, "Can't find download info list with label: $label"); return }
-            list.add(0, info)
-            repo.allInfoList.add(0, info)
-            repo.allInfoMap[archive.arcid] = info
-            scheduler.waitList.add(info)
-            repo.persistInfo(info)
-            // Inserted at index 0 (newest-first) above, so the listener
-            // position is 0 — not list.size - 1, which pointed at the wrong row.
-            eventBus.forEachListener { it.onAdd(info, list, 0) }
-            scheduler.ensureDownload()
-            // No history row here: starting a download is not reading. History
-            // is written by reader sessions only (audit 2026-10-04 C03).
+            if ((uri != null && uri.startsWith("content://")) || existing.state == DownloadState.WAIT) return null
+            existing.state = DownloadState.WAIT
+            scheduler.waitList.add(existing)
+            return StagedStart.Restarted(existing)
         }
+        val info = archive.toDownloadInfoView().apply {
+            this.label = label
+            state = DownloadState.WAIT
+            time = System.currentTimeMillis()
+            downloadRootUri = DownloadSettings.getCurrentDownloadRootUri()
+        }
+        val list = repo.getInfoListForLabel(info.label)
+        if (list == null) {
+            Log.e(TAG, "Can't find download info list with label: $label")
+            return null
+        }
+        list.add(0, info)
+        repo.allInfoList.add(0, info)
+        repo.allInfoMap[archive.arcid] = info
+        scheduler.waitList.add(info)
+        // No history row here: starting a download is not reading. History
+        // is written by reader sessions only (audit 2026-10-04 C03).
+        return StagedStart.Added(info, list)
     }
 
     fun startRangeDownload(arcidList: List<String>) {
