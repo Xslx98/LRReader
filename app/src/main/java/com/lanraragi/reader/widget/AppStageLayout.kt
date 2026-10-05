@@ -31,8 +31,12 @@ class AppStageLayout @JvmOverloads constructor(
     private var windowPaddingBottom = 0
 
     override fun onGetWindowPadding(top: Int, bottom: Int) {
+        if (top == windowPaddingTop && bottom == windowPaddingBottom) return
         windowPaddingTop = top
         windowPaddingBottom = bottom
+        // The drawer reads these margins in onMeasure but never re-lays out
+        // when the insets change (e.g. the keyboard opens, RES-1).
+        requestLayout()
     }
 
     override fun getAdditionalTopMargin(): Int = windowPaddingTop

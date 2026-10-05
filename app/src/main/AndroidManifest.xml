@@ -48,6 +48,7 @@
     <application
         android:name="com.lanraragi.reader.LRReaderApplication"
         android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
@@ -72,7 +73,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.Main"
-            android:windowSoftInputMode="stateHidden">
+            android:windowSoftInputMode="stateHidden|adjustResize">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

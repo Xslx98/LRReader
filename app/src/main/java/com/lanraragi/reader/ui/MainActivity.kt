@@ -1137,16 +1137,12 @@ class MainActivity : StageActivity(),
     }
 
     @SuppressLint("RtlHardcoded")
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
+    override fun onInterceptBack(): Boolean {
         val drawer = mDrawerLayout
-        if (drawer != null && (drawer.isDrawerOpen(Gravity.LEFT) ||
-                drawer.isDrawerOpen(Gravity.RIGHT))
-        ) {
-            drawer.closeDrawers()
-        } else {
-            super.onBackPressed()
-        }
+        val open = drawer != null &&
+            (drawer.isDrawerOpen(Gravity.LEFT) || drawer.isDrawerOpen(Gravity.RIGHT))
+        if (open) drawer?.closeDrawers()
+        return open
     }
 
     @SuppressLint("NonConstantResourceId", "RtlHardcoded")
