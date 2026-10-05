@@ -56,14 +56,18 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
     }
 
     private val tags: ByteArray
-    private val tagList: List<TagEntry>
+
+    /**
+     * Parsed rows for [suggest], built on first use (off the main thread,
+     * see SearchBar) instead of at load: translation lookups only need the
+     * byte array, and many sessions never type a search (audit C36).
+     */
+    private val tagList: List<TagEntry> by lazy { initTagList(String(tags, StandardCharsets.UTF_8)) }
 
     init {
         val totalBytes = source.readInt()
         tags = ByteArray(totalBytes)
         source.readFully(tags)
-        val sourceString = String(tags.clone(), StandardCharsets.UTF_8)
-        tagList = initTagList(sourceString)
     }
 
     fun getTranslation(tag: String): String? {

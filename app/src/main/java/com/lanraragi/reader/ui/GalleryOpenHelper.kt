@@ -169,9 +169,9 @@ object GalleryOpenHelper {
                 intent.putExtra(GalleryActivity.KEY_DOWNLOAD_DIR, hybridDir.absolutePath)
             }
             // Fire-and-forget LRR warmup. preloadForDetail downloads the
-            // bytes and decode-warms the slot. Idempotent w.r.t. an
-            // earlier detail-page trigger; the slot's
-            // store-replaces-and-recycles semantics handle a duplicate.
+            // bytes and decode-warms the slot. After a detail-page trigger it
+            // waits for that warm and skips the decode when the slot already
+            // holds the page, so the open does not repeat the work.
             // Resolve the archive's source profile (not the active one) so
             // the warm hits the same server the reader will stream from.
             val serverUrl = runCatching {

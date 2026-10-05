@@ -376,7 +376,7 @@ class TankoubonsScene : BaseScene() {
                         ArchiveCoverStamps.bust(fallback.thumbnailUrl, fallback.arcid)
                     )
                 } else {
-                    val stamp = TankCoverCacheStamp.value
+                    val stamp = TankCoverCacheStamp.get(tank.id)
                     holder.thumb.load(
                         LRRCacheKeyFactory.getThumbKey("${tank.id}#$stamp"),
                         LRRTankoubonApi.getTankoubonThumbnailUrl(serverUrl, tank.id, cacheBust = stamp)

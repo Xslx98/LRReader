@@ -114,22 +114,51 @@ class TankoubonsViewModelTest {
     //
     // Tank covers are cached by KEY with an immutable URL, so external
     // cover regenerations (web-client reorder/set-cover) stay invisible
-    // unless every successful tank fetch bumps the process-wide stamp the
-    // cover binds fold into key+URL. Failed loads must NOT bump: retained
-    // views should keep serving cached covers offline.
+    // unless the tank's stamp (folded into key+URL) moves. A list fetch
+    // moves it only for tanks whose member list changed (audit C38). Failed
+    // loads must NOT bump: retained views keep serving cached covers offline.
 
     @Test
-    fun loadTankoubons_success_bumpsCoverCacheStamp() {
-        server.enqueue(MockResponse().setBody(pageJson(
-            1, tankJson("TANK_0000000001", "Alpha")
-        )))
-
-        val before = TankCoverCacheStamp.value
+    fun loadTankoubons_rekeysOnlyTanksWhoseMembersChanged() {
+        val a = "TANK_0000000001"
+        val b = "TANK_0000000002"
+        val dispatcher = probeDispatcher(
+            pageJson(2, tankJson(a, "Alpha", archiveCount = 1), tankJson(b, "Beta", archiveCount = 1)),
+            probeCode = 200
+        )
+        server.dispatcher = dispatcher
         val vm = TankoubonsViewModel()
         vm.loadTankoubons()
+        awaitUntil { vm.tanks.value.size == 2 }
+        val stampA = TankCoverCacheStamp.get(a)
+        val stampB = TankCoverCacheStamp.get(b)
 
-        awaitUntil { vm.tanks.value.size == 1 }
-        awaitUntil { TankCoverCacheStamp.value > before }
+        // Second fetch: Alpha gained a member (cover may differ), Beta did not.
+        dispatcher.listBody =
+            pageJson(2, tankJson(a, "Alpha", archiveCount = 2), tankJson(b, "Beta", archiveCount = 1))
+        vm.loadTankoubons()
+        awaitUntil { vm.tanks.value.firstOrNull { it.id == a }?.archives?.size == 2 }
+
+        assertTrue(TankCoverCacheStamp.get(a) > stampA)
+        assertEquals(stampB, TankCoverCacheStamp.get(b))
+    }
+
+    @Test
+    fun loadTankoubons_reopenedList_doesNotReprobeConfirmedCovers() {
+        val dispatcher = probeDispatcher(
+            pageJson(1, tankJson("TANK_0000000001", "Alpha", archiveCount = 1)),
+            probeCode = 200
+        )
+        server.dispatcher = dispatcher
+        TankoubonsViewModel().loadTankoubons()
+        awaitUntil { dispatcher.probePaths.size == 1 }
+
+        // A new screen (new ViewModel) on the same server.
+        val vm2 = TankoubonsViewModel()
+        vm2.loadTankoubons()
+        awaitUntil { vm2.tanks.value.size == 1 }
+        Thread.sleep(300)
+        assertEquals(1, dispatcher.probePaths.size)
     }
 
     @Test
@@ -138,11 +167,11 @@ class TankoubonsViewModelTest {
 
         val vm = TankoubonsViewModel()
         val events = vm.uiEvent.collectInto(eventScope)
-        val before = TankCoverCacheStamp.value
+        val before = TankCoverCacheStamp.generation
         vm.loadTankoubons()
 
         awaitUntil { events.any { it is TankoubonsViewModel.TankUiEvent.ShowError } }
-        assertEquals(before, TankCoverCacheStamp.value)
+        assertEquals(before, TankCoverCacheStamp.generation)
     }
 
     // ── membership follow seam (spec 2026-09-21 §1/§3) ────────────
@@ -252,14 +281,22 @@ class TankoubonsViewModelTest {
     /** Dispatcher: list endpoint serves [listBody]; probes answer [probeCode]. */
     private fun probeDispatcher(listBody: String, probeCode: Int) = object : okhttp3.mockwebserver.Dispatcher() {
         val probePaths = CopyOnWriteArrayList<String>()
+
+        @Volatile
+        var listBody = listBody
         override fun dispatch(request: okhttp3.mockwebserver.RecordedRequest): MockResponse {
             val path = request.path.orEmpty()
             return if ("thumbnail" in path) {
                 probePaths += path
-                MockResponse().setResponseCode(probeCode)
-                    .setBody(if (probeCode == 202) """{"success":1,"job":1}""" else "img")
+                // HEAD (the probe) must not carry a body, or it corrupts the kept-alive connection.
+                if (request.method == "HEAD") {
+                    MockResponse().setResponseCode(probeCode)
+                } else {
+                    MockResponse().setResponseCode(probeCode)
+                        .setBody(if (probeCode == 202) """{"success":1,"job":1}""" else "img")
+                }
             } else {
-                MockResponse().setBody(listBody)
+                MockResponse().setBody(this.listBody)
             }
         }
     }

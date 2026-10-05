@@ -54,7 +54,7 @@ class ClientModule(
             memoryCacheMaxSize = memoryCacheMaxSize()
             hasDiskCache = true
             diskCacheDir = File(context.cacheDir, "thumb")
-            diskCacheMaxSize = diskCacheMaxSize()
+            diskCacheMaxSize = diskCacheMaxSize(context)
             okHttpClient = networkModule.thumbFetchClient
             objectHelper = imageBitmapHelper
             debug = false
@@ -101,8 +101,8 @@ class ClientModule(
             return (totalMemBytes / THUMB_RAM_FRACTION).coerceIn(THUMB_MIN, THUMB_MAX)
         }
 
-        internal fun diskCacheMaxSize(): Int =
-            tieredDiskCacheSize(Runtime.getRuntime().maxMemory()).toInt()
+        internal fun diskCacheMaxSize(context: Context): Int = com.lanraragi.reader.util.CacheBudget
+            .thumbs(context, tieredDiskCacheSize(Runtime.getRuntime().maxMemory())).toInt()
 
         /**
          * Returns the image disk cache size for the given per-app heap limit.

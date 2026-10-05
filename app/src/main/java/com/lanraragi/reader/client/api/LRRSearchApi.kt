@@ -33,7 +33,9 @@ object LRRSearchApi {
         untaggedonly: Boolean = false,
         groupbyTanks: Boolean = false,
         hideCompleted: Boolean = false
-    ): LRRSearchResult = retryOnFailure {
+    ): LRRSearchResult = retryOnFailure(retryTimeouts = false) {
+        // A timed-out search is not retried: up to ~31 s of spinner, and every
+        // retry re-ran the same slow query on a busy server (audit C35).
         withContext(Dispatchers.IO) {
             val urlBuilder = parseBaseUrl(baseUrl).newBuilder()
                 .addPathSegments("api/search")
@@ -62,9 +64,7 @@ object LRRSearchApi {
                     LRRSearchResult()
                 } else {
                     ensureSuccess(response)
-                    val body = response.body?.string()
-                        ?: throw LRREmptyBodyException()
-                    lrrJson.decodeFromString<LRRSearchResult>(body)
+                    decodeJsonBody<LRRSearchResult>(response)
                 }
             }
         }
@@ -103,9 +103,7 @@ object LRRSearchApi {
             .build()
         client.newCall(request).await().use { response ->
             ensureSuccess(response)
-            val body = response.body?.string()
-                ?: throw LRREmptyBodyException()
-            lrrJson.decodeFromString<LRRSearchResult>(body)
+            decodeJsonBody<LRRSearchResult>(response)
         }
     }
 

@@ -32,7 +32,7 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
     }
 
     override val cache: Cache by lazy {
-        Cache(File(context.cacheDir, "http_cache"), 200L * 1024L * 1024L)
+        Cache(File(context.cacheDir, "http_cache"), com.lanraragi.reader.util.CacheBudget.http(context))
     }
 
     override val proxySelector: AppProxySelector by lazy { AppProxySelector() }
@@ -80,17 +80,23 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
             .build()
     }
 
-    /** Long-read client for archive extraction (large archives can be slow to extract). */
+    /**
+     * Long-read client for archive extraction (large archives can be slow to
+     * extract). Off the shared HTTP cache like every big-body client: its
+     * responses (file lists, page streams) are single-use (audit C35).
+     */
     override val longReadClient: OkHttpClient by lazy {
         okHttpClient.newBuilder()
+            .cache(null)
             .readTimeout(120, TimeUnit.SECONDS)
             .callTimeout(10, TimeUnit.MINUTES) // extraction should never exceed 10 min
             .build()
     }
 
-    /** Upload client for file uploads (large write + long read timeouts). */
+    /** Upload client for file uploads (large write + long read timeouts, no HTTP cache). */
     override val uploadClient: OkHttpClient by lazy {
         okHttpClient.newBuilder()
+            .cache(null)
             .writeTimeout(300, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
             .callTimeout(30, TimeUnit.MINUTES) // allow large archives on slow WAN

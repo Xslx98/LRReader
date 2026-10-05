@@ -55,6 +55,61 @@ class LRRCategoryApiTest {
     }
 
     @Test
+    fun getArchiveCategories_usesPerArchiveEndpoint() = runTest {
+        server.enqueue(MockResponse().setBody("""{"operation":"find_arc_categories","success":1,"categories":[
+            {"id":"SET_0000000001","name":"Favorites","archives":["$ARCID"],"pinned":0,"search":""}
+        ]}"""))
+
+        val cats = LRRCategoryApi.getArchiveCategories(client, baseUrl, ARCID)
+        assertEquals(listOf("Favorites"), cats.map { it.name })
+
+        val req = server.awaitRequest()
+        assertEquals("GET", req.method)
+        assertEquals("/api/archives/$ARCID/categories", req.path)
+    }
+
+    @Test
+    fun categoriesContaining_tankRejectedWith400_fallsBackToFullList() = runTest {
+        server.enqueue(MockResponse().setResponseCode(400))
+        server.enqueue(MockResponse().setBody("""[
+            {"id":"SET_0000000001","name":"Has","archives":["$TANK"],"pinned":"0","search":""},
+            {"id":"SET_0000000002","name":"Other","archives":["$ARCID"],"pinned":"0","search":""},
+            {"id":"SET_0000000003","name":"Dyn","archives":["$TANK"],"pinned":"0","search":"x"}
+        ]"""))
+
+        val cats = LRRCategoryApi.categoriesContaining(client, baseUrl, TANK)
+        assertEquals(listOf("Has"), cats.map { it.name })
+        assertEquals("/api/archives/$TANK/categories", server.awaitRequest().path)
+        assertEquals("/api/categories", server.awaitRequest().path)
+    }
+
+    @Test
+    fun categoriesContaining_tankAuthFailure_doesNotFallBack() = runTest {
+        server.enqueue(MockResponse().setResponseCode(401))
+
+        try {
+            LRRCategoryApi.categoriesContaining(client, baseUrl, TANK)
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(401, e.code)
+        }
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun categoriesContaining_archiveRejectedWith400_isNotMasked() = runTest {
+        server.enqueue(MockResponse().setResponseCode(400))
+
+        try {
+            LRRCategoryApi.categoriesContaining(client, baseUrl, ARCID)
+            fail("Should have thrown")
+        } catch (e: LRRHttpException) {
+            assertEquals(400, e.code)
+        }
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     fun createCategory_sendsFormBody() = runTest {
         server.enqueue(MockResponse().setBody("""{"category_id":"new_cat","operation":"create_category","success":1}"""))
 
@@ -132,5 +187,10 @@ class LRRCategoryApiTest {
         val req = server.awaitRequest()
         assertEquals("DELETE", req.method)
         assertEquals("/api/categories/SET_aaaaaaaaaa", req.path)
+    }
+
+    private companion object {
+        const val ARCID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        const val TANK = "TANK_1700000000"
     }
 }

@@ -245,6 +245,40 @@ class DownloadManagerTest {
         assertTrue(runBlocking { dao.getAllHistory() }.none { it.arcid == "tok_2010" })
     }
 
+    /**
+     * Audit 2026-10-04 C17 (SCAL-04): "download selected" persists the whole
+     * selection in one batch and refreshes listeners once, instead of one
+     * write + one onAdd per archive.
+     */
+    @Test
+    fun startDownloads_queuesAllWithOneRefreshAndOneBatchWrite() {
+        val existing = DownloadInfo().apply { arcid = "tok_2100"; title = "Old" }
+        manager.addDownload(existing.toArchive(), null, DownloadState.NONE)
+        var adds = 0
+        var updateAlls = 0
+        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
+            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) { adds++ }
+            override fun onUpdateAll() { updateAlls++ }
+        })
+        val fresh = (1..5).map { i -> DownloadInfo().apply { arcid = "tok_21$i"; title = "New $i" } }
+
+        manager.startDownloads(fresh.map { it.toArchive() } + existing.toArchive(), null)
+
+        assertEquals(0, adds)
+        assertEquals(1, updateAlls)
+        for (arcid in fresh.map { it.arcid } + "tok_2100") {
+            val state = manager.getDownloadState(arcid)
+            assertTrue(
+                "$arcid: expected WAIT or DOWNLOAD, got $state",
+                state == DownloadState.WAIT || state == DownloadState.DOWNLOAD
+            )
+        }
+        val dao = db.archiveLocalStateDao()
+        awaitUntil(message = "batch rows were never persisted") {
+            runBlocking { dao.getAllDownloads() }.count { it.arcid.startsWith("tok_21") } == 6
+        }
+    }
+
     @Test
     fun startDownload_existingDownload_restartsIt() {
         // Add a download first with STATE_NONE via addDownload

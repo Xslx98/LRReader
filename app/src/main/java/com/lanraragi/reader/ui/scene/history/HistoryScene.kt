@@ -101,7 +101,7 @@ class HistoryScene : ToolbarScene(),
     private var mAdapter: RecyclerView.Adapter<*>? = null
 
     /** [TankCoverCacheStamp] value the tank pseudo-rows were last bound with. */
-    private var mTankCoverStampSeen = TankCoverCacheStamp.value
+    private var mTankCoverStampSeen = TankCoverCacheStamp.generation
     private lateinit var mLayoutManager: AutoStaggeredGridLayoutManager
 
     /*---------------
@@ -270,7 +270,7 @@ class HistoryScene : ToolbarScene(),
         super.onResume()
         // Tank pseudo-rows bind their cover by TankCoverCacheStamp; rebind
         // them when it moved while this list was covered.
-        val stamp = TankCoverCacheStamp.value
+        val stamp = TankCoverCacheStamp.generation
         if (stamp != mTankCoverStampSeen) {
             mTankCoverStampSeen = stamp
             viewModel.historyList.value.forEachIndexed { index, archive ->

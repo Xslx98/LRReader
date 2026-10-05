@@ -167,4 +167,20 @@ class LRRSearchApiTest {
 
         assertFalse(server.awaitRequest().path!!.contains("hidecompleted"))
     }
+
+    @Test
+    fun searchArchives_readTimeout_isNotRetried() = runTest {
+        // Body arrives after the 1 s read timeout; a retry would re-run the query.
+        server.enqueue(
+            MockResponse().setBody("""{"data":[],"recordsFiltered":0,"recordsTotal":0}""")
+                .setHeadersDelay(3, TimeUnit.SECONDS)
+        )
+        try {
+            LRRSearchApi.searchArchives(client, baseUrl, null, null, 0, null, null, false)
+            fail("Should have timed out")
+        } catch (e: java.net.SocketTimeoutException) {
+            // expected
+        }
+        assertEquals(1, server.requestCount)
+    }
 }

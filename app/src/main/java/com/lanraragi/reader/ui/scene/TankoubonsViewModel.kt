@@ -365,15 +365,13 @@ class TankoubonsViewModel : ViewModel() {
             if (r.result.isEmpty() || all.size >= r.total) break
             page++
         }
-        // Fresh server truth in hand — revalidate covers. Must precede the
-        // callers' _tanks publication so cover binds already see the new stamp.
-        TankCoverCacheStamp.bump()
+        // Fresh server truth in hand — re-key the covers of tanks whose
+        // member list changed. Must precede the callers' _tanks publication
+        // so cover binds already see the new stamps.
+        for (tank in all) TankCoverCacheStamp.observe(tank.id, tank.archives)
         TankListCache.put(serverUrl, all)
         return ArrayList(all)
     }
-
-    /** Tanks whose generated cover was confirmed: never probed again by this list. */
-    private val confirmedCovers = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
     /**
      * Cover probing runs AFTER the list is published (the list used to wait
@@ -407,7 +405,7 @@ class TankoubonsViewModel : ViewModel() {
     ): Map<String, CoverFallback> = coroutineScope {
         val client = ServiceRegistry.networkModule.okHttpClient
         val gate = Semaphore(PROBE_PARALLELISM)
-        tanks.filter { it.archives.isNotEmpty() && it.id !in confirmedCovers }
+        tanks.filter { it.archives.isNotEmpty() && coverKey(serverUrl, it.id) !in confirmedCovers }
             .map { tank ->
                 async {
                     val missing = try {
@@ -418,7 +416,7 @@ class TankoubonsViewModel : ViewModel() {
                         false
                     }
                     if (!missing) {
-                        confirmedCovers += tank.id
+                        confirmedCovers += coverKey(serverUrl, tank.id)
                         return@async null
                     }
                     val arcid = tank.archives.first()
@@ -447,6 +445,16 @@ class TankoubonsViewModel : ViewModel() {
         }
 
     private companion object {
+        /**
+         * `server|tank` pairs whose generated cover was confirmed: never
+         * probed again in this process (a cover, once generated, does not
+         * go away). Process-wide so reopening the list does not re-probe
+         * every tank (audit C38 / SCAL-09).
+         */
+        val confirmedCovers: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+        fun coverKey(serverUrl: String, tankId: String) = "$serverUrl|$tankId"
+
         const val MAX_PAGES = 100
         const val PROBE_PARALLELISM = 6
         const val HTTP_LOCKED = 423

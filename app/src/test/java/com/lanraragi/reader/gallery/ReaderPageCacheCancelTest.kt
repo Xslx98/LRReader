@@ -18,6 +18,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import kotlinx.coroutines.launch
 
 class ReaderPageCacheCancelTest {
 
@@ -83,5 +84,32 @@ class ReaderPageCacheCancelTest {
         assertFalse("no partial cache file may survive a cancel", cacheFile.exists())
         val leftovers = tmp.root.listFiles()?.filter { it.name.contains(".tmp") }.orEmpty()
         assertTrue("tmp leftovers: $leftovers", leftovers.isEmpty())
+    }
+
+    /**
+     * Audit C18: cancelling the coroutine of a detail preload cuts the page
+     * stream instead of letting the blocking read finish (~6.4 s here).
+     */
+    @Test(timeout = 15_000)
+    fun downloadCancellable_coroutineCancel_cutsTheStream() = kotlinx.coroutines.runBlocking {
+        val body = Buffer().write(ByteArray(512 * 1024))
+        server.enqueue(
+            MockResponse().setBody(body).throttleBody(8 * 1024, 100, TimeUnit.MILLISECONDS)
+        )
+        val cacheFile = File(tmp.root, "page_1")
+        val job = launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                with(ReaderPageCache) { downloadCancellable(client, server.url("/page").toString(), cacheFile, 1) }
+            } catch (expected: IOException) {
+                // the severed stream; the preload loop logs and stops
+            }
+        }
+        assertNotNull("request never reached server", server.takeRequest(5, TimeUnit.SECONDS))
+        val start = System.currentTimeMillis()
+        job.cancel()
+        job.join()
+        val elapsed = System.currentTimeMillis() - start
+        assertTrue("stream kept running for ${elapsed}ms after cancel", elapsed < 2_000)
+        assertFalse("no partial cache file may survive a cancel", cacheFile.exists())
     }
 }

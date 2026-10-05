@@ -111,8 +111,7 @@ object LRRTankoubonApi {
         val request = Request.Builder().url(urlBuilder.build()).get().build()
         client.newCall(request).await().use { response ->
             ensureSuccess(response)
-            val body = response.body?.string() ?: throw LRREmptyBodyException()
-            lrrJson.decodeFromString<TankoubonListResult>(body)
+            decodeJsonBody<TankoubonListResult>(response)
         }
     }
 
@@ -136,8 +135,7 @@ object LRRTankoubonApi {
         val request = Request.Builder().url(url).get().build()
         client.newCall(request).await().use { response ->
             ensureSuccess(response)
-            val body = response.body?.string() ?: throw LRREmptyBodyException()
-            lrrJson.decodeFromString<TankoubonFullResult>(body)
+            decodeJsonBody<TankoubonFullResult>(response)
         }
     }
 

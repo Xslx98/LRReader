@@ -449,8 +449,27 @@ class GalleryDetailViewModel : ViewModel() {
     // Detail-page reading preload
     // -------------------------------------------------------------------------
 
-    /** Background job that preloads reading pages from the detail page. */
+    /**
+     * Background job that preloads reading pages from the detail page. It
+     * owns the app-scope warm it awaits ([ReaderPageCache.joinOwned]), so
+     * cancelling it stops the server extraction, downloads and decode too.
+     */
+    @Volatile
     private var detailPreloadJob: Job? = null
+
+    /**
+     * Set when the page is left, cleared by the next [requestGalleryDetail]:
+     * a fetch still in flight when the user left must not start a preload.
+     */
+    @Volatile
+    private var readingPreloadSuppressed = false
+
+    /** The user left the detail page: stop its reading preload (audit C18). */
+    fun cancelReadingPreload() {
+        readingPreloadSuppressed = true
+        detailPreloadJob?.cancel()
+        detailPreloadJob = null
+    }
 
     /**
      * Warm up the reader before the user taps "open". For downloaded
@@ -461,11 +480,15 @@ class GalleryDetailViewModel : ViewModel() {
      *
      * Either way, [DirGalleryProvider]/[com.lanraragi.reader.gallery.LRRGalleryProvider]
      * gets a chance to skip the first-page decode on next reader open.
+     *
+     * [archive] is the freshly fetched detail's archive, passed in: the
+     * trigger used to read `_detailLoaded.replayCache`, which is always
+     * empty (replay 0), so the preload never ran (audit C18 ruling R9).
      */
-    private fun triggerReadingPreload(arcId: String) {
+    private fun triggerReadingPreload(arcId: String, archive: Archive) {
         detailPreloadJob?.cancel()
+        if (readingPreloadSuppressed) return
         val context = ServiceRegistry.appModule.getContext()
-        val archive = _detailLoaded.replayCache.firstOrNull()?.archive ?: return
 
         // Same offline-reconcile math as GalleryOpenHelper and the Dir seed
         // (the old timestamp-blind maxOf heuristic could warm a page the
@@ -493,7 +516,7 @@ class GalleryDetailViewModel : ViewModel() {
                             "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage"
                         )
                     }
-                    ReaderPageCache.warmDir(context, arcId, uniFile, startPage).join()
+                    ReaderPageCache.joinOwned(ReaderPageCache.warmDir(context, arcId, uniFile, startPage))
                     return@launch
                 }
             }
@@ -511,7 +534,7 @@ class GalleryDetailViewModel : ViewModel() {
                     "[WARM] detailVM LRR trigger arcid=$arcId page=$startPage"
                 )
             }
-            ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage).join()
+            ReaderPageCache.joinOwned(ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage))
         }
     }
 
@@ -689,6 +712,7 @@ class GalleryDetailViewModel : ViewModel() {
         if (arcid.isNullOrEmpty()) {
             return false
         }
+        readingPreloadSuppressed = false
 
         val client = ServiceRegistry.networkModule.okHttpClient
 
@@ -721,11 +745,12 @@ class GalleryDetailViewModel : ViewModel() {
                     sourceBaseUrl = serverUrl,
                 )
 
-                // Query LANraragi categories to determine favorite status.
+                // Query the categories holding this archive (per-archive
+                // endpoint, not the full list) for the favourite heart.
                 // Failure here is non-fatal — keep the previously known
                 // favorite state rather than blanking it.
                 try {
-                    val categories = LRRCategoryApi.getCategories(client, serverUrl)
+                    val categories = LRRCategoryApi.getArchiveCategories(client, serverUrl, arcid)
                     val matchedNames = mutableListOf<String>()
                     for (cat in categories) {
                         if (!cat.isDynamic() && cat.archives.contains(arcid)) {
@@ -773,7 +798,7 @@ class GalleryDetailViewModel : ViewModel() {
                 loadArchiveTankoubons()
 
                 // Preload reading pages in background
-                triggerReadingPreload(arcid)
+                triggerReadingPreload(arcid, ad.archive)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 android.util.Log.e(TAG, "LRR metadata fetch failed", e)

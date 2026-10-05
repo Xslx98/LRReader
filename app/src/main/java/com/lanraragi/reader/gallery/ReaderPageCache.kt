@@ -10,15 +10,22 @@ import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
+import com.lanraragi.reader.util.CacheBudget
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -55,7 +62,6 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
      * files only appear under their final name via an atomic rename.
      */
     const val MIN_IMAGE_SIZE = 16L
-    const val MAX_TOTAL_CACHE_BYTES = 500L * 1024L * 1024L // 500MB total limit
     private const val DETAIL_PRELOAD_RADIUS = 1 // Pages before and after the progress page
 
     /**
@@ -197,6 +203,39 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     }
 
     /**
+     * [downloadToFile] whose HTTP call is cancelled with the calling
+     * coroutine: the blocking socket read ignores coroutine cancellation,
+     * so a cancelled preload used to finish every page it had started
+     * (audit C18). Throws [IOException] when cut off.
+     */
+    internal fun CoroutineScope.downloadCancellable(
+        client: OkHttpClient,
+        url: String,
+        cacheFile: File,
+        pageIndex: Int = 0,
+    ) {
+        val job = coroutineContext.job
+        val callRef = AtomicReference<Call?>()
+        // ATOMIC: the watcher's finally runs even if cancellation lands first.
+        val watcher = launch(start = CoroutineStart.ATOMIC) {
+            try {
+                awaitCancellation()
+            } finally {
+                callRef.get()?.cancel()
+            }
+        }
+        try {
+            downloadToFile(client, url, cacheFile, pageIndex, onCallCreated = { call ->
+                callRef.set(call)
+                // Cancelled before the call existed: the watcher saw null.
+                if (!job.isActive) call.cancel()
+            })
+        } finally {
+            watcher.cancel()
+        }
+    }
+
+    /**
      * Download a URL to [cacheFile] via atomic write (temp → fsync → rename)
      * with completeness and image-format validation.
      *
@@ -293,9 +332,10 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
 
     /**
      * Evict oldest archive cache directories until total size is within limit.
-     * Uses SharedPreferences access time as LRU indicator.
+     * Uses SharedPreferences access time as LRU indicator. The default limit
+     * is 500 MB, smaller when the cache quota is ([CacheBudget]).
      */
-    fun cleanupOldCaches(context: Context, maxTotalBytes: Long = MAX_TOTAL_CACHE_BYTES) {
+    fun cleanupOldCaches(context: Context, maxTotalBytes: Long = CacheBudget.readerPages(context)) {
         val appContext = context.applicationContext
         val parentDir = File(appContext.cacheDir, CACHE_PARENT)
         if (!parentDir.exists() || !parentDir.isDirectory) return
@@ -404,7 +444,8 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         pageIndex: Int,
         awaitInflightWarmMs: Long = 0L,
     ): Image? {
-        if (awaitInflightWarmMs > 0L) {
+        // A slot already holding this page needs no wait for an in-flight warm.
+        if (awaitInflightWarmMs > 0L && !hasWarmSlot(arcid, pageIndex)) {
             val warmJob = activeWarmups[arcid]
             if (warmJob != null && warmJob.isActive) {
                 Log.i(TAG, "[WARM] consume awaiting in-flight warm arcid=$arcid timeoutMs=$awaitInflightWarmMs")
@@ -447,6 +488,31 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
             return slot.image
         }
     }
+
+    /** True when the slot holds an unexpired decode of [arcid]:[pageIndex]. */
+    fun hasWarmSlot(arcid: String, pageIndex: Int): Boolean = synchronized(slotLock) {
+        val slot = decodedSlot
+        slot != null && slot.arcid == arcid && slot.pageIndex == pageIndex &&
+            System.currentTimeMillis() <= slot.expiresAt
+    }
+
+    /**
+     * Awaits [warm] on behalf of a screen-scoped caller and cancels it when
+     * the caller is cancelled first: a warm runs on the app scope, so
+     * cancelling only the caller's `join()` left the server extraction,
+     * page downloads and decode running after the user left (audit C18).
+     */
+    suspend fun joinOwned(warm: Job) {
+        try {
+            warm.join()
+        } finally {
+            warm.cancel()
+        }
+    }
+
+    @androidx.annotation.VisibleForTesting
+    internal fun storeDecodedSlotForTest(arcid: String, pageIndex: Int, image: Image) =
+        storeDecodedSlot(arcid, pageIndex, image)
 
     /**
      * Park [image] for [arcid]:[pageIndex]. Replaces (and recycles)
@@ -573,6 +639,11 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
      * (clamped to valid range) using the same cache directory and file naming
      * as the reader, producing immediate cache hits when the reader opens.
      *
+     * A warm already running for [arcId] (the detail page's, when the
+     * reader opens from it) is awaited first, and the centre page is not
+     * decoded again when the slot already holds it (audit C18: the reader
+     * open used to repeat the 10-30 MB decode).
+     *
      * @param centerPage 0-indexed reading progress page
      * @return Job that can be cancelled to abort the preload
      */
@@ -582,11 +653,13 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         serverUrl: String,
         centerPage: Int
     ): Job {
+        val previous = activeWarmups[arcId]?.takeIf { it.isActive }
         // CoroutineStart.LAZY so the Job is registered in
         // activeWarmups before it begins running. See [warmDir] for
         // the same pattern.
         val job = ServiceRegistry.coroutineModule.ioScope.launch(start = CoroutineStart.LAZY) {
             try {
+            previous?.join()
             val appContext = context.applicationContext
             ensureCacheDir(appContext, arcId)
 
@@ -608,12 +681,16 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
             val end = (centerPage + DETAIL_PRELOAD_RADIUS).coerceAtMost(pages.size - 1)
 
             for (pageIndex in start..end) {
+                // Left the detail page: stop between pages too (audit C18).
+                ensureActive()
                 val cacheFile = getCacheFile(appContext, arcId, pageIndex)
                 if (!(cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE)) {
                     try {
                         val pageUrl = resolvePageUrl(serverUrl, pages[pageIndex])
-                        downloadToFile(pageClient, pageUrl, cacheFile, pageIndex)
+                        downloadCancellable(pageClient, pageUrl, cacheFile, pageIndex)
                         Log.d(TAG, "Detail preloaded page $pageIndex for $arcId")
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.d(TAG, "Detail preload page $pageIndex failed: ${e.message}")
                         continue
@@ -623,7 +700,9 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
                 // Decode-warm the *center* page only: it's the one the
                 // reader will display first, and decoding its neighbours
                 // would bloat memory before they're actually visible.
-                if (pageIndex == centerPage) {
+                if (pageIndex == centerPage && hasWarmSlot(arcId, centerPage)) {
+                    Log.i(TAG, "[WARM] preloadForDetail slot already warm arcid=$arcId page=$centerPage")
+                } else if (pageIndex == centerPage) {
                     val decodeStart = System.currentTimeMillis()
                     try {
                         val decoded = withContext(
@@ -643,6 +722,8 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
                         } else {
                             Log.i(TAG, "[WARM] preloadForDetail decode null arcid=$arcId page=$centerPage")
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.w(TAG, "[WARM] preloadForDetail decode-warm $centerPage failed: ${e.message}")
                     }

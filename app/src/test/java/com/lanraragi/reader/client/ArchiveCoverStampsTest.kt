@@ -33,14 +33,16 @@ class ArchiveCoverStampsTest {
     }
 
     @Test
-    fun `tank rows ride the process-wide tank cover stamp`() {
+    fun `tank rows ride their own tank cover stamp`() {
         val tank = "TANK_1688000000"
         val tankUrl = "http://lrr.local/api/tankoubons/$tank/thumbnail"
-        TankCoverCacheStamp.bump()
-        val stamp = TankCoverCacheStamp.value
+        TankCoverCacheStamp.bump(tank)
+        val stamp = TankCoverCacheStamp.get(tank)
         assertEquals("preview:large:$tank:$stamp", LRRCacheKeyFactory.getThumbKey(tank))
         assertEquals("$tankUrl?ts=$stamp", ArchiveCoverStamps.bust(tankUrl, tank))
-        TankCoverCacheStamp.bump()
+        TankCoverCacheStamp.bump("TANK_1688000001")
+        assertEquals(stamp, ArchiveCoverStamps.get(tank))
+        TankCoverCacheStamp.bump(tank)
         assertNotEquals(stamp, ArchiveCoverStamps.get(tank))
     }
 

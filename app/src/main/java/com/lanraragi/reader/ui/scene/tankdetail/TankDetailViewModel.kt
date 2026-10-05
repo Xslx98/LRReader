@@ -401,7 +401,7 @@ class TankDetailViewModel : ViewModel() {
         val fallback = resolveCoverFallback(client, url, members)
         // Fresh server truth — revalidate the cover before publishing so the
         // header bind already sees the new stamp.
-        TankCoverCacheStamp.bump()
+        TankCoverCacheStamp.revalidate(tankId, full.archives)
         return TankDetailState(
             tankId = tankId,
             profileId = profileId,
@@ -423,8 +423,8 @@ class TankDetailViewModel : ViewModel() {
      */
     private suspend fun resolveFavorite(client: OkHttpClient, url: String) {
         try {
-            val names = LRRCategoryApi.getCategories(client, url)
-                .filter { !it.isDynamic() && tankId in it.archives }
+            val names = LRRCategoryApi.categoriesContaining(client, url, tankId)
+                .filter { !it.isDynamic() }
                 .mapNotNull { it.name }
             _favoriteState.value = if (names.isEmpty()) {
                 FavoriteState(isFavorited = false, name = null)

@@ -43,9 +43,7 @@ object LRRDatabaseApi {
             .build()
         client.newCall(request).await().use { response ->
             ensureSuccess(response)
-            val body = response.body?.string()
-                ?: throw LRREmptyBodyException()
-            lrrJson.decodeFromString<List<LRRTagStat>>(body)
+            decodeJsonBody<List<LRRTagStat>>(response)
         }
     }
 

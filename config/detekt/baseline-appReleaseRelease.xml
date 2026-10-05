@@ -329,7 +329,6 @@
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: TimeoutException</ID>
     <ID>ThrowsCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun throwIfFatal(t: Throwable)</ID>
     <ID>ThrowsCount:GalleryListViewModel.kt$GalleryListViewModel$fun uploadArchive(req: UploadRequest)</ID>
-    <ID>ThrowsCount:LRRApiUtils.kt$internal suspend fun &lt;T&gt; retryOnFailure( maxRetries: Int = 2, block: suspend () -&gt; T ): T</ID>
     <ID>ThrowsCount:LRRAuthInterceptor.kt$internal fun matchesConfiguredServer( requestUrl: HttpUrl, serverUrlString: String ): ServerMatchResult</ID>
     <ID>ThrowsCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
     <ID>ThrowsCount:LRRCleartextRejectionInterceptor.kt$LRRCleartextRejectionInterceptor$private fun enforceActiveBased( chain: Interceptor.Chain, request: okhttp3.Request, url: HttpUrl, ): Response</ID>
@@ -449,9 +448,7 @@
     <ID>UnreachableCode:DownloadsScene.kt$DownloadsScene$if (id !in affected) continue</ID>
     <ID>UnreachableCode:DownloadsScene.kt$DownloadsScene$val id = info.arcid ?: continue</ID>
     <ID>UnreachableCode:DownloadsScene.kt$DownloadsScene$val inPagePos = viewModel.adapterPositionForListIndex(indexInList) ?: continue</ID>
-    <ID>UnreachableCode:GalleryDetailViewModel.kt$GalleryDetailViewModel$detailPreloadJob = viewModelScope.launch { // Resolve the local download directory (DB lookup) off the // main thread before deciding which warmup path to use. val dir = withContext(Dispatchers.IO) { com.lanraragi.reader.ui.GalleryOpenHelper .getLocalDownloadDir(context, archive) } if (dir != null) { val uniFile = com.lanraragi.framework.unifile.UniFile.fromFile(dir) if (uniFile != null) { if (BuildConfig.DEBUG) { android.util.Log.i( TAG, "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage" ) } ReaderPageCache.warmDir(context, arcId, uniFile, startPage).join() return@launch } } val serverUrl = try { resolveSourceServerUrl() } catch (_: OrphanProfileException) { // Source profile is gone — preloading from network is // impossible. The reader will surface a localised tip // when the user actually opens the gallery. return@launch } if (BuildConfig.DEBUG) { android.util.Log.i( TAG, "[WARM] detailVM LRR trigger arcid=$arcId page=$startPage" ) } ReaderPageCache.preloadForDetail(context, arcId, serverUrl, startPage).join() }</ID>
     <ID>UnreachableCode:GalleryDetailViewModel.kt$GalleryDetailViewModel$getLocalDownloadDir(context, archive)</ID>
-    <ID>UnreachableCode:GalleryDetailViewModel.kt$GalleryDetailViewModel$val archive = _detailLoaded.replayCache.firstOrNull()?.archive ?: return</ID>
     <ID>UnreachableCode:GalleryDetailViewModel.kt$GalleryDetailViewModel$val startPage = ReadingProgressReconciler.resolveOffline( context, arcId, archive.progress, archive.lastreadtime )</ID>
     <ID>UnreachableCode:GalleryImageOperations.kt$GalleryImageOperations$filename ?: "page_$page"</ID>
     <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$tankCategorySyncAfterAdd(client, baseUrl, op.tankId, op.tankName, succeeded)</ID>
@@ -480,12 +477,9 @@
     <ID>UnreachableCode:LRRArchiveApi.kt$LRRArchiveApi$val jsonObj = Json.parseToJsonElement(body).jsonObject</ID>
     <ID>UnreachableCode:LRRArchiveApi.kt$LRRArchiveApi$val pages = jsonObj["pages"]?.jsonArray ?: throw LRRMissingFieldException("pages")</ID>
     <ID>UnreachableCode:LRRArchiveApi.kt$LRRArchiveApi$val success = jsonObj["success"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0</ID>
-    <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$lrrJson.decodeFromString&lt;List&lt;LRRCategory&gt;&gt;(body)</ID>
     <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$obj["category_id"]?.jsonPrimitive?.content ?: throw LRRMissingFieldException("category_id")</ID>
     <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRCategoryApi.kt$LRRCategoryApi$val obj = lrrJson.parseToJsonElement(body).jsonObject</ID>
-    <ID>UnreachableCode:LRRDatabaseApi.kt$LRRDatabaseApi$lrrJson.decodeFromString&lt;List&lt;LRRTagStat&gt;&gt;(body)</ID>
-    <ID>UnreachableCode:LRRDatabaseApi.kt$LRRDatabaseApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if ("file" != uni.uri.scheme) return false</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$if (BuildConfig.DEBUG) { Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish") }</ID>
@@ -505,8 +499,6 @@
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$val jsonObj = Json.parseToJsonElement(body).jsonObject</ID>
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$val success = jsonObj["success"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0</ID>
-    <ID>UnreachableCode:LRRSearchApi.kt$LRRSearchApi$lrrJson.decodeFromString&lt;LRRSearchResult&gt;(body)</ID>
-    <ID>UnreachableCode:LRRSearchApi.kt$LRRSearchApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$ServerCapabilityCache.recordServerInfo(baseUrl, info)</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$info</ID>
     <ID>UnreachableCode:LRRServerApi.kt$LRRServerApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
@@ -520,8 +512,6 @@
     <ID>UnreachableCode:LRRStampApi.kt$LRRStampApi$val parsed = lrrJson.decodeFromString&lt;AddStampResult&gt;(body)</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$if (parsed.success != 1) throw IOException(parsed.error ?: "create_tankoubon failed")</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$lrrJson.decodeFromString&lt;ArchiveTankoubonsResult&gt;(body).tankoubons</ID>
-    <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$lrrJson.decodeFromString&lt;TankoubonFullResult&gt;(body)</ID>
-    <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$lrrJson.decodeFromString&lt;TankoubonListResult&gt;(body)</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$parsed.tankoubonId ?: throw LRRMissingFieldException("tankoubon_id")</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$val body = response.body?.string() ?: throw LRREmptyBodyException()</ID>
     <ID>UnreachableCode:LRRTankoubonApi.kt$LRRTankoubonApi$val parsed = lrrJson.decodeFromString&lt;CreateTankoubonResult&gt;(body)</ID>

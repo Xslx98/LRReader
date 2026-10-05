@@ -839,6 +839,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Leaving the page (not a rotation, not the reader opening — that is
+        // another activity) ends its speculative reading preload.
+        if (activity?.isChangingConfigurations != true) viewModel.cancelReadingPreload()
 
         val context = getEHContext()
         AssertUtils.assertNotNull(context)

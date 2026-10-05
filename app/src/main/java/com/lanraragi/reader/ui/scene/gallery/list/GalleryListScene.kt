@@ -169,7 +169,7 @@ class GalleryListScene : BaseScene(),
     private var rootLayout: ViewGroup? = null
 
     /** [TankCoverCacheStamp] value the tank rows were last bound with. */
-    private var mTankCoverStampSeen = TankCoverCacheStamp.value
+    private var mTankCoverStampSeen = TankCoverCacheStamp.generation
     private var tankMergeAnimator: TankMergeAnimator? = null
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
@@ -994,7 +994,7 @@ class GalleryListScene : BaseScene(),
      * bind their cover by that stamp, so rebind them to fetch the new one.
      */
     private fun rebindTankRowsIfCoverStampMoved() {
-        val stamp = TankCoverCacheStamp.value
+        val stamp = TankCoverCacheStamp.generation
         if (stamp == mTankCoverStampSeen) return
         mTankCoverStampSeen = stamp
         val helper = mHelper ?: return

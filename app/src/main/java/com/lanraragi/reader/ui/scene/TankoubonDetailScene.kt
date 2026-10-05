@@ -668,9 +668,9 @@ class TankoubonDetailScene : BaseScene() {
      * (first load). Idempotent per key|url so the multiple observer call
      * sites do not restart the image load.
      *
-     * The image pipeline caches by KEY, not URL — BOTH carry the
-     * process-wide [TankCoverCacheStamp] (bumped by every successful tank
-     * fetch and by set-cover), otherwise a cover regenerated server-side
+     * The image pipeline caches by KEY, not URL — BOTH carry the tank's
+     * [TankCoverCacheStamp] (moved by every successful fetch of this tank
+     * and by set-cover), otherwise a cover regenerated server-side
      * would be shadowed by the stale cached image forever. (The pre-bump
      * image stays cached under the old key until evicted — accepted.)
      */
@@ -707,7 +707,7 @@ class TankoubonDetailScene : BaseScene() {
             key = LRRCacheKeyFactory.getThumbKey(fallback.arcid)
             url = ArchiveCoverStamps.bust(fallback.thumbnailUrl, fallback.arcid)
         } else {
-            val bust = TankCoverCacheStamp.value
+            val bust = TankCoverCacheStamp.get(tankId)
             key = LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
             url = LRRTankoubonApi.getTankoubonThumbnailUrl(baseUrl, tankId, cacheBust = bust)
         }

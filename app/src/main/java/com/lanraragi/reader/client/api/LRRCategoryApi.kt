@@ -3,6 +3,7 @@ package com.lanraragi.reader.client.api
 import com.lanraragi.reader.client.api.data.LRRCategory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.FormBody
@@ -14,6 +15,7 @@ import okhttp3.Request
  *
  * Endpoints:
  * - GET    /api/categories              — List all categories
+ * - GET    /api/archives/:id/categories — Static categories containing one archive/tank
  * - PUT    /api/categories              — Create a new category
  * - PUT    /api/categories/:id          — Update a category
  * - DELETE /api/categories/:id          — Delete a category
@@ -41,12 +43,62 @@ object LRRCategoryApi {
                 .build()
             client.newCall(request).await().use { response ->
                 ensureSuccess(response)
-                val body = response.body?.string()
-                    ?: throw LRREmptyBodyException()
-                lrrJson.decodeFromString<List<LRRCategory>>(body)
+                decodeJsonBody<List<LRRCategory>>(response)
             }
         }
     }
+
+    @Serializable
+    private class ArchiveCategoriesResult(val categories: List<LRRCategory> = emptyList())
+
+    /**
+     * GET /api/archives/{id}/categories — the static categories containing
+     * [id] (an arcid, or a `TANK_` id on 0.9.81+; older servers answer 400
+     * for a tank id). Every server since 0.9.0 has the endpoint, so an
+     * archive's favourite heart never needs the full category list (audit C16).
+     */
+    @JvmStatic
+    suspend fun getArchiveCategories(
+        client: OkHttpClient,
+        baseUrl: String,
+        id: String
+    ): List<LRRCategory> = retryOnFailure {
+        withContext(Dispatchers.IO) {
+            val url = parseBaseUrl(baseUrl).newBuilder()
+                .addPathSegments("api/archives")
+                .addPathSegment(requireValidCategoryMemberId(id))
+                .addPathSegment("categories")
+                .build()
+            val request = Request.Builder().url(url).get().build()
+            client.newCall(request).await().use { response ->
+                ensureSuccess(response)
+                decodeJsonBody<ArchiveCategoriesResult>(response).categories
+            }
+        }
+    }
+
+    /**
+     * Static categories containing [id]. A `TANK_` id rejected with 400
+     * (servers before 0.9.81 validate the path as a 40-char arcid) falls
+     * back to filtering the full category list.
+     */
+    @JvmStatic
+    suspend fun categoriesContaining(
+        client: OkHttpClient,
+        baseUrl: String,
+        id: String
+    ): List<LRRCategory> {
+        val direct = try {
+            getArchiveCategories(client, baseUrl, id)
+        } catch (e: LRRHttpException) {
+            if (e.code != HTTP_BAD_REQUEST || !isTankoubonId(id)) throw e
+            null
+        }
+        if (direct != null) return direct
+        return getCategories(client, baseUrl).filter { !it.isDynamic() && id in it.archives }
+    }
+
+    private const val HTTP_BAD_REQUEST = 400
 
     /**
      * PUT /api/categories — Create a new category.
