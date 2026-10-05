@@ -23,11 +23,9 @@ import android.util.Log;
 
 import com.lanraragi.framework.beerbelly.BeerBelly;
 import com.lanraragi.framework.lib.yorozuya.thread.PriorityThreadFactory;
-import com.lanraragi.framework.lib.yorozuya.thread.SerialThreadExecutor;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.OkHttpClient;
 
 public class Conaco<V> {
+
+    private static final int DISK_THREADS = 3;
 
     private static final String TAG = Conaco.class.getSimpleName();
 
@@ -51,7 +51,7 @@ public class Conaco<V> {
     private ValueCache<V> mCache;
     private OkHttpClient mOkHttpClient;
     private Register<V> mRegister;
-    private final SerialThreadExecutor mDiskExecutor;
+    private final ThreadPoolExecutor mDiskExecutor;
     private final ThreadPoolExecutor mNetworkExecutor;
     private final AtomicInteger mIdGenerator;
     private final boolean mDebug;
@@ -71,8 +71,13 @@ public class Conaco<V> {
 
         mRegister = new Register<>();
 
-        mDiskExecutor = new SerialThreadExecutor(3000L, new LinkedList<>(),
+        // Disk hits include the decode, so a single thread made covers pop in one
+        // by one when scrolling back (audit 2026-10-04 C19 / PERF-07). SimpleDiskCache
+        // locks per key, so a small pool is safe.
+        mDiskExecutor = new ThreadPoolExecutor(DISK_THREADS, DISK_THREADS, 3L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
                 new PriorityThreadFactory("Conaco-Disk", Process.THREAD_PRIORITY_BACKGROUND));
+        mDiskExecutor.allowCoreThreadTimeOut(true);
         // Network pool: 5 core / 8 max to match OkHttp's default per-host limit of 5.
         // LANraragi thumbnails all target the same server, so Conaco was previously the
         // bottleneck at 3 threads while OkHttp could handle 5 concurrent connections.
