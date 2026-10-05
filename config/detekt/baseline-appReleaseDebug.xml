@@ -329,7 +329,6 @@
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: TimeoutException</ID>
     <ID>ThrowsCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun throwIfFatal(t: Throwable)</ID>
     <ID>ThrowsCount:GalleryListViewModel.kt$GalleryListViewModel$fun uploadArchive(req: UploadRequest)</ID>
-    <ID>ThrowsCount:LRRApiUtils.kt$internal suspend fun &lt;T&gt; retryOnFailure( maxRetries: Int = 2, block: suspend () -&gt; T ): T</ID>
     <ID>ThrowsCount:LRRAuthInterceptor.kt$internal fun matchesConfiguredServer( requestUrl: HttpUrl, serverUrlString: String ): ServerMatchResult</ID>
     <ID>ThrowsCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
     <ID>ThrowsCount:LRRCleartextRejectionInterceptor.kt$LRRCleartextRejectionInterceptor$private fun enforceActiveBased( chain: Interceptor.Chain, request: okhttp3.Request, url: HttpUrl, ): Response</ID>

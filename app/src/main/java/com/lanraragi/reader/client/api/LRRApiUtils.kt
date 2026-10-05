@@ -325,16 +325,17 @@ fun friendlyError(context: Context, e: Exception): String {
  * Uses exponential backoff: 500ms -> 1000ms.
  *
  * @param maxRetries maximum number of retry attempts (default: 2)
+ * @param retryTimeouts false fails fast on a timeout ([java.io.InterruptedIOException],
+ *   incl. [java.net.SocketTimeoutException]): for an expensive query a retry
+ *   re-runs the same work on a server that is already slow (audit C35)
  * @param block the suspend function to execute with retry
  */
 internal suspend fun <T> retryOnFailure(
     maxRetries: Int = 2,
+    retryTimeouts: Boolean = true,
     block: suspend () -> T
 ): T {
-    // Fast-fail when device is known to be offline — avoids waiting for connect timeout
-    // runCatching guards against uninitialized ServiceRegistry in unit tests
-    val isOffline = runCatching { !ServiceRegistry.networkModule.networkMonitor.isAvailable }.getOrDefault(false)
-    if (isOffline) throw LRROfflineException()
+    ensureNotKnownOffline()
     var lastException: Exception? = null
     repeat(maxRetries + 1) { attempt ->
         try {
@@ -347,7 +348,7 @@ internal suspend fun <T> retryOnFailure(
             currentCoroutineContext().ensureActive()
             // Permanent failures (4xx, cleartext/plaintext policy refusals, TLS errors)
             // cannot be fixed by retrying — fail fast instead of burning the backoff.
-            if (isPermanentFailure(e)) throw e
+            if (isPermanentFailure(e) || (!retryTimeouts && isTimeout(e))) throw e
             lastException = e
             if (attempt < maxRetries) {
                 val delayMs = 500L * (1 shl attempt) // 500, 1000
@@ -358,6 +359,19 @@ internal suspend fun <T> retryOnFailure(
     }
     throw lastException ?: IOException("Retry exhausted after ${maxRetries + 1} attempts")
 }
+
+/**
+ * Fast-fail when the device is known to be offline — avoids waiting for the
+ * connect timeout. runCatching guards against an uninitialized ServiceRegistry
+ * in unit tests.
+ */
+private fun ensureNotKnownOffline() {
+    val isOffline = runCatching { !ServiceRegistry.networkModule.networkMonitor.isAvailable }.getOrDefault(false)
+    if (isOffline) throw LRROfflineException()
+}
+
+/** Read/call timeouts ([java.net.SocketTimeoutException] is a subclass). */
+private fun isTimeout(e: IOException): Boolean = e is java.io.InterruptedIOException
 
 /** IOExceptions that are deterministic policy/protocol failures — retrying is pointless. */
 private fun isPermanentFailure(e: IOException): Boolean = when {
