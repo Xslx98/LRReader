@@ -20,6 +20,7 @@ import android.util.LruCache;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
@@ -28,13 +29,14 @@ import com.lanraragi.framework.lib.glview.view.GLRoot;
 import com.lanraragi.framework.lib.image.Image;
 //import com.lanraragi.framework.lib.image.Image1;
 import com.lanraragi.framework.lib.yorozuya.ConcurrentPool;
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
 import com.lanraragi.framework.lib.yorozuya.OSUtils;
+import com.lanraragi.reader.util.MemoryTrim;
+import com.lanraragi.reader.util.MemoryTrimmable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-public abstract class GalleryProvider {
+public abstract class GalleryProvider implements MemoryTrimmable {
 
     public static final int STATE_WAIT = -1;
     public static final int STATE_ERROR = -2;
@@ -58,13 +60,30 @@ public abstract class GalleryProvider {
             throw new IllegalStateException("Can't start it twice");
         }
         mStarted = true;
+        MemoryTrim.register(this);
     }
 
     @UiThread
     public void stop() {
         OSUtils.checkMainLoop();
         mStopped = true;
+        MemoryTrim.unregister(this);
         mImageCache.evictAll();
+    }
+
+    /**
+     * Audit 2026-10-04 C12: give decoded pages back under memory pressure. TRIM
+     * keeps the most recently used quarter (the pages around the current one);
+     * CLEAR drops all of them. Pages on screen hold their own reference.
+     */
+    @UiThread
+    @Override
+    public void onTrimMemory(@NonNull MemoryTrim.Action action) {
+        if (action == MemoryTrim.Action.CLEAR) {
+            mImageCache.evictAll();
+        } else if (action == MemoryTrim.Action.TRIM) {
+            mImageCache.trimToSize(mImageCache.maxSize() / 4);
+        }
     }
 
     public void setGLRoot(GLRoot glRoot) {
@@ -283,13 +302,11 @@ public abstract class GalleryProvider {
 
     private static class ImageCache extends LruCache<Integer, ImageWrapper> {
 
-        // Increased to hold 5-8 large manga pages (each ~15MB at 1600x2400x4)
-        // Previous limits (32-128MB) only held ~3 pages, causing black page eviction
-        private static final long MAX_CACHE_SIZE = 256 * 1024 * 1024;
-        private static final long MIN_CACHE_SIZE = 64 * 1024 * 1024;
+        // Budget: MemoryTrim.readerCacheBytes (RAM/8, 64..256 MB, 96 MB on low-RAM
+        // devices). Large pages are ~15 MB at 1600x2400x4.
 
         public ImageCache() {
-            super((int) MathUtils.clamp(OSUtils.getTotalMemory() / 6, MIN_CACHE_SIZE, MAX_CACHE_SIZE));
+            super(MemoryTrim.readerCacheBytes(OSUtils.getTotalMemory(), MemoryTrim.isLowRamDevice()));
         }
 
         public void add(Integer key, ImageWrapper value) {

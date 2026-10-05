@@ -29,6 +29,9 @@ class ClientModule(
         // hits the server-keying enables. The 30-minute TTL bounds staleness.
         ServiceRegistry.registerCacheable(ReaderPageCache)
         ServiceRegistry.registerCacheable(PageThumbnailCache)
+        // Memory pressure (audit C12); the reader GalleryProvider registers itself.
+        com.lanraragi.reader.util.MemoryTrim.register(ReaderPageCache)
+        com.lanraragi.reader.util.MemoryTrim.register(PageThumbnailCache)
     }
 
     override val imageBitmapHelper: ImageBitmapHelper by lazy {

@@ -549,6 +549,7 @@ class LRReaderApplication : RecordingApplication() {
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
+        com.lanraragi.reader.util.MemoryTrim.dispatch(level)
         if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             ServiceRegistry.clientModule.clearMemoryCache()
             ServiceRegistry.dataModule.clearArchiveDetailCache()
