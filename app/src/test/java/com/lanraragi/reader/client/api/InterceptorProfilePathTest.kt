@@ -137,6 +137,17 @@ class InterceptorProfilePathTest {
         assertRefused<LRRPlaintextRefusedException>(authClient, "http://user:pw@$host:$port/api/info")
     }
 
+    // Audit C48 / SEC-08: same host:port but outside the profile's base path —
+    // another app on the host, or a server URL escaping its instance.
+    @Test
+    fun auth_pathOutsideTheProfileBasePath_getsNoKey() {
+        addProfile("http://$host:$port/lrr-a", key = "profile-key")
+
+        sendThroughMock(authClient, "http://$host:$port/other-app/api/info")
+
+        assertNull(server.awaitRequest().getHeader("Authorization"))
+    }
+
     @Test
     fun auth_profileWithoutAKey_passesThroughUnauthenticated() {
         addProfile("http://$host:$port", key = null)

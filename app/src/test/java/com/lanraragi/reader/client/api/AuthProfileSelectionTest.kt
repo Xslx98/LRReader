@@ -35,6 +35,12 @@ class AuthProfileSelectionTest {
         assertEquals(4L, pickSchemeMatch(listOf(a, twin), "https://nas.example/lrr-a/api".toHttpUrl())!!.profile.id)
     }
 
+    // Audit C48 / SEC-08: a path no profile owns gets no key (no first() fallback).
+    @Test
+    fun pathOutsideEveryBasePathGetsNoProfile() {
+        assertNull(pickSchemeMatch(listOf(a, b), "https://nas.example/other-app/api".toHttpUrl()))
+    }
+
     @Test
     fun schemeMismatchStillRefuses() {
         assertNull(pickSchemeMatch(listOf(a), "http://nas.example/lrr-a/api".toHttpUrl()))

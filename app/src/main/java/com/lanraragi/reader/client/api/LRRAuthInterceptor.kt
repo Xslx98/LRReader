@@ -53,12 +53,18 @@ class LRRAuthInterceptor : Interceptor {
             return interceptViaActive(chain)
         }
 
-        val match = pickSchemeMatch(candidates, original.url)
-        if (match == null) {
+        if (candidates.none { it.url.scheme == original.url.scheme }) {
             Log.e(TAG, "Refusing to send API key: scheme mismatch with configured profile")
             throw LRRPlaintextRefusedException(
                 "Scheme mismatch between request and configured profile"
             )
+        }
+        val match = pickSchemeMatch(candidates, original.url)
+        if (match == null) {
+            // Same host:port but outside every profile's base path (another
+            // app on the host, or a server-supplied URL escaping its
+            // instance): no key goes with it (audit C48 / SEC-08).
+            return chain.proceed(original)
         }
 
         if (hasSuspiciousComponents(original.url)) {
@@ -143,9 +149,9 @@ internal fun bearerAuthHeaderValue(apiKey: String): String {
 
 /**
  * Pick the candidate whose configured scheme matches [requestUrl] and
- * whose base path best matches its path. Returns null when every
- * candidate has the wrong scheme (a
- * credential-downgrade attempt — caller should reject). Candidates carry
+ * whose base path best matches its path. Returns null when no candidate
+ * has both the scheme and a base path owning the request path; the caller
+ * rejects a scheme mismatch and sends no key otherwise. Candidates carry
  * their pre-parsed URL, so this is pure string comparison.
  */
 internal fun pickSchemeMatch(
@@ -157,13 +163,13 @@ internal fun pickSchemeMatch(
     // Several LANraragi instances can share one host behind a reverse proxy
     // (https://nas/lrr-a, https://nas/lrr-b): pick the profile whose base
     // path is the longest prefix of the request path, so each instance gets
-    // its own key. Ties prefer the active profile; no prefix match keeps the
-    // first candidate (the previous host+port+scheme behaviour).
+    // its own key. Ties prefer the active profile. No prefix match means no
+    // key: falling back to the first candidate handed one instance's key to
+    // any path on the host (audit C48 / SEC-08).
     val requestPath = requestUrl.encodedPath
     return sameScheme
         .filter { isPathPrefix(basePath(it.url), requestPath) }
         .maxWithOrNull(compareBy<ProfileUrlCandidate>({ basePath(it.url).length }, { it.profile.isActive }))
-        ?: sameScheme.first()
 }
 
 /** A profile URL's path without its trailing slash ("" for the root). */
