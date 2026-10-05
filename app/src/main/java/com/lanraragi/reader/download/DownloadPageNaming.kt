@@ -18,11 +18,22 @@ object DownloadPageNaming {
 
     private const val DEFAULT_EXTENSION = ".jpg"
 
-    /** File extension (with the dot) of a server page path, `.jpg` when absent. */
+    /**
+     * File extension (with the dot) of a server page path, `.jpg` when absent
+     * or not 1-5 ASCII letters/digits — the path is server data and the old
+     * rule kept everything after the last dot, separators included (audit
+     * C48 / SEC-09). Valid extensions keep their case so existing downloads
+     * still resolve.
+     */
     fun extensionOf(pagePath: String): String {
         val dot = pagePath.lastIndexOf('.')
-        return if (dot >= 0) pagePath.substring(dot) else DEFAULT_EXTENSION
+        if (dot < 0) return DEFAULT_EXTENSION
+        val ext = pagePath.substring(dot + 1)
+        val valid = ext.length in 1..MAX_EXTENSION_LENGTH && ext.all { it.code < 128 && it.isLetterOrDigit() }
+        return if (valid) ".$ext" else DEFAULT_EXTENSION
     }
+
+    private const val MAX_EXTENSION_LENGTH = 5
 
     /**
      * The page file for 0-based [index] whose server path is [pagePath].

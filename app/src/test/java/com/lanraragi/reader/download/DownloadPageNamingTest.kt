@@ -36,4 +36,19 @@ class DownloadPageNamingTest {
         assertEquals(".jpg", DownloadPageNaming.extensionOf("a.b/c.d.jpg"))
         assertEquals(".jpg", DownloadPageNaming.extensionOf("plain"))
     }
+
+    // Audit C48 / SEC-09: the page path is server data.
+    @Test
+    fun extensionOf_rejectsSeparatorsAndOverlongExtensions() {
+        assertEquals(".jpg", DownloadPageNaming.extensionOf("dir.d/../../evil"))
+        assertEquals(".jpg", DownloadPageNaming.extensionOf("p.jpg/x"))
+        assertEquals(".jpg", DownloadPageNaming.extensionOf("p.toolong"))
+        assertEquals(".jpg", DownloadPageNaming.extensionOf("p."))
+    }
+
+    @Test
+    fun extensionOf_keepsTheCaseOfAValidExtension() {
+        assertEquals(".JPG", DownloadPageNaming.extensionOf("p/001.JPG"))
+        assertEquals(".jpeg", DownloadPageNaming.extensionOf("p/001.jpeg"))
+    }
 }

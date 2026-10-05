@@ -70,4 +70,19 @@ class DownloadDirNamingTest {
         assertFalse(DownloadDirNaming.isLegacyName(arcid, "Old Title"))
         assertFalse(DownloadDirNaming.isLegacyName(arcid, "${arcid.take(8)}-x"))
     }
+
+    // Audit C48 / SEC-09: the arcid fallback is server data as well.
+    @Test
+    fun baseName_fallbackArcidIsSanitisedToOneSafeSegment() {
+        val name = DownloadDirNaming.baseName("../../shared_prefs/x", "...")
+        assertTrue(DownloadDirNaming.isSafeName(name))
+        assertFalse(name.contains('/'))
+        assertEquals("archive", DownloadDirNaming.baseName("..", null))
+    }
+
+    @Test
+    fun baseName_wellFormedArcidFallbackIsUnchanged() {
+        val arcid = "a".repeat(40)
+        assertEquals(arcid, DownloadDirNaming.baseName(arcid, ""))
+    }
 }
