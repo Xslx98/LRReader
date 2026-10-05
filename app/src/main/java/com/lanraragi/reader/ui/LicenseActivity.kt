@@ -16,6 +16,8 @@
 
 package com.lanraragi.reader.ui
 
+import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Html
 import android.util.Log
@@ -33,9 +35,17 @@ class LicenseActivity : ToolbarActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(createWebView() ?: createTextFallback())
+        val html = readAsset()
+        setContentView(createWebView(html) ?: createTextFallback(html))
 
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
+    }
+
+    private fun readAsset(): String = try {
+        assets.open(ASSET).bufferedReader().use { it.readText() }
+    } catch (e: java.io.IOException) {
+        Log.e(TAG, "Read $ASSET", e)
+        ""
     }
 
     /**
@@ -44,9 +54,11 @@ class LicenseActivity : ToolbarActivity() {
      * fall back to plain text instead of crashing (audit 2026-10-04 C34 /
      * STAB-21).
      */
-    private fun createWebView(): View? = try {
+    private fun createWebView(html: String): View? = try {
         WebView(this).also {
-            it.loadUrl("file:///android_asset/$ASSET")
+            // Let the themed window background show through the page.
+            it.setBackgroundColor(Color.TRANSPARENT)
+            it.loadDataWithBaseURL(ASSET_BASE_URL, themed(html, isNightMode()), "text/html", "utf-8", null)
             mWebView = it
         }
     } catch (e: RuntimeException) {
@@ -54,21 +66,18 @@ class LicenseActivity : ToolbarActivity() {
         null
     }
 
-    private fun createTextFallback(): View {
-        val html = try {
-            assets.open(ASSET).bufferedReader().use { it.readText() }
-        } catch (e: java.io.IOException) {
-            Log.e(TAG, "Read $ASSET", e)
-            ""
-        }
+    private fun createTextFallback(html: String): View {
         val padding = (16 * resources.displayMetrics.density).toInt()
         val textView = TextView(this).apply {
             setPadding(padding, padding, padding, padding)
             setTextIsSelectable(true)
-            text = Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT)
+            text = Html.fromHtml(bodyOf(html), Html.FROM_HTML_MODE_COMPACT)
         }
         return ScrollView(this).apply { addView(textView) }
     }
+
+    private fun isNightMode(): Boolean =
+        resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 
     override fun onDestroy() {
         super.onDestroy()
@@ -88,6 +97,26 @@ class LicenseActivity : ToolbarActivity() {
 
     companion object {
         private const val TAG = "LicenseActivity"
-        private const val ASSET = "open_source_licenses.html"
+        internal const val ASSET = "open_source_licenses.html"
+        private const val ASSET_BASE_URL = "file:///android_asset/"
+        private val HTML_TAG = Regex("<html\\b")
+
+        /**
+         * The app theme is always a Light parent (night colors come from
+         * values-night), so the WebView never matches
+         * `prefers-color-scheme: dark`; the page keys its dark palette off a
+         * `dark` class on the root element instead.
+         */
+        internal fun themed(html: String, night: Boolean): String =
+            if (night) html.replaceFirst(HTML_TAG, "<html class=\"dark\"") else html
+
+        /**
+         * [Html.fromHtml] prints the text of `<style>` and `<title>`, so the
+         * text fallback renders only the body.
+         */
+        internal fun bodyOf(html: String): String {
+            val start = html.indexOf("<body")
+            return if (start < 0) html else html.substring(start)
+        }
     }
 }

@@ -3,7 +3,6 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "org.jetbrains.kotlin.plugin.parcelize"
 apply plugin: "org.jetbrains.kotlin.plugin.serialization"
 apply plugin: "com.google.devtools.ksp"
-apply plugin: "com.jaredsburrows.license"
 apply plugin: "io.gitlab.arturbosch.detekt"
 apply plugin: "jacoco"
 if (file('google-services.json').exists()) {
@@ -115,8 +114,8 @@ android {
                     'META-INF/*.version',
                     'META-INF/org/jetbrains/**',
                     // Apache-2.0 texts shipped per-artifact by androidx (7x
-                    // identical 10KB files). In-app attribution is generated
-                    // by the jaredsburrows.license plugin, not these files.
+                    // identical 10KB files). In-app attribution lives in
+                    // assets/open_source_licenses.html, not these files.
                     'META-INF/**/LICENSE.txt',
                     // OkHttp public-suffix DB (41KB, incompressible). Only
                     // consumer is cookie domain-matching / topPrivateDomain;
