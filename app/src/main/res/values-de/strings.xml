@@ -211,6 +211,10 @@
         <item quantity="one">Speicher voll: %d Download angehalten. Platz freigeben, dann fortsetzen.</item>
         <item quantity="other">Speicher voll: %d Downloads angehalten. Platz freigeben, dann fortsetzen.</item>
     </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="one">Systemgrenze: %d Download pausiert. App geöffnet lassen und fortsetzen.</item>
+        <item quantity="other">Systemgrenze: %d Downloads pausiert. App geöffnet lassen und fortsetzen.</item>
+    </plurals>
     <string name="remember_download_label">Download-Etikette merken</string>
     <string name="default_download_label">Standard-Download-Etikette</string>
     <string name="added_to_download_list">Zu Download-Liste hinzugefügt</string>

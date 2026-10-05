@@ -115,6 +115,9 @@ class DownloadService : Service(), DownloadListener {
      */
     private var isForeground = false
 
+    /** startForeground threw since the last successful promotion (audit C34 / STAB-14). */
+    private var foregroundRefused = false
+
     override fun onCreate() {
         super.onCreate()
 
@@ -250,6 +253,7 @@ class DownloadService : Service(), DownloadListener {
             handle = ::handleIntent,
             onError = { intent, e -> Log.e(TAG, "Download command failed — intent=$intent", e) },
             afterEach = { startId ->
+                pauseIfForegroundRefused()
                 lastHandledStartId = startId
                 checkStopSelf()
             },
@@ -274,6 +278,25 @@ class DownloadService : Service(), DownloadListener {
                 return
             }
         }
+    }
+
+    /**
+     * The system refused [startForeground] (ForegroundServiceStartNotAllowedException
+     * on Android 12+ background starts, an OEM block, a missing FGS permission).
+     * Running on as a plain started service would stall silently once the system
+     * reclaims it, so the next command boundary pauses the queue resumably and the
+     * resume banner explains why (audit 2026-10-04 C34 / STAB-14).
+     */
+    internal fun onForegroundRefused(e: Exception) {
+        com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "startForeground refused", e)
+        foregroundRefused = true
+    }
+
+    /** Main thread. Pauses everything once after a refusal; see [onForegroundRefused]. */
+    internal fun pauseIfForegroundRefused() {
+        if (!foregroundRefused || isForeground) return
+        foregroundRefused = false
+        mDownloadManager?.pauseAllForSystemLimit()
     }
 
     /**
@@ -306,8 +329,10 @@ class DownloadService : Service(), DownloadListener {
                 startForeground(ID_DOWNLOADING, notification)
             }
             isForeground = true
+            foregroundRefused = false
         } catch (e: Exception) {
             Log.e(TAG, "startForeground(placeholder) failed", e)
+            onForegroundRefused(e)
         }
     }
 
@@ -873,6 +898,10 @@ class DownloadService : Service(), DownloadListener {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "startForeground(delay) failed", e)
+                (service as? DownloadService)?.let {
+                    it.onForegroundRefused(e)
+                    it.pauseIfForegroundRefused()
+                }
             }
         }
 

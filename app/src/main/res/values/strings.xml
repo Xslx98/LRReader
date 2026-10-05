@@ -349,6 +349,10 @@
         <item quantity="one">Storage full: %d download paused. Free up space, then resume.</item>
         <item quantity="other">Storage full: %d downloads paused. Free up space, then resume.</item>
     </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="one">System limit: %d download paused. Keep the app open and resume.</item>
+        <item quantity="other">System limit: %d downloads paused. Keep the app open and resume.</item>
+    </plurals>
     <string name="remember_download_label">Remember download label</string>
     <string name="default_download_label">Default download label</string>
     <string name="added_to_download_list">Added to download list</string>

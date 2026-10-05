@@ -253,6 +253,9 @@
     <plurals name="download_resume_storage_full_snackbar">
         <item quantity="other">พื้นที่จัดเก็บเต็ม: หยุดการดาวน์โหลด %d รายการชั่วคราว ล้างพื้นที่แล้วดำเนินการต่อ</item>
     </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="other">ข้อจำกัดของระบบ: หยุดการดาวน์โหลด %d รายการชั่วคราว เปิดแอปไว้แล้วดำเนินการต่อ</item>
+    </plurals>
     <string name="remember_download_label">จดจำป้ายชื่อดาวน์โหลด</string>
     <string name="default_download_label">ป้ายชื่อดาวน์โหลดเริ่มต้น</string>
     <string name="added_to_download_list">เพิ่มเข้าในรายการดาวน์โหลดแล้ว</string>

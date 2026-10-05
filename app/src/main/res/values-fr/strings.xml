@@ -258,6 +258,11 @@
         <item quantity="other">Stockage plein : %d téléchargements en pause. Libérez de l\'espace, puis reprenez.</item>
         <item quantity="many">Stockage plein : %d téléchargements en pause. Libérez de l\'espace, puis reprenez.</item>
     </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="one">Limite du système : %d téléchargement en pause. Gardez l’app ouverte et reprenez.</item>
+        <item quantity="many">Limite du système : %d téléchargements en pause. Gardez l’app ouverte et reprenez.</item>
+        <item quantity="other">Limite du système : %d téléchargements en pause. Gardez l’app ouverte et reprenez.</item>
+    </plurals>
     <string name="remember_download_label">Enregistrer le label de téléchargement</string>
     <string name="default_download_label">Label de téléchargement par défaut</string>
     <string name="added_to_download_list">Ajouté à la liste de téléchargement</string>

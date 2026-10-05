@@ -794,6 +794,14 @@ class MainActivity : StageActivity(),
                 R.string.download_resume_resume_action,
                 snapshot.arcids,
             )
+            is DownloadResumeBanner.Snapshot.SystemLimited -> showRequeueSnackbar(
+                host,
+                resources.getQuantityString(
+                    R.plurals.download_resume_system_limit_snackbar, snapshot.count, snapshot.count
+                ),
+                R.string.download_resume_resume_action,
+                snapshot.arcids,
+            )
             is DownloadResumeBanner.Snapshot.TimedOut -> showRequeueSnackbar(
                 host,
                 resources.getQuantityString(

@@ -220,6 +220,9 @@
     <plurals name="download_resume_storage_full_snackbar">
         <item quantity="other">ストレージがいっぱいです：%d 件のダウンロードを一時停止しました。空き容量を確保してから再開してください。</item>
     </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="other">システムの制限により %d 件のダウンロードを一時停止しました。アプリを開いたまま再開してください。</item>
+    </plurals>
     <string name="remember_download_label">ダウンロードラベルを記憶する</string>
     <string name="default_download_label">デフォルトのダウンロードラベル</string>
     <string name="added_to_download_list">ダウンロードリストに追加しました</string>

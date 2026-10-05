@@ -12,6 +12,7 @@ import com.lanraragi.reader.containedTestScope
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.HistoryRepository
+import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
 import kotlinx.coroutines.CoroutineScope
@@ -138,6 +139,32 @@ class DownloadServiceTest {
         awaitUntil { shadow.stopSelfResultId == 3 }
         // A plain stopSelf() would destroy the service whatever is still queued.
         assertEquals(0, shadow.stopSelfId)
+    }
+
+    /** Audit 2026-10-04 C34 / STAB-14: a refused startForeground pauses the queue once, as "system limit". */
+    @Test
+    fun refusedForeground_pausesActiveDownloadsAsSystemLimited_once() {
+        DownloadResumeBanner.clear()
+        val info = com.lanraragi.reader.dao.DownloadInfo().apply { arcid = "fgs_refused"; title = "T" }
+        manager.addDownload(info.toArchive(), null, DownloadState.NONE)
+        manager.allDownloadInfoList.first { it.arcid == "fgs_refused" }.state = DownloadState.WAIT
+
+        val c = Robolectric.buildService(DownloadService::class.java).create().also { controller = it }
+        val service = c.get()
+        service.pauseIfForegroundRefused()
+        assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
+
+        service.onForegroundRefused(IllegalStateException("ForegroundServiceStartNotAllowedException"))
+        service.pauseIfForegroundRefused()
+        assertEquals(
+            DownloadResumeBanner.Snapshot.SystemLimited(listOf("fgs_refused"), 1),
+            DownloadResumeBanner.consume(),
+        )
+
+        // One pause per refusal.
+        manager.allDownloadInfoList.first { it.arcid == "fgs_refused" }.state = DownloadState.WAIT
+        service.pauseIfForegroundRefused()
+        assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
     }
 }
 

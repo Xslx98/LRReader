@@ -235,6 +235,9 @@
     <plurals name="download_resume_storage_full_snackbar">
         <item quantity="other">儲存空間已滿：已暫停 %d 個下載。請釋放空間後繼續。</item>
     </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="other">受系統限制，已暫停 %d 個下載。請保持應用程式開啟後繼續。</item>
+    </plurals>
     <string name="remember_download_label">記住下載標籤</string>
     <string name="default_download_label">預設下載標籤</string>
     <string name="added_to_download_list">已新增至下載列表</string>

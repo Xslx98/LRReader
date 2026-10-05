@@ -261,6 +261,11 @@
         <item quantity="many">Almacenamiento lleno: %d descargas en pausa. Libera espacio y reanuda.</item>
         <item quantity="other">Almacenamiento lleno: %d descargas en pausa. Libera espacio y reanuda.</item>
     </plurals>
+    <plurals name="download_resume_system_limit_snackbar">
+        <item quantity="one">Límite del sistema: %d descarga en pausa. Mantén la app abierta y reanuda.</item>
+        <item quantity="many">Límite del sistema: %d descargas en pausa. Mantén la app abierta y reanuda.</item>
+        <item quantity="other">Límite del sistema: %d descargas en pausa. Mantén la app abierta y reanuda.</item>
+    </plurals>
     <string name="remember_download_label">Recordar etiqueta de descarga</string>
     <string name="default_download_label">Etiqueta predeterminada de descarga</string>
     <string name="added_to_download_list">Añadido a la lista de descargas</string>
