@@ -167,6 +167,7 @@
 
     <!-- Download -->
     <string name="no_download_info">Vos téléchargements s\'afficheront ici</string>
+    <string name="downloads_load_failed">Impossible de charger vos téléchargements. Touchez pour réessayer.</string>
     <string name="download_state_none">En veille</string>
     <string name="download_state_wait">En attente</string>
     <string name="download_state_downloading">Téléchargement en cours</string>

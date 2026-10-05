@@ -168,6 +168,7 @@
 
     <!-- Download -->
     <string name="no_download_info">Las galerías descargadas se mostrarán acá</string>
+    <string name="downloads_load_failed">No se pudieron cargar tus descargas. Toca para reintentar.</string>
     <string name="download_state_wait">Esperando</string>
     <string name="download_state_downloading">Descargando</string>
     <string name="download_state_downloaded">Descargado</string>

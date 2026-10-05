@@ -41,6 +41,10 @@ class DownloadRepositoryTest {
     private lateinit var repo: DownloadRepository
     private lateinit var testScope: CoroutineScope
 
+    /** When true the data module's download DB repository throws (audit C34 load-failure tests). */
+    @Volatile
+    private var failDbRepo = false
+
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
@@ -82,7 +86,7 @@ class DownloadRepositoryTest {
             data = object : com.lanraragi.reader.module.IDataModule {
                 override val searchHistoryRepository get() = throw NotImplementedError("not needed")
                 override val downloadDbRepository get() =
-                    DownloadDbRepository(
+                    if (failDbRepo) throw IllegalStateException("download db unavailable (test)") else DownloadDbRepository(
                         db.archiveLocalStateDao(), db.downloadDao(), db,
                         kotlinx.coroutines.Dispatchers.Unconfined
                     )
@@ -410,6 +414,64 @@ class DownloadRepositoryTest {
         runBlocking { repo.awaitDbWrites() }
         val stored = runBlocking { db.archiveLocalStateDao().loadByArcidAndProfile("snap", 1L) }!!
         assertTrue(stored.archiveJson.contains("Before"))
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Audit 2026-10-04 C34 / STAB-13: a failed load is an error, not "no downloads"
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun loadFailure_setsLoadError_andRetryLoadsTheRows() {
+        runBlocking {
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(makeInfo("a", "A"))
+        }
+        failDbRepo = true
+        val r = DownloadRepository(context, testScope, Dispatchers.Unconfined)
+        r.startLoading {}
+        awaitUntil { r.initDeferred.isCompleted }
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        assertNotNull(r.loadError.value)
+        assertFalse(r.containDownloadInfo("a"))
+
+        failDbRepo = false
+        var reloaded = false
+        r.retryLoading { reloaded = true }
+        awaitUntil { reloaded }
+        assertNull(r.loadError.value)
+        assertTrue(r.containDownloadInfo("a"))
+    }
+
+    @Test
+    fun retry_keepsRowsAddedSinceTheFailure_withoutDuplicates() {
+        runBlocking {
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(makeInfo("a", "A"))
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(makeInfo("b", "B"))
+        }
+        failDbRepo = true
+        val r = DownloadRepository(context, testScope, Dispatchers.Unconfined)
+        r.startLoading {}
+        awaitUntil { r.initDeferred.isCompleted }
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        // The user re-adds "a" while the list is broken.
+        val live = makeInfo("a", "A")
+        r.addInfo(live)
+
+        failDbRepo = false
+        var reloaded = false
+        r.retryLoading { reloaded = true }
+        awaitUntil { reloaded }
+        assertEquals(listOf("a", "b"), r.allInfoList.map { it.arcid }.sorted())
+        assertSame(live, r.getDownloadInfo("a"))
+        assertEquals(2, r.getInfoListForLabel(null)!!.size)
+    }
+
+    @Test
+    fun retry_withoutAnError_isANoOp() {
+        var called = false
+        repo.retryLoading { called = true }
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        assertFalse(called)
     }
 
     // ═══════════════════════════════════════════════════════════

@@ -126,6 +126,7 @@
     <string name="copy_tag">Tag kopieren</string>
     <string name="copied_to_clipboard">Text in Zwischenablage kopiert</string>
     <string name="no_download_info">Downloads werden hier angezeigt</string>
+    <string name="downloads_load_failed">Downloads konnten nicht geladen werden. Zum Wiederholen tippen.</string>
     <string name="download_state_none">Pausiert</string>
     <string name="download_state_wait">In der Warteschlange</string>
     <string name="download_state_downloading">Download läuft</string>

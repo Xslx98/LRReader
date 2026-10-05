@@ -208,6 +208,7 @@
 
     <!-- Download -->
     <string name="no_download_info">下載項目會顯示在此</string>
+    <string name="downloads_load_failed">無法載入下載清單，輕按重試</string>
     <string name="download_state_none">閒置中</string>
     <string name="download_state_wait">等待中</string>
     <string name="download_state_downloading">下載中</string>

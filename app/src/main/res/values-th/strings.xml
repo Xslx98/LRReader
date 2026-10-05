@@ -176,6 +176,7 @@
 
     <!-- Download -->
     <string name="no_download_info">รายการดาวน์โหลดจะอยู่ตรงนี้</string>
+    <string name="downloads_load_failed">โหลดรายการดาวน์โหลดไม่สำเร็จ แตะเพื่อลองใหม่</string>
     <string name="download_state_none">Idle</string>
     <string name="download_state_wait">กำลังรอ</string>
     <string name="download_state_downloading">กำลังดาวน์โหลด</string>

@@ -207,6 +207,14 @@ class DownloadManager(
         val rating: Float,
     )
 
+    /** Non-null while the download list failed to load from the database (audit C34). */
+    val loadError: kotlinx.coroutines.flow.StateFlow<Throwable?> get() = repo.loadError
+
+    /** Retries a failed load; listeners get onReload() as on a normal start. */
+    fun retryLoading() {
+        repo.retryLoading { eventBus.forEachListener { it.onReload() } }
+    }
+
     suspend fun awaitInitAsync(timeoutMs: Long = 10_000L) {
         if (repo.initialized) return
         check(Looper.myLooper() != Looper.getMainLooper()) { "awaitInitAsync() must not be called on the main thread" }
