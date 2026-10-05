@@ -49,13 +49,16 @@ interface INetworkModule {
     /**
      * HTTP client for large single-file transfers (APK update, translation
      * DB, database stats dumps). No call cap so a slow link can't abort a
-     * multi-MB body mid-stream; 60s readTimeout catches stalls.
+     * multi-MB body mid-stream; 60s readTimeout catches stalls. The HTTP
+     * cache is disabled: an APK, the tag DB or a stats dump would otherwise
+     * push the small JSON responses out of the shared cache (audit C35).
      *
      * Default getter derives per access so INetworkModule test fakes need no
      * override; [NetworkModule] overrides with a cached instance.
      */
     val largeFileClient: OkHttpClient
         get() = okHttpClient.newBuilder()
+            .cache(null)
             .readTimeout(60, TimeUnit.SECONDS)
             .callTimeout(0, TimeUnit.MILLISECONDS)
             .build()
