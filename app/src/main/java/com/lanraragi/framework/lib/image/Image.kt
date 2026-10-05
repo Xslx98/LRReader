@@ -33,6 +33,8 @@ class Image private constructor(
     val hardware: Boolean = false,
     targetWidth: Int = 0,
     targetHeight: Int = 0,
+    /** Extra sampling factor; 2 on the retry after an OutOfMemoryError (audit C11). */
+    sampleMultiplier: Int = 1,
     val release: () -> Unit? = {},
 ) {
     private val mDrawableRef = AtomicReference<Drawable?>(null)
@@ -51,6 +53,7 @@ class Image private constructor(
             if (fileSize > 10485760) {
                 simpleSize = (fileSize / 10485760 + 1).toInt()
             }
+            if (sampleMultiplier > 1) simpleSize = (simpleSize ?: 1) * sampleMultiplier
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val src = ImageDecoder.createSource(
                     source.channel.map(
@@ -78,7 +81,7 @@ class Image private constructor(
                                     screenWidth, screenHeight
                                 )
                             }
-                            val sampleSize = max(fitSize, simpleSize ?: 1)
+                            val sampleSize = max(fitSize * sampleMultiplier, simpleSize ?: 1)
                             if (Log.isLoggable(TAG, Log.DEBUG)) {
                                 Log.d(
                                     TAG,
@@ -280,6 +283,7 @@ class Image private constructor(
 
     companion object {
         private const val TAG = "Image"
+        internal const val OOM_RETRY_MULTIPLIER = 2
         var screenWidth: Int = 0
         var screenHeight: Int = 0
 
@@ -297,10 +301,26 @@ class Image private constructor(
             }
         }
 
+        /**
+         * Screen size for reader sampling. Called synchronously at boot and again on
+         * every configuration change (audit 2026-10-04 C11: it used to run async, so
+         * early decodes saw 0x0 and decoded at full size, and it never followed
+         * rotation or fold/unfold). Reads the display, not the application
+         * resources, whose configuration is frozen at process start.
+         */
         @JvmStatic
         fun initialize(context: android.content.Context) {
-            screenWidth = context.resources.displayMetrics.widthPixels
-            screenHeight = context.resources.displayMetrics.heightPixels
+            val metrics = android.util.DisplayMetrics()
+            val display = context.getSystemService(android.hardware.display.DisplayManager::class.java)
+                ?.getDisplay(android.view.Display.DEFAULT_DISPLAY)
+            if (display != null) {
+                @Suppress("DEPRECATION")
+                display.getRealMetrics(metrics)
+            } else {
+                metrics.setTo(context.resources.displayMetrics)
+            }
+            screenWidth = metrics.widthPixels
+            screenHeight = metrics.heightPixels
         }
 
         /**
@@ -321,15 +341,10 @@ class Image private constructor(
         }
 
         @JvmStatic
-        fun decode(stream: FileInputStream, hardware: Boolean = true): Image? {
-            try {
-                return Image(stream, hardware = hardware)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Analytics.recordException(e)
-                return null
+        fun decode(stream: FileInputStream, hardware: Boolean = true): Image? =
+            retryOnOutOfMemory(rewind = { stream.channel.position(0) }) { multiplier ->
+                Image(stream, hardware = hardware, sampleMultiplier = multiplier)
             }
-        }
 
         /**
          * Decode with a target-size hint: the result is sampled so both
@@ -343,18 +358,38 @@ class Image private constructor(
             targetWidth: Int,
             targetHeight: Int,
         ): Image? {
-            try {
-                return Image(
+            return retryOnOutOfMemory(rewind = { stream.channel.position(0) }) { multiplier ->
+                Image(
                     stream,
                     hardware = hardware,
                     targetWidth = targetWidth,
                     targetHeight = targetHeight,
+                    sampleMultiplier = multiplier,
                 )
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Analytics.recordException(e)
-                return null
             }
+        }
+
+        /**
+         * Runs [attempt] at sample multiplier 1; on OutOfMemoryError rewinds and
+         * retries once at [OOM_RETRY_MULTIPLIER] (audit 2026-10-04 C11, user ruling:
+         * no general pixel cap). A second OOM or any exception yields null, which
+         * callers already show as "decode failed" instead of a spinner forever.
+         */
+        internal fun <T> retryOnOutOfMemory(rewind: () -> Unit, attempt: (Int) -> T): T? {
+            for (multiplier in intArrayOf(1, OOM_RETRY_MULTIPLIER)) {
+                try {
+                    if (multiplier > 1) rewind()
+                    return attempt(multiplier)
+                } catch (e: OutOfMemoryError) {
+                    Log.e(TAG, "Decode ran out of memory at sample x$multiplier", e)
+                    com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "Decode OOM at sample x$multiplier", e)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Decode failed", e)
+                    Analytics.recordException(e)
+                    return null
+                }
+            }
+            return null
         }
 
         @JvmStatic
