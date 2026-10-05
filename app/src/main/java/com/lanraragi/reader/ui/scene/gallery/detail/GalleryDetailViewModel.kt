@@ -454,10 +454,19 @@ class GalleryDetailViewModel : ViewModel() {
      * owns the app-scope warm it awaits ([ReaderPageCache.joinOwned]), so
      * cancelling it stops the server extraction, downloads and decode too.
      */
+    @Volatile
     private var detailPreloadJob: Job? = null
+
+    /**
+     * Set when the page is left, cleared by the next [requestGalleryDetail]:
+     * a fetch still in flight when the user left must not start a preload.
+     */
+    @Volatile
+    private var readingPreloadSuppressed = false
 
     /** The user left the detail page: stop its reading preload (audit C18). */
     fun cancelReadingPreload() {
+        readingPreloadSuppressed = true
         detailPreloadJob?.cancel()
         detailPreloadJob = null
     }
@@ -471,14 +480,14 @@ class GalleryDetailViewModel : ViewModel() {
      *
      * Either way, [DirGalleryProvider]/[com.lanraragi.reader.gallery.LRRGalleryProvider]
      * gets a chance to skip the first-page decode on next reader open.
+     *
+     * [archive] is the freshly fetched detail's archive, passed in: the
+     * trigger used to read `_detailLoaded.replayCache`, which is always
+     * empty (replay 0), so the preload never ran (audit C18 ruling R9).
      */
-    private fun triggerReadingPreload(arcId: String) {
+    private fun triggerReadingPreload(arcId: String, archive: Archive) {
         detailPreloadJob?.cancel()
-        val archive = _detailLoaded.replayCache.firstOrNull()?.archive
-        if (archive != null) startReadingPreload(arcId, archive)
-    }
-
-    private fun startReadingPreload(arcId: String, archive: Archive) {
+        if (readingPreloadSuppressed) return
         val context = ServiceRegistry.appModule.getContext()
 
         // Same offline-reconcile math as GalleryOpenHelper and the Dir seed
@@ -703,6 +712,7 @@ class GalleryDetailViewModel : ViewModel() {
         if (arcid.isNullOrEmpty()) {
             return false
         }
+        readingPreloadSuppressed = false
 
         val client = ServiceRegistry.networkModule.okHttpClient
 
@@ -788,7 +798,7 @@ class GalleryDetailViewModel : ViewModel() {
                 loadArchiveTankoubons()
 
                 // Preload reading pages in background
-                triggerReadingPreload(arcid)
+                triggerReadingPreload(arcid, ad.archive)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 android.util.Log.e(TAG, "LRR metadata fetch failed", e)
