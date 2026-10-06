@@ -26,6 +26,7 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.TankTagSyncFailedEvent
+import com.lanraragi.reader.gallery.ArchiveProgressOutbox
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.mapper.toDownloadInfoView
 import com.lanraragi.reader.client.api.LRRArchiveApi
@@ -663,7 +664,9 @@ class DownloadManager(
                     // outranks any stale pair on other devices too.
                     try {
                         val baseUrl = resolveSourceBaseUrl(di.serverProfileId, lookupCache)
-                        LRRArchiveApi.updateProgress(client, baseUrl, di.arcid, 1)
+                        pushProgressReset(baseUrl, di.arcid) {
+                            LRRArchiveApi.updateProgress(client, baseUrl, di.arcid, 1)
+                        }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -721,5 +724,15 @@ class DownloadManager(
         private val TAG = DownloadManager::class.java.simpleName
         private const val RATING_SYNC_PREFS = "download_rating_sync"
         const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"
+
+        /**
+         * The server step of a progress reset, sent through
+         * [ArchiveProgressOutbox] (audit 2026-10-06 C20): a success drops a
+         * page left pending from before the reset, which the next flush would
+         * otherwise push and so undo the reset; a failure queues the reset
+         * itself (page 1) for the next flush.
+         */
+        internal suspend fun pushProgressReset(baseUrl: String, arcid: String, put: suspend () -> Unit) =
+            ArchiveProgressOutbox.tracked(baseUrl, arcid, 0, put)
     }
 }
