@@ -117,4 +117,38 @@ class OrderedPageWindowTest {
             }
         }
     }
+
+    /** Audit PERF-13: a lowered limit caps pages in flight; raising it widens the window again. */
+    @Test
+    fun activeLimitCapsAndThenReleasesTheWindow() = runBlocking {
+        val limit = AtomicInteger(2)
+        val inFlight = AtomicInteger(0)
+        val peakWhileCapped = AtomicInteger(0)
+        val peakAfter = AtomicInteger(0)
+        withTimeout(10_000) {
+            OrderedPageWindow.run(
+                scope, total = 60, workers = 8, isCancelled = { false }, activeLimit = { limit.get() },
+            ) { i ->
+                val now = inFlight.incrementAndGet()
+                if (i < 20) peakWhileCapped.updateAndGet { maxOf(it, now) } else peakAfter.updateAndGet { maxOf(it, now) }
+                if (i == 19) limit.set(8)
+                delay(20)
+                inFlight.decrementAndGet()
+            }
+        }
+        assertTrue("capped peak ${peakWhileCapped.get()}", peakWhileCapped.get() <= 2)
+        assertTrue("released peak ${peakAfter.get()}", peakAfter.get() > 2)
+    }
+
+    @Test
+    fun aCancelledWindowFinishesWhileWorkersArePaused() = runBlocking {
+        val cancelled = AtomicInteger(0)
+        withTimeout(5_000) {
+            OrderedPageWindow.run(
+                scope, total = 100, workers = 8, isCancelled = { cancelled.get() == 1 }, activeLimit = { 1 },
+            ) { i ->
+                if (i == 3) cancelled.set(1)
+            }
+        }
+    }
 }

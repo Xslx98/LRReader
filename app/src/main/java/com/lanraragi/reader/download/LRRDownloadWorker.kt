@@ -13,6 +13,7 @@ import com.lanraragi.reader.client.api.OrphanProfileException
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.gallery.ForegroundReading
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.spider.SpiderQueen
@@ -316,7 +317,10 @@ class LRRDownloadWorker(
         val downloaded = AtomicInteger(0)
 
         try {
-            OrderedPageWindow.run(scope, total, PARALLEL_PAGES, { cancelled || aborted }) { i ->
+            OrderedPageWindow.run(
+                scope, total, PARALLEL_PAGES, { cancelled || aborted },
+                activeLimit = { if (ForegroundReading.isActive) PARALLEL_PAGES_WHILE_READING else PARALLEL_PAGES },
+            ) { i ->
                 val pagePath = resolvedPagePaths[i]
                 val pageFile = DownloadPageNaming.pageFile(downloadDir, i, pagePath)
 
@@ -666,10 +670,13 @@ class LRRDownloadWorker(
         private const val PROGRESS_NOTIFY_INTERVAL_MS = 250L
         // Concurrent page downloads per archive. 8 is a sweet spot for LAN +
         // pre-extracted archives (Hypnotoad's 4 workers can saturate 8 open
-        // page requests without queueing, and NetworkModule now allows 16
-        // per-host). Going higher starts to stress server CPU / disk on
-        // first-time extractions with diminishing throughput gain.
+        // page requests). Going higher starts to stress server CPU / disk on
+        // first-time extractions with diminishing throughput gain. Page fetches
+        // use blocking execute(), so OkHttp's Dispatcher limits do not apply:
+        // this window is the only cap.
         private const val PARALLEL_PAGES = 8
+        // While a reader is on screen (audit PERF-13): its page goes first.
+        private const val PARALLEL_PAGES_WHILE_READING = 2
         /** Bytes peeked from an image response / file to verify magic. */
         private const val HEADER_PEEK_BYTES = 16
 
