@@ -23,17 +23,28 @@ import java.util.concurrent.ConcurrentHashMap
  * Flows are keyed like the store ([LocalReadingProgress.key]): per server
  * profile and arcid. Keyed by arcid alone, the same content-hash arcid on
  * another server showed the previous server's page in the detail header after
- * a profile switch (audit 2026-10-06 C37). Observers read the active
- * profile's flow; a reader of another server's download writes that server's
- * flow, which the detail header shows once that profile is active.
+ * a profile switch (audit 2026-10-06 C37). The reader saves under the
+ * archive's source profile, so the detail header observes that profile's flow
+ * ([progressFlow] with [LocalReadingProgress.sourceProfile]): a download of
+ * another server shows the page just read without switching profiles
+ * (audit 2026-10-06c C37 note).
  */
 object ReadingProgressTracker {
 
     private val flows = ConcurrentHashMap<String, MutableStateFlow<Int>>()
 
-    /** Returns a flow that always reflects the latest 0-indexed local progress for [arcid]. */
+    /** Returns a flow that always reflects the latest 0-indexed local progress for [arcid] on the active profile. */
     fun progressFlow(arcid: String): StateFlow<Int> =
-        flowFor(LocalReadingProgress.profileId(), arcid).asStateFlow()
+        progressFlow(LocalReadingProgress.profileId(), arcid)
+
+    /**
+     * As [progressFlow] for the progress stored under [profileId] (the
+     * archive's source profile, [LocalReadingProgress.sourceProfile]). The
+     * initial value is read like the reader's load, including the fallback to
+     * the active profile's entry while the own key is empty.
+     */
+    fun progressFlow(profileId: Long, arcid: String): StateFlow<Int> =
+        flowFor(profileId, arcid).asStateFlow()
 
     /** Notifies observers after [GalleryProvider2.saveReadingProgress] writes SP. */
     @JvmStatic
