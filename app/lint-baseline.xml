@@ -1605,38 +1605,6 @@
     <issue
         id="AnimatorKeep"
         message="This method is accessed from an ObjectAnimator so it should be annotated with `@Keep` to ensure that it is not discarded or renamed in release builds"
-        errorLine1="    public void setProgress(float progress) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/drawable/AddDeleteDrawable.java"
-            line="127"
-            column="17"/>
-        <location
-            file="src/main/java/com/lanraragi/framework/drawable/AddDeleteDrawable.java"
-            line="153"
-            column="66"
-            message="ObjectAnimator usage here"/>
-    </issue>
-
-    <issue
-        id="AnimatorKeep"
-        message="This method is accessed from an ObjectAnimator so it should be annotated with `@Keep` to ensure that it is not discarded or renamed in release builds"
-        errorLine1="    public void setProgress(float progress) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/drawable/DrawerArrowDrawable.java"
-            line="183"
-            column="17"/>
-        <location
-            file="src/main/java/com/lanraragi/framework/drawable/DrawerArrowDrawable.java"
-            line="207"
-            column="66"
-            message="ObjectAnimator usage here"/>
-    </issue>
-
-    <issue
-        id="AnimatorKeep"
-        message="This method is accessed from an ObjectAnimator so it should be annotated with `@Keep` to ensure that it is not discarded or renamed in release builds"
         errorLine1="    public void setTrimStart(float trimStart) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
