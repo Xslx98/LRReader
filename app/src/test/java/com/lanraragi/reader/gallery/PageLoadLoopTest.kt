@@ -29,6 +29,7 @@ class PageLoadLoopTest {
     private var fetches = 0
     private var decodes = 0
     private var retries = 0
+    private var handOvers = 0
 
     @Before
     fun setUp() {
@@ -52,6 +53,10 @@ class PageLoadLoopTest {
         },
         decode = { decode(++decodes) },
         ownedByDownload = { it.parentFile != cacheDir },
+        handOverDamaged = {
+            handOvers++
+            false
+        },
         retryDelay = { retries++ },
         sdkInt = sdkInt,
     )
@@ -132,6 +137,44 @@ class PageLoadLoopTest {
         assertEquals(1, fetches)
         assertEquals(0, retries)
         assertArrayEquals("download-dir page belongs to the worker", PageFixtures.damagedPng, file.readBytes())
+        assertEquals("offered to the download side", 1, handOvers)
+    }
+
+    /**
+     * Audit 2026-10-06e P4-d: a damaged download-dir page is handed to the
+     * download pipeline (not deleted) and the retry reads a fresh copy from
+     * the reader cache, where the hand-over pointed the page.
+     */
+    @Test
+    fun damagedDownloadDirPage_isHandedOverAndReadFreshFromTheCache() = runBlocking {
+        val dlPage = File(downloadDir, "0001.png").apply { writeBytes(PageFixtures.damagedPng) }
+        val cachePage = File(cacheDir, "page_0")
+        var current = dlPage
+        val handedOver = mutableListOf<File>()
+        val result = PageLoadLoop(
+            pageFile = { current },
+            fetch = {
+                if (!current.exists()) {
+                    fetches++
+                    current.writeBytes(PageFixtures.damagedPng)
+                }
+            },
+            decode = { f -> if (f == dlPage) failed else DecodeResult.Ok("fresh") },
+            ownedByDownload = { it.parentFile != cacheDir },
+            handOverDamaged = { f ->
+                handedOver += f
+                current = cachePage
+                true
+            },
+            retryDelay = { retries++ },
+            sdkInt = 30,
+        ).run()
+
+        assertEquals(PageLoadResult.Loaded("fresh"), result)
+        assertEquals(listOf(dlPage), handedOver)
+        assertEquals("one fetch, into the reader cache", 1, fetches)
+        assertTrue(cachePage.exists())
+        assertArrayEquals("the download pipeline replaces it", PageFixtures.damagedPng, dlPage.readBytes())
     }
 
     @Test
@@ -141,6 +184,17 @@ class PageLoadLoopTest {
 
         assertEquals(PageLoadResult.Failed(PageFailure.Unsupported(PageImageFormat.AVIF)), result)
         assertTrue(file.exists())
+        assertEquals("a valid page is never handed over for a re-download", 0, handOvers)
+    }
+
+    @Test
+    fun tooLargeDownloadDirPage_isKeptAndNotHandedOver() = runBlocking {
+        val file = File(downloadDir, "0001.png")
+        val result = loop(file, PageFixtures.damagedPng) { DecodeResult.OutOfMemory }.run()
+
+        assertEquals(PageLoadResult.Failed(PageFailure.TooLarge), result)
+        assertTrue(file.exists())
+        assertEquals(0, handOvers)
     }
 
     @Test

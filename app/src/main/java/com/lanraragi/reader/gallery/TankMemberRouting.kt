@@ -2,6 +2,7 @@ package com.lanraragi.reader.gallery
 
 import android.content.Context
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.download.DownloadPageRepair
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.util.suspendRunCatching
 import okhttp3.OkHttpClient
@@ -40,7 +41,10 @@ internal object TankMemberRouting {
         }
         val hybridDir = localDir ?: suspendRunCatching { resolver.pendingDownloadDir(archive) }.getOrNull()
         val store = hybridDir?.let {
-            HybridPageStore(it, ReaderPageCache.getCacheDir(context, member.arcid))
+            HybridPageStore(
+                it, ReaderPageCache.getCacheDir(context, member.arcid),
+                onRepairRequested = { DownloadPageRepair.requeueIfFinished(member.arcid) },
+            )
         }
         return LrrTankMemberSource(context, member.arcid, serverUrl, pageClient, listClient, store)
     }

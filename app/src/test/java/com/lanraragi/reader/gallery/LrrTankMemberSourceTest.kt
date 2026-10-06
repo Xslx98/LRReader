@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.download.DownloadPageRepair
 import com.lanraragi.reader.download.DurablePageWrite
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -17,6 +18,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
 import org.junit.After
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -285,10 +287,31 @@ class LrrTankMemberSourceTest {
         source.ensurePageCount()
         val page = java.io.File(downloadDir, "0001.png")
 
+        // The server keeps sending damaged bytes: the fresh reader-cache copy
+        // fails too, and only that copy is dropped.
         assertEquals(PageFailure.Corrupt, decodeFailure(source, 0))
-        assertTrue("the download worker owns this file", page.exists())
-        assertEquals(PageFailure.Corrupt, decodeFailure(source, 0))
-        assertEquals(1, pageRequests.get())
+        assertArrayEquals("the download worker owns this file", PageFixtures.damagedPng, page.readBytes())
+        assertEquals(2, pageRequests.get())
+        downloadDir.deleteRecursively()
+    }
+
+    /** Audit 2026-10-06e P4-d: hand the damaged page to the download side, show a fresh copy now. */
+    @Test
+    fun `damaged download-dir page is handed over and read fresh from the reader cache`(): Unit = runBlocking {
+        val (store, downloadDir) = newStore()
+        downloadDir.mkdirs()
+        val page = java.io.File(downloadDir, "0001.png").apply { writeBytes(PageFixtures.damagedPng) }
+        val source = newSource(store)
+        source.ensurePageCount()
+
+        val image = source.obtainImage(0)
+
+        assertNotNull(image)
+        image!!.recycle()
+        assertEquals("one fetch, into the reader cache", 1, pageRequests.get())
+        assertArrayEquals("only the download pipeline replaces it", PageFixtures.damagedPng, page.readBytes())
+        assertTrue("marked for the worker", DownloadPageRepair.isMarked(page))
+        assertTrue(java.io.File(ReaderPageCache.ensureCacheDir(ctx, ARCID), "page_0").exists())
         downloadDir.deleteRecursively()
     }
 

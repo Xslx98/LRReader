@@ -2,6 +2,10 @@ package com.lanraragi.reader.download
 
 import android.system.ErrnoException
 import android.system.OsConstants
+import com.lanraragi.reader.client.api.LRREmptyBodyException
+import com.lanraragi.reader.client.api.LRRHttpException
+import com.lanraragi.reader.client.api.LRRMissingFieldException
+import com.lanraragi.reader.client.api.LRRUnexpectedContentTypeException
 import com.lanraragi.reader.download.PageRetryPolicy.Decision
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -77,5 +81,29 @@ class PageRetryPolicyTest {
         assertEquals(Decision.Fail(DownloadFailureReason.CORRUPT), PageRetryPolicy.decide(corrupt, 2))
         assertEquals(Decision.Fail(DownloadFailureReason.UNKNOWN), PageRetryPolicy.decide(HttpStatusException(400), 1))
         assertEquals(Decision.Retry(PageRetryPolicy.BASE_DELAY_MS), PageRetryPolicy.decide(IllegalStateException(), 1))
+    }
+
+    /** Audit 2026-10-06e REL-02: the page-list request shares the page budget. */
+    @Test
+    fun pageList_transientRetriesPermanentAndMalformedFailAtOnce() {
+        assertEquals(Decision.Retry(1_000), PageRetryPolicy.decideList(LRRHttpException(503), 1, noJitter))
+        assertEquals(Decision.Retry(5_000), PageRetryPolicy.decideList(LRRHttpException(429, null, 5_000), 1))
+        assertEquals(Decision.Retry(1_000), PageRetryPolicy.decideList(SocketTimeoutException(), 1, noJitter))
+        assertEquals(
+            Decision.Fail(DownloadFailureReason.SERVER),
+            PageRetryPolicy.decideList(LRRHttpException(502), PageRetryPolicy.TRANSIENT_ATTEMPTS, noJitter),
+        )
+        assertEquals(Decision.Abort(DownloadFailureReason.NOT_FOUND), PageRetryPolicy.decideList(LRRHttpException(404), 1))
+        assertEquals(Decision.Fail(DownloadFailureReason.UNKNOWN), PageRetryPolicy.decideList(LRRHttpException(400), 1))
+        assertEquals(Decision.Fail(DownloadFailureReason.UNKNOWN), PageRetryPolicy.decideList(LRREmptyBodyException(), 1))
+        assertEquals(
+            Decision.Fail(DownloadFailureReason.UNKNOWN),
+            PageRetryPolicy.decideList(LRRMissingFieldException("pages"), 1),
+        )
+        assertEquals(
+            Decision.Fail(DownloadFailureReason.UNKNOWN),
+            PageRetryPolicy.decideList(LRRUnexpectedContentTypeException("text/html"), 1),
+        )
+        assertEquals(Decision.Fail(DownloadFailureReason.UNKNOWN), PageRetryPolicy.decideList(IllegalArgumentException(), 1))
     }
 }
