@@ -805,6 +805,7 @@
     <string name="lrr_keystore_failed_message">デバイスのキーストアが利用できません。API キーを読み込めませんでした。サーバーの認証情報を再入力してください。</string>
     <string name="security_storage_unavailable_message">端末の安全なストレージが現在利用できないため、アプリロックを確認できません。再試行するか、アプリロックをリセットしてください。リセットするとパターンと保存済みのすべてのサーバー API キーが削除されます。ライブラリとダウンロードは残ります。</string>
     <string name="security_storage_retry">再試行</string>
+    <string name="security_storage_starting_message">端末の安全なストレージがまだ起動中のため、アプリロックをまだ確認できません。しばらく待ってから「再試行」をタップしてください。</string>
     <string name="security_reset_app_lock">アプリロックをリセット</string>
     <string name="security_reset_app_lock_confirm">アプリロックをリセットし、保存済みのすべての API キーを削除しますか？サーバーの認証情報を再入力する必要があります。</string>
     <string name="security_fingerprint_changed">端末の指紋が変更されたため、指紋ロック解除をオフにしました。プライバシー設定で再度オンにできます。</string>

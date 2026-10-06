@@ -173,4 +173,52 @@ class LRRAuthManagerInitGateTest {
             scope.cancel()
         }
     }
+
+    /**
+     * Audit 2026-10-06 N5: the main thread (Robolectric runs tests on it) gives
+     * up before the 5 s input-dispatch ANR limit, with the production bounds,
+     * while a background reader keeps waiting and still gets the real value.
+     */
+    @Test(timeout = 20_000)
+    fun hungInit_mainThreadGivesUpBeforeAnrLimit_backgroundReaderKeepsWaiting() {
+        val scheduler = TestCoroutineScheduler()
+        val scope = CoroutineScope(
+            StandardTestDispatcher(scheduler) +
+                CoroutineExceptionHandler { _, t -> println("contained: $t") }
+        )
+        try {
+            LRRAuthManager.scheduleInitialize(ctx, scope) // never advanced: init "hangs"
+            assertTrue(android.os.Looper.myLooper() == android.os.Looper.getMainLooper())
+
+            val started = System.nanoTime()
+            assertNull(LRRAuthManager.getServerUrl())
+            val waitedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
+            assertTrue("main thread waited $waitedMs ms, at the ANR limit", waitedMs < 5_000)
+
+            val again = System.nanoTime()
+            LRRAuthManager.getActiveProfileId()
+            assertTrue(
+                "later main-thread readers must not wait again",
+                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - again) < 150
+            )
+
+            val background = CountDownLatch(1)
+            var observed: String? = "sentinel"
+            thread(isDaemon = true) {
+                observed = LRRAuthManager.getServerUrl()
+                background.countDown()
+            }
+            assertFalse(
+                "a background reader keeps its longer wait",
+                background.await(300, TimeUnit.MILLISECONDS)
+            )
+            val prefs = ctx.getSharedPreferences("lrr_gate_main_test", Context.MODE_PRIVATE)
+            prefs.edit().putString("server_url", "http://10.0.0.7:3000").commit()
+            LRRAuthManager.initializeForTesting(prefs)
+            assertTrue(background.await(5, TimeUnit.SECONDS))
+            assertEquals("http://10.0.0.7:3000", observed)
+        } finally {
+            scope.cancel()
+        }
+    }
 }

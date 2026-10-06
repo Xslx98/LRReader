@@ -119,6 +119,22 @@ class LRRUrlHelperConnectTest {
     }
 
     @Test
+    fun explicitHttps_toLanHost_failsWithoutHttpFallback() = runBlocking {
+        // SEC-01: the user typed https://, so a failed TLS handshake must be
+        // reported, never retried over http:// with the key. The plaintext
+        // MockWebServer fails the handshake; a fallback would succeed on it.
+        server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
+        val httpsUrl = "https://" + baseUrl().removePrefix("http://")
+
+        val result = LRRUrlHelper.connectWithFallback(client, httpsUrl, "secret", allowCleartext = true)
+
+        val error = result.errorOrNull()
+        assertTrue("explicit https must fail, got $result", error != null && error !is LRRCleartextRefusedException)
+        // The TLS attempt opens a socket but never completes an HTTP request.
+        assertEquals("no request may reach the server over HTTP", 0, server.requestCount)
+    }
+
+    @Test
     fun explicitHttp_toNonLanHost_refusesBeforeSendingKey() = runBlocking {
         // An explicit http:// URL to a WAN host must be refused before any
         // request goes out — otherwise the Bearer key travels in cleartext.

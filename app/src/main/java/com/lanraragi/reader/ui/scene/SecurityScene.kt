@@ -35,6 +35,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.scene.SecurityViewModel.SecurityUiEvent
+import com.lanraragi.reader.ui.scene.SecurityViewModel.StorageState
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.framework.widget.lockpattern.LockPatternUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
@@ -212,17 +213,43 @@ class SecurityScene : SolidScene(),
         }
 
         // Fail closed: with the secure store unreadable the pattern cannot be
-        // checked, but the app stays locked. Offer a retry or a reset.
-        secureStorageAvailable = LRRAuthManager.isSecureStorageAvailable()
-        if (!secureStorageAvailable) {
-            patternView.isEnabled = false
-            showStorageUnavailableDialog()
-        }
+        // checked, but the app stays locked. Offer a retry, and a reset only
+        // when the store definitely failed to open.
+        secureStorageAvailable = checkSecureStorage()
 
         return view
     }
 
     private var secureStorageAvailable = true
+
+    /** @return whether the pattern can be checked now */
+    private fun checkSecureStorage(): Boolean {
+        val state = viewModel.storageState()
+        mPatternView?.isEnabled = state == StorageState.AVAILABLE
+        when (state) {
+            StorageState.AVAILABLE -> Unit
+            StorageState.STARTING -> showStorageStartingDialog()
+            StorageState.UNAVAILABLE -> showStorageUnavailableDialog()
+        }
+        return state == StorageState.AVAILABLE
+    }
+
+    /**
+     * The store is still opening (a slow keystore after boot). No reset here:
+     * it would wipe the lock while the store is about to become readable,
+     * leaving history and favourites open (audit SEC-04).
+     */
+    private fun showStorageStartingDialog() {
+        val ctx = ehContext ?: return
+        AlertDialog.Builder(ctx)
+            .setTitle(R.string.lrr_keystore_failed_title)
+            .setMessage(R.string.security_storage_starting_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.security_storage_retry) { _, _ ->
+                secureStorageAvailable = checkSecureStorage()
+            }
+            .show()
+    }
 
     private fun showStorageUnavailableDialog() {
         val ctx = ehContext ?: return

@@ -948,6 +948,7 @@
     <string name="lrr_keystore_failed_message">The device keystore is unavailable. Your API key could not be loaded. Please re-enter your server credentials.</string>
     <string name="security_storage_unavailable_message">The app lock can\'t be checked because the device\'s secure storage is unavailable right now. Try again, or reset the app lock: this removes the pattern and every saved server API key. Your library and downloads are kept.</string>
     <string name="security_storage_retry">Try again</string>
+    <string name="security_storage_starting_message">The device\'s secure storage is still starting, so the app lock can\'t be checked yet. Wait a moment, then tap Try again.</string>
     <string name="security_reset_app_lock">Reset app lock</string>
     <string name="security_reset_app_lock_confirm">Reset the app lock and remove every saved API key? You will need to re-enter your server credentials.</string>
     <string name="security_fingerprint_changed">The device\'s fingerprints changed, so fingerprint unlock was turned off. Turn it on again in Privacy settings.</string>

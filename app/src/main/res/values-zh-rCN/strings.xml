@@ -892,6 +892,7 @@
     <string name="lrr_keystore_failed_message">设备密钥库不可用，无法加载 API Key。请重新输入服务器凭据。</string>
     <string name="security_storage_unavailable_message">设备的安全存储暂时不可用，无法验证应用锁。可以重试，或重置应用锁：这会清除图案和所有已保存的服务器 API Key，书库和下载不受影响。</string>
     <string name="security_storage_retry">重试</string>
+    <string name="security_storage_starting_message">设备的安全存储仍在启动，暂时无法验证应用锁。请稍等片刻，然后点「重试」。</string>
     <string name="security_reset_app_lock">重置应用锁</string>
     <string name="security_reset_app_lock_confirm">重置应用锁并清除所有已保存的 API Key？之后需要重新输入服务器凭据。</string>
     <string name="security_fingerprint_changed">设备的指纹已变更，指纹解锁已关闭。可在隐私设置中重新开启。</string>

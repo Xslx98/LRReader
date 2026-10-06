@@ -74,6 +74,24 @@ class SecurityViewModel : ViewModel() {
         data object PatternUnverifiable : SecurityUiEvent
     }
 
+    /** What the lock screen can offer while the secure store is unreadable (audit SEC-04). */
+    enum class StorageState {
+        /** The pattern can be checked. */
+        AVAILABLE,
+
+        /** Init has not finished yet: transient, offer only a retry. */
+        STARTING,
+
+        /** Init finished and the store could not be opened: retry or reset. */
+        UNAVAILABLE,
+    }
+
+    fun storageState(): StorageState = when {
+        LRRAuthManager.isSecureStorageAvailable() -> StorageState.AVAILABLE
+        LRRAuthManager.isSecureStorageStillStarting() -> StorageState.STARTING
+        else -> StorageState.UNAVAILABLE
+    }
+
     private val _uiEvent = MutableSharedFlow<SecurityUiEvent>(extraBufferCapacity = 1)
 
     /** One-shot events for the Scene to react to. */

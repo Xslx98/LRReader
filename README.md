@@ -35,9 +35,9 @@ LR Reader is a phone client for your own LANraragi server, so on first launch it
 
 **1. 填服务器地址 / Enter the server address**
 
-打开 App 会看到引导页。在「服务器地址」里填 LANraragi 的地址和端口，比如 `192.168.1.100:3000`。不用写 `http://` 或 `https://`——App 会先试加密连接，局域网地址再自动改用明文（改用明文时会请你确认一次）。如果从外网访问，建议把 LANraragi 放在支持 HTTPS 的反向代理后面。
+打开 App 会看到引导页。在「服务器地址」里填 LANraragi 的地址和端口，比如 `192.168.1.100:3000`。不用写 `http://` 或 `https://`——App 会先试加密的 HTTPS；局域网地址连不上时会自动改用明文 HTTP，不再询问，并把该服务器标为「未加密（HTTP）」。如果想强制加密，就写上 `https://`，这样 App 只用 HTTPS，连不上就报错，绝不退回明文。如果从外网访问，建议把 LANraragi 放在支持 HTTPS 的反向代理后面。
 
-The onboarding page opens on first launch. Put your LANraragi address and port in the server field, e.g. `192.168.1.100:3000`. No need to type `http://` or `https://` — the app tries an encrypted connection first and falls back to plain HTTP for LAN addresses (it asks you once before doing so). For access from outside your home, put LANraragi behind an HTTPS reverse proxy.
+The onboarding page opens on first launch. Put your LANraragi address and port in the server field, e.g. `192.168.1.100:3000`. No need to type `http://` or `https://` — the app tries encrypted HTTPS first and, for a LAN address, switches to plain HTTP automatically without asking, marking the server "Unencrypted (HTTP)". To require encryption, type `https://`: the app then uses HTTPS only and reports an error instead of falling back to plain HTTP. For access from outside your home, put LANraragi behind an HTTPS reverse proxy.
 
 **2. 拿到 API Key / Get an API Key**
 
