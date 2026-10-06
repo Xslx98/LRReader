@@ -217,6 +217,43 @@ class BackupRoundTripTest {
         }
     }
 
+    /**
+     * Audit 2026-10-06f REL-01: rows written before multi-server support keep
+     * profile id 0 (= the active server). No backup profile has that id, so the
+     * restore used to drop them without a count.
+     */
+    @Test
+    fun legacy_rows_go_to_the_backups_active_server() {
+        seedSource()
+        runBlocking {
+            source.archiveLocalStateDao().insertNew(
+                ArchiveLocalState(arcid = "legacy", serverProfileId = 0L, archiveJson = "{}", historyTime = 70, favoriteTime = 60)
+            )
+            source.browsingDao().upsertSearchHistory(
+                SearchHistoryEntry().apply { query = "old"; serverProfileId = 0L; lastUsed = 5 }
+            )
+            source.statsDao().insertDailyAggregateIfAbsent(
+                DailyReadingAggregate().apply { epochDay = 2; serverProfileId = 0L; pagesRead = 12; completed = 0 }
+            )
+        }
+        val backup = BackupCodec.read(ByteArrayInputStream(backupBytes()))
+
+        runBlocking { importer().restore(backup) }
+
+        runBlocking {
+            val restored = target.miscDao().getAllServerProfiles().single().id
+            val legacy = target.archiveLocalStateDao().loadByArcidAndProfile("legacy", restored)
+            assertEquals(70L, legacy?.historyTime)
+            assertEquals(60L, legacy?.favoriteTime)
+            val old = target.browsingDao().getAllSearchHistory().single { it.query == "old" }
+            assertEquals(5L, old.lastUsed)
+            assertEquals(restored, old.serverProfileId)
+            val day = target.statsDao().getAllDailyAggregates().single { it.epochDay == 2L }
+            assertEquals(12L, day.pagesRead)
+            assertEquals(restored, day.serverProfileId)
+        }
+    }
+
     @Test(expected = BackupFormatException::class)
     fun another_json_file_is_refused() {
         BackupCodec.read(ByteArrayInputStream("""{"format":"something-else"}""".toByteArray()))
