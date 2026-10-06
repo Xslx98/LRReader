@@ -7,6 +7,7 @@ import android.util.Base64
 import java.nio.ByteBuffer
 import java.security.GeneralSecurityException
 import java.security.KeyStore
+import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -201,16 +202,44 @@ class KeystoreSecurePrefs private constructor(
         null
     }
 
+    /** A decrypted value and the exact stored text it came from. */
+    private class Opened(val stored: String, val type: Char, val payload: String)
+
+    /**
+     * Decrypted values by key (audit 06e PERF-01): the server URL and API key
+     * are read per request and per list entry, and each decrypt is a
+     * keystore2 operation. An entry is served only while the stored text is
+     * still the one it was decrypted from — every write seals with a fresh
+     * IV, so any write, by any path (this editor, the backing file, a reset),
+     * makes the entry miss. Editors also drop the keys they touch.
+     * Failures are not cached.
+     */
+    private val opened = ConcurrentHashMap<String, Opened>()
+
+    /** (type, payload) of [stored], the value of [key]; null when it does not decrypt. */
+    private fun unsealCached(key: String, stored: String): Pair<Char, String>? {
+        val hit = opened[key]
+        if (hit != null && hit.stored == stored) return hit.type to hit.payload
+        val plain = unseal(stored)
+        if (plain != null) opened[key] = Opened(stored, plain.first, plain.second)
+        return plain
+    }
+
+    /** Keys whose decrypted value is held in memory. Tests only. */
+    internal fun cachedKeysForTesting(): Set<String> = opened.keys.toSet()
+
     private fun read(key: String, type: Char): String? {
         val stored = backing.getString(key, null) ?: return null
-        val (t, payload) = unseal(stored) ?: return null
+        val (t, payload) = unsealCached(key, stored) ?: return null
         return if (t == type) payload else null
     }
 
     override fun getAll(): Map<String, *> =
         backing.all.entries
             .filter { (key, stored) -> key != CANARY_KEY && stored is String }
-            .mapNotNull { (key, stored) -> unseal(stored as String)?.let { (type, payload) -> key to decode(type, payload) } }
+            .mapNotNull { (key, stored) ->
+                unsealCached(key, stored as String)?.let { (type, payload) -> key to decode(type, payload) }
+            }
             .toMap()
 
     private fun decode(type: Char, payload: String): Any? = when (type) {
@@ -300,14 +329,22 @@ class KeystoreSecurePrefs private constructor(
             for (key in backing.all.keys) if (key != CANARY_KEY && key !in touched) inner.remove(key)
         }
 
+        /** Drops cached values this editor changed (all of them after clear()). */
+        private fun dropOpened() {
+            if (cleared) opened.clear() else touched.forEach { opened.remove(it) }
+        }
+
         override fun commit(): Boolean {
             applyClear()
-            return inner.commit()
+            val result = inner.commit()
+            dropOpened()
+            return result
         }
 
         override fun apply() {
             applyClear()
             inner.apply()
+            dropOpened()
         }
     }
 }
