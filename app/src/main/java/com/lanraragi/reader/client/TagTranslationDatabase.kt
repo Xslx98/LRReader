@@ -24,7 +24,6 @@ import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.framework.util.ExceptionUtils
 import android.util.Log
 import com.lanraragi.framework.util.TextUrl
@@ -41,6 +40,8 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
@@ -159,8 +160,17 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
     companion object {
         private val TAG = TagTranslationDatabase::class.java.simpleName
 
-        /** Upper bound for the dataset body; the real file is a few MB. */
-        internal const val MAX_DATASET_BYTES = 32 * 1024 * 1024
+        /**
+         * Upper bound for the dataset body. The real file is about 1.4 MB
+         * (2026-10), so this leaves roughly 10x headroom for growth.
+         */
+        internal const val MAX_DATASET_BYTES = 16 * 1024 * 1024
+
+        /** Download cap for the dataset file: the body plus its 4-byte length prefix. */
+        internal const val MAX_DATASET_DOWNLOAD_BYTES = MAX_DATASET_BYTES + 4L
+
+        /** Download cap for the hash file, which holds a raw 20-byte SHA-1. */
+        internal const val MAX_SHA1_DOWNLOAD_BYTES = 64L
 
         @JvmField
         val NAMESPACE_TO_PREFIX: Map<String, String> = mapOf(
@@ -435,25 +445,43 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
             return s1.contentEquals(s2)
         }
 
-        private suspend fun save(client: OkHttpClient, url: String, file: File): Boolean {
+        /**
+         * Downloads [url] into [file]. Returns false, leaving a partial file
+         * for the caller to delete, when the response fails or is larger
+         * than [maxBytes] — declared or actually streamed (audit SEC-01).
+         */
+        @VisibleForTesting
+        internal suspend fun save(client: OkHttpClient, url: String, file: File, maxBytes: Long): Boolean {
             val request = Request.Builder().url(url).build()
             val call = client.newCall(request)
             return try {
                 call.await().use { response ->
                     if (!response.isSuccessful) return false
                     val body = response.body ?: return false
-                    body.byteStream().use { inputStream ->
-                        FileOutputStream(file).use { outputStream ->
-                            IOUtils.copy(inputStream, outputStream)
-                        }
-                    }
-                    true
+                    body.contentLength() <= maxBytes && writeAtMost(body.byteStream(), file, maxBytes)
                 }
             } catch (t: Throwable) {
                 if (t is CancellationException) throw t
                 ExceptionUtils.throwIfFatal(t)
                 Analytics.recordException(t)
                 false
+            }
+        }
+
+        /** Writes [input] to [file]; false as soon as more than [maxBytes] arrive. */
+        private fun writeAtMost(input: InputStream, file: File, maxBytes: Long): Boolean {
+            return input.use { FileOutputStream(file).use { output -> copyAtMost(input, output, maxBytes) } }
+        }
+
+        private fun copyAtMost(input: InputStream, output: OutputStream, maxBytes: Long): Boolean {
+            val buffer = ByteArray(8 * 1024)
+            var total = 0L
+            while (true) {
+                val n = input.read(buffer)
+                if (n == -1) return true
+                total += n
+                if (total > maxBytes) return false
+                output.write(buffer, 0, n)
             }
         }
 
@@ -486,7 +514,7 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
 
             // Save new sha1
             val tempSha1File = File(dir, "$sha1Name.tmp")
-            if (!save(client, sha1Url, tempSha1File)) {
+            if (!save(client, sha1Url, tempSha1File, MAX_SHA1_DOWNLOAD_BYTES)) {
                 FileUtils.delete(tempSha1File)
                 return
         }
@@ -501,7 +529,7 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
 
         // Save new data
         val tempDataFile = File(dir, "$dataName.tmp")
-        if (!save(client, dataUrl, tempDataFile)) {
+        if (!save(client, dataUrl, tempDataFile, MAX_DATASET_DOWNLOAD_BYTES)) {
             FileUtils.delete(tempDataFile)
             return
         }
