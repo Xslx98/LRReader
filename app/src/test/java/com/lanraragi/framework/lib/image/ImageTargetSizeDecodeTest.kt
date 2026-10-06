@@ -60,6 +60,34 @@ class ImageTargetSizeDecodeTest {
         image.recycle()
     }
 
+    /**
+     * Audit 2026-10-06c PERF-01: a 15 MiB file whose pixels fit the screen must
+     * decode at full resolution (the old fileSize / 10 MiB + 1 floor gave sample 2).
+     * The PNG is padded after IEND so the file is large but the pixels are not.
+     */
+    @Test
+    fun `large file with screen-fit pixels decodes at full resolution`() {
+        val file = pngFile(1000, 1400)
+        java.io.RandomAccessFile(file, "rw").use { it.setLength(15L * 1024 * 1024) }
+        val image = FileInputStream(file).use { Image.decode(it, false) }
+        assertNotNull(image)
+        assertEquals(1000, image!!.width)
+        assertEquals(1400, image.height)
+        image.recycle()
+    }
+
+    @Test
+    fun `large file with target hint samples by pixels only`() {
+        val file = pngFile(1000, 1400)
+        java.io.RandomAccessFile(file, "rw").use { it.setLength(25L * 1024 * 1024) }
+        val image = FileInputStream(file).use { Image.decode(it, false, 336, 470) }
+        assertNotNull(image)
+        // pixel fit = 2; the old file-size floor would have forced 3
+        assertEquals(500, image!!.width)
+        assertEquals(700, image.height)
+        image.recycle()
+    }
+
     @Test
     fun `decode with target hint samples down to cell scale`() {
         val image = FileInputStream(pngFile(1000, 1400)).use {
