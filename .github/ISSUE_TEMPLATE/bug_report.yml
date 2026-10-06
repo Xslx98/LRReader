@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in LR Reader does not work as expected.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please search the existing issues first.
+        Security problems: do not open an issue — use private reporting (see SECURITY.md).
+  - type: input
+    id: app-version
+    attributes:
+      label: LR Reader version
+      description: Settings → About → Build version.
+      placeholder: "e.g. 2.0.0"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: "e.g. Pixel 8, Android 16"
+    validations:
+      required: true
+  - type: input
+    id: server-version
+    attributes:
+      label: LANraragi server version
+      placeholder: "e.g. 0.9.60"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Tap …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Screenshots or a screen recording help.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: |
+        For crashes or failures, attach the zip from Settings → Advanced → Share diagnostics.
+        It contains redacted logs and local crash reports. Check it before attaching if your
+        archive titles or server address are private.

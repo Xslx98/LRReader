@@ -1,117 +1,145 @@
-# Contributing to LR Reader | 贡献指南
+# Contributing to LR Reader
 
-感谢你对 LRReader 的关注！欢迎提交 Bug 报告、功能建议和代码贡献。
+Thank you for your interest in LR Reader. Bug reports, feature requests and pull
+requests are welcome. Security problems go through private reporting instead —
+see [SECURITY.md](SECURITY.md).
 
-Thank you for your interest in LRReader! Bug reports, feature requests, and code contributions are welcome.
+## Development environment
 
-## 开发环境 | Development Environment
-
-| 工具 / Tool | 版本 / Version |
+| Tool | Version |
 |---|---|
-| Android Studio | Ladybug+ |
-| JDK | 21+ |
-| Android SDK | API 35 (compile), API 28 (min) |
-| Kotlin | 2.1.0 |
+| JDK | 21 (CI uses Temurin) |
+| Android SDK | compileSdk / targetSdk 36, minSdk 28 |
+| Android Gradle Plugin, Kotlin | see `gradle/libs.versions.toml` |
 
-## 构建 | Build
+All library and plugin versions live in `gradle/libs.versions.toml`. Reference
+them from `build.gradle` as `libs.<alias>`; never hard-code a version.
+
+## Build and check
 
 ```bash
 git clone https://github.com/Xslx98/LRReader.git
 cd LRReader
-./gradlew :app:assembleAppReleaseDebug
+./gradlew :app:assembleAppReleaseDebug          # debug APK (arm64 + x86_64)
+./gradlew app:testAppReleaseDebugUnitTest       # unit tests (Robolectric)
+./gradlew app:lintAppReleaseDebug               # Android lint
+./gradlew detekt detektMain                     # static analysis
+bash scripts/ci-check.sh                        # every CI gate, locally
 ```
 
-生成的 APK 在 `app/build/outputs/apk/appRelease/debug/` 目录下。
+The debug APK is written to `app/build/outputs/apk/appRelease/debug/`.
 
-The generated APK is located at `app/build/outputs/apk/appRelease/debug/`.
+`scripts/ci-check.sh` runs the same gates as CI: assemble, unit tests, lint,
+detekt with type resolution, the release DEX log check, Room schema drift,
+baseline growth, the `runCatching` cap, the coverage floor and the JitPack AAR
+checksums. Run it before opening a pull request (`ANDROID_HOME` must be set).
 
-## 签名配置 | Signing Config
+Release builds are signed with a key that is not part of the repository;
+`:app:assembleAppReleaseRelease` needs your own keystore in `local.properties`
+(`RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`,
+`RELEASE_KEY_PASSWORD`). You do not need it to contribute. Never commit
+`local.properties`, keystores or any credential.
 
-项目使用 `keystore/release.jks` 作为发布签名密钥。签名凭据通过 `local.properties` 注入（已 gitignore）。
+## Project layout
 
-The project uses `keystore/release.jks` for release signing. Credentials are injected via `local.properties` (gitignored).
+One Gradle module, `app/`:
 
-**首次 clone 后，在 `local.properties` 中添加 | After cloning, add to `local.properties`:**
+- `com.lanraragi.reader.*` — application code, 100% Kotlin.
+  - `client/api/` — every LANraragi REST call and its `@Serializable` DTOs.
+  - `dao/` — Room entities, DAOs and migrations (`AppDatabase` is the only database).
+  - `download/` — the download service; other packages use the `DownloadManager` facade only.
+  - `ui/scene/` — screens (scenes) and their ViewModels.
+- `com.lanraragi.framework.*` — the reader/rendering framework inherited from
+  EhViewer, kept in Java. Leave it in Java; new code anywhere is Kotlin.
+- `app/schemas/` — exported Room schemas; CI fails when they drift.
 
-```properties
-RELEASE_STORE_FILE=keystore/release.jks
-RELEASE_STORE_PASSWORD=<your-store-password>
-RELEASE_KEY_ALIAS=<your-key-alias>
-RELEASE_KEY_PASSWORD=<your-key-password>
-```
+## Code conventions
 
-> ⚠️ **密钥信息 | Key Info**
-> - Keystore: `keystore/release.jks`
-> - Key Alias: *(see `SIGNING_CREDENTIALS.md`)*
-> - Store/Key Password: *(see `SIGNING_CREDENTIALS.md`)*
-> - Algorithm: RSA 2048, validity 10000 days
->
-> **请妥善保管 release.jks 文件和密码。一旦丢失，将无法更新已发布的应用。**
->
-> **Keep release.jks and its password safe. If lost, published apps cannot be updated.**
+### Language and style
 
-## 发布构建 | Release Build
+- New code is Kotlin. 4-space indent, braces on the same line, `CamelCase`
+  types and `camelCase` members.
+- JSON uses `kotlinx-serialization` `@Serializable` classes. Gson is not allowed.
+- Build LANraragi URLs with `parseBaseUrl()`, not `toHttpUrlOrNull()!!`.
 
-```bash
-# 签名 APK / Signed APK (direct distribution)
-./gradlew :app:assembleAppReleaseRelease
-```
+### Coroutines and threads
 
-| 产物 / Artifact | 路径 / Path | 用途 / Usage |
-|---|---|---|
-| APK | `app/build/outputs/apk/appRelease/release/` | GitHub Releases |
+- Network and database work is `suspend fun` + `withContext(Dispatchers.IO)`.
+- No `runBlocking`, `AsyncTask` or bare `Thread` for I/O.
+- No database calls on the main thread.
+- A fire-and-forget `scope.launch { … }` that writes data must catch and log
+  its errors.
+- Wrap suspending calls with `suspendRunCatching`, not `runCatching` — the
+  latter swallows cancellation. CI caps the number of plain `runCatching`.
 
-## 提交规范 | Commit Guidelines
+### Architecture
 
-### Commit Message
+- Every functional screen has a ViewModel; scenes observe `StateFlow` /
+  `SharedFlow` and hold no business logic.
+- UI code reaches persistence through the repositories on
+  `ServiceRegistry.dataModule`, not through `LegacyDb` directly.
+- New singletons go into a `ServiceRegistry` module, not `LRReaderApplication`.
+- Caches implement `Cacheable` and register themselves.
+- Lists use `DiffUtil` or `notifyItem*()`, never `notifyDataSetChanged()`.
+- Keep the existing look (theme attributes, `RoundSideRectDrawable`); do not
+  introduce Material 3 widgets or new themes.
 
-采用简洁的中文或英文描述 | Use concise Chinese or English descriptions:
+### Database
 
-```
-<type>: <brief description>
+- Every schema change gets a Room migration and an exported schema. Never use
+  `fallbackToDestructiveMigration()`.
+- API keys and other secrets never go into source code or unencrypted
+  `SharedPreferences`.
 
-[optional details]
-```
+### Logging
 
-**类型 | Types**:
-- `feat` - 新功能 / New feature
-- `fix` - Bug 修复 / Bug fix
-- `refactor` - 代码重构 / Code refactoring
-- `docs` - 文档变更 / Documentation
-- `chore` - 构建/依赖/配置 / Build/deps/config
+- Release builds strip `Log.v/d/i/w` with R8. A call whose arguments have side
+  effects (a `Throwable` argument, a string template reading properties) is not
+  stripped and fails the DEX log check. Use `Log.e` for real errors or guard the
+  call with `if (BuildConfig.DEBUG)`.
 
-### 分支策略 | Branch Strategy
+### Strings
 
-- 基于 `main` 分支创建 feature/fix 分支
-- Create your feature/fix branch from `main`
-- PR 标题应清晰描述改动内容
-- PR titles should clearly describe the changes
+- Every new user-visible string needs all ten translations (`de es fr ja ko th
+  zh-rCN zh-rHK zh-rTW` plus the default English); lint's `MissingTranslation`
+  is an error. Spanish and French plurals need the `many` quantity.
 
-## 代码规范 | Code Style
+### Static analysis
 
-- Java 和 Kotlin 混合项目，新代码建议使用 **Kotlin**
-- Java/Kotlin hybrid project; prefer **Kotlin** for new code
-- 网络调用使用 **Kotlin 协程** (`suspend fun` + `withContext(Dispatchers.IO)`)
-- Network calls should use **Kotlin Coroutines**
-- LRR API 相关代码放在 `client/lrr/` 包下
-- LRR API code goes in the `client/lrr/` package
-- 遵循现有代码风格（4 空格缩进，花括号不换行）
-- Follow existing style (4-space indent, same-line braces)
+- detekt runs with `maxIssues: 0` and a baseline. Fix new findings; do not add
+  entries to `config/detekt/baseline*.xml` or to the lint baseline.
 
-## 报告 Bug | Reporting Bugs
+## Tests
 
-请在 [Issues](https://github.com/Xslx98/LRReader/issues) 中提交，包含以下信息：
+- A bug fix comes with a test that fails without the fix. A new feature comes
+  with tests for its logic (ViewModels, repositories, parsers, workers).
+- Prove a new guard is tested: break it on purpose (remove the check, flip the
+  condition), run its test, see it fail, then restore the code.
+- Unit tests run on the JVM with Robolectric. Avoid `Thread.sleep`: wait for the
+  event, or use the coroutine test dispatcher.
+- Line coverage of the `dao`, `download` and `gallery` packages must not drop
+  below the floor in `scripts/ci/coverage-floor.txt`. Raise the floor when your
+  change raises coverage.
 
-Please file an [Issue](https://github.com/Xslx98/LRReader/issues) with:
+## Commits and pull requests
 
-1. 设备型号和 Android 版本 / Device model and Android version
-2. LRReader 版本号 / LRReader version
-3. 复现步骤 / Steps to reproduce
-4. 期望行为 vs 实际行为 / Expected vs actual behavior
-5. 日志截图（如有）/ Log screenshots (if any)
+- Branch from `main`. One logical change per commit: each commit builds, passes
+  the tests and detekt, and can be reverted on its own. If the subject needs
+  "and" or "also", split the commit.
+- Commit messages: `<type>(<scope>): <summary>` in English, for example
+  `fix(downloads): keep the failure reason after a restart`. Types: `feat`,
+  `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`.
+- Do not rewrite commits that are already pushed to a shared branch.
+- Do not skip hooks or signing (`--no-verify`, `--no-gpg-sign`).
+- Fill in the pull request template; CI must be green before review.
 
-## 许可证 | License
+## Reporting bugs and requesting features
 
-贡献的代码将按照项目的 [GPLv3 许可证](LICENSE) 发布。
+Use the issue templates on
+[GitHub Issues](https://github.com/Xslx98/LRReader/issues). For crashes,
+**Settings → Advanced → Share diagnostics** creates a zip with redacted logs and
+local crash reports — attach it instead of screenshots of logs.
 
-All contributions are released under the project's [GPLv3 License](LICENSE).
+## License
+
+Contributions are released under the project's [GPLv3 license](LICENSE).
