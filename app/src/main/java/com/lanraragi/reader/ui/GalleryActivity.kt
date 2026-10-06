@@ -52,6 +52,7 @@ import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.gallery.DirGalleryProvider
+import com.lanraragi.reader.gallery.ForegroundReading
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.LRRGalleryProvider
 import com.lanraragi.reader.gallery.NextArchiveResolver
@@ -739,8 +740,15 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Background downloads yield to the page on screen (audit PERF-13).
+        ForegroundReading.enter()
+    }
+
     override fun onStop() {
         super.onStop()
+        ForegroundReading.exit()
         val currentPage = mSliderController.currentIndex.takeIf { it >= 0 } ?: mPage
         mReadingSession.stop(currentPage)
     }

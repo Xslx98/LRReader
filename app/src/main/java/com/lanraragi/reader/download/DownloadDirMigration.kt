@@ -4,6 +4,7 @@ import android.util.Log
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.util.suspendRunCatching
 
 /**
  * One-shot boot migration from `<arcid>-<title>` download directories to
@@ -33,7 +34,7 @@ class DownloadDirMigration(
     suspend fun run(): Outcome {
         val counts = mutableMapOf<RowResult, Int>()
         for (info in repo.getAllDownloadInfo()) {
-            val result = runCatching { migrateRow(info) }.getOrElse { t ->
+            val result = suspendRunCatching { migrateRow(info) }.getOrElse { t ->
                 Log.w(TAG, "Download dir migration failed for ${info.arcid}: ${t.message}")
                 RowResult.FAILED
             }

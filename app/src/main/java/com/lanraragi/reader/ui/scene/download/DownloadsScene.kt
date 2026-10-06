@@ -33,6 +33,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -784,7 +785,7 @@ class DownloadsScene : ToolbarScene(),
                 val (ids, resolved) = withContext(Dispatchers.IO) {
                     val ids = data.downloadDbRepository.getTankGroupMemberIds(tankId)
                     val present = data.downloadDbRepository.getTankMemberArchives(tankId)
-                    val url = runCatching {
+                    val url = suspendRunCatching {
                         resolveSourceBaseUrl(profileId, data.profileLookupCache)
                     }.getOrNull()
                     val client = ServiceRegistry.networkModule.okHttpClient
@@ -792,7 +793,7 @@ class DownloadsScene : ToolbarScene(),
                         if (url == null) {
                             null
                         } else {
-                            runCatching {
+                            suspendRunCatching {
                                 LRRArchiveApi.getArchiveMetadata(client, url, id)
                                     .toArchive(sourceProfileId = profileId, sourceBaseUrl = url)
                             }.getOrNull()

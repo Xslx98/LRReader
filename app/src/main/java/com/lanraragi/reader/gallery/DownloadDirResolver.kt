@@ -6,6 +6,7 @@ import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.util.suspendRunCatching
 import java.io.File
 
 /**
@@ -69,11 +70,11 @@ interface DownloadDirResolver {
         override suspend fun pendingDownloadDir(archive: Archive): File? {
             // Room lookup, not DownloadManager.getDownloadInfo: this runs on an
             // IO coroutine and the in-memory repository asserts the main thread.
-            val tracked = runCatching {
+            val tracked = suspendRunCatching {
                 ServiceRegistry.dataModule.downloadDbRepository.isDownloadTracked(archive.arcid)
             }.getOrDefault(false)
             if (!tracked) return null
-            val uni = runCatching {
+            val uni = suspendRunCatching {
                 // Tracked download: the reader writes pages through into this
                 // directory, so it may allocate it ahead of the worker.
                 SpiderDen.allocateGalleryDownloadDir(archive.arcid, archive.title)

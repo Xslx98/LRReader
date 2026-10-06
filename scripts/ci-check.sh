@@ -14,4 +14,5 @@ bash scripts/ci/check-schemas.sh
 bash scripts/ci/check-jitpack-aars.sh
 bash scripts/ci/check-baselines.sh "$BASE"
 bash scripts/ci/check-dex-logs.sh
+bash scripts/ci/check-runcatching.sh
 echo "ci-check: all gates passed"

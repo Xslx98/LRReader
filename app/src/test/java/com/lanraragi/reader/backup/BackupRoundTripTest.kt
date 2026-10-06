@@ -77,7 +77,11 @@ class BackupRoundTripTest {
             DailyReadingAggregate().apply { epochDay = 1; serverProfileId = home; pagesRead = 30; completed = 1 }
         )
         srcSettings.edit().putInt("theme", 2).putString("image_path", "/x").commit()
-        srcProgress.edit().putInt("read", 7).putLong("read_ts", 200L).commit()
+        srcProgress.edit()
+            .putInt("$home:read", 7).putLong("$home:read_ts", 200L)
+            // A pre-C37 entry (bare arcid) belongs to the backup's active server.
+            .putInt("old", 3).putLong("old_ts", 100L)
+            .commit()
         home
     }
 
@@ -118,7 +122,9 @@ class BackupRoundTripTest {
         }
         assertEquals(2, dstSettings.getInt("theme", 0))
         assertTrue("the download location never travels", !dstSettings.contains("image_path"))
-        assertEquals(7, dstProgress.getInt("read", 0))
+        val restored = runBlocking { target.miscDao().getAllServerProfiles().single().id }
+        assertEquals(7, dstProgress.getInt("$restored:read", 0))
+        assertEquals(3, dstProgress.getInt("$restored:old", 0))
     }
 
     @Test
@@ -136,7 +142,7 @@ class BackupRoundTripTest {
             )
             id
         }
-        dstProgress.edit().putInt("read", 9).putLong("read_ts", 500L).commit()
+        dstProgress.edit().putInt("$local:read", 9).putLong("$local:read_ts", 500L).commit()
         val backup = BackupCodec.read(ByteArrayInputStream(backupBytes()))
 
         runBlocking { importer().restore(backup) }
@@ -155,7 +161,7 @@ class BackupRoundTripTest {
             assertEquals(1, day.completed)
             assertEquals(1, target.browsingDao().getAllSearchHistory().size)
         }
-        assertEquals("the newer local progress stays", 9, dstProgress.getInt("read", 0))
+        assertEquals("the newer local progress stays", 9, dstProgress.getInt("$local:read", 0))
     }
 
     @Test

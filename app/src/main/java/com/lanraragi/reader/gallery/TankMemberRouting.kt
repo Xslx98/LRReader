@@ -3,6 +3,7 @@ package com.lanraragi.reader.gallery
 import android.content.Context
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.util.suspendRunCatching
 import okhttp3.OkHttpClient
 import java.io.File
 
@@ -33,11 +34,11 @@ internal object TankMemberRouting {
         networkAvailable: () -> Boolean = { ServiceRegistry.networkModule.networkMonitor.isAvailable },
     ): TankMemberSource {
         val archive = member.toRoutingArchive(profileId)
-        val localDir = runCatching { resolver.localDownloadDir(context, archive) }.getOrNull()
+        val localDir = suspendRunCatching { resolver.localDownloadDir(context, archive) }.getOrNull()
         if (localDir != null) {
             dirSourceOrNull(context, member, localDir, resolver, networkAvailable)?.let { return it }
         }
-        val hybridDir = localDir ?: runCatching { resolver.pendingDownloadDir(archive) }.getOrNull()
+        val hybridDir = localDir ?: suspendRunCatching { resolver.pendingDownloadDir(archive) }.getOrNull()
         val store = hybridDir?.let {
             HybridPageStore(it, ReaderPageCache.getCacheDir(context, member.arcid))
         }

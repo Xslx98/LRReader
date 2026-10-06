@@ -38,12 +38,10 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
     override val proxySelector: AppProxySelector by lazy { AppProxySelector() }
 
     /**
-     * Shared dispatcher. The OkHttp default caps concurrent requests to the
-     * same host at 5, which throttled parallel page downloads once multiple
-     * archives ran at once (or when a single archive exceeded
-     * `PARALLEL_PAGES=4`). LANraragi's Hypnotoad (4 workers × 1000
-     * connections) tolerates far more; raise the per-host cap so our own
-     * parallelism settings actually take effect.
+     * Shared dispatcher. Its limits apply only to enqueue()d calls (API requests);
+     * page traffic (download worker, reader cache, thumbnails) uses blocking
+     * execute() and is capped by those callers instead — see
+     * LRRDownloadWorker.PARALLEL_PAGES and ForegroundReading (audit PERF-13).
      */
     private val dispatcher: Dispatcher by lazy {
         Dispatcher().apply {

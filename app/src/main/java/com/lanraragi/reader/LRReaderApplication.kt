@@ -205,6 +205,11 @@ class LRReaderApplication : RecordingApplication() {
                 if (activeProfile != null) {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                     resolvedId = activeProfile.id
+                    // Pre-C37 progress was keyed by arcid alone: it belongs to this profile.
+                    com.lanraragi.reader.gallery.LocalReadingProgress.migrateLegacy(
+                        com.lanraragi.reader.gallery.LocalReadingProgress.prefs(this@LRReaderApplication),
+                        activeProfile.id,
+                    )
                 } else {
                     // Repair installs where the active profile was deleted before
                     // the session was cleared on delete (audit 2026-10-04 C02).

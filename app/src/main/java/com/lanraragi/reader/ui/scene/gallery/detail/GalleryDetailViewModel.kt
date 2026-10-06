@@ -27,6 +27,7 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.gallery.ReadingProgressReconciler
 import com.lanraragi.reader.gallery.ReadingProgressTracker
+import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -412,7 +413,7 @@ class GalleryDetailViewModel : ViewModel() {
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                runCatching { resolveSourceServerUrl() }.getOrNull()
+                suspendRunCatching { resolveSourceServerUrl() }.getOrNull()
                     ?.let { TankoubonSupportGate.markFrom(it, e) }
                 _archiveTankoubons.value = null
             }
@@ -826,7 +827,7 @@ class GalleryDetailViewModel : ViewModel() {
     ): Exception {
         if (e !is LRRHttpException) return e
         if (e.code != HTTP_BAD_REQUEST && e.code != HTTP_NOT_FOUND) return e
-        val baseUrl = runCatching { resolveSourceServerUrl() }
+        val baseUrl = suspendRunCatching { resolveSourceServerUrl() }
             .getOrElse { return e }
         val healthy = probeSourceHealthy(client, baseUrl)
         return if (healthy) {

@@ -12,6 +12,7 @@ import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.probeSourceHealthy
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.util.suspendRunCatching
 import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -172,13 +173,13 @@ class TankGalleryProvider(
                     if (stopped) break
                     val index = indexOfSlot(slot)
                     if (index < 0) continue
-                    runCatching { countedSourceFor(index) }
+                    suspendRunCatching { countedSourceFor(index) }
                 }
             } else {
                 val entry = (if (initialPageOverride >= 0) initialPageOverride else startPageValue)
                     .coerceIn(0, pageMap.total - 1)
                 pageMap.locate(entry)?.let { (member, _) ->
-                    runCatching { countedSourceFor(member) }
+                    suspendRunCatching { countedSourceFor(member) }
                 }
             }
         }

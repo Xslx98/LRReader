@@ -26,6 +26,7 @@ import com.lanraragi.reader.ui.scene.download.DownloadLabelHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.util.ClipboardUtil
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
+import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -204,7 +205,7 @@ internal class DetailActionHandler(
         val profileId = viewModel.getSourceProfileId()
         lifecycleOwner.lifecycleScope.launch {
             val claiming = withContext(Dispatchers.IO) {
-                runCatching {
+                suspendRunCatching {
                     ServiceRegistry.dataModule.downloadDbRepository.findTankGroupClaiming(archive.arcid, profileId)
                 }.getOrNull()
             }

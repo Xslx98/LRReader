@@ -55,6 +55,9 @@ jobs:
       - name: JitPack AARs must match the committed backups
         run: bash scripts/ci/check-jitpack-aars.sh
 
+      - name: No new plain runCatching (it swallows coroutine cancellation)
+        run: bash scripts/ci/check-runcatching.sh
+
       - name: Room schema must be committed
         # KSP rewrites app/schemas/<version>.json on every build; a diff here
         # means an entity changed without a version bump.

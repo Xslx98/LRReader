@@ -12,6 +12,7 @@ import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.util.suspendRunCatching
 import java.io.File
 
 /**
@@ -69,7 +70,7 @@ object GalleryOpenHelper {
      */
     private suspend fun enrichProgressSnapshot(archive: Archive): Archive {
         if (archive.progress > 0) return archive
-        val snapshot = runCatching {
+        val snapshot = suspendRunCatching {
             ServiceRegistry.dataModule.historyRepository
                 .getArchiveSnapshot(archive.arcid, archive.serverProfileId)
         }.getOrNull() ?: return archive
@@ -174,7 +175,7 @@ object GalleryOpenHelper {
             // holds the page, so the open does not repeat the work.
             // Resolve the archive's source profile (not the active one) so
             // the warm hits the same server the reader will stream from.
-            val serverUrl = runCatching {
+            val serverUrl = suspendRunCatching {
                 resolveSourceBaseUrl(
                     archive.serverProfileId,
                     ServiceRegistry.dataModule.profileLookupCache,
