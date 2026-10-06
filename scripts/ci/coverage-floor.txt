@@ -1,0 +1,6 @@
+# Line-coverage floors (percent) for scripts/ci/check-coverage.sh.
+# <package path in the JaCoCo report, sub-packages included> <floor>
+# Raise a floor when coverage goes up; never lower one to make a change pass.
+com/lanraragi/reader/dao 89.0
+com/lanraragi/reader/download 68.0
+com/lanraragi/reader/gallery 34.7
