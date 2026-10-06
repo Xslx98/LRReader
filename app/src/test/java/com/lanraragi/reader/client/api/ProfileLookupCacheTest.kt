@@ -5,11 +5,14 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.containedTestScope
 import com.lanraragi.reader.dao.AppDatabase
+import com.lanraragi.reader.dao.MiscRoomDao
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -150,5 +153,24 @@ class ProfileLookupCacheTest {
         // The Room flow always emits an initial value (possibly empty) on
         // subscription, so awaitInitialized must complete promptly.
         withTimeout(2_000) { cache.awaitInitialized() }
+    }
+
+    /**
+     * Audit 2026-10-06 N8: a profile flow that fails before its first emission
+     * left awaitInitialized pending forever, and the download worker with it
+     * (holding the foreground service and its locks).
+     */
+    @Test(timeout = 10_000)
+    fun awaitInitialized_returnsWhenTheFlowFailsBeforeItsFirstEmission() = runBlocking {
+        val failingDao = object : MiscRoomDao by db.miscDao() {
+            override fun observeAllProfiles(): Flow<List<ServerProfile>> =
+                flow { throw IllegalStateException("profiles unavailable (test)") }
+        }
+        val cache = ProfileLookupCache(ProfileRepository(failingDao), scope)
+        withTimeout(2_000) { cache.awaitInitialized() }
+        assertTrue(cache.snapshot.value.isEmpty())
+        // Callers see an unknown profile (their existing error path), not a hang.
+        val resolved = runCatching { withTimeout(2_000) { resolveSourceBaseUrl(7L, cache) } }
+        assertTrue(resolved.exceptionOrNull() is OrphanProfileException)
     }
 }

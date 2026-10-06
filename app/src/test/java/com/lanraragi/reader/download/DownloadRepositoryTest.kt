@@ -45,6 +45,23 @@ class DownloadRepositoryTest {
     @Volatile
     private var failDbRepo = false
 
+    /**
+     * When set, the next access to the download DB repository blocks until the
+     * latch opens (one-shot), holding the write-queue consumer inside a write.
+     */
+    private val repoGate = java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch?>(null)
+    private val repoGateEntered = java.util.concurrent.CountDownLatch(1)
+
+    /** When set, the next access to the download DB repository throws an Error (one-shot). */
+    private val errorOnNextRepoAccess = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    private fun holdAtRepoGate() {
+        if (errorOnNextRepoAccess.getAndSet(false)) throw LinkageError("download db broken (test)")
+        val gate = repoGate.getAndSet(null) ?: return
+        repoGateEntered.countDown()
+        gate.await(10, java.util.concurrent.TimeUnit.SECONDS)
+    }
+
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
@@ -85,11 +102,14 @@ class DownloadRepositoryTest {
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {
                 override val searchHistoryRepository get() = throw NotImplementedError("not needed")
-                override val downloadDbRepository get() =
-                    if (failDbRepo) throw IllegalStateException("download db unavailable (test)") else DownloadDbRepository(
+                override val downloadDbRepository: DownloadDbRepository get() {
+                    holdAtRepoGate()
+                    if (failDbRepo) throw IllegalStateException("download db unavailable (test)")
+                    return DownloadDbRepository(
                         db.archiveLocalStateDao(), db.downloadDao(), db,
                         kotlinx.coroutines.Dispatchers.Unconfined
                     )
+                }
                 override val downloadManager get() = throw NotImplementedError("not needed")
                 override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
                 override val historyRepository get() = com.lanraragi.reader.dao.HistoryRepository(db.archiveLocalStateDao(), db)
@@ -404,6 +424,52 @@ class DownloadRepositoryTest {
             ioScope.cancel()
             pool.shutdownNow()
         }
+    }
+
+    @Test(timeout = 30_000)
+    fun reload_waitsForWritesIssuedBeforeIt() {
+        // Audit 2026-10-06 N7: the reload read used its own coroutine and could
+        // overtake queued writes (new row lost, deleted row resurrected).
+        runBlocking {
+            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(
+                makeInfo("gone", "Gone").apply { serverProfileId = 1L }
+            )
+        }
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
+        val ioScope = CoroutineScope(kotlinx.coroutines.SupervisorJob() + pool.asCoroutineDispatcher())
+        val gate = java.util.concurrent.CountDownLatch(1)
+        try {
+            val r = DownloadRepository(context, ioScope, Dispatchers.Unconfined)
+            repoGate.set(gate)
+            r.persistInfo(makeInfo("new", "New").apply { serverProfileId = 1L })
+            assertTrue(repoGateEntered.await(10, java.util.concurrent.TimeUnit.SECONDS))
+            r.removeInfoFromDbByArcid("gone")
+
+            val done = java.util.concurrent.atomic.AtomicBoolean(false)
+            r.reload { done.set(true) }
+            val overtook = runCatching { awaitUntil(timeoutMs = 1_000) { done.get() } }.isSuccess
+            assertFalse("reload finished while an earlier write was still pending", overtook)
+
+            gate.countDown()
+            awaitUntil { done.get() }
+            assertTrue(r.containDownloadInfo("new"))
+            assertFalse(r.containDownloadInfo("gone"))
+            assertEquals(listOf("new"), r.allInfoList.map { it.arcid })
+        } finally {
+            gate.countDown()
+            ioScope.cancel()
+            pool.shutdownNow()
+        }
+    }
+
+    /** Audit 2026-10-06 L2: one write failing with an Error must not end the only write consumer. */
+    @Test(timeout = 20_000)
+    fun aWriteFailingWithAnError_doesNotStopLaterWrites() {
+        errorOnNextRepoAccess.set(true)
+        repo.persistInfo(makeInfo("lost", "Lost").apply { serverProfileId = 1L })
+        repo.persistInfo(makeInfo("kept", "Kept").apply { serverProfileId = 1L })
+        runBlocking { kotlinx.coroutines.withTimeout(5_000) { repo.awaitDbWrites() } }
+        assertNotNull(runBlocking { db.archiveLocalStateDao().loadByArcidAndProfile("kept", 1L) })
     }
 
     @Test

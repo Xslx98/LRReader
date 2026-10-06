@@ -7,7 +7,7 @@
 # A new plain runCatching around non-suspend code is fine: raise MAX with it.
 set -euo pipefail
 
-MAX=35
+MAX=34
 COUNT=$(grep -rhoE "(^|[^A-Za-z.])runCatching[ ({<]" app/src/main/java --include=*.kt | wc -l | tr -d ' ')
 if [ "$COUNT" -gt "$MAX" ]; then
   echo "::error::$COUNT plain runCatching uses in app/src/main (max $MAX). Use suspendRunCatching around suspend calls, or raise MAX in $0 for non-suspend code."

@@ -41,6 +41,33 @@ class DownloadCommandQueueTest {
         assertEquals(listOf(1, 2, 3), afterEach)
     }
 
+    /** Audit 2026-10-06 L2: a throwing stop check or error report must not end the only consumer. */
+    @Test
+    fun throwingAfterEachOrOnError_doesNotStopTheConsumer() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val handled = mutableListOf<String>()
+        val afterEach = mutableListOf<Int>()
+        val queue = DownloadCommandQueue<String>(
+            scope = backgroundScope,
+            handlerDispatcher = dispatcher,
+            awaitReady = {},
+            handle = { if (it == "boom") throw IllegalStateException(it) else handled += it },
+            onError = { _, _ -> throw IllegalStateException("report failed") },
+            afterEach = {
+                afterEach += it
+                if (it == 1) throw IllegalStateException("stop check failed")
+            },
+        )
+
+        queue.submit("a", 1)
+        queue.submit("boom", 2)
+        queue.submit("c", 3)
+        testScheduler.runCurrent()
+
+        assertEquals(listOf("a", "c"), handled)
+        assertEquals(listOf(1, 2, 3), afterEach)
+    }
+
     @Test
     fun afterEach_reportsHandledStartIdWhileNewerCommandsWait() = runTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)

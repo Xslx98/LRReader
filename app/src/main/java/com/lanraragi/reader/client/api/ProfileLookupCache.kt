@@ -2,6 +2,8 @@ package com.lanraragi.reader.client.api
 
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
+import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,22 +55,34 @@ class ProfileLookupCache(
 
     init {
         scope.launch {
-            repo.observeAll().collect { list ->
-                // Parse before publishing _snapshot so a reader woken by the
-                // snapshot change never sees a stale parsed list.
-                parsedProfiles = list.mapNotNull { profile ->
-                    profile.url.toHttpUrlOrNull()?.let { ProfileUrlCandidate(profile, it) }
+            try {
+                repo.observeAll().collect { list ->
+                    // Parse before publishing _snapshot so a reader woken by the
+                    // snapshot change never sees a stale parsed list.
+                    parsedProfiles = list.mapNotNull { profile ->
+                        profile.url.toHttpUrlOrNull()?.let { ProfileUrlCandidate(profile, it) }
+                    }
+                    _snapshot.value = list
+                    if (!initialized.isCompleted) initialized.complete(Unit)
                 }
-                _snapshot.value = list
-                if (!initialized.isCompleted) initialized.complete(Unit)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Server profile observation failed", e)
+            } finally {
+                // Release awaiters even when the flow ends without an emission
+                // (audit 2026-10-06 N8): they then see the current, possibly
+                // empty, snapshot instead of waiting forever.
+                initialized.complete(Unit)
             }
         }
     }
 
     /**
-     * Suspend until the first emission lands. Used by paths that must
-     * not race the cache's cold start (download worker starting before
-     * the initial flow tick).
+     * Suspend until the first emission lands, or until the profile flow has
+     * failed or stopped without one (the snapshot is then empty and lookups
+     * miss). Used by paths that must not race the cache's cold start
+     * (download worker starting before the initial flow tick).
      */
     suspend fun awaitInitialized(): Unit = initialized.await()
 
@@ -91,6 +105,10 @@ class ProfileLookupCache(
             }
         }
         return out
+    }
+
+    private companion object {
+        const val TAG = "ProfileLookupCache"
     }
 }
 
