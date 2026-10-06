@@ -13,6 +13,7 @@ BASE="${1:-origin/main}"
 bash scripts/ci/check-schemas.sh
 bash scripts/ci/check-jitpack-aars.sh
 bash scripts/ci/check-baselines.sh "$BASE"
+bash scripts/ci/check-lint-crash-ids.sh
 bash scripts/ci/check-dex-logs.sh
 bash scripts/ci/check-dex-retrace.sh
 bash scripts/ci/check-runcatching.sh

@@ -81,6 +81,11 @@ jobs:
           fi
           bash scripts/ci/check-baselines.sh "$BASE"
 
+      - name: No crash-class lint ids in the lint baseline
+        # NewApi & co. flag code that throws on some devices; a baselined
+        # NewApi hid an Android 9/10 crash (audit 2026-10-06d STAB-11).
+        run: bash scripts/ci/check-lint-crash-ids.sh
+
       - name: Detekt
         run: ./gradlew detektMain
 

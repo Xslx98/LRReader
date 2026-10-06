@@ -20,6 +20,7 @@ import android.provider.DocumentsContract
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.text.TextUtils
@@ -29,6 +30,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -153,6 +155,14 @@ class GalleryImageOperations(private val mActivity: Activity) {
     // --- Save to MediaStore ---
 
     fun saveImage(page: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            // Android 9 has no MediaStore volume "external_primary" and no
+            // RELATIVE_PATH, and inserting there needs WRITE_EXTERNAL_STORAGE,
+            // which the app does not request: the insert always failed. The
+            // picker saves to Pictures (or anywhere) without a permission.
+            saveImageTo(page)
+            return
+        }
         val provider = galleryProvider ?: return
 
         val cacheDir = mActivity.cacheDir
@@ -212,7 +222,8 @@ class GalleryImageOperations(private val mActivity: Activity) {
         }
     }
 
-    /** MediaStore insert + copy. Throws on provider errors; caller guards. */
+    /** MediaStore insert + copy (API 29+, see [saveImage]). Throws on provider errors; caller guards. */
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun saveToMediaStore(
         cacheDir: File,
         filename: String?,
