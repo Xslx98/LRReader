@@ -86,10 +86,10 @@ class SecurityViewModel : ViewModel() {
         UNAVAILABLE,
     }
 
-    fun storageState(): StorageState = when {
-        LRRAuthManager.isSecureStorageAvailable() -> StorageState.AVAILABLE
-        LRRAuthManager.isSecureStorageStillStarting() -> StorageState.STARTING
-        else -> StorageState.UNAVAILABLE
+    fun storageState(): StorageState = when (LRRAuthManager.secureStorageState()) {
+        LRRAuthManager.SecureStorageState.AVAILABLE -> StorageState.AVAILABLE
+        LRRAuthManager.SecureStorageState.STARTING -> StorageState.STARTING
+        LRRAuthManager.SecureStorageState.UNAVAILABLE -> StorageState.UNAVAILABLE
     }
 
     private val _uiEvent = MutableSharedFlow<SecurityUiEvent>(extraBufferCapacity = 1)
