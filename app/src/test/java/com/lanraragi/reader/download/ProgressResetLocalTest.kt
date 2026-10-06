@@ -158,9 +158,12 @@ class ProgressResetLocalTest {
     fun `a page read on another server's download updates that server's tracker flow`() {
         openDownload("arc-t", sourceProfileId = 2).putStartPage(6)
 
-        assertEquals(ReadingProgressTracker.NO_LOCAL_PROGRESS, ReadingProgressTracker.progressFlow("arc-t").value)
-        active = 2
-        LocalReadingProgress.profileId = { active }
-        assertEquals(6, ReadingProgressTracker.progressFlow("arc-t").value)
+        // The detail header observes the source profile's flow (audit 2026-10-06c C37 note).
+        assertEquals(6, ReadingProgressTracker.progressFlow(2, "arc-t").value)
+        assertEquals(
+            "the active profile's flow is untouched",
+            ReadingProgressTracker.NO_LOCAL_PROGRESS,
+            ReadingProgressTracker.progressFlow("arc-t").value,
+        )
     }
 }
