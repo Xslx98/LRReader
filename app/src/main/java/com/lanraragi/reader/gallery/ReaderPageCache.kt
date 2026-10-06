@@ -10,6 +10,7 @@ import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
+import com.lanraragi.reader.download.DurablePageWrite
 import com.lanraragi.reader.util.CacheBudget
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
@@ -253,8 +254,8 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     }
 
     /**
-     * Download a URL to [cacheFile] via atomic write (temp → fsync → rename)
-     * with completeness and image-format validation.
+     * Download a URL to [cacheFile] via atomic write (temp → rename) with
+     * completeness and image-format validation.
      *
      * Thread-safe for *different* files; caller must handle same-file concurrency
      * (e.g. striped locks in [LRRGalleryProvider]).
@@ -262,6 +263,10 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
      * @param onCallCreated invoked with the underlying [Call] before execution so
      *   callers can sever the request (including an in-flight body stream) from
      *   lifecycle hooks — see LRRGalleryProvider.stop()/onCancelRequest (NET-3).
+     * @param durable non-null when [cacheFile] is in a download directory (a
+     *   hybrid session, see [HybridPageStore.durableWriteFor]): the write then
+     *   gets the worker's guarantees — free-space floor, size cap and fsync
+     *   before the rename (audit REL-04). Null for the disposable reader cache.
      * @throws IOException on network error, incomplete download, or invalid image
      */
     @Throws(IOException::class)
@@ -271,7 +276,8 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         cacheFile: File,
         pageIndex: Int = 0,
         progressCallback: ProgressCallback? = null,
-        onCallCreated: ((Call) -> Unit)? = null
+        onCallCreated: ((Call) -> Unit)? = null,
+        durable: DurablePageWrite? = null,
     ) {
         if (cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE) return
 
@@ -279,69 +285,89 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         if (cacheFile.exists()) cacheFile.delete()
 
         val cacheDir = cacheFile.parentFile ?: throw IOException("No parent directory")
+        durable?.checkRoom(cacheDir)
         val tmpFile = File(cacheDir, "${cacheFile.name}.${Thread.currentThread().id}.tmp")
         try {
-            val request = Request.Builder().url(url).get().build()
-            var contentLength: Long = -1
-            var totalRead: Long = 0
-
-            val call = client.newCall(request)
+            val call = client.newCall(Request.Builder().url(url).get().build())
             onCallCreated?.invoke(call)
-            call.execute().use { response ->
-                if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
-                val body = response.body ?: throw IOException("Empty response body")
-                contentLength = body.contentLength()
-
-                body.byteStream().use { inputStream ->
-                    FileOutputStream(tmpFile).use { fos ->
-                        val buffer = ByteArray(BUFFER_SIZE)
-                        var read: Int
-                        while (inputStream.read(buffer).also { read = it } != -1) {
-                            fos.write(buffer, 0, read)
-                            totalRead += read
-                            if (progressCallback != null && contentLength > 0) {
-                                progressCallback.onProgress(
-                                    pageIndex,
-                                    totalRead.toFloat() / contentLength
-                                )
-                            }
-                        }
-                        // No fsync: this cache is disposable. A torn file
-                        // after an OS crash fails the magic-byte/size checks
-                        // on the read path and is simply re-downloaded;
-                        // paying a physical flush per page (current page +
-                        // every preload) buys durability nothing needs.
-                    }
-                }
-            }
-
-            // Validate download completeness
-            if (contentLength > 0 && totalRead != contentLength) {
-                tmpFile.delete()
-                throw IOException(
-                    "Incomplete download: expected $contentLength bytes, got $totalRead"
-                )
-            }
-            if (totalRead < MIN_IMAGE_SIZE) {
-                tmpFile.delete()
-                throw IOException("Downloaded file too small ($totalRead bytes), likely corrupt")
-            }
-
-            // Validate image format
-            if (!validateImageFile(tmpFile)) {
-                tmpFile.delete()
-                throw IOException("Downloaded file is not a valid image (bad magic bytes)")
-            }
-
-            // Atomic rename
-            if (!tmpFile.renameTo(cacheFile)) {
-                tmpFile.delete()
-                if (!cacheFile.exists() || cacheFile.length() < MIN_IMAGE_SIZE) {
-                    throw IOException("Failed to rename temp file")
-                }
-            }
+            val (contentLength, totalRead) = fetchToTemp(call, tmpFile, pageIndex, progressCallback, durable)
+            val problem = pageProblem(tmpFile, contentLength, totalRead)
+            if (problem != null) throw IOException(problem)
+            commitTemp(tmpFile, cacheFile)
         } finally {
             if (tmpFile.exists()) tmpFile.delete()
+        }
+    }
+
+    /** Executes [call] into [tmpFile]; returns (Content-Length, bytes written). */
+    @Throws(IOException::class)
+    private fun fetchToTemp(
+        call: Call,
+        tmpFile: File,
+        pageIndex: Int,
+        progressCallback: ProgressCallback?,
+        durable: DurablePageWrite?,
+    ): Pair<Long, Long> = call.execute().use { response ->
+        if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+        // if/throw, not `?: throw`: detektMain flags every statement
+        // after an elvis-Nothing as UnreachableCode.
+        val body = response.body
+        if (body == null) throw IOException("Empty response body")
+        val length = body.contentLength()
+        body.byteStream().use { input ->
+            FileOutputStream(tmpFile).use { fos ->
+                length to copyPage(input, fos, length, pageIndex, progressCallback, durable)
+            }
+        }
+    }
+
+    /** Streams [input] into [fos]; returns the byte count. */
+    private fun copyPage(
+        input: java.io.InputStream,
+        fos: FileOutputStream,
+        contentLength: Long,
+        pageIndex: Int,
+        progressCallback: ProgressCallback?,
+        durable: DurablePageWrite?,
+    ): Long {
+        val buffer = ByteArray(BUFFER_SIZE)
+        var totalRead = 0L
+        while (true) {
+            val read = input.read(buffer)
+            if (read == -1) break
+            fos.write(buffer, 0, read)
+            totalRead += read
+            durable?.checkSize(totalRead)
+            if (progressCallback != null && contentLength > 0) {
+                progressCallback.onProgress(pageIndex, totalRead.toFloat() / contentLength)
+            }
+        }
+        // The reader cache is disposable: no fsync, a page torn by an OS
+        // crash is just fetched again. A download directory is not — the
+        // worker skips any page whose header is valid and a FINISH download
+        // is never re-checked, so a page torn after its header would stay
+        // broken (audit REL-04).
+        durable?.sync(fos)
+        return totalRead
+    }
+
+    /** Why the fetched temp file is not a usable page, or null when it is. */
+    private fun pageProblem(tmpFile: File, contentLength: Long, totalRead: Long): String? = when {
+        contentLength > 0 && totalRead != contentLength ->
+            "Incomplete download: expected $contentLength bytes, got $totalRead"
+        totalRead < MIN_IMAGE_SIZE -> "Downloaded file too small ($totalRead bytes), likely corrupt"
+        !validateImageFile(tmpFile) -> "Downloaded file is not a valid image (bad magic bytes)"
+        else -> null
+    }
+
+    /** Atomic rename; a concurrent writer that already landed the page counts as success. */
+    @Throws(IOException::class)
+    private fun commitTemp(tmpFile: File, cacheFile: File) {
+        if (!tmpFile.renameTo(cacheFile)) {
+            tmpFile.delete()
+            if (!cacheFile.exists() || cacheFile.length() < MIN_IMAGE_SIZE) {
+                throw IOException("Failed to rename temp file")
+            }
         }
     }
 

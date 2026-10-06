@@ -693,7 +693,8 @@ class LRRGalleryProvider(
                     onCallCreated = { c ->
                         call = c
                         inflightCalls[index] = c
-                    }
+                    },
+                    durable = store?.durableWriteFor(cacheFile),
                 )
             } catch (e: IOException) {
                 if (call?.isCanceled() == true || stateRef.get().stopped) {
