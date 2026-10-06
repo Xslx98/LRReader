@@ -19,6 +19,11 @@ import java.util.concurrent.ConcurrentHashMap
  * SharedPreferences on first access. [GalleryProvider2.saveReadingProgress]
  * calls [setProgress] after the SP write so observers see the new value
  * immediately — no polling, no stale display.
+ *
+ * Flows are keyed like the store ([LocalReadingProgress.key]): per active
+ * server profile and arcid. Keyed by arcid alone, the same content-hash arcid
+ * on another server showed the previous server's page in the detail header
+ * after a profile switch (audit 2026-10-06 C37).
  */
 object ReadingProgressTracker {
 
@@ -34,6 +39,19 @@ object ReadingProgressTracker {
     }
 
     /**
+     * The local save for [arcid] on [profileId] was removed. A flow of a
+     * non-active profile is only reset if one was created while that profile
+     * was active; otherwise the next access seeds from the cleared store.
+     */
+    internal fun clearProgress(profileId: Long, arcid: String) {
+        if (profileId == LocalReadingProgress.profileId()) {
+            setProgress(arcid, NO_LOCAL_PROGRESS)
+        } else {
+            flows[LocalReadingProgress.key(profileId, arcid)]?.value = NO_LOCAL_PROGRESS
+        }
+    }
+
+    /**
      * Sentinel "no local progress yet" value. Returned when the SP has never
      * been written for this arcid (timestamp == 0), so observers can keep
      * trusting the server-reported progress instead of clobbering it with
@@ -41,15 +59,16 @@ object ReadingProgressTracker {
      */
     const val NO_LOCAL_PROGRESS: Int = -1
 
-    private fun flowFor(arcid: String): MutableStateFlow<Int> = flows.getOrPut(arcid) {
-        // Defensive: ServiceRegistry may not be initialized in unit tests or
-        // very early app startup. Fall back to NO_LOCAL_PROGRESS so observers
-        // simply defer to whatever progress is already in memory.
-        val initial = runCatching {
-            val ctx = ServiceRegistry.appModule.getContext()
-            val ts = GalleryProvider2.loadReadingTimestamp(ctx, arcid)
-            if (ts > 0) GalleryProvider2.loadReadingProgress(ctx, arcid) else NO_LOCAL_PROGRESS
-        }.getOrDefault(NO_LOCAL_PROGRESS)
-        MutableStateFlow(initial)
-    }
+    private fun flowFor(arcid: String): MutableStateFlow<Int> =
+        flows.getOrPut(LocalReadingProgress.key(LocalReadingProgress.profileId(), arcid)) {
+            // Defensive: ServiceRegistry may not be initialized in unit tests or
+            // very early app startup. Fall back to NO_LOCAL_PROGRESS so observers
+            // simply defer to whatever progress is already in memory.
+            val initial = runCatching {
+                val ctx = ServiceRegistry.appModule.getContext()
+                val ts = GalleryProvider2.loadReadingTimestamp(ctx, arcid)
+                if (ts > 0) GalleryProvider2.loadReadingProgress(ctx, arcid) else NO_LOCAL_PROGRESS
+            }.getOrDefault(NO_LOCAL_PROGRESS)
+            MutableStateFlow(initial)
+        }
 }
