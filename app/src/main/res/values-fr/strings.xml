@@ -970,4 +970,20 @@ Cette action est irréversible.</string>
         <item quantity="many">Trop de tentatives échouées. Réessayez dans %d secondes.</item>
         <item quantity="other">Trop de tentatives échouées. Réessayez dans %d secondes.</item>
     </plurals>
+    <string name="settings_advanced_backup">Sauvegarder les données</string>
+    <string name="settings_advanced_backup_summary">Enregistre les serveurs (sans clés API), l\'historique, les favoris, la progression de lecture et les réglages dans un fichier</string>
+    <string name="settings_advanced_restore">Restaurer les données</string>
+    <string name="settings_advanced_restore_summary">Fusionne un fichier de sauvegarde avec les données de cet appareil</string>
+    <string name="backup_done">Sauvegarde enregistrée</string>
+    <string name="backup_failed">Impossible d\'enregistrer la sauvegarde</string>
+    <string name="restore_invalid">Ce fichier n\'est pas une sauvegarde LR Reader, ou il provient d\'une version plus récente</string>
+    <string name="restore_confirm_title">Restaurer cette sauvegarde ?</string>
+    <string name="restore_confirm_message">Sauvegarde du %1$s : %2$d serveurs, %3$d archives.\n\nElle est fusionnée avec les données de cet appareil ; rien n\'est supprimé ici. Les sauvegardes ne contiennent aucune clé API. L\'application redémarre ensuite.</string>
+    <string name="restore_action">Restaurer</string>
+    <string name="restore_running">Restauration…</string>
+    <string name="restore_failed">La restauration a échoué. Rien n\'a été modifié.</string>
+    <string name="restore_done_title">Restauration terminée</string>
+    <string name="restore_done_message">%1$d archives restaurées, %2$d téléchargements reliés (%3$d introuvables sur cet appareil), %4$d serveurs ajoutés.</string>
+    <string name="restore_done_keys">Saisissez la clé API de chaque serveur ajouté dans la liste des serveurs.</string>
+    <string name="restore_done_restart">L\'application redémarre maintenant.</string>
 </resources>

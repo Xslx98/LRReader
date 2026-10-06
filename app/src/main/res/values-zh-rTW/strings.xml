@@ -916,4 +916,20 @@
     <plurals name="pattern_lockout_message">
         <item quantity="other">嘗試次數過多，請在 %d 秒後重試。</item>
     </plurals>
+    <string name="settings_advanced_backup">備份資料</string>
+    <string name="settings_advanced_backup_summary">將伺服器（不含 API 金鑰）、紀錄、收藏、閱讀進度和設定儲存到檔案</string>
+    <string name="settings_advanced_restore">還原資料</string>
+    <string name="settings_advanced_restore_summary">將備份檔案合併到本裝置的資料中</string>
+    <string name="backup_done">備份已儲存</string>
+    <string name="backup_failed">無法儲存備份</string>
+    <string name="restore_invalid">此檔案不是 LR Reader 備份，或來自較新的版本</string>
+    <string name="restore_confirm_title">還原此備份？</string>
+    <string name="restore_confirm_message">備份時間 %1$s：%2$d 個伺服器，%3$d 個檔案。\n\n備份會與本裝置的資料合併，不會刪除這裡的任何資料。備份不含 API 金鑰。完成後應用程式會重新啟動。</string>
+    <string name="restore_action">還原</string>
+    <string name="restore_running">正在還原…</string>
+    <string name="restore_failed">還原失敗，未做任何變更。</string>
+    <string name="restore_done_title">還原完成</string>
+    <string name="restore_done_message">已還原 %1$d 個檔案，重新連結 %2$d 個下載（%3$d 個在本裝置上找不到），新增 %4$d 個伺服器。</string>
+    <string name="restore_done_keys">請在伺服器列表中為新增的伺服器輸入 API 金鑰。</string>
+    <string name="restore_done_restart">應用程式即將重新啟動。</string>
 </resources>

@@ -25,6 +25,7 @@ import androidx.preference.Preference
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.backup.BackupController
 import com.lanraragi.reader.diagnostics.DiagnosticsCollector
 import com.lanraragi.reader.settings.AppearanceSettings
 import kotlinx.coroutines.async
@@ -34,9 +35,14 @@ import java.io.IOException
 class AdvancedFragment : BasePreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
 
+    private lateinit var backupController: BackupController
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.advanced_settings)
 
+        backupController = BackupController(this)
+        findPreference<Preference>(KEY_BACKUP_DATA)?.onPreferenceClickListener = this
+        findPreference<Preference>(KEY_RESTORE_DATA)?.onPreferenceClickListener = this
         val shareDiagnostics = findPreference<Preference>(KEY_SHARE_DIAGNOSTICS)
         val clearMemoryCache = findPreference<Preference>(KEY_CLEAR_MEMORY_CACHE)
         val appLanguage = findPreference<Preference>(KEY_APP_LANGUAGE)
@@ -55,6 +61,8 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
         return when (preference.key) {
             KEY_SHARE_DIAGNOSTICS -> shareDiagnostics(preference)
             KEY_CLEAR_MEMORY_CACHE -> clearMemoryCache()
+            KEY_BACKUP_DATA -> true.also { backupController.startBackup() }
+            KEY_RESTORE_DATA -> true.also { backupController.startRestore() }
             else -> false
         }
     }
@@ -125,6 +133,8 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
         private const val TAG = "AdvancedFragment"
         private const val KEY_SHARE_DIAGNOSTICS = "share_diagnostics"
         private const val KEY_CLEAR_MEMORY_CACHE = "clear_memory_cache"
+        private const val KEY_BACKUP_DATA = "backup_data"
+        private const val KEY_RESTORE_DATA = "restore_data"
         private const val KEY_APP_LANGUAGE = "app_language"
     }
 }

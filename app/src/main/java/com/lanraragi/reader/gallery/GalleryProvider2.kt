@@ -87,7 +87,7 @@ abstract class GalleryProvider2 : GalleryProvider() {
         )
 
         /** SharedPreferences name for local reading progress storage. */
-        private const val SP_READING_PROGRESS = "reading_progress"
+        internal const val SP_READING_PROGRESS = "reading_progress"
 
         /** Key suffix for the per-arcid save timestamp (epoch seconds). */
         private const val TS_SUFFIX = "_ts"

@@ -966,4 +966,20 @@ Esta acción no se puede deshacer.</string>
         <item quantity="many">Demasiados intentos fallidos. Inténtalo de nuevo en %d segundos.</item>
         <item quantity="other">Demasiados intentos fallidos. Inténtalo de nuevo en %d segundos.</item>
     </plurals>
+    <string name="settings_advanced_backup">Copia de seguridad</string>
+    <string name="settings_advanced_backup_summary">Guarda servidores (sin claves API), historial, favoritos, progreso de lectura y ajustes en un archivo</string>
+    <string name="settings_advanced_restore">Restaurar datos</string>
+    <string name="settings_advanced_restore_summary">Combina un archivo de copia con los datos de este dispositivo</string>
+    <string name="backup_done">Copia guardada</string>
+    <string name="backup_failed">No se pudo guardar la copia</string>
+    <string name="restore_invalid">Este archivo no es una copia de LR Reader o es de una versión más nueva</string>
+    <string name="restore_confirm_title">¿Restaurar esta copia?</string>
+    <string name="restore_confirm_message">Copia del %1$s: %2$d servidores, %3$d archivos.\n\nSe combina con los datos de este dispositivo; aquí no se borra nada. Las copias no contienen claves API. Después la app se reinicia.</string>
+    <string name="restore_action">Restaurar</string>
+    <string name="restore_running">Restaurando…</string>
+    <string name="restore_failed">La restauración falló. No se cambió nada.</string>
+    <string name="restore_done_title">Restauración completada</string>
+    <string name="restore_done_message">%1$d archivos restaurados, %2$d descargas vinculadas de nuevo (%3$d no encontradas en este dispositivo), %4$d servidores añadidos.</string>
+    <string name="restore_done_keys">Introduce la clave API de cada servidor añadido en la lista de servidores.</string>
+    <string name="restore_done_restart">La app se reinicia ahora.</string>
 </resources>

@@ -49,6 +49,10 @@ interface BrowsingRoomDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSearchHistory(entry: SearchHistoryEntry)
 
+    /** Every profile's entries: the backup export (audit C05). */
+    @Query("SELECT * FROM SEARCH_HISTORY")
+    suspend fun getAllSearchHistory(): List<SearchHistoryEntry>
+
     /** Legacy-import variant: an existing (fresher) entry wins. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertSearchHistoryIfAbsent(entry: SearchHistoryEntry)

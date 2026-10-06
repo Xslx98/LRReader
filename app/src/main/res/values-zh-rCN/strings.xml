@@ -932,4 +932,20 @@
     <plurals name="pattern_lockout_message">
         <item quantity="other">尝试次数过多，请在 %d 秒后重试。</item>
     </plurals>
+    <string name="settings_advanced_backup">备份数据</string>
+    <string name="settings_advanced_backup_summary">将服务器（不含 API 密钥）、历史、收藏、阅读进度和设置保存到文件</string>
+    <string name="settings_advanced_restore">恢复数据</string>
+    <string name="settings_advanced_restore_summary">将备份文件合并到本设备的数据中</string>
+    <string name="backup_done">备份已保存</string>
+    <string name="backup_failed">无法保存备份</string>
+    <string name="restore_invalid">此文件不是 LR Reader 备份，或来自更新的版本</string>
+    <string name="restore_confirm_title">恢复此备份？</string>
+    <string name="restore_confirm_message">备份时间 %1$s：%2$d 个服务器，%3$d 个档案。\n\n备份将与本设备的数据合并，不会删除这里的任何数据。备份不含 API 密钥。完成后应用会重启。</string>
+    <string name="restore_action">恢复</string>
+    <string name="restore_running">正在恢复…</string>
+    <string name="restore_failed">恢复失败，未做任何更改。</string>
+    <string name="restore_done_title">恢复完成</string>
+    <string name="restore_done_message">已恢复 %1$d 个档案，重新关联 %2$d 个下载（%3$d 个在本设备上未找到），新增 %4$d 个服务器。</string>
+    <string name="restore_done_keys">请在服务器列表中为新增的服务器输入 API 密钥。</string>
+    <string name="restore_done_restart">应用即将重启。</string>
 </resources>

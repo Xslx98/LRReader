@@ -989,4 +989,20 @@
     <string name="cd_clear_search">Clear search</string>
     <string name="appwidget_continue_reading_description">One-tap resume of your last-read archive</string>
     <string name="appwidget_continue_reading_empty">No recent reading</string>
+    <string name="settings_advanced_backup">Back up data</string>
+    <string name="settings_advanced_backup_summary">Save servers (without API keys), history, favourites, reading progress and settings to a file</string>
+    <string name="settings_advanced_restore">Restore data</string>
+    <string name="settings_advanced_restore_summary">Merge a backup file into the data on this device</string>
+    <string name="backup_done">Backup saved</string>
+    <string name="backup_failed">Could not save the backup</string>
+    <string name="restore_invalid">This file is not an LR Reader backup, or it comes from a newer version</string>
+    <string name="restore_confirm_title">Restore this backup?</string>
+    <string name="restore_confirm_message">Backup from %1$s\nServers: %2$d\nArchives: %3$d\n\nIt is merged with the data on this device; nothing here is deleted. Backups contain no API keys. The app restarts afterwards.</string>
+    <string name="restore_action">Restore</string>
+    <string name="restore_running">Restoring…</string>
+    <string name="restore_failed">Restore failed. Nothing was changed.</string>
+    <string name="restore_done_title">Restore complete</string>
+    <string name="restore_done_message">Archives restored: %1$d\nDownloads re-linked: %2$d\nDownloads not found on this device: %3$d\nServers added: %4$d</string>
+    <string name="restore_done_keys">Enter the API key of each added server in the server list.</string>
+    <string name="restore_done_restart">The app restarts now.</string>
 </resources>
