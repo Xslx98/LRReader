@@ -447,23 +447,21 @@ class Image private constructor(
          * retries once at [OOM_RETRY_MULTIPLIER] (audit 2026-10-04 C11, user ruling:
          * no general pixel cap). A second OOM or any exception yields null, which
          * callers already show as "decode failed" instead of a spinner forever.
+         * [decodeResult] keeps the reason instead.
          */
-        internal fun <T> retryOnOutOfMemory(rewind: () -> Unit, attempt: (Int) -> T): T? {
-            for (multiplier in intArrayOf(1, OOM_RETRY_MULTIPLIER)) {
-                try {
-                    if (multiplier > 1) rewind()
-                    return attempt(multiplier)
-                } catch (e: OutOfMemoryError) {
-                    Log.e(TAG, "Decode ran out of memory at sample x$multiplier", e)
-                    com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "Decode OOM at sample x$multiplier", e)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Decode failed", e)
-                    Analytics.recordException(e)
-                    return null
-                }
+        internal fun <T> retryOnOutOfMemory(rewind: () -> Unit, attempt: (Int) -> T): T? =
+            (decodeWithOomRetry(rewind, attempt) as? DecodeResult.Ok)?.value
+
+        /**
+         * Reader-page decode like [decode] that reports WHY it failed
+         * ([DecodeResult.OutOfMemory] vs [DecodeResult.Failed]) so a valid page
+         * the device cannot show is not mistaken for a damaged file (audit
+         * 2026-10-06d PERF-01).
+         */
+        fun decodeResult(stream: FileInputStream, hardware: Boolean = true): DecodeResult<Image> =
+            decodeWithOomRetry(rewind = { stream.channel.position(0) }) { multiplier ->
+                Image(stream, hardware = hardware, sampleMultiplier = multiplier)
             }
-            return null
-        }
 
         @JvmStatic
         fun decode(drawable: Drawable?, hardware: Boolean = true): Image? {

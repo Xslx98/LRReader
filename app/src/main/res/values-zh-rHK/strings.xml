@@ -817,6 +817,8 @@
     <string name="lrr_download_orphan_profile">下載暫停：來源站點的伺服器設定已被刪除</string>
     <string name="lrr_download_source_deleted">來源已刪除</string>
     <string name="lrr_decode_failed">圖片解碼失敗，點擊重試</string>
+    <string name="lrr_decode_unsupported_format">此裝置不支援這種圖片格式（%1$s）</string>
+    <string name="lrr_decode_too_large">此頁面過大，無法在此裝置上顯示</string>
     <string name="lrr_empty_response">伺服器傳回空回應</string>
     <string name="lrr_malformed_response">伺服器傳回意外回應</string>
     <string name="lrr_auth_failed_check_key">驗證失敗，請檢查 API 金鑰</string>

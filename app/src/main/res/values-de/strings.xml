@@ -760,6 +760,8 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_download_orphan_profile">Download pausiert: Quellserver-Profil wurde gelöscht</string>
     <string name="lrr_download_source_deleted">Quelle gelöscht</string>
     <string name="lrr_decode_failed">Bilddekodierung fehlgeschlagen, tippen zum Wiederholen</string>
+    <string name="lrr_decode_unsupported_format">Dieses Bildformat (%1$s) wird auf diesem Gerät nicht unterstützt</string>
+    <string name="lrr_decode_too_large">Diese Seite ist zu groß, um auf diesem Gerät angezeigt zu werden</string>
     <string name="lrr_empty_response">Server hat leere Antwort zurückgegeben</string>
     <string name="lrr_malformed_response">Server hat unerwartete Antwort zurückgegeben</string>
     <string name="lrr_auth_failed_check_key">Authentifizierung fehlgeschlagen, bitte API-Schlüssel prüfen</string>

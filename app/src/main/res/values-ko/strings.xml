@@ -808,6 +808,8 @@
     <string name="lrr_download_orphan_profile">다운로드 일시 중지됨: 원본 서버 프로필이 삭제되었습니다</string>
     <string name="lrr_download_source_deleted">원본 삭제됨</string>
     <string name="lrr_decode_failed">이미지 디코드 실패, 탭하여 다시 시도</string>
+    <string name="lrr_decode_unsupported_format">이 이미지 형식(%1$s)은 이 기기에서 지원되지 않습니다</string>
+    <string name="lrr_decode_too_large">이 페이지는 너무 커서 이 기기에서 표시할 수 없습니다</string>
     <string name="lrr_empty_response">서버가 빈 응답을 반환했습니다</string>
     <string name="lrr_malformed_response">서버가 예상치 못한 응답을 반환했습니다</string>
     <string name="lrr_auth_failed_check_key">인증 실패, API 키를 확인하세요</string>

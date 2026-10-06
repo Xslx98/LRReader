@@ -856,6 +856,8 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_download_orphan_profile">Descarga pausada: el perfil del servidor de origen ha sido eliminado</string>
     <string name="lrr_download_source_deleted">Origen eliminado</string>
     <string name="lrr_decode_failed">Error al decodificar imagen, toca para reintentar</string>
+    <string name="lrr_decode_unsupported_format">Este formato de imagen (%1$s) no es compatible con este dispositivo</string>
+    <string name="lrr_decode_too_large">Esta página es demasiado grande para mostrarse en este dispositivo</string>
     <string name="lrr_empty_response">El servidor devolvió una respuesta vacía</string>
     <string name="lrr_malformed_response">El servidor devolvió una respuesta inesperada</string>
     <string name="lrr_auth_failed_check_key">Autenticación fallida, verifica la clave API</string>

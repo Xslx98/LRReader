@@ -73,10 +73,13 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
      * download worker's copy in [com.lanraragi.reader.download.LRRDownloadWorker].
      */
     private val ISO_BMFF_IMAGE_BRANDS = setOf(
-        "avif", "avis", // AV1 Image File Format (still / sequence)
+        "avif", "avis", // AV1 Image File Format (still / sequence), see AVIF_BRANDS
         "heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", // HEVC-coded
         "mif1", "msf1", // generic HEIF (image / sequence)
     )
+
+    /** The AV1 brands of [ISO_BMFF_IMAGE_BRANDS]; decodable on API 31+ only. */
+    private val AVIF_BRANDS = setOf("avif", "avis")
 
     /**
      * TTL for the decoded-page slot. Long enough to bridge a typical
@@ -139,77 +142,73 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
 
     /**
      * Validate that a file starts with a known image format magic bytes.
-     * Supports JPEG, PNG, GIF, WebP, BMP, AVIF, JPEG XL.
+     * Supports JPEG, PNG, GIF, WebP, BMP, HEIF, AVIF, JPEG XL.
      */
-    fun validateImageFile(file: File): Boolean {
-        if (!file.exists() || file.length() < 4) return false
+    fun validateImageFile(file: File): Boolean = detectImageFormat(file) != null
+
+    /**
+     * The page format named by [file]'s magic bytes, or null when the file is
+     * missing, unreadable or not a known image. A known format is not
+     * necessarily decodable on this device; see [PageImageFormat.decodableOn].
+     */
+    internal fun detectImageFormat(file: File): PageImageFormat? {
+        if (!file.exists() || file.length() < 4) return null
         return try {
             FileInputStream(file).use { fis ->
                 val header = ByteArray(16)
                 val read = fis.read(header)
-                if (read < 4) return false
-
-                // JPEG: FF D8 FF
-                if (header[0] == 0xFF.toByte() && header[1] == 0xD8.toByte() &&
-                    header[2] == 0xFF.toByte()
-                ) return true
-
-                // PNG: 89 50 4E 47
-                if (header[0] == 0x89.toByte() && header[1] == 0x50.toByte() &&
-                    header[2] == 0x4E.toByte() && header[3] == 0x47.toByte()
-                ) return true
-
-                // GIF: 47 49 46 38
-                if (header[0] == 0x47.toByte() && header[1] == 0x49.toByte() &&
-                    header[2] == 0x46.toByte() && header[3] == 0x38.toByte()
-                ) return true
-
-                // WebP: RIFF....WEBP
-                if (read >= 12 &&
-                    header[0] == 'R'.code.toByte() && header[1] == 'I'.code.toByte() &&
-                    header[2] == 'F'.code.toByte() && header[3] == 'F'.code.toByte() &&
-                    header[8] == 'W'.code.toByte() && header[9] == 'E'.code.toByte() &&
-                    header[10] == 'B'.code.toByte() && header[11] == 'P'.code.toByte()
-                ) return true
-
-                // BMP: 42 4D
-                if (header[0] == 0x42.toByte() && header[1] == 0x4D.toByte()) return true
-
-                // ISO-BMFF (AVIF / HEIF / HEIC): "ftyp" at bytes 4-7, 4-char
-                // major brand at bytes 8-11. Accept any brand the platform
-                // decoder can read so HEIC/HEIF pages — listed as supported
-                // page files — are not rejected as "not an image".
-                if (read >= 12 &&
-                    header[4] == 'f'.code.toByte() && header[5] == 't'.code.toByte() &&
-                    header[6] == 'y'.code.toByte() && header[7] == 'p'.code.toByte() &&
-                    String(header, 8, 4, Charsets.US_ASCII) in ISO_BMFF_IMAGE_BRANDS
-                ) return true
-
-                // JXL naked codestream: FF 0A
-                if (header[0] == 0xFF.toByte() && header[1] == 0x0A.toByte()) return true
-
-                // JXL ISOBMFF container: 00 00 00 0C 4A 58 4C 20 0D 0A 87 0A
-                if (read >= 12 &&
-                    header[0] == 0x00.toByte() && header[1] == 0x00.toByte() &&
-                    header[2] == 0x00.toByte() && header[3] == 0x0C.toByte() &&
-                    header[4] == 0x4A.toByte() && header[5] == 0x58.toByte() &&
-                    header[6] == 0x4C.toByte() && header[7] == 0x20.toByte() &&
-                    header[8] == 0x0D.toByte() && header[9] == 0x0A.toByte() &&
-                    header[10] == 0x87.toByte() && header[11] == 0x0A.toByte()
-                ) return true
-
-                Log.w(
-                    TAG,
-                    String.format(
-                        "Unknown image format: %02X %02X %02X %02X",
-                        header[0], header[1], header[2], header[3]
+                val format = if (read < 4) null else imageFormatOf(header, read)
+                if (format == null && read >= 4) {
+                    Log.w(
+                        TAG,
+                        String.format(
+                            "Unknown image format: %02X %02X %02X %02X",
+                            header[0], header[1], header[2], header[3]
+                        )
                     )
-                )
-                false
+                }
+                format
             }
         } catch (e: IOException) {
             Log.d(TAG, "Validate image file", e)
-            false
+            null
+        }
+    }
+
+    @Suppress("CyclomaticComplexMethod")
+    private fun imageFormatOf(header: ByteArray, read: Int): PageImageFormat? {
+        fun at(i: Int, v: Int) = header[i] == v.toByte()
+        fun ascii(i: Int, s: String) = s.indices.all { header[i + it] == s[it].code.toByte() }
+        return when {
+            // JPEG: FF D8 FF
+            at(0, 0xFF) && at(1, 0xD8) && at(2, 0xFF) -> PageImageFormat.JPEG
+            // PNG: 89 50 4E 47
+            at(0, 0x89) && at(1, 0x50) && at(2, 0x4E) && at(3, 0x47) -> PageImageFormat.PNG
+            // GIF: 47 49 46 38
+            at(0, 0x47) && at(1, 0x49) && at(2, 0x46) && at(3, 0x38) -> PageImageFormat.GIF
+            // WebP: RIFF....WEBP
+            read >= 12 && ascii(0, "RIFF") && ascii(8, "WEBP") -> PageImageFormat.WEBP
+            // BMP: 42 4D
+            at(0, 0x42) && at(1, 0x4D) -> PageImageFormat.BMP
+            // ISO-BMFF (AVIF / HEIF / HEIC): "ftyp" at bytes 4-7, 4-char
+            // major brand at bytes 8-11. Accept any brand the platform
+            // decoder can read so HEIC/HEIF pages — listed as supported
+            // page files — are not rejected as "not an image".
+            read >= 12 && ascii(4, "ftyp") -> {
+                val brand = String(header, 8, 4, Charsets.US_ASCII)
+                when (brand) {
+                    in AVIF_BRANDS -> PageImageFormat.AVIF
+                    in ISO_BMFF_IMAGE_BRANDS -> PageImageFormat.HEIF
+                    else -> null
+                }
+            }
+            // JXL naked codestream: FF 0A
+            at(0, 0xFF) && at(1, 0x0A) -> PageImageFormat.JXL
+            // JXL ISOBMFF container: 00 00 00 0C 4A 58 4C 20 0D 0A 87 0A
+            read >= 12 && at(0, 0x00) && at(1, 0x00) && at(2, 0x00) && at(3, 0x0C) &&
+                ascii(4, "JXL ") && at(8, 0x0D) && at(9, 0x0A) && at(10, 0x87) && at(11, 0x0A) ->
+                PageImageFormat.JXL
+            else -> null
         }
     }
 

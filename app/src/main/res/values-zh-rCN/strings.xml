@@ -833,6 +833,8 @@
     <string name="lrr_download_orphan_profile">下载暂停：源站点的服务器配置已被删除</string>
     <string name="lrr_download_source_deleted">源已删除</string>
     <string name="lrr_decode_failed">图片解码失败，请点击重试</string>
+    <string name="lrr_decode_unsupported_format">此设备不支持该图片格式（%1$s）</string>
+    <string name="lrr_decode_too_large">此页面过大，无法在此设备上显示</string>
     <string name="lrr_empty_response">服务器返回空响应体</string>
     <string name="lrr_malformed_response">服务器返回了意外的响应</string>
     <string name="lrr_auth_failed_check_key">认证失败，请检查 API Key 是否正确</string>
