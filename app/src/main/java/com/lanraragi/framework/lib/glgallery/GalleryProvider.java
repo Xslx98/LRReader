@@ -22,6 +22,7 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
 import com.lanraragi.framework.lib.glview.image.ImageWrapper;
@@ -45,7 +46,20 @@ public abstract class GalleryProvider implements MemoryTrimmable {
     private volatile Listener mListener;
     private volatile GLRoot mGLRoot;
 
-    private final ImageCache mImageCache = new ImageCache();
+    private final ImageCache mImageCache;
+
+    protected GalleryProvider() {
+        this(MemoryTrim.readerCacheBytes(OSUtils.getTotalMemory(), MemoryTrim.isLowRamDevice()));
+    }
+
+    /**
+     * @param cacheMaxBytes budget of the decoded-page memory cache (tests pass
+     *                      a small one to exercise the over-budget path).
+     */
+    @VisibleForTesting
+    protected GalleryProvider(int cacheMaxBytes) {
+        mImageCache = new ImageCache(cacheMaxBytes);
+    }
 
     private boolean mStarted = false;
     // Written on the UI thread in stop(), read on decoder threads in
@@ -213,10 +227,11 @@ public abstract class GalleryProvider implements MemoryTrimmable {
             // yet an in-flight decode still completed. A successful animated
             // page is never retained by mImageCache (see ImageCache.add), so if
             // we drop the notification here nothing will ever recycle its
-            // native image. Release it to free the underlying Image. Non-
-            // animated pages are owned by the cache and must NOT be released.
+            // native image. Release it to free the underlying Image. The same
+            // holds for a page bigger than the cache budget. Cached pages are
+            // owned by the cache and must NOT be released.
             if (type == NotifyTask.TYPE_SUCCEED && image != null
-                    && Boolean.TRUE.equals(image.getAnimated())) {
+                    && image.isUncached()) {
                 image.release();
             }
             return;
@@ -305,12 +320,24 @@ public abstract class GalleryProvider implements MemoryTrimmable {
         // Budget: MemoryTrim.readerCacheBytes (RAM/8, 64..256 MB, 96 MB on low-RAM
         // devices). Large pages are ~15 MB at 1600x2400x4.
 
-        public ImageCache() {
-            super(MemoryTrim.readerCacheBytes(OSUtils.getTotalMemory(), MemoryTrim.isLowRamDevice()));
+        public ImageCache(int maxBytes) {
+            super(maxBytes);
         }
 
         public void add(Integer key, ImageWrapper value) {
-            if (!value.getAnimated() && value.obtain()) {
+            if (value.getAnimated()) {
+                return;
+            }
+            if (sizeOf(key, value) > maxSize()) {
+                // Audit 2026-10-06 N3: LruCache.trimToSize would evict an entry
+                // bigger than the whole budget the moment it is put, releasing
+                // it to zero references (recycled) before the GL thread can
+                // obtain it — the adapter then re-requested the page forever.
+                // Hand it over uncached instead, like an animated page.
+                value.markCacheBypassed();
+                return;
+            }
+            if (value.obtain()) {
                 put(key, value);
             }
 //            if (value.getFormat() != Image1.FORMAT_GIF && value.getFormat() == Image1.FORMAT_WEBP && value.obtain()) {
