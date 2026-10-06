@@ -15,7 +15,6 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.util.suspendRunCatching
 import java.io.IOException
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -87,8 +86,9 @@ class TankGalleryProvider(
 
     private val serverUrlDeferred = CompletableDeferred<String?>()
 
-    private val inflightRequests = ConcurrentHashMap<Int, Boolean>()
-    private val rebindWanted = ConcurrentHashMap.newKeySet<Int>()
+    // In-flight page requests (per-job tokens) and rebinds that arrived while
+    // a job was running; see PageRequestTracker (audit 2026-10-06 N6).
+    private val requests = PageRequestTracker()
 
     /** Global cap on concurrent prefetch downloads (mirrors LRRGalleryProvider). */
     private val prefetchSemaphore = Semaphore(PREFETCH_PARALLELISM)
@@ -188,8 +188,7 @@ class TankGalleryProvider(
     override fun stop() {
         super.stop()
         stopped = true
-        inflightRequests.clear()
-        rebindWanted.clear()
+        requests.clear()
         providerScope?.cancel()
         providerScope = null
         synchronized(slotsLock) { slots.forEach { it.source?.cancelAll() } }
@@ -222,13 +221,14 @@ class TankGalleryProvider(
             notifyPageFailed(index, GetText.getString(R.string.error_out_of_range))
             return
         }
-        if (inflightRequests.putIfAbsent(index, true) != null) {
-            rebindWanted.add(index)
-            return
-        }
+        // Already in flight: the tracker records the rebind so a cancelled
+        // job re-requests the page instead of leaving it spinning.
+        val token = requests.begin(index)
+        if (token == null) return
         notifyPageWait(index)
-        val scope = providerScope ?: run {
-            inflightRequests.remove(index)
+        val scope = providerScope
+        if (scope == null) {
+            requests.abandon(index, token)
             return
         }
         scope.launch {
@@ -247,8 +247,7 @@ class TankGalleryProvider(
                 Log.w(TAG, "Failed to serve tank page $index: ${e.message}")
                 notifyPageFailed(index, friendlyPageError(e))
             } finally {
-                inflightRequests.remove(index)
-                if (rebindWanted.remove(index) && cancelled && !stopped) {
+                if (requests.finish(index, token, cancelled, stopped)) {
                     onRequest(index)
                 }
             }
@@ -256,7 +255,7 @@ class TankGalleryProvider(
     }
 
     override fun onForceRequest(index: Int) {
-        inflightRequests.remove(index)
+        requests.forget(index)
         onRequest(index)
     }
 
