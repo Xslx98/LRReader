@@ -4,6 +4,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -14,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Collections
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 class OrderedPageWindowTest {
@@ -106,6 +108,34 @@ class OrderedPageWindowTest {
             if (i == 3) cancelled = true
         }
         assertTrue("cancel should cut the run short", processed.get() < 100)
+    }
+
+    /**
+     * Audit 2026-10-06 N9: a page that throws must cancel the pages still in
+     * flight before the failure reaches the caller. Pages launched on the
+     * worker's own scope kept writing after the worker had given up.
+     */
+    @Test(timeout = 10_000)
+    fun aThrowingPageCancelsItsSiblingsBeforeTheFailureSurfaces() = runBlocking {
+        val workers = 4
+        val siblingsStarted = CountDownLatch(workers - 1)
+        val siblingsCancelled = AtomicInteger(0)
+        val thrown = runCatching {
+            OrderedPageWindow.run(scope, total = workers, workers = workers, isCancelled = { false }) { i ->
+                if (i == workers - 1) {
+                    while (siblingsStarted.count > 0) delay(5)
+                    throw IllegalStateException("page $i failed")
+                }
+                try {
+                    siblingsStarted.countDown()
+                    awaitCancellation()
+                } finally {
+                    siblingsCancelled.incrementAndGet()
+                }
+            }
+        }.exceptionOrNull()
+        assertTrue("expected the page failure, got $thrown", thrown is IllegalStateException)
+        assertEquals(workers - 1, siblingsCancelled.get())
     }
 
     @Test
