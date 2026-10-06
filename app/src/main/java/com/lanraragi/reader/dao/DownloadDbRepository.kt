@@ -110,6 +110,7 @@ class DownloadDbRepository(
             .distinctUntilChanged()
             .map { rows -> rows.map { it.toDownloadInfoView() } }
             .flowOn(decodeDispatcher)
+            .endOnDbFailure(TAG, "downloads")
     }
 
     /**
@@ -277,7 +278,8 @@ class DownloadDbRepository(
     private val tankGroupDao: TankDownloadGroupDao get() = database.tankDownloadGroupDao()
 
     /** Downloads-list card source: every downloaded-tank group, newest first. */
-    fun observeTankGroups(): Flow<List<TankDownloadGroup>> = tankGroupDao.observeAll()
+    fun observeTankGroups(): Flow<List<TankDownloadGroup>> =
+        tankGroupDao.observeAll().endOnDbFailure(TAG, "tank groups")
 
     suspend fun getTankGroup(tankId: String): TankDownloadGroup? = tankGroupDao.getById(tankId)
 
@@ -535,5 +537,7 @@ class DownloadDbRepository(
     private companion object {
         /** Ids per `IN (...)` query, under the 999 bind-variable cap of older SQLite. */
         const val SQL_IN_CHUNK = 500
+
+        const val TAG = "DownloadDbRepository"
     }
 }

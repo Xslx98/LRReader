@@ -12,8 +12,8 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.lang.ref.WeakReference
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Application-level utilities: global object registry and temp cache.
@@ -128,20 +128,32 @@ class AppModule(private val context: Context) : IAppModule {
         val activeProfileIdDeferred: CompletableDeferred<Long?> = CompletableDeferred()
 
         /**
-         * Sticky one-shot for non-KeyStore boot failures (DB corruption, Room
-         * migration error, generic loader exception). Set by [LRReaderApplication]
-         * when the profile-load path catches a non-secure-storage exception;
-         * read+cleared by the first UI that can surface a dialog (typically
-         * [com.lanraragi.reader.ui.MainActivity.onCreate]).
+         * Non-KeyStore boot failure (DB corruption, Room migration error,
+         * generic loader exception) waiting for the user. Set by
+         * [LRReaderApplication] when the profile-load path catches a
+         * non-secure-storage exception — on a background thread, usually
+         * after MainActivity was created — so it is observed, not read once
+         * (audit 2026-10-06d STAB-02): [com.lanraragi.reader.ui.BootNoticePresenter]
+         * shows the recovery dialog whenever the value arrives and clears it
+         * (`compareAndSet(err, null)`) once the user answers.
          *
-         * Cleared with [AtomicReference.getAndSet]`(null)` so each failure is
-         * shown exactly once. KeyStore-specific failures continue to flow
-         * through [com.lanraragi.reader.client.api.LRRAuthManager.isNeedsReauthentication]
+         * KeyStore-specific failures continue to flow through
+         * [com.lanraragi.reader.client.api.LRRAuthManager.isNeedsReauthentication]
          * and the existing reauth dialog — this slot is for the "everything
          * else" branch that previously vanished into Log.e.
          */
         @JvmStatic
-        val bootProfileLoadError: AtomicReference<Throwable?> = AtomicReference(null)
+        val bootProfileLoadError: MutableStateFlow<Throwable?> = MutableStateFlow(null)
+
+        /**
+         * Timestamp of a quarantined (corrupt, moved aside) database set the
+         * user has not been told about yet, or null (audit 2026-10-06d REL-02).
+         * Published by the boot loader from
+         * [com.lanraragi.reader.dao.DatabaseResetNotice.pendingStamp]; shown and
+         * cleared by [com.lanraragi.reader.ui.BootNoticePresenter].
+         */
+        @JvmStatic
+        val databaseResetNotice: MutableStateFlow<Long?> = MutableStateFlow(null)
 
         /**
          * Build a [CoroutineExceptionHandler] from injectable function references.

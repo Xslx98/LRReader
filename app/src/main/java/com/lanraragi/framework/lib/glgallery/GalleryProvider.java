@@ -317,8 +317,9 @@ public abstract class GalleryProvider implements MemoryTrimmable {
 
     private static class ImageCache extends LruCache<Integer, ImageWrapper> {
 
-        // Budget: MemoryTrim.readerCacheBytes (RAM/8, 64..256 MB, 96 MB on low-RAM
-        // devices). Large pages are ~15 MB at 1600x2400x4.
+        // Budget: MemoryTrim.readerCacheBytes (RAM/12, 64..256 MB, 96 MB on
+        // low-RAM devices). A FIT page decodes near screen size (Image
+        // readerSampleSize), about 10-15 MB as ARGB_8888.
 
         public ImageCache(int maxBytes) {
             super(maxBytes);
@@ -347,12 +348,10 @@ public abstract class GalleryProvider implements MemoryTrimmable {
 
         @Override
         protected int sizeOf(Integer key, ImageWrapper value) {
-            int size = value.getWidth() * value.getHeight() * 4;
-//            if (value.getFormat() == Image1.FORMAT_GIF || value.getFormat() == Image1.FORMAT_WEBP) {
-//                size *= 5;
-//            }
-//            return size;
-            return value.getWidth() * value.getHeight() * 4;
+            // Real resident bytes (audit PERF-07): a 16-bit PNG or 10-bit
+            // AVIF/HEIF page keeps its source bitmap plus an ARGB_8888 upload
+            // copy, up to 12 bytes per pixel instead of the 4 counted before.
+            return value.getByteCount();
         }
 
         @Override

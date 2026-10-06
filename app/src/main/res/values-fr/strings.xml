@@ -860,6 +860,8 @@ Cette action est irréversible.</string>
     <string name="lrr_download_orphan_profile">Téléchargement suspendu : le profil du serveur source a été supprimé</string>
     <string name="lrr_download_source_deleted">Source supprimée</string>
     <string name="lrr_decode_failed">Décodage de l\'image échoué, appuyer pour réessayer</string>
+    <string name="lrr_decode_unsupported_format">Ce format d\'image (%1$s) n\'est pas pris en charge sur cet appareil</string>
+    <string name="lrr_decode_too_large">Cette page est trop grande pour être affichée sur cet appareil</string>
     <string name="lrr_empty_response">Le serveur a retourné une réponse vide</string>
     <string name="lrr_malformed_response">Le serveur a retourné une réponse inattendue</string>
     <string name="lrr_auth_failed_check_key">Authentification échouée, vérifiez la clé API</string>
@@ -929,6 +931,11 @@ Cette action est irréversible.</string>
     <string name="security_storage_unavailable_message">Le verrouillage de l\'application ne peut pas être vérifié car le stockage sécurisé de l\'appareil est indisponible pour le moment. Réessayez ou réinitialisez le verrouillage : le schéma et toutes les clés API enregistrées seront supprimés. La bibliothèque et les téléchargements sont conservés.</string>
     <string name="security_storage_retry">Réessayer</string>
     <string name="security_storage_starting_message">Le stockage sécurisé de l\'appareil est encore en cours de démarrage : le verrouillage de l\'application ne peut pas encore être vérifié. Patientez un instant, puis touchez Réessayer.</string>
+    <string name="security_storage_unavailable_first_message">Le verrouillage de l\'application ne peut pas être vérifié car le stockage sécurisé de l\'appareil n\'a pas pu être ouvert. C\'est souvent temporaire : touchez Réessayer pour redémarrer l\'application.</string>
+    <string name="security_lock_state_unknown_first_message">L\'état du verrouillage de l\'application ne peut pas être vérifié car le stockage sécurisé de l\'appareil n\'a pas pu être ouvert. C\'est souvent temporaire : touchez Réessayer pour redémarrer l\'application.</string>
+    <string name="security_lock_state_unknown_message">L\'état du verrouillage de l\'application ne peut pas être vérifié car le stockage sécurisé de l\'appareil ne peut toujours pas être ouvert. Réessayez ou réinitialisez les identifiants enregistrés : toutes les clés API enregistrées et tout verrouillage de l\'application seront supprimés. La bibliothèque et les téléchargements sont conservés.</string>
+    <string name="security_legacy_lock_removed_title">Verrouillage de l\'application supprimé</string>
+    <string name="security_legacy_lock_removed_message">Le verrouillage de l\'application était enregistré dans un ancien format que cette version ne peut plus vérifier : il a donc été supprimé et l\'application s\'est ouverte sans verrouillage. Définissez à nouveau un schéma pour garder l\'application verrouillée.</string>
     <string name="security_reset_app_lock">Réinitialiser le verrouillage</string>
     <string name="security_reset_app_lock_confirm">Réinitialiser le verrouillage et supprimer toutes les clés API enregistrées ? Vous devrez saisir à nouveau les identifiants du serveur.</string>
     <string name="lrr_reset_credentials">Réinitialiser les identifiants enregistrés</string>
@@ -937,11 +944,14 @@ Cette action est irréversible.</string>
     <string name="security_pattern_unverifiable_message">Les empreintes de l\'appareil ont changé et ce schéma a été enregistré de sorte qu\'il ne peut être vérifié qu\'avec l\'ancienne clé d\'empreinte. Réinitialisez le verrouillage pour continuer : le schéma et toutes les clés API enregistrées seront supprimés. La bibliothèque et les téléchargements sont conservés.</string>
     <string name="lrr_boot_load_failed_title">Erreur de démarrage</string>
     <string name="lrr_boot_load_failed_message">Impossible de charger vos profils serveur enregistrés au démarrage. L\'application fonctionne sans profil chargé ; vous devrez peut-être reconfigurer ou réinstaller.\n\nDétails : %1$s</string>
+    <string name="lrr_boot_db_newer_message">La base de données locale a été enregistrée par une version plus récente de LR Reader : cette version ne peut pas l\'ouvrir. Le fichier n\'a pas été modifié : réinstallez la version plus récente pour tout retrouver, ou réinitialisez la base de données pour repartir de zéro ici (la base actuelle est mise de côté, pas supprimée).</string>
     <string name="lrr_boot_load_failed_retry">Réessayer</string>
     <string name="lrr_boot_load_failed_reset_db">Réinitialiser la base</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">Réinitialiser la base ?</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">Cette action supprimera définitivement toutes les données stockées localement : profils serveur, historique de lecture, favoris, téléchargements et recherches. Les fichiers d\'archives déjà téléchargés sur le disque ne sont pas affectés. L\'application redémarrera dans un état neuf.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">Cette action réinitialise la base de données locale de l\'application : profils serveur, historique de lecture, favoris, téléchargements et recherches repartent de zéro. La base actuelle est mise de côté sur cet appareil (elle n\'est pas supprimée) et les archives déjà téléchargées sur le disque ne sont pas affectées. L\'application redémarre ensuite.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">Réinitialiser et redémarrer</string>
+    <string name="lrr_db_reset_notice_title">Base de données réinitialisée</string>
+    <string name="lrr_db_reset_notice_message">La base de données locale était endommagée et a été remplacée par une base vide : les serveurs enregistrés, l\'historique de lecture et d\'autres données locales peuvent donc manquer. Une copie du fichier endommagé a été conservée sur cet appareil.</string>
     <string name="lrr_secure_storage_write_failed">Le magasin de clés de l\'appareil est indisponible, vos modifications n\'ont pas pu être enregistrées en toute sécurité. Veuillez redémarrer l\'appareil et réessayer, ou réinstaller l\'application si le problème persiste.</string>
     <string name="reauth_required_title">Ré-authentification requise</string>
     <string name="reauth_required_message">Le magasin de clés sécurisé est devenu indisponible. Veuillez saisir à nouveau la clé API de chaque serveur.</string>

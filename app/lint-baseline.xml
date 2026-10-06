@@ -123,28 +123,6 @@
     </issue>
 
     <issue
-        id="InlinedApi"
-        message="Field requires API level 29 (current min is 28): `android.provider.MediaStore#VOLUME_EXTERNAL_PRIMARY`"
-        errorLine1="            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values"
-        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/reader/ui/gallery/GalleryImageOperations.kt"
-            line="200"
-            column="51"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 30 (current min is 28): `android.security.keystore.KeyProperties#AUTH_BIOMETRIC_STRONG`"
-        errorLine1="            .setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)"
-        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/reader/client/api/LRRAuthManager.kt"
-            line="602"
-            column="49"/>
-    </issue>
-
-    <issue
         id="KotlinNullnessAnnotation"
         message="Do not use `@Nullable` in Kotlin; the nullability is already implied by the Kotlin type `UniFile?` ending with `?`"
         errorLine1="    @Nullable"
@@ -153,17 +131,6 @@
             file="src/main/java/com/lanraragi/reader/settings/DownloadSettings.kt"
             line="37"
             column="5"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 30 (current min is 28): `android.security.keystore.KeyGenParameterSpec.Builder#setUserAuthenticationParameters`"
-        errorLine1="            .setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)"
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/reader/client/api/LRRAuthManager.kt"
-            line="602"
-            column="14"/>
     </issue>
 
     <issue

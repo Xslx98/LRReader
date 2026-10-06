@@ -709,59 +709,34 @@ class LRRGalleryProvider(
 
     @Throws(IOException::class)
     private suspend fun downloadAndDecodePage(index: Int) {
-        // Try up to 2 times: once normally, once with cache invalidation
-        for (attempt in 0 until 2) {
-            var cacheFile = getCacheFile(index)
-
-            // On retry, wait 1s for network recovery, then force re-download.
-            // Suspending delay: parkNanos here blocked an IO-pool thread for
-            // the full second AND ignored coroutine cancellation — leaving the
-            // reader (provider scope cancel on exit) waiting on a parked
-            // thread. delay() frees the thread and aborts on cancellation.
-            if (attempt > 0) {
+        // Fetch -> validate -> decode with one retry for a BAD FILE only; a
+        // valid page this device cannot decode fails at once and is kept, and
+        // a download-dir page (hybrid) is never deleted for a decode failure
+        // (audit 2026-10-06d PERF-01). See PageLoadLoop.
+        val result = PageLoadLoop(
+            pageFile = { getCacheFile(index) },
+            fetch = { downloadPageToCache(index) { idx, percent -> notifyPagePercent(idx, percent) } },
+            // Decode routed through the bounded decoderDispatcher so a burst
+            // of concurrent page requests doesn't blow past the global cap on
+            // simultaneous BitmapFactory work.
+            decode = { file ->
+                withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
+                    FileInputStream(file).use { fis -> Image.decodeResult(fis, false) }
+                }
+            },
+            ownedByDownload = { file -> file.parentFile != cacheDir },
+            // On retry, wait 1s for network recovery. Suspending delay: it
+            // frees the IO thread and aborts on cancellation (reader exit).
+            retryDelay = {
                 if (BuildConfig.DEBUG) {
-                    Log.w(TAG, "Retry page $index (attempt ${attempt + 1}), waiting 1s...")
+                    Log.w(TAG, "Retry page $index, waiting 1s...")
                 }
                 delay(RETRY_DELAY_MS)
-                if (cacheFile.exists()) {
-                    cacheFile.delete()
-                }
-            }
-
-            // Download (with progress reporting via notifyPagePercent)
-            downloadPageToCache(index) { idx, percent -> notifyPagePercent(idx, percent) }
-
-            // Validate cached file before decode
-            cacheFile = getCacheFile(index)
-            if (!cacheFile.exists() || cacheFile.length() < ReaderPageCache.MIN_IMAGE_SIZE) {
-                if (attempt == 0) continue // Retry
-                notifyPageFailed(index, context.getString(R.string.lrr_download_failed_invalid))
-                return
-            }
-
-            if (!ReaderPageCache.validateImageFile(cacheFile)) {
-                cacheFile.delete()
-                if (attempt == 0) continue // Retry
-                notifyPageFailed(index, context.getString(R.string.lrr_download_failed_not_image))
-                return
-            }
-
-            // Decode image. Routed through the bounded decoderDispatcher so
-            // a burst of concurrent page requests doesn't blow past the
-            // global cap on simultaneous BitmapFactory work.
-            val image = withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
-                FileInputStream(cacheFile).use { fis -> Image.decode(fis, false) }
-            }
-            if (image != null) {
-                notifyPageSucceed(index, image)
-                return // Success!
-            } else {
-                // Decode returned null — file is corrupt
-                cacheFile.delete()
-                if (attempt == 0) continue // Retry
-                notifyPageFailed(index, context.getString(R.string.lrr_decode_failed))
-                return
-            }
+            },
+        ).run()
+        when (result) {
+            is PageLoadResult.Loaded -> notifyPageSucceed(index, result.value)
+            is PageLoadResult.Failed -> notifyPageFailed(index, result.failure.message(context))
         }
     }
 

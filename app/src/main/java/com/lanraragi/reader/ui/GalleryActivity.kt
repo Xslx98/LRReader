@@ -48,6 +48,8 @@ import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.settings.ReadingSettings
+import com.lanraragi.reader.util.MemoryTrim
+import com.lanraragi.framework.lib.image.PageFit
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.GalleryActivityEvent
@@ -169,6 +171,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     private var mGalleryView: GalleryView? = null
     private var mGalleryProvider: GalleryProvider2? = null
     private var mGalleryAdapter: GalleryAdapter? = null
+
+    /** Scale-mode fit the cached decoded pages were sampled for (Image.readerSampleSize). */
+    private var mPageFit: PageFit? = null
 
     private var mSystemUiHelper: SystemUiHelper? = null
 
@@ -504,6 +509,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         val galleryAdapter = GalleryAdapter(glRootView, galleryProvider)
         mGalleryAdapter = galleryAdapter
         val resources = resources
+        mPageFit = ReadingSettings.getPageFit()
         val galleryView = GalleryView.Builder(this, galleryAdapter)
             .setListener(this)
             .setLayoutMode(ReadingSettings.getReadingDirection())
@@ -848,7 +854,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
      *   GL surface is resized, not recreated, so the EGL context stays.
      * - GalleryHeader re-reads the moved display cutout from the insets.
      * - Image.initialize re-reads the display metrics for decode sampling
-     *   (LRReaderApplication.onConfigurationChanged).
+     *   (LRReaderApplication.onConfigurationChanged). Decoded pages are kept:
+     *   the fit / fit-width / fit-height samples hold for both orientations
+     *   (Image.readerSampleSize), so a rotation never shows them below 1x.
      * - A user-locked orientation is a requestedOrientation, so the system
      *   never rotates the window in the first place.
      * The reader layouts have no orientation-qualified resources; the menu
@@ -1070,6 +1078,15 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         val gv = mGalleryView ?: return
 
         requestedOrientation = resolveOrientation(screenRotation)
+        val pageFit = PageFit.of(layoutMode, scaleMode)
+        if (pageFit != mPageFit) {
+            // Decoded pages are sampled for the old fit (a FIT-sampled wide
+            // page is far too small for fit height): drop the cached ones so
+            // they re-decode for the new mode. Pages on screen keep their
+            // texture until they are bound again.
+            mPageFit = pageFit
+            mGalleryProvider?.onTrimMemory(MemoryTrim.Action.CLEAR)
+        }
         gv.layoutMode = layoutMode
         gv.setScaleMode(scaleMode)
         gv.setStartPosition(startPosition)

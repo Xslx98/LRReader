@@ -65,6 +65,10 @@ class LrrTankMemberSourceTest {
     private val fileListRequests = java.util.concurrent.atomic.AtomicInteger(0)
     private val pageRequests = java.util.concurrent.atomic.AtomicInteger(0)
 
+    /** Page bytes the server returns instead of [pngBytes] when set. */
+    @Volatile
+    private var pageBody: ByteArray? = null
+
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
@@ -87,7 +91,7 @@ class LrrTankMemberSourceTest {
                         pageRequests.incrementAndGet()
                         MockResponse()
                             .addHeader("Content-Type", "image/png")
-                            .setBody(Buffer().write(pngBytes))
+                            .setBody(Buffer().write(pageBody ?: pngBytes))
                     }
                     else -> MockResponse().setResponseCode(404)
                 }
@@ -231,6 +235,60 @@ class LrrTankMemberSourceTest {
         }
         assertEquals("no page request below the floor", 1, pageRequests.get())
         assertFalse(java.io.File(downloadDir, "0002.png").exists())
+        downloadDir.deleteRecursively()
+    }
+
+    private fun decodeFailure(source: LrrTankMemberSource, page0: Int): PageFailure {
+        val e = assertThrows(PageDecodeException::class.java) {
+            runBlocking { source.obtainImage(page0) }
+        }
+        return e.failure
+    }
+
+    /** Audit 2026-10-06d PERF-01: a valid page the device cannot decode is kept, not re-fetched. */
+    @Test
+    fun `unsupported format fails with its reason and is neither deleted nor re-fetched`(): Unit = runBlocking {
+        pageBody = PageFixtures.avif // Robolectric runs API 30: no AVIF decoder
+        val source = newSource()
+        source.ensurePageCount()
+        val cached = java.io.File(ReaderPageCache.ensureCacheDir(ctx, ARCID), "page_0")
+
+        val failure = decodeFailure(source, 0)
+        assertEquals(PageFailure.Unsupported(PageImageFormat.AVIF), failure)
+        assertEquals("This image format (AVIF) isn't supported on this device", failure.message(ctx))
+        assertTrue("valid page must stay cached", cached.exists())
+
+        assertEquals(PageFailure.Unsupported(PageImageFormat.AVIF), decodeFailure(source, 0))
+        assertEquals("no re-download of a valid page", 1, pageRequests.get())
+    }
+
+    @Test
+    fun `damaged cache page is dropped so the next request re-fetches it`(): Unit = runBlocking {
+        pageBody = PageFixtures.damagedPng
+        val source = newSource()
+        source.ensurePageCount()
+        val cached = java.io.File(ReaderPageCache.ensureCacheDir(ctx, ARCID), "page_0")
+
+        assertEquals(PageFailure.Corrupt, decodeFailure(source, 0))
+        assertFalse(cached.exists())
+
+        pageBody = null
+        source.obtainImage(0)!!.recycle()
+        assertEquals(2, pageRequests.get())
+    }
+
+    @Test
+    fun `damaged download-dir page is never deleted on a decode failure`(): Unit = runBlocking {
+        pageBody = PageFixtures.damagedPng
+        val (store, downloadDir) = newStore()
+        val source = newSource(store)
+        source.ensurePageCount()
+        val page = java.io.File(downloadDir, "0001.png")
+
+        assertEquals(PageFailure.Corrupt, decodeFailure(source, 0))
+        assertTrue("the download worker owns this file", page.exists())
+        assertEquals(PageFailure.Corrupt, decodeFailure(source, 0))
+        assertEquals(1, pageRequests.get())
         downloadDir.deleteRecursively()
     }
 

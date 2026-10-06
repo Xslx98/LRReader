@@ -3,6 +3,8 @@ package com.lanraragi.reader.settings
 import android.content.SharedPreferences
 import com.lanraragi.reader.Settings
 import com.lanraragi.framework.lib.glgallery.GalleryView
+import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.lib.image.PageFit
 
 /**
  * Reading-related settings extracted from Settings.java.
@@ -379,5 +381,14 @@ object ReadingSettings {
 
         // Register listener (strong reference held by this object, never GC'd)
         prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
+
+        // Reader page decodes are sampled by the effective scale mode (owner
+        // decision 2026-10-06); read live, so a settings change reaches the
+        // next decode.
+        Image.pageFitSource = ::getPageFit
     }
+
+    /** How the reader shows a page at 1x zoom: reading direction + scale mode. */
+    @JvmStatic
+    fun getPageFit(): PageFit = PageFit.of(cachedReadingDirection, cachedPageScaling)
 }

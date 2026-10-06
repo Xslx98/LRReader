@@ -44,6 +44,25 @@ class CrashReportTest {
         assertTrue(report, report.contains(frame))
     }
 
+    /**
+     * Audit 2026-10-06d REL-04: a release frame names its mapping as
+     * `r8-map-id-<pg_map_id>` plus a minified line; retrace needs both
+     * verbatim, so the redaction must not touch them.
+     */
+    @Test
+    fun r8Frames_keepMapIdAndLineNumber() {
+        val mapId = "r8-map-id-797e10a046b0a5a6fb81376ed0d17a08ac03dcb43b27d8f917e7c8d7f288cfb6"
+        val t = IllegalStateException("boom").apply {
+            stackTrace = arrayOf(
+                StackTraceElement("a3", "b", mapId, 42),
+                StackTraceElement("zx", "invoke", mapId, 7),
+            )
+        }
+        val report = Crash.buildReport("", "main", t, emptyList())
+        assertTrue(report, report.contains("\tat a3.b($mapId:42)"))
+        assertTrue(report, report.contains("\tat zx.invoke($mapId:7)"))
+    }
+
     @Test
     fun emptyBreadcrumbs_areMarked() {
         val report = Crash.buildReport("", "main", RuntimeException("x"), emptyList())

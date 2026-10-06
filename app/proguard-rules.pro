@@ -5,6 +5,17 @@
 # classes pinned by -keep rules below keep their full names.
 -repackageclasses ''
 
+# === Retraceable crash stacks (audit 2026-10-06d REL-04) ===
+# Deliberately NO -keepattributes SourceFile,LineNumberTable and NO
+# -renamesourcefileattribute: R8 already keeps line info by default (pc-based
+# minified lines that mapping.txt maps back) and stamps every class's source
+# file as "r8-map-id-<pg_map_id>", so a frame in a field crash report reads
+# `at a3.b(r8-map-id-797e...:12)` and names the exact mapping it needs.
+# Either rule would replace that stamp with "SourceFile" or the real file
+# names. scripts/ci/check-dex-retrace.sh enforces this on the release DEX;
+# every release build copies its mapping to
+# build/release-mapping/mapping-<versionName>-<versionCode>.txt.
+
 # === Strip debug/verbose logs in release (security: prevent accidental data leak) ===
 -assumenosideeffects class android.util.Log {
     public static int v(...);

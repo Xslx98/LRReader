@@ -2,6 +2,7 @@ package com.lanraragi.reader.client.api
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Looper
 import android.os.SystemClock
 import android.os.Trace
@@ -73,10 +74,11 @@ object LRRAuthManager {
     private const val KEY_CONFIGURED_HINT = "server_configured"
 
     /**
-     * Plain-prefs count of consecutive launches whose secure store failed to
-     * open; cleared by the next launch that opens it. A KeyStore error that
+     * Plain-prefs count of consecutive launches that SHOWED a screen while
+     * the secure store failed to open (see [countStoreFailureShown]);
+     * cleared by the next process start that opens it. A KeyStore error that
      * heals on the next launch must not offer the destructive credential
-     * reset (audit 2026-10-06c N-new-1).
+     * reset (audit 2026-10-06c N-new-1, 06d SEC-01).
      */
     private const val KEY_STORE_OPEN_FAILURES = "secure_store_open_failures"
     private const val RESET_OFFER_MIN_FAILED_LAUNCHES = 2
@@ -87,6 +89,10 @@ object LRRAuthManager {
     private const val KEY_ALLOW_CLEARTEXT = "allow_cleartext"
     private const val KEY_PATTERN_SALT = "pattern_salt"
     private const val KEY_PATTERN_HASH_V2 = "pattern_hash_v2"
+    /** Pre-PBKDF2 SHA-256 pattern hash; only removed now. */
+    private const val KEY_PATTERN_HASH_V1 = "pattern_hash"
+    /** Plain-prefs flag: a [KEY_PATTERN_HASH_V1] lock was dropped and the user not told yet. */
+    private const val KEY_LEGACY_LOCK_REMOVED_NOTICE = "legacy_lock_removed_notice"
     private const val PBKDF2_ITERATIONS_V1 = 100_000  // Legacy, kept for migration
     private const val PBKDF2_ITERATIONS = 200_000
     private const val PBKDF2_KEY_BITS = 256
@@ -283,6 +289,7 @@ object LRRAuthManager {
         sInitDone = false
         sInitTimedOut = false
         sMainInitTimedOut = false
+        sStoreFailureCounted = false
         initTimeoutMs = INIT_TIMEOUT_MS
         mainThreadInitTimeoutMs = MAIN_THREAD_INIT_TIMEOUT_MS
         secureStoreCipher = { KeystoreValueCipher(KEYSTORE_ALIAS_SECURE_PREFS) }
@@ -346,10 +353,15 @@ object LRRAuthManager {
         // Restore active profile (falls back to 0 when sPrefs is null)
         val prefs = sPrefs
         sActiveProfileId = prefs?.getLong(KEY_ACTIVE_PROFILE_ID, 0L) ?: 0L
-        // Migrate away from v1 SHA-256 pattern hash: remove stale key so hasPattern()
-        // correctly returns false and prompts the user to re-enroll with PBKDF2.
-        if (prefs?.contains("pattern_hash") == true) {
-            prefs.edit { remove("pattern_hash") }
+        // Migrate away from v1 SHA-256 pattern hash: it cannot be checked any
+        // more, so the lock is dropped and the app opens unlocked. Tell the
+        // user once ([consumeLegacyLockRemovedNotice], audit 06d SEC-08); the
+        // notice flag is committed first so the drop is never silent.
+        if (prefs?.contains(KEY_PATTERN_HASH_V1) == true) {
+            if (!hasPatternIn(prefs)) {
+                plainPrefs.edit(commit = true) { putBoolean(KEY_LEGACY_LOCK_REMOVED_NOTICE, true) }
+            }
+            prefs.edit { remove(KEY_PATTERN_HASH_V1) }
         }
         // Persist "was_configured" flag when a server URL exists, so we can detect
         // KeyStore corruption vs fresh install on next startup.
@@ -368,15 +380,42 @@ object LRRAuthManager {
         }
     }
 
-    /** Count failed opens in a row; committed, the lock screen's retry kills the process. */
+    /**
+     * A store that opened ends the run of failed launches. A failed open is
+     * not counted here but by [countStoreFailureShown], when a screen shows
+     * it: init also runs for widget updates, download workers and other
+     * background starts, which could otherwise reach the reset threshold
+     * within seconds of a single KeyStore outage (audit 06c N-new-1 note).
+     */
     private fun recordStoreOpenOutcome(plainPrefs: SharedPreferences, opened: Boolean) {
-        if (opened) {
-            if (plainPrefs.contains(KEY_STORE_OPEN_FAILURES)) {
-                plainPrefs.edit(commit = true) { remove(KEY_STORE_OPEN_FAILURES) }
+        if (opened && plainPrefs.contains(KEY_STORE_OPEN_FAILURES)) {
+            plainPrefs.edit(commit = true) { remove(KEY_STORE_OPEN_FAILURES) }
+        }
+    }
+
+    /** Set once this process counted its failed store open, see [countStoreFailureShown]. */
+    @Volatile
+    private var sStoreFailureCounted = false
+    private val storeFailureCountLock = Any()
+
+    /**
+     * Count this process's failed store open once, the first time a screen
+     * asks whether to offer a reset (the lock screen, the "credentials
+     * unavailable" prompts), and return the count. So the count is of
+     * launches that showed the failure to the user — including a start
+     * after the lock screen's "Try again" restart: the user retried and the
+     * store still failed. Call only while the store is UNAVAILABLE.
+     * Committed: the lock screen's retry kills the process right after.
+     */
+    private fun countStoreFailureShown(): Int {
+        val plain = fastPlainPrefs() ?: return 0
+        synchronized(storeFailureCountLock) {
+            if (!sStoreFailureCounted) {
+                sStoreFailureCounted = true
+                val failures = plain.getInt(KEY_STORE_OPEN_FAILURES, 0) + 1
+                plain.edit(commit = true) { putInt(KEY_STORE_OPEN_FAILURES, failures) }
             }
-        } else {
-            val failures = plainPrefs.getInt(KEY_STORE_OPEN_FAILURES, 0) + 1
-            plainPrefs.edit(commit = true) { putInt(KEY_STORE_OPEN_FAILURES, failures) }
+            return plain.getInt(KEY_STORE_OPEN_FAILURES, 0)
         }
     }
 
@@ -807,7 +846,24 @@ object LRRAuthManager {
         val keyGen = KeyGenerator.getInstance(
             KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore"
         )
-        val spec = KeyGenParameterSpec.Builder(
+        keyGen.init(patternKeySpec())
+        keyGen.generateKey()
+    }
+
+    /**
+     * The pattern key's spec: AES-GCM, usable only through a strong-biometric
+     * BiometricPrompt CryptoObject, once per authentication.
+     *
+     * `setUserAuthenticationParameters` exists from API 30 only; on Android
+     * 9/10 calling it threw NoSuchMethodError, an Error the caller's
+     * fallback does not catch, so setting a pattern crashed (audit 06d
+     * STAB-01). Below API 30 a validity of -1 is the same rule: per-use
+     * authentication that only a biometric can satisfy, and a key that the
+     * CryptoObject flow unlocks (BiometricPrompt exists from API 28).
+     */
+    @JvmStatic
+    internal fun patternKeySpec(): KeyGenParameterSpec {
+        val builder = KeyGenParameterSpec.Builder(
             KEYSTORE_ALIAS_PATTERN,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
         )
@@ -815,10 +871,13 @@ object LRRAuthManager {
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setKeySize(256)
             .setUserAuthenticationRequired(true)
-            .setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)
-            .build()
-        keyGen.init(spec)
-        keyGen.generateKey()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            builder.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)
+        } else {
+            @Suppress("DEPRECATION")
+            builder.setUserAuthenticationValidityDurationSeconds(-1)
+        }
+        return builder.build()
     }
 
     /**
@@ -1064,7 +1123,10 @@ object LRRAuthManager {
         }
     }
 
-    /** Launches in a row whose secure store failed to open, 0 after one that opened it. */
+    /**
+     * Launches in a row that showed the user a failed store open (see
+     * [countStoreFailureShown]), 0 after a start that opened it.
+     */
     @JvmStatic
     fun consecutiveStoreOpenFailures(): Int = fastPlainPrefs()?.getInt(KEY_STORE_OPEN_FAILURES, 0) ?: 0
 
@@ -1082,8 +1144,43 @@ object LRRAuthManager {
     @JvmStatic
     fun canOfferCredentialReset(): Boolean =
         secureStorageState() == SecureStorageState.UNAVAILABLE &&
-            consecutiveStoreOpenFailures() >= RESET_OFFER_MIN_FAILED_LAUNCHES &&
+            countStoreFailureShown() >= RESET_OFFER_MIN_FAILED_LAUNCHES &&
             !isLockSetOrUnknown()
+
+    /**
+     * Whether the lock screen's "store unavailable" prompt may offer the
+     * reset: the same two-launch rule as [canOfferCredentialReset] (audit
+     * 2026-10-06d SEC-01). On the first failed launch it offers only a
+     * retry, as the failure may heal by itself.
+     */
+    @JvmStatic
+    fun canOfferLockScreenReset(): Boolean =
+        secureStorageState() == SecureStorageState.UNAVAILABLE &&
+            countStoreFailureShown() >= RESET_OFFER_MIN_FAILED_LAUNCHES
+
+    /**
+     * Whether an app lock is set, from what is readable without the
+     * keystore: true / false, or null when that cannot be told (a legacy
+     * store not yet migrated and no mirror). Unlike [isLockSetOrUnknown]
+     * it does not fail closed; for wording only, never for gating.
+     */
+    @JvmStatic
+    fun lockStateWithoutKeystore(): Boolean? = lockEnabledHint() ?: patternEvidenceWithoutKeystore()
+
+    /**
+     * True once after init dropped an app lock saved as the pre-PBKDF2
+     * SHA-256 hash (audit 2026-10-06d SEC-08): it cannot be checked, so the
+     * app now opens unlocked, and the user must be told to set a pattern
+     * again. Clears the flag.
+     */
+    @JvmStatic
+    fun consumeLegacyLockRemovedNotice(): Boolean {
+        awaitInit()
+        val plain = fastPlainPrefs()
+        val pending = plain?.getBoolean(KEY_LEGACY_LOCK_REMOVED_NOTICE, false) == true
+        if (pending) plain?.edit { remove(KEY_LEGACY_LOCK_REMOVED_NOTICE) }
+        return pending
+    }
 
     /**
      * Last resort when the secure store is unreadable: drop the encrypted
