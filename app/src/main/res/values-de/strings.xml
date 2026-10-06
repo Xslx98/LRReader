@@ -869,4 +869,20 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
         <item quantity="one">Zu viele Fehlversuche. Erneut versuchen in %d Sekunde.</item>
         <item quantity="other">Zu viele Fehlversuche. Erneut versuchen in %d Sekunden.</item>
     </plurals>
+    <string name="settings_advanced_backup">Daten sichern</string>
+    <string name="settings_advanced_backup_summary">Server (ohne API-Schlüssel), Verlauf, Favoriten, Lesefortschritt und Einstellungen in einer Datei speichern</string>
+    <string name="settings_advanced_restore">Daten wiederherstellen</string>
+    <string name="settings_advanced_restore_summary">Eine Sicherungsdatei mit den Daten auf diesem Gerät zusammenführen</string>
+    <string name="backup_done">Sicherung gespeichert</string>
+    <string name="backup_failed">Sicherung konnte nicht gespeichert werden</string>
+    <string name="restore_invalid">Diese Datei ist keine LR-Reader-Sicherung oder stammt aus einer neueren Version</string>
+    <string name="restore_confirm_title">Diese Sicherung wiederherstellen?</string>
+    <string name="restore_confirm_message">Sicherung vom %1$s: %2$d Server, %3$d Archive.\n\nSie wird mit den Daten auf diesem Gerät zusammengeführt; hier wird nichts gelöscht. Sicherungen enthalten keine API-Schlüssel. Danach startet die App neu.</string>
+    <string name="restore_action">Wiederherstellen</string>
+    <string name="restore_running">Wird wiederhergestellt…</string>
+    <string name="restore_failed">Wiederherstellung fehlgeschlagen. Es wurde nichts geändert.</string>
+    <string name="restore_done_title">Wiederherstellung abgeschlossen</string>
+    <string name="restore_done_message">%1$d Archive wiederhergestellt, %2$d Downloads neu verknüpft (%3$d auf diesem Gerät nicht gefunden), %4$d Server hinzugefügt.</string>
+    <string name="restore_done_keys">Gib in der Serverliste den API-Schlüssel jedes hinzugefügten Servers ein.</string>
+    <string name="restore_done_restart">Die App startet jetzt neu.</string>
 </resources>

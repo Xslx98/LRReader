@@ -1,7 +1,7 @@
 package com.lanraragi.reader.backup
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.backup.BackupMerge.Relink
 import com.lanraragi.reader.download.DownloadDirMarker
@@ -28,7 +28,7 @@ class DownloadRelinker(private val listDirs: (rootUri: String) -> List<Pair<Stri
 
     companion object {
         fun onDisk(context: Context): DownloadRelinker = DownloadRelinker { rootUri ->
-            val root = UniFile.fromUri(context, Uri.parse(rootUri))
+            val root = UniFile.fromUri(context, rootUri.toUri())
             root?.listFiles().orEmpty()
                 .filter { it.isDirectory && it.name?.startsWith(".") == false }
                 .map { dir -> dir.name.orEmpty() to DownloadDirMarker.read(dir)?.arcid }

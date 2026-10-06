@@ -916,4 +916,20 @@
     <plurals name="pattern_lockout_message">
         <item quantity="other">시도 횟수가 너무 많습니다. %d초 후에 다시 시도하세요.</item>
     </plurals>
+    <string name="settings_advanced_backup">데이터 백업</string>
+    <string name="settings_advanced_backup_summary">서버(API 키 제외), 기록, 즐겨찾기, 읽기 진행 상황, 설정을 파일로 저장합니다</string>
+    <string name="settings_advanced_restore">데이터 복원</string>
+    <string name="settings_advanced_restore_summary">백업 파일을 이 기기의 데이터와 병합합니다</string>
+    <string name="backup_done">백업을 저장했습니다</string>
+    <string name="backup_failed">백업을 저장하지 못했습니다</string>
+    <string name="restore_invalid">이 파일은 LR Reader 백업이 아니거나 더 새로운 버전에서 만든 것입니다</string>
+    <string name="restore_confirm_title">이 백업을 복원할까요?</string>
+    <string name="restore_confirm_message">%1$s 백업: 서버 %2$d개, 아카이브 %3$d개.\n\n이 기기의 데이터와 병합되며 여기 있는 데이터는 삭제되지 않습니다. 백업에는 API 키가 없습니다. 복원 후 앱이 다시 시작됩니다.</string>
+    <string name="restore_action">복원</string>
+    <string name="restore_running">복원 중…</string>
+    <string name="restore_failed">복원에 실패했습니다. 변경된 내용은 없습니다.</string>
+    <string name="restore_done_title">복원 완료</string>
+    <string name="restore_done_message">아카이브 %1$d개 복원, 다운로드 %2$d개 다시 연결(이 기기에서 찾지 못함 %3$d개), 서버 %4$d개 추가.</string>
+    <string name="restore_done_keys">추가된 서버의 API 키를 서버 목록에서 입력하세요.</string>
+    <string name="restore_done_restart">앱을 다시 시작합니다.</string>
 </resources>

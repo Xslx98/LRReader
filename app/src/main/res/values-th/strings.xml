@@ -909,4 +909,20 @@
     <plurals name="pattern_lockout_message">
         <item quantity="other">ลองผิดหลายครั้งเกินไป โปรดลองอีกครั้งใน %d วินาที</item>
     </plurals>
+    <string name="settings_advanced_backup">สำรองข้อมูล</string>
+    <string name="settings_advanced_backup_summary">บันทึกเซิร์ฟเวอร์ (ไม่รวมคีย์ API) ประวัติ รายการโปรด ความคืบหน้าการอ่าน และการตั้งค่าลงในไฟล์</string>
+    <string name="settings_advanced_restore">กู้คืนข้อมูล</string>
+    <string name="settings_advanced_restore_summary">รวมไฟล์สำรองเข้ากับข้อมูลในอุปกรณ์นี้</string>
+    <string name="backup_done">บันทึกไฟล์สำรองแล้ว</string>
+    <string name="backup_failed">บันทึกไฟล์สำรองไม่ได้</string>
+    <string name="restore_invalid">ไฟล์นี้ไม่ใช่ไฟล์สำรองของ LR Reader หรือมาจากเวอร์ชันที่ใหม่กว่า</string>
+    <string name="restore_confirm_title">กู้คืนไฟล์สำรองนี้หรือไม่</string>
+    <string name="restore_confirm_message">ไฟล์สำรองจาก %1$s: เซิร์ฟเวอร์ %2$d รายการ อาร์ไคฟ์ %3$d รายการ\n\nข้อมูลจะถูกรวมกับข้อมูลในอุปกรณ์นี้ โดยไม่มีการลบข้อมูลใด ไฟล์สำรองไม่มีคีย์ API แอปจะเริ่มใหม่หลังจากนั้น</string>
+    <string name="restore_action">กู้คืน</string>
+    <string name="restore_running">กำลังกู้คืน…</string>
+    <string name="restore_failed">กู้คืนไม่สำเร็จ ไม่มีการเปลี่ยนแปลงใด</string>
+    <string name="restore_done_title">กู้คืนเสร็จแล้ว</string>
+    <string name="restore_done_message">กู้คืนอาร์ไคฟ์ %1$d รายการ เชื่อมโยงการดาวน์โหลดใหม่ %2$d รายการ (ไม่พบในอุปกรณ์นี้ %3$d รายการ) เพิ่มเซิร์ฟเวอร์ %4$d รายการ</string>
+    <string name="restore_done_keys">ป้อนคีย์ API ของเซิร์ฟเวอร์ที่เพิ่มในรายการเซิร์ฟเวอร์</string>
+    <string name="restore_done_restart">แอปจะเริ่มใหม่ตอนนี้</string>
 </resources>

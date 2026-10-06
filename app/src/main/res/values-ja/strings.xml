@@ -845,4 +845,20 @@
     <plurals name="pattern_lockout_message">
         <item quantity="other">試行回数が多すぎます。%d 秒後にもう一度お試しください。</item>
     </plurals>
+    <string name="settings_advanced_backup">データをバックアップ</string>
+    <string name="settings_advanced_backup_summary">サーバー（API キーを除く）、履歴、お気に入り、読書の進み具合、設定をファイルに保存します</string>
+    <string name="settings_advanced_restore">データを復元</string>
+    <string name="settings_advanced_restore_summary">バックアップファイルをこの端末のデータに統合します</string>
+    <string name="backup_done">バックアップを保存しました</string>
+    <string name="backup_failed">バックアップを保存できませんでした</string>
+    <string name="restore_invalid">このファイルは LR Reader のバックアップではないか、新しいバージョンのものです</string>
+    <string name="restore_confirm_title">このバックアップを復元しますか？</string>
+    <string name="restore_confirm_message">%1$s のバックアップ：サーバー %2$d 件、アーカイブ %3$d 件。\n\nこの端末のデータと統合され、ここにあるデータは削除されません。バックアップに API キーは含まれません。復元後にアプリが再起動します。</string>
+    <string name="restore_action">復元</string>
+    <string name="restore_running">復元中…</string>
+    <string name="restore_failed">復元に失敗しました。何も変更されていません。</string>
+    <string name="restore_done_title">復元が完了しました</string>
+    <string name="restore_done_message">アーカイブ %1$d 件を復元、ダウンロード %2$d 件を再リンク（この端末で見つからないもの %3$d 件）、サーバー %4$d 件を追加しました。</string>
+    <string name="restore_done_keys">追加したサーバーの API キーをサーバー一覧で入力してください。</string>
+    <string name="restore_done_restart">アプリを再起動します。</string>
 </resources>
