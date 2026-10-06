@@ -28,6 +28,7 @@ import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.TankTagSyncFailedEvent
 import com.lanraragi.reader.gallery.ArchiveProgressOutbox
 import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.gallery.LocalReadingProgress
 import com.lanraragi.reader.mapper.toDownloadInfoView
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
@@ -648,8 +649,9 @@ class DownloadManager(
                     // own progress/lastreadtime pair feeding both. All three
                     // layers must be reset or the old position resurrects.
 
-                    // 1. Local SP save + in-memory tracker.
-                    GalleryProvider2.clearReadingProgress(ctx, di.arcid)
+                    // 1. Local SP save + in-memory tracker, for the
+                    // download's own source profile.
+                    clearLocalProgress(ctx, di.arcid, di.serverProfileId)
 
                     // 2. Room snapshot for this download's source profile.
                     try {
@@ -724,6 +726,17 @@ class DownloadManager(
         private val TAG = DownloadManager::class.java.simpleName
         private const val RATING_SYNC_PREFS = "download_rating_sync"
         const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"
+
+        /**
+         * Step 1 of a progress reset: the local save is keyed per profile, so
+         * clear the one of the download's source [sourceProfileId], not the
+         * active profile's (audit 2026-10-06 C37). 0 = legacy row of the
+         * active profile, as in [resolveSourceBaseUrl].
+         */
+        internal fun clearLocalProgress(ctx: Context, arcid: String, sourceProfileId: Long) {
+            val profileId = if (sourceProfileId == 0L) LocalReadingProgress.profileId() else sourceProfileId
+            GalleryProvider2.clearReadingProgress(ctx, arcid, profileId)
+        }
 
         /**
          * The server step of a progress reset, sent through

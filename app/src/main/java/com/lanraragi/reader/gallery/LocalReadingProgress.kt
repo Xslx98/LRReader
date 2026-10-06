@@ -62,8 +62,9 @@ internal object LocalReadingProgress {
     fun loadTimestamp(ctx: Context, arcid: String): Long =
         prefs(ctx).getLong(key(profileId(), arcid) + TS_SUFFIX, 0L)
 
-    fun clear(ctx: Context, arcid: String) {
-        val key = key(profileId(), arcid)
+    /** [profileId] defaults to the active profile; a reset passes the download's own source profile. */
+    fun clear(ctx: Context, arcid: String, profileId: Long = this.profileId()) {
+        val key = key(profileId, arcid)
         prefs(ctx).edit {
             remove(key)
             remove(key + TS_SUFFIX)

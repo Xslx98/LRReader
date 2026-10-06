@@ -39,6 +39,19 @@ object ReadingProgressTracker {
     }
 
     /**
+     * The local save for [arcid] on [profileId] was removed. A flow of a
+     * non-active profile is only reset if one was created while that profile
+     * was active; otherwise the next access seeds from the cleared store.
+     */
+    internal fun clearProgress(profileId: Long, arcid: String) {
+        if (profileId == LocalReadingProgress.profileId()) {
+            setProgress(arcid, NO_LOCAL_PROGRESS)
+        } else {
+            flows[LocalReadingProgress.key(profileId, arcid)]?.value = NO_LOCAL_PROGRESS
+        }
+    }
+
+    /**
      * Sentinel "no local progress yet" value. Returned when the SP has never
      * been written for this arcid (timestamp == 0), so observers can keep
      * trusting the server-reported progress instead of clobbering it with
