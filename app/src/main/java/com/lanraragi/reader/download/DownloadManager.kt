@@ -259,6 +259,16 @@ class DownloadManager(
         return Collections.unmodifiableList(list)
     }
 
+    /**
+     * Mutate the live download row of [arcid] on the main thread and persist
+     * it in issue order with every other download-row write. Returns false
+     * (nothing changed or written) when the download no longer exists, so a
+     * late detail-page or rating write cannot resurrect a deleted row
+     * (audit 2026-10-06b STAB-01).
+     */
+    fun updateDownloadInfo(arcid: String, mutate: (DownloadInfo) -> Unit): Boolean =
+        repo.updateInfo(arcid, mutate)
+
     // ── Listener methods ──────────────────────────────────────
 
     fun addDownloadInfoListener(listener: DownloadInfoListener) { eventBus.addDownloadInfoListener(listener) }
@@ -409,20 +419,7 @@ class DownloadManager(
     fun addDownload(downloadInfoList: List<DownloadInfo>) {
         repo.assertMainThread()
         val newLabels = repo.importInfoBatch(downloadInfoList)
-        val infosToSave = ArrayList(downloadInfoList)
-        val labelsToPersist = ArrayList(newLabels)
-        scope.launch {
-            try {
-                val savedLabels = ArrayList<DownloadLabel>(labelsToPersist.size)
-                for (l in labelsToPersist) savedLabels.add(ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(l))
-                for (info in infosToSave) ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-                if (savedLabels.isNotEmpty()) {
-                    repo.runOnMainThread { for (s in savedLabels) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist imported downloads", e)
-            }
-        }
+        repo.persistImport(newLabels, downloadInfoList)
         eventBus.postToMain { eventBus.forEachListener { it.onReload() } }
     }
 
