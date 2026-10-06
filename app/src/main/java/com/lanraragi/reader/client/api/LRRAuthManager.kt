@@ -2,6 +2,7 @@ package com.lanraragi.reader.client.api
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Looper
 import android.os.SystemClock
 import android.os.Trace
 import android.security.keystore.KeyGenParameterSpec
@@ -48,6 +49,11 @@ object LRRAuthManager {
 
     private const val TAG = "LRRAuthManager"
     private const val INIT_TIMEOUT_MS = 10_000L
+    /**
+     * Main-thread bound: well under Android's 5 s input-dispatch ANR limit,
+     * leaving room for the rest of the frame (audit 2026-10-06 N5).
+     */
+    private const val MAIN_THREAD_INIT_TIMEOUT_MS = 2_000L
     /** Legacy EncryptedSharedPreferences file, read once by [migrateLegacyStore]. */
     private const val PREF_NAME = "lrr_auth_encrypted"
     private const val SECURE_PREF_NAME = "lrr_auth_secure"
@@ -181,9 +187,20 @@ object LRRAuthManager {
     @Volatile
     private var sInitTimedOut = false
 
+    /**
+     * Set once a main-thread reader gave up; later main-thread readers stop
+     * blocking while background readers keep their longer wait.
+     */
+    @Volatile
+    private var sMainInitTimedOut = false
+
     /** How long [awaitInit] waits for the gate. Tests shorten it. */
     @Volatile
     internal var initTimeoutMs: Long = INIT_TIMEOUT_MS
+
+    /** How long [awaitInit] waits on the main thread. Tests shorten it. */
+    @Volatile
+    internal var mainThreadInitTimeoutMs: Long = MAIN_THREAD_INIT_TIMEOUT_MS
 
     /**
      * Gate every read/write of [sPrefs]/[sPlainPrefs]/[sActiveProfileId]/
@@ -200,14 +217,20 @@ object LRRAuthManager {
         if (sInitDone) return
         if (!sInitScheduled) return
         if (sInitTimedOut) return
+        // Gated getters run on the main thread during cold start (MainActivity's
+        // reauthentication check, SecurityScene's storage check, drawer and list
+        // setup), so the main thread gets a bound below the ANR limit (N5).
+        val onMain = Looper.myLooper() == Looper.getMainLooper()
+        if (onMain && sMainInitTimedOut) return
+        val timeoutMs = if (onMain) mainThreadInitTimeoutMs else initTimeoutMs
         // Bounded (audit 2026-10-04 C34 / STAB-15): a hung KeyStore binder call must
         // not block every reader forever. After the timeout readers see the
         // uninitialised defaults (as if storage were unavailable) until the gate opens.
-        if (!sInitLatch.await(initTimeoutMs, TimeUnit.MILLISECONDS)) {
-            sInitTimedOut = true
-            Log.e(TAG, "Secure storage init still pending after $initTimeoutMs ms; continuing without it")
+        if (!sInitLatch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+            if (onMain) sMainInitTimedOut = true else sInitTimedOut = true
+            Log.e(TAG, "Secure storage init still pending after $timeoutMs ms; continuing without it")
             com.lanraragi.reader.diagnostics.DiagLog.e(
-                TAG, "Secure storage init still pending after $initTimeoutMs ms; continuing without it"
+                TAG, "Secure storage init still pending after $timeoutMs ms; continuing without it"
             )
         }
     }
@@ -243,7 +266,9 @@ object LRRAuthManager {
         sInitScheduled = false
         sInitDone = false
         sInitTimedOut = false
+        sMainInitTimedOut = false
         initTimeoutMs = INIT_TIMEOUT_MS
+        mainThreadInitTimeoutMs = MAIN_THREAD_INIT_TIMEOUT_MS
         sInitLatch = CountDownLatch(1)
     }
 
