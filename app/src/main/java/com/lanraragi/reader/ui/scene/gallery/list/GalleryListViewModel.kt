@@ -1,17 +1,13 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import android.os.Parcelable
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.cachedIn
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
@@ -26,18 +22,15 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
@@ -48,10 +41,12 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.parcelize.Parcelize
 
 /**
- * ViewModel for the gallery list screen. Exposes a [Flow] of [PagingData]
- * that automatically invalidates when search parameters change.
+ * ViewModel for the gallery list screen. Activity-scoped and therefore shared by
+ * every list scene on the back stack, so it deliberately holds no per-list search
+ * state: each scene keeps the query it shows (audit 2026-10-06 C01).
  *
  * Also manages the [DownloadInfoListener] registration so the Scene does not
  * need to hold the listener directly. The Scene observes [downloadEvent] to
@@ -70,8 +65,10 @@ class GalleryListViewModel : ViewModel() {
         get() = ServiceRegistry.dataModule.downloadManager
 
     /**
-     * Encapsulates all search parameters needed to create a [LRRArchivePagingSource].
+     * The `/api/search` inputs of one list load. Parcelable so a list scene can
+     * keep the query it shows across recreation (see [GalleryListScene]).
      */
+    @Parcelize
     data class SearchParams(
         val filter: String? = null,
         val category: String? = null,
@@ -79,50 +76,7 @@ class GalleryListViewModel : ViewModel() {
         val order: String? = "desc",
         val newonly: Boolean = false,
         val untaggedonly: Boolean = false
-    )
-
-    private val searchParams = MutableStateFlow(SearchParams())
-
-    /** Snapshot of the params driving [galleryFlow] right now (for ReadingContext capture). */
-    val currentSearchParams: SearchParams
-        get() = searchParams.value
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val galleryFlow: Flow<PagingData<Archive>> = searchParams.flatMapLatest { params ->
-        Pager<Int, Archive>(
-            config = PagingConfig(
-                pageSize = PAGE_SIZE,
-                // Keep initialLoadSize == pageSize. The PagingSource keys are raw
-                // item offsets and advance by the count the server actually
-                // returned (NET-2), so loadSize no longer shifts offsets — but a
-                // larger initial load would still be pointless: /api/search has
-                // no page-size parameter and returns archives_per_page rows
-                // regardless of what we ask for.
-                initialLoadSize = PAGE_SIZE,
-                enablePlaceholders = false,
-                prefetchDistance = PREFETCH_DISTANCE
-            )
-        ) {
-            LRRArchivePagingSource(
-                client = LRRClientProvider.getClient(),
-                baseUrl = LRRClientProvider.getBaseUrl(),
-                filter = params.filter,
-                category = params.category,
-                sortby = params.sortby,
-                order = params.order,
-                newonly = params.newonly,
-                untaggedonly = params.untaggedonly
-            )
-        }.flow
-    }.cachedIn(viewModelScope)
-
-    /**
-     * Trigger a new search. The existing PagingData is automatically invalidated
-     * and a fresh load begins from page 0.
-     */
-    fun search(params: SearchParams) {
-        searchParams.value = params
-    }
+    ) : Parcelable
 
     // -------------------------------------------------------------------------
     // Download state observation
@@ -579,12 +533,6 @@ class GalleryListViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "GalleryListViewModel"
-
-        /** Page size for gallery list. Kept smaller than LANraragi default (100) to reduce memory. */
-        const val PAGE_SIZE = 50
-
-        /** Number of items before the end to start loading the next page. */
-        const val PREFETCH_DISTANCE = 10
 
         /** Upload progress is reported on a 0..100 scale. */
         private const val PERCENT_MAX = 100

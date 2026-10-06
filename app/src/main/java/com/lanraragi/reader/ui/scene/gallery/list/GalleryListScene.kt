@@ -120,6 +120,9 @@ class GalleryListScene : BaseScene(),
     private var mHideActionFabSlop = 0
 
     private var mHasFirstRefresh = false
+
+    /** The query this scene's rows came from (not the shared ViewModel's; C01). */
+    internal val shownSearch = ShownSearchState()
     private var mLastServerConfigVersion = LRRAuthManager.serverConfigVersion
     private var mNavCheckedId = 0
     private var mPressBackTime: Long = 0
@@ -376,6 +379,7 @@ class GalleryListScene : BaseScene(),
         mHasFirstRefresh = savedInstanceState.getBoolean(KEY_HAS_FIRST_REFRESH)
         mUrlBuilder = savedInstanceState.getParcelable(KEY_LIST_URL_BUILDER)
         mRestoredState = savedInstanceState.getInt(KEY_STATE)
+        shownSearch.restore(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -389,6 +393,7 @@ class GalleryListScene : BaseScene(),
         outState.putBoolean(KEY_HAS_FIRST_REFRESH, hasFirstRefresh)
         outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder)
         outState.putInt(KEY_STATE, stateHelper?.state ?: GalleryStateHelper.STATE_NORMAL)
+        shownSearch.save(outState)
     }
 
     override fun onDestroy() {
@@ -948,7 +953,7 @@ class GalleryListScene : BaseScene(),
      */
     private fun publishReadingContext(archive: Archive, position: Int) {
         val baseUrl = LRRClientProvider.getBaseUrl()
-        val params = viewModel.currentSearchParams
+        val params = shownSearch.forReadingContext()
         ReadingContextStore.publish(
             ReadingContext.OnlineSearch(
                 sourceProfileId = LRRAuthManager.getActiveProfileId(),

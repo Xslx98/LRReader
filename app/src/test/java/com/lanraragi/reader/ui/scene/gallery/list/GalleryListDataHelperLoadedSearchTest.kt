@@ -67,13 +67,4 @@ class GalleryListDataHelperLoadedSearchTest {
 
         assertTrue(callback.loaded.isEmpty())
     }
-
-    @Test
-    fun `view model exposes the last loaded query for the reading context`() {
-        val vm = GalleryListViewModel()
-
-        vm.search(filtered)
-
-        assertEquals(filtered, vm.currentSearchParams)
-    }
 }
