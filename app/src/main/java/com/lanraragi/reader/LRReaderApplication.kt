@@ -233,7 +233,7 @@ class LRReaderApplication : RecordingApplication() {
                 // dialog. Without this the failure was completely silent — user
                 // saw the app come up as if no profiles existed, with no way
                 // to distinguish "fresh install" from "DB blew up".
-                AppModule.bootProfileLoadError.set(e)
+                AppModule.bootProfileLoadError.value = e
                 Analytics.recordException(e)
             } finally {
                 // Always complete the deferred so awaiters never hang, even on the
