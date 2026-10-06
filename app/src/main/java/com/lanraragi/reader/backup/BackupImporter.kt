@@ -12,6 +12,7 @@ import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.dao.SearchHistoryEntry
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.dao.TankDownloadGroup
+import com.lanraragi.reader.gallery.LocalReadingProgress
 
 /**
  * Merges a backup into this device's data (audit C05, ruling R18). Nothing local
@@ -42,7 +43,7 @@ class BackupImporter(
         // Disk scan first, outside the transaction.
         val roots = listOfNotNull(currentRootUri()) + backup.archives.mapNotNull { it.downloadRootUri }
         val onDisk = relinker.index(roots)
-        val result = db.withTransaction {
+        val (result, ids) = db.withTransaction {
             val (ids, added) = restoreProfiles(backup.profiles)
             val archives = restoreArchives(backup.archives, ids, onDisk)
             restoreLabels(backup.downloadLabels)
@@ -50,9 +51,11 @@ class BackupImporter(
             restoreQuickSearches(backup.quickSearches)
             restoreSearchHistory(backup.searchHistory, ids)
             restoreAggregates(backup.dailyAggregates, ids)
-            archives.copy(profilesAdded = added)
+            archives.copy(profilesAdded = added) to ids
         }
-        mergeReadingProgress(backup.readingProgress)
+        // Entries from backups made before progress was kept per server belong to its active one.
+        val legacyOwner = backup.profiles.firstOrNull { it.isActive }?.id?.let { ids[it] }
+        mergeReadingProgress(backup.readingProgress, ids, legacyOwner)
         return result.copy(settingsApplied = BackupSettings.apply(settings, backup.settings))
     }
 
@@ -169,14 +172,17 @@ class BackupImporter(
         }
     }
 
-    private fun mergeReadingProgress(entries: List<BackupReadingProgress>) {
+    /** Keys follow [LocalReadingProgress]: `<local profile id>:<arcid>`. */
+    private fun mergeReadingProgress(entries: List<BackupReadingProgress>, ids: Map<Long, Long>, legacyOwner: Long?) {
         val all = readingProgress.all
         readingProgress.edit {
             for (e in entries) {
-                val localTs = (all[e.arcid + BackupExporter.TS_SUFFIX] as? Long) ?: 0L
-                if (BackupMerge.backupProgressWins(localTs, e.arcid in all, e)) {
-                    putInt(e.arcid, e.page)
-                    putLong(e.arcid + BackupExporter.TS_SUFFIX, e.savedAt)
+                val owner = if (e.profileId == null) legacyOwner else ids[e.profileId]
+                val key = owner?.let { LocalReadingProgress.key(it, e.arcid) }
+                val localTs = key?.let { all[it + BackupExporter.TS_SUFFIX] as? Long } ?: 0L
+                if (key != null && BackupMerge.backupProgressWins(localTs, key in all, e)) {
+                    putInt(key, e.page)
+                    putLong(key + BackupExporter.TS_SUFFIX, e.savedAt)
                 }
             }
         }

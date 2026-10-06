@@ -91,9 +91,13 @@ data class BackupSearchHistory(val query: String, val profileId: Long, val lastU
 @Serializable
 data class BackupDailyAggregate(val epochDay: Long, val profileId: Long, val pagesRead: Long, val completed: Int)
 
-/** One `reading_progress` entry: 0-indexed page saved at [savedAt] (epoch seconds, 0 = unknown). */
+/**
+ * One `reading_progress` entry: 0-indexed page saved at [savedAt] (epoch seconds, 0 = unknown).
+ * [profileId] is the backup-local profile; null in backups made before progress was kept per
+ * server (audit C37), whose entries belong to the backup's active server.
+ */
 @Serializable
-data class BackupReadingProgress(val arcid: String, val page: Int, val savedAt: Long = 0)
+data class BackupReadingProgress(val arcid: String, val page: Int, val savedAt: Long = 0, val profileId: Long? = null)
 
 /** A whitelisted default-prefs value; [type] is one of [BackupSettings.TYPES]. */
 @Serializable

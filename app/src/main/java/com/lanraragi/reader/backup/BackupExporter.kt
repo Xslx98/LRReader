@@ -100,14 +100,24 @@ class BackupExporter(
 
     companion object {
         const val TS_SUFFIX = "_ts"
+        private const val SEP = ":"
 
-        /** `reading_progress` holds `<arcid>` → page and `<arcid>_ts` → saved-at seconds. */
+        /**
+         * `reading_progress` holds `<profileId>:<arcid>` → page and `…_ts` → saved-at seconds
+         * ([com.lanraragi.reader.gallery.LocalReadingProgress]); a not yet migrated bare arcid
+         * key is exported without a profile.
+         */
         fun exportReadingProgress(prefs: SharedPreferences): List<BackupReadingProgress> {
             val all = prefs.all
             return all.entries
                 .filter { !it.key.endsWith(TS_SUFFIX) && it.value is Int }
-                .map { BackupReadingProgress(it.key, it.value as Int, (all[it.key + TS_SUFFIX] as? Long) ?: 0L) }
-                .sortedBy { it.arcid }
+                .map { (key, page) ->
+                    val savedAt = (all[key + TS_SUFFIX] as? Long) ?: 0L
+                    val profile = key.substringBefore(SEP, "").toLongOrNull()
+                    val arcid = if (profile != null) key.substringAfter(SEP) else key
+                    BackupReadingProgress(arcid, page as Int, savedAt, profile)
+                }
+                .sortedWith(compareBy({ it.profileId }, { it.arcid }))
         }
     }
 }
