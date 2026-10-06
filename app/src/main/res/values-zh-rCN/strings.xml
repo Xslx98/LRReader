@@ -908,6 +908,7 @@
     <string name="security_pattern_unverifiable_message">设备的指纹已变更，而这个图案的保存方式只能用旧的指纹密钥验证。请重置应用锁以继续：这会清除图案和所有已保存的服务器 API Key，书库和下载不受影响。</string>
     <string name="lrr_boot_load_failed_title">启动错误</string>
     <string name="lrr_boot_load_failed_message">启动时无法加载已保存的服务器配置。当前以无配置状态运行，您可能需要重新配置或重新安装。\n\n详细信息：%1$s</string>
+    <string name="lrr_boot_db_newer_message">本地数据库由更新版本的 LR Reader 保存，当前版本无法打开。文件未被改动：重新安装更新版本即可恢复全部数据，或重置数据库在此从空白开始（当前数据库会被另行保留，不会删除）。</string>
     <string name="lrr_boot_load_failed_retry">重试</string>
     <string name="lrr_boot_load_failed_reset_db">重置数据库</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">重置数据库？</string>

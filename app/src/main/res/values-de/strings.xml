@@ -844,6 +844,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="security_pattern_unverifiable_message">Die Fingerabdrücke des Geräts haben sich geändert, und dieses Muster wurde so gespeichert, dass es nur mit dem alten Fingerabdruckschlüssel geprüft werden kann. Setze die App-Sperre zurück, um fortzufahren: Dabei werden das Muster und alle gespeicherten Server-API-Schlüssel entfernt. Bibliothek und Downloads bleiben erhalten.</string>
     <string name="lrr_boot_load_failed_title">Startfehler</string>
     <string name="lrr_boot_load_failed_message">Beim Start konnten Ihre gespeicherten Server-Profile nicht geladen werden. Die App läuft ohne geladenes Profil; eine Neukonfiguration oder Neuinstallation ist möglicherweise erforderlich.\n\nDetails: %1$s</string>
+    <string name="lrr_boot_db_newer_message">Die lokale Datenbank wurde von einer neueren Version von LR Reader gespeichert und kann von dieser Version nicht geöffnet werden. Die Datei wurde nicht verändert: Installiere die neuere Version erneut, um alles zurückzubekommen, oder setze die Datenbank zurück, um hier leer zu beginnen (die aktuelle Datenbank wird beiseitegelegt, nicht gelöscht).</string>
     <string name="lrr_boot_load_failed_retry">Wiederholen</string>
     <string name="lrr_boot_load_failed_reset_db">Datenbank zurücksetzen</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">Datenbank zurücksetzen?</string>
