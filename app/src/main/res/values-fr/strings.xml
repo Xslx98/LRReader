@@ -945,6 +945,8 @@ Cette action est irréversible.</string>
     <string name="lrr_secure_storage_write_failed">Le magasin de clés de l\'appareil est indisponible, vos modifications n\'ont pas pu être enregistrées en toute sécurité. Veuillez redémarrer l\'appareil et réessayer, ou réinstaller l\'application si le problème persiste.</string>
     <string name="reauth_required_title">Ré-authentification requise</string>
     <string name="reauth_required_message">Le magasin de clés sécurisé est devenu indisponible. Veuillez saisir à nouveau la clé API de chaque serveur.</string>
+    <string name="reauth_keys_missing_title">Saisissez à nouveau vos clés API</string>
+    <string name="reauth_keys_missing_message">Les clés API enregistrées sont manquantes (par exemple après une réinitialisation ou une restauration sur un nouvel appareil). Saisissez à nouveau la clé API de chaque serveur.</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">Menu</string>

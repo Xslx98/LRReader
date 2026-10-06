@@ -972,6 +972,8 @@
     <string name="lrr_save_and_connect">Save &amp; Connect</string>
     <string name="reauth_required_title">Re-authentication Required</string>
     <string name="reauth_required_message">The secure keystore became unavailable. Please re-enter your API key for each server.</string>
+    <string name="reauth_keys_missing_title">Re-enter Your API Keys</string>
+    <string name="reauth_keys_missing_message">Saved API keys are missing (for example after a reset or a restore on a new device). Re-enter the API key for each server.</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">Menu</string>

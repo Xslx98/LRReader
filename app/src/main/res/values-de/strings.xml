@@ -845,6 +845,8 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_secure_storage_write_failed">Der Schlüsselspeicher des Geräts ist nicht verfügbar, Ihre Änderungen konnten nicht sicher gespeichert werden. Bitte starten Sie das Gerät neu und versuchen Sie es erneut, oder installieren Sie die App neu, wenn das Problem weiterhin besteht.</string>
     <string name="reauth_required_title">Erneute Authentifizierung erforderlich</string>
     <string name="reauth_required_message">Der sichere Schlüsselspeicher ist nicht mehr verfügbar. Bitte geben Sie den API-Schlüssel für jeden Server erneut ein.</string>
+    <string name="reauth_keys_missing_title">API-Schlüssel erneut eingeben</string>
+    <string name="reauth_keys_missing_message">Gespeicherte API-Schlüssel fehlen (zum Beispiel nach einem Zurücksetzen oder einer Wiederherstellung auf einem neuen Gerät). Bitte geben Sie den API-Schlüssel für jeden Server erneut ein.</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">Menü</string>

@@ -886,6 +886,8 @@
     <string name="lrr_secure_storage_write_failed">คีย์สโตร์ของอุปกรณ์ไม่พร้อมใช��งาน จึงไม่สามารถบันทึกการเปลี่ยนแปลงอย่างปลอดภัยได้ กรุณารีสตาร์ทอุปกรณ์แล้วลองอีกครั้ง หรือติดตั้งแอปใหม่หากปัญหายังคงอยู่</string>
     <string name="reauth_required_title">ต้องยืนยันตัวตนใหม่</string>
     <string name="reauth_required_message">คีย์สโตร์ความปลอดภัยไม่พร้อมใช้งาน กรุณากรอก API Key ของแต่ละเซิร์ฟเวอร์อีกครั้ง</string>
+    <string name="reauth_keys_missing_title">กรอก API Key อีกครั้ง</string>
+    <string name="reauth_keys_missing_message">ไม่พบ API Key ที่บันทึกไว้ (เช่น หลังจากรีเซ็ตหรือกู้คืนบนอุปกรณ์ใหม่) กรุณากรอก API Key ของแต่ละเซิร์ฟเวอร์อีกครั้ง</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">เมนู</string>

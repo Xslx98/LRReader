@@ -264,11 +264,11 @@ internal class ServerListDialogHelper(
     // Reauth dialog
     // -------------------------------------------------------------------------
 
-    fun showReauthDialog() {
+    fun showReauthDialog(prompt: ReauthPrompt.Text) {
         val ctx = contextProvider() ?: return
         val builder = AlertDialog.Builder(ctx)
-            .setTitle(R.string.reauth_required_title)
-            .setMessage(R.string.reauth_required_message)
+            .setTitle(prompt.title)
+            .setMessage(prompt.message)
             .setPositiveButton(android.R.string.ok, null)
         CredentialResetDialog.offerResetIfStuck(builder, ctx).show()
     }

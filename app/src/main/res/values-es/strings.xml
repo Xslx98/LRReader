@@ -941,6 +941,8 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_secure_storage_write_failed">El almacén de claves del dispositivo no está disponible, por lo que los cambios no se pudieron guardar de forma segura. Reinicie el dispositivo e inténtelo de nuevo, o reinstale la aplicación si el problema persiste.</string>
     <string name="reauth_required_title">Se requiere re-autenticación</string>
     <string name="reauth_required_message">El almacén de claves seguro dejó de estar disponible. Por favor, vuelva a introducir la clave API de cada servidor.</string>
+    <string name="reauth_keys_missing_title">Vuelva a introducir sus claves API</string>
+    <string name="reauth_keys_missing_message">Faltan las claves API guardadas (por ejemplo, tras un restablecimiento o una restauración en un dispositivo nuevo). Vuelva a introducir la clave API de cada servidor.</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">Menú</string>

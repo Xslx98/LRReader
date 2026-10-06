@@ -909,6 +909,8 @@
     <string name="lrr_secure_storage_write_failed">设备密钥库不可用，无法安全保存更改。请重启设备后重试，若问题持续请重新安装应用。</string>
     <string name="reauth_required_title">需要重新认证</string>
     <string name="reauth_required_message">安全密钥库已失效，请为每个服务器重新输入 API Key。</string>
+    <string name="reauth_keys_missing_title">请重新输入 API Key</string>
+    <string name="reauth_keys_missing_message">已保存的 API Key 缺失（例如重置后或在新设备上恢复备份后）。请为每个服务器重新输入 API Key。</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">菜单</string>
