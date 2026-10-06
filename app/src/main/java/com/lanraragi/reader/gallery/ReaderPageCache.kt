@@ -531,6 +531,9 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     internal fun storeDecodedSlotForTest(arcid: String, pageIndex: Int, image: Image) =
         storeDecodedSlot(arcid, pageIndex, image)
 
+    @androidx.annotation.VisibleForTesting
+    internal fun registerActiveWarmupForTest(arcid: String, job: Job) = registerActiveWarmup(arcid, job)
+
     /**
      * Park [image] for [arcid]:[pageIndex]. Replaces (and recycles)
      * any previously-stored slot — there is intentionally only one
@@ -582,6 +585,11 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
      * and the regular decode path runs. Numeric-named dirs resolve the
      * page through [DirImageFiles.warmTarget]; a page missing from a
      * partial download skips the warm.
+     *
+     * Like [preloadForDetail], a warm already running for [arcId] (the
+     * detail page's, when the reader opens from it) is awaited first, and
+     * the page is not decoded again when the slot already holds it (audit
+     * 2026-10-06 C18: the open helper repeated the 10-30 MB decode).
      */
     fun warmDir(
         context: Context,
@@ -589,6 +597,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         dir: UniFile,
         startPageOverride: Int = -1,
     ): Job {
+        val previous = activeWarmups[arcId]?.takeIf { it.isActive }
         // CoroutineStart.LAZY so we can publish the Job into
         // activeWarmups *before* it begins running — otherwise a
         // provider racing the launch could observe activeWarmups[arcId]
@@ -597,6 +606,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
             val startMs = System.currentTimeMillis()
             Log.i(TAG, "[WARM] warmDir begin arcid=$arcId")
             try {
+                previous?.join()
                 val files = runInterruptible(Dispatchers.IO) {
                     DirImageFiles.listSorted(dir)
                 }
@@ -624,6 +634,10 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
                     return@launch
                 }
                 val (publishPage, filePos) = target
+                if (hasWarmSlot(arcId, publishPage)) {
+                    Log.i(TAG, "[WARM] warmDir slot already warm arcid=$arcId page=$publishPage")
+                    return@launch
+                }
                 val image = withContext(
                     ServiceRegistry.coroutineModule.decoderDispatcher
                 ) {
