@@ -924,6 +924,16 @@ object LRRAuthManager {
     }
 
     /**
+     * True while the store's async init has not finished, i.e. a reader gave
+     * up waiting for it ([isSecureStorageAvailable] is then false). Unlike an
+     * init that finished and failed, this is transient — the store may open a
+     * moment later — so it must not offer the destructive app-lock reset
+     * (audit SEC-04).
+     */
+    @JvmStatic
+    fun isSecureStorageStillStarting(): Boolean = sInitScheduled && !sInitDone
+
+    /**
      * Last resort when the secure store is unreadable: drop the encrypted
      * store (pattern, API keys, server URL) and its master key, and clear
      * the lock state, so the next process start begins unlocked with no
