@@ -17,7 +17,7 @@ import java.util.zip.ZipOutputStream
  *   paths, labels or free text);
  * - `events.txt` — the redacted [DiagLog] ring;
  * - `logcat.txt` — this process's redacted logcat;
- * - `reports/` — the local crash, non-fatal and exit reports.
+ * - `reports/` — the local crash, non-fatal and exit reports, redacted.
  */
 class DiagnosticsBundle(private val sources: Sources) {
 
@@ -46,10 +46,11 @@ class DiagnosticsBundle(private val sources: Sources) {
             text("logcat.txt") {
                 if (!sources.writeLogcat(writer)) writer.write("(logcat unavailable)\n")
             }
+            // Redacted again on the way out: reports written by older builds
+            // (or before a Redactor rule existed) carry raw exception messages
+            // with server hosts (audit 2026-10-06 C06 / SEC-02).
             for (report in sources.reports()) {
-                zip.putNextEntry(ZipEntry("reports/" + report.name))
-                report.inputStream().use { it.copyTo(zip) }
-                zip.closeEntry()
+                text("reports/" + report.name) { writer.write(Redactor.redact(report.readText(Charsets.UTF_8))) }
             }
         }
     }

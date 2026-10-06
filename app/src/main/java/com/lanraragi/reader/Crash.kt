@@ -26,6 +26,7 @@ import com.lanraragi.framework.scene.StageActivity
 import com.lanraragi.framework.util.PackageUtils
 import com.lanraragi.reader.diagnostics.CrashLogStore
 import com.lanraragi.reader.diagnostics.DiagLog
+import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.settings.PrivacySettings
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -137,11 +138,14 @@ object Crash {
         append("======== CrashInfo ========\n")
         append("Thread=").append(threadName).append('\n')
         // stackTraceToString already walks the cause chain; never loop causes again.
-        append(t.stackTraceToString())
+        // Exception messages name the server ("Unable to resolve host", "failed to
+        // connect to host/ip"): redact them; the frames pass through unchanged
+        // (audit 2026-10-06 C06 / SEC-02).
+        append(Redactor.redact(t.stackTraceToString()))
         append('\n')
         append("======== Recent events ========\n")
         if (breadcrumbs.isEmpty()) append("(none)\n")
-        breadcrumbs.forEach { append(it).append('\n') }
+        breadcrumbs.forEach { append(Redactor.redact(it)).append('\n') }
     }
 
     private fun collectInfo(context: Context): String = buildString {
