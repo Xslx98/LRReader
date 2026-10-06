@@ -23,7 +23,6 @@ import com.lanraragi.reader.Analytics
 import java.io.FileInputStream
 import java.nio.channels.FileChannel
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.max
 import kotlin.math.min
 
 
@@ -58,11 +57,9 @@ class Image private constructor(
     init {
         source?.let {
             val fileSize = source.channel.size()
-            var simpleSize: Int? = null
-            if (fileSize > 10485760) {
-                simpleSize = (fileSize / 10485760 + 1).toInt()
-            }
-            if (sampleMultiplier > 1) simpleSize = (simpleSize ?: 1) * sampleMultiplier
+            // Sampling depends on the pixel size and the target only (audit
+            // 2026-10-06c PERF-01): the old EhViewer floor of fileSize / 10 MiB + 1
+            // halved large lossless pages that already fit the screen.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val src = ImageDecoder.createSource(
                     source.channel.map(
@@ -79,18 +76,10 @@ class Image private constructor(
                             // Idk it will cause how much performance regression
                             // Thumbnail loads pass an explicit target; the reader
                             // passes none and keeps the screen-based sampling.
-                            val fitSize = if (targetWidth > 0 && targetHeight > 0) {
-                                computeSampleSize(
-                                    info.size.width, info.size.height,
-                                    targetWidth, targetHeight
-                                )
-                            } else {
-                                computeSampleSize(
-                                    info.size.width, info.size.height,
-                                    screenWidth, screenHeight
-                                )
-                            }
-                            val sampleSize = max(fitSize * sampleMultiplier, simpleSize ?: 1)
+                            val sampleSize = computeDecodeSampleSize(
+                                info.size.width, info.size.height,
+                                targetWidth, targetHeight, sampleMultiplier
+                            )
                             if (Log.isLoggable(TAG, Log.DEBUG)) {
                                 Log.d(
                                     TAG,
@@ -108,17 +97,10 @@ class Image private constructor(
                     try {
                         // 重置流位置以便重新读取
                         source.channel.position(0)
-                        if (simpleSize != null) {
-                            val option = BitmapFactory.Options().apply {
-                                inSampleSize = simpleSize
-                            }
-                            val bitmap = BitmapFactory.decodeStream(source, null, option)
-                            mDrawableRef.set(
-                                bitmap?.toDrawable(Resources.getSystem())
-                            )
-                        } else {
-                            mDrawableRef.set(BitmapDrawable.createFromStream(source, null))
-                        }
+                        val bitmap = decodeSampledBitmap(
+                            source, targetWidth, targetHeight, sampleMultiplier
+                        )
+                        mDrawableRef.set(bitmap?.toDrawable(Resources.getSystem()))
                     } catch (fallbackException: Exception) {
                         Analytics.recordException(fallbackException)
                         throw Exception("Android 9 解码失败", e)
@@ -126,17 +108,10 @@ class Image private constructor(
                 }
                 // Should we lazy decode it?
             } else {
-                if (simpleSize != null) {
-                    val option = BitmapFactory.Options().apply {
-                        inSampleSize = simpleSize
-                    }
-                    val bitmap = BitmapFactory.decodeStream(source, null, option)
-                    mDrawableRef.set(
-                        BitmapDrawable(Resources.getSystem(), bitmap)
-                    )
-                } else {
-                    mDrawableRef.set(BitmapDrawable.createFromStream(source, null))
-                }
+                val bitmap = decodeSampledBitmap(
+                    source, targetWidth, targetHeight, sampleMultiplier
+                )
+                mDrawableRef.set(bitmap?.toDrawable(Resources.getSystem()))
             }
         }
         if (mDrawableRef.get() == null) {
@@ -389,6 +364,53 @@ class Image private constructor(
             if (targetWidth <= 0 || targetHeight <= 0) return 1
             return min(srcWidth / targetWidth, srcHeight / targetHeight)
                 .coerceAtLeast(1)
+        }
+
+        /**
+         * Sample size for one decode: the screen-fit (or thumbnail-target) sample
+         * times [sampleMultiplier] (2 on the OOM retry). Deliberately ignores the
+         * file size (audit 2026-10-06c PERF-01) and has no pixel cap (user ruling,
+         * see [retryOnOutOfMemory]); memory is bounded by the fit itself plus the
+         * OOM retry. Explicit targets win; otherwise the screen size is used.
+         */
+        @JvmStatic
+        internal fun computeDecodeSampleSize(
+            srcWidth: Int,
+            srcHeight: Int,
+            targetWidth: Int,
+            targetHeight: Int,
+            sampleMultiplier: Int,
+            fallbackWidth: Int = screenWidth,
+            fallbackHeight: Int = screenHeight,
+        ): Int {
+            val fit = if (targetWidth > 0 && targetHeight > 0) {
+                computeSampleSize(srcWidth, srcHeight, targetWidth, targetHeight)
+            } else {
+                computeSampleSize(srcWidth, srcHeight, fallbackWidth, fallbackHeight)
+            }
+            return fit * sampleMultiplier.coerceAtLeast(1)
+        }
+
+        /**
+         * BitmapFactory decode (ImageDecoder fallback) with the same sampling as
+         * the main path: bounds first, then [computeDecodeSampleSize].
+         */
+        private fun decodeSampledBitmap(
+            source: FileInputStream,
+            targetWidth: Int,
+            targetHeight: Int,
+            sampleMultiplier: Int,
+        ): Bitmap? {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeStream(source, null, bounds)
+            source.channel.position(0)
+            val option = BitmapFactory.Options().apply {
+                inSampleSize = computeDecodeSampleSize(
+                    bounds.outWidth, bounds.outHeight,
+                    targetWidth, targetHeight, sampleMultiplier
+                )
+            }
+            return BitmapFactory.decodeStream(source, null, option)
         }
 
         @JvmStatic
