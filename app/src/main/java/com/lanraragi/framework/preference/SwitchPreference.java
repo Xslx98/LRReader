@@ -29,22 +29,8 @@ import android.widget.CompoundButton;
 import androidx.annotation.StringRes;
 import androidx.appcompat.widget.SwitchCompat;
 import com.lanraragi.reader.R;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 public class SwitchPreference extends TwoStatePreference {
-
-    private static Method sSyncSummaryViewMethod;
-
-    static {
-        try {
-            sSyncSummaryViewMethod = TwoStatePreference.class.getDeclaredMethod("syncSummaryView", View.class);
-            sSyncSummaryViewMethod.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-            sSyncSummaryViewMethod = null;
-        }
-    }
 
     // Switch text for on and off states
     private CharSequence mSwitchOn;
@@ -113,16 +99,6 @@ public class SwitchPreference extends TwoStatePreference {
                 switchView.setOnCheckedChangeListener(mListener);
             }
         }
-
-//        if (sSyncSummaryViewMethod != null) {
-//            try {
-//                sSyncSummaryViewMethod.invoke(this, holder);
-//            } catch (IllegalAccessException e) {
-//                e.printStackTrace();
-//            } catch (InvocationTargetException e) {
-//                e.printStackTrace();
-//            }
-//        }
     }
 
 
