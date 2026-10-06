@@ -56,6 +56,10 @@ class DirGalleryProvider : GalleryProvider2 {
     private val context: Context?
     private val arcId: String?
     private var serverProfileId: Long = 0L
+    // Profile the local page save is keyed by: the archive's source profile
+    // (0 = legacy row -> active), not whichever profile is active while a
+    // download of another server is read (audit 2026-10-06b C37 / REL-04).
+    private var progressProfileId: Long = 0L
     // Written from the seed/reconcile path and putStartPage (GL/main
     // threads), read by getStartPage on the GL thread — volatile, matching
     // LRRGalleryProvider.
@@ -240,10 +244,11 @@ class DirGalleryProvider : GalleryProvider2 {
         this.context = context.applicationContext
         this.arcId = arcid
         this.serverProfileId = serverProfileId
+        this.progressProfileId = LocalReadingProgress.sourceProfile(serverProfileId)
         val ctx = this.context ?: return
         // Order matters: capture pristine SP BEFORE seeding startPageValue.
-        pristineLocalPage0 = loadReadingProgress(ctx, arcid)
-        pristineLocalTs = loadReadingTimestamp(ctx, arcid)
+        pristineLocalPage0 = loadReadingProgress(ctx, arcid, progressProfileId)
+        pristineLocalTs = loadReadingTimestamp(ctx, arcid, progressProfileId)
         this.startPageValue = ReadingProgressReconciler.resolve(
             pristineLocalPage0,
             pristineLocalTs,
@@ -262,7 +267,7 @@ class DirGalleryProvider : GalleryProvider2 {
         }
         startPageValue = page
         if (context != null && arcId != null) {
-            saveReadingProgress(context, arcId!!, page)
+            saveReadingProgress(context, arcId!!, page, progressProfileId)
         }
         // Sync progress to LANraragi server (1-indexed), serialized and
         // conflated — see ReadingProgressSyncer. The syncer awaits the
@@ -444,7 +449,7 @@ class DirGalleryProvider : GalleryProvider2 {
                         if (resolvedPage != startPageValue) {
                             startPageValue = resolvedPage
                             readAnchor = startPageValue
-                            if (arcId != null) saveReadingProgress(context, arcId!!, resolvedPage)
+                            if (arcId != null) saveReadingProgress(context, arcId!!, resolvedPage, progressProfileId)
                         }
                         // Second consume at the reconciled page (mirrors
                         // LRRGalleryProvider's post-reconcile consume): when the

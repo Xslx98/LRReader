@@ -11,9 +11,11 @@ import com.lanraragi.reader.client.api.LRRAuthManager
  *
  * - Keys are `<profileId>:<arcid>` → 0-indexed page and `<profileId>:<arcid>_ts`
  *   → saved-at epoch seconds, so the same content-hash arcid on two servers keeps
- *   two positions (REL-16). The profile is the active one; a reader always reads
- *   for it. Pre-C37 keys (bare arcid) move to the active profile once
- *   ([migrateLegacy]).
+ *   two positions (REL-16). The profile defaults to the active one; a reader that
+ *   knows the archive's source profile (a download of another server, opened
+ *   from the Downloads list without switching profile) passes it
+ *   ([sourceProfile], audit 2026-10-06b C37 / REL-04). Pre-C37 keys (bare arcid)
+ *   move to the active profile once ([migrateLegacy]).
  * - A page turn no longer copies the whole map: the entry count is kept in memory
  *   and the trim scan runs only above [MAX_ENTRIES] (PERF-11). Saving the page
  *   that is already stored is skipped.
@@ -43,10 +45,38 @@ internal object LocalReadingProgress {
 
     fun key(profileId: Long, arcid: String): String = "$profileId$SEP$arcid"
 
+    /**
+     * The profile an archive's progress is stored under: its source
+     * [serverProfileId], or the active profile for 0 (legacy row), as in
+     * [com.lanraragi.reader.client.api.resolveSourceBaseUrl].
+     */
+    fun sourceProfile(serverProfileId: Long): Long =
+        if (serverProfileId == 0L) profileId() else serverProfileId
+
+    /**
+     * The key a load for [profileId] reads. Up to the 2026-10-06b fix the
+     * reader saved every archive under the ACTIVE profile, so a download of
+     * another server has its position there: with nothing stored under its
+     * own key yet, the active profile's entry is read instead. The reader's
+     * next save goes to the own key, so the fallback stops applying.
+     */
+    private fun readKey(prefs: SharedPreferences, arcid: String, profileId: Long): String {
+        val own = key(profileId, arcid)
+        val active = this.profileId()
+        if (profileId == active || prefs.contains(own)) return own
+        return key(active, arcid)
+    }
+
     /** @return true when something was written */
-    fun save(ctx: Context, arcid: String, page: Int, nowSeconds: Long): Boolean {
+    fun save(
+        ctx: Context,
+        arcid: String,
+        page: Int,
+        nowSeconds: Long,
+        profileId: Long = this.profileId(),
+    ): Boolean {
         val prefs = prefs(ctx)
-        val key = key(profileId(), arcid)
+        val key = key(profileId, arcid)
         val known = prefs.contains(key)
         if (known && prefs.getInt(key, -1) == page) return false
         prefs.edit {
@@ -57,10 +87,15 @@ internal object LocalReadingProgress {
         return true
     }
 
-    fun load(ctx: Context, arcid: String): Int = prefs(ctx).getInt(key(profileId(), arcid), 0)
+    fun load(ctx: Context, arcid: String, profileId: Long = this.profileId()): Int {
+        val prefs = prefs(ctx)
+        return prefs.getInt(readKey(prefs, arcid, profileId), 0)
+    }
 
-    fun loadTimestamp(ctx: Context, arcid: String): Long =
-        prefs(ctx).getLong(key(profileId(), arcid) + TS_SUFFIX, 0L)
+    fun loadTimestamp(ctx: Context, arcid: String, profileId: Long = this.profileId()): Long {
+        val prefs = prefs(ctx)
+        return prefs.getLong(readKey(prefs, arcid, profileId) + TS_SUFFIX, 0L)
+    }
 
     /** [profileId] defaults to the active profile; a reset passes the download's own source profile. */
     fun clear(ctx: Context, arcid: String, profileId: Long = this.profileId()) {

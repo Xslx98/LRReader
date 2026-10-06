@@ -498,7 +498,7 @@ class GalleryDetailViewModel : ViewModel() {
         // flow's own fresh reconcile — the provider's post-resolve consume
         // picks the slot up even when SP and snapshot disagree.
         val startPage = ReadingProgressReconciler.resolveOffline(
-            context, arcId, archive.progress, archive.lastreadtime
+            context, arcId, archive.progress, archive.lastreadtime, archive.serverProfileId
         )
 
         detailPreloadJob = viewModelScope.launch {

@@ -140,7 +140,8 @@ object GalleryOpenHelper {
                     startPage
                 } else {
                     ReadingProgressReconciler.resolveOffline(
-                        context, archive.arcid, archive.progress, archive.lastreadtime
+                        context, archive.arcid, archive.progress, archive.lastreadtime,
+                        archive.serverProfileId,
                     )
                 }
                 ReaderPageCache.warmDir(context, archive.arcid, uniFile, warmPage)
@@ -192,7 +193,8 @@ object GalleryOpenHelper {
                     startPage
                 } else {
                     ReadingProgressReconciler.resolveOffline(
-                        context, archive.arcid, archive.progress, archive.lastreadtime
+                        context, archive.arcid, archive.progress, archive.lastreadtime,
+                        archive.serverProfileId,
                     )
                 }
                 if (BuildConfig.DEBUG) Log.i(TAG, "[WARM] openHelper LRR trigger arcid=${archive.arcid} page=$warmupPage")
