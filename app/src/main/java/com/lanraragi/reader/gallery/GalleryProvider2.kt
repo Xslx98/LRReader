@@ -131,12 +131,13 @@ abstract class GalleryProvider2 : GalleryProvider() {
          * the timestamp key (a surviving `_ts` would make page 0 look like a
          * real save) — and push the no-progress sentinel into
          * [ReadingProgressTracker] so detail-page observers refresh.
-         * Part of the "reset reading progress" flow.
+         * Part of the "reset reading progress" flow, which passes the
+         * download's own source [profileId] (audit 2026-10-06 C37).
          */
         @JvmStatic
-        fun clearReadingProgress(ctx: Context, arcid: String) {
-            LocalReadingProgress.clear(ctx, arcid)
-            ReadingProgressTracker.setProgress(arcid, ReadingProgressTracker.NO_LOCAL_PROGRESS)
+        fun clearReadingProgress(ctx: Context, arcid: String, profileId: Long = LocalReadingProgress.profileId()) {
+            LocalReadingProgress.clear(ctx, arcid, profileId)
+            ReadingProgressTracker.clearProgress(profileId, arcid)
         }
     }
 }

@@ -265,7 +265,10 @@ object LRRUrlHelper {
 
     /**
      * Attempt to connect to a server. If the user did not specify a protocol,
-     * try HTTPS first, then fall back to HTTP.
+     * try HTTPS first, then fall back to HTTP (LAN or opted-in hosts only,
+     * ruling R11). An explicit scheme is used as given: a failed `https://`
+     * is reported as is and never retried over HTTP, which would send the
+     * API key in cleartext against the user's choice (audit SEC-01).
      *
      * @param testClient   OkHttpClient with short timeouts
      * @param rawInput     user input, already normalised (no trailing slash)
@@ -311,17 +314,9 @@ object LRRUrlHelper {
                     throw ce
                 } catch (e: Exception) {
                     Log.d(TAG, "Explicit URL failed: ${e.message}")
-                    // Explicit http:// — no fallback, report failure directly.
-                    if (!rawInput.lowercase().startsWith("https://")) {
-                        return ConnectResult.Failure(e)
-                    }
-                    // Explicit https:// failed — try HTTP fallback (LAN or
-                    // opted-in only; otherwise report the original HTTPS error).
-                    val httpUrl = "http://" + rawInput.substring("https://".length)
-                    if (isInsecureWanUrl(httpUrl) && !allowCleartext) {
-                        return ConnectResult.Failure(e)
-                    }
-                    return httpFallback(testClient, httpUrl, apiKey)
+                    // No fallback for an explicit scheme: retrying an https://
+                    // URL over http:// would downgrade the key to cleartext.
+                    return ConnectResult.Failure(e)
                 }
             }
 

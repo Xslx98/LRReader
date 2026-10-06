@@ -48,6 +48,19 @@ class LocalReadingProgressTest {
     }
 
     @Test
+    fun removing_a_profile_drops_only_its_entries() {
+        LocalReadingProgress.save(ctx, "a", 5, nowSeconds = 100)
+        LocalReadingProgress.save(ctx, "b", 6, nowSeconds = 100)
+        profile = 11
+        LocalReadingProgress.save(ctx, "a", 7, nowSeconds = 100)
+
+        assertEquals(2, LocalReadingProgress.removeProfile(ctx, 1))
+
+        assertEquals(setOf("11:a", "11:a_ts"), LocalReadingProgress.prefs(ctx).all.keys)
+        assertEquals(0, LocalReadingProgress.removeProfile(ctx, 1))
+    }
+
+    @Test
     fun saving_the_stored_page_again_writes_nothing() {
         assertTrue(LocalReadingProgress.save(ctx, "arc", 5, nowSeconds = 100))
         assertFalse(LocalReadingProgress.save(ctx, "arc", 5, nowSeconds = 200))

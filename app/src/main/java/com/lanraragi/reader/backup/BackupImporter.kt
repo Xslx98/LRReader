@@ -1,9 +1,12 @@
 package com.lanraragi.reader.backup
 
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.core.content.edit
 import androidx.room.withTransaction
 import com.lanraragi.reader.backup.BackupMerge.Relink
+import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DailyReadingAggregate
 import com.lanraragi.reader.dao.DownloadDirname
@@ -22,6 +25,10 @@ import com.lanraragi.reader.gallery.LocalReadingProgress
  * and enters its key as usual.
  *
  * @param currentRootUri the download root in use now, searched for re-linkable downloads
+ * @param markKeyless records "no key yet" for a restored profile, as adding a
+ *   server without a key does; without it the boot check
+ *   [LRRAuthManager.markReauthIfProfilesUnprotected] takes the restored profile
+ *   for a lost key and asks for reauthentication on every launch
  */
 class BackupImporter(
     private val db: AppDatabase,
@@ -29,6 +36,7 @@ class BackupImporter(
     private val readingProgress: SharedPreferences,
     private val relinker: DownloadRelinker,
     private val currentRootUri: () -> String?,
+    private val markKeyless: (Long) -> Unit = { LRRAuthManager.setApiKeyForProfile(it, null) },
 ) {
 
     data class Result(
@@ -43,33 +51,50 @@ class BackupImporter(
         // Disk scan first, outside the transaction.
         val roots = listOfNotNull(currentRootUri()) + backup.archives.mapNotNull { it.downloadRootUri }
         val onDisk = relinker.index(roots)
-        val (result, ids) = db.withTransaction {
-            val (ids, added) = restoreProfiles(backup.profiles)
+        val (result, ids, addedIds) = db.withTransaction {
+            val (ids, addedIds) = restoreProfiles(backup.profiles)
             val archives = restoreArchives(backup.archives, ids, onDisk)
             restoreLabels(backup.downloadLabels)
             restoreTankGroups(backup.tankGroups, ids)
             restoreQuickSearches(backup.quickSearches)
             restoreSearchHistory(backup.searchHistory, ids)
             restoreAggregates(backup.dailyAggregates, ids)
-            archives.copy(profilesAdded = added) to ids
+            Triple(archives.copy(profilesAdded = addedIds.size), ids, addedIds)
         }
+        // After the commit: a rolled-back restore leaves no key entries behind.
+        markProfilesKeyless(addedIds)
         // Entries from backups made before progress was kept per server belong to its active one.
         val legacyOwner = backup.profiles.firstOrNull { it.isActive }?.id?.let { ids[it] }
         mergeReadingProgress(backup.readingProgress, ids, legacyOwner)
         return result.copy(settingsApplied = BackupSettings.apply(settings, backup.settings))
     }
 
-    /** @return backup profile id → local id, and how many profiles were added */
-    private suspend fun restoreProfiles(profiles: List<BackupProfile>): Pair<Map<Long, Long>, Int> {
+    /** @return backup profile id → local id, and the local ids of the added profiles */
+    private suspend fun restoreProfiles(profiles: List<BackupProfile>): Pair<Map<Long, Long>, List<Long>> {
         val misc = db.miscDao()
         val ids = HashMap(BackupMerge.matchProfiles(misc.getAllServerProfiles(), profiles))
         val missing = profiles.filter { it.id !in ids }
+        val added = ArrayList<Long>(missing.size)
         for (p in missing) {
-            ids[p.id] = misc.insertServerProfile(
+            val id = misc.insertServerProfile(
                 ServerProfile(name = p.name, url = p.url, isActive = false, allowCleartext = p.allowCleartext)
             )
+            ids[p.id] = id
+            added += id
         }
-        return ids to missing.size
+        return ids to added
+    }
+
+    /**
+     * With the secure store down every key is unreadable anyway and the boot
+     * check rightly asks for reauthentication, so the restore still succeeds.
+     */
+    private fun markProfilesKeyless(profileIds: List<Long>) {
+        try {
+            profileIds.forEach(markKeyless)
+        } catch (e: LRRSecureStorageUnavailableException) {
+            Log.e(TAG, "Could not record restored profiles as keyless", e)
+        }
     }
 
     private suspend fun restoreArchives(
@@ -186,5 +211,9 @@ class BackupImporter(
                 }
             }
         }
+    }
+
+    private companion object {
+        const val TAG = "BackupImporter"
     }
 }

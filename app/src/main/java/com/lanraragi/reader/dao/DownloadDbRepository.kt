@@ -371,8 +371,13 @@ class DownloadDbRepository(
     suspend fun getTankMemberArchives(tankId: String): List<Archive> {
         val order = getTankGroupMemberIds(tankId)
         if (order.isEmpty()) return emptyList()
-        val byId = archiveLocalStateDao.getDownloadsByArcids(order)
-            .associate { it.arcid to it.toArchive() }
+        // Chunked (audit 2026-10-06 N10): SQLite before Android 12 binds at
+        // most 999 variables, and a tank can hold more members. One
+        // transaction keeps the chunks a single consistent read.
+        val rows = database.withTransaction {
+            order.distinct().chunked(SQL_IN_CHUNK).flatMap { archiveLocalStateDao.getDownloadsByArcids(it) }
+        }
+        val byId = rows.associate { it.arcid to it.toArchive() }
         return order.mapNotNull { byId[it] }
     }
 
@@ -525,5 +530,10 @@ class DownloadDbRepository(
 
     suspend fun removeDownloadLabel(raw: DownloadLabel) {
         downloadDao.deleteLabel(raw)
+    }
+
+    private companion object {
+        /** Ids per `IN (...)` query, under the 999 bind-variable cap of older SQLite. */
+        const val SQL_IN_CHUNK = 500
     }
 }

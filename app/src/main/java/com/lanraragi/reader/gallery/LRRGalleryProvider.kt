@@ -452,7 +452,7 @@ class LRRGalleryProvider(
         stateRef.updateAndGet { it.copy(stopped = true) }
         pageClient = null
         // Safe to clear: stopped flag prevents new requests from entering onRequest()
-        inflightRequests.clear()
+        requests.clear()
 
         // Evict old archive caches on the application-scoped IO scope so the
         // cleanup still runs after the provider's own scope is cancelled below.
@@ -559,22 +559,13 @@ class LRRGalleryProvider(
             return
         }
 
-        // Skip if this page is already being downloaded. Remember the rebind:
-        // if the in-flight job turns out to be a CANCELLED one (scroll-away
-        // then scroll-back races onCancelRequest against the job's finally),
-        // its quiet PageCancelledException path would otherwise leave this
-        // rebound page on an infinite spinner with nothing re-requesting it.
-        val token = Any()
-        if (inflightRequests.putIfAbsent(index, token) != null) {
-            rebindWanted.add(index)
-            // The in-flight job may have finished between putIfAbsent and
-            // add (its finally already consumed rebindWanted): nobody would
-            // re-dispatch, so check again and take over.
-            if (!inflightRequests.containsKey(index) && rebindWanted.remove(index)) {
-                onRequest(index)
-            }
-            return
-        }
+        // Skip if this page is already being downloaded. The tracker remembers
+        // the rebind: if the in-flight job turns out to be a CANCELLED one
+        // (scroll-away then scroll-back races onCancelRequest against the
+        // job's finally), its quiet PageCancelledException path would
+        // otherwise leave this rebound page on an infinite spinner.
+        val token = requests.begin(index)
+        if (token == null) return
 
         notifyPageWait(index)
 
@@ -583,7 +574,7 @@ class LRRGalleryProvider(
         val scope = providerScope
         if (scope == null) {
             // stop() was called after onRequest arrived — skip silently
-            inflightRequests.remove(index, token)
+            requests.abandon(index, token)
             return
         }
         scope.launch {
@@ -602,15 +593,10 @@ class LRRGalleryProvider(
                 Log.e(TAG, "Failed to load page $index: ${e.message}", e)
                 notifyPageFailed(index, e.message)
             } finally {
-                // Only this job's own entry: a force request may already have
-                // replaced it with a newer job's token.
-                inflightRequests.remove(index, token)
-                // A rebind landed while this job was in flight. Success and
-                // failure paths already notified the rebound page (notify* is
-                // keyed by index, not requester); only the quiet cancelled
-                // path needs an explicit re-request, or the page spins
-                // forever.
-                if (rebindWanted.remove(index) && cancelled && !stateRef.get().stopped) {
+                // A rebind landed while this job was in flight and the job
+                // ended on the quiet cancelled path: re-request, or the page
+                // spins forever.
+                if (requests.finish(index, token, cancelled, stateRef.get().stopped)) {
                     onRequest(index)
                 }
             }
@@ -623,7 +609,7 @@ class LRRGalleryProvider(
         if (cached.exists()) {
             cached.delete()
         }
-        inflightRequests.remove(index)
+        requests.forget(index)
         onRequest(index)
     }
 
@@ -650,13 +636,9 @@ class LRRGalleryProvider(
 
     private fun pageMutex(index: Int): Mutex = pageMutexes.computeIfAbsent(index) { Mutex() }
 
-    // Track in-flight page requests to avoid submitting duplicate tasks to the thread pool
-    // (value = per-job token, so a finishing job never clears a newer job's entry)
-    private val inflightRequests = ConcurrentHashMap<Int, Any>()
-
-    // Pages that were re-requested while an in-flight job existed; consumed in
-    // the job's finally to re-dispatch after a cancelled (quiet) run.
-    private val rebindWanted = ConcurrentHashMap.newKeySet<Int>()
+    // In-flight page requests (per-job tokens) and rebinds that arrived while
+    // a job was running; see PageRequestTracker.
+    private val requests = PageRequestTracker()
 
     // In-flight page HTTP calls, keyed by page index. Coroutine cancellation
     // cannot interrupt the blocking execute()/body read inside

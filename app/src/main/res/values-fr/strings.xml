@@ -928,6 +928,7 @@ Cette action est irréversible.</string>
     <string name="lrr_keystore_failed_message">Le magasin de clés de l\'appareil est indisponible. Votre clé API n\'a pas pu être chargée. Veuillez saisir à nouveau vos identifiants de serveur.</string>
     <string name="security_storage_unavailable_message">Le verrouillage de l\'application ne peut pas être vérifié car le stockage sécurisé de l\'appareil est indisponible pour le moment. Réessayez ou réinitialisez le verrouillage : le schéma et toutes les clés API enregistrées seront supprimés. La bibliothèque et les téléchargements sont conservés.</string>
     <string name="security_storage_retry">Réessayer</string>
+    <string name="security_storage_starting_message">Le stockage sécurisé de l\'appareil est encore en cours de démarrage : le verrouillage de l\'application ne peut pas encore être vérifié. Patientez un instant, puis touchez Réessayer.</string>
     <string name="security_reset_app_lock">Réinitialiser le verrouillage</string>
     <string name="security_reset_app_lock_confirm">Réinitialiser le verrouillage et supprimer toutes les clés API enregistrées ? Vous devrez saisir à nouveau les identifiants du serveur.</string>
     <string name="security_fingerprint_changed">Les empreintes de l\'appareil ont changé, le déverrouillage par empreinte a donc été désactivé. Vous pouvez le réactiver dans les paramètres de confidentialité.</string>

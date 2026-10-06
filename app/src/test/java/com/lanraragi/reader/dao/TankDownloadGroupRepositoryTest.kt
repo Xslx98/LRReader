@@ -132,6 +132,31 @@ class TankDownloadGroupRepositoryTest {
         assertEquals(listOf(ARC_A), repo.getTankMemberArchives(TANK).map { it.arcid })
     }
 
+    /**
+     * Audit 2026-10-06 N10: SQLite before Android 12 binds at most 999
+     * variables, so one `ARCID IN (...)` over a whole large tank failed there.
+     */
+    @Test
+    fun getTankMemberArchives_handlesMoreMembersThanTheBindLimit() = runTest {
+        // Robolectric's SQLite allows far more variables; enforce the old cap.
+        val realDao = db.archiveLocalStateDao()
+        val bindLimitedDao = object : ArchiveLocalStateDao by realDao {
+            override suspend fun getDownloadsByArcids(arcids: List<String>): List<ArchiveLocalState> {
+                if (arcids.size > LEGACY_SQLITE_MAX_VARIABLES) {
+                    throw android.database.sqlite.SQLiteException("too many SQL variables (test)")
+                }
+                return realDao.getDownloadsByArcids(arcids)
+            }
+        }
+        val limitedRepo = DownloadDbRepository(bindLimitedDao, db.downloadDao(), db, Dispatchers.Unconfined)
+        val ids = (0 until 1_200).map { "arc-%04d".format(it) }
+        limitedRepo.putDownloadInfoBatch(ids.map { downloadInfo(it, "T$it") })
+        val order = ids.reversed()
+        limitedRepo.putTankGroup(TANK, 1L, "BigTank", order)
+
+        assertEquals(order, limitedRepo.getTankMemberArchives(TANK).map { it.arcid })
+    }
+
     @Test
     fun normalDownloadUpsert_neverClobbersTankTag() = runTest {
         repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
@@ -309,6 +334,7 @@ class TankDownloadGroupRepositoryTest {
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)
         const val TANK = "TANK_1688000000"
+        const val LEGACY_SQLITE_MAX_VARIABLES = 999
     }
 
     @Test

@@ -1,8 +1,10 @@
 package com.lanraragi.reader.download
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -32,7 +34,9 @@ internal object OrderedPageWindow {
      * failure) counts the page as finished for window purposes — a failed
      * page must not stall the window. [isCancelled] is polled before each
      * claim; a cancelled window stops issuing new pages but does not
-     * interrupt pages already in flight (callers cancel their scope for that).
+     * interrupt pages already in flight (cancelling the calling coroutine does).
+     * A page that throws cancels the others; the exception is rethrown once
+     * they have all finished.
      *
      * [activeLimit] can lower the number of workers at runtime (audit PERF-13: the
      * reader on screen gets the server first). A worker whose number is at or
@@ -51,22 +55,30 @@ internal object OrderedPageWindow {
         if (total <= 0) return
         val cursor = AtomicInteger(0)
         val tracker = WindowTracker(total)
-        List(minOf(workers, total)) { worker ->
-            scope.async {
-                while (!isCancelled()) {
-                    while (worker >= activeLimit().coerceAtLeast(1) && !isCancelled()) delay(LIMIT_POLL_MS)
-                    val index = if (isCancelled()) total else cursor.getAndIncrement()
-                    if (index >= total) break
-                    // Wait until this index falls inside the window.
-                    tracker.lowestUnfinished.first { lowest -> index - lowest < workers }
-                    try {
-                        process(index)
-                    } finally {
-                        tracker.markDone(index)
+        // The page coroutines are children of this call (audit 2026-10-06 N9),
+        // not of the worker's supervisor scope: a page that throws cancels its
+        // siblings, and the failure reaches the caller only after they have
+        // stopped, so no orphan keeps writing into the directory a retry reuses.
+        // [scope] still supplies the dispatcher; its Job is left out.
+        val pageContext = scope.coroutineContext.minusKey(Job)
+        coroutineScope {
+            List(minOf(workers, total)) { worker ->
+                async(pageContext) {
+                    while (!isCancelled()) {
+                        while (worker >= activeLimit().coerceAtLeast(1) && !isCancelled()) delay(LIMIT_POLL_MS)
+                        val index = if (isCancelled()) total else cursor.getAndIncrement()
+                        if (index >= total) break
+                        // Wait until this index falls inside the window.
+                        tracker.lowestUnfinished.first { lowest -> index - lowest < workers }
+                        try {
+                            process(index)
+                        } finally {
+                            tracker.markDone(index)
+                        }
                     }
                 }
-            }
-        }.awaitAll()
+            }.awaitAll()
+        }
     }
 
     private const val LIMIT_POLL_MS = 200L

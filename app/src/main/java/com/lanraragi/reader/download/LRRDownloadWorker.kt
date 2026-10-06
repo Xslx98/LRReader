@@ -442,7 +442,7 @@ class LRRDownloadWorker(
         }.getOrNull() ?: return false
         if (pagecount <= 0) return false
         // Lookup only: a verifier must not create a directory it then reports on.
-        val uni = runCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false
+        val uni = suspendRunCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false
         if ("file" != uni.uri.scheme) return false
         val dir = File(uni.uri.path ?: return false)
         if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false
@@ -644,6 +644,8 @@ class LRRDownloadWorker(
                     return File(uri.path ?: return null)
                 }
                 Log.w(TAG, "Download root is not a file:// directory; cannot download")
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to allocate the gallery download dir", e)
             }
