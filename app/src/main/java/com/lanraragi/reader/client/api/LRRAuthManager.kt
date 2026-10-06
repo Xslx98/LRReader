@@ -171,6 +171,9 @@ object LRRAuthManager {
     @Volatile
     private var sAppContext: Context? = null
 
+    /** Orders the store's mirror write against [rememberLockState]'s (the store's wins). */
+    private val lockMirrorWrite = Any()
+
     private fun readBootCount(): Int {
         val resolver = sAppContext?.contentResolver ?: return -1
         return android.provider.Settings.Global.getInt(resolver, android.provider.Settings.Global.BOOT_COUNT, -1)
@@ -356,9 +359,11 @@ object LRRAuthManager {
         if (prefs != null) {
             // Refresh the plain mirrors from the source of truth (also
             // migrates installs from before they existed).
-            plainPrefs.edit {
-                putBoolean(KEY_LOCK_ENABLED, hasPatternIn(prefs))
-                putBoolean(KEY_CONFIGURED_HINT, !prefs.getString(KEY_SERVER_URL, null).isNullOrEmpty())
+            synchronized(lockMirrorWrite) {
+                plainPrefs.edit {
+                    putBoolean(KEY_LOCK_ENABLED, hasPatternIn(prefs))
+                    putBoolean(KEY_CONFIGURED_HINT, !prefs.getString(KEY_SERVER_URL, null).isNullOrEmpty())
+                }
             }
         }
     }
@@ -929,6 +934,74 @@ object LRRAuthManager {
         return if (plain.contains(KEY_LOCK_ENABLED)) plain.getBoolean(KEY_LOCK_ENABLED, false) else null
     }
 
+    /**
+     * Whether an app lock is set, FAILING CLOSED: true whenever a lock
+     * cannot be ruled out (audit 2026-10-06c SEC-01). Reads the plain mirror
+     * ([lockEnabledHint]). Without it — first launch after upgrading from a
+     * version that never wrote it (<= v1.26), when the store is slow or
+     * cannot be opened — it decides from what is readable without the
+     * keystore (see [patternEvidenceWithoutKeystore]) and writes the mirror.
+     * Only a legacy store that is still to be migrated cannot be read that
+     * way: the store gets its bounded chance to open (which writes the
+     * mirror), and if it does not, the answer is "locked". The lock screen
+     * then offers its retry and, once the store failed, its reset, and lets
+     * the user in as soon as the store opens without a pattern.
+     *
+     * False is therefore always a definite answer, which AppLockGate
+     * may keep for the whole foreground session.
+     */
+    @JvmStatic
+    fun isLockSetOrUnknown(): Boolean {
+        val hint = lockEnabledHint()
+        if (hint != null) return hint
+        val evidence = patternEvidenceWithoutKeystore()
+        if (evidence != null) {
+            rememberLockState(evidence)
+            return evidence
+        }
+        awaitInit()
+        return lockEnabledHint() ?: true
+    }
+
+    /**
+     * Whether a pattern is stored, from plaintext only: true / false, or null
+     * when the legacy EncryptedSharedPreferences store (whose key names are
+     * encrypted) has not been migrated yet. The legacy check comes first:
+     * the migration copies into the new store before it marks itself done
+     * and deletes the legacy file, so once the legacy store is seen as gone
+     * the new store's slots read next are complete.
+     */
+    private fun patternEvidenceWithoutKeystore(): Boolean? {
+        val plain = fastPlainPrefs()
+        val context = sAppContext
+        val legacyPending = context != null &&
+            plain?.getBoolean(KEY_SECURE_STORE_MIGRATED, false) != true &&
+            legacyStoreFile(context).exists()
+        // Written with the pattern and removed with it by every version since v1.12.4.
+        val boundFlag = plain?.contains(KEY_PATTERN_KEYSTORE_BOUND) == true
+        // KeystoreSecurePrefs keeps its key names in plaintext.
+        val opened = sPrefs
+        val inStore = (opened != null && hasPatternIn(opened)) ||
+            (context != null && hasPatternIn(context.getSharedPreferences(SECURE_PREF_NAME, Context.MODE_PRIVATE)))
+        return when {
+            boundFlag || inStore -> true
+            legacyPending -> null
+            else -> false
+        }
+    }
+
+    /**
+     * Write the lock mirror decided without the keystore, unless the store's
+     * init (the source of truth) wrote it meanwhile.
+     */
+    private fun rememberLockState(locked: Boolean) {
+        val plain = fastPlainPrefs()
+        if (plain == null) return
+        synchronized(lockMirrorWrite) {
+            if (!plain.contains(KEY_LOCK_ENABLED)) plain.edit { putBoolean(KEY_LOCK_ENABLED, locked) }
+        }
+    }
+
     /** Whether a server URL is set, from the plain mirror; null when unknown. */
     @JvmStatic
     fun configuredHint(): Boolean? {
@@ -1010,7 +1083,7 @@ object LRRAuthManager {
     fun canOfferCredentialReset(): Boolean =
         secureStorageState() == SecureStorageState.UNAVAILABLE &&
             consecutiveStoreOpenFailures() >= RESET_OFFER_MIN_FAILED_LAUNCHES &&
-            lockEnabledHint() != true
+            !isLockSetOrUnknown()
 
     /**
      * Last resort when the secure store is unreadable: drop the encrypted
