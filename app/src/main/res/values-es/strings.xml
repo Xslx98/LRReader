@@ -938,6 +938,8 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">¿Restablecer la base de datos?</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_message">Esto eliminará permanentemente todos los datos almacenados localmente: perfiles de servidor, historial de lectura, favoritos, registros de descargas e historial de búsqueda. Los archivos descargados en disco no se verán afectados. La aplicación se reiniciará como una instalación nueva.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">Restablecer y reiniciar</string>
+    <string name="lrr_db_reset_notice_title">Base de datos restablecida</string>
+    <string name="lrr_db_reset_notice_message">La base de datos local estaba dañada y se ha sustituido por una vacía, por lo que pueden faltar los servidores guardados, el historial de lectura y otros datos locales. Se ha conservado una copia del archivo dañado en este dispositivo.</string>
     <string name="lrr_secure_storage_write_failed">El almacén de claves del dispositivo no está disponible, por lo que los cambios no se pudieron guardar de forma segura. Reinicie el dispositivo e inténtelo de nuevo, o reinstale la aplicación si el problema persiste.</string>
     <string name="reauth_required_title">Se requiere re-autenticación</string>
     <string name="reauth_required_message">El almacén de claves seguro dejó de estar disponible. Por favor, vuelva a introducir la clave API de cada servidor.</string>

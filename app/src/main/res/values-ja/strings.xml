@@ -819,6 +819,8 @@
     <string name="lrr_boot_load_failed_reset_db_confirm_title">データベースをリセットしますか？</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_message">この操作によりアプリのローカルデータベース内のすべてのデータ（サーバープロファイル、閲覧履歴、お気に入り、ダウンロード記録、検索履歴）が完全に削除されます。ディスク上のダウンロード済みアーカイブファイルは影響を受けません。アプリは新規インストール状態で再起動します。</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">リセットして再起動</string>
+    <string name="lrr_db_reset_notice_title">データベースをリセットしました</string>
+    <string name="lrr_db_reset_notice_message">ローカルデータベースが破損していたため、空のデータベースに置き換えました。保存済みのサーバー、閲覧履歴などのローカルデータが失われている可能性があります。破損したファイルのコピーはこの端末に保存されています。</string>
     <string name="lrr_secure_storage_write_failed">デバイスのキーストアが利用できないため、変更を安全に保存できませんでした。デバイスを再起動して再試行するか、問題が解決しない場合はア��リを再インストールしてください。</string>
     <string name="reauth_required_title">再認証が必要です</string>
     <string name="reauth_required_message">セキュアキーストアが利用できなくなりました。各サーバーの API キーを再入力してください。</string>

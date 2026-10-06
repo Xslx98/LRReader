@@ -58,7 +58,7 @@ import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DatabaseQuarantine
-import com.lanraragi.reader.module.AppModule
+import com.lanraragi.reader.dao.DatabaseResetNotice
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -551,11 +551,16 @@ class MainActivity : StageActivity(),
         }
 
         // Surface non-KeyStore boot failures (e.g., DB corruption, Room migration
-        // error). Sticky one-shot — getAndSet(null) so each failure is shown
-        // exactly once. KeyStore-only failures take precedence above.
-        AppModule.bootProfileLoadError.getAndSet(null)?.let { err ->
-            showBootFailureDialog(err)
-        }
+        // error). The loader usually fails after this point, so the presenter
+        // observes the slot while STARTED and waits out the lock screen
+        // (STAB-02). KeyStore-only failures take precedence above.
+        bootNotices = BootNoticePresenter(
+            activity = this,
+            isLockScreenUp = ::isLockScreenUp,
+            onRetry = ::triggerRebirth,
+            onResetDatabase = ::showResetDatabaseConfirm,
+            onResetNoticeSeen = { stamp -> DatabaseResetNotice.markSeen(Settings.getPreferences(), stamp) },
+        ).also { it.install() }
 
         // Cold-start auto update check. No-op if user disabled the toggle, the
         // 1-day throttle hasn't expired, or the latest release is the skipped
@@ -682,38 +687,22 @@ class MainActivity : StageActivity(),
         }
     }
 
+    /** Shows boot notices ([BootNoticePresenter]); set in onCreate2. */
+    private var bootNotices: BootNoticePresenter? = null
+
     /**
-     * Three-button recovery dialog for non-KeyStore boot failures (DB
-     * corruption, Room migration error, generic loader exception). Without
-     * a recovery path the user gets stuck restarting into the same broken
-     * state — see backlog Stage 1 / fix-roadmap S2-2.
-     *
-     * - **Retry**: simple process restart. The original error may have been
-     *   transient (e.g. `SQLiteException: disk I/O error` from a flaky FS).
-     * - **Reset Database**: opens a second confirm dialog before deleting
-     *   `eh.db` and restarting. Destructive and non-undoable.
-     * - **Cancel**: dismiss and continue with no profile loaded — same
-     *   behaviour as the previous OK-only dialog. Set non-cancelable so the
-     *   user must consciously dismiss.
+     * The app lock has not been passed yet, or its screen is on top: boot
+     * notices wait so nothing about the library shows before unlock.
      */
-    private fun showBootFailureDialog(err: Throwable) {
-        val detail = err.message ?: err.javaClass.simpleName
-        AlertDialog.Builder(this)
-            .setTitle(R.string.lrr_boot_load_failed_title)
-            .setMessage(getString(R.string.lrr_boot_load_failed_message, detail))
-            .setPositiveButton(R.string.lrr_boot_load_failed_retry) { _, _ ->
-                triggerRebirth()
-            }
-            .setNegativeButton(R.string.lrr_boot_load_failed_reset_db) { _, _ ->
-                showResetDatabaseConfirm()
-            }
-            .setNeutralButton(android.R.string.cancel, null)
-            .setCancelable(false)
-            .show()
+    private fun isLockScreenUp(): Boolean {
+        if (AppLockGate.isLocked()) return true
+        val top = topSceneClass
+        return top != null && SecurityScene::class.java.isAssignableFrom(top)
     }
 
     /**
-     * Second-stage confirm for the destructive "reset database" branch.
+     * Second-stage confirm for the destructive "reset database" branch of
+     * the boot-failure dialog ([BootNoticePresenter]).
      * Cancellable so back / outside-tap aborts; positive button calls
      * [resetDatabaseAndRestart].
      */
@@ -739,7 +728,11 @@ class MainActivity : StageActivity(),
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    DatabaseQuarantine.quarantine(applicationContext.getDatabasePath(AppDatabase.DB_NAME))
+                    val moved = DatabaseQuarantine.quarantine(applicationContext.getDatabasePath(AppDatabase.DB_NAME))
+                    // The user chose this reset: no "database was damaged" notice
+                    // after the restart (REL-02). Committed, the process dies next.
+                    val stamp = moved?.let { DatabaseQuarantine.stampOf(it, AppDatabase.DB_NAME) }
+                    if (stamp != null) DatabaseResetNotice.markSeen(Settings.getPreferences(), stamp, commit = true)
                 } catch (t: Throwable) {
                     Log.e(TAG, "database quarantine failed during boot-failure reset", t)
                 }
@@ -1036,7 +1029,11 @@ class MainActivity : StageActivity(),
         // BEFORE removing the popped scene's tag, so during the gate's own
         // dismissal topSceneClass still reads as the gate. One handler hop
         // later the stack is settled.
-        mainHandler.post { maybeReplayPendingGateRequest() }
+        mainHandler.post {
+            maybeReplayPendingGateRequest()
+            // The lock screen may just have gone: show what waited for it.
+            bootNotices?.maybeShow()
+        }
     }
 
     @SuppressLint("RtlHardcoded")

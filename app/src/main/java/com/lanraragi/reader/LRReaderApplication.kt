@@ -233,13 +233,16 @@ class LRReaderApplication : RecordingApplication() {
                 // dialog. Without this the failure was completely silent — user
                 // saw the app come up as if no profiles existed, with no way
                 // to distinguish "fresh install" from "DB blew up".
-                AppModule.bootProfileLoadError.set(e)
+                AppModule.bootProfileLoadError.value = e
                 Analytics.recordException(e)
             } finally {
                 // Always complete the deferred so awaiters never hang, even on the
                 // failure path. complete() is a no-op if already completed.
                 AppModule.activeProfileIdDeferred.complete(resolvedId)
             }
+            // The query above opened the database; a corrupt file was moved
+            // aside silently on the way. Tell the user once (REL-02).
+            publishDatabaseResetNotice()
         }
 
         // Legacy migration — runs once on first launch after upgrading from old DB format.
@@ -541,6 +544,19 @@ class LRReaderApplication : RecordingApplication() {
     private fun update() {
         // Intentionally empty — kept as the documented integration point for
         // future versionCode-driven upgrades.
+    }
+
+    /** Publishes an unseen database quarantine for MainActivity's notice (REL-02). IO thread. */
+    private fun publishDatabaseResetNotice() {
+        try {
+            val stamp = com.lanraragi.reader.dao.DatabaseResetNotice.pendingStamp(
+                getDatabasePath(com.lanraragi.reader.dao.AppDatabase.DB_NAME),
+                Settings.getPreferences(),
+            )
+            if (stamp != null) AppModule.databaseResetNotice.value = stamp
+        } catch (e: SecurityException) {
+            Log.e(TAG, "database quarantine scan failed", e)
+        }
     }
 
     private fun clearTempDir() {

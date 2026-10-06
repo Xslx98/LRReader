@@ -52,6 +52,20 @@ object DatabaseQuarantine {
         return movedMain
     }
 
+    /** The timestamp in a quarantined file's name (`<name>.broken-<millis>...`), or null. */
+    fun stampOf(quarantined: File, dbName: String): Long? {
+        val prefix = dbName + MARKER
+        if (!quarantined.name.startsWith(prefix)) return null
+        return quarantined.name.removePrefix(prefix).takeWhile(Char::isDigit).toLongOrNull()
+    }
+
+    /** Timestamp of the newest quarantined set of [dbFile], or null when there is none. */
+    fun newestStamp(dbFile: File): Long? {
+        val dir = dbFile.absoluteFile.parentFile
+        if (dir == null) return null
+        return dir.listFiles().orEmpty().mapNotNull { stampOf(it, dbFile.name) }.maxOrNull()
+    }
+
     /** Deletes every quarantined set of [dbName] in [dir] except the newest [keep]. */
     internal fun prune(dir: File, dbName: String, keep: Int) {
         val prefix = dbName + MARKER
