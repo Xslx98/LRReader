@@ -8,6 +8,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import com.lanraragi.reader.R
+import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +35,8 @@ import org.robolectric.shadows.ShadowLooper
  * (copied from another phone, keystore key lost) used to be resettable only
  * from the lock screen, which a user without an app lock never sees. The
  * "credentials unavailable" dialogs those users land on must offer the reset
- * when the store's init finished and failed, and only then: not while init
+ * when the store's init finished and failed on two launches in a row, and
+ * only then: not after a single failure (audit 06c N-new-1), not while init
  * is still running (transient, audit SEC-04), not on a healthy store, and not
  * when a lock is set (the lock screen owns the reset there).
  *
@@ -48,6 +50,7 @@ class CredentialResetOfferTest {
     private lateinit var controller: ActivityController<AppCompatActivity>
     private lateinit var activity: AppCompatActivity
     private val scheduler = TestCoroutineScheduler()
+    private val cipher = InMemoryValueCipher()
     private val scope = CoroutineScope(
         StandardTestDispatcher(scheduler) + CoroutineExceptionHandler { _, t -> println("contained: $t") }
     )
@@ -62,6 +65,7 @@ class CredentialResetOfferTest {
         activity.setTheme(R.style.AppTheme)
         controller.create().start().resume()
         plainPrefs().edit(commit = true) { clear() }
+        activity.getSharedPreferences("lrr_auth_secure", Context.MODE_PRIVATE).edit(commit = true) { clear() }
     }
 
     @After
@@ -73,10 +77,9 @@ class CredentialResetOfferTest {
     }
 
     @Test(timeout = 10_000)
-    fun storeThatFailedToOpen_noLock_offersTheReset() {
-        // Robolectric has no AndroidKeyStore: initialize() finishes on its failure branch.
-        LRRAuthManager.scheduleInitialize(activity, scope)
-        scheduler.advanceUntilIdle()
+    fun storeThatFailedToOpenTwiceInARow_noLock_offersTheReset() {
+        failedLaunch()
+        failedLaunch()
 
         assertTrue(LRRAuthManager.canOfferCredentialReset())
         val reset = showErrorDialog().getButton(DialogInterface.BUTTON_NEGATIVE)
@@ -89,6 +92,32 @@ class CredentialResetOfferTest {
         val confirm = ShadowDialog.getLatestDialog() as AlertDialog
         val message = confirm.findViewById<TextView>(android.R.id.message)!!.text.toString()
         assertEquals(activity.getString(R.string.lrr_reset_credentials_confirm), message)
+    }
+
+    /**
+     * Audit 2026-10-06c N-new-1: one failed open may be a KeyStore error
+     * that heals by the next launch; the reset would cost every API key.
+     */
+    @Test(timeout = 10_000)
+    fun storeThatFailedToOpenOnce_offersNoReset() {
+        failedLaunch()
+
+        assertFalse(LRRAuthManager.isSecureStorageAvailable())
+        assertEquals(1, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertFalse(LRRAuthManager.canOfferCredentialReset())
+        assertResetHidden(showErrorDialog())
+    }
+
+    @Test(timeout = 10_000)
+    fun aLaunchThatOpensTheStore_restartsTheCount() {
+        failedLaunch()
+        openedLaunch()
+        assertEquals(0, LRRAuthManager.consecutiveStoreOpenFailures())
+
+        failedLaunch()
+        assertFalse("not two failures in a row", LRRAuthManager.canOfferCredentialReset())
+        failedLaunch()
+        assertTrue(LRRAuthManager.canOfferCredentialReset())
     }
 
     @Test(timeout = 10_000)
@@ -111,12 +140,28 @@ class CredentialResetOfferTest {
     @Test(timeout = 10_000)
     fun storeThatFailedToOpen_withLock_leavesTheResetToTheLockScreen() {
         plainPrefs().edit(commit = true) { putBoolean("app_lock_enabled", true) }
-        LRRAuthManager.scheduleInitialize(activity, scope)
-        scheduler.advanceUntilIdle()
+        failedLaunch()
+        failedLaunch()
 
         assertFalse(LRRAuthManager.isSecureStorageAvailable())
         assertFalse(LRRAuthManager.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
+    }
+
+    /** One process start whose store fails to open (Robolectric has no AndroidKeyStore). */
+    private fun failedLaunch() {
+        LRRAuthManager.resetInitGateForTesting()
+        LRRAuthManager.scheduleInitialize(activity, scope)
+        scheduler.advanceUntilIdle()
+    }
+
+    /** One process start whose store opens. */
+    private fun openedLaunch() {
+        LRRAuthManager.resetInitGateForTesting()
+        LRRAuthManager.secureStoreCipher = { cipher }
+        LRRAuthManager.scheduleInitialize(activity, scope)
+        scheduler.advanceUntilIdle()
+        assertTrue(LRRAuthManager.isSecureStorageAvailable())
     }
 
     private fun plainPrefs() = activity.getSharedPreferences("lrr_auth_plain", Context.MODE_PRIVATE)
