@@ -1,7 +1,10 @@
 package com.lanraragi.reader.ui.scene
 
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
+import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.client.api.LRRAuthManager
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -72,6 +75,34 @@ class SecurityViewModel : ViewModel() {
          * resetting the app lock.
          */
         data object PatternUnverifiable : SecurityUiEvent
+
+        /**
+         * The fingerprint prompt reported success, but its cipher did not
+         * open the pattern key's blob: no unlock, the pattern is required.
+         */
+        data object FingerprintUnverified : SecurityUiEvent
+
+        /** The fingerprint prompt's cipher opened the pattern key's blob: unlock. */
+        data object FingerprintVerified : SecurityUiEvent
+    }
+
+    /** Whether the lock screen may offer fingerprint unlock now (audit 2026-10-06e SEC-01). */
+    sealed interface FingerprintStart {
+        /** Authenticate with this cipher as the prompt's CryptoObject. */
+        data class Ready(val cipher: Cipher) : FingerprintStart
+
+        /** Fingerprint unlock is not switched on. */
+        data object Off : FingerprintStart
+
+        /**
+         * Fingerprint unlock was on but cannot be proven any more (key
+         * invalidated by a new enrolment, or never bound): it has just been
+         * switched off. Tell the user [reason]; the pattern unlocks.
+         */
+        data class TurnedOff(@StringRes val reason: Int) : FingerprintStart
+
+        /** The keystore failed for another reason: pattern only this time, the setting stays. */
+        data object Unavailable : FingerprintStart
     }
 
     /** What the lock screen can offer while the secure store is unreadable (audit SEC-04). */
@@ -158,10 +189,66 @@ class SecurityViewModel : ViewModel() {
         }
         if (SecuritySettings.verifyPattern(patternString)) {
             LRRAuthManager.unbindPatternFromKeystore()
+            // Already off when the lock screen switched it off on resume
+            // (startFingerprintUnlock) and told the user: do not tell twice.
+            val wasOn = SecuritySettings.getEnableFingerprint()
             SecuritySettings.putEnableFingerprint(false)
-            _uiEvent.tryEmit(SecurityUiEvent.VerifiedAfterFingerprintChange)
+            _uiEvent.tryEmit(
+                if (wasOn) SecurityUiEvent.VerifiedAfterFingerprintChange else SecurityUiEvent.PatternVerified
+            )
         } else {
             onVerificationFailed()
+        }
+    }
+
+    /**
+     * Decides whether the lock screen offers fingerprint unlock, and with
+     * which CryptoObject cipher (audit 2026-10-06e SEC-01). A prompt without
+     * a CryptoObject accepted any enrolled finger, including one added after
+     * the lock was set, so fingerprint unlock now needs the keystore-bound
+     * pattern key. When that key was invalidated (new enrolment) or never
+     * bound (pattern saved without the biometric confirmation, e.g. the
+     * prompt was cancelled), fingerprint unlock is switched off and the
+     * pattern is required.
+     *
+     * It is not re-bound after a pattern unlock: that would need a second
+     * biometric prompt on every such unlock. Setting the pattern again
+     * (Privacy settings, fingerprint box ticked) creates a fresh key and
+     * turns fingerprint unlock back on.
+     */
+    fun startFingerprintUnlock(): FingerprintStart {
+        if (!SecuritySettings.getEnableFingerprint()) return FingerprintStart.Off
+        if (!LRRAuthManager.isPatternKeystoreBound()) {
+            return turnFingerprintOff(R.string.security_fingerprint_not_bound)
+        }
+        return try {
+            FingerprintStart.Ready(LRRAuthManager.getDecryptCipher())
+        } catch (e: KeyPermanentlyInvalidatedException) {
+            Log.e(TAG, "Fingerprint key invalidated", e)
+            turnFingerprintOff(R.string.security_fingerprint_changed)
+        } catch (e: LRRAuthManager.PatternKeyMissingException) {
+            Log.e(TAG, "Fingerprint key missing", e)
+            turnFingerprintOff(R.string.security_fingerprint_not_bound)
+        } catch (e: Exception) {
+            Log.e(TAG, "Fingerprint cipher unavailable", e)
+            FingerprintStart.Unavailable
+        }
+    }
+
+    private fun turnFingerprintOff(@StringRes reason: Int): FingerprintStart {
+        SecuritySettings.putEnableFingerprint(false)
+        return FingerprintStart.TurnedOff(reason)
+    }
+
+    /**
+     * The fingerprint prompt reported success. Unlocks only if its
+     * CryptoObject cipher really decrypts the pattern key's blob.
+     */
+    fun onFingerprintAuthenticated(cipher: Cipher?) {
+        if (LRRAuthManager.verifyFingerprintCipher(cipher)) {
+            _uiEvent.tryEmit(SecurityUiEvent.FingerprintVerified)
+        } else {
+            _uiEvent.tryEmit(SecurityUiEvent.FingerprintUnverified)
         }
     }
 

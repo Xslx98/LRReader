@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.security.GeneralSecurityException
+import java.security.Key
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -954,15 +955,58 @@ object LRRAuthManager {
         awaitInit()
         val prefs = sPrefs ?: throw GeneralSecurityException("Secure storage unavailable")
         val ivStr = prefs.getString(KEY_PATTERN_IV, null)
-            ?: throw GeneralSecurityException("Pattern IV not found")
+            ?: throw PatternKeyMissingException("Pattern IV not found")
         val iv = Base64.decode(ivStr, Base64.NO_WRAP)
-        val keyStore = KeyStore.getInstance("AndroidKeyStore")
-        keyStore.load(null)
-        val key = keyStore.getKey(KEYSTORE_ALIAS_PATTERN, null)
-            ?: throw GeneralSecurityException("Pattern KeyStore key not found")
+        val key = patternKeyLoader()
+            ?: throw PatternKeyMissingException("Pattern KeyStore key not found")
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        // A key invalidated by a new fingerprint enrolment throws
+        // KeyPermanentlyInvalidatedException here.
         cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(AES_GCM_TAG_BITS, iv))
         return cipher
+    }
+
+    /** The pattern key or its IV is gone for good: no fingerprint proof is possible until the pattern is set again. */
+    class PatternKeyMissingException(message: String) : GeneralSecurityException(message)
+
+    /** Loads the pattern key. Tests swap in a software key (Robolectric has no AndroidKeyStore). */
+    internal var patternKeyLoader: () -> Key? = {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        keyStore.getKey(KEYSTORE_ALIAS_PATTERN, null)
+    }
+
+    /**
+     * Whether [authenticatedCipher] — the CryptoObject cipher returned by a
+     * successful fingerprint BiometricPrompt — really is the pattern key,
+     * unlocked by that authentication (audit 2026-10-06e SEC-01). The prompt's
+     * success callback alone proves only that *some* enrolled finger matched,
+     * including one added after the lock was set by anyone who knows the
+     * device PIN. The key is created with `setUserAuthenticationRequired`
+     * and the default `setInvalidatedByBiometricEnrollment(true)`, so after
+     * such an enrolment it cannot be initialised at all, and without the
+     * biometric it cannot be used: decrypting the stored blob (GCM checks
+     * its tag, so a wrong key fails) is the proof.
+     *
+     * Scope (audit SEC-02): this binds the *fingerprint* unlock only. The
+     * pattern itself is also stored as a plain PBKDF2 hash beside the
+     * encrypted copy, so the binding adds nothing against an attacker who
+     * can read the secure store; it is not a second factor for the pattern.
+     */
+    @JvmStatic
+    fun verifyFingerprintCipher(authenticatedCipher: Cipher?): Boolean {
+        if (authenticatedCipher == null) return false
+        awaitInit()
+        val prefs = sPrefs ?: return false
+        val encryptedStr = prefs.getString(KEY_PATTERN_ENCRYPTED, null) ?: return false
+        return try {
+            val decrypted = authenticatedCipher.doFinal(Base64.decode(encryptedStr, Base64.NO_WRAP))
+            val plainStr = prefs.getString(KEY_PATTERN_HASH_V2, null)
+            plainStr == null || MessageDigest.isEqual(decrypted, Base64.decode(plainStr, Base64.NO_WRAP))
+        } catch (e: Exception) {
+            Log.e(TAG, "Fingerprint cipher did not decrypt the pattern blob", e)
+            false
+        }
     }
 
     // ── App-lock pattern (PBKDF2WithHmacSHA256 + optional KeyStore AES-GCM) ──
