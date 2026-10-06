@@ -18,6 +18,7 @@ package com.lanraragi.reader.ui
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
@@ -803,15 +804,43 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         super.onWindowFocusChanged(hasFocus)
 
         mainHandler.postDelayed({
-            if (hasFocus) {
-                val uiHelper = mSystemUiHelper ?: return@postDelayed
-                if (mSliderController.isShowSystemUi) {
-                    uiHelper.show()
-                } else {
-                    uiHelper.hide()
-                }
-            }
+            if (hasFocus) applySystemUiState()
         }, 300)
+    }
+
+    private fun applySystemUiState() {
+        val uiHelper = mSystemUiHelper ?: return
+        if (mSliderController.isShowSystemUi) {
+            uiHelper.show()
+        } else {
+            uiHelper.hide()
+        }
+    }
+
+    /**
+     * Rotation, fold/unfold, multi-window resizes and keyboard attach arrive
+     * here instead of recreating the reader (AndroidManifest configChanges,
+     * audit PERF-02): a recreation ran provider.stop(), dropping the decoded
+     * pages and every GL texture, and an online session redid its metadata
+     * request. What follows the new size without help:
+     * - GLRootView.onLayout relays its new bounds to GalleryView, whose
+     *   layout managers refill the pages and recompute the tap areas; the
+     *   GL surface is resized, not recreated, so the EGL context stays.
+     * - GalleryHeader re-reads the moved display cutout from the insets.
+     * - Image.initialize re-reads the display metrics for decode sampling
+     *   (LRReaderApplication.onConfigurationChanged).
+     * - A user-locked orientation is a requestedOrientation, so the system
+     *   never rotates the window in the first place.
+     * The reader layouts have no orientation-qualified resources; the menu
+     * dialog's keyline padding (values-sw600dp) refreshes when it is reopened.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // The floating stamp card is anchored in screen pixels of the old layout.
+        mStampOps?.dismissCard()
+        // Some devices re-show the system bars on rotation; restore the
+        // immersive state the slider last asked for.
+        applySystemUiState()
     }
 
     // ======== Input delegation ========
