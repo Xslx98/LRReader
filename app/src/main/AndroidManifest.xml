@@ -161,6 +161,16 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
+        <!-- Process rebirth (LRReaderApplication.restart, STAB-10): runs in its own
+             process so it can kill the main one and relaunch the app. -->
+        <activity
+            android:name="com.lanraragi.reader.PhoenixActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:process=":phoenix"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
 
 
         <service
