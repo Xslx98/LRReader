@@ -5,6 +5,7 @@ import com.lanraragi.framework.lib.yorozuya.StringUtils
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.download.DownloadPageRepair
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.util.suspendRunCatching
 import java.io.File
@@ -48,7 +49,10 @@ interface DownloadDirResolver {
     /**
      * A local copy is complete when it holds at least [expectedPages] page
      * images. An unknown server pagecount (<= 0) is treated as complete —
-     * we have no basis to second-guess the directory.
+     * we have no basis to second-guess the directory. A copy with a damaged
+     * page waiting for its re-download ([DownloadPageRepair]) is not
+     * complete: with the network up it opens in hybrid mode, which serves
+     * that page from the server.
      */
     fun isLocalCopyComplete(dir: File, expectedPages: Int): Boolean
 
@@ -85,6 +89,7 @@ interface DownloadDirResolver {
         }
 
         override fun isLocalCopyComplete(dir: File, expectedPages: Int): Boolean {
+            if (DownloadPageRepair.hasPending(dir)) return false
             if (expectedPages <= 0) return true
             return countImageFiles(dir) >= expectedPages
         }

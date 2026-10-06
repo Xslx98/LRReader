@@ -10,6 +10,7 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.download.DownloadPageRepair
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.framework.unifile.UniFile
@@ -206,7 +207,9 @@ class LRRGalleryProvider(
         // .nomedia markers and LRU access stamp are created first thing on
         // IO below, before any page can be requested.
         cacheDir = ReaderPageCache.getCacheDir(context, arcId)
-        store = downloadDir?.let { HybridPageStore(it, cacheDir) }
+        store = downloadDir?.let {
+            HybridPageStore(it, cacheDir, onRepairRequested = { DownloadPageRepair.requeueIfFinished(arcId) })
+        }
 
         // Shared page-streaming client (no call cap, no HTTP cache) — see
         // INetworkModule.pageStreamClient for the rationale.
@@ -611,9 +614,11 @@ class LRRGalleryProvider(
     }
 
     override fun onForceRequest(index: Int) {
-        // Delete cached file and re-request
+        // Delete the cached file and re-request. A download-dir page (hybrid)
+        // is the download pipeline's to replace (audit 2026-10-06d PERF-01):
+        // it is decoded again, and handed over if it is damaged (P4-d).
         val cached = getCacheFile(index)
-        if (cached.exists()) {
+        if (cached.parentFile == cacheDir && cached.exists()) {
             cached.delete()
         }
         requests.forget(index)
@@ -725,6 +730,7 @@ class LRRGalleryProvider(
                 }
             },
             ownedByDownload = { file -> file.parentFile != cacheDir },
+            handOverDamaged = { file -> store?.handOverDamagedPage(index, file) == true },
             // On retry, wait 1s for network recovery. Suspending delay: it
             // frees the IO thread and aborts on cancellation (reader exit).
             retryDelay = {

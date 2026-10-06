@@ -149,10 +149,14 @@ internal class LrrTankMemberSource(
         // Audit 2026-10-06d PERF-01: only damaged bytes in the reader cache
         // are dropped so a retry re-downloads. A valid page this device
         // cannot decode is kept (a re-download brings the same bytes), and a
-        // download-dir page (hybrid) belongs to the download worker.
+        // download-dir page (hybrid) belongs to the download worker: a
+        // damaged one is handed to it for a re-download and this session
+        // reads a fresh copy from the reader cache instead (audit 2026-10-06e
+        // P4-d). The hand-over happens once per page, so this recurses once.
         val failure = PageFailure.ofDecode(decoded, ReaderPageCache.detectImageFormat(file), Build.VERSION.SDK_INT)
-        if (failure is PageFailure.Corrupt && store == null) {
-            file.delete()
+        if (failure is PageFailure.Corrupt) {
+            if (store?.handOverDamagedPage(page0, file) == true) return obtainImage(page0, onPercent)
+            if (file.parentFile != store?.downloadDir) file.delete()
         }
         throw PageDecodeException(failure)
     }

@@ -336,93 +336,17 @@ class LRRDownloadWorker(
                 val pageFile = DownloadPageNaming.pageFile(downloadDir, i, pagePath)
 
                 // Skip if already downloaded and valid (an earlier run, or the
-                // reader's hybrid session writing into this directory).
-                if (pageFile.exists() && pageFile.length() > MIN_IMAGE_SIZE && validateImageFile(pageFile)) {
+                // reader's hybrid session writing into this directory) — unless
+                // a reader found its body damaged and asked for it again.
+                if (isOnDiskAndValid(pageFile)) {
                     val f = finished.incrementAndGet()
                     val d = downloaded.incrementAndGet()
                     listener?.onPageSuccess(i, f, d, total)
                     return@run
                 }
 
-                // Free-space floor (audit C21): stop before the disk is truly
-                // full, so Room and the rest of the system keep room to write.
-                // Checked only for pages that still need downloading, so an
-                // archive already complete on disk is never blocked.
-                if (env.usableBytes(downloadDir) < MIN_FREE_BYTES) {
-                    if (!aborted) {
-                        failureReason = DownloadFailureReason.NO_SPACE
-                        aborted = true
-                        listener?.onPageFailure(i, "Storage full", finished.get(), downloaded.get(), total)
-                    }
-                    return@run
-                }
-
-                var success = false
-                var attempt = 0
-                while (!cancelled && !aborted && !success) {
-                    try {
-                        downloadPage(pageClient, pagePath, pageFile, i, total)
-                        if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
-                            if (pageFile.exists()) pageFile.delete()
-                            throw CorruptPageException("Downloaded file too small or missing")
-                        }
-                        success = true
-                    } catch (e: Exception) {
-                        // Not just IOException: a runtime failure (URL
-                        // building, malformed path, provider quirk) used
-                        // to escape this loop and abort the WHOLE archive
-                        // via the generic handler instead of costing this
-                        // page a retry. Coroutine cancellation still
-                        // propagates.
-                        if (e is CancellationException) throw e
-                        if (cancelled) break
-                        if (!env.isNetworkAvailable()) {
-                            // Network-induced failure: pause and wait for the
-                            // network instead of consuming a retry. Loop to
-                            // re-attempt the same page once it returns.
-                            if (BuildConfig.DEBUG) Log.w(TAG, "Page $i: network down, waiting", e)
-                            if (pageFile.exists()) pageFile.delete()
-                            val resumed = waitForNetworkIfDown()
-                            if (!resumed) {
-                                failureReason = DownloadFailureReason.NETWORK
-                                listener?.onPageFailure(
-                                    i, e.message ?: "Network timeout",
-                                    finished.get(), downloaded.get(), total
-                                )
-                                break
-                            }
-                        } else {
-                            // Genuine error: PageRetryPolicy decides (audit C21).
-                            attempt++
-                            Log.e(TAG, "Failed to download page $i (attempt $attempt)", e)
-                            if (pageFile.exists()) pageFile.delete()
-                            when (val decision = PageRetryPolicy.decide(e, attempt)) {
-                                is PageRetryPolicy.Decision.Retry -> delay(decision.delayMillis)
-                                is PageRetryPolicy.Decision.Fail -> {
-                                    failureReason = decision.reason
-                                    listener?.onPageFailure(
-                                        i, e.message ?: "Unknown error",
-                                        finished.get(), downloaded.get(), total
-                                    )
-                                    break
-                                }
-                                is PageRetryPolicy.Decision.Abort -> {
-                                    // No other page can succeed either: stop
-                                    // claiming pages and end the archive.
-                                    failureReason = decision.reason
-                                    aborted = true
-                                    listener?.onPageFailure(
-                                        i, e.message ?: "Unknown error",
-                                        finished.get(), downloaded.get(), total
-                                    )
-                                    break
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (success) {
+                if (fetchPage(pageClient, pagePath, pageFile, i, total, finished, downloaded)) {
+                    DownloadPageRepair.clear(pageFile)
                     val f = finished.incrementAndGet()
                     val d = downloaded.incrementAndGet()
                     listener?.onPageSuccess(i, f, d, total)
@@ -432,8 +356,168 @@ class LRRDownloadWorker(
             Log.d(TAG, "Download cancelled", e)
         }
 
+        // Step 3b: pages a reader marked as damaged after the window had
+        // already skipped them (audit 2026-10-06e P4-d).
+        if (!cancelled && !aborted && DownloadPageRepair.hasPending(downloadDir)) {
+            try {
+                repairMarkedPages(pageClient, resolvedPagePaths, downloadDir, finished, downloaded)
+            } catch (e: CancellationException) {
+                Log.d(TAG, "Download cancelled", e)
+            }
+        }
+
         // Step 4: Report finish
         listener?.onFinish(finished.get(), downloaded.get(), total)
+    }
+
+    /** On disk with a valid header and size, and not marked for a re-download. */
+    private fun isOnDiskAndValid(pageFile: File): Boolean =
+        pageFile.exists() && pageFile.length() > MIN_IMAGE_SIZE && validateImageFile(pageFile) &&
+            !DownloadPageRepair.isMarked(pageFile)
+
+    /**
+     * Fetch again every page that carries a repair marker. Such a page was
+     * counted when the window skipped it; if the new fetch fails, it no
+     * longer counts (the damaged file is gone or still damaged).
+     */
+    private suspend fun repairMarkedPages(
+        pageClient: OkHttpClient,
+        pagePaths: Array<String>,
+        downloadDir: File,
+        finished: AtomicInteger,
+        downloaded: AtomicInteger,
+    ) {
+        val total = pagePaths.size
+        for (i in 0 until total) {
+            if (cancelled || aborted) break
+            val pageFile = DownloadPageNaming.pageFile(downloadDir, i, pagePaths[i])
+            if (DownloadPageRepair.isMarked(pageFile)) {
+                if (fetchPage(pageClient, pagePaths[i], pageFile, i, total, finished, downloaded)) {
+                    DownloadPageRepair.clear(pageFile)
+                } else {
+                    finished.decrementAndGet()
+                    downloaded.decrementAndGet()
+                }
+            }
+        }
+    }
+
+    /**
+     * Fetch page [i] into [pageFile] with the page retry policy (audit C21):
+     * waits out network loss, backs off on transient errors, gives up on
+     * permanent ones. Returns true once the page is on disk; on failure the
+     * reason and the page failure have been reported.
+     */
+    private suspend fun fetchPage(
+        pageClient: OkHttpClient,
+        pagePath: String,
+        pageFile: File,
+        i: Int,
+        total: Int,
+        finished: AtomicInteger,
+        downloaded: AtomicInteger,
+    ): Boolean {
+        val downloadDir = pageFile.parentFile
+        if (downloadDir == null) return false
+        // Free-space floor (audit C21): stop before the disk is truly
+        // full, so Room and the rest of the system keep room to write.
+        // Checked only for pages that still need downloading, so an
+        // archive already complete on disk is never blocked.
+        if (env.usableBytes(downloadDir) < MIN_FREE_BYTES) {
+            if (!aborted) {
+                failureReason = DownloadFailureReason.NO_SPACE
+                aborted = true
+                listener?.onPageFailure(i, "Storage full", finished.get(), downloaded.get(), total)
+            }
+            return false
+        }
+
+        var attempt = 0
+        var keepTrying = true
+        while (keepTrying && !cancelled && !aborted) {
+            val error = attemptPage(pageClient, pagePath, pageFile, i, total)
+            if (error == null) return true
+            if (cancelled) break
+            if (pageFile.exists()) pageFile.delete()
+            keepTrying = if (!env.isNetworkAvailable()) {
+                // Network-induced failure: pause and wait for the network
+                // instead of consuming a retry, then re-attempt the page.
+                if (BuildConfig.DEBUG) Log.w(TAG, "Page $i: network down, waiting", error)
+                val resumed = waitForNetworkIfDown()
+                if (!resumed) {
+                    failureReason = DownloadFailureReason.NETWORK
+                    listener?.onPageFailure(
+                        i, error.message ?: "Network timeout",
+                        finished.get(), downloaded.get(), total
+                    )
+                }
+                resumed
+            } else {
+                // Genuine error: PageRetryPolicy decides (audit C21).
+                attempt++
+                Log.e(TAG, "Failed to download page $i (attempt $attempt)", error)
+                val retryDelay = retryDelayOrGiveUp(error, attempt, i, total, finished, downloaded)
+                if (retryDelay != null) delay(retryDelay)
+                retryDelay != null
+            }
+        }
+        return false
+    }
+
+    /**
+     * One download of page [i]: null when it landed, else the failure. Not
+     * just IOException: a runtime failure (URL building, malformed path,
+     * provider quirk) used to escape the retry loop and abort the WHOLE
+     * archive via the generic handler instead of costing this page a retry.
+     * Coroutine cancellation still propagates.
+     */
+    private fun attemptPage(
+        pageClient: OkHttpClient,
+        pagePath: String,
+        pageFile: File,
+        i: Int,
+        total: Int,
+    ): Exception? =
+        try {
+            downloadPage(pageClient, pagePath, pageFile, i, total)
+            if (!pageFile.exists() || pageFile.length() < MIN_IMAGE_SIZE) {
+                if (pageFile.exists()) pageFile.delete()
+                throw CorruptPageException("Downloaded file too small or missing")
+            }
+            null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            e
+        }
+
+    /**
+     * Applies [PageRetryPolicy] to a failed attempt: the delay before the
+     * next one, or null after reporting that the page is given up on.
+     */
+    private fun retryDelayOrGiveUp(
+        error: Exception,
+        attempt: Int,
+        i: Int,
+        total: Int,
+        finished: AtomicInteger,
+        downloaded: AtomicInteger,
+    ): Long? {
+        val decision = PageRetryPolicy.decide(error, attempt)
+        if (decision is PageRetryPolicy.Decision.Retry) return decision.delayMillis
+        if (decision is PageRetryPolicy.Decision.Abort) {
+            // No other page can succeed either: stop claiming pages and
+            // end the archive.
+            failureReason = decision.reason
+            aborted = true
+        } else if (decision is PageRetryPolicy.Decision.Fail) {
+            failureReason = decision.reason
+        }
+        listener?.onPageFailure(
+            i, error.message ?: "Unknown error",
+            finished.get(), downloaded.get(), total
+        )
+        return null
     }
 
     /** The page list could not be fetched: the archive ends with [reason]. */

@@ -1,5 +1,6 @@
 package com.lanraragi.reader.gallery
 
+import com.lanraragi.reader.download.DownloadPageRepair
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -68,5 +69,13 @@ class DownloadDirResolverTest {
     @Test
     fun `unknown pagecount is treated as complete`() {
         assertTrue(DownloadDirResolver.isLocalCopyComplete(dirWith("0001.jpg"), 0))
+    }
+
+    @Test
+    fun `a page waiting for its re-download makes the copy incomplete`() {
+        val dir = dirWith("0001.jpg", "0002.jpg")
+        DownloadPageRepair.mark(File(dir, "0002.jpg"))
+        assertFalse(DownloadDirResolver.isLocalCopyComplete(dir, 2))
+        assertFalse(DownloadDirResolver.isLocalCopyComplete(dir, 0))
     }
 }
