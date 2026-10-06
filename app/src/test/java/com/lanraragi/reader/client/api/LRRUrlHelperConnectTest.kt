@@ -130,8 +130,13 @@ class LRRUrlHelperConnectTest {
 
         val error = result.errorOrNull()
         assertTrue("explicit https must fail, got $result", error != null && error !is LRRCleartextRefusedException)
-        // The TLS attempt opens a socket but never completes an HTTP request.
-        assertEquals("no request may reach the server over HTTP", 0, server.requestCount)
+        // The TLS attempt opens a socket and MockWebServer may record its
+        // ClientHello as a malformed request, depending on timing; what must
+        // never arrive is a real plain-HTTP API request carrying the key.
+        val httpApiRequests = generateSequence { server.takeRequest(100, TimeUnit.MILLISECONDS) }
+            .filter { it.path?.startsWith("/api/") == true || it.getHeader("Authorization") != null }
+            .toList()
+        assertTrue("no API request may reach the server over HTTP: $httpApiRequests", httpApiRequests.isEmpty())
     }
 
     @Test
