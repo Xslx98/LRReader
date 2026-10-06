@@ -146,6 +146,16 @@ class AppModule(private val context: Context) : IAppModule {
         val bootProfileLoadError: MutableStateFlow<Throwable?> = MutableStateFlow(null)
 
         /**
+         * Timestamp of a quarantined (corrupt, moved aside) database set the
+         * user has not been told about yet, or null (audit 2026-10-06d REL-02).
+         * Published by the boot loader from
+         * [com.lanraragi.reader.dao.DatabaseResetNotice.pendingStamp]; shown and
+         * cleared by [com.lanraragi.reader.ui.BootNoticePresenter].
+         */
+        @JvmStatic
+        val databaseResetNotice: MutableStateFlow<Long?> = MutableStateFlow(null)
+
+        /**
          * Build a [CoroutineExceptionHandler] from injectable function references.
          * Both callbacks are wrapped in try/catch so a misbehaving handler cannot
          * itself crash the process (a death loop while reporting another crash).

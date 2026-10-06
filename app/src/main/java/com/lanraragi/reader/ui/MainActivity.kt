@@ -58,6 +58,7 @@ import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DatabaseQuarantine
+import com.lanraragi.reader.dao.DatabaseResetNotice
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -558,6 +559,7 @@ class MainActivity : StageActivity(),
             isLockScreenUp = ::isLockScreenUp,
             onRetry = ::triggerRebirth,
             onResetDatabase = ::showResetDatabaseConfirm,
+            onResetNoticeSeen = { stamp -> DatabaseResetNotice.markSeen(Settings.getPreferences(), stamp) },
         ).also { it.install() }
 
         // Cold-start auto update check. No-op if user disabled the toggle, the
@@ -726,7 +728,11 @@ class MainActivity : StageActivity(),
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    DatabaseQuarantine.quarantine(applicationContext.getDatabasePath(AppDatabase.DB_NAME))
+                    val moved = DatabaseQuarantine.quarantine(applicationContext.getDatabasePath(AppDatabase.DB_NAME))
+                    // The user chose this reset: no "database was damaged" notice
+                    // after the restart (REL-02). Committed, the process dies next.
+                    val stamp = moved?.let { DatabaseQuarantine.stampOf(it, AppDatabase.DB_NAME) }
+                    if (stamp != null) DatabaseResetNotice.markSeen(Settings.getPreferences(), stamp, commit = true)
                 } catch (t: Throwable) {
                     Log.e(TAG, "database quarantine failed during boot-failure reset", t)
                 }

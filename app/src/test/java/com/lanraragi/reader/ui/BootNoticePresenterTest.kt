@@ -40,6 +40,8 @@ class BootNoticePresenterTest {
     fun setUp() {
         ShadowDialog.reset()
         bootError.value = null
+        resetNotice.value = null
+        seenStamps.clear()
         lockUp = false
         retries = 0
         resets = 0
@@ -49,6 +51,7 @@ class BootNoticePresenterTest {
     fun tearDown() {
         if (::controller.isInitialized) controller.pause().stop().destroy()
         bootError.value = null
+        resetNotice.value = null
     }
 
     @Test(timeout = 10_000)
@@ -136,6 +139,44 @@ class BootNoticePresenterTest {
         assertNull(bootError.value)
     }
 
+    @Test(timeout = 10_000)
+    fun databaseResetNotice_arrivingAfterStart_isShownOnceAndMarkedSeenOnOk() {
+        startHost()
+        resetNotice.value = 1234L
+        idle()
+
+        val dialog = showingDialogs().single() as AlertDialog
+        controller.get().presenter.maybeShow()
+        idle()
+        assertEquals(1, ShadowDialog.getShownDialogs().size)
+        val message = dialog.findViewById<android.widget.TextView>(android.R.id.message)!!.text.toString()
+        assertEquals(controller.get().getString(R.string.lrr_db_reset_notice_message), message)
+
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+        idle()
+        assertEquals(listOf(1234L), seenStamps)
+        assertNull(resetNotice.value)
+    }
+
+    @Test(timeout = 10_000)
+    fun databaseResetNotice_waitsForTheLockAndSurvivesRecreateUnanswered() {
+        lockUp = true
+        resetNotice.value = 99L
+        startHost()
+        assertEquals(0, showingDialogs().size)
+
+        lockUp = false
+        controller.get().presenter.maybeShow()
+        idle()
+        val first = showingDialogs().single()
+
+        controller.recreate()
+        idle()
+        assertTrue(!first.isShowing)
+        assertEquals(1, showingDialogs().size)
+        assertTrue(seenStamps.isEmpty())
+    }
+
     private fun startHost() {
         controller = Robolectric.buildActivity(HostActivity::class.java).setup()
         idle()
@@ -157,13 +198,17 @@ class BootNoticePresenterTest {
                 isLockScreenUp = { lockUp },
                 onRetry = { retries++ },
                 onResetDatabase = { resets++ },
+                onResetNoticeSeen = { seenStamps += it },
                 bootError = bootError,
+                resetNotice = resetNotice,
             ).also { it.install() }
         }
     }
 
     companion object {
         val bootError = MutableStateFlow<Throwable?>(null)
+        val resetNotice = MutableStateFlow<Long?>(null)
+        val seenStamps = mutableListOf<Long>()
         var lockUp = false
         var retries = 0
         var resets = 0

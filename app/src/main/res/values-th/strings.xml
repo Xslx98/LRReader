@@ -883,6 +883,8 @@
     <string name="lrr_boot_load_failed_reset_db_confirm_title">รีเซ็ตฐานข้อมูล?</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_message">การดำเนินการนี้จะลบข้อมูลที่จัดเก็บในเครื่องทั้งหมดอย่างถาวร ได้แก่ โปรไฟล์เซิร์ฟเวอร์ ประวัติการอ่าน รายการโปรด บันทึกการดาวน์โหลด และประวัติการค้นหา ไฟล์อาร์ไคฟ์ที่ดาวน์โหลดไว้บนดิสก์จะไม่ได้รับผลกระทบ แอปจะรีสตาร์ทเสมือนเป็นการติดตั้งใหม่</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">รีเซ็ตและรีสตาร์ท</string>
+    <string name="lrr_db_reset_notice_title">รีเซ็ตฐานข้อมูลแล้ว</string>
+    <string name="lrr_db_reset_notice_message">ฐานข้อมูลในเครื่องเสียหายและถูกแทนที่ด้วยฐานข้อมูลว่าง เซิร์ฟเวอร์ที่บันทึกไว้ ประวัติการอ่าน และข้อมูลในเครื่องอื่นๆ อาจหายไป สำเนาของไฟล์ที่เสียหายถูกเก็บไว้ในอุปกรณ์นี้</string>
     <string name="lrr_secure_storage_write_failed">คีย์สโตร์ของอุปกรณ์ไม่พร้อมใช��งาน จึงไม่สามารถบันทึกการเปลี่ยนแปลงอย่างปลอดภัยได้ กรุณารีสตาร์ทอุปกรณ์แล้วลองอีกครั้ง หรือติดตั้งแอปใหม่หากปัญหายังคงอยู่</string>
     <string name="reauth_required_title">ต้องยืนยันตัวตนใหม่</string>
     <string name="reauth_required_message">คีย์สโตร์ความปลอดภัยไม่พร้อมใช้งาน กรุณากรอก API Key ของแต่ละเซิร์ฟเวอร์อีกครั้ง</string>
