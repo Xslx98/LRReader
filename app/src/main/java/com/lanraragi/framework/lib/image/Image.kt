@@ -540,10 +540,13 @@ class Image private constructor(
          * the device cannot show is not mistaken for a damaged file (audit
          * 2026-10-06d PERF-01).
          */
-        fun decodeResult(stream: FileInputStream, hardware: Boolean = true): DecodeResult<Image> =
-            decodeWithOomRetry(rewind = { stream.channel.position(0) }) { multiplier ->
-                Image(stream, hardware = hardware, sampleMultiplier = multiplier)
+        fun decodeResult(stream: FileInputStream, hardware: Boolean = true): DecodeResult<Image> {
+            // Sampled by the reader's scale mode, read once, like [decode].
+            val fit = pageFitSource()
+            return decodeWithOomRetry(rewind = { stream.channel.position(0) }) { multiplier ->
+                Image(stream, hardware = hardware, sampleMultiplier = multiplier, pageFit = fit)
             }
+        }
 
         @JvmStatic
         fun decode(drawable: Drawable?, hardware: Boolean = true): Image? {

@@ -111,6 +111,20 @@ class ReaderPageFitDecodeTest {
     }
 
     @Test
+    fun `the reason-reporting decode follows the scale mode too`() {
+        // Image.decodeResult is what the online and tank providers call (06d
+        // PERF-01); it must sample like Image.decode, or webtoon strips are
+        // decoded at the FIT sample and look blurry.
+        ReadingSettings.putReadingDirection(GalleryView.LAYOUT_TOP_TO_BOTTOM)
+        ReadingSettings.putPageScaling(GalleryView.SCALE_FIT)
+        val result = FileInputStream(pngFile(700, 1000)).use { Image.decodeResult(it, false) }
+        val image = (result as com.lanraragi.framework.lib.image.DecodeResult.Ok).value
+        assertEquals(700, image.width)
+        assertEquals(1000, image.height)
+        image.recycle()
+    }
+
+    @Test
     fun `decode without a target through the thumbnail overload ignores the scale mode`() {
         ReadingSettings.putReadingDirection(GalleryView.LAYOUT_RIGHT_TO_LEFT)
         ReadingSettings.putPageScaling(GalleryView.SCALE_FIT)
