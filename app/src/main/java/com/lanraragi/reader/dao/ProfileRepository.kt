@@ -21,7 +21,7 @@ class ProfileRepository(private val dao: MiscRoomDao) {
      * and download workers.
      */
     fun observeAll(): Flow<List<ServerProfile>> =
-        dao.observeAllProfiles()
+        dao.observeAllProfiles().endOnDbFailure(TAG, "profiles")
 
     suspend fun getActiveProfile(): ServerProfile? =
         dao.getActiveProfile()
@@ -46,5 +46,9 @@ class ProfileRepository(private val dao: MiscRoomDao) {
     /** Atomically make [id] the sole active profile. */
     suspend fun activateExclusive(id: Long) {
         dao.setActiveProfileExclusive(id)
+    }
+
+    private companion object {
+        const val TAG = "ProfileRepository"
     }
 }
