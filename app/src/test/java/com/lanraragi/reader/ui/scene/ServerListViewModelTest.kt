@@ -43,6 +43,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 import java.util.concurrent.TimeUnit
 import com.lanraragi.reader.gallery.ArchiveProgressOutbox
+import com.lanraragi.reader.gallery.LocalReadingProgress
 import com.lanraragi.reader.client.api.ServerCapabilityCache
 
 /**
@@ -604,6 +605,35 @@ class ServerListViewModelTest {
         } finally {
             ArchiveProgressOutbox.installForTesting(null)
             ServerCapabilityCache.clear()
+        }
+    }
+
+    /** Audit 2026-10-06 C37: the deleted profile's `<id>:*` local reading positions go with it. */
+    @Test
+    fun deleteProfile_dropsTheProfilesLocalReadingProgress() {
+        // The cascade's earlier tank-cover step reads Settings.
+        com.lanraragi.reader.Settings.initialize(ctx)
+        val gone = insertProfile("Gone", "https://gone.example")
+        val kept = insertProfile("Kept", "https://kept.example")
+        val prefs = LocalReadingProgress.prefs(ctx)
+        prefs.edit().clear().commit()
+        LocalReadingProgress.resetForTest()
+        try {
+            LocalReadingProgress.profileId = { gone }
+            LocalReadingProgress.save(ctx, "arc", 5, nowSeconds = 100)
+            LocalReadingProgress.profileId = { kept }
+            LocalReadingProgress.save(ctx, "arc", 9, nowSeconds = 200)
+
+            ServerListViewModel().deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example"))
+
+            awaitUntil { prefs.all.keys.none { it.startsWith("$gone:") } }
+            assertEquals(
+                setOf(LocalReadingProgress.key(kept, "arc"), LocalReadingProgress.key(kept, "arc") + "_ts"),
+                prefs.all.keys,
+            )
+        } finally {
+            LocalReadingProgress.resetForTest()
+            prefs.edit().clear().commit()
         }
     }
 }

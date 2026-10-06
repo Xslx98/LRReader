@@ -71,6 +71,20 @@ internal object LocalReadingProgress {
         entries = -1
     }
 
+    /**
+     * Drops every entry stored for [profileId] (its server profile was deleted,
+     * audit 2026-10-06 C37). @return how many archives were dropped
+     */
+    fun removeProfile(ctx: Context, profileId: Long): Int {
+        val prefs = prefs(ctx)
+        val prefix = "$profileId$SEP"
+        val keys = prefs.all.keys.filter { it.startsWith(prefix) }
+        if (keys.isEmpty()) return 0
+        prefs.edit { keys.forEach { remove(it) } }
+        entries = -1
+        return keys.count { !it.endsWith(TS_SUFFIX) }
+    }
+
     private fun countNewEntry(prefs: SharedPreferences, activeKey: String) {
         val count = if (entries < 0) countEntries(prefs.all) else entries + 1
         entries = count
