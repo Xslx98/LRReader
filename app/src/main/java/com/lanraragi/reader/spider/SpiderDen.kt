@@ -23,6 +23,7 @@ import com.lanraragi.reader.Settings
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.download.DownloadDirAllocator
 import com.lanraragi.reader.download.DownloadDirNaming
+import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.framework.unifile.UniFile
 import java.util.Locale
@@ -112,6 +113,8 @@ object SpiderDen {
      */
     internal fun resolveRootDir(storedUri: String?): UniFile? {
         if (!storedUri.isNullOrEmpty()) {
+            // A root from an earlier setting: its title dirs stay out of reports too (audit 2026-10-06 C06).
+            Redactor.registerDownloadRoot(storedUri)
             try {
                 val parsed = storedUri.toUri()
                 val file = UniFile.fromUri(Settings.getContext(), parsed)

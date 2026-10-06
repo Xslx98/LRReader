@@ -85,8 +85,100 @@ object Redactor {
     )
     private val SOURCE_EXTENSIONS = setOf("kt", "kts", "java", "xml", "json", "txt", "log")
 
+    // ---- Archive titles in download paths (audit 2026-10-06 C06) ----
+    // A download directory is named after the archive title (DownloadDirNaming),
+    // so "<root>/<title>/0001.jpg" in a FileNotFoundException names the archive.
+    // The segment right below a download root is replaced; the rest of the path
+    // (page file name, error reason) is kept.
+
+    private const val TITLE = "<title>"
+    private const val PATH = "<path>"
+
+    /**
+     * One directory name below a root. FileUtils.sanitizeFilename strips
+     * `\ / : * ? " < > |`, so a title never holds them: the segment ends at a
+     * separator, at the ": open failed" that follows a libcore path, or at the
+     * end of the line. Excluding `<`/`>` also keeps the rule idempotent.
+     */
+    private const val SEGMENT = """[^/\\:*?"<>|\r\n]+"""
+
+    /** The default roots: `files/download` in the external or internal files dir. */
+    private val DEFAULT_ROOT_CHILD = Regex("""(/files/download/)$SEGMENT""")
+
+    /** Percent-encoded SAF document id: `/document/primary%3AManga%2FTitle%2F0001.jpg`. */
+    private val SAF_DOCUMENT = Regex("""(/document/[A-Za-z0-9._-]+%3A)[^\s"'<>]+""")
+
+    private val rootsLock = Any()
+    private val rootPrefixes = LinkedHashSet<String>()
+
+    @Volatile
+    private var rootRules: List<Regex> = emptyList()
+
+    /**
+     * Adds a download root (a file path, `file://` URI or SAF `content://`
+     * tree URI) whose child directories are archive titles. Called wherever a
+     * root is resolved; repeats are cheap no-ops.
+     */
+    fun registerDownloadRoot(root: String?) {
+        if (root.isNullOrBlank()) return
+        val prefixes = prefixesOf(root)
+        synchronized(rootsLock) {
+            if (!rootPrefixes.addAll(prefixes)) return
+            rootRules = rootPrefixes.map { Regex("(" + Regex.escape(it) + "/)" + SEGMENT) }
+        }
+    }
+
+    /** Test hook: forget every registered root. */
+    internal fun clearDownloadRoots() = synchronized(rootsLock) {
+        rootPrefixes.clear()
+        rootRules = emptyList()
+    }
+
+    /** The literal path prefixes [root] appears as in messages: decoded and, if different, encoded. */
+    private fun prefixesOf(root: String): List<String> {
+        val raw = when {
+            root.startsWith("file://") -> root.removePrefix("file://")
+            root.startsWith("content://") -> root.substringAfter("/tree/", "").substringBefore('/')
+            else -> root
+        }
+        val decoded = percentDecode(raw)
+        return listOf(decoded, raw).map { it.trimEnd('/') }.filter { it.length >= MIN_ROOT_LENGTH }.distinct()
+    }
+
+    private const val MIN_ROOT_LENGTH = 2
+
+    /** `%XX` escapes to UTF-8 text; a malformed escape is kept as is (never throws). */
+    private fun percentDecode(s: String): String {
+        if ('%' !in s) return s
+        val bytes = java.io.ByteArrayOutputStream(s.length)
+        var i = 0
+        while (i < s.length) {
+            val escape = if (s[i] == '%' && i + 2 < s.length) s.substring(i + 1, i + ESCAPE_LENGTH) else ""
+            if (escape.isNotEmpty() && escape.all { Character.digit(it, HEX_RADIX) >= 0 }) {
+                bytes.write(escape.toInt(HEX_RADIX))
+                i += ESCAPE_LENGTH
+            } else {
+                val cp = s.codePointAt(i)
+                bytes.write(String(Character.toChars(cp)).toByteArray(Charsets.UTF_8))
+                i += Character.charCount(cp)
+            }
+        }
+        return bytes.toString(Charsets.UTF_8.name())
+    }
+
+    private const val HEX_RADIX = 16
+    private const val ESCAPE_LENGTH = 3
+
+    private fun redactTitles(text: String): String {
+        var out = DEFAULT_ROOT_CHILD.replace(text) { m -> m.groupValues[1] + TITLE }
+        out = SAF_DOCUMENT.replace(out) { m -> m.groupValues[1] + PATH }
+        for (rule in rootRules) out = rule.replace(out) { m -> m.groupValues[1] + TITLE }
+        return out
+    }
+
     fun redact(text: String): String {
-        var out = AUTH_HEADER.replace(text) { m -> (m.groupValues[1]) + SECRET }
+        // Titles first: the host rules below must not split a title segment.
+        var out = AUTH_HEADER.replace(redactTitles(text)) { m -> (m.groupValues[1]) + SECRET }
         out = KEY_VALUE.replace(out) { m -> m.groupValues[1] + m.groupValues[2] + SECRET }
         out = URL_AUTHORITY.replace(out) { m -> m.groupValues[1] + "://" + HOST }
         out = RESOLVE_HOST.replace(out) { m -> m.groupValues[1] + m.groupValues[2] + HOST + m.groupValues[3] }

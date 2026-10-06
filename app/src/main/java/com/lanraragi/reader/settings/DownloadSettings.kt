@@ -7,6 +7,7 @@ import androidx.annotation.Nullable
 import androidx.core.content.edit
 import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.Settings
+import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.framework.util.ExceptionUtils
@@ -53,10 +54,15 @@ object DownloadSettings {
         // location used to silently degrade to app-private storage — invisible files that
         // "delete with files" could never reclaim. Fall back to the default app file://
         // directory for any non-file (or unresolved) location.
-        if (dir == null || dir.uri.scheme != "file") {
-            return UniFile.fromFile(AppConfig.getDefaultDownloadDir())
+        val location = if (dir == null || dir.uri.scheme != "file") {
+            UniFile.fromFile(AppConfig.getDefaultDownloadDir())
+        } else {
+            dir
         }
-        return dir
+        // Its child directories are archive titles: keep them out of crash
+        // reports and diagnostics (audit 2026-10-06 C06).
+        Redactor.registerDownloadRoot(location?.uri?.toString())
+        return location
     }
 
     /**

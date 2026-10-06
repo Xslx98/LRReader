@@ -1,5 +1,6 @@
 package com.lanraragi.reader.diagnostics
 
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -180,6 +181,97 @@ class RedactorTest {
         )
         assertFalse(once, once.contains("example") || once.contains("db8") || once.contains("10.0.0.2"))
         assertFalse(once, once.contains("\"nas\""))
+        assertEquals(once, Redactor.redact(once))
+    }
+
+    // ---- Archive titles in download paths (audit 2026-10-06 C06) ----
+
+    @After
+    fun forgetRoots() = Redactor.clearDownloadRoots()
+
+    @Test
+    fun defaultDownloadRoot_titleSegmentIsReplaced() {
+        val out = Redactor.redact(
+            "java.io.FileNotFoundException: /storage/emulated/0/Android/data/com.lanraragi.reader/files/download/" +
+                "[Circle (Author)] My Secret Title (2)/0001.jpg: open failed: ENOENT (No such file or directory)"
+        )
+        assertEquals(
+            "java.io.FileNotFoundException: /storage/emulated/0/Android/data/com.lanraragi.reader/files/download/" +
+                "<title>/0001.jpg: open failed: ENOENT (No such file or directory)",
+            out,
+        )
+        // A directory path with nothing after the title, and the internal files dir.
+        assertEquals(
+            "Cannot create /data/user/0/com.lanraragi.reader/files/download/<title>",
+            Redactor.redact("Cannot create /data/user/0/com.lanraragi.reader/files/download/Someone's Title, Vol. 3"),
+        )
+        assertEquals(
+            "file:///storage/emulated/0/Android/data/p/files/download/<title>/002.png",
+            Redactor.redact(
+                "file:///storage/emulated/0/Android/data/p/files/download/My%20Title%20%E7%AC%AC1%E5%B7%BB/002.png"
+            ),
+        )
+    }
+
+    @Test
+    fun userChosenRoot_titleSegmentIsReplaced_onlyOnceRegistered() {
+        val msg = "java.io.IOException: rename failed: /storage/emulated/0/Manga/Great Title/0003.webp.tmp -> " +
+            "/storage/emulated/0/Manga/Great Title/0003.webp"
+        assertEquals(msg, Redactor.redact(msg))
+
+        Redactor.registerDownloadRoot("file:///storage/emulated/0/Manga/")
+        assertEquals(
+            "java.io.IOException: rename failed: /storage/emulated/0/Manga/<title>/0003.webp.tmp -> " +
+                "/storage/emulated/0/Manga/<title>/0003.webp",
+            Redactor.redact(msg),
+        )
+        // A sibling folder that only shares the prefix is not a child of the root.
+        assertEquals("/storage/emulated/0/Manga2/x/1.jpg", Redactor.redact("/storage/emulated/0/Manga2/x/1.jpg"))
+    }
+
+    @Test
+    fun userChosenRoot_withEncodedCharacters_matchesDecodedAndEncodedPaths() {
+        Redactor.registerDownloadRoot("file:///storage/emulated/0/My%20Books")
+        assertEquals(
+            "/storage/emulated/0/My Books/<title>/001.jpg",
+            Redactor.redact("/storage/emulated/0/My Books/Title A/001.jpg"),
+        )
+        assertEquals(
+            "file:///storage/emulated/0/My%20Books/<title>/001.jpg",
+            Redactor.redact("file:///storage/emulated/0/My%20Books/Title%20A/001.jpg"),
+        )
+    }
+
+    @Test
+    fun safDocumentUris_documentPathIsReplaced() {
+        val out = Redactor.redact(
+            "java.io.FileNotFoundException: Missing file for " +
+                "content://com.android.externalstorage.documents/tree/primary%3AManga/document/" +
+                "primary%3AManga%2FMy%20Secret%20Title%2F0001.jpg at /storage/emulated/0/Manga/x"
+        )
+        assertEquals(
+            "java.io.FileNotFoundException: Missing file for " +
+                "content://<host>/tree/primary%3AManga/document/primary%3A<path> at /storage/emulated/0/Manga/x",
+            out,
+        )
+        Redactor.registerDownloadRoot("content://com.android.externalstorage.documents/tree/primary%3AManga")
+        assertEquals(
+            "Failed to open primary:Manga/<title>/0001.jpg",
+            Redactor.redact("Failed to open primary:Manga/My Secret Title/0001.jpg"),
+        )
+    }
+
+    @Test
+    fun titleRules_leaveFramesAndOtherDownloadPathsAlone() {
+        val text = listOf(
+            "\tat com.lanraragi.reader.download.LRRDownloadWorker.writePage(LRRDownloadWorker.kt:598)",
+            "\tat com.lanraragi.reader.spider.SpiderDen.resolveRootDir(SpiderDen.kt:120)",
+            "GET https://<host>/Xslx98/LRReader/releases/download/v1.27.1/app.apk",
+        ).joinToString("\n")
+        Redactor.registerDownloadRoot("/storage/emulated/0/Manga")
+        assertEquals(text, Redactor.redact(text))
+        val once = Redactor.redact("/storage/emulated/0/Manga/T/1.jpg /x/files/download/T2/2.jpg")
+        assertEquals("/storage/emulated/0/Manga/<title>/1.jpg /x/files/download/<title>/2.jpg", once)
         assertEquals(once, Redactor.redact(once))
     }
 
