@@ -1,6 +1,6 @@
 # Privacy Policy - LR Reader | 隐私政策
 
-**生效日期 | Effective Date:** 2026-10-05
+**生效日期 | Effective Date:** 2026-10-06
 
 LR Reader（以下简称"本应用"）是一个开源的 LANraragi Android 客户端，用于连接用户自建的漫画/档案管理服务器。本隐私政策说明应用如何处理您的数据。
 
@@ -23,11 +23,17 @@ Your data stays on your device and on the LANraragi server(s) you configure. The
 The App stores the following data on your device:
 
 - **服务器连接信息 / Server connection details** (URL, API key) - API 密钥与应用锁图案使用保存在 Android 密钥库（Android Keystore）中的密钥加密存储 / the API key and the app-lock pattern are stored encrypted with a key kept in the Android Keystore
-- **阅读历史、进度与偏好设置 / Reading history, progress and preferences** - 存储在本地数据库与设置中 / stored in a local database and in the app settings
+- **阅读历史、进度与偏好设置 / Reading history, progress and preferences** - 存储在本地数据库与设置中；网络不可用时未能发送到服务器的阅读进度和合订本标签更新也暂存在本地，联网后发送 / stored in a local database and in the app settings; reading progress and tankoubon tag updates that could not reach the server while offline are also kept locally and sent once the network is back
 - **下载的档案 / Downloaded archives** - 保存在您选择的下载位置，直到您删除。这些文件不加密，应用锁不保护它们：通过 USB 连接的电脑或有存储权限的应用可以读取 / kept in the download location you choose until you delete them. They are not encrypted and the app lock does not protect them: a computer over USB or an app with storage access can read them
 - **缓存 / Caches** - 阅读页面、缩略图和网络响应的缓存，大小有上限并随系统分配的缓存配额缩小，可在系统的应用信息中清除，系统空间不足时也可能自动清理 / caches of reader pages, thumbnails and network responses; their sizes are capped and shrink with the cache quota the system grants, they can be cleared from the system app info screen, and the system may clear them when storage runs low
 - **标签翻译数据 / Tag translation data** - 仅在显示标签翻译时下载（见下文）/ downloaded only while tag translations are shown (see below)
 - **崩溃与诊断报告 / Crash and diagnostic reports** - 默认开启，仅保存在应用私有目录（每类最近 5 份），可在「设置 → 高级」关闭；内容为错误堆栈、设备型号与系统版本、应用版本及近期脱敏事件，不含服务器地址、API 密钥或档案标题 / on by default, kept only in the app-private directory (the newest 5 of each kind) and can be turned off in Settings → Advanced; they contain error stack traces, device model and OS version, app version and recent redacted events, never server addresses, API keys or archive titles
+
+## 备份文件 | Backup Files
+
+只有在您于「设置 → 高级 → 备份数据」中选择保存位置时，本应用才会写出备份文件。文件为未加密的 JSON，包含服务器名称与地址（不含 API 密钥）、阅读历史与档案标题、收藏、下载记录（不含文件本身）、阅读进度与统计、搜索记录和非敏感设置；应用锁与 API 密钥从不写入。文件保存在您选择的位置，由您自行保管；本应用不会上传它。
+
+The App writes a backup file only when you pick a location under Settings → Advanced → Back up data. The file is unencrypted JSON holding server names and addresses (without API keys), reading history with archive titles, favourites, download records (not the files), reading progress and statistics, search history and non-sensitive settings; the app lock and API keys are never written. It is stored where you choose and is yours to keep safe; the App never uploads it.
 
 ## 诊断信息分享 | Sharing Diagnostics
 

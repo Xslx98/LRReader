@@ -1,16 +1,20 @@
 LR Reader is a feature-rich Android client for LANraragi, a self-hosted manga/archive management server.
 
 Features:
-• Full-featured search — keyword, category filter, sort, random
-• High-performance reader — native C image decoder + smart preloading
-• Offline download — background archive download with resume support
+• Full-featured search — keyword, category filter, sort, random, per-server search history
+• High-performance reader — GL rendering, on-demand decoding and smart preloading
+• Tankoubons — read a whole tankoubon as one book, with its own detail page, tags and one-tap download
+• Offline download — background archive download with resume, read while downloading
+• Progress sync — two-way reading progress with the server, kept per server
+• Backup & restore — servers (without API keys), history, favourites, progress and settings to a file
 • Tag translation — auto-translate tags in Chinese (EhTagDatabase)
 • Archive rating — emoji-based star rating system
 • Category management — browse, create, edit LANraragi categories
-• Secure authentication — encrypted API Key storage
+• Secure — API keys encrypted with the Android Keystore, pattern app lock, plain-HTTP servers marked
 • Multi-server — configure and switch between multiple LANraragi instances
-• Multi-language — 10 languages including CJK, English, French, German, Spanish, Thai
-• Dark mode — follows system theme
 • Upload & URL download — add archives directly from the app
+• Private by design — no analytics; crash reports stay on the device unless you share them
+• Multi-language — 10 languages including CJK, English, French, German, Spanish, Thai
+• Dark mode — follows system theme, AMOLED black
 
 Built upon the EhViewer reading framework.

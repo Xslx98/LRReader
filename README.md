@@ -79,19 +79,21 @@ Tap **Test connection**; seeing the server name and version means you are in —
 | 📦 **合订本下载 / Tank Download** | 一键下载整个合订本，下载列表聚合为单卡片，点击即离线整本阅读；已下载成员自动并入零重复下载 / One-tap whole-tank download aggregated into a single card that opens the offline whole-tank session; already-downloaded members merge in with zero re-download (LANraragi 0.9.8+) |
 | ⏬ **边下边读 / Read While Downloading** | 下载中的档案（含合订本成员）可直接阅读：已落盘页秒开，阅读器取回的页写入下载目录供下载器复用；离线时缺页显示错误页而非截断 / Read an archive (or tankoubon member) while it downloads: landed pages open instantly, pages fetched by the reader are written into the download directory for the worker to reuse; offline, missing pages show as errors instead of ending early |
 | 🔖 **页面标注 / Page Stamps** | 阅读器内查看、放置、编辑页面标注 / View, place and edit per-page stamps in the reader (LANraragi 0.9.8+) |
-| 🔄 **进度同步 / Progress Sync** | 阅读进度与服务器双向同步，跨设备续读 / Two-way reading-progress sync with the server |
+| 🔄 **进度同步 / Progress Sync** | 阅读进度与服务器双向同步，跨设备续读；本地进度按服务器分开保存，离线时的进度联网后自动补发 / Two-way reading-progress sync with the server; local progress is kept per server, and progress made offline is sent once the network is back |
 | 📊 **阅读统计 / Reading Stats** | 阅读量、分服务器统计与标签偏好分析 / Reading totals, per-server breakdown and tag-preference analysis |
 | 🖼️ **页面预览 / Page Previews** | 详情页全页面缩略图网格，支持跳页与密度调节 / Per-page thumbnail grid on detail page with jump-to-page and configurable density |
-| ⬇️ **离线下载 / Offline Download** | 后台下载整本档案，断点续传 + 断网自动等网恢复 / Background archive download with resume and automatic recovery after network loss |
+| ⬇️ **离线下载 / Offline Download** | 后台下载整本档案，断点续传 + 断网自动等网恢复；失败原因显示在卡片和通知上，存储空间不足时整队暂停；打开阅读器时下载自动让路 / Background archive download with resume and automatic recovery after network loss; failure reasons on the card and notification, the whole queue pauses when storage runs out, and downloads step aside while you read |
 | ☑️ **多选批量 / Batch Operations** | 长按后滑动即可连续多选：批量下载、加分类、加入合订本（带汇入动画，无合订本时直接新建）、清 NEW、删除 / Long-press then slide to select a run of rows: batch download, categorize, add to tankoubon (with a merge animation; creates one when none exists), clear-new, delete |
 | 🏷️ **标签翻译 / Tag Translation** | 中文环境下自动翻译标签 / Auto-translate tags in Chinese locale (EhTagDatabase) |
 | ⭐ **档案评分 / Archive Rating** | 基于标签的 emoji 星级评分 / Tag-based emoji star rating |
 | 📁 **分类管理 / Category Management** | 浏览、创建、编辑 LANraragi 分类 / Browse, create, edit LANraragi categories |
-| 🔐 **安全认证 / Secure Auth** | API Key 加密存储 + 定向请求鉴权 + 图案应用锁 / Encrypted API Key storage, per-request auth, pattern app lock |
+| 🔐 **安全认证 / Secure Auth** | API Key 用 Android 密钥库加密保存，只发给对应服务器；图案应用锁（至少 4 点、需二次确认，可用指纹）；明文 HTTP 服务器标注「未加密」 / API keys encrypted with the Android Keystore and sent only to their own server; pattern app lock (4+ dots, confirmed twice, fingerprint optional); plain-HTTP servers labelled "Unencrypted" |
+| 💾 **备份与恢复 / Backup & Restore** | 把服务器（不含 API Key）、历史、收藏、阅读进度和设置导出为文件，恢复时与本机数据合并；文件仍在的下载会重新关联 / Export servers (without API keys), history, favourites, reading progress and settings to a file; restoring merges into the data on the device and re-links downloads whose files are still there |
+| 🩺 **诊断信息 / Diagnostics** | 崩溃报告只存在本机；需要反馈时一键生成脱敏的诊断压缩包，由你决定分享给谁 / Crash reports stay on the device; when you need to report a problem, one tap builds a redacted diagnostics zip that you choose where to share |
 | 🖥️ **多服务器 / Multi-Server** | 支持配置和切换多个 LANraragi 实例，跨服务器打开与下载 / Configure and switch between server instances, cross-server detail & download |
 | 📤 **上传管理 / Upload** | 从设备上传档案 / 通过 URL 下载到服务器，实时进度 / Upload from device or by URL with live progress |
 | 🗑️ **远程删除 / Remote Delete** | 服务器档案删除，带可选 3 秒确认倒计时 / Server-side deletion with optional 3-second confirmation cooldown |
-| 🚀 **应用内更新 / In-App Update** | 自动检查 GitHub Releases 并安装新版本 / Auto-check GitHub Releases and install updates |
+| 🚀 **应用内更新 / In-App Update** | 自动检查 GitHub Releases，下载后校验大小、SHA-256 和签名证书再安装 / Auto-check GitHub Releases; the download is checked for size, SHA-256 and signing certificate before it is installed |
 | 🌐 **10 种语言 / 10 Languages** | 中文简繁/粤语、日/韩/英/法/德/西/泰 / CJK + EN/FR/DE/ES/TH |
 | 🌙 **深色模式 / Dark Mode** | 跟随系统主题，支持纯黑模式 / System theme + AMOLED black |
 
@@ -107,7 +109,7 @@ Tap **Test connection**; seeing the server name and version means you are in —
 |---|---|
 | Android Studio | 支持 AGP 8.13 的版本 / Any version supporting AGP 8.13 |
 | JDK | 21+ |
-| Android SDK | API 35 (compileSdk) |
+| Android SDK | API 36 (compileSdk / targetSdk) |
 | Kotlin | 2.3.21 (KSP 2.3.9) |
 | Android 最低版本 / Min SDK | 9.0 (API 28) |
 
@@ -118,34 +120,23 @@ git clone https://github.com/Xslx98/LRReader.git
 cd LRReader
 ```
 
-首次 clone 后，在根目录创建 `local.properties` 并添加签名配置：
-
-After cloning, create `local.properties` in the project root with your signing config:
-
-```properties
-sdk.dir=/path/to/your/Android/Sdk
-RELEASE_STORE_FILE=keystore/release.jks
-RELEASE_STORE_PASSWORD=<your-store-password>
-RELEASE_KEY_ALIAS=<your-key-alias>
-RELEASE_KEY_PASSWORD=<your-key-password>
-```
-
 构建 | Build:
 
 ```bash
-# Debug APK
+# Debug APK（无需签名配置 / no signing setup needed）
 ./gradlew :app:assembleAppReleaseDebug
 
-# 签名 Release APK / Signed Release APK
-./gradlew :app:assembleAppReleaseRelease
+# 本地跑一遍 CI 的全部检查 / run every CI gate locally
+bash scripts/ci-check.sh
 ```
 
-构建产物 | Output: Debug APK 位于 `app/build/outputs/apk/appRelease/debug/`，Release APK 位于 `app/build/outputs/apk/appRelease/release/`。
-The Debug APK lands in `app/build/outputs/apk/appRelease/debug/`, the Release APK in `app/build/outputs/apk/appRelease/release/`.
+Debug APK 位于 `app/build/outputs/apk/appRelease/debug/`。签名的 Release 包需要你自己的密钥，写在 `local.properties`（`RELEASE_STORE_FILE` 等四项），贡献代码不需要它。
 
-> 详细的签名配置和发布流程请参考 [CONTRIBUTING.md](CONTRIBUTING.md)。
+The Debug APK lands in `app/build/outputs/apk/appRelease/debug/`. A signed release build needs your own key in `local.properties` (`RELEASE_STORE_FILE` and three more entries); you do not need it to contribute.
+
+> 代码约定、测试要求与提交规范见 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
 >
-> See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed signing and release instructions.
+> See [CONTRIBUTING.md](CONTRIBUTING.md) for code conventions, tests and commit rules; report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## 🏗️ 技术栈 | Tech Stack
 
@@ -157,8 +148,9 @@ The Debug APK lands in `app/build/outputs/apk/appRelease/debug/`, the Release AP
 | **列表分页 / Paging** | Jetpack Paging 3 |
 | **数据库 / Database** | Room 2.8 + KSP (schema v31, 多服务器复合主键 / composite key for multi-server state) |
 | **图像解码 / Image Decoding** | Android ImageDecoder（按目标尺寸采样）+ 轻量 JNI 辅助 / Platform ImageDecoder with target-size sampling + minimal JNI helpers |
-| **安全 / Security** | EncryptedSharedPreferences (API Key, 模式锁 / pattern lock) |
-| **构建 / Build** | Gradle + R8/ProGuard |
+| **安全 / Security** | Android Keystore + AES-GCM（API Key、图案锁 / API keys, pattern lock） |
+| **构建 / Build** | Gradle + R8 |
+| **质量门禁 / Quality Gates** | 单元测试（JUnit + Robolectric）、Android Lint、detekt、JaCoCo 覆盖率下限、Room schema 漂移检查、模拟器 Release 冒烟 / Unit tests (JUnit + Robolectric), Android Lint, detekt, JaCoCo coverage floor, Room schema drift check, emulator release smoke |
 | **ABI** | Release: arm64-v8a · Debug: arm64-v8a + x86_64 |
 
 ## 📂 项目结构 | Project Structure
@@ -173,18 +165,22 @@ LRReader/
 │   │   │   ├── domain/                 # Domain models (Archive, …)
 │   │   │   ├── download/               # Download subsystem (DownloadManager facade, worker)
 │   │   │   ├── gallery/                # Reader providers (streaming / local dir / hybrid / tankoubon)
-│   │   │   ├── tankoubon/              # Member sorting + reorder logic (pure Kotlin)
+│   │   │   ├── tankoubon/              # Tankoubon rules: member sorting, tag/category sync, retries
+│   │   │   ├── backup/                 # Backup export / restore (JSON, merge)
+│   │   │   ├── diagnostics/            # Local crash reports + share-diagnostics zip
 │   │   │   ├── settings/               # Modular settings (Privacy, Network, Reading, …)
 │   │   │   ├── stats/                  # Reading statistics + daily aggregate
 │   │   │   ├── ui/                     # Activities, Scenes, ViewModels
 │   │   │   └── ServiceRegistry.kt      # Module registry (network / data / coroutine …)
 │   │   └── com/lanraragi/framework/    # Legacy GLView / Conaco / widget framework (Java)
-│   ├── cpp/                            # Minimal JNI helpers (GIF background decode, GL texImage)
+│   ├── cpp/                            # Minimal JNI helper (GL texture upload)
 │   ├── res/                            # Resources (10 languages)
 │   └── assets/                         # Open-source license page
-├── fastlane/metadata/android/          # Play Store metadata + per-release changelogs
-├── keystore/                           # Signing keys (gitignored)
+├── fastlane/metadata/android/          # Store metadata + per-release changelogs
+├── scripts/                            # ci-check.sh and the CI gate scripts
+├── .github/                            # Workflows, issue / PR templates, Dependabot
 ├── CONTRIBUTING.md                     # Contributing guide
+├── SECURITY.md                         # Security policy (private reporting)
 ├── PRIVACY_POLICY.md                   # Privacy policy
 ├── NOTICE                              # Upstream credits
 └── LICENSE                             # GPLv3
@@ -203,7 +199,7 @@ This project is built upon the following open-source projects:
 
 ### 依赖库 | Dependencies
 
-- [AndroidX](https://developer.android.com/jetpack/androidx) (AppCompat, Room, RecyclerView, Security)
+- [AndroidX](https://developer.android.com/jetpack/androidx) (AppCompat, Room, Paging, RecyclerView, Biometric, Security)
 - [OkHttp](https://github.com/square/okhttp) - HTTP client
 - [kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization) - JSON serialization
 - [kotlinx-coroutines](https://github.com/Kotlin/kotlinx.coroutines) - Async programming
