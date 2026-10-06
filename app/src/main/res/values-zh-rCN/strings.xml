@@ -906,7 +906,7 @@
     <string name="lrr_boot_load_failed_retry">重试</string>
     <string name="lrr_boot_load_failed_reset_db">重置数据库</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">重置数据库？</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">此操作将永久删除应用本地数据库中的所有数据：服务器配置、阅读历史、收藏、下载记录与搜索历史。已下载到磁盘的档案文件不受影响。应用将重启并以全新状态运行。</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">此操作将重置应用的本地数据库：服务器配置、阅读历史、收藏、下载记录与搜索历史将从空白开始。当前数据库会在本机另行保留（不会删除），已下载到磁盘的档案文件也不受影响。随后应用将重启。</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">重置并重启</string>
     <string name="lrr_db_reset_notice_title">数据库已重置</string>
     <string name="lrr_db_reset_notice_message">本地数据库已损坏，已替换为空数据库，因此已保存的服务器、阅读历史等本地数据可能丢失。损坏文件的副本已保留在本设备上。</string>

@@ -938,7 +938,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_boot_load_failed_retry">Reintentar</string>
     <string name="lrr_boot_load_failed_reset_db">Restablecer base de datos</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">¿Restablecer la base de datos?</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">Esto eliminará permanentemente todos los datos almacenados localmente: perfiles de servidor, historial de lectura, favoritos, registros de descargas e historial de búsqueda. Los archivos descargados en disco no se verán afectados. La aplicación se reiniciará como una instalación nueva.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">Esto restablece la base de datos local de la aplicación: los perfiles de servidor, el historial de lectura, los favoritos, los registros de descargas y el historial de búsqueda empezarán vacíos. La base de datos actual se aparta en este dispositivo (no se elimina) y los archivos descargados en disco no se ven afectados. La aplicación se reiniciará después.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">Restablecer y reiniciar</string>
     <string name="lrr_db_reset_notice_title">Base de datos restablecida</string>
     <string name="lrr_db_reset_notice_message">La base de datos local estaba dañada y se ha sustituido por una vacía, por lo que pueden faltar los servidores guardados, el historial de lectura y otros datos locales. Se ha conservado una copia del archivo dañado en este dispositivo.</string>

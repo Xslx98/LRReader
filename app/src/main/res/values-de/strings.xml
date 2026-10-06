@@ -842,7 +842,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="lrr_boot_load_failed_retry">Wiederholen</string>
     <string name="lrr_boot_load_failed_reset_db">Datenbank zurücksetzen</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">Datenbank zurücksetzen?</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">Hierdurch werden alle lokal gespeicherten Daten dauerhaft gelöscht: Server-Profile, Leseverlauf, Favoriten, Download-Einträge und Suchverlauf. Bereits heruntergeladene Archive auf der Festplatte bleiben erhalten. Die App startet im Zustand einer Neuinstallation neu.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">Dadurch wird die lokale Datenbank der App zurückgesetzt: Server-Profile, Leseverlauf, Favoriten, Download-Einträge und Suchverlauf beginnen leer. Die bisherige Datenbank wird auf diesem Gerät beiseitegelegt (nicht gelöscht), und bereits heruntergeladene Archive bleiben erhalten. Die App startet danach neu.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">Zurücksetzen &amp; Neustart</string>
     <string name="lrr_db_reset_notice_title">Datenbank zurückgesetzt</string>
     <string name="lrr_db_reset_notice_message">Die lokale Datenbank war beschädigt und wurde durch eine leere ersetzt. Gespeicherte Server, Leseverlauf und andere lokale Daten können daher fehlen. Eine Kopie der beschädigten Datei wurde auf diesem Gerät aufbewahrt.</string>

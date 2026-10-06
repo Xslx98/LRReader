@@ -819,7 +819,7 @@
     <string name="lrr_boot_load_failed_retry">再試行</string>
     <string name="lrr_boot_load_failed_reset_db">データベースをリセット</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">データベースをリセットしますか？</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">この操作によりアプリのローカルデータベース内のすべてのデータ（サーバープロファイル、閲覧履歴、お気に入り、ダウンロード記録、検索履歴）が完全に削除されます。ディスク上のダウンロード済みアーカイブファイルは影響を受けません。アプリは新規インストール状態で再起動します。</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">アプリのローカルデータベースをリセットします。サーバープロファイル、閲覧履歴、お気に入り、ダウンロード記録、検索履歴は空の状態から始まります。現在のデータベースはこの端末内に退避され（削除はされません）、ディスク上のダウンロード済みアーカイブも影響を受けません。その後アプリが再起動します。</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">リセットして再起動</string>
     <string name="lrr_db_reset_notice_title">データベースをリセットしました</string>
     <string name="lrr_db_reset_notice_message">ローカルデータベースが破損していたため、空のデータベースに置き換えました。保存済みのサーバー、閲覧履歴などのローカルデータが失われている可能性があります。破損したファイルのコピーはこの端末に保存されています。</string>

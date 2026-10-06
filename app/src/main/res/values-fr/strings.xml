@@ -942,7 +942,7 @@ Cette action est irréversible.</string>
     <string name="lrr_boot_load_failed_retry">Réessayer</string>
     <string name="lrr_boot_load_failed_reset_db">Réinitialiser la base</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">Réinitialiser la base ?</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">Cette action supprimera définitivement toutes les données stockées localement : profils serveur, historique de lecture, favoris, téléchargements et recherches. Les fichiers d\'archives déjà téléchargés sur le disque ne sont pas affectés. L\'application redémarrera dans un état neuf.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">Cette action réinitialise la base de données locale de l\'application : profils serveur, historique de lecture, favoris, téléchargements et recherches repartent de zéro. La base actuelle est mise de côté sur cet appareil (elle n\'est pas supprimée) et les archives déjà téléchargées sur le disque ne sont pas affectées. L\'application redémarre ensuite.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">Réinitialiser et redémarrer</string>
     <string name="lrr_db_reset_notice_title">Base de données réinitialisée</string>
     <string name="lrr_db_reset_notice_message">La base de données locale était endommagée et a été remplacée par une base vide : les serveurs enregistrés, l\'historique de lecture et d\'autres données locales peuvent donc manquer. Une copie du fichier endommagé a été conservée sur cet appareil.</string>

@@ -962,7 +962,7 @@
     <string name="lrr_boot_load_failed_retry">Retry</string>
     <string name="lrr_boot_load_failed_reset_db">Reset Database</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">Reset Database?</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">This will permanently delete all locally stored data — server profiles, reading history, favorites, download records, and search history. Your downloaded archive files on disk are not affected. The app will restart and behave like a fresh install.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">This resets the app's local database: server profiles, reading history, favorites, download records and search history start empty. The current database is set aside on this device (not deleted), and your downloaded archive files on disk are not affected. The app restarts afterwards.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">Reset &amp; Restart</string>
     <string name="lrr_db_reset_notice_title">Database reset</string>
     <string name="lrr_db_reset_notice_message">The local database was damaged and has been replaced with an empty one, so saved servers, reading history and other local data may be missing. A copy of the damaged file was kept on this device.</string>
