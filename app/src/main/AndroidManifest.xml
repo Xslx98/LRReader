@@ -48,6 +48,7 @@
     <application
         android:name="com.lanraragi.reader.LRReaderApplication"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
@@ -109,9 +110,12 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- The reader handles rotation, fold/unfold, multi-window resizes and keyboard
+             attach in place (GalleryActivity.onConfigurationChanged): recreating it drops
+             the decoded-page cache and every GL texture (audit PERF-02). -->
         <activity
             android:name="com.lanraragi.reader.ui.GalleryActivity"
-            android:configChanges="screenSize|uiMode"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode"
             android:exported="false"
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.Gallery">
@@ -155,6 +159,16 @@
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
             android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- Process rebirth (LRReaderApplication.restart, STAB-10): runs in its own
+             process so it can kill the main one and relaunch the app. -->
+        <activity
+            android:name="com.lanraragi.reader.PhoenixActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:process=":phoenix"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
 

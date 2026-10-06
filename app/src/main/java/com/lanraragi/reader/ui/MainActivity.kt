@@ -62,7 +62,9 @@ import com.lanraragi.reader.module.AppModule
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.BaseScene
+import com.lanraragi.reader.ui.scene.CredentialResetDialog
 import com.lanraragi.reader.ui.scene.ServerConfigScene
+import com.lanraragi.reader.ui.scene.ReauthPrompt
 import com.lanraragi.reader.ui.scene.ServerListScene
 import com.lanraragi.reader.ui.scene.download.DownloadLabelsScene
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
@@ -527,15 +529,24 @@ class MainActivity : StageActivity(),
         }
         TagTranslationDatabase.update(this)
 
-        // Prompt user to re-enter credentials if KeyStore became unavailable
+        // Prompt user to re-enter credentials: the KeyStore became unavailable,
+        // or it works but saved API keys are missing (after a credential reset
+        // or a restore on a new device).
         if (LRRAuthManager.isNeedsReauthentication()) {
-            AlertDialog.Builder(this)
-                .setTitle(R.string.lrr_keystore_failed_title)
-                .setMessage(R.string.lrr_keystore_failed_message)
-                .setPositiveButton(android.R.string.ok) { _, _ ->
-                    startScene(Announcer(ServerListScene::class.java))
-                }
+            val storeAvailable = LRRAuthManager.isSecureStorageAvailable()
+            val prompt = ReauthPrompt.startup(storeAvailable)
+            val openServerList: () -> Unit = {
+                val args = Bundle().apply { putBoolean(ReauthPrompt.ARG_KEYS_MISSING_PROMPTED, storeAvailable) }
+                startScene(Announcer(ServerListScene::class.java).setArgs(args))
+            }
+            val builder = AlertDialog.Builder(this)
+                .setTitle(prompt.title)
+                .setMessage(prompt.message)
+                .setPositiveButton(android.R.string.ok) { _, _ -> openServerList() }
                 .setCancelable(false)
+            // A store that can never be read again (e.g. copied from another
+            // phone) needs a way out for users without an app lock (REL-01).
+            CredentialResetDialog.offerResetIfStuck(builder, this, onCancel = openServerList)
                 .show()
         }
 

@@ -259,6 +259,16 @@ class DownloadManager(
         return Collections.unmodifiableList(list)
     }
 
+    /**
+     * Mutate the live download row of [arcid] on the main thread and persist
+     * it in issue order with every other download-row write. Returns false
+     * (nothing changed or written) when the download no longer exists, so a
+     * late detail-page or rating write cannot resurrect a deleted row
+     * (audit 2026-10-06b STAB-01).
+     */
+    fun updateDownloadInfo(arcid: String, mutate: (DownloadInfo) -> Unit): Boolean =
+        repo.updateInfo(arcid, mutate)
+
     // ── Listener methods ──────────────────────────────────────
 
     fun addDownloadInfoListener(listener: DownloadInfoListener) { eventBus.addDownloadInfoListener(listener) }
@@ -409,20 +419,7 @@ class DownloadManager(
     fun addDownload(downloadInfoList: List<DownloadInfo>) {
         repo.assertMainThread()
         val newLabels = repo.importInfoBatch(downloadInfoList)
-        val infosToSave = ArrayList(downloadInfoList)
-        val labelsToPersist = ArrayList(newLabels)
-        scope.launch {
-            try {
-                val savedLabels = ArrayList<DownloadLabel>(labelsToPersist.size)
-                for (l in labelsToPersist) savedLabels.add(ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(l))
-                for (info in infosToSave) ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-                if (savedLabels.isNotEmpty()) {
-                    repo.runOnMainThread { for (s in savedLabels) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist imported downloads", e)
-            }
-        }
+        repo.persistImport(newLabels, downloadInfoList)
         eventBus.postToMain { eventBus.forEachListener { it.onReload() } }
     }
 
@@ -729,13 +726,19 @@ class DownloadManager(
 
         /**
          * Step 1 of a progress reset: the local save is keyed per profile, so
-         * clear the one of the download's source [sourceProfileId], not the
-         * active profile's (audit 2026-10-06 C37). 0 = legacy row of the
-         * active profile, as in [resolveSourceBaseUrl].
+         * clear the one of the download's source [sourceProfileId] (audit
+         * 2026-10-06 C37). 0 = legacy row of the active profile, as in
+         * [resolveSourceBaseUrl]. The active profile's entry goes too: builds
+         * before the 2026-10-06b fix saved a download of another server under
+         * the active profile, and the reader falls back to that entry while
+         * the source key is empty ([LocalReadingProgress.load]), so leaving it
+         * would bring the old page back.
          */
         internal fun clearLocalProgress(ctx: Context, arcid: String, sourceProfileId: Long) {
-            val profileId = if (sourceProfileId == 0L) LocalReadingProgress.profileId() else sourceProfileId
-            GalleryProvider2.clearReadingProgress(ctx, arcid, profileId)
+            val source = LocalReadingProgress.sourceProfile(sourceProfileId)
+            GalleryProvider2.clearReadingProgress(ctx, arcid, source)
+            val active = LocalReadingProgress.profileId()
+            if (active != source) GalleryProvider2.clearReadingProgress(ctx, arcid, active)
         }
 
         /**

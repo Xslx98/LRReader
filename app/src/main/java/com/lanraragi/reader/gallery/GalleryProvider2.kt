@@ -91,14 +91,21 @@ abstract class GalleryProvider2 : GalleryProvider() {
 
         /**
          * Save reading progress locally (0-indexed page number) with timestamp,
-         * for the active server profile ([LocalReadingProgress], audit C37).
+         * per server profile ([LocalReadingProgress], audit C37).
          * @param arcid Archive identifier
          * @param page 0-indexed current page
+         * @param profileId the archive's source profile
+         *   ([LocalReadingProgress.sourceProfile]); defaults to the active one
          */
         @JvmStatic
-        fun saveReadingProgress(ctx: Context, arcid: String, page: Int) {
-            LocalReadingProgress.save(ctx, arcid, page, System.currentTimeMillis() / 1000L)
-            ReadingProgressTracker.setProgress(arcid, page)
+        fun saveReadingProgress(
+            ctx: Context,
+            arcid: String,
+            page: Int,
+            profileId: Long = LocalReadingProgress.profileId(),
+        ) {
+            LocalReadingProgress.save(ctx, arcid, page, System.currentTimeMillis() / 1000L, profileId)
+            ReadingProgressTracker.setProgress(profileId, arcid, page)
         }
 
         /** Archive-count cap for the reading_progress store (2 keys each). */
@@ -113,18 +120,27 @@ abstract class GalleryProvider2 : GalleryProvider() {
             LocalReadingProgress.trim(prefs, activeKey)
 
         /**
-         * Load reading progress from local storage (active server profile).
+         * Load reading progress from local storage for [profileId] (default:
+         * the active server profile; see [LocalReadingProgress.load]).
          * @return 0-indexed page number, or 0 if not found
          */
         @JvmStatic
-        fun loadReadingProgress(ctx: Context, arcid: String): Int = LocalReadingProgress.load(ctx, arcid)
+        fun loadReadingProgress(
+            ctx: Context,
+            arcid: String,
+            profileId: Long = LocalReadingProgress.profileId(),
+        ): Int = LocalReadingProgress.load(ctx, arcid, profileId)
 
         /**
          * Load the timestamp (epoch seconds) of the last local progress save.
          * @return epoch seconds, or 0 if not found
          */
         @JvmStatic
-        fun loadReadingTimestamp(ctx: Context, arcid: String): Long = LocalReadingProgress.loadTimestamp(ctx, arcid)
+        fun loadReadingTimestamp(
+            ctx: Context,
+            arcid: String,
+            profileId: Long = LocalReadingProgress.profileId(),
+        ): Long = LocalReadingProgress.loadTimestamp(ctx, arcid, profileId)
 
         /**
          * Remove the local progress save for [arcid] — both the page key and

@@ -951,6 +951,8 @@
     <string name="security_storage_starting_message">The device\'s secure storage is still starting, so the app lock can\'t be checked yet. Wait a moment, then tap Try again.</string>
     <string name="security_reset_app_lock">Reset app lock</string>
     <string name="security_reset_app_lock_confirm">Reset the app lock and remove every saved API key? You will need to re-enter your server credentials.</string>
+    <string name="lrr_reset_credentials">Reset saved credentials</string>
+    <string name="lrr_reset_credentials_confirm">Remove every saved server API key? Your server list, library, history, favorites and downloads are kept. The app restarts, then re-enter your API keys.</string>
     <string name="security_fingerprint_changed">The device\'s fingerprints changed, so fingerprint unlock was turned off. Turn it on again in Privacy settings.</string>
     <string name="security_pattern_unverifiable_message">The device\'s fingerprints changed and this pattern was saved in a way that can only be checked with the old fingerprint key. Reset the app lock to continue: this removes the pattern and every saved server API key. Your library and downloads are kept.</string>
     <string name="lrr_boot_load_failed_title">Startup Error</string>
@@ -970,6 +972,8 @@
     <string name="lrr_save_and_connect">Save &amp; Connect</string>
     <string name="reauth_required_title">Re-authentication Required</string>
     <string name="reauth_required_message">The secure keystore became unavailable. Please re-enter your API key for each server.</string>
+    <string name="reauth_keys_missing_title">Re-enter Your API Keys</string>
+    <string name="reauth_keys_missing_message">Saved API keys are missing (for example after a reset or a restore on a new device). Re-enter the API key for each server.</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">Menu</string>

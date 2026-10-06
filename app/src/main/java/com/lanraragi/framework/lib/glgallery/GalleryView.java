@@ -409,8 +409,9 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         mLayoutManager = null;
     }
 
+    // Package-private for GalleryViewResizeTest (no GLRoot in a JVM test).
     @SuppressWarnings("deprecation")
-    private void onAttachToRootInternal() {
+    void onAttachToRootInternal() {
         if (null == mPageTextTexture) {
             mPageTextTexture = ImageMovableTextTexture.create(mPageTextTypeface,
                     mPageTextSize, mPageTextColor,
@@ -511,7 +512,8 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
 
     @Override
     public void requestLayout() {
-        // Do not need requestLayout, because the size will not change
+        // A child's layout request only needs a refill. A resize of this
+        // view itself (rotation handled in place) refills from onLayout.
         requestFill();
     }
 
@@ -697,6 +699,13 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     protected void onLayout(boolean changeSize, int left, int top, int right, int bottom) {
         mEdgeView.layout(left, top, right, bottom);
 
+        // fill() is a no-op unless a fill was requested, and nothing else
+        // requests one on a resize: the layout managers would keep every
+        // page at the old width (a rotation handled in place left the
+        // pages in their portrait geometry, audit PERF-02).
+        if (changeSize) {
+            mRequestFill = true;
+        }
         fill();
 
         if (changeSize) {

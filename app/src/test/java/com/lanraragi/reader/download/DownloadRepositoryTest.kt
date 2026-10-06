@@ -541,6 +541,116 @@ class DownloadRepositoryTest {
     }
 
     // ═══════════════════════════════════════════════════════════
+    // Audit 2026-10-06b STAB-01: detail-page and rating writes
+    // ═══════════════════════════════════════════════════════════
+
+    @Test
+    fun updateInfo_afterTheRowWasDeleted_writesNothing() {
+        // The rating PUT returns after the user removed the download: the late
+        // write used to upsert the captured object and re-create the row.
+        val info = makeInfo("rated", "Rated").apply { serverProfileId = 1L }
+        repo.addInfo(info)
+        repo.persistInfo(info)
+        repo.deleteInfo("rated")
+
+        assertFalse(repo.updateInfo("rated") { it.rating = 4f })
+
+        runBlocking { repo.awaitDbWrites() }
+        assertTrue(runBlocking { db.archiveLocalStateDao().getAllDownloads() }.isEmpty())
+        assertNotEquals(4f, info.rating)
+    }
+
+    @Test(timeout = 30_000)
+    fun updateInfo_isQueuedBehindEarlierWrites_andALaterDeleteWins() {
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
+        val ioScope = CoroutineScope(kotlinx.coroutines.SupervisorJob() + pool.asCoroutineDispatcher())
+        val gate = java.util.concurrent.CountDownLatch(1)
+        try {
+            val r = DownloadRepository(context, ioScope, Dispatchers.Unconfined)
+            val live = makeInfo("live", "Before").apply { serverProfileId = 1L }
+            r.addInfo(live)
+            r.persistInfo(live)
+            runBlocking { r.awaitDbWrites() }
+
+            // Hold the queue consumer inside an earlier write.
+            repoGate.set(gate)
+            r.persistInfo(makeInfo("other", "Other").apply { serverProfileId = 1L })
+            assertTrue(repoGateEntered.await(10, java.util.concurrent.TimeUnit.SECONDS))
+
+            assertTrue(r.updateInfo("live") { it.title = "After" })
+            assertEquals("After", live.title)
+            val overtook = runCatching {
+                awaitUntil(timeoutMs = 1_000) {
+                    runBlocking { db.archiveLocalStateDao().loadByArcidAndProfile("live", 1L) }
+                        ?.let { "After" in it.archiveJson } == true
+                }
+            }.isSuccess
+            assertFalse("the detail-page write bypassed the ordered queue", overtook)
+
+            // The user removes the download right after: the delete must win.
+            r.deleteInfo("live")
+            gate.countDown()
+            runBlocking { r.awaitDbWrites() }
+            val rows = runBlocking { db.archiveLocalStateDao().getAllDownloads() }.map { it.arcid }
+            assertEquals(listOf("other"), rows)
+        } finally {
+            gate.countDown()
+            ioScope.cancel()
+            pool.shutdownNow()
+        }
+    }
+
+    @Test
+    fun persistImport_skipsDuplicates_andDoesNotOverwriteTheLiveRow() {
+        val live = makeInfo("dup", "Live").apply { serverProfileId = 1L }
+        repo.addInfo(live)
+        repo.persistInfo(live)
+        runBlocking { repo.awaitDbWrites() }
+
+        val stale = makeInfo("dup", "Stale").apply { serverProfileId = 1L }
+        val fresh = makeInfo("fresh", "Fresh").apply { serverProfileId = 1L }
+        val newLabels = repo.importInfoBatch(listOf(stale, fresh))
+        repo.persistImport(newLabels, listOf(stale, fresh))
+        runBlocking { repo.awaitDbWrites() }
+
+        val dupRow = runBlocking { db.archiveLocalStateDao().loadByArcidAndProfile("dup", 1L) }!!
+        assertTrue("an import duplicate overwrote the live row", "Live" in dupRow.archiveJson)
+        assertNotNull(runBlocking { db.archiveLocalStateDao().loadByArcidAndProfile("fresh", 1L) })
+    }
+
+    @Test(timeout = 30_000)
+    fun persistImport_isQueuedBehindEarlierWrites_andALaterDeleteWins() {
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
+        val ioScope = CoroutineScope(kotlinx.coroutines.SupervisorJob() + pool.asCoroutineDispatcher())
+        val gate = java.util.concurrent.CountDownLatch(1)
+        try {
+            val r = DownloadRepository(context, ioScope, Dispatchers.Unconfined)
+            repoGate.set(gate)
+            r.persistInfo(makeInfo("other", "Other").apply { serverProfileId = 1L })
+            assertTrue(repoGateEntered.await(10, java.util.concurrent.TimeUnit.SECONDS))
+
+            val imported = listOf(makeInfo("imported", "Imported").apply { serverProfileId = 1L })
+            r.persistImport(r.importInfoBatch(imported), imported)
+            val overtook = runCatching {
+                awaitUntil(timeoutMs = 1_000) {
+                    runBlocking { db.archiveLocalStateDao().loadByArcidAndProfile("imported", 1L) } != null
+                }
+            }.isSuccess
+            assertFalse("the import write bypassed the ordered queue", overtook)
+
+            r.deleteInfo("imported")
+            gate.countDown()
+            runBlocking { r.awaitDbWrites() }
+            val rows = runBlocking { db.archiveLocalStateDao().getAllDownloads() }.map { it.arcid }
+            assertEquals(listOf("other"), rows)
+        } finally {
+            gate.countDown()
+            ioScope.cancel()
+            pool.shutdownNow()
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
     // Helpers
     // ═══════════════════════════════════════════════════════════
 

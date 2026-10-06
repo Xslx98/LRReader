@@ -101,10 +101,15 @@ class ServerListScene : BaseScene() {
         super.onResume()
         // Refresh list when returning from ServerConfigScene
         viewModel.loadProfiles()
-        // Prompt user if encrypted keystore is unavailable (credentials lost)
+        // Prompt user if API keys are lost (keystore unavailable or keys missing),
+        // unless the startup prompt already explained the missing keys.
         if (LRRAuthManager.isNeedsReauthentication() && !mReauthDialogShown) {
             mReauthDialogShown = true
-            dialogHelper.showReauthDialog()
+            val storeAvailable = LRRAuthManager.isSecureStorageAvailable()
+            val prompted = arguments?.getBoolean(ReauthPrompt.ARG_KEYS_MISSING_PROMPTED, false) == true
+            if (ReauthPrompt.serverListShouldPrompt(prompted, storeAvailable)) {
+                dialogHelper.showReauthDialog(ReauthPrompt.serverList(storeAvailable))
+            }
         }
     }
 

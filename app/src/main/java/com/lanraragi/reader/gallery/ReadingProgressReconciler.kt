@@ -92,6 +92,8 @@ internal object ReadingProgressReconciler {
      * @param snapshotProgress1 1-indexed progress from the archive snapshot (<=0 = none)
      * @param snapshotTs epoch seconds `lastreadtime` from the archive snapshot
      *   (milliseconds tolerated — normalized via [normalizeEpochSeconds])
+     * @param serverProfileId the archive's source profile (0 = legacy row ->
+     *   active); the local save is read under the same key the reader uses
      * @return 0-indexed page
      */
     fun resolveOffline(
@@ -99,10 +101,14 @@ internal object ReadingProgressReconciler {
         arcid: String,
         snapshotProgress1: Int,
         snapshotTs: Long,
-    ): Int = resolve(
-        GalleryProvider2.loadReadingProgress(context, arcid),
-        GalleryProvider2.loadReadingTimestamp(context, arcid),
-        snapshotProgress1,
-        normalizeEpochSeconds(snapshotTs),
-    )
+        serverProfileId: Long = 0L,
+    ): Int {
+        val profileId = LocalReadingProgress.sourceProfile(serverProfileId)
+        return resolve(
+            GalleryProvider2.loadReadingProgress(context, arcid, profileId),
+            GalleryProvider2.loadReadingTimestamp(context, arcid, profileId),
+            snapshotProgress1,
+            normalizeEpochSeconds(snapshotTs),
+        )
+    }
 }

@@ -927,6 +927,8 @@ Esta acción no se puede deshacer.</string>
     <string name="security_storage_starting_message">El almacenamiento seguro del dispositivo aún se está iniciando, así que todavía no se puede comprobar el bloqueo de la aplicación. Espera un momento y toca Reintentar.</string>
     <string name="security_reset_app_lock">Restablecer bloqueo</string>
     <string name="security_reset_app_lock_confirm">¿Restablecer el bloqueo y eliminar todas las claves API guardadas? Tendrás que volver a introducir las credenciales del servidor.</string>
+    <string name="lrr_reset_credentials">Restablecer credenciales guardadas</string>
+    <string name="lrr_reset_credentials_confirm">¿Eliminar todas las claves API de servidor guardadas? Se conservan la lista de servidores, la biblioteca, el historial, los favoritos y las descargas. La app se reiniciará; después vuelve a introducir tus claves API.</string>
     <string name="security_fingerprint_changed">Las huellas del dispositivo cambiaron, así que se desactivó el desbloqueo con huella. Puedes volver a activarlo en los ajustes de privacidad.</string>
     <string name="security_pattern_unverifiable_message">Las huellas del dispositivo cambiaron y este patrón se guardó de forma que solo puede comprobarse con la clave de huella anterior. Restablece el bloqueo para continuar: se eliminarán el patrón y todas las claves API guardadas. La biblioteca y las descargas se conservan.</string>
     <string name="lrr_boot_load_failed_title">Error de inicio</string>
@@ -939,6 +941,8 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_secure_storage_write_failed">El almacén de claves del dispositivo no está disponible, por lo que los cambios no se pudieron guardar de forma segura. Reinicie el dispositivo e inténtelo de nuevo, o reinstale la aplicación si el problema persiste.</string>
     <string name="reauth_required_title">Se requiere re-autenticación</string>
     <string name="reauth_required_message">El almacén de claves seguro dejó de estar disponible. Por favor, vuelva a introducir la clave API de cada servidor.</string>
+    <string name="reauth_keys_missing_title">Vuelva a introducir sus claves API</string>
+    <string name="reauth_keys_missing_message">Faltan las claves API guardadas (por ejemplo, tras un restablecimiento o una restauración en un dispositivo nuevo). Vuelva a introducir la clave API de cada servidor.</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">Menú</string>

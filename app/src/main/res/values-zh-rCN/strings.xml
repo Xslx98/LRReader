@@ -895,6 +895,8 @@
     <string name="security_storage_starting_message">设备的安全存储仍在启动，暂时无法验证应用锁。请稍等片刻，然后点「重试」。</string>
     <string name="security_reset_app_lock">重置应用锁</string>
     <string name="security_reset_app_lock_confirm">重置应用锁并清除所有已保存的 API Key？之后需要重新输入服务器凭据。</string>
+    <string name="lrr_reset_credentials">重置已保存的凭据</string>
+    <string name="lrr_reset_credentials_confirm">清除所有已保存的服务器 API Key？服务器列表、书库、历史、收藏和下载都会保留。应用将重启，之后请重新输入 API Key。</string>
     <string name="security_fingerprint_changed">设备的指纹已变更，指纹解锁已关闭。可在隐私设置中重新开启。</string>
     <string name="security_pattern_unverifiable_message">设备的指纹已变更，而这个图案的保存方式只能用旧的指纹密钥验证。请重置应用锁以继续：这会清除图案和所有已保存的服务器 API Key，书库和下载不受影响。</string>
     <string name="lrr_boot_load_failed_title">启动错误</string>
@@ -907,6 +909,8 @@
     <string name="lrr_secure_storage_write_failed">设备密钥库不可用，无法安全保存更改。请重启设备后重试，若问题持续请重新安装应用。</string>
     <string name="reauth_required_title">需要重新认证</string>
     <string name="reauth_required_message">安全密钥库已失效，请为每个服务器重新输入 API Key。</string>
+    <string name="reauth_keys_missing_title">请重新输入 API Key</string>
+    <string name="reauth_keys_missing_message">已保存的 API Key 缺失（例如重置后或在新设备上恢复备份后）。请为每个服务器重新输入 API Key。</string>
 
     <!-- Content descriptions (D-A11y sprint) -->
     <string name="cd_menu">菜单</string>

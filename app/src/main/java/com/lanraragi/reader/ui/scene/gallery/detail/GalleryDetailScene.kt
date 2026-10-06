@@ -1064,9 +1064,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 di.thumb != result.archive.thumbnailUrl && di.arcid == result.archive.arcid
             ) {
                 mHeaderBinder?.useNetWorkLoadThumb = true
-                di.updateInfo(result.archive)
-                di.state = dlState
-                viewModel.persistDownloadInfo(di)
+                // The download state is owned by the scheduler: it is not
+                // copied back here (it could only be stale or another
+                // archive's), and the row is written through the ordered
+                // download write queue (audit 2026-10-06b STAB-01).
+                viewModel.updateDownloadRowFromDetail(result.archive)
             }
         }
         adjustViewVisibility(STATE_NORMAL, true)

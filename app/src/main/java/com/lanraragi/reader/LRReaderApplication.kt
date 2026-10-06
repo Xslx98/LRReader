@@ -18,8 +18,7 @@ package com.lanraragi.reader
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlarmManager
-import android.app.PendingIntent
+import android.app.Application
 import android.content.ComponentCallbacks2
 import android.content.ComponentName
 import android.content.Context
@@ -28,7 +27,6 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.res.Resources
 import android.os.Debug
-import android.os.Process
 import android.os.StrictMode
 import android.os.Trace
 import android.util.Log
@@ -97,6 +95,12 @@ class LRReaderApplication : RecordingApplication() {
 
     @SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped
     override fun onCreate() {
+        // The :phoenix process only hosts PhoenixActivity for a restart; none of
+        // the boot work below belongs there (STAB-10).
+        if (ProcessRebirth.isPhoenixProcess(Application.getProcessName())) {
+            super.onCreate()
+            return
+        }
         instance = this
         // First: the crash handler below writes into AppConfig.getCrashDir(), and a
         // crash in any later initialiser must still leave a report (audit C06).
@@ -123,8 +127,6 @@ class LRReaderApplication : RecordingApplication() {
         }
 
         super.onCreate()
-
-        cancelStaleRestartAlarm()
 
         // Debug-only StrictMode: penaltyLog surfaces main-thread disk/network
         // work and leaked closables during development (this class of bug —
@@ -628,58 +630,20 @@ class LRReaderApplication : RecordingApplication() {
     }
 
     /**
-     * Restart the whole app process ("rebirth"). Schedules a one-shot inexact
-     * alarm to relaunch the launcher activity ~100 ms after this process is
-     * killed; standard ProcessPhoenix-style pattern, no extra permission needed
-     * (`AlarmManager.set` with `RTC` is inexact and exempt from
-     * SCHEDULE_EXACT_ALARM on API 31+). Uses `getLaunchIntentForPackage` so the
-     * relaunched task starts at whichever Activity is the registered launcher.
+     * Restart the whole app process ("rebirth") via [ProcessRebirth]: a tiny
+     * activity in a separate process kills this one and relaunches the
+     * launcher entry in a fresh task. Must be called while the app is in the
+     * foreground (background activity starts are blocked); if the relaunch
+     * cannot start, the process is still killed.
      *
      * Unlike [recreate] (which only re-creates the live activities), this rebuilds
      * everything bound to the application context at process start — the wrapped
      * locale, GetText's cached resources, notification/service strings — because
      * the fresh process re-runs [attachBaseContext]. Use it for changes an
      * activity recreate cannot pick up, e.g. an in-app language switch.
-     *
-     * Callers finishing their own task first (e.g. `finishAffinity()`) should do
-     * so before calling this; this method itself only schedules the relaunch and
-     * kills the process.
      */
     fun restart() {
-        restartPendingIntent(PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            ?.let { pendingIntent ->
-                val alarm = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                alarm.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent)
-            }
-        Process.killProcess(Process.myPid())
-    }
-
-    /**
-     * The relaunch PendingIntent used by [restart]. Reconstructed with the same
-     * request code (and filter-equal Intent) by [cancelStaleRestartAlarm] so a
-     * pending copy can be found and cancelled on the next process start.
-     */
-    private fun restartPendingIntent(flags: Int): PendingIntent? {
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.also {
-            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        } ?: return null
-        return PendingIntent.getActivity(this, 0, launchIntent, flags)
-    }
-
-    /**
-     * The rebirth alarm scheduled by [restart] races the OS's own relaunch of a
-     * killed foreground task: the system restarts the top activity almost
-     * immediately, while the inexact alarm can land seconds later and replace
-     * the activity the user is already interacting with (open drawer snapping
-     * shut, list state lost — observed ~5s late on API 35). Whichever path
-     * booted this process, a still-pending alarm is stale by definition.
-     */
-    private fun cancelStaleRestartAlarm() {
-        restartPendingIntent(PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
-            ?.let { pendingIntent ->
-                (getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(pendingIntent)
-                pendingIntent.cancel()
-            }
+        ProcessRebirth.trigger(this)
     }
 
     // --- GlobalStuff delegation ---
