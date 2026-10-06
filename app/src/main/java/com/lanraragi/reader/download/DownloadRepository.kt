@@ -642,39 +642,46 @@ class DownloadRepository(
     /**
      * Clear all in-memory collections and reload from DB.
      * [onComplete] is called on the main thread after reload finishes.
+     *
+     * The read runs as an item of the ordered write queue (audit 2026-10-06
+     * N7), so every persist/delete issued before this call reaches Room first:
+     * a read on its own coroutine could overtake them, dropping a new row or
+     * bringing a deleted one back in memory until the next cold start.
+     * Labels are not reloaded: the label table is not per server and the
+     * in-memory label list is kept in step with it by the same queue.
      */
     fun reload(onComplete: () -> Unit) {
         assertMainThread()
 
         allInfoList.clear()
         allInfoMap.clear()
-        allInfoMap.clear()
         defaultInfoList.clear()
         for ((_, value) in labelInfoMap) {
             value.clear()
         }
 
-        scope.launch {
-            try {
-                val reloadedInfos = ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadInfo()
-                runOnMainThread {
-                    allInfoList.addAll(reloadedInfos)
-                    for (info in reloadedInfos) {
-                        allInfoMap[info.arcid] = info
-                        allInfoMap[info.arcid] = info
-                        var list = getInfoListForLabel(info.label)
-                        if (list == null) {
-                            list = ArrayList()
-                            labelInfoMap[info.label] = list
-                        }
-                        list.add(info)
-                    }
-                    onComplete()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to reload download data from DB", e)
-                runOnMainThread { onComplete() }
+        enqueueDbWrite("Failed to reload download data from DB", onFailure = { runOnMainThread(onComplete) }) {
+            val reloadedInfos = ServiceRegistry.dataModule.downloadDbRepository.getAllDownloadInfo()
+            runOnMainThread {
+                publishReloadedInfos(reloadedInfos)
+                onComplete()
             }
+        }
+    }
+
+    private fun publishReloadedInfos(reloadedInfos: List<DownloadInfo>) {
+        for (info in reloadedInfos) {
+            // A row added on the main thread while the read was queued is
+            // already in memory (and its write is queued after the read).
+            if (allInfoMap.containsKey(info.arcid)) continue
+            allInfoList.add(info)
+            allInfoMap[info.arcid] = info
+            var list = getInfoListForLabel(info.label)
+            if (list == null) {
+                list = ArrayList()
+                labelInfoMap[info.label] = list
+            }
+            list.add(info)
         }
     }
 
