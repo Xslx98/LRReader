@@ -129,15 +129,22 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                     PatternConfirmFlow.Step.TooShort -> rejectDraw(patternView, R.string.set_pattern_too_short)
                     PatternConfirmFlow.Step.ConfirmNext -> {
                         patternView.clearPattern()
-                        mTip?.setText(R.string.set_pattern_confirm)
+                        showTip(R.string.set_pattern_confirm)
                     }
                     PatternConfirmFlow.Step.Mismatch -> {
                         rejectDraw(patternView, R.string.set_pattern_mismatch)
-                        mTip?.setText(R.string.set_pattern_protection_tip)
+                        showTip(R.string.set_pattern_protection_tip)
                     }
                 }
             }
         }
+    }
+
+    /** Swaps the tip without changing its height, so the pattern grid does not move between draws. */
+    private fun showTip(text: Int) {
+        val tip = mTip ?: return
+        tip.minHeight = maxOf(tip.minHeight, tip.height)
+        tip.setText(text)
     }
 
     private fun rejectDraw(patternView: LockPatternView, message: Int) {
