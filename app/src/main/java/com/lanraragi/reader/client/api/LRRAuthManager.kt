@@ -356,7 +356,7 @@ object LRRAuthManager {
         sActiveProfileId = prefs?.getLong(KEY_ACTIVE_PROFILE_ID, 0L) ?: 0L
         // Migrate away from v1 SHA-256 pattern hash: it cannot be checked any
         // more, so the lock is dropped and the app opens unlocked. Tell the
-        // user once ([consumeLegacyLockRemovedNotice], audit 06d SEC-08); the
+        // user once ([isLegacyLockRemovedNoticePending], audit 06d SEC-08); the
         // notice flag is committed first so the drop is never silent.
         if (prefs?.contains(KEY_PATTERN_HASH_V1) == true) {
             if (!hasPatternIn(prefs)) {
@@ -1212,18 +1212,23 @@ object LRRAuthManager {
     fun lockStateWithoutKeystore(): Boolean? = lockEnabledHint() ?: patternEvidenceWithoutKeystore()
 
     /**
-     * True once after init dropped an app lock saved as the pre-PBKDF2
-     * SHA-256 hash (audit 2026-10-06d SEC-08): it cannot be checked, so the
-     * app now opens unlocked, and the user must be told to set a pattern
-     * again. Clears the flag.
+     * True after init dropped an app lock saved as the pre-PBKDF2 SHA-256
+     * hash (audit 2026-10-06d SEC-08): it cannot be checked, so the app now
+     * opens unlocked, and the user must be told to set a pattern again.
+     * Stays true until [clearLegacyLockRemovedNotice]: the notice is cleared
+     * when the user answers it, not when it is shown, so a rotation or
+     * process death before the answer shows it again (audit 06e).
      */
     @JvmStatic
-    fun consumeLegacyLockRemovedNotice(): Boolean {
+    fun isLegacyLockRemovedNoticePending(): Boolean {
         awaitInit()
-        val plain = fastPlainPrefs()
-        val pending = plain?.getBoolean(KEY_LEGACY_LOCK_REMOVED_NOTICE, false) == true
-        if (pending) plain?.edit { remove(KEY_LEGACY_LOCK_REMOVED_NOTICE) }
-        return pending
+        return fastPlainPrefs()?.getBoolean(KEY_LEGACY_LOCK_REMOVED_NOTICE, false) == true
+    }
+
+    /** The user answered the legacy-lock notice: do not show it again. */
+    @JvmStatic
+    fun clearLegacyLockRemovedNotice() {
+        fastPlainPrefs()?.edit { remove(KEY_LEGACY_LOCK_REMOVED_NOTICE) }
     }
 
     /**
