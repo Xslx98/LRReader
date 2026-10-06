@@ -28,6 +28,7 @@ class SimpleDiskCacheClearFairnessTest {
         val running = AtomicBoolean(true)
         // Reader failures happen off the test thread; collect them so a dead
         // reader (fewer overlapping readers) cannot make clear() pass trivially.
+        val holding = CountDownLatch(8)
         val errors = CopyOnWriteArrayList<Throwable>()
         // Staggered readers so that at every instant someone holds a lock.
         val readers = (1..8).map { n ->
@@ -39,6 +40,7 @@ class SimpleDiskCacheClearFairnessTest {
                         val pipe = cache.getInputStreamPipe("k")
                         if (pipe == null) { Thread.sleep(5); continue }
                         pipe.obtain()
+                        holding.countDown()
                         Thread.sleep(25)
                         pipe.release()
                     }
@@ -47,7 +49,8 @@ class SimpleDiskCacheClearFairnessTest {
                 }
             }.apply { isDaemon = true; start() }
         }
-        Thread.sleep(100) // let the staggered readers overlap before clearing
+        // Clear only once every reader has held a pipe, so they really overlap.
+        assertTrue("readers never all started", holding.await(5, TimeUnit.SECONDS))
         try {
             val done = CountDownLatch(1)
             Thread { cache.clear(); done.countDown() }.apply { isDaemon = true; start() }

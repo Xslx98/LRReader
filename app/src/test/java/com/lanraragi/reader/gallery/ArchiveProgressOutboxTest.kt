@@ -110,4 +110,14 @@ class ArchiveProgressOutboxTest {
         assertTrue(ArchiveProgressOutbox.shouldPush(readAtSeconds = 1000, serverLastReadSeconds = 1000 + grace))
         assertFalse(ArchiveProgressOutbox.shouldPush(readAtSeconds = 1000, serverLastReadSeconds = 1001 + grace))
     }
+
+    @Test
+    fun `dropServer removes only that server's pending pages`() {
+        ArchiveProgressOutbox.markPending(base, "arc", 4)
+        ArchiveProgressOutbox.markPending("http://other", "arc", 9)
+
+        ArchiveProgressOutbox.dropServer(base)
+
+        assertEquals(listOf("http://other"), ArchiveProgressOutbox.entries().map { it.baseUrl })
+    }
 }

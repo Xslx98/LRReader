@@ -1,6 +1,10 @@
 package com.lanraragi.reader.module
 
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.Crash
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -8,10 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import java.io.IOException
 
 /**
  * Provides properly configured [CoroutineScope] instances for the application.
@@ -33,27 +34,21 @@ import kotlinx.coroutines.flow.asSharedFlow
  *
  * @param nonFatalSink receives every exception that reaches [exceptionHandler];
  *   production writes a non-fatal report (audit 2026-10-04 C06 / STAB-02).
+ * @param debugRethrow gets every handled exception that is not an [IOException]
+ *   (a programming error rather than a network or disk failure). Debug builds
+ *   rethrow it on the main looper so the bug crashes during development
+ *   instead of a feature silently doing nothing (STAB-02).
  */
 class CoroutineModule(
     private val nonFatalSink: (Throwable) -> Unit = Crash::saveNonFatal,
+    private val debugRethrow: (Throwable) -> Unit = {},
 ) : ICoroutineModule {
 
     private val tag = "CoroutineModule"
 
-    private val _uncaughtErrors = MutableSharedFlow<Throwable>(
-        extraBufferCapacity = 5,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-
     /**
-     * Observable stream of uncaught coroutine exceptions.
-     * UI layers can optionally subscribe to display error notifications.
-     */
-    override val uncaughtErrors: SharedFlow<Throwable> = _uncaughtErrors.asSharedFlow()
-
-    /**
-     * Global exception handler that logs uncaught coroutine exceptions,
-     * reports them to Analytics, and emits them on [uncaughtErrors].
+     * Global exception handler that logs uncaught coroutine exceptions, writes
+     * a non-fatal report and, for programming errors, calls [debugRethrow].
      * Installed on all scopes created by this module.
      */
     override val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
@@ -64,7 +59,7 @@ class CoroutineModule(
         } catch (e: Throwable) {
             Log.e(tag, "Record non-fatal report", e)
         }
-        _uncaughtErrors.tryEmit(throwable)
+        if (throwable !is IOException) debugRethrow(throwable)
     }
 
     /**
@@ -111,7 +106,16 @@ class CoroutineModule(
         ioScope.cancel()
     }
 
-    private companion object {
+    companion object {
+        /** Production [debugRethrow] (wired in [com.lanraragi.reader.ServiceRegistry.initialize]). */
+        fun rethrowOnMainInDebug(throwable: Throwable) {
+            // Robolectric boots the real Application: a posted throw would fail an
+            // unrelated test when it next idles the main looper.
+            if (BuildConfig.DEBUG && Build.FINGERPRINT != "robolectric") {
+                Handler(Looper.getMainLooper()).post { throw throwable }
+            }
+        }
+
         /**
          * Max concurrent decode tasks running through
          * [decoderDispatcher]. Aligns with Coil's
@@ -119,6 +123,6 @@ class CoroutineModule(
          * to overlap "current page + a couple of preloads" but low
          * enough that large-bitmap allocations don't pile up.
          */
-        const val DECODER_PARALLELISM = 4
+        private const val DECODER_PARALLELISM = 4
     }
 }

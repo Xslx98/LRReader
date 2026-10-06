@@ -81,6 +81,7 @@
     <string name="update_downloading_title">正在下載 %1$s</string>
     <string name="update_download_failed">下載失敗，請重試或在瀏覽器中開啟</string>
     <string name="update_install_permission_needed">需要授予「安裝未知應用程式」權限來完成更新，請開啟系統設定</string>
+    <string name="update_signer_mismatch">此更新的簽署金鑰與已安裝的應用程式不同，未予安裝。</string>
     <string name="update_open_settings">開啟設定</string>
     <string name="update_open_in_browser">在瀏覽器中開啟</string>
     <string name="settings_about_check_for_updates">檢查更新</string>
@@ -276,8 +277,10 @@
 
     <!-- Set Security -->
     <string name="set_pattern_protection">設定圖形解鎖</string>
-    <string name="set_pattern_protection_tip">繪製圖案來設定繪圖解鎖\n留白以取消圖案保護</string>
+    <string name="set_pattern_protection_tip">繪製圖案來設定繪圖解鎖\n留白以取消圖案保護\n\n應用程式鎖只保護應用程式本身：已下載的檔案仍可透過電腦或檔案管理員讀取。</string>
     <string name="set_pattern_too_short">請至少連接 4 個點</string>
+    <string name="set_pattern_confirm">請再次繪製相同的圖案以確認</string>
+    <string name="set_pattern_mismatch">兩次圖案不一致，請重新繪製圖案。</string>
     <string name="set">設定</string>
     <string name="enable_fingerprint">啟用指紋解鎖</string>
 
@@ -907,4 +910,10 @@
     <string name="cd_clear_search">清除搜尋</string>
     <string name="appwidget_continue_reading_description">一鍵繼續閱讀上次看的檔案</string>
     <string name="appwidget_continue_reading_empty">暫無最近閱讀</string>
+    <string name="biometric_prompt_pattern_set">驗證身分以將圖案綁定到生物辨識</string>
+    <string name="biometric_prompt_pattern_verify">驗證身分以確認圖案</string>
+    <string name="lrr_offline_error">沒有網路連線</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="other">嘗試次數過多，請在 %d 秒後重試。</item>
+    </plurals>
 </resources>

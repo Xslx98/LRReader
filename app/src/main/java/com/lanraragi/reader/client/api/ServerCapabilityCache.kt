@@ -14,8 +14,9 @@ import java.util.concurrent.ConcurrentHashMap
  *   explicitly says to check `/api/info` before calling that endpoint. Read by
  *   [LRRArchiveApi.updateProgress].
  * - `excluded_namespaces`: tag namespaces the admin excluded from suggestions
- *   and statistics. The server already filters its own `/api/database/stats`;
- *   this copy lets the offline reading-stats page apply the same exclusions to
+ *   and statistics. The server filters `/api/database/stats` only when asked
+ *   (`hide_excluded_namespaces`, sent by [LRRDatabaseApi.getTagStats]); this
+ *   copy lets the offline reading-stats page apply the same exclusions to
  *   locally stored tag snapshots. Backed by an optional [Store] so the value
  *   survives process death (an `/api/info` round-trip only happens on connect).
  *
@@ -28,6 +29,9 @@ object ServerCapabilityCache {
     interface Store {
         fun loadExcludedNamespaces(baseUrl: String): Set<String>?
         fun saveExcludedNamespaces(baseUrl: String, namespaces: Set<String>)
+
+        /** Drops what is kept for [baseUrl] (its profile was deleted). */
+        fun forget(baseUrl: String)
     }
 
     private val tracksProgress = ConcurrentHashMap<String, Boolean>()
@@ -89,6 +93,14 @@ object ServerCapabilityCache {
     fun excludedNamespaces(baseUrl: String): Set<String>? =
         excludedNamespaces[baseUrl]
             ?: store?.loadExcludedNamespaces(baseUrl)?.also { excludedNamespaces[baseUrl] = it }
+
+    /** Drops every fact about [baseUrl], persisted ones included (audit SEC-16). */
+    fun forget(baseUrl: String) {
+        tracksProgress.remove(baseUrl)
+        serverSummaries.remove(baseUrl)
+        excludedNamespaces.remove(baseUrl)
+        store?.forget(baseUrl)
+    }
 
     /** Drops in-memory facts only; an attached [Store] keeps its contents. */
     fun clear() {

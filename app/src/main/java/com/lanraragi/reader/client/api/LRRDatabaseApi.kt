@@ -36,6 +36,9 @@ object LRRDatabaseApi {
     ): List<LRRTagStat> = withContext(Dispatchers.IO) {
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/database/stats")
+            // The server filters the admin's excluded namespaces only on request;
+            // older servers ignore the unknown parameter.
+            .addQueryParameter("hide_excluded_namespaces", "true")
             .build()
         val request = Request.Builder()
             .url(url)

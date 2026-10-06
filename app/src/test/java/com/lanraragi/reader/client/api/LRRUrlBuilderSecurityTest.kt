@@ -82,7 +82,7 @@ class LRRUrlBuilderSecurityTest {
         LRRDatabaseApi.getTagStats(client, baseUrl)
 
         val req = server.awaitRequest()
-        assertEquals("/lrr/api/database/stats", req.path)
+        assertEquals("/lrr/api/database/stats", req.requestUrl!!.encodedPath)
     }
 
     @Test

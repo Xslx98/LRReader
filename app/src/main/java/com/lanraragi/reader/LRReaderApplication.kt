@@ -455,6 +455,12 @@ class LRReaderApplication : RecordingApplication() {
                 Log.e(TAG, "Failed to delete the legacy parse error dir", e)
             }
 
+            try {
+                com.lanraragi.reader.updater.ApkSigner.purgeInstalledUpdates(this@LRReaderApplication)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete installed update APKs", e)
+            }
+
             // Migrate downloads from old app-private path to user-visible location.
             // Skip if a previous run already completed migration successfully.
             if (!Settings.getBoolean(KEY_DOWNLOAD_MIGRATION_DONE, false)) {

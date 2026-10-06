@@ -79,6 +79,7 @@
     <string name="update_downloading_title">Téléchargement de %1$s</string>
     <string name="update_download_failed">Échec du téléchargement. Réessayer ou ouvrir la version dans le navigateur.</string>
     <string name="update_install_permission_needed">LR Reader a besoin de la permission pour installer les mises à jour. Ouvrez les paramètres système pour l\'autoriser.</string>
+    <string name="update_signer_mismatch">Cette mise à jour est signée avec une autre clé que l\'application installée ; elle n\'a pas été installée.</string>
     <string name="update_open_settings">Ouvrir les paramètres</string>
     <string name="update_open_in_browser">Ouvrir dans le navigateur</string>
     <string name="settings_about_check_for_updates">Vérifier les mises à jour</string>
@@ -287,8 +288,10 @@
 
     <!-- Set Security -->
     <string name="set_pattern_protection">Définir le modèle de déverrouillage</string>
-    <string name="set_pattern_protection_tip">Dessinez un modèle pour définir le modèle de déverrouillage\nContinuer sans rien dessiner pour effacer le modèle</string>
+    <string name="set_pattern_protection_tip">Dessinez un modèle pour définir le modèle de déverrouillage\nContinuer sans rien dessiner pour effacer le modèle\n\nLe verrouillage ne protège que l\'application : les fichiers téléchargés restent lisibles depuis un ordinateur ou un gestionnaire de fichiers.</string>
     <string name="set_pattern_too_short">Reliez au moins 4 points</string>
+    <string name="set_pattern_confirm">Dessinez à nouveau le même schéma pour confirmer</string>
+    <string name="set_pattern_mismatch">Les schémas ne correspondent pas. Dessinez un nouveau schéma.</string>
     <string name="set">Définir</string>
     <string name="enable_fingerprint">Permettre le déverrouillage avec l\'empreinte digitale</string>
 
@@ -959,4 +962,12 @@ Cette action est irréversible.</string>
     <string name="cd_clear_search">Effacer la recherche</string>
     <string name="appwidget_continue_reading_description">Reprendre en un geste la dernière archive lue</string>
     <string name="appwidget_continue_reading_empty">Aucune lecture récente</string>
+    <string name="biometric_prompt_pattern_set">Authentifiez-vous pour associer le schéma à la sécurité biométrique</string>
+    <string name="biometric_prompt_pattern_verify">Authentifiez-vous pour vérifier le schéma</string>
+    <string name="lrr_offline_error">Aucune connexion réseau</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="one">Trop de tentatives échouées. Réessayez dans %d seconde.</item>
+        <item quantity="many">Trop de tentatives échouées. Réessayez dans %d secondes.</item>
+        <item quantity="other">Trop de tentatives échouées. Réessayez dans %d secondes.</item>
+    </plurals>
 </resources>

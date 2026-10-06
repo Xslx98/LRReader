@@ -87,6 +87,7 @@
     <string name="update_downloading_title">%1$s 다운로드 중</string>
     <string name="update_download_failed">다운로드 실패. 다시 시도하거나 브라우저에서 열어 보세요.</string>
     <string name="update_install_permission_needed">LR Reader가 업데이트를 설치하려면 권한이 필요합니다. 시스템 설정을 열어 허용하세요.</string>
+    <string name="update_signer_mismatch">이 업데이트는 설치된 앱과 다른 키로 서명되어 설치하지 않았습니다.</string>
     <string name="update_open_settings">설정 열기</string>
     <string name="update_open_in_browser">브라우저에서 열기</string>
     <string name="settings_about_check_for_updates">업데이트 확인</string>
@@ -281,8 +282,10 @@
 
     <!-- Set Security -->
     <string name="set_pattern_protection">패턴 보호 사용</string>
-    <string name="set_pattern_protection_tip">패턴 보호를 사용하려면 패턴을 그리세요.\n비워두면 패턴 보호가 해제됩니다.</string>
+    <string name="set_pattern_protection_tip">패턴 보호를 사용하려면 패턴을 그리세요.\n비워두면 패턴 보호가 해제됩니다.\n\n잠금은 앱만 보호합니다. 다운로드한 파일은 컴퓨터나 파일 관리자에서 읽을 수 있습니다.</string>
     <string name="set_pattern_too_short">4개 이상의 점을 연결하세요</string>
+    <string name="set_pattern_confirm">확인을 위해 같은 패턴을 다시 그리세요</string>
+    <string name="set_pattern_mismatch">패턴이 일치하지 않습니다. 새 패턴을 그리세요.</string>
     <string name="set">지정</string>
     <string name="enable_fingerprint">지문으로 잠금 해제 허용</string>
 
@@ -907,4 +910,10 @@
     <string name="cd_clear_search">검색 지우기</string>
     <string name="appwidget_continue_reading_description">마지막으로 읽은 아카이브를 한 번에 이어 읽기</string>
     <string name="appwidget_continue_reading_empty">최근 읽은 항목 없음</string>
+    <string name="biometric_prompt_pattern_set">패턴을 생체 인증에 연결하려면 인증하세요</string>
+    <string name="biometric_prompt_pattern_verify">패턴을 확인하려면 인증하세요</string>
+    <string name="lrr_offline_error">네트워크 연결 없음</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="other">시도 횟수가 너무 많습니다. %d초 후에 다시 시도하세요.</item>
+    </plurals>
 </resources>

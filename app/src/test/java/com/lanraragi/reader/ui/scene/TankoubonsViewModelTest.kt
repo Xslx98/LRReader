@@ -157,7 +157,8 @@ class TankoubonsViewModelTest {
         val vm2 = TankoubonsViewModel()
         vm2.loadTankoubons()
         awaitUntil { vm2.tanks.value.size == 1 }
-        Thread.sleep(300)
+        // Every launched probe has finished, so "no second probe" is a real result.
+        awaitViewModelIdle(vm2)
         assertEquals(1, dispatcher.probePaths.size)
     }
 

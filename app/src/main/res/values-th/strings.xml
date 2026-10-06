@@ -86,6 +86,7 @@
     <string name="update_downloading_title">กำลังดาวน์โหลด %1$s</string>
     <string name="update_download_failed">ดาวน์โหลดล้มเหลว ลองอีกครั้งหรือเปิดในเบราว์เซอร์</string>
     <string name="update_install_permission_needed">LR Reader ต้องการสิทธิ์ในการติดตั้งอัพเดต เปิดการตั้งค่าระบบเพื่ออนุญาต</string>
+    <string name="update_signer_mismatch">การอัปเดตนี้ลงนามด้วยคีย์ที่ต่างจากแอปที่ติดตั้งอยู่ จึงไม่ได้ติดตั้ง</string>
     <string name="update_open_settings">เปิดการตั้งค่า</string>
     <string name="update_open_in_browser">เปิดในเบราว์เซอร์</string>
     <string name="settings_about_check_for_updates">ตรวจสอบการอัพเดต</string>
@@ -280,8 +281,10 @@
 
     <!-- Set Security -->
     <string name="set_pattern_protection">ตั้้งการป้องกันแบบรูปแบบ</string>
-    <string name="set_pattern_protection_tip">ลากรูปแบบเพื่อตั้งค่าการป้องกันแบบรูปแบบ\nเว้นว้างไว้เพื่อลบการป้องกันแบบรูปแบบ</string>
+    <string name="set_pattern_protection_tip">ลากรูปแบบเพื่อตั้งค่าการป้องกันแบบรูปแบบ\nเว้นว้างไว้เพื่อลบการป้องกันแบบรูปแบบ\n\nการล็อกปกป้องเฉพาะแอป ไฟล์ที่ดาวน์โหลดยังอ่านได้จากคอมพิวเตอร์หรือแอปจัดการไฟล์</string>
     <string name="set_pattern_too_short">เชื่อมต่ออย่างน้อย 4 จุด</string>
+    <string name="set_pattern_confirm">วาดรูปแบบเดิมอีกครั้งเพื่อยืนยัน</string>
+    <string name="set_pattern_mismatch">รูปแบบไม่ตรงกัน โปรดวาดรูปแบบใหม่</string>
     <string name="set">กำหนด</string>
     <string name="enable_fingerprint">อนุญาตใช้สแกนลายนิ้วมือเพื่อปลดล็อกเช่นกัน</string>
 
@@ -900,4 +903,10 @@
     <string name="cd_clear_search">ล้างการค้นหา</string>
     <string name="appwidget_continue_reading_description">แตะครั้งเดียวเพื่ออ่านไฟล์ล่าสุดต่อ</string>
     <string name="appwidget_continue_reading_empty">ไม่มีการอ่านล่าสุด</string>
+    <string name="biometric_prompt_pattern_set">ยืนยันตัวตนเพื่อผูกรูปแบบกับความปลอดภัยไบโอเมตริก</string>
+    <string name="biometric_prompt_pattern_verify">ยืนยันตัวตนเพื่อตรวจสอบรูปแบบ</string>
+    <string name="lrr_offline_error">ไม่มีการเชื่อมต่อเครือข่าย</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="other">ลองผิดหลายครั้งเกินไป โปรดลองอีกครั้งใน %d วินาที</item>
+    </plurals>
 </resources>

@@ -21,6 +21,10 @@ class PrefsServerCapabilityStore(private val prefs: SharedPreferences) : ServerC
         prefs.edit { putString(key(baseUrl), namespaces.joinToString(",")) }
     }
 
+    override fun forget(baseUrl: String) {
+        prefs.edit { remove(key(baseUrl)) }
+    }
+
     private fun key(baseUrl: String) = KEY_PREFIX + baseUrl
 
     companion object {

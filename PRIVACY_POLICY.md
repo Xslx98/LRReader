@@ -24,7 +24,7 @@ The App stores the following data on your device:
 
 - **服务器连接信息 / Server connection details** (URL, API key) - API 密钥与应用锁图案使用保存在 Android 密钥库（Android Keystore）中的密钥加密存储 / the API key and the app-lock pattern are stored encrypted with a key kept in the Android Keystore
 - **阅读历史、进度与偏好设置 / Reading history, progress and preferences** - 存储在本地数据库与设置中 / stored in a local database and in the app settings
-- **下载的档案 / Downloaded archives** - 保存在您选择的下载位置，直到您删除 / kept in the download location you choose until you delete them
+- **下载的档案 / Downloaded archives** - 保存在您选择的下载位置，直到您删除。这些文件不加密，应用锁不保护它们：通过 USB 连接的电脑或有存储权限的应用可以读取 / kept in the download location you choose until you delete them. They are not encrypted and the app lock does not protect them: a computer over USB or an app with storage access can read them
 - **缓存 / Caches** - 阅读页面、缩略图和网络响应的缓存，大小有上限并随系统分配的缓存配额缩小，可在系统的应用信息中清除，系统空间不足时也可能自动清理 / caches of reader pages, thumbnails and network responses; their sizes are capped and shrink with the cache quota the system grants, they can be cleared from the system app info screen, and the system may clear them when storage runs low
 - **标签翻译数据 / Tag translation data** - 仅在显示标签翻译时下载（见下文）/ downloaded only while tag translations are shown (see below)
 - **崩溃与诊断报告 / Crash and diagnostic reports** - 默认开启，仅保存在应用私有目录（每类最近 5 份），可在「设置 → 高级」关闭；内容为错误堆栈、设备型号与系统版本、应用版本及近期脱敏事件，不含服务器地址、API 密钥或档案标题 / on by default, kept only in the app-private directory (the newest 5 of each kind) and can be turned off in Settings → Advanced; they contain error stack traces, device model and OS version, app version and recent redacted events, never server addresses, API keys or archive titles

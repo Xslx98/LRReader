@@ -82,6 +82,7 @@
     <string name="update_downloading_title">Descargando %1$s</string>
     <string name="update_download_failed">Descarga fallida. Inténtalo de nuevo o abre la versión en tu navegador.</string>
     <string name="update_install_permission_needed">LR Reader necesita permiso para instalar actualizaciones. Abre la configuración del sistema para concederlo.</string>
+    <string name="update_signer_mismatch">Esta actualización está firmada con una clave distinta a la de la app instalada, así que no se instaló.</string>
     <string name="update_open_settings">Abrir ajustes</string>
     <string name="update_open_in_browser">Abrir en el navegador</string>
     <string name="settings_about_check_for_updates">Buscar actualizaciones</string>
@@ -287,8 +288,10 @@
 
     <!-- Set Security -->
     <string name="set_pattern_protection">Establecer protección por patrón</string>
-    <string name="set_pattern_protection_tip">Dibuje un patrón para establecer la protección por patrón\nDeje en blanco para quitar la protección por patrón</string>
+    <string name="set_pattern_protection_tip">Dibuje un patrón para establecer la protección por patrón\nDeje en blanco para quitar la protección por patrón\n\nEl bloqueo solo protege la app: los archivos descargados siguen siendo legibles desde un ordenador o un gestor de archivos.</string>
     <string name="set_pattern_too_short">Conecta al menos 4 puntos</string>
+    <string name="set_pattern_confirm">Vuelve a dibujar el mismo patrón para confirmar</string>
+    <string name="set_pattern_mismatch">Los patrones no coinciden. Dibuja un patrón nuevo.</string>
     <string name="set">Establecer</string>
     <string name="enable_fingerprint">También permitir desbloqueo con huella digital</string>
 
@@ -955,4 +958,12 @@ Esta acción no se puede deshacer.</string>
     <string name="cd_clear_search">Borrar búsqueda</string>
     <string name="appwidget_continue_reading_description">Reanuda con un toque el último archivo leído</string>
     <string name="appwidget_continue_reading_empty">No hay lectura reciente</string>
+    <string name="biometric_prompt_pattern_set">Autentícate para vincular el patrón a la seguridad biométrica</string>
+    <string name="biometric_prompt_pattern_verify">Autentícate para verificar el patrón</string>
+    <string name="lrr_offline_error">Sin conexión de red</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="one">Demasiados intentos fallidos. Inténtalo de nuevo en %d segundo.</item>
+        <item quantity="many">Demasiados intentos fallidos. Inténtalo de nuevo en %d segundos.</item>
+        <item quantity="other">Demasiados intentos fallidos. Inténtalo de nuevo en %d segundos.</item>
+    </plurals>
 </resources>

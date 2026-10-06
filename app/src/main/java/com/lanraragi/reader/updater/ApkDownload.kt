@@ -59,7 +59,7 @@ object ApkDownloader {
      */
     fun targetFile(context: Context, release: GhRelease): File? {
         val asset = release.apkAsset
-        val dir = File(context.cacheDir, "updates")
+        val dir = File(context.cacheDir, UPDATES_DIR)
         if (asset == null || (!dir.isDirectory && !dir.mkdirs())) return null
         val name = ApkIntegrity.safeFileName(asset.name)
         dir.listFiles()?.forEach { if (it.name != name) it.delete() }
@@ -194,6 +194,7 @@ object ApkDownloader {
         .buffer(Channel.UNLIMITED)
         .flowOn(Dispatchers.IO)
 
+    const val UPDATES_DIR = "updates"
     private const val BUFFER_SIZE = 8 * 1024              // 8 KB read buffer
     private const val EMIT_INTERVAL_BYTES = 256 * 1024L   // emit InProgress every 256 KB
 }

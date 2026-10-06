@@ -42,6 +42,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.util.concurrent.TimeUnit
+import com.lanraragi.reader.gallery.ArchiveProgressOutbox
+import com.lanraragi.reader.client.api.ServerCapabilityCache
 
 /**
  * Unit tests for [ServerListViewModel].
@@ -577,5 +579,31 @@ class ServerListViewModelTest {
         LRRAuthManager.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore", Context.MODE_PRIVATE)
         )
+    }
+
+    /** Audit SEC-16: per-server state outside Room goes with the profile. */
+    @Test
+    fun deleteProfile_dropsTheServersCapabilityFactsAndPendingProgress() {
+        val gone = insertProfile("Gone", "https://gone.example/")
+        val outboxPrefs = ApplicationProvider.getApplicationContext<Context>()
+            .getSharedPreferences("outbox_sec16_test", Context.MODE_PRIVATE)
+        outboxPrefs.edit().clear().commit()
+        ArchiveProgressOutbox.installForTesting(outboxPrefs)
+        try {
+            ServerCapabilityCache.setTracksProgress("https://gone.example", true)
+            ServerCapabilityCache.setTracksProgress("https://kept.example", true)
+            ArchiveProgressOutbox.markPending("https://gone.example", "arc", 3)
+            ArchiveProgressOutbox.markPending("https://kept.example", "arc", 5)
+
+            ServerListViewModel().deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example/"))
+
+            awaitUntil { ArchiveProgressOutbox.entries().none { it.baseUrl == "https://gone.example" } }
+            assertEquals(listOf("https://kept.example"), ArchiveProgressOutbox.entries().map { it.baseUrl })
+            assertEquals(null, ServerCapabilityCache.tracksProgress("https://gone.example"))
+            assertEquals(true, ServerCapabilityCache.tracksProgress("https://kept.example"))
+        } finally {
+            ArchiveProgressOutbox.installForTesting(null)
+            ServerCapabilityCache.clear()
+        }
     }
 }

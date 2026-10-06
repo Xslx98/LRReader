@@ -41,6 +41,13 @@ class TankCoverChoiceStore(private val storage: Storage = SettingsStorage) {
         save(map - tankId)
     }
 
+    /** Drops every choice made on [profileId] (the profile was deleted, audit SEC-16). */
+    fun removeProfile(profileId: Long) {
+        val map = load()
+        val kept = map.filterValues { it.profileId != profileId }
+        if (kept.size != map.size) save(kept)
+    }
+
     /**
      * Membership changed: a choice whose archive is no longer a member is
      * dropped (the server will regenerate from the new first member).

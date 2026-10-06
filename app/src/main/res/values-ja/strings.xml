@@ -69,6 +69,7 @@
     <string name="update_downloading_title">%1$s をダウンロード中</string>
     <string name="update_download_failed">ダウンロードに失敗しました。再試行するかブラウザで開いてください。</string>
     <string name="update_install_permission_needed">LR Reader が更新をインストールするための権限が必要です。システム設定を開いて許可してください。</string>
+    <string name="update_signer_mismatch">この更新はインストール済みのアプリと異なる鍵で署名されているため、インストールしませんでした。</string>
     <string name="update_open_settings">設定を開く</string>
     <string name="update_open_in_browser">ブラウザで開く</string>
     <string name="settings_about_check_for_updates">更新の確認</string>
@@ -240,8 +241,10 @@
     <string name="clear_all_history">このサーバーの閲覧履歴を削除しますか？</string>
     <!-- Set Security -->
     <string name="set_pattern_protection">パターン保護を設定</string>
-    <string name="set_pattern_protection_tip">パターンを描いてパターン保護を設定します。\n空白のまま続行してパターン保護をクリアします。</string>
+    <string name="set_pattern_protection_tip">パターンを描いてパターン保護を設定します。\n空白のまま続行してパターン保護をクリアします。\n\nロックはアプリのみを保護します。ダウンロードしたファイルはパソコンやファイル管理アプリから読み取れます。</string>
     <string name="set_pattern_too_short">4 個以上の点をつないでください</string>
+    <string name="set_pattern_confirm">確認のため、同じパターンをもう一度描いてください</string>
+    <string name="set_pattern_mismatch">パターンが一致しません。新しいパターンを描いてください。</string>
     <string name="set">設定</string>
     <string name="enable_fingerprint">指紋でロックを解除</string>
     <!-- UConfig Activity -->
@@ -836,4 +839,10 @@
     <string name="cd_clear_search">検索をクリア</string>
     <string name="appwidget_continue_reading_description">最後に読んだアーカイブをワンタップで再開</string>
     <string name="appwidget_continue_reading_empty">最近読んだものはありません</string>
+    <string name="biometric_prompt_pattern_set">パターンを生体認証に紐付けるには認証してください</string>
+    <string name="biometric_prompt_pattern_verify">パターンを確認するには認証してください</string>
+    <string name="lrr_offline_error">ネットワークに接続されていません</string>
+    <plurals name="pattern_lockout_message">
+        <item quantity="other">試行回数が多すぎます。%d 秒後にもう一度お試しください。</item>
+    </plurals>
 </resources>
