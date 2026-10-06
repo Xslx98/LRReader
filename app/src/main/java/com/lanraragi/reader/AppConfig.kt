@@ -30,6 +30,7 @@ object AppConfig {
     private const val ARCHIVER = "archiver"
     private const val IMAGE = "image"
     private const val PARSE_ERROR = "parse_error"
+    private const val LEGACY_LOGCAT = "logcat"
     private const val DATA = "data"
     private const val CRASH = "crash"
 
@@ -104,16 +105,23 @@ object AppConfig {
     }
 
     /**
-     * Deletes the external `parse_error` directory, where older builds could
-     * dump raw server responses readable outside the app (audit C49 /
-     * SEC-19). Nothing writes there any more. Call off the main thread.
+     * Deletes the external dump directories older builds left readable
+     * outside the app (audit C49 / SEC-19): `parse_error` (raw server
+     * responses), `logcat` (device-wide logcat dumps) and `crash` (crash logs
+     * with SERIAL/HOST/USER; reports now live in the app-private
+     * [getCrashDir]). Nothing writes to any of them any more, so after the
+     * first boot of this build each check is a cheap miss. Call off the main
+     * thread.
      */
     @JvmStatic
-    fun purgeLegacyParseErrorDir() {
+    fun purgeLegacyExternalDumpDirs() {
         if (!::sContext.isInitialized) return
-        val external = sContext.getExternalFilesDir(null) ?: return
-        val dir = File(external, PARSE_ERROR)
-        if (dir.exists()) dir.deleteRecursively()
+        val external = sContext.getExternalFilesDir(null)
+        if (external == null) return
+        for (name in listOf(PARSE_ERROR, LEGACY_LOGCAT, CRASH)) {
+            val dir = File(external, name)
+            if (dir.exists()) dir.deleteRecursively()
+        }
     }
 
     @JvmStatic
