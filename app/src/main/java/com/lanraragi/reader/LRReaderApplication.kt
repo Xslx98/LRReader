@@ -171,6 +171,9 @@ class LRReaderApplication : RecordingApplication() {
         // Single-archive progress PUTs that failed are kept here until the
         // network returns (audit 2026-10-04 C20); flushed below.
         com.lanraragi.reader.gallery.ArchiveProgressOutbox.install(this)
+        // Tank tag re-materializations a member tag edit could not finish
+        // (audit 2026-10-04 REL-24); flushed with the progress outbox.
+        com.lanraragi.reader.tankoubon.TankTagOutbox.install(this)
         // Before any DownloadManager exists: its first load records the queue a
         // killed process left behind, which must reach disk (A47).
         com.lanraragi.reader.download.DownloadResumeBanner.interruptedStore =
@@ -311,7 +314,10 @@ class LRReaderApplication : RecordingApplication() {
         ServiceRegistry.coroutineModule.ioScope.launch {
             ServiceRegistry.networkModule.networkMonitor.isAvailableFlow
                 .filter { it }
-                .collect { com.lanraragi.reader.gallery.ArchiveProgressOutbox.flushToServers() }
+                .collect {
+                    com.lanraragi.reader.gallery.ArchiveProgressOutbox.flushToServers()
+                    com.lanraragi.reader.tankoubon.TankTagOutbox.flushToServers()
+                }
         }
         // Eagerly start the profile snapshot collector. Interceptors and the
         // download worker need a populated snapshot before their first read;

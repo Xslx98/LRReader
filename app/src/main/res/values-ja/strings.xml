@@ -319,6 +319,7 @@
     <string name="tank_tag_sync_failed">「%1$s」のタグ統合に失敗しました</string>
     <string name="tank_category_sync_failed">「%1$s」のカテゴリ更新に失敗しました</string>
     <string name="tank_download_group_failed">ダウンロード済みの単行本を更新できませんでした。もう一度お試しください。</string>
+    <string name="tank_tag_sync_pending">サーバーに接続でき次第、単行本のタグを更新します</string>
     <string name="tank_reset_tags">メンバーの和集合にリセット</string>
     <string name="tank_reset_tags_confirm">単行本のタグをメンバーのタグの和集合で置き換えますか？手入力したタグは失われ、評価は保持されます。</string>
     <string name="tank_delete_confirm">この単行本を削除しますか？中のアーカイブは削除されませんが、単行本自体の概要・追加タグ・読書進捗は失われます。</string>

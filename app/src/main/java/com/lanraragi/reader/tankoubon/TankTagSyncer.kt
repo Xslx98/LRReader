@@ -21,6 +21,9 @@ import okhttp3.OkHttpClient
  */
 object TankTagSyncer {
 
+    /** What a follow-up did: wrote the tank, found nothing to change, or could not finish. */
+    enum class Outcome { WRITTEN, UNCHANGED, FAILED }
+
     /** Tank tags + member raw tags captured BEFORE a removal (rule 3 needs "before"). */
     class Snapshot(val tankId: String, val tankName: String, val tankTags: String?, val memberTags: Map<String, String>)
 
@@ -56,7 +59,12 @@ object TankTagSyncer {
     /**
      * A member's own tags were edited ([oldTags] → [newTags]) in one tank
      * containing it: rule 3 with the member's old contribution as "before".
+     * Unlike the other entry points this reports a failed snapshot too
+     * ([Outcome.FAILED]): [TankTagOutbox] keeps such an edit for a retry,
+     * since the old contribution cannot be recovered later. [notifyFailure]
+     * false keeps a retry from posting the failure Snackbar again.
      */
+    @Suppress("LongParameterList")
     suspend fun afterMemberTagsChanged(
         client: OkHttpClient,
         baseUrl: String,
@@ -64,11 +72,13 @@ object TankTagSyncer {
         arcid: String,
         oldTags: String,
         newTags: String,
-    ): Boolean = write(client, baseUrl, tankId) { snap ->
-        if (arcid !in snap.memberTags) return@write snap.tankTags.orEmpty()
+        notifyFailure: Boolean = true,
+    ): Outcome {
+        val snap = snapshot(client, baseUrl, tankId) ?: return Outcome.FAILED
+        if (arcid !in snap.memberTags) return Outcome.UNCHANGED
         val before = snap.memberTags.mapValues { (id, tags) -> if (id == arcid) oldTags else tags }.values.toList()
         val after = snap.memberTags.mapValues { (id, tags) -> if (id == arcid) newTags else tags }.values.toList()
-        TankTagMerge.onMemberTagsChanged(snap.tankTags, before, after)
+        return putOutcome(client, baseUrl, snap, TankTagMerge.onMemberTagsChanged(snap.tankTags, before, after), notifyFailure)
     }
 
     /** 「重置为成员并集」 (§5.4). */
@@ -99,17 +109,28 @@ object TankTagSyncer {
     }
 
     /** PUTs [next] as the whole tag string when it differs; failures post the event. */
-    private suspend fun put(client: OkHttpClient, baseUrl: String, snap: Snapshot, next: String): Boolean {
-        if (TankTagMerge.split(next) == TankTagMerge.split(snap.tankTags)) return false
+    private suspend fun put(client: OkHttpClient, baseUrl: String, snap: Snapshot, next: String): Boolean =
+        putOutcome(client, baseUrl, snap, next, notifyFailure = true) == Outcome.WRITTEN
+
+    private suspend fun putOutcome(
+        client: OkHttpClient,
+        baseUrl: String,
+        snap: Snapshot,
+        next: String,
+        notifyFailure: Boolean,
+    ): Outcome {
+        if (TankTagMerge.split(next) == TankTagMerge.split(snap.tankTags)) return Outcome.UNCHANGED
         return try {
             LRRTankoubonApi.updateTankoubon(client, baseUrl, snap.tankId, tags = next)
-            true
+            Outcome.WRITTEN
         } catch (e: CancellationException) {
             throw e
         } catch (ignored: Exception) {
             Log.w(TAG, "tank tag write failed")
-            AppEventBus.postTankTagSyncFailedEvent(TankTagSyncFailedEvent(snap.tankId, snap.tankName))
-            false
+            if (notifyFailure) {
+                AppEventBus.postTankTagSyncFailedEvent(TankTagSyncFailedEvent(snap.tankId, snap.tankName))
+            }
+            Outcome.FAILED
         }
     }
 

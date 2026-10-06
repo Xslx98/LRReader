@@ -47,6 +47,9 @@ class TankTagSyncerTest {
     @Volatile
     private var putStatus = 200
 
+    @Volatile
+    private var fullStatus = 200
+
     private val putBodies = CopyOnWriteArrayList<String>()
     // Recorded on the MockWebServer thread, asserted on the test thread:
     // an assertion inside the dispatcher only surfaces as a failed PUT.
@@ -68,7 +71,8 @@ class TankTagSyncerTest {
                         putBodies.add(body.getValue("metadata").jsonObject.getValue("tags").jsonPrimitive.content)
                         MockResponse().setResponseCode(putStatus).setBody("""{"success":1}""")
                     }
-                    path.startsWith("/api/tankoubons/$TANK/full") -> MockResponse().setBody(fullJson())
+                    path.startsWith("/api/tankoubons/$TANK/full") ->
+                        if (fullStatus == 200) MockResponse().setBody(fullJson()) else MockResponse().setResponseCode(fullStatus)
                     else -> MockResponse().setResponseCode(404)
                 }
             }
@@ -133,15 +137,47 @@ class TankTagSyncerTest {
         // Server already holds B's NEW tags.
         members = listOf(ID_A to "artist:a", ID_B to "artist:a, new:n")
 
-        assertTrue(TankTagSyncer.afterMemberTagsChanged(client, baseUrl, TANK, ID_B, "artist:a, parody:p", "artist:a, new:n"))
+        assertEquals(
+            TankTagSyncer.Outcome.WRITTEN,
+            TankTagSyncer.afterMemberTagsChanged(client, baseUrl, TANK, ID_B, "artist:a, parody:p", "artist:a, new:n"),
+        )
 
         assertEquals("artist:a, hand:written, new:n", putBodies.single())
     }
 
     @Test
     fun afterMemberTagsChanged_ignoresArchivesNotInTheTank() = runTest {
-        assertFalse(TankTagSyncer.afterMemberTagsChanged(client, baseUrl, TANK, "c".repeat(40), "x:1", "x:2"))
+        assertEquals(
+            TankTagSyncer.Outcome.UNCHANGED,
+            TankTagSyncer.afterMemberTagsChanged(client, baseUrl, TANK, "c".repeat(40), "x:1", "x:2"),
+        )
         assertTrue(putBodies.isEmpty())
+    }
+
+    @Test
+    fun afterMemberTagsChanged_unreadableTankIsFailedNotUnchanged() = runTest {
+        // REL-24: the outbox must keep the edit, so a failed snapshot cannot look like "nothing to do".
+        fullStatus = 503
+
+        assertEquals(
+            TankTagSyncer.Outcome.FAILED,
+            TankTagSyncer.afterMemberTagsChanged(client, baseUrl, TANK, ID_B, "artist:a, parody:p", "artist:a, new:n"),
+        )
+        assertTrue(putBodies.isEmpty())
+    }
+
+    @Test
+    fun afterMemberTagsChanged_failedPutWithoutNotifyPostsNoEvent() = runTest {
+        members = listOf(ID_A to "artist:a", ID_B to "artist:a, new:n")
+        putStatus = 500
+
+        val outcome = TankTagSyncer.afterMemberTagsChanged(
+            client, baseUrl, TANK, ID_B, "artist:a, parody:p", "artist:a, new:n", notifyFailure = false
+        )
+
+        assertEquals(TankTagSyncer.Outcome.FAILED, outcome)
+        assertEquals(1, putBodies.size)
+        assertTrue("a retry must not post the failure Snackbar again", failures.isEmpty())
     }
 
     @Test
