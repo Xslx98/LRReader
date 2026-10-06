@@ -2,6 +2,7 @@ package com.lanraragi.reader.client.api
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Looper
 import android.os.SystemClock
 import android.os.Trace
@@ -807,7 +808,24 @@ object LRRAuthManager {
         val keyGen = KeyGenerator.getInstance(
             KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore"
         )
-        val spec = KeyGenParameterSpec.Builder(
+        keyGen.init(patternKeySpec())
+        keyGen.generateKey()
+    }
+
+    /**
+     * The pattern key's spec: AES-GCM, usable only through a strong-biometric
+     * BiometricPrompt CryptoObject, once per authentication.
+     *
+     * `setUserAuthenticationParameters` exists from API 30 only; on Android
+     * 9/10 calling it threw NoSuchMethodError, an Error the caller's
+     * fallback does not catch, so setting a pattern crashed (audit 06d
+     * STAB-01). Below API 30 a validity of -1 is the same rule: per-use
+     * authentication that only a biometric can satisfy, and a key that the
+     * CryptoObject flow unlocks (BiometricPrompt exists from API 28).
+     */
+    @JvmStatic
+    internal fun patternKeySpec(): KeyGenParameterSpec {
+        val builder = KeyGenParameterSpec.Builder(
             KEYSTORE_ALIAS_PATTERN,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
         )
@@ -815,10 +833,13 @@ object LRRAuthManager {
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setKeySize(256)
             .setUserAuthenticationRequired(true)
-            .setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)
-            .build()
-        keyGen.init(spec)
-        keyGen.generateKey()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            builder.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)
+        } else {
+            @Suppress("DEPRECATION")
+            builder.setUserAuthenticationValidityDurationSeconds(-1)
+        }
+        return builder.build()
     }
 
     /**
