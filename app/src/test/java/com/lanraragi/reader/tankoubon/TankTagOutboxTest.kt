@@ -93,6 +93,30 @@ class TankTagOutboxTest {
         assertTrue(TankTagOutbox.entries().isEmpty())
     }
 
+    /** Audit 2026-10-06c REL-02: a keyless (or rate-limited) listing is not "no tanks". */
+    @Test
+    fun `auth and transient 4xx on the tank list keep the edit`() = runBlocking {
+        for (code in listOf(401, 403, 408, 423, 429)) {
+            listFailure = LRRHttpException(code)
+
+            assertFalse("HTTP $code", apply("a:1", "a:2"))
+            TankTagOutbox.flush(lister, tankSync)
+
+            assertEquals("HTTP $code", listOf(Entry(base, "arc", "a:1", "a:2")), TankTagOutbox.entries())
+        }
+    }
+
+    @Test
+    fun `flush drops an edit whose archive is gone`() = runBlocking {
+        listFailure = IOException("offline")
+        apply("a:1", "a:2")
+        listFailure = LRRHttpException(404)
+
+        TankTagOutbox.flush(lister, tankSync)
+
+        assertTrue(TankTagOutbox.entries().isEmpty())
+    }
+
     @Test
     fun `a second edit keeps the first old tags and the latest new tags`() = runBlocking {
         listFailure = IOException("offline")

@@ -119,7 +119,22 @@ internal val EMPTY_REQUEST_BODY: RequestBody = ByteArray(0).toRequestBody()
  * was absent or not a JSON error envelope (e.g. an HTML reverse-proxy page).
  */
 class LRRHttpException(val code: Int, val serverError: String? = null) :
-    IOException(serverError ?: "HTTP $code")
+    IOException(serverError ?: "HTTP $code") {
+
+    /**
+     * True for a 4xx that will fail again however often it is retried (400
+     * progress tracking disabled, 404/410 archive gone). 401/403 (no key yet,
+     * e.g. after a credential reset or a restore), 408, 423 and 429 are not:
+     * a durable outbox must keep its entry for a later attempt (audit
+     * 2026-10-06c REL-02).
+     */
+    val isPermanentClientError: Boolean
+        get() = code in 400..499 && code !in RETRYABLE_CLIENT_CODES
+
+    private companion object {
+        val RETRYABLE_CLIENT_CODES = setOf(401, 403, 408, 423, 429)
+    }
+}
 
 /** Thrown when the server returns a 2xx response but an empty body. */
 class LRREmptyBodyException : IOException()
