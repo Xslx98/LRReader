@@ -52,7 +52,11 @@ class DownloadRepositoryTest {
     private val repoGate = java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CountDownLatch?>(null)
     private val repoGateEntered = java.util.concurrent.CountDownLatch(1)
 
+    /** When set, the next access to the download DB repository throws an Error (one-shot). */
+    private val errorOnNextRepoAccess = java.util.concurrent.atomic.AtomicBoolean(false)
+
     private fun holdAtRepoGate() {
+        if (errorOnNextRepoAccess.getAndSet(false)) throw LinkageError("download db broken (test)")
         val gate = repoGate.getAndSet(null) ?: return
         repoGateEntered.countDown()
         gate.await(10, java.util.concurrent.TimeUnit.SECONDS)
@@ -456,6 +460,16 @@ class DownloadRepositoryTest {
             ioScope.cancel()
             pool.shutdownNow()
         }
+    }
+
+    /** Audit 2026-10-06 L2: one write failing with an Error must not end the only write consumer. */
+    @Test(timeout = 20_000)
+    fun aWriteFailingWithAnError_doesNotStopLaterWrites() {
+        errorOnNextRepoAccess.set(true)
+        repo.persistInfo(makeInfo("lost", "Lost").apply { serverProfileId = 1L })
+        repo.persistInfo(makeInfo("kept", "Kept").apply { serverProfileId = 1L })
+        runBlocking { kotlinx.coroutines.withTimeout(5_000) { repo.awaitDbWrites() } }
+        assertNotNull(runBlocking { db.archiveLocalStateDao().loadByArcidAndProfile("kept", 1L) })
     }
 
     @Test

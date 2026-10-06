@@ -579,7 +579,18 @@ class DownloadRepository(
 
     init {
         scope.launch {
-            for (write in dbWrites) write()
+            // This is the only consumer: one item failing in any way (an Error,
+            // or a throwing onFailure) must not strand every later write
+            // (audit 2026-10-06 L2).
+            for (write in dbWrites) {
+                try {
+                    write()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Download DB write failed", t)
+                }
+            }
         }
     }
 
@@ -589,8 +600,8 @@ class DownloadRepository(
                 block()
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                Log.e(TAG, failure, e)
+            } catch (t: Throwable) {
+                Log.e(TAG, failure, t)
                 onFailure()
             }
         }

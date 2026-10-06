@@ -1,5 +1,6 @@
 package com.lanraragi.reader.download
 
+import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +20,7 @@ import kotlinx.coroutines.withContext
  *    on. Before, anything but a `NullPointerException` ended the loop for
  *    good: later commands piled up unread and the foreground notification,
  *    wake lock and Wi-Fi lock were never released.
+ *    A throwing [onError] or [afterEach] is logged and the loop goes on too.
  *  - [afterEach] receives the startId of the command just handled, not of
  *    the latest one delivered. The service passes it to `stopSelfResult`,
  *    which refuses to stop while a newer start is still queued — a plain
@@ -53,10 +55,26 @@ internal class DownloadCommandQueue<T>(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    onError(command.value, e)
+                    runGuarded("Reporting a failed download command") { onError(command.value, e) }
                 }
-                afterEach(command.startId)
+                // Guarded too (audit 2026-10-06 L2): a throw here used to end
+                // the only consumer, stranding every later command.
+                runGuarded("Post-command stop check") { afterEach(command.startId) }
             }
         }
+    }
+
+    private inline fun runGuarded(what: String, block: () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "$what failed", e)
+        }
+    }
+
+    private companion object {
+        const val TAG = "DownloadCommandQueue"
     }
 }
