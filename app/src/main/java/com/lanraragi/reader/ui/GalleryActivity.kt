@@ -36,6 +36,8 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
@@ -369,6 +371,22 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         startActivity(intent)
     }
 
+    /**
+     * recreate() keeps the window's decor view, so turning fullscreen off from
+     * the reader menu inherits the immersive SystemUiHelper flags and hidden
+     * system bars of the instance being replaced. A fresh launch has none.
+     */
+    private fun showSystemBarsLeftByFullscreen() {
+        val w = window
+        w.clearFlags(
+            WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION or
+                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+        )
+        @Suppress("DEPRECATION") // SystemUiHelper sets these legacy flags.
+        w.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        WindowCompat.getInsetsController(w, w.decorView).show(WindowInsetsCompat.Type.systemBars())
+    }
+
     @Suppress("WrongConstant")
     override fun onCreate(savedInstanceState: Bundle?) {
         if (ReadingSettings.getReadingFullscreen()) {
@@ -381,6 +399,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
             )
+        } else {
+            showSystemBarsLeftByFullscreen()
         }
         super.onCreate(savedInstanceState)
         // Locked: BaseActivity handed off to the lock screen (this intent is
@@ -1049,8 +1069,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     ) {
         val gv = mGalleryView ?: return
 
-        val oldReadingFullscreen = ReadingSettings.getReadingFullscreen()
-
         requestedOrientation = resolveOrientation(screenRotation)
         gv.layoutMode = layoutMode
         gv.setScaleMode(scaleMode)
@@ -1079,11 +1097,14 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mSliderController.layoutMode = layoutMode
         mInputHandler.layoutMode = layoutMode
 
-        if (oldReadingFullscreen != readingFullscreen) {
-            recreate()
-        }
-
         refreshStampsVisibility()
+    }
+
+    override fun onReadingFullscreenChanged() {
+        // The fullscreen window flags and SystemUiHelper are set up in
+        // onCreate only. An explicit recreate() is not suppressed by the
+        // manifest configChanges, which cover system config changes alone.
+        recreate()
     }
 
     // ======== Screen lightness ========

@@ -49,6 +49,12 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
             customScreenLightness: Boolean, screenLightness: Int,
             transferTime: Int
         )
+
+        /**
+         * Fullscreen is applied only when the reader is created; called after
+         * [onSettingsApplied] when the menu changed it.
+         */
+        fun onReadingFullscreenChanged()
     }
 
     val view: View
@@ -210,6 +216,10 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         val screenLightness = mScreenLightness.progress
         val transferTime = mStartTransferTime.progress
 
+        // Compare before the put below overwrites the stored value;
+        // afterwards the two are always equal.
+        val readingFullscreenChanged = readingFullscreen != ReadingSettings.getReadingFullscreen()
+
         // Persist all settings
         ReadingSettings.putScreenRotation(screenRotation)
         ReadingSettings.putReadingDirection(layoutMode)
@@ -237,5 +247,6 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
             volumePage, reverseVolumePage, readingFullscreen,
             customScreenLightness, screenLightness, transferTime
         )
+        if (readingFullscreenChanged) mCallback?.onReadingFullscreenChanged()
     }
 }
