@@ -52,7 +52,8 @@ class BackupImporter(
         val roots = listOfNotNull(currentRootUri()) + backup.archives.mapNotNull { it.downloadRootUri }
         val onDisk = relinker.index(roots)
         val (result, ids, addedIds) = db.withTransaction {
-            val (ids, addedIds) = restoreProfiles(backup.profiles)
+            val (profileIds, addedIds) = restoreProfiles(backup.profiles)
+            val ids = withLegacyRows(profileIds, backup.profiles)
             val archives = restoreArchives(backup.archives, ids, onDisk)
             restoreLabels(backup.downloadLabels)
             restoreTankGroups(backup.tankGroups, ids)
@@ -83,6 +84,18 @@ class BackupImporter(
             added += id
         }
         return ids to added
+    }
+
+    /**
+     * Rows from before multi-server support carry profile id 0, which the source
+     * device resolves to its active server ([com.lanraragi.reader.client.api.resolveSourceBaseUrl]).
+     * No backup profile has that id, so without this mapping they were dropped
+     * (audit 2026-10-06f REL-01). They go to the backup's active server; with no
+     * active server they stay legacy rows.
+     */
+    private fun withLegacyRows(ids: Map<Long, Long>, profiles: List<BackupProfile>): Map<Long, Long> {
+        val legacyOwner = profiles.firstOrNull { it.isActive }?.id?.let { ids[it] }
+        return ids + (LEGACY_PROFILE_ID to (legacyOwner ?: LEGACY_PROFILE_ID))
     }
 
     /**
@@ -215,5 +228,6 @@ class BackupImporter(
 
     private companion object {
         const val TAG = "BackupImporter"
+        const val LEGACY_PROFILE_ID = 0L
     }
 }

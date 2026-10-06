@@ -341,6 +341,28 @@ class LRRDownloadWorkerTest {
         assertEquals(DownloadFailureReason.SERVER, worker.failureReason)
     }
 
+    /**
+     * Audit 2026-10-06f: a page marked before the run whose fetch fails in the
+     * window was never counted. The repair step fetched it a second time and
+     * then took it off the count again, so the finish reported one page too few.
+     */
+    @Test(timeout = 60_000)
+    fun pageMarkedBeforeTheRunWhoseFetchFails_isTriedOnceAndCountedOnce() {
+        run()
+        pageHits.clear()
+        assertTrue(DownloadPageRepair.mark(pageFile(2)))
+        pageAnswer = { page, _ ->
+            if (page == 2) MockResponse().setResponseCode(502).setHeader("Retry-After", "0") else image()
+        }
+
+        val r = run()
+
+        assertEquals("the two good pages still count", 2, r.finished)
+        assertEquals("no second round of retries", PageRetryPolicy.TRANSIENT_ATTEMPTS, hits(2))
+        assertTrue("still marked for the next run", DownloadPageRepair.isMarked(pageFile(2)))
+        assertEquals(DownloadFailureReason.SERVER, worker.failureReason)
+    }
+
     private companion object {
         val ARCID = "a".repeat(40)
     }

@@ -52,6 +52,16 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
             return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
                 BiometricManager.BIOMETRIC_SUCCESS
         }
+
+        /**
+         * Fingerprint unlock needs the pattern bound to the keystore key: the lock
+         * screen only unlocks with a cipher that decrypts it. Saving it on for an
+         * unbound pattern (prompt cancelled, keystore failure) only made the next
+         * lock screen switch it off again (audit 2026-10-06f R3).
+         */
+        @JvmStatic
+        fun fingerprintUnlockAfterSave(requested: Boolean, keystoreBound: Boolean): Boolean =
+            requested && keystoreBound
     }
 
     private var mPatternView: LockPatternView? = null
@@ -185,17 +195,22 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
             BiometricManager.BIOMETRIC_SUCCESS
     }
 
-    private fun setPatternPbkdf2Only(security: String) {
+    private fun fingerprintRequested(security: String): Boolean {
         val fingerprint = mFingerprint
+        return fingerprint != null && fingerprint.isVisible && fingerprint.isChecked && security.isNotEmpty()
+    }
+
+    private fun setPatternPbkdf2Only(security: String) {
+        val requested = fingerprintRequested(security)
         try {
             SecuritySettings.setPattern(security)
-            SecuritySettings.putEnableFingerprint(
-                fingerprint != null && fingerprint.isVisible &&
-                    fingerprint.isChecked && security.isNotEmpty()
-            )
+            SecuritySettings.putEnableFingerprint(fingerprintUnlockAfterSave(requested, keystoreBound = false))
         } catch (e: LRRSecureStorageUnavailableException) {
             showStorageErrorDialog()
             return
+        }
+        if (requested) {
+            Toast.makeText(this, R.string.security_fingerprint_not_bound, Toast.LENGTH_LONG).show()
         }
         finish()
     }
@@ -231,12 +246,10 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                         setPatternPbkdf2Only(security)
                         return
                     }
-                    val fp = mFingerprint
                     try {
                         LRRAuthManager.setPatternWithCipher(security, authCipher)
                         SecuritySettings.putEnableFingerprint(
-                            fp != null && fp.isVisible &&
-                                fp.isChecked && security.isNotEmpty()
+                            fingerprintUnlockAfterSave(fingerprintRequested(security), keystoreBound = true)
                         )
                     } catch (e: LRRSecureStorageUnavailableException) {
                         showStorageErrorDialog()

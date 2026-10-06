@@ -7,7 +7,9 @@ import androidx.core.content.edit
  * Which default-prefs settings travel in a backup (ruling R18: all non-sensitive
  * ones). An explicit whitelist, so a new setting is left out until someone
  * decides it belongs. Never included: the lock (`security`, `enable_fingerprint`),
- * the download location (`image_*`, meaningless on another device), update and
+ * the download location (`image_*`, meaningless on another device), the proxy
+ * (`proxy_*`: no screen shows or clears it and it routes every request, so a
+ * crafted backup could capture API keys — audit 2026-10-06f SEC-02), update and
  * guide bookkeeping, and anything in the encrypted prefs (API keys).
  */
 object BackupSettings {
@@ -23,7 +25,7 @@ object BackupSettings {
         "download_delay", "download_order_asc", "download_list_pagination", "drag_download_gallery",
         "concurrent_downloads", "network_resume_timeout", "include_pic",
         // Network and privacy
-        "proxy_type", "proxy_ip", "proxy_port", "cellular_network_warning", "save_crash_log",
+        "cellular_network_warning", "save_crash_log",
         "delete_confirm_countdown", "enable_secure",
         // Reader
         "screen_rotation", "reading_direction", "page_scaling", "start_position", "start_transfer_time",

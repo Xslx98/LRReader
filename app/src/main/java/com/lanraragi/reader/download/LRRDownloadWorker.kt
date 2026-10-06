@@ -326,6 +326,8 @@ class LRRDownloadWorker(
         // consumes this directory mid-download sees pages land in order.
         val finished = AtomicInteger(0)
         val downloaded = AtomicInteger(0)
+        // Pages this run counted; only those can be taken off the count again.
+        val counted = ConcurrentHashMap.newKeySet<Int>()
 
         try {
             OrderedPageWindow.run(
@@ -339,6 +341,7 @@ class LRRDownloadWorker(
                 // reader's hybrid session writing into this directory) — unless
                 // a reader found its body damaged and asked for it again.
                 if (isOnDiskAndValid(pageFile)) {
+                    counted += i
                     val f = finished.incrementAndGet()
                     val d = downloaded.incrementAndGet()
                     listener?.onPageSuccess(i, f, d, total)
@@ -347,6 +350,7 @@ class LRRDownloadWorker(
 
                 if (fetchPage(pageClient, pagePath, pageFile, i, total, finished, downloaded)) {
                     DownloadPageRepair.clear(pageFile)
+                    counted += i
                     val f = finished.incrementAndGet()
                     val d = downloaded.incrementAndGet()
                     listener?.onPageSuccess(i, f, d, total)
@@ -360,7 +364,7 @@ class LRRDownloadWorker(
         // already skipped them (audit 2026-10-06e P4-d).
         if (!cancelled && !aborted && DownloadPageRepair.hasPending(downloadDir)) {
             try {
-                repairMarkedPages(pageClient, resolvedPagePaths, downloadDir, finished, downloaded)
+                repairMarkedPages(pageClient, resolvedPagePaths, downloadDir, counted, finished, downloaded)
             } catch (e: CancellationException) {
                 Log.d(TAG, "Download cancelled", e)
             }
@@ -376,14 +380,17 @@ class LRRDownloadWorker(
             !DownloadPageRepair.isMarked(pageFile)
 
     /**
-     * Fetch again every page that carries a repair marker. Such a page was
-     * counted when the window skipped it; if the new fetch fails, it no
-     * longer counts (the damaged file is gone or still damaged).
+     * Fetch again every counted page that carries a repair marker: a reader
+     * marked it after the window counted it. If the new fetch fails, it no
+     * longer counts (the damaged file is gone or still damaged). A marked page
+     * the window could not fetch was never counted and already had its retries
+     * (audit 2026-10-06f); it stays marked for the next run.
      */
     private suspend fun repairMarkedPages(
         pageClient: OkHttpClient,
         pagePaths: Array<String>,
         downloadDir: File,
+        counted: Set<Int>,
         finished: AtomicInteger,
         downloaded: AtomicInteger,
     ) {
@@ -391,7 +398,7 @@ class LRRDownloadWorker(
         for (i in 0 until total) {
             if (cancelled || aborted) break
             val pageFile = DownloadPageNaming.pageFile(downloadDir, i, pagePaths[i])
-            if (DownloadPageRepair.isMarked(pageFile)) {
+            if (i in counted && DownloadPageRepair.isMarked(pageFile)) {
                 if (fetchPage(pageClient, pagePaths[i], pageFile, i, total, finished, downloaded)) {
                     DownloadPageRepair.clear(pageFile)
                 } else {

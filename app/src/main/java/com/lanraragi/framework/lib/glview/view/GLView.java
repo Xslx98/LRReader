@@ -199,7 +199,7 @@ public class GLView implements TouchOwner {
      * @return One of {@link #VISIBLE}, {@link #INVISIBLE}, or {@link #GONE}.
      */
     @Visibility
-    @SuppressWarnings("WrongConstant")
+    @SuppressWarnings("WrongConstant") // masked flags are VISIBLE, INVISIBLE or GONE once INVALID is mapped below
     public int getVisibility() {
         int visibility = mViewFlags & FLAG_INVISIBLE;
 
