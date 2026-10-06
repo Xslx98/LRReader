@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.download.DurablePageWrite
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import kotlin.random.Random
@@ -112,9 +113,11 @@ class LrrTankMemberSourceTest {
         store = store,
     )
 
-    private fun newStore(): Pair<HybridPageStore, java.io.File> {
+    private fun newStore(
+        durable: DurablePageWrite = DurablePageWrite(usableBytes = { Long.MAX_VALUE }, syncFile = {}),
+    ): Pair<HybridPageStore, java.io.File> {
         val downloadDir = java.io.File(ctx.cacheDir, "tank_member_dl_$ARCID").also { it.deleteRecursively() }
-        return HybridPageStore(downloadDir, ReaderPageCache.ensureCacheDir(ctx, ARCID)) to downloadDir
+        return HybridPageStore(downloadDir, ReaderPageCache.ensureCacheDir(ctx, ARCID), durable) to downloadDir
     }
 
     @Test
@@ -206,6 +209,28 @@ class LrrTankMemberSourceTest {
         assertEquals(0, pageRequests.get())
         assertTrue(java.io.File(downloadDir, "0003.png").length() > ReaderPageCache.MIN_IMAGE_SIZE)
         assertFalse("warm copy is moved, not duplicated", warm.exists())
+        downloadDir.deleteRecursively()
+    }
+
+    /** Audit REL-04: a member page fetched into the download dir is fsynced; a below-floor volume blocks it. */
+    @Test
+    fun `hybrid store writes download-dir pages durably and respects the free-space floor`(): Unit = runBlocking {
+        val syncs = java.util.concurrent.atomic.AtomicInteger(0)
+        var usable = Long.MAX_VALUE
+        val durable = DurablePageWrite(usableBytes = { usable }, syncFile = { syncs.incrementAndGet() })
+        val (store, downloadDir) = newStore(durable)
+        val source = newSource(store)
+        source.ensurePageCount()
+
+        source.obtainImage(0)?.recycle()
+        assertEquals("download-dir page must be fsynced", 1, syncs.get())
+
+        usable = DurablePageWrite.MIN_FREE_BYTES - 1
+        assertThrows(IOException::class.java) {
+            runBlocking { source.obtainImage(1) }
+        }
+        assertEquals("no page request below the floor", 1, pageRequests.get())
+        assertFalse(java.io.File(downloadDir, "0002.png").exists())
         downloadDir.deleteRecursively()
     }
 
