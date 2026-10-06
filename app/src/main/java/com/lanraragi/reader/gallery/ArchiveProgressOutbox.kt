@@ -29,8 +29,12 @@ import kotlinx.coroutines.CancellationException
  * is the single-archive sibling, flushed whenever the network comes back
  * instead of only on the next open.
  *
- * An entry is written only when a PUT fails and cleared when a later PUT of
- * the same page succeeds, so a normal page turn costs no extra disk write.
+ * An entry is written only when a PUT fails and cleared when a PUT of a page
+ * read at or after it succeeds, so a normal page turn costs no extra disk
+ * write. Recency, not page equality, decides (audit 2026-10-06 C20): after a
+ * blip that fails page 10 while 11-15 go through, the pending 10 is stale and
+ * must not rewind the server when the network returns; a pending page read
+ * after the success (an older PUT completing late) is kept.
  * Before pushing, [flush] compares the server's `lastreadtime` with the time
  * the page was read: if the server is clearly newer, another device read
  * since, and the stale local page is dropped instead of overwriting it.
@@ -61,34 +65,41 @@ object ArchiveProgressOutbox {
         prefs = testPrefs
     }
 
-    /** A PUT of [page0] for [arcid] on [baseUrl] failed: keep it for a later push. */
-    fun markPending(baseUrl: String, arcid: String, page0: Int) {
+    /** A PUT of [page0] (read at [readAtSeconds]) for [arcid] on [baseUrl] failed: keep it for a later push. */
+    fun markPending(baseUrl: String, arcid: String, page0: Int, readAtSeconds: Long = clockSeconds()) {
         if (page0 < 0) return
-        prefs?.edit { putString(key(baseUrl, arcid), "$page0;${clockSeconds()}") }
-    }
-
-    /** A PUT of [page0] succeeded: drop the entry unless a newer page is waiting. */
-    fun markSynced(baseUrl: String, arcid: String, page0: Int) {
-        val p = prefs ?: return
-        val key = key(baseUrl, arcid)
-        val value = p.getString(key, null) ?: return
-        if (parse(key, value)?.page0 == page0) p.edit { remove(key) }
+        prefs?.edit { putString(key(baseUrl, arcid), "$page0;$readAtSeconds") }
     }
 
     /**
-     * Run a progress [put] for [page0]: success clears a pending entry for the
-     * same page, failure records one, and the failure is rethrown.
+     * A PUT of a page read at [readAtSeconds] succeeded: it supersedes a
+     * pending entry read at or before then. A pending page read later stays.
+     */
+    fun markSynced(baseUrl: String, arcid: String, readAtSeconds: Long) {
+        val p = prefs ?: return
+        val key = key(baseUrl, arcid)
+        val value = p.getString(key, null) ?: return
+        val pending = parse(key, value)
+        if (pending == null || pending.readAtSeconds <= readAtSeconds) p.edit { remove(key) }
+    }
+
+    /**
+     * Run a progress [put] for [page0]: success drops a pending entry read at
+     * or before this one, failure records one, and the failure is rethrown.
+     * The read time is taken before the PUT, so a slow success cannot
+     * outrank a page read while it was in flight.
      */
     suspend fun tracked(baseUrl: String, arcid: String, page0: Int, put: suspend () -> Unit) {
+        val readAt = clockSeconds()
         try {
             put()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            markPending(baseUrl, arcid, page0)
+            markPending(baseUrl, arcid, page0, readAt)
             throw e
         }
-        markSynced(baseUrl, arcid, page0)
+        markSynced(baseUrl, arcid, readAt)
     }
 
     fun entries(): List<Entry> {
