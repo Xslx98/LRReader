@@ -729,13 +729,19 @@ class DownloadManager(
 
         /**
          * Step 1 of a progress reset: the local save is keyed per profile, so
-         * clear the one of the download's source [sourceProfileId], not the
-         * active profile's (audit 2026-10-06 C37). 0 = legacy row of the
-         * active profile, as in [resolveSourceBaseUrl].
+         * clear the one of the download's source [sourceProfileId] (audit
+         * 2026-10-06 C37). 0 = legacy row of the active profile, as in
+         * [resolveSourceBaseUrl]. The active profile's entry goes too: builds
+         * before the 2026-10-06b fix saved a download of another server under
+         * the active profile, and the reader falls back to that entry while
+         * the source key is empty ([LocalReadingProgress.load]), so leaving it
+         * would bring the old page back.
          */
         internal fun clearLocalProgress(ctx: Context, arcid: String, sourceProfileId: Long) {
-            val profileId = if (sourceProfileId == 0L) LocalReadingProgress.profileId() else sourceProfileId
-            GalleryProvider2.clearReadingProgress(ctx, arcid, profileId)
+            val source = LocalReadingProgress.sourceProfile(sourceProfileId)
+            GalleryProvider2.clearReadingProgress(ctx, arcid, source)
+            val active = LocalReadingProgress.profileId()
+            if (active != source) GalleryProvider2.clearReadingProgress(ctx, arcid, active)
         }
 
         /**

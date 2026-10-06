@@ -71,6 +71,13 @@ class LRRGalleryProvider(
     private val context: Context = context.applicationContext
 
     /**
+     * Profile the local page save is keyed by: the archive's source profile
+     * (0 = legacy row -> active), as for the server URL below (audit
+     * 2026-10-06b C37 / REL-04).
+     */
+    private val progressProfileId: Long = LocalReadingProgress.sourceProfile(serverProfileId)
+
+    /**
      * Source-profile base URL, resolved once at the top of [start] from
      * [serverProfileId] via [resolveSourceBaseUrl] so page downloads,
      * metadata and progress sync hit the server this archive belongs to —
@@ -130,7 +137,7 @@ class LRRGalleryProvider(
     // metadata reconcile and putStartPage (GL/main threads), read by
     // getStartPage on the GL thread — volatile for cross-thread visibility.
     @Volatile
-    private var startPageValue: Int = loadReadingProgress(this.context, arcId)
+    private var startPageValue: Int = loadReadingProgress(this.context, arcId, progressProfileId)
 
     // Local-only intra-page scroll fraction (0.0 ~ 1.0) restored on
     // start from ARCHIVE_LOCAL_STATE.HISTORY_SCROLL_FRACTION; written
@@ -350,7 +357,7 @@ class LRRGalleryProvider(
                         "[PROGRESS] Server metadata: progress=${metadata.progress}" +
                             " lastreadtime=${metadata.lastreadtime} arcid=${metadata.arcid}"
                     )
-                    val localTs = loadReadingTimestamp(context, arcId)
+                    val localTs = loadReadingTimestamp(context, arcId, progressProfileId)
                     val resolved = ReadingProgressReconciler.resolve(
                         startPageValue, localTs, metadata.progress, metadata.lastreadtime
                     )
@@ -361,7 +368,7 @@ class LRRGalleryProvider(
                     )
                     if (resolved != startPageValue) {
                         startPageValue = resolved
-                        saveReadingProgress(context, arcId, resolved)
+                        saveReadingProgress(context, arcId, resolved, progressProfileId)
                     }
                     serverPage = resolved
                 }
@@ -482,7 +489,7 @@ class LRRGalleryProvider(
         startPageValue = page
 
         // Persist locally for instant restore on next open
-        saveReadingProgress(context, arcId, page)
+        saveReadingProgress(context, arcId, page, progressProfileId)
 
         // Sync progress to LANraragi server (1-indexed), serialized and
         // conflated so the last page of a fast-flip burst — not an
