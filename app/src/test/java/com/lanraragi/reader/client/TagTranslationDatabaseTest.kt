@@ -129,4 +129,106 @@ class TagTranslationDatabaseTest {
         // Not an EOFException from reading a body that was never there.
         assertEquals(true, e?.message?.contains("out of range"))
     }
+
+    // Audit SEC-01: the body comes from a third-party repo and is only
+    // checked against its own SHA-1, so its row structure is untrusted.
+
+    private fun row(key: String, value: String) =
+        key + "\r" + Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP) + "\n"
+
+    private val validBody = (row("a:asanagi", "朝凪") + row("o:full color", "全彩") + row("p:touhou", "东方"))
+
+    /** Bodies that break the `key\rvalue\n` row contract, by failure kind. */
+    private val malformedBodies: Map<String, ByteArray> = mapOf(
+        "empty" to ByteArray(0),
+        "row without CR" to (row("a:asanagi", "朝凪") + "o:full color\n" + row("p:touhou", "东方")).toByteArray(),
+        "only row without CR" to "a:asanagi\n".toByteArray(),
+        "no trailing LF" to validBody.dropLast(1).toByteArray(),
+        "truncated mid-value" to validBody.toByteArray().copyOf(validBody.toByteArray().size - 20),
+        "truncated mid-key" to (row("a:asanagi", "朝凪") + "o:full").toByteArray(),
+        "truncated after CR" to (row("a:asanagi", "朝凪") + "o:full color\r").toByteArray(),
+        "empty key" to (row("a:asanagi", "朝凪") + row("", "x")).toByteArray(),
+        "empty value" to (row("a:asanagi", "朝凪") + "o:full color\r\n").toByteArray(),
+        "two CRs" to (row("a:asanagi", "朝凪") + "o:x\ry\rz\n").toByteArray(),
+        "blank line" to (row("a:asanagi", "朝凪") + "\n" + row("p:touhou", "东方")).toByteArray(),
+        "single byte" to byteArrayOf(0x0A),
+    )
+
+    /** Keys that steer the binary search below, onto, and past every row. */
+    private val probes = listOf("", "0", "a:asanagi", "a:zzz", "o:full color", "o:full", "p:touhou", "zzzz", "ÿ")
+
+    @Test
+    fun `search on a malformed body returns null instead of throwing`() {
+        for ((kind, body) in malformedBodies) {
+            for (probe in probes) {
+                val result = runCatching { TagTranslationDatabase.search(body, probe.toByteArray()) }
+                assertNull("$kind / '$probe' threw ${result.exceptionOrNull()}", result.exceptionOrNull())
+            }
+        }
+        // Rows the search cannot delimit never translate.
+        val noCr = malformedBodies.getValue("only row without CR")
+        assertNull(TagTranslationDatabase.search(noCr, "a:asanagi".toByteArray()))
+        val noLf = "a:asanagi\r5pyd5Yeq".toByteArray()
+        assertNull(TagTranslationDatabase.search(noLf, "a:asanagi".toByteArray()))
+        val truncated = malformedBodies.getValue("truncated after CR")
+        assertNull(TagTranslationDatabase.search(truncated, "o:full color".toByteArray()))
+        assertNull(TagTranslationDatabase.search(ByteArray(0), "a:asanagi".toByteArray()))
+    }
+
+    @Test
+    fun `search returns null for a row whose value is not base64`() {
+        // A lone base64 character cannot be decoded (Base64 throws).
+        val body = "a:asanagi\rA\n".toByteArray()
+        assertNull(TagTranslationDatabase.search(body, "a:asanagi".toByteArray()))
+    }
+
+    @Test
+    fun `search on a well-formed body finds every row and misses cleanly`() {
+        val body = validBody.toByteArray()
+        assertEquals("朝凪", TagTranslationDatabase.search(body, "a:asanagi".toByteArray()))
+        assertEquals("全彩", TagTranslationDatabase.search(body, "o:full color".toByteArray()))
+        assertEquals("东方", TagTranslationDatabase.search(body, "p:touhou".toByteArray()))
+        for (miss in listOf("", "0", "a:asanag", "a:asanagii", "o:full", "zzzz")) {
+            assertNull(miss, TagTranslationDatabase.search(body, miss.toByteArray()))
+        }
+    }
+
+    @Test
+    fun `malformed bodies are rejected when loading`() {
+        for ((kind, body) in malformedBodies) {
+            assertEquals(kind, false, TagTranslationDatabase.isWellFormed(body))
+            val e = runCatching {
+                TagTranslationDatabase("bad", Buffer().writeInt(body.size).write(body))
+            }.exceptionOrNull()
+            assertEquals("$kind: $e", true, e is java.io.IOException)
+        }
+        assertEquals(true, TagTranslationDatabase.isWellFormed(validBody.toByteArray()))
+    }
+
+    @Test
+    fun `a body shorter than its length prefix is rejected`() {
+        val body = validBody.toByteArray()
+        val e = runCatching {
+            TagTranslationDatabase("bad", Buffer().writeInt(body.size + 10).write(body))
+        }.exceptionOrNull()
+        assertEquals("$e", true, e is java.io.IOException)
+    }
+
+    @Test
+    fun `load returns null for a malformed file and a database for a valid one`() {
+        val dir = java.nio.file.Files.createTempDirectory("tagdb").toFile()
+        try {
+            val bad = java.io.File(dir, "bad")
+            val badBody = malformedBodies.getValue("no trailing LF")
+            bad.writeBytes(Buffer().writeInt(badBody.size).write(badBody).readByteArray())
+            assertNull(TagTranslationDatabase.load("bad", bad))
+
+            val good = java.io.File(dir, "good")
+            val goodBody = validBody.toByteArray()
+            good.writeBytes(Buffer().writeInt(goodBody.size).write(goodBody).readByteArray())
+            assertEquals("朝凪", TagTranslationDatabase.load("good", good)?.translateTag("artist", "asanagi"))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
 }
