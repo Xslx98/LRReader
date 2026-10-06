@@ -39,6 +39,17 @@ class DataExtractionRulesTest {
         assertEquals("false", app.getAttributeNS(ANDROID_NS, "fullBackupContent"))
     }
 
+    /**
+     * Audit 2026-10-06d REL-03: downloads live in app-specific storage and the
+     * database next to them; on Android 10+ this lets the uninstall dialog
+     * offer to keep that data, so a reinstall finds the library again.
+     */
+    @Test
+    fun uninstallOffersToKeepAppData() {
+        val app = sourceManifest().getElementsByTagName("application").item(0) as Element
+        assertEquals("true", app.getAttributeNS(ANDROID_NS, "hasFragileUserData"))
+    }
+
     private fun sourceManifest(): Document {
         val file = File("src/main/AndroidManifest.xml")
         assertTrue("run from the app module dir: ${file.absolutePath}", file.isFile)

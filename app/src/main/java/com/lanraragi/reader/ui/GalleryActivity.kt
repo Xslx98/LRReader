@@ -36,6 +36,8 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
@@ -46,6 +48,8 @@ import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.settings.ReadingSettings
+import com.lanraragi.reader.util.MemoryTrim
+import com.lanraragi.framework.lib.image.PageFit
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.GalleryActivityEvent
@@ -167,6 +171,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     private var mGalleryView: GalleryView? = null
     private var mGalleryProvider: GalleryProvider2? = null
     private var mGalleryAdapter: GalleryAdapter? = null
+
+    /** Scale-mode fit the cached decoded pages were sampled for (Image.readerSampleSize). */
+    private var mPageFit: PageFit? = null
 
     private var mSystemUiHelper: SystemUiHelper? = null
 
@@ -369,6 +376,22 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         startActivity(intent)
     }
 
+    /**
+     * recreate() keeps the window's decor view, so turning fullscreen off from
+     * the reader menu inherits the immersive SystemUiHelper flags and hidden
+     * system bars of the instance being replaced. A fresh launch has none.
+     */
+    private fun showSystemBarsLeftByFullscreen() {
+        val w = window
+        w.clearFlags(
+            WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION or
+                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+        )
+        @Suppress("DEPRECATION") // SystemUiHelper sets these legacy flags.
+        w.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        WindowCompat.getInsetsController(w, w.decorView).show(WindowInsetsCompat.Type.systemBars())
+    }
+
     @Suppress("WrongConstant")
     override fun onCreate(savedInstanceState: Bundle?) {
         if (ReadingSettings.getReadingFullscreen()) {
@@ -381,6 +404,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
             )
+        } else {
+            showSystemBarsLeftByFullscreen()
         }
         super.onCreate(savedInstanceState)
         // Locked: BaseActivity handed off to the lock screen (this intent is
@@ -484,6 +509,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         val galleryAdapter = GalleryAdapter(glRootView, galleryProvider)
         mGalleryAdapter = galleryAdapter
         val resources = resources
+        mPageFit = ReadingSettings.getPageFit()
         val galleryView = GalleryView.Builder(this, galleryAdapter)
             .setListener(this)
             .setLayoutMode(ReadingSettings.getReadingDirection())
@@ -828,7 +854,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
      *   GL surface is resized, not recreated, so the EGL context stays.
      * - GalleryHeader re-reads the moved display cutout from the insets.
      * - Image.initialize re-reads the display metrics for decode sampling
-     *   (LRReaderApplication.onConfigurationChanged).
+     *   (LRReaderApplication.onConfigurationChanged). Decoded pages are kept:
+     *   the fit / fit-width / fit-height samples hold for both orientations
+     *   (Image.readerSampleSize), so a rotation never shows them below 1x.
      * - A user-locked orientation is a requestedOrientation, so the system
      *   never rotates the window in the first place.
      * The reader layouts have no orientation-qualified resources; the menu
@@ -1049,9 +1077,16 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     ) {
         val gv = mGalleryView ?: return
 
-        val oldReadingFullscreen = ReadingSettings.getReadingFullscreen()
-
         requestedOrientation = resolveOrientation(screenRotation)
+        val pageFit = PageFit.of(layoutMode, scaleMode)
+        if (pageFit != mPageFit) {
+            // Decoded pages are sampled for the old fit (a FIT-sampled wide
+            // page is far too small for fit height): drop the cached ones so
+            // they re-decode for the new mode. Pages on screen keep their
+            // texture until they are bound again.
+            mPageFit = pageFit
+            mGalleryProvider?.onTrimMemory(MemoryTrim.Action.CLEAR)
+        }
         gv.layoutMode = layoutMode
         gv.setScaleMode(scaleMode)
         gv.setStartPosition(startPosition)
@@ -1079,11 +1114,14 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mSliderController.layoutMode = layoutMode
         mInputHandler.layoutMode = layoutMode
 
-        if (oldReadingFullscreen != readingFullscreen) {
-            recreate()
-        }
-
         refreshStampsVisibility()
+    }
+
+    override fun onReadingFullscreenChanged() {
+        // The fullscreen window flags and SystemUiHelper are set up in
+        // onCreate only. An explicit recreate() is not suppressed by the
+        // manifest configChanges, which cover system config changes alone.
+        recreate()
     }
 
     // ======== Screen lightness ========

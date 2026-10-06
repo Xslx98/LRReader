@@ -53,4 +53,19 @@ class ImageOomRetryTest {
         assertNull(out)
         assertEquals(1, calls)
     }
+
+    /** Audit 2026-10-06d PERF-01: the typed result keeps OOM apart from a decoder rejection. */
+    @Test
+    fun typedResult_tellsOutOfMemoryFromFailure() {
+        assertEquals(
+            DecodeResult.OutOfMemory,
+            decodeWithOomRetry<String>(rewind = {}) { throw OutOfMemoryError("still too big") },
+        )
+        val bad = IllegalStateException("bad data")
+        assertEquals(DecodeResult.Failed(bad), decodeWithOomRetry<String>(rewind = {}) { throw bad })
+        assertEquals(
+            DecodeResult.Ok("ok"),
+            decodeWithOomRetry(rewind = {}) { m -> if (m == 1) throw OutOfMemoryError() else "ok" },
+        )
+    }
 }

@@ -808,6 +808,8 @@
     <string name="lrr_download_orphan_profile">下載暫停：來源站點的伺服器設定已被刪除</string>
     <string name="lrr_download_source_deleted">來源已刪除</string>
     <string name="lrr_decode_failed">圖片解碼失敗，點擊重試</string>
+    <string name="lrr_decode_unsupported_format">此裝置不支援這種圖片格式（%1$s）</string>
+    <string name="lrr_decode_too_large">此頁面過大，無法在此裝置上顯示</string>
     <string name="lrr_empty_response">伺服器傳回空回應</string>
     <string name="lrr_malformed_response">伺服器傳回意外回應</string>
     <string name="lrr_auth_failed_check_key">驗證失敗，請檢查 API 金鑰</string>
@@ -877,6 +879,11 @@
     <string name="security_storage_unavailable_message">裝置的安全儲存空間暫時無法使用，無法驗證應用程式鎖。可以重試，或重設應用程式鎖：這會清除圖案和所有已儲存的伺服器 API Key，書庫和下載不受影響。</string>
     <string name="security_storage_retry">重試</string>
     <string name="security_storage_starting_message">裝置的安全儲存空間仍在啟動，暫時無法驗證應用程式鎖。請稍等片刻，然後點「重試」。</string>
+    <string name="security_storage_unavailable_first_message">無法開啟裝置的安全儲存空間，暫時無法驗證應用程式鎖。這通常是暫時的：點「重試」重新啟動應用程式。</string>
+    <string name="security_lock_state_unknown_first_message">無法開啟裝置的安全儲存空間，暫時無法確認應用程式鎖狀態。這通常是暫時的：點「重試」重新啟動應用程式。</string>
+    <string name="security_lock_state_unknown_message">裝置的安全儲存空間仍無法開啟，無法確認應用程式鎖狀態。可以重試，或重設已儲存的憑證：這會清除所有已儲存的伺服器 API Key 以及可能存在的應用程式鎖，書庫和下載不受影響。</string>
+    <string name="security_legacy_lock_removed_title">應用程式鎖已移除</string>
+    <string name="security_legacy_lock_removed_message">應用程式鎖以舊格式儲存，此版本已無法驗證，因此已被移除，應用程式在未鎖定狀態下開啟。請重新設定圖案以繼續鎖定應用程式。</string>
     <string name="security_reset_app_lock">重設應用程式鎖</string>
     <string name="security_reset_app_lock_confirm">重設應用程式鎖並清除所有已儲存的 API Key？之後需要重新輸入伺服器憑證。</string>
     <string name="lrr_reset_credentials">重設已儲存的憑證</string>
@@ -888,7 +895,7 @@
     <string name="lrr_boot_load_failed_retry">重試</string>
     <string name="lrr_boot_load_failed_reset_db">重置資料庫</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">重置資料庫？</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">此操作將永久刪除應用程式本機資料庫中的所有資料：伺服器設定檔、閱讀歷史、收藏、下載記錄與搜尋歷史。已下載到磁碟的檔案不受影響。應用程式將重新啟動並以全新狀態執行。</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">此操作將重設應用程式的本機資料庫：伺服器設定檔、閱讀歷史、收藏、下載記錄與搜尋歷史將從空白開始。目前的資料庫會在本機另行保留（不會刪除），已下載到磁碟的檔案也不受影響。之後應用程式將重新啟動。</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">重置並重啟</string>
     <string name="lrr_db_reset_notice_title">資料庫已重設</string>
     <string name="lrr_db_reset_notice_message">本機資料庫已損壞，已換成空白資料庫，因此已儲存的伺服器、閱讀紀錄等本機資料可能遺失。損壞檔案的副本已保留在本裝置上。</string>

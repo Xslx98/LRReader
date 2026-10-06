@@ -1,6 +1,7 @@
 package com.lanraragi.framework.lib.image
 
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -52,34 +53,51 @@ class ImageComputeSampleSizeTest {
         assertEquals(1, Image.computeSampleSize(1000, 1414, -1, 470))
     }
 
-    // computeDecodeSampleSize (audit 2026-10-06c PERF-01): fit x multiplier only.
+    // computeDecodeSampleSize (audit 2026-10-06c PERF-01): fit x multiplier only,
+    // against the screen a 1440x3200 phone reports to Image.initialize.
+
+    @Before
+    fun phoneScreen() {
+        Image.screenWidth = 1440
+        Image.screenHeight = 3200
+    }
 
     @Test
     fun `screen-fit page decodes at full resolution`() {
-        // 2400x3600 scan on a 1440x3200 phone: min(1, 1) = 1
-        assertEquals(1, Image.computeDecodeSampleSize(2400, 3600, 0, 0, 1, 1440, 3200))
+        // 2400x3600 scan on a 1440x3200 phone: FIT min(max(1, 1), max(0, 2)) = 1
+        assertEquals(1, Image.computeDecodeSampleSize(2400, 3600, 0, 0, 1, PageFit.FIT))
     }
 
     @Test
     fun `huge pixel count is bounded by the screen fit`() {
         // 14400x32000 on 1440x3200 -> sample 10 -> 1440x3200 decoded
-        assertEquals(10, Image.computeDecodeSampleSize(14400, 32000, 0, 0, 1, 1440, 3200))
+        assertEquals(10, Image.computeDecodeSampleSize(14400, 32000, 0, 0, 1, PageFit.FIT))
     }
 
     @Test
-    fun `very tall page keeps full width (no pixel cap, user ruling)`() {
-        assertEquals(1, Image.computeDecodeSampleSize(1440, 60000, 0, 0, 1, 1440, 3200))
+    fun `very tall page keeps full width in fit width (strips stay sharp)`() {
+        assertEquals(1, Image.computeDecodeSampleSize(1440, 60000, 0, 0, 1, PageFit.FIT_WIDTH))
     }
 
     @Test
     fun `oom retry multiplier is applied to the fit`() {
-        assertEquals(2, Image.computeDecodeSampleSize(2400, 3600, 0, 0, 2, 1440, 3200))
-        assertEquals(20, Image.computeDecodeSampleSize(14400, 32000, 0, 0, 2, 1440, 3200))
+        assertEquals(2, Image.computeDecodeSampleSize(2400, 3600, 0, 0, 2, PageFit.FIT))
+        assertEquals(20, Image.computeDecodeSampleSize(14400, 32000, 0, 0, 2, PageFit.FIT))
+        assertEquals(2, Image.computeDecodeSampleSize(1440, 60000, 0, 0, 2, PageFit.FIT_WIDTH))
     }
 
     @Test
-    fun `explicit target wins over the screen`() {
-        assertEquals(2, Image.computeDecodeSampleSize(1000, 1414, 336, 470, 1, 1440, 3200))
-        assertEquals(4, Image.computeDecodeSampleSize(1000, 1414, 336, 470, 2, 1440, 3200))
+    fun `explicit target wins over the screen and the scale mode`() {
+        for (fit in PageFit.entries) {
+            assertEquals(2, Image.computeDecodeSampleSize(1000, 1414, 336, 470, 1, fit))
+            assertEquals(4, Image.computeDecodeSampleSize(1000, 1414, 336, 470, 2, fit))
+        }
+    }
+
+    @Test
+    fun `no target and no screen size disables sampling`() {
+        Image.screenWidth = 0
+        Image.screenHeight = 0
+        assertEquals(1, Image.computeDecodeSampleSize(14400, 3200, 0, 0, 1, PageFit.FIT))
     }
 }

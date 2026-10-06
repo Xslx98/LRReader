@@ -914,6 +914,8 @@
     <string name="lrr_download_orphan_profile">Download paused: source server profile was deleted</string>
     <string name="lrr_download_source_deleted">Source deleted</string>
     <string name="lrr_decode_failed">Image decode failed, tap to retry</string>
+    <string name="lrr_decode_unsupported_format">This image format (%1$s) isn\'t supported on this device</string>
+    <string name="lrr_decode_too_large">This page is too large to display on this device</string>
     <string name="lrr_empty_response">Server returned empty response</string>
     <string name="lrr_malformed_response">Server returned unexpected response</string>
     <string name="lrr_auth_failed_check_key">Authentication failed, please check API Key</string>
@@ -949,6 +951,11 @@
     <string name="security_storage_unavailable_message">The app lock can\'t be checked because the device\'s secure storage is unavailable right now. Try again, or reset the app lock: this removes the pattern and every saved server API key. Your library and downloads are kept.</string>
     <string name="security_storage_retry">Try again</string>
     <string name="security_storage_starting_message">The device\'s secure storage is still starting, so the app lock can\'t be checked yet. Wait a moment, then tap Try again.</string>
+    <string name="security_storage_unavailable_first_message">The app lock can\'t be checked because the device\'s secure storage could not be opened. This is often temporary: tap Try again to restart the app.</string>
+    <string name="security_lock_state_unknown_first_message">The app lock state can\'t be checked because the device\'s secure storage could not be opened. This is often temporary: tap Try again to restart the app.</string>
+    <string name="security_lock_state_unknown_message">The app lock state can\'t be checked because the device\'s secure storage still can\'t be opened. Try again, or reset saved credentials: this removes every saved server API key and any app lock. Your library and downloads are kept.</string>
+    <string name="security_legacy_lock_removed_title">App lock removed</string>
+    <string name="security_legacy_lock_removed_message">The app lock was saved in an old format that this version can no longer check, so it was removed and the app opened unlocked. Set a pattern again to keep the app locked.</string>
     <string name="security_reset_app_lock">Reset app lock</string>
     <string name="security_reset_app_lock_confirm">Reset the app lock and remove every saved API key? You will need to re-enter your server credentials.</string>
     <string name="lrr_reset_credentials">Reset saved credentials</string>
@@ -960,7 +967,7 @@
     <string name="lrr_boot_load_failed_retry">Retry</string>
     <string name="lrr_boot_load_failed_reset_db">Reset Database</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">Reset Database?</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">This will permanently delete all locally stored data — server profiles, reading history, favorites, download records, and search history. Your downloaded archive files on disk are not affected. The app will restart and behave like a fresh install.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">This resets the app\'s local database: server profiles, reading history, favorites, download records and search history start empty. The current database is set aside on this device (not deleted), and your downloaded archive files on disk are not affected. The app restarts afterwards.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">Reset &amp; Restart</string>
     <string name="lrr_db_reset_notice_title">Database reset</string>
     <string name="lrr_db_reset_notice_message">The local database was damaged and has been replaced with an empty one, so saved servers, reading history and other local data may be missing. A copy of the damaged file was kept on this device.</string>

@@ -186,6 +186,25 @@ afterEvaluate {
     tasks.matching { it.name == "preBuild" }.configureEach { dependsOn("verifyNoBaseUrlConcat") }
 }
 
+// Audit 2026-10-06d REL-04: a release crash report is retraced with the
+// mapping.txt of the exact build that shipped, and a rebuild of the tag is not
+// guaranteed to reproduce it. Every R8 release build copies its mapping to a
+// versioned path outside app/build (root build/, gitignored), from where the
+// release checklist attaches it to the GitHub Release and CI uploads it as an
+// artifact. Retrace: `retrace mapping-<versionName>-<versionCode>.txt trace.txt`
+// (cmdline-tools) on the "CrashInfo" section of a diagnostics bundle.
+def releaseMappingName = "mapping-${android.defaultConfig.versionName}-${android.defaultConfig.versionCode}.txt"
+def archiveReleaseMapping = tasks.register('archiveReleaseMapping', Copy) {
+    group = 'build'
+    description = 'Copies the appReleaseRelease R8 mapping to build/release-mapping/' + releaseMappingName
+    from(layout.buildDirectory.file('outputs/mapping/appReleaseRelease/mapping.txt'))
+    into(rootProject.layout.buildDirectory.dir('release-mapping'))
+    rename { releaseMappingName }
+}
+tasks.matching { it.name == 'minifyAppReleaseReleaseWithR8' }.configureEach {
+    finalizedBy archiveReleaseMapping
+}
+
 dependencies {
     implementation libs.material
 

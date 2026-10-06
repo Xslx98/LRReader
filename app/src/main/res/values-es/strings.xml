@@ -856,6 +856,8 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_download_orphan_profile">Descarga pausada: el perfil del servidor de origen ha sido eliminado</string>
     <string name="lrr_download_source_deleted">Origen eliminado</string>
     <string name="lrr_decode_failed">Error al decodificar imagen, toca para reintentar</string>
+    <string name="lrr_decode_unsupported_format">Este formato de imagen (%1$s) no es compatible con este dispositivo</string>
+    <string name="lrr_decode_too_large">Esta página es demasiado grande para mostrarse en este dispositivo</string>
     <string name="lrr_empty_response">El servidor devolvió una respuesta vacía</string>
     <string name="lrr_malformed_response">El servidor devolvió una respuesta inesperada</string>
     <string name="lrr_auth_failed_check_key">Autenticación fallida, verifica la clave API</string>
@@ -925,6 +927,11 @@ Esta acción no se puede deshacer.</string>
     <string name="security_storage_unavailable_message">No se puede comprobar el bloqueo de la aplicación porque el almacenamiento seguro del dispositivo no está disponible ahora. Vuelve a intentarlo o restablece el bloqueo: se eliminarán el patrón y todas las claves API guardadas. La biblioteca y las descargas se conservan.</string>
     <string name="security_storage_retry">Reintentar</string>
     <string name="security_storage_starting_message">El almacenamiento seguro del dispositivo aún se está iniciando, así que todavía no se puede comprobar el bloqueo de la aplicación. Espera un momento y toca Reintentar.</string>
+    <string name="security_storage_unavailable_first_message">No se puede comprobar el bloqueo de la aplicación porque no se pudo abrir el almacenamiento seguro del dispositivo. Suele ser algo temporal: toca Reintentar para reiniciar la aplicación.</string>
+    <string name="security_lock_state_unknown_first_message">No se puede comprobar el estado del bloqueo de la aplicación porque no se pudo abrir el almacenamiento seguro del dispositivo. Suele ser algo temporal: toca Reintentar para reiniciar la aplicación.</string>
+    <string name="security_lock_state_unknown_message">No se puede comprobar el estado del bloqueo de la aplicación porque el almacenamiento seguro del dispositivo sigue sin poder abrirse. Vuelve a intentarlo o restablece las credenciales guardadas: se eliminarán todas las claves API guardadas y cualquier bloqueo de la aplicación. La biblioteca y las descargas se conservan.</string>
+    <string name="security_legacy_lock_removed_title">Bloqueo de la aplicación eliminado</string>
+    <string name="security_legacy_lock_removed_message">El bloqueo de la aplicación estaba guardado en un formato antiguo que esta versión ya no puede comprobar, así que se eliminó y la aplicación se abrió sin bloqueo. Vuelve a establecer un patrón para mantener la aplicación bloqueada.</string>
     <string name="security_reset_app_lock">Restablecer bloqueo</string>
     <string name="security_reset_app_lock_confirm">¿Restablecer el bloqueo y eliminar todas las claves API guardadas? Tendrás que volver a introducir las credenciales del servidor.</string>
     <string name="lrr_reset_credentials">Restablecer credenciales guardadas</string>
@@ -936,7 +943,7 @@ Esta acción no se puede deshacer.</string>
     <string name="lrr_boot_load_failed_retry">Reintentar</string>
     <string name="lrr_boot_load_failed_reset_db">Restablecer base de datos</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">¿Restablecer la base de datos?</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">Esto eliminará permanentemente todos los datos almacenados localmente: perfiles de servidor, historial de lectura, favoritos, registros de descargas e historial de búsqueda. Los archivos descargados en disco no se verán afectados. La aplicación se reiniciará como una instalación nueva.</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">Esto restablece la base de datos local de la aplicación: los perfiles de servidor, el historial de lectura, los favoritos, los registros de descargas y el historial de búsqueda empezarán vacíos. La base de datos actual se aparta en este dispositivo (no se elimina) y los archivos descargados en disco no se ven afectados. La aplicación se reiniciará después.</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">Restablecer y reiniciar</string>
     <string name="lrr_db_reset_notice_title">Base de datos restablecida</string>
     <string name="lrr_db_reset_notice_message">La base de datos local estaba dañada y se ha sustituido por una vacía, por lo que pueden faltar los servidores guardados, el historial de lectura y otros datos locales. Se ha conservado una copia del archivo dañado en este dispositivo.</string>

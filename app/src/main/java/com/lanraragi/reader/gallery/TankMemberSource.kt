@@ -1,7 +1,9 @@
 package com.lanraragi.reader.gallery
 
 import android.content.Context
+import android.os.Build
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.framework.lib.image.DecodeResult
 import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
@@ -50,6 +52,8 @@ internal interface TankMemberSource {
      * download progress in 0..1 when the bytes come off the network.
      * @throws IOException on fetch failure — [TankPageCancelledException]
      *   when the failure is a deliberate cancel (quiet path).
+     * @throws PageDecodeException when a source can say WHY the page did not
+     *   decode (unsupported format, too large, damaged) instead of null.
      */
     @Throws(IOException::class)
     suspend fun obtainImage(page0: Int, onPercent: ((Float) -> Unit)? = null): Image?
@@ -138,14 +142,19 @@ internal class LrrTankMemberSource(
         if (!file.exists() || file.length() < ReaderPageCache.MIN_IMAGE_SIZE) {
             throw IOException("Cached page $page0 missing or too small for $arcid")
         }
-        val image = withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
-            FileInputStream(file).use { fis -> Image.decode(fis, false) }
+        val decoded = withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
+            FileInputStream(file).use { fis -> Image.decodeResult(fis, false) }
         }
-        if (image == null) {
-            // Corrupt bytes: drop them so a retry re-downloads.
+        if (decoded is DecodeResult.Ok) return decoded.value
+        // Audit 2026-10-06d PERF-01: only damaged bytes in the reader cache
+        // are dropped so a retry re-downloads. A valid page this device
+        // cannot decode is kept (a re-download brings the same bytes), and a
+        // download-dir page (hybrid) belongs to the download worker.
+        val failure = PageFailure.ofDecode(decoded, ReaderPageCache.detectImageFormat(file), Build.VERSION.SDK_INT)
+        if (failure is PageFailure.Corrupt && store == null) {
             file.delete()
         }
-        return image
+        throw PageDecodeException(failure)
     }
 
     override suspend fun prefetchPage(page0: Int) {

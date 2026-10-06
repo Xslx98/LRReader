@@ -141,6 +141,13 @@ public class ImageWrapper {
         return mCut.height();
     }
 
+    /**
+     * @see Image#getByteCount()
+     */
+    public int getByteCount() {
+        return mImage.getByteCount();
+    }
+
 //    /**
 //     * @see Image#render(int, int, Bitmap, int, int, int, int)
 //     */

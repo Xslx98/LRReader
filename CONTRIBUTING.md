@@ -30,7 +30,7 @@ bash scripts/ci-check.sh                        # every CI gate, locally
 The debug APK is written to `app/build/outputs/apk/appRelease/debug/`.
 
 `scripts/ci-check.sh` runs the same gates as CI: assemble, unit tests, lint,
-detekt with type resolution, the release DEX log check, Room schema drift,
+detekt with type resolution, the release DEX log and retrace checks, Room schema drift,
 baseline growth, the `runCatching` cap, the coverage floor and the JitPack AAR
 checksums. Run it before opening a pull request (`ANDROID_HOME` must be set).
 
@@ -39,6 +39,13 @@ Release builds are signed with a key that is not part of the repository;
 (`RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`,
 `RELEASE_KEY_PASSWORD`). You do not need it to contribute. Never commit
 `local.properties`, keystores or any credential.
+
+Every R8 release build copies its mapping to
+`build/release-mapping/mapping-<versionName>-<versionCode>.txt`; each GitHub
+Release carries the mapping of its APK. A release crash frame such as
+`at a3.b(r8-map-id-797e…:12)` names the mapping it needs (the `pg_map_id`
+header); retrace it with `retrace <mapping> <trace>` from the Android SDK
+command-line tools.
 
 ## Project layout
 

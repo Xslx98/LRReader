@@ -833,6 +833,8 @@
     <string name="lrr_download_orphan_profile">下载暂停：源站点的服务器配置已被删除</string>
     <string name="lrr_download_source_deleted">源已删除</string>
     <string name="lrr_decode_failed">图片解码失败，请点击重试</string>
+    <string name="lrr_decode_unsupported_format">此设备不支持该图片格式（%1$s）</string>
+    <string name="lrr_decode_too_large">此页面过大，无法在此设备上显示</string>
     <string name="lrr_empty_response">服务器返回空响应体</string>
     <string name="lrr_malformed_response">服务器返回了意外的响应</string>
     <string name="lrr_auth_failed_check_key">认证失败，请检查 API Key 是否正确</string>
@@ -893,6 +895,11 @@
     <string name="security_storage_unavailable_message">设备的安全存储暂时不可用，无法验证应用锁。可以重试，或重置应用锁：这会清除图案和所有已保存的服务器 API Key，书库和下载不受影响。</string>
     <string name="security_storage_retry">重试</string>
     <string name="security_storage_starting_message">设备的安全存储仍在启动，暂时无法验证应用锁。请稍等片刻，然后点「重试」。</string>
+    <string name="security_storage_unavailable_first_message">无法打开设备的安全存储，暂时无法验证应用锁。这通常是暂时的：点「重试」重新启动应用。</string>
+    <string name="security_lock_state_unknown_first_message">无法打开设备的安全存储，暂时无法确认应用锁状态。这通常是暂时的：点「重试」重新启动应用。</string>
+    <string name="security_lock_state_unknown_message">设备的安全存储仍无法打开，无法确认应用锁状态。可以重试，或重置已保存的凭据：这会清除所有已保存的服务器 API Key 以及可能存在的应用锁，书库和下载不受影响。</string>
+    <string name="security_legacy_lock_removed_title">应用锁已移除</string>
+    <string name="security_legacy_lock_removed_message">应用锁以旧格式保存，此版本已无法验证，因此已被移除，应用在未锁定状态下打开。请重新设置图案以继续锁定应用。</string>
     <string name="security_reset_app_lock">重置应用锁</string>
     <string name="security_reset_app_lock_confirm">重置应用锁并清除所有已保存的 API Key？之后需要重新输入服务器凭据。</string>
     <string name="lrr_reset_credentials">重置已保存的凭据</string>
@@ -904,7 +911,7 @@
     <string name="lrr_boot_load_failed_retry">重试</string>
     <string name="lrr_boot_load_failed_reset_db">重置数据库</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">重置数据库？</string>
-    <string name="lrr_boot_load_failed_reset_db_confirm_message">此操作将永久删除应用本地数据库中的所有数据：服务器配置、阅读历史、收藏、下载记录与搜索历史。已下载到磁盘的档案文件不受影响。应用将重启并以全新状态运行。</string>
+    <string name="lrr_boot_load_failed_reset_db_confirm_message">此操作将重置应用的本地数据库：服务器配置、阅读历史、收藏、下载记录与搜索历史将从空白开始。当前数据库会在本机另行保留（不会删除），已下载到磁盘的档案文件也不受影响。随后应用将重启。</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_yes">重置并重启</string>
     <string name="lrr_db_reset_notice_title">数据库已重置</string>
     <string name="lrr_db_reset_notice_message">本地数据库已损坏，已替换为空数据库，因此已保存的服务器、阅读历史等本地数据可能丢失。损坏文件的副本已保留在本设备上。</string>
