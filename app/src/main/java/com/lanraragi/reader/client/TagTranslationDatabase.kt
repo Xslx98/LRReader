@@ -15,7 +15,6 @@
  */
 package com.lanraragi.reader.client
 
-import com.lanraragi.reader.BuildConfig
 import androidx.annotation.VisibleForTesting
 import android.content.Context
 import android.util.Base64
@@ -25,7 +24,6 @@ import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.framework.util.ExceptionUtils
 import android.util.Log
 import com.lanraragi.framework.util.TextUrl
@@ -42,6 +40,8 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
@@ -77,6 +77,11 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
         }
         tags = ByteArray(totalBytes)
         source.readFully(tags)
+        // The SHA-1 check only proves the file matches its own hash file;
+        // the lookups below assume `key\rvalue\n` rows (audit SEC-01).
+        if (!isWellFormed(tags)) {
+            throw java.io.IOException("Tag dataset is malformed")
+        }
     }
 
     fun getTranslation(tag: String): String? {
@@ -121,8 +126,8 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
 
     private fun parseTag(source: String): TagEntry {
         val cArray = source.split("\r")
-        if (cArray.size == 2) {
-            val chinese = String(Base64.decode(cArray[1], Base64.DEFAULT), StandardCharsets.UTF_8)
+        val chinese = if (cArray.size == 2) decodeOrNull(cArray[1]) else null
+        if (chinese != null) {
             val eArray = cArray[0].split(":")
             val english = if (eArray.size == 2) {
                 val key = eArray[0] + ":"
@@ -134,64 +139,6 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
             return TagEntry(english, chinese)
         }
         return TagEntry(source, "null")
-    }
-
-    private fun search(tags: ByteArray, tag: ByteArray): String? {
-        var low = 0
-        var high = tags.size
-        while (low < high) {
-            var start = (low + high) / 2
-            // Look for the starting '\n'
-            while (start > -1 && tags[start] != '\n'.code.toByte()) {
-                start--
-            }
-            start++
-
-            // Look for the middle '\r'
-            var middle = 1
-            while (tags[start + middle] != '\r'.code.toByte()) {
-                middle++
-            }
-
-            // Look for the ending '\n'
-            var end = middle + 1
-            while (tags[start + end] != '\n'.code.toByte()) {
-                end++
-            }
-
-            var compare: Int
-            var tagIndex = 0
-            var curIndex = start
-
-            while (true) {
-                val tagByte = tag[tagIndex].toInt() and 0xff
-                val curByte = tags[curIndex].toInt() and 0xff
-                compare = tagByte - curByte
-                if (compare != 0) break
-
-                tagIndex++
-                curIndex++
-                if (tagIndex == tag.size && curIndex == start + middle) break
-                if (tagIndex == tag.size) {
-                    compare = -1
-                    break
-                }
-                if (curIndex == start + middle) {
-                    compare = 1
-                    break
-                }
-            }
-
-            when {
-                compare < 0 -> high = start - 1
-                compare > 0 -> low = start + end + 1
-                else -> {
-                    val bytes = Base64.decode(tags, start + middle + 1, end - middle - 1, Base64.DEFAULT)
-                    return String(bytes, TextUrl.UTF_8!!)
-                }
-            }
-        }
-        return null
     }
 
     @JvmOverloads
@@ -213,8 +160,17 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
     companion object {
         private val TAG = TagTranslationDatabase::class.java.simpleName
 
-        /** Upper bound for the dataset body; the real file is a few MB. */
-        internal const val MAX_DATASET_BYTES = 32 * 1024 * 1024
+        /**
+         * Upper bound for the dataset body. The real file is about 1.4 MB
+         * (2026-10), so this leaves roughly 10x headroom for growth.
+         */
+        internal const val MAX_DATASET_BYTES = 16 * 1024 * 1024
+
+        /** Download cap for the dataset file: the body plus its 4-byte length prefix. */
+        internal const val MAX_DATASET_DOWNLOAD_BYTES = MAX_DATASET_BYTES + 4L
+
+        /** Download cap for the hash file, which holds a raw 20-byte SHA-1. */
+        internal const val MAX_SHA1_DOWNLOAD_BYTES = 64L
 
         @JvmField
         val NAMESPACE_TO_PREFIX: Map<String, String> = mapOf(
@@ -296,7 +252,8 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
         }
 
         @Volatile
-        private var instance: TagTranslationDatabase? = null
+        @VisibleForTesting
+        internal var instance: TagTranslationDatabase? = null
 
         // EH-LEGACY: multi-language lock not implemented, Chinese-only is sufficient
         // Single-flight guard. Deliberately NOT a ReentrantLock: save() now
@@ -340,6 +297,103 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
         @JvmStatic
         fun prefixToNamespace(prefix: String): String? {
             return PREFIX_TO_NAMESPACE[prefix]
+        }
+
+        private const val LF: Byte = 0x0A
+        private const val CR: Byte = 0x0D
+
+        /**
+         * Whether [body] is a non-empty run of `key\rvalue\n` rows: every row
+         * ends with '\n' and holds exactly one '\r' with a non-empty key and
+         * value on either side. Sort order and base64 are not checked here.
+         */
+        @VisibleForTesting
+        internal fun isWellFormed(body: ByteArray): Boolean {
+            if (body.isEmpty() || body[body.size - 1] != LF) return false
+            var rowStart = 0
+            var separator = -1
+            for (i in body.indices) {
+                when (body[i]) {
+                    CR -> {
+                        if (separator != -1 || i == rowStart) return false
+                        separator = i
+                    }
+                    LF -> {
+                        if (separator == -1 || separator == i - 1) return false
+                        rowStart = i + 1
+                        separator = -1
+                    }
+                }
+            }
+            return true
+        }
+
+        /**
+         * Binary search for [tag] in the sorted `key\rbase64\n` rows of
+         * [tags]. Bounds-checked so that a malformed dataset yields null
+         * (no translation) rather than an exception on the UI thread
+         * (audit SEC-01).
+         */
+        @VisibleForTesting
+        internal fun search(tags: ByteArray, tag: ByteArray): String? {
+            if (tag.isEmpty()) return null
+            var low = 0
+            var high = tags.size
+            while (low < high) {
+                // Row that contains the midpoint: [start, separator) is the
+                // key, (separator, end) the value, tags[end] the '\n'.
+                var start = (low + high) / 2
+                while (start > 0 && tags[start - 1] != LF) {
+                    start--
+                }
+                var separator = start
+                while (separator < tags.size && tags[separator] != CR && tags[separator] != LF) {
+                    separator++
+                }
+                if (separator == start || separator >= tags.size || tags[separator] != CR) return null
+                var end = separator + 1
+                while (end < tags.size && tags[end] != LF) {
+                    end++
+                }
+                if (end >= tags.size) return null
+
+                val compare = compareKey(tag, tags, start, separator)
+                when {
+                    compare < 0 -> high = start
+                    compare > 0 -> low = end + 1
+                    else -> return decodeValue(tags, separator + 1, end - separator - 1)
+                }
+            }
+            return null
+        }
+
+        /** Unsigned byte-wise comparison of [tag] with `tags[from, to)`. */
+        private fun compareKey(tag: ByteArray, tags: ByteArray, from: Int, to: Int): Int {
+            val keyLength = to - from
+            val common = minOf(tag.size, keyLength)
+            for (i in 0 until common) {
+                val diff = (tag[i].toInt() and 0xff) - (tags[from + i].toInt() and 0xff)
+                if (diff != 0) return diff
+            }
+            return tag.size - keyLength
+        }
+
+        private fun decodeOrNull(value: String): String? {
+            return try {
+                String(Base64.decode(value, Base64.DEFAULT), StandardCharsets.UTF_8)
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Bad base64 in tag dataset row", e)
+                null
+            }
+        }
+
+        private fun decodeValue(tags: ByteArray, offset: Int, length: Int): String? {
+            return try {
+                String(Base64.decode(tags, offset, length, Base64.DEFAULT), StandardCharsets.UTF_8)
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Bad base64 in tag dataset row", e)
+                null
+            }
         }
 
         private fun getMetadata(context: Context): Array<String>? {
@@ -391,25 +445,43 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
             return s1.contentEquals(s2)
         }
 
-        private suspend fun save(client: OkHttpClient, url: String, file: File): Boolean {
+        /**
+         * Downloads [url] into [file]. Returns false, leaving a partial file
+         * for the caller to delete, when the response fails or is larger
+         * than [maxBytes] — declared or actually streamed (audit SEC-01).
+         */
+        @VisibleForTesting
+        internal suspend fun save(client: OkHttpClient, url: String, file: File, maxBytes: Long): Boolean {
             val request = Request.Builder().url(url).build()
             val call = client.newCall(request)
             return try {
                 call.await().use { response ->
                     if (!response.isSuccessful) return false
                     val body = response.body ?: return false
-                    body.byteStream().use { inputStream ->
-                        FileOutputStream(file).use { outputStream ->
-                            IOUtils.copy(inputStream, outputStream)
-                        }
-                    }
-                    true
+                    body.contentLength() <= maxBytes && writeAtMost(body.byteStream(), file, maxBytes)
                 }
             } catch (t: Throwable) {
                 if (t is CancellationException) throw t
                 ExceptionUtils.throwIfFatal(t)
                 Analytics.recordException(t)
                 false
+            }
+        }
+
+        /** Writes [input] to [file]; false as soon as more than [maxBytes] arrive. */
+        private fun writeAtMost(input: InputStream, file: File, maxBytes: Long): Boolean {
+            return input.use { FileOutputStream(file).use { output -> copyAtMost(input, output, maxBytes) } }
+        }
+
+        private fun copyAtMost(input: InputStream, output: OutputStream, maxBytes: Long): Boolean {
+            val buffer = ByteArray(8 * 1024)
+            var total = 0L
+            while (true) {
+                val n = input.read(buffer)
+                if (n == -1) return true
+                total += n
+                if (total > maxBytes) return false
+                output.write(buffer, 0, n)
             }
         }
 
@@ -442,7 +514,7 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
 
             // Save new sha1
             val tempSha1File = File(dir, "$sha1Name.tmp")
-            if (!save(client, sha1Url, tempSha1File)) {
+            if (!save(client, sha1Url, tempSha1File, MAX_SHA1_DOWNLOAD_BYTES)) {
                 FileUtils.delete(tempSha1File)
                 return
         }
@@ -457,7 +529,7 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
 
         // Save new data
         val tempDataFile = File(dir, "$dataName.tmp")
-        if (!save(client, dataUrl, tempDataFile)) {
+        if (!save(client, dataUrl, tempDataFile, MAX_DATASET_DOWNLOAD_BYTES)) {
             FileUtils.delete(tempDataFile)
             return
         }
@@ -469,22 +541,35 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
             return
         }
 
+        // Parse the new data before it replaces anything: a dataset that
+        // fails the structure check is discarded and the current copy (if
+        // any) stays active (audit SEC-01).
+        val newDatabase = load(dataName, tempDataFile)
+        if (newDatabase == null) {
+            FileUtils.delete(tempSha1File)
+            FileUtils.delete(tempDataFile)
+            return
+        }
+
         // Replace current sha1 and current data with new sha1 and new data
         FileUtils.delete(sha1File)
         FileUtils.delete(dataFile)
         tempSha1File.renameTo(sha1File)
         tempDataFile.renameTo(dataFile)
 
-        // Read new TagTranslationDatabase
-        try {
-            dataFile.source().buffer().use { source ->
-                instance = TagTranslationDatabase(dataName, source)
-            }
-            throttle.recordSuccess()
-        } catch (e: java.io.IOException) {
-            // Throwable-arg Log.w survives R8's strip; gate it.
-            if (BuildConfig.DEBUG) Log.w(TAG, "Failed to read updated tag database", e)
+        instance = newDatabase
+        throttle.recordSuccess()
         }
+
+        /** Reads and validates the dataset in [file], or null when it is unreadable or malformed. */
+        @VisibleForTesting
+        internal fun load(name: String, file: File): TagTranslationDatabase? {
+            return try {
+                file.source().buffer().use { source -> TagTranslationDatabase(name, source) }
+            } catch (e: java.io.IOException) {
+                Log.e(TAG, "Rejected tag database file", e)
+                null
+            }
         }
 
         /**
@@ -526,15 +611,15 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
                     }
 
                     // Read current TagTranslationDatabase
+                    // A malformed copy is deleted so the remote check below
+                    // can replace it; until then there are no translations.
                     if (instance == null && dataFile.exists()) {
-                        try {
-                            dataFile.source().buffer().use { source ->
-                                instance = TagTranslationDatabase(dataName, source)
-                            }
-                        } catch (e: java.io.IOException) {
-                            Log.w(TAG, "Failed to read existing tag database", e)
+                        val local = load(dataName, dataFile)
+                        if (local == null) {
                             FileUtils.delete(sha1File)
                             FileUtils.delete(dataFile)
+                        } else {
+                            instance = local
                         }
                     }
 
