@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  No app data leaves the device through the platform (Android 12+), matching
+  allowBackup="false" / fullBackupContent="false" for older releases. The app
+  has its own manual backup (Settings > Advanced) for that.
+
+  Device-to-device transfer must be excluded explicitly: allowBackup="false"
+  does not stop it for apps targeting API 31+. A transferred lrr_auth_secure
+  store arrives without its AndroidKeyStore key (keys never leave the device),
+  so it can never be decrypted on the new phone (audit 2026-10-06b REL-01).
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

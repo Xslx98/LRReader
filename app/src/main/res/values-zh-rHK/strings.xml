@@ -888,6 +888,8 @@
     <string name="security_storage_starting_message">裝置的安全儲存空間仍在啟動，暫時無法驗證應用程式鎖。請稍等片刻，然後點「重試」。</string>
     <string name="security_reset_app_lock">重設應用程式鎖</string>
     <string name="security_reset_app_lock_confirm">重設應用程式鎖並清除所有已儲存的 API Key？之後需要重新輸入伺服器憑證。</string>
+    <string name="lrr_reset_credentials">重設已儲存的憑證</string>
+    <string name="lrr_reset_credentials_confirm">清除所有已儲存的伺服器 API Key？伺服器列表、書庫、歷史、收藏和下載都會保留。應用程式將重新啟動，之後請重新輸入 API Key。</string>
     <string name="security_fingerprint_changed">裝置的指紋已變更，指紋解鎖已關閉。可在私隱設定中重新開啟。</string>
     <string name="security_pattern_unverifiable_message">裝置的指紋已變更，而這個圖案的儲存方式只能用舊的指紋金鑰驗證。請重設應用程式鎖以繼續：這會清除圖案和所有已儲存的伺服器 API Key，書庫和下載不受影響。</string>
     <string name="lrr_boot_load_failed_title">啟動錯誤</string>

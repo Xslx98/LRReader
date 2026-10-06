@@ -934,6 +934,19 @@ object LRRAuthManager {
     fun isSecureStorageStillStarting(): Boolean = sInitScheduled && !sInitDone
 
     /**
+     * Whether the "credentials unavailable" prompts outside the lock screen
+     * may offer [resetAppLockAndCredentials] (audit 2026-10-06b REL-01): the
+     * store finished opening and failed (never while it is still starting),
+     * and no app lock is set. A store copied from another phone, or one whose
+     * keystore key was lost, never becomes readable again, and a user without
+     * a lock never sees the lock screen's reset. With a lock set, the lock
+     * screen owns the reset.
+     */
+    @JvmStatic
+    fun canOfferCredentialReset(): Boolean =
+        !isSecureStorageAvailable() && !isSecureStorageStillStarting() && lockEnabledHint() != true
+
+    /**
      * Last resort when the secure store is unreadable: drop the encrypted
      * store (pattern, API keys, server URL) and its master key, and clear
      * the lock state, so the next process start begins unlocked with no

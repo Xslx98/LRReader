@@ -270,11 +270,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
 
     private fun showSecureStorageErrorDialog() {
         val ctx = ehContext ?: return
-        androidx.appcompat.app.AlertDialog.Builder(ctx)
-            .setTitle(R.string.lrr_keystore_failed_title)
-            .setMessage(R.string.lrr_secure_storage_write_failed)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
+        CredentialResetDialog.showSecureStorageError(ctx)
     }
 
     private fun redirectToArchiveList() {
