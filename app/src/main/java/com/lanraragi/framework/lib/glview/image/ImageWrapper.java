@@ -35,6 +35,9 @@ public class ImageWrapper {
     private final Image mImage;
     private final Rect mCut;
     private int mReferences;
+    // Set when the provider's cache refused the page (bigger than its whole
+    // budget). Such a wrapper starts with no owner, like an animated page.
+    private volatile boolean mCacheBypassed;
 
     /**
      * Create ImageWrapper
@@ -95,6 +98,22 @@ public class ImageWrapper {
         if (mReferences <= 0 && !mImage.isRecycled()) {
             mImage.recycle();
         }
+    }
+
+    /**
+     * Marks this wrapper as not held by the provider's memory cache.
+     */
+    public void markCacheBypassed() {
+        mCacheBypassed = true;
+    }
+
+    /**
+     * @return true when no cache holds a reference to this wrapper (animated
+     * pages and pages bigger than the cache budget). Whoever drops such a
+     * wrapper without showing it must {@link #release()} it.
+     */
+    public boolean isUncached() {
+        return mCacheBypassed || Boolean.TRUE.equals(getAnimated());
     }
 
     public boolean isImageRecycled() {
