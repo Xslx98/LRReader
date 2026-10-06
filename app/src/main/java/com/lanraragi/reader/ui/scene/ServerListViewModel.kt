@@ -9,6 +9,7 @@ import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.ui.ContinueReadingShortcut
 import com.lanraragi.reader.gallery.ArchiveProgressOutbox
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
+import com.lanraragi.reader.tankoubon.TankTagOutbox
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
@@ -421,13 +422,15 @@ class ServerListViewModel : ViewModel() {
 
     /**
      * Per-server state outside Room that a deleted profile leaves behind
-     * (audit SEC-16): capability facts, pending progress PUTs, tank cover
-     * choices. Base URLs are stored without a trailing slash.
+     * (audit SEC-16): capability facts, pending progress PUTs, pending tank
+     * tag retries, tank cover choices. Base URLs are stored without a
+     * trailing slash.
      */
     private fun purgeServerState(profile: ServerProfile) {
         val baseUrl = profile.url.removeSuffix("/")
         ServerCapabilityCache.forget(baseUrl)
         ArchiveProgressOutbox.dropServer(baseUrl)
+        TankTagOutbox.dropServer(baseUrl)
         TankCoverChoiceStore.default.removeProfile(profile.id)
     }
 

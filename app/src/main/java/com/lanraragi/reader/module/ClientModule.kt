@@ -68,9 +68,10 @@ class ClientModule(
     companion object {
         private const val MB = 1024L * 1024
 
-        // Tier thresholds (per-app heap limit from Runtime.maxMemory())
-        private const val TIER_LOW = 512 * MB      // < 512MB heap
-        private const val TIER_MID = 1024 * MB      // < 1GB heap
+        // Disk tier thresholds on total RAM (/proc/meminfo MemTotal, which
+        // reads a little below the nominal size: a "4 GB" phone is ~3.6 GB).
+        private const val TIER_LOW = 3072 * MB     // < 3 GB RAM
+        private const val TIER_MID = 6144 * MB     // < 6 GB RAM
 
         private const val THUMB_RAM_FRACTION = 16
         private const val THUMB_MIN = 32 * MB
@@ -102,22 +103,29 @@ class ClientModule(
         }
 
         internal fun diskCacheMaxSize(context: Context): Int = com.lanraragi.reader.util.CacheBudget
-            .thumbs(context, tieredDiskCacheSize(Runtime.getRuntime().maxMemory())).toInt()
+            .thumbs(
+                context,
+                tieredDiskCacheSize(
+                    com.lanraragi.framework.lib.yorozuya.OSUtils.getTotalMemory(),
+                    com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
+                ),
+            ).toInt()
 
         /**
-         * Returns the image disk cache size for the given per-app heap limit.
-         *
-         * We use heap as a proxy for overall device capability — devices with
-         * tiny per-app heaps almost always have limited storage too.
+         * Image disk cache size from total RAM (audit 2026-10-04 C12/C19,
+         * PERF-15). It was keyed on Runtime.maxMemory(), which only meant
+         * something with `largeHeap`; RAM is the same "device class" proxy
+         * without it. The storage cache quota caps it further
+         * ([com.lanraragi.reader.util.CacheBudget]).
          *
          * Tiers:
-         * - `maxMemoryBytes < 512MB` → 80 MB
-         * - `maxMemoryBytes < 1 GB`  → 160 MB
-         * - `maxMemoryBytes >= 1 GB` → 320 MB
+         * - low-RAM device or `< 3 GB` RAM -> 80 MB
+         * - `< 6 GB` RAM -> 160 MB
+         * - `>= 6 GB` RAM -> 320 MB
          */
-        internal fun tieredDiskCacheSize(maxMemoryBytes: Long): Long = when {
-            maxMemoryBytes < TIER_LOW -> DISK_LOW
-            maxMemoryBytes < TIER_MID -> DISK_MID
+        internal fun tieredDiskCacheSize(totalMemBytes: Long, lowRam: Boolean): Long = when {
+            lowRam || totalMemBytes < TIER_LOW -> DISK_LOW
+            totalMemBytes < TIER_MID -> DISK_MID
             else -> DISK_HIGH
         }
     }

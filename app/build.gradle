@@ -251,6 +251,16 @@ configurations.configureEach {
     }
 }
 
+// Robolectric loads app classes through its own sandbox class loader, which
+// JaCoCo treats as "no location" and skips by default: without this, most
+// Robolectric-tested code (dao, download) reported near-zero coverage.
+tasks.withType(Test).configureEach {
+    jacoco {
+        includeNoLocationClasses = true
+        excludes = ['jdk.internal.*']
+    }
+}
+
 tasks.register('jacocoTestReport', JacocoReport) {
     dependsOn 'testAppReleaseDebugUnitTest'
     reports {

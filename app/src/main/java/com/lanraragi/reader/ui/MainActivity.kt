@@ -581,19 +581,26 @@ class MainActivity : StageActivity(),
     /**
      * Tank tag materialization failures (spec 2026-09-22 §5.3) are
      * best-effort follow-ups of a membership write that already succeeded;
-     * whichever scene is up, the shell names the tank in a Snackbar.
+     * whichever scene is up, the shell names the tank in a Snackbar. Queued
+     * tag retries and local download-group write failures (REL-24) use the
+     * same channel with a message that names no tank.
      */
     private fun observeTankTagSyncFailures() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 AppEventBus.tankTagSyncFailedEvent.collect { event ->
                     val host = mDrawerLayout ?: return@collect
-                    val resId = when (event.kind) {
-                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.TAGS -> R.string.tank_tag_sync_failed
+                    val text = when (event.kind) {
+                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.TAGS ->
+                            getString(R.string.tank_tag_sync_failed, event.tankName)
                         com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.CATEGORIES ->
-                            R.string.tank_category_sync_failed
+                            getString(R.string.tank_category_sync_failed, event.tankName)
+                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.TAGS_PENDING ->
+                            getString(R.string.tank_tag_sync_pending)
+                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.DOWNLOAD_GROUP ->
+                            getString(R.string.tank_download_group_failed)
                     }
-                    Snackbar.make(host, getString(resId, event.tankName), Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(host, text, Snackbar.LENGTH_LONG).show()
                 }
             }
         }

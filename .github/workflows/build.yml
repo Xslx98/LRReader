@@ -92,9 +92,12 @@ jobs:
           ./gradlew :app:minifyAppReleaseReleaseWithR8
           bash scripts/ci/check-dex-logs.sh
 
-      - name: Test Coverage
-        run: ./gradlew app:jacocoTestReport
-        continue-on-error: true
+      - name: Coverage must not drop below the floor
+        # Line coverage of dao / download / gallery against
+        # scripts/ci/coverage-floor.txt (audit 2026-10-04 C47 / REL-23).
+        run: |
+          ./gradlew app:jacocoTestReport
+          bash scripts/ci/check-coverage.sh
 
       - name: Upload Test Reports
         if: always()

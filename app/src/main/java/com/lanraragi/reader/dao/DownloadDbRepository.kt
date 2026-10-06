@@ -33,10 +33,13 @@ import kotlinx.coroutines.flow.map
  * invalidation observer that drives [observeDownloads] in unit tests
  * with inline executors.
  *
- * The only operation that *does* take a `withTransaction` lock is
+ * The operations that *do* take a `withTransaction` lock are
  * [moveDownloadInfo], because per-row UPDATEs there are not safe to
- * interleave with concurrent writes on the same arcids. The other
- * batch operations are sequenced loops over the atomic mutations.
+ * interleave with concurrent writes on the same arcids, and the tank
+ * group writes (group row + per-row tags, audit 2026-10-04 REL-24), so a
+ * failure can never leave a group row whose members are untagged or a
+ * deleted tank's group row behind. The other batch operations are
+ * sequenced loops over the atomic mutations.
  *
  * **Important distinction**: there is also a
  * [com.lanraragi.reader.download.DownloadRepository] that manages
@@ -288,7 +291,7 @@ class DownloadDbRepository(
         serverProfileId: Long,
         name: String,
         memberIdsInOrder: List<String>,
-    ) {
+    ) = database.withTransaction {
         // A group keeps the profile that first downloaded it. Download rows
         // are unique per arcid, so a second profile on the same server
         // "downloading" the tank reuses the same member rows; taking the
@@ -323,15 +326,14 @@ class DownloadDbRepository(
         serverName: String,
         serverMemberIds: List<String>,
         activeProfileId: Long,
-    ): TankGroupReconciler.Result? {
+    ): TankGroupReconciler.Result? = database.withTransaction {
         var result: TankGroupReconciler.Result? = null
         tankGroupDao.modify(tankId) { group ->
             val r = TankGroupReconciler.reconcile(group, serverName, serverMemberIds, activeProfileId)
             result = r
             r?.group ?: group
         }
-        val applied = result ?: return null
-        return applied.also { applyReconcileTags(tankId, it) }
+        result?.also { applyReconcileTags(tankId, it) }
     }
 
     private suspend fun applyReconcileTags(tankId: String, result: TankGroupReconciler.Result) {
@@ -384,7 +386,7 @@ class DownloadDbRepository(
      * app-side): rewrite the group's id list and clear the row tag; the
      * member reappears as a standalone download.
      */
-    suspend fun removeTankGroupMember(tankId: String, arcid: String) {
+    suspend fun removeTankGroupMember(tankId: String, arcid: String): Unit = database.withTransaction {
         archiveLocalStateDao.setDownloadTankId(arcid, null)
         tankGroupDao.modify(tankId) { group ->
             val remaining = TankGroupReconciler.decode(group.memberIdsJson).filterNot { it == arcid }
@@ -404,10 +406,25 @@ class DownloadDbRepository(
      * Dissolve a tank group: drop the group row and untag every member —
      * the members reappear as standalone downloads (files untouched).
      */
-    suspend fun dissolveTankGroup(tankId: String) {
+    suspend fun dissolveTankGroup(tankId: String) = database.withTransaction {
         archiveLocalStateDao.clearDownloadTankId(tankId)
         tankGroupDao.delete(tankId)
     }
+
+    /**
+     * Delete downloaded tank cards in one transaction: clear the download
+     * columns of every member row in [arcids] and dissolve every group in
+     * [tankIds]. Two separate writes could leave a group row claiming
+     * members whose download rows are gone (audit 2026-10-04 REL-24).
+     */
+    suspend fun removeDownloadsAndDissolveTankGroups(arcids: List<String>, tankIds: Collection<String>) =
+        database.withTransaction {
+            if (arcids.isNotEmpty()) archiveLocalStateDao.clearDownloadAndPruneBatch(arcids)
+            for (tankId in tankIds) {
+                archiveLocalStateDao.clearDownloadTankId(tankId)
+                tankGroupDao.delete(tankId)
+            }
+        }
 
     // ═══════════════════════════════════════════════════════════
     // DOWNLOAD DIRNAME (separate table, not touched by L1)

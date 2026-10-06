@@ -24,7 +24,9 @@ import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.tankoubon.TankTagSyncer
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.TankTagSyncFailedEvent
+import com.lanraragi.reader.tankoubon.TankTagOutbox
 import okhttp3.OkHttpClient
 import com.lanraragi.reader.domain.BARE_TAG_BUCKET
 import com.lanraragi.reader.domain.TagGroup
@@ -71,8 +73,8 @@ object TagEditDialog {
         suspend fun readRaw(client: OkHttpClient, baseUrl: String, id: String): String? = null
 
         /**
-         * Best-effort follow-up after a successful [write]; [oldTags] is the
-         * string the dialog opened with. Must not throw past cancellation.
+         * Follow-up after a successful [write]; [oldTags] is the server's
+         * string before the edit. Must not throw past cancellation.
          */
         @Suppress("LongParameterList")
         suspend fun afterWrite(client: OkHttpClient, baseUrl: String, id: String, oldTags: String, newTags: String) {}
@@ -81,8 +83,9 @@ object TagEditDialog {
     /**
      * Default: `PUT /api/archives/{id}/metadata`, then (spec 2026-09-22
      * §5.2) every tankoubon containing the archive re-materializes its own
-     * tags with this member's old → new contribution (rule 3). Servers
-     * without the tankoubon routes just skip the follow-up.
+     * tags with this member's old → new contribution (rule 3), through
+     * [TankTagOutbox] so a failure is retried later. Servers without the
+     * tankoubon routes just skip the follow-up.
      */
     @JvmField
     val archiveWriter: TagWriter = object : TagWriter {
@@ -94,15 +97,12 @@ object TagEditDialog {
             LRRArchiveApi.getArchiveMetadata(client, baseUrl, id).tags
 
         override suspend fun afterWrite(client: OkHttpClient, baseUrl: String, id: String, oldTags: String, newTags: String) {
-            val tanks = try {
-                LRRTankoubonApi.getArchiveTankoubons(client, baseUrl, id)
-            } catch (ce: CancellationException) {
-                throw ce
-            } catch (ignored: Exception) {
-                return
-            }
-            for (tankId in tanks) {
-                TankTagSyncer.afterMemberTagsChanged(client, baseUrl, tankId, id, oldTags, newTags)
+            // A failed follow-up is kept and retried (audit 2026-10-04 REL-24):
+            // the member's old contribution exists only now.
+            if (!TankTagOutbox.applyOnServer(client, baseUrl, id, oldTags, newTags)) {
+                AppEventBus.postTankTagSyncFailedEvent(
+                    TankTagSyncFailedEvent("", "", TankTagSyncFailedEvent.Kind.TAGS_PENDING)
+                )
             }
         }
     }
