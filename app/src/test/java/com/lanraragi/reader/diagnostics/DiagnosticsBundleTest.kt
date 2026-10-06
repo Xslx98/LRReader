@@ -47,6 +47,36 @@ class DiagnosticsBundleTest {
         assertEquals("trace", e["reports/crash-20261004-120000-000.log"])
     }
 
+    /** Audit 2026-10-06 C06: a report written by an older build is redacted on the way into the zip. */
+    @Test
+    fun reports_areRedactedWhenBundled_framesKept() {
+        val legacy = tmp.newFile("nonfatal-20261001-090000-000.log").apply {
+            writeText(
+                "======== CrashInfo ========\n" +
+                    "java.net.ConnectException: Failed to connect to lrr.example.com/203.0.113.5:3000\n" +
+                    "\tat okhttp3.internal.connection.RealConnection.connectSocket(RealConnection.kt:298)\n" +
+                    "======== Recent events ========\n" +
+                    "01-01 E/Api: GET http://10.0.0.2:3000/api/info?key=abc failed\n"
+            )
+        }
+        val target = tmp.root.resolve("diag.zip")
+        DiagnosticsBundle(object : DiagnosticsBundle.Sources {
+            override fun info() = ""
+            override fun settings(): Map<String, *> = emptyMap<String, Any>()
+            override fun events() = emptyList<String>()
+            override fun reports() = listOf(legacy)
+            override fun writeLogcat(out: Writer) = false
+        }).writeTo(target)
+        assertEquals(
+            "======== CrashInfo ========\n" +
+                "java.net.ConnectException: Failed to connect to <host>/<ip>\n" +
+                "\tat okhttp3.internal.connection.RealConnection.connectSocket(RealConnection.kt:298)\n" +
+                "======== Recent events ========\n" +
+                "01-01 E/Api: GET http://<host>/api/info?key=<redacted> failed\n",
+            entries(target)["reports/nonfatal-20261001-090000-000.log"],
+        )
+    }
+
     @Test
     fun failedLogcat_isMarked() {
         val target = tmp.root.resolve("diag.zip")

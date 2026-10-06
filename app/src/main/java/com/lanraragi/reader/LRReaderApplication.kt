@@ -461,9 +461,9 @@ class LRReaderApplication : RecordingApplication() {
             }
 
             try {
-                AppConfig.purgeLegacyParseErrorDir()
+                AppConfig.purgeLegacyExternalDumpDirs()
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete the legacy parse error dir", e)
+                Log.e(TAG, "Failed to delete the legacy external dump dirs", e)
             }
 
             try {
