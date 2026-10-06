@@ -927,6 +927,8 @@ Esta acción no se puede deshacer.</string>
     <string name="security_storage_starting_message">El almacenamiento seguro del dispositivo aún se está iniciando, así que todavía no se puede comprobar el bloqueo de la aplicación. Espera un momento y toca Reintentar.</string>
     <string name="security_reset_app_lock">Restablecer bloqueo</string>
     <string name="security_reset_app_lock_confirm">¿Restablecer el bloqueo y eliminar todas las claves API guardadas? Tendrás que volver a introducir las credenciales del servidor.</string>
+    <string name="lrr_reset_credentials">Restablecer credenciales guardadas</string>
+    <string name="lrr_reset_credentials_confirm">¿Eliminar todas las claves API de servidor guardadas? Se conservan la lista de servidores, la biblioteca, el historial, los favoritos y las descargas. La app se reiniciará; después vuelve a introducir tus claves API.</string>
     <string name="security_fingerprint_changed">Las huellas del dispositivo cambiaron, así que se desactivó el desbloqueo con huella. Puedes volver a activarlo en los ajustes de privacidad.</string>
     <string name="security_pattern_unverifiable_message">Las huellas del dispositivo cambiaron y este patrón se guardó de forma que solo puede comprobarse con la clave de huella anterior. Restablece el bloqueo para continuar: se eliminarán el patrón y todas las claves API guardadas. La biblioteca y las descargas se conservan.</string>
     <string name="lrr_boot_load_failed_title">Error de inicio</string>

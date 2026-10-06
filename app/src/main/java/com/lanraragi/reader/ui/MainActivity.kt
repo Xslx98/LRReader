@@ -62,6 +62,7 @@ import com.lanraragi.reader.module.AppModule
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.BaseScene
+import com.lanraragi.reader.ui.scene.CredentialResetDialog
 import com.lanraragi.reader.ui.scene.ServerConfigScene
 import com.lanraragi.reader.ui.scene.ServerListScene
 import com.lanraragi.reader.ui.scene.download.DownloadLabelsScene
@@ -529,13 +530,15 @@ class MainActivity : StageActivity(),
 
         // Prompt user to re-enter credentials if KeyStore became unavailable
         if (LRRAuthManager.isNeedsReauthentication()) {
-            AlertDialog.Builder(this)
+            val openServerList: () -> Unit = { startScene(Announcer(ServerListScene::class.java)) }
+            val builder = AlertDialog.Builder(this)
                 .setTitle(R.string.lrr_keystore_failed_title)
                 .setMessage(R.string.lrr_keystore_failed_message)
-                .setPositiveButton(android.R.string.ok) { _, _ ->
-                    startScene(Announcer(ServerListScene::class.java))
-                }
+                .setPositiveButton(android.R.string.ok) { _, _ -> openServerList() }
                 .setCancelable(false)
+            // A store that can never be read again (e.g. copied from another
+            // phone) needs a way out for users without an app lock (REL-01).
+            CredentialResetDialog.offerResetIfStuck(builder, this, onCancel = openServerList)
                 .show()
         }
 

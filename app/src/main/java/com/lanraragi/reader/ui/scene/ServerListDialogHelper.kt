@@ -266,20 +266,16 @@ internal class ServerListDialogHelper(
 
     fun showReauthDialog() {
         val ctx = contextProvider() ?: return
-        AlertDialog.Builder(ctx)
+        val builder = AlertDialog.Builder(ctx)
             .setTitle(R.string.reauth_required_title)
             .setMessage(R.string.reauth_required_message)
             .setPositiveButton(android.R.string.ok, null)
-            .show()
+        CredentialResetDialog.offerResetIfStuck(builder, ctx).show()
     }
 
     fun showSecureStorageErrorDialog() {
         val ctx = contextProvider() ?: return
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.lrr_keystore_failed_title)
-            .setMessage(R.string.lrr_secure_storage_write_failed)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
+        CredentialResetDialog.showSecureStorageError(ctx)
     }
 
     // -------------------------------------------------------------------------
