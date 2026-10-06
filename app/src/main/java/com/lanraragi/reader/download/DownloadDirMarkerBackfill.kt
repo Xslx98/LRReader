@@ -3,6 +3,7 @@ package com.lanraragi.reader.download
 import android.util.Log
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.dao.DownloadDbRepository
+import com.lanraragi.reader.util.suspendRunCatching
 
 /**
  * One-shot boot pass that writes a [DownloadDirMarker] into the directory of
@@ -21,7 +22,7 @@ class DownloadDirMarkerBackfill(
     suspend fun run(): Boolean {
         var complete = true
         for (info in repo.getAllDownloadInfo()) {
-            val written = runCatching {
+            val written = suspendRunCatching {
                 val dir = findDir(info.arcid, info.downloadRootUri)
                 dir == null || !dir.isDirectory || DownloadDirMarker.write(dir, DownloadDirMarker.of(info))
             }.getOrElse { t ->

@@ -23,6 +23,7 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadEntryGate
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
+import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -225,7 +226,7 @@ class GalleryListViewModel : ViewModel() {
                 // Best-effort: an inconclusive probe (network/proxy error) is
                 // treated as "not a confirmed duplicate" so the upload still runs
                 // and the server's own check remains the backstop.
-                val isDuplicate = runCatching { LRRArchiveApi.archiveExists(arcid) }
+                val isDuplicate = suspendRunCatching { LRRArchiveApi.archiveExists(arcid) }
                     .getOrDefault(false)
                 if (isDuplicate) {
                     _uploadState.value = UploadUiState.DuplicateSkipped(arcid)

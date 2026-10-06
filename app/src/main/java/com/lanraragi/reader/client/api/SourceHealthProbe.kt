@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -40,7 +41,7 @@ suspend fun probeSourceHealthy(
     baseUrl: String,
     totalTimeoutMs: Long = 3000L,
 ): Boolean = withContext(Dispatchers.IO) {
-    runCatching {
+    suspendRunCatching {
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/info")
             .build()

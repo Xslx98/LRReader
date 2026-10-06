@@ -17,6 +17,7 @@ import com.lanraragi.reader.gallery.ForegroundReading
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.spider.SpiderQueen
+import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -435,7 +436,7 @@ class LRRDownloadWorker(
      * source is reachable again.
      */
     private suspend fun reportIfLocallyComplete(): Boolean {
-        val pagecount = runCatching {
+        val pagecount = suspendRunCatching {
             ServiceRegistry.dataModule.historyRepository
                 .getArchiveSnapshot(arcId, info.serverProfileId)?.pagecount
         }.getOrNull() ?: return false
