@@ -60,13 +60,20 @@ object SecuritySettings {
      * Reads the plain-prefs mirror, so it needs no keystore work (safe on the
      * launch path) and FAILS CLOSED: when the secure store cannot be opened,
      * [hasPattern] reports false, but the mirror still says the app is
-     * locked. Falls back to [hasPattern] only before this version has
-     * written the mirror (first launch after upgrading).
+     * locked. Before this version has written the mirror (first launch after
+     * upgrading from <= v1.26) it decides without the keystore and reports
+     * "locked" while that is not possible (audit 2026-10-06c SEC-01, see
+     * [LRRAuthManager.isLockSetOrUnknown]).
      */
     @JvmStatic
     fun isLockEnabled(): Boolean {
-        val hint = LRRAuthManager.lockEnabledHint() ?: return hasPattern()
-        return hint || !Settings.getString(KEY_SECURITY, "").isNullOrEmpty()
+        if (!Settings.getString(KEY_SECURITY, "").isNullOrEmpty()) {
+            // Pre-hash plaintext pattern: locked. Migrate it while the mirror
+            // is unwritten, as before.
+            if (LRRAuthManager.lockEnabledHint() == null) hasPattern()
+            return true
+        }
+        return LRRAuthManager.isLockSetOrUnknown()
     }
 
     /**

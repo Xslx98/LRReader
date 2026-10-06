@@ -211,6 +211,7 @@ internal class LrrTankMemberSource(
                         call = c
                         inflightCalls[page0] = c
                     },
+                    durable = store?.durableWriteFor(file),
                 )
             } catch (e: IOException) {
                 if (call?.isCanceled() == true || stopped) throw TankPageCancelledException(e)

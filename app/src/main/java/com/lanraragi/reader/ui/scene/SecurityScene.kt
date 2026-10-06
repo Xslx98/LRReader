@@ -227,7 +227,10 @@ class SecurityScene : SolidScene(),
         val state = viewModel.storageState()
         mPatternView?.isEnabled = state == StorageState.AVAILABLE
         when (state) {
-            StorageState.AVAILABLE -> Unit
+            // Shown because the lock could not be ruled out before the store
+            // opened (upgrade from <= v1.26, audit 06c SEC-01); the store is
+            // open now and holds no pattern: nothing to unlock.
+            StorageState.AVAILABLE -> if (!SecuritySettings.isLockEnabled()) mHandler.post { dismissAfterUnlock() }
             StorageState.STARTING -> showStorageStartingDialog()
             StorageState.UNAVAILABLE -> showStorageUnavailableDialog()
         }

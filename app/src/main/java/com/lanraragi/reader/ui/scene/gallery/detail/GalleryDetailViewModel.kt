@@ -24,6 +24,7 @@ import com.lanraragi.reader.domain.mergeRatingIntoTags
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
+import com.lanraragi.reader.gallery.LocalReadingProgress
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.gallery.ReadingProgressReconciler
 import com.lanraragi.reader.gallery.ReadingProgressTracker
@@ -429,12 +430,18 @@ class GalleryDetailViewModel : ViewModel() {
     val localReadingPage: StateFlow<Int> = combine(
         _archiveDetail, _archive, _arcid
     ) { ad, archive, argArcid ->
-        ad?.archive?.arcid ?: archive?.arcid ?: argArcid
+        // Source profile from the nav arg, as in [getSourceProfileId]: the
+        // reader saves under it, so a download of another server must show
+        // its page here too (audit 2026-10-06c C37 note).
+        (ad?.archive?.arcid ?: archive?.arcid ?: argArcid) to (archive?.serverProfileId ?: 0L)
     }
         .distinctUntilChanged()
-        .flatMapLatest { arcid ->
-            if (arcid.isNullOrEmpty()) flowOf(ReadingProgressTracker.NO_LOCAL_PROGRESS)
-            else ReadingProgressTracker.progressFlow(arcid)
+        .flatMapLatest { (arcid, serverProfileId) ->
+            if (arcid.isNullOrEmpty()) {
+                flowOf(ReadingProgressTracker.NO_LOCAL_PROGRESS)
+            } else {
+                ReadingProgressTracker.progressFlow(LocalReadingProgress.sourceProfile(serverProfileId), arcid)
+            }
         }
         // Lazily started so the flow does not run (and does not touch
         // ServiceRegistry / SharedPreferences) until the Scene subscribes.

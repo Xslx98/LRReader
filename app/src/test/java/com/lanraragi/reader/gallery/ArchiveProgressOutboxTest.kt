@@ -129,6 +129,39 @@ class ArchiveProgressOutboxTest {
         assertEquals(listOf("kept"), ArchiveProgressOutbox.entries().map { it.arcid })
     }
 
+    /**
+     * Audit 2026-10-06c REL-02: without a stored key (credential reset, a
+     * restore) the GET passes unauthenticated and only the PUT is refused;
+     * that progress must survive until the key is back.
+     */
+    @Test
+    fun `auth and transient 4xx keep the entry, a permanent 4xx drops it`() = runBlocking {
+        val kept = listOf(401, 403, 408, 423, 429)
+        val dropped = listOf(400, 404, 410)
+        (kept + dropped).forEach { ArchiveProgressOutbox.markPending(base, "arc$it", 1) }
+
+        ArchiveProgressOutbox.flush(
+            fetch = { _, _ -> ArchiveProgressOutbox.ServerProgress(0L) },
+            put = { _, arcid, _ -> throw LRRHttpException(arcid.removePrefix("arc").toInt()) },
+        )
+
+        assertEquals(kept.map { "arc$it" }.toSet(), ArchiveProgressOutbox.entries().map { it.arcid }.toSet())
+    }
+
+    @Test
+    fun `an entry kept on 401 is pushed once the key is back`() = runBlocking {
+        ArchiveProgressOutbox.markPending(base, "arc", 4)
+        ArchiveProgressOutbox.flush(
+            fetch = { _, _ -> ArchiveProgressOutbox.ServerProgress(0L) },
+            put = { _, _, _ -> throw LRRHttpException(401) },
+        )
+
+        flushWith(serverLastRead = 0L)
+
+        assertEquals(listOf(Triple(base, "arc", 5)), puts)
+        assertTrue(ArchiveProgressOutbox.entries().isEmpty())
+    }
+
     @Test
     fun `shouldPush tolerates clock skew within the grace window`() {
         val grace = ReadingProgressReconciler.CLOCK_SKEW_GRACE_SECONDS

@@ -1,5 +1,6 @@
 package com.lanraragi.reader.gallery
 
+import com.lanraragi.reader.download.DurablePageWrite
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,7 +23,7 @@ class HybridPageStoreTest {
     private fun setUp(createDownloadDir: Boolean = true) {
         downloadDir = if (createDownloadDir) tmp.newFolder("dl") else File(tmp.root, "dl")
         warmDir = tmp.newFolder("warm")
-        store = HybridPageStore(downloadDir, warmDir)
+        store = HybridPageStore(downloadDir, warmDir, DurablePageWrite(usableBytes = { Long.MAX_VALUE }, syncFile = {}))
     }
 
     @Test

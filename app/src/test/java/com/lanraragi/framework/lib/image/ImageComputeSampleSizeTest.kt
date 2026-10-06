@@ -51,4 +51,35 @@ class ImageComputeSampleSizeTest {
     fun `negative target means no sampling`() {
         assertEquals(1, Image.computeSampleSize(1000, 1414, -1, 470))
     }
+
+    // computeDecodeSampleSize (audit 2026-10-06c PERF-01): fit x multiplier only.
+
+    @Test
+    fun `screen-fit page decodes at full resolution`() {
+        // 2400x3600 scan on a 1440x3200 phone: min(1, 1) = 1
+        assertEquals(1, Image.computeDecodeSampleSize(2400, 3600, 0, 0, 1, 1440, 3200))
+    }
+
+    @Test
+    fun `huge pixel count is bounded by the screen fit`() {
+        // 14400x32000 on 1440x3200 -> sample 10 -> 1440x3200 decoded
+        assertEquals(10, Image.computeDecodeSampleSize(14400, 32000, 0, 0, 1, 1440, 3200))
+    }
+
+    @Test
+    fun `very tall page keeps full width (no pixel cap, user ruling)`() {
+        assertEquals(1, Image.computeDecodeSampleSize(1440, 60000, 0, 0, 1, 1440, 3200))
+    }
+
+    @Test
+    fun `oom retry multiplier is applied to the fit`() {
+        assertEquals(2, Image.computeDecodeSampleSize(2400, 3600, 0, 0, 2, 1440, 3200))
+        assertEquals(20, Image.computeDecodeSampleSize(14400, 32000, 0, 0, 2, 1440, 3200))
+    }
+
+    @Test
+    fun `explicit target wins over the screen`() {
+        assertEquals(2, Image.computeDecodeSampleSize(1000, 1414, 336, 470, 1, 1440, 3200))
+        assertEquals(4, Image.computeDecodeSampleSize(1000, 1414, 336, 470, 2, 1440, 3200))
+    }
 }

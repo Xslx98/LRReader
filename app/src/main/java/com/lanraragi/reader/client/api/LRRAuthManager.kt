@@ -71,6 +71,15 @@ object LRRAuthManager {
      */
     private const val KEY_LOCK_ENABLED = "app_lock_enabled"
     private const val KEY_CONFIGURED_HINT = "server_configured"
+
+    /**
+     * Plain-prefs count of consecutive launches whose secure store failed to
+     * open; cleared by the next launch that opens it. A KeyStore error that
+     * heals on the next launch must not offer the destructive credential
+     * reset (audit 2026-10-06c N-new-1).
+     */
+    private const val KEY_STORE_OPEN_FAILURES = "secure_store_open_failures"
+    private const val RESET_OFFER_MIN_FAILED_LAUNCHES = 2
     private const val KEY_SERVER_URL = "server_url"
     private const val KEY_API_KEY = "api_key"
     private const val KEY_SERVER_NAME = "server_name"
@@ -162,6 +171,9 @@ object LRRAuthManager {
     @Volatile
     private var sAppContext: Context? = null
 
+    /** Orders the store's mirror write against [rememberLockState]'s (the store's wins). */
+    private val lockMirrorWrite = Any()
+
     private fun readBootCount(): Int {
         val resolver = sAppContext?.contentResolver ?: return -1
         return android.provider.Settings.Global.getInt(resolver, android.provider.Settings.Global.BOOT_COUNT, -1)
@@ -201,6 +213,10 @@ object LRRAuthManager {
     /** How long [awaitInit] waits on the main thread. Tests shorten it. */
     @Volatile
     internal var mainThreadInitTimeoutMs: Long = MAIN_THREAD_INIT_TIMEOUT_MS
+
+    /** Cipher of the secure store. Tests swap in an in-memory one (Robolectric has no AndroidKeyStore). */
+    @Volatile
+    internal var secureStoreCipher: () -> ValueCipher = { KeystoreValueCipher(KEYSTORE_ALIAS_SECURE_PREFS) }
 
     /**
      * Gate every read/write of [sPrefs]/[sPlainPrefs]/[sActiveProfileId]/
@@ -269,6 +285,7 @@ object LRRAuthManager {
         sMainInitTimedOut = false
         initTimeoutMs = INIT_TIMEOUT_MS
         mainThreadInitTimeoutMs = MAIN_THREAD_INIT_TIMEOUT_MS
+        secureStoreCipher = { KeystoreValueCipher(KEYSTORE_ALIAS_SECURE_PREFS) }
         sInitLatch = CountDownLatch(1)
     }
 
@@ -295,7 +312,7 @@ object LRRAuthManager {
         try {
             val secure = KeystoreSecurePrefs.open(
                 context.applicationContext.getSharedPreferences(SECURE_PREF_NAME, Context.MODE_PRIVATE),
-                KeystoreValueCipher(KEYSTORE_ALIAS_SECURE_PREFS),
+                secureStoreCipher(),
             )
             if (!plainPrefs.getBoolean(KEY_SECURE_STORE_MIGRATED, false)) {
                 migrateLegacyStore(context.applicationContext, secure)
@@ -325,6 +342,7 @@ object LRRAuthManager {
             sPrefs = null
             sNeedsReauthentication = plainPrefs.getBoolean(KEY_WAS_CONFIGURED, false)
         }
+        recordStoreOpenOutcome(plainPrefs, opened = sPrefs != null)
         // Restore active profile (falls back to 0 when sPrefs is null)
         val prefs = sPrefs
         sActiveProfileId = prefs?.getLong(KEY_ACTIVE_PROFILE_ID, 0L) ?: 0L
@@ -341,10 +359,24 @@ object LRRAuthManager {
         if (prefs != null) {
             // Refresh the plain mirrors from the source of truth (also
             // migrates installs from before they existed).
-            plainPrefs.edit {
-                putBoolean(KEY_LOCK_ENABLED, hasPatternIn(prefs))
-                putBoolean(KEY_CONFIGURED_HINT, !prefs.getString(KEY_SERVER_URL, null).isNullOrEmpty())
+            synchronized(lockMirrorWrite) {
+                plainPrefs.edit {
+                    putBoolean(KEY_LOCK_ENABLED, hasPatternIn(prefs))
+                    putBoolean(KEY_CONFIGURED_HINT, !prefs.getString(KEY_SERVER_URL, null).isNullOrEmpty())
+                }
             }
+        }
+    }
+
+    /** Count failed opens in a row; committed, the lock screen's retry kills the process. */
+    private fun recordStoreOpenOutcome(plainPrefs: SharedPreferences, opened: Boolean) {
+        if (opened) {
+            if (plainPrefs.contains(KEY_STORE_OPEN_FAILURES)) {
+                plainPrefs.edit(commit = true) { remove(KEY_STORE_OPEN_FAILURES) }
+            }
+        } else {
+            val failures = plainPrefs.getInt(KEY_STORE_OPEN_FAILURES, 0) + 1
+            plainPrefs.edit(commit = true) { putInt(KEY_STORE_OPEN_FAILURES, failures) }
         }
     }
 
@@ -902,6 +934,74 @@ object LRRAuthManager {
         return if (plain.contains(KEY_LOCK_ENABLED)) plain.getBoolean(KEY_LOCK_ENABLED, false) else null
     }
 
+    /**
+     * Whether an app lock is set, FAILING CLOSED: true whenever a lock
+     * cannot be ruled out (audit 2026-10-06c SEC-01). Reads the plain mirror
+     * ([lockEnabledHint]). Without it — first launch after upgrading from a
+     * version that never wrote it (<= v1.26), when the store is slow or
+     * cannot be opened — it decides from what is readable without the
+     * keystore (see [patternEvidenceWithoutKeystore]) and writes the mirror.
+     * Only a legacy store that is still to be migrated cannot be read that
+     * way: the store gets its bounded chance to open (which writes the
+     * mirror), and if it does not, the answer is "locked". The lock screen
+     * then offers its retry and, once the store failed, its reset, and lets
+     * the user in as soon as the store opens without a pattern.
+     *
+     * False is therefore always a definite answer, which AppLockGate
+     * may keep for the whole foreground session.
+     */
+    @JvmStatic
+    fun isLockSetOrUnknown(): Boolean {
+        val hint = lockEnabledHint()
+        if (hint != null) return hint
+        val evidence = patternEvidenceWithoutKeystore()
+        if (evidence != null) {
+            rememberLockState(evidence)
+            return evidence
+        }
+        awaitInit()
+        return lockEnabledHint() ?: true
+    }
+
+    /**
+     * Whether a pattern is stored, from plaintext only: true / false, or null
+     * when the legacy EncryptedSharedPreferences store (whose key names are
+     * encrypted) has not been migrated yet. The legacy check comes first:
+     * the migration copies into the new store before it marks itself done
+     * and deletes the legacy file, so once the legacy store is seen as gone
+     * the new store's slots read next are complete.
+     */
+    private fun patternEvidenceWithoutKeystore(): Boolean? {
+        val plain = fastPlainPrefs()
+        val context = sAppContext
+        val legacyPending = context != null &&
+            plain?.getBoolean(KEY_SECURE_STORE_MIGRATED, false) != true &&
+            legacyStoreFile(context).exists()
+        // Written with the pattern and removed with it by every version since v1.12.4.
+        val boundFlag = plain?.contains(KEY_PATTERN_KEYSTORE_BOUND) == true
+        // KeystoreSecurePrefs keeps its key names in plaintext.
+        val opened = sPrefs
+        val inStore = (opened != null && hasPatternIn(opened)) ||
+            (context != null && hasPatternIn(context.getSharedPreferences(SECURE_PREF_NAME, Context.MODE_PRIVATE)))
+        return when {
+            boundFlag || inStore -> true
+            legacyPending -> null
+            else -> false
+        }
+    }
+
+    /**
+     * Write the lock mirror decided without the keystore, unless the store's
+     * init (the source of truth) wrote it meanwhile.
+     */
+    private fun rememberLockState(locked: Boolean) {
+        val plain = fastPlainPrefs()
+        if (plain == null) return
+        synchronized(lockMirrorWrite) {
+            if (!plain.contains(KEY_LOCK_ENABLED)) plain.edit { putBoolean(KEY_LOCK_ENABLED, locked) }
+        }
+    }
+
     /** Whether a server URL is set, from the plain mirror; null when unknown. */
     @JvmStatic
     fun configuredHint(): Boolean? {
@@ -933,18 +1033,57 @@ object LRRAuthManager {
     @JvmStatic
     fun isSecureStorageStillStarting(): Boolean = sInitScheduled && !sInitDone
 
+    /** The secure store's state as one consistent reading, see [secureStorageState]. */
+    enum class SecureStorageState {
+        /** The store is open. */
+        AVAILABLE,
+
+        /** Init has not finished (a reader gave up waiting): transient. */
+        STARTING,
+
+        /** Init finished and the store could not be opened. */
+        UNAVAILABLE,
+    }
+
+    /**
+     * [isSecureStorageAvailable] and [isSecureStorageStillStarting] in one
+     * reading. Asked one after the other, an init that finished in between
+     * read as "not available and not starting", i.e. failed (audit 06b N11).
+     * Here the init flag is read first: init publishes the store before it
+     * marks itself done, so once done is seen the store read next is final.
+     */
+    @JvmStatic
+    fun secureStorageState(): SecureStorageState {
+        awaitInit()
+        val starting = sInitScheduled && !sInitDone
+        val prefs = sPrefs
+        return when {
+            prefs != null -> SecureStorageState.AVAILABLE
+            starting -> SecureStorageState.STARTING
+            else -> SecureStorageState.UNAVAILABLE
+        }
+    }
+
+    /** Launches in a row whose secure store failed to open, 0 after one that opened it. */
+    @JvmStatic
+    fun consecutiveStoreOpenFailures(): Int = fastPlainPrefs()?.getInt(KEY_STORE_OPEN_FAILURES, 0) ?: 0
+
     /**
      * Whether the "credentials unavailable" prompts outside the lock screen
      * may offer [resetAppLockAndCredentials] (audit 2026-10-06b REL-01): the
      * store finished opening and failed (never while it is still starting),
-     * and no app lock is set. A store copied from another phone, or one whose
-     * keystore key was lost, never becomes readable again, and a user without
-     * a lock never sees the lock screen's reset. With a lock set, the lock
-     * screen owns the reset.
+     * it also failed on the launch before (a KeyStore error that heals by
+     * the next launch must not cost the user every API key, audit 06c
+     * N-new-1), and no app lock is set. A store copied from another phone,
+     * or one whose keystore key was lost, never becomes readable again, and
+     * a user without a lock never sees the lock screen's reset. With a lock
+     * set, the lock screen owns the reset.
      */
     @JvmStatic
     fun canOfferCredentialReset(): Boolean =
-        !isSecureStorageAvailable() && !isSecureStorageStillStarting() && lockEnabledHint() != true
+        secureStorageState() == SecureStorageState.UNAVAILABLE &&
+            consecutiveStoreOpenFailures() >= RESET_OFFER_MIN_FAILED_LAUNCHES &&
+            !isLockSetOrUnknown()
 
     /**
      * Last resort when the secure store is unreadable: drop the encrypted
@@ -970,6 +1109,7 @@ object LRRAuthManager {
             putBoolean(KEY_LOCK_ENABLED, false)
             putBoolean(KEY_CONFIGURED_HINT, false)
             remove(KEY_WAS_CONFIGURED)
+            remove(KEY_STORE_OPEN_FAILURES)
             remove(KEY_PATTERN_KEYSTORE_BOUND)
             remove(KEY_PATTERN_FAIL_COUNT)
             remove(KEY_PATTERN_LOCKOUT_UNTIL_LEGACY)

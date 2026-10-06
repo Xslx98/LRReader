@@ -118,7 +118,10 @@ object ArchiveProgressOutbox {
 
     /**
      * Try every pending entry once. A network failure keeps the entry for the
-     * next attempt; an HTTP 4xx (archive gone, server refuses progress) drops it.
+     * next attempt; a permanent HTTP 4xx (archive gone, server refuses progress)
+     * drops it. 401/403/408/423/429 keep it: without a stored key (credential
+     * reset, restore onto a new device) the request goes out unauthenticated
+     * and the progress must survive until the key is re-entered.
      *
      * @param fetch reads the archive's server progress
      * @param put sends the 1-indexed page
@@ -138,7 +141,11 @@ object ArchiveProgressOutbox {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: LRRHttpException) {
-                if (e.code in 400..499) removeIfUnchanged(entry)
+                if (e.isPermanentClientError) {
+                    removeIfUnchanged(entry)
+                } else {
+                    Log.e(TAG, "Progress outbox push refused for now; kept for the next attempt", e)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Progress outbox push failed; kept for the next attempt", e)
             }

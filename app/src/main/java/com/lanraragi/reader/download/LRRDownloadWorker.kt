@@ -656,9 +656,12 @@ class LRRDownloadWorker(
         // Same floor as the reader (see ReaderPageCache.MIN_IMAGE_SIZE);
         // internal so LocalArchiveVerifier applies it like the resume skip.
         internal const val MIN_IMAGE_SIZE = ReaderPageCache.MIN_IMAGE_SIZE
-        /** Below this much free space no further page is downloaded (audit C21). */
-        internal const val MIN_FREE_BYTES = 64L * 1024 * 1024
-        private const val MAX_PAGE_SIZE = 200L * 1024 * 1024 // 200MB per page
+        /**
+         * Below this much free space no further page is downloaded (audit C21).
+         * Shared with the reader's hybrid writes through [DurablePageWrite].
+         */
+        internal const val MIN_FREE_BYTES = DurablePageWrite.MIN_FREE_BYTES
+        private const val MAX_PAGE_SIZE = DurablePageWrite.MAX_PAGE_SIZE // 200MB per page
         /** Settle delay after the network returns before re-attempting, so a
          *  rapidly flapping link cannot hot-spin the download→fail→wait→resume
          *  loop (the "never time out" mode has no budget bound otherwise). */

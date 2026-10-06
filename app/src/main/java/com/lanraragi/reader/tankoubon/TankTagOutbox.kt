@@ -147,14 +147,16 @@ object TankTagOutbox {
     }
 
     /**
-     * An HTTP 4xx while listing (archive gone, or a server without the
-     * tankoubon routes) means there is no tank to update: done.
+     * A permanent HTTP 4xx while listing (archive gone, or a server without
+     * the tankoubon routes) means there is no tank to update: done. 401/403
+     * (no key yet), 408, 423 and 429 are rethrown so the edit stays pending
+     * (audit 2026-10-06c REL-02).
      */
     private suspend fun syncAll(entry: Entry, lister: TankLister, tankSync: TankSync): Boolean {
         val tanks = try {
             lister.tanksOf(entry.baseUrl, entry.arcid)
         } catch (e: LRRHttpException) {
-            if (e.code !in 400..499) throw e
+            if (!e.isPermanentClientError) throw e
             emptyList()
         }
         var allDone = true
