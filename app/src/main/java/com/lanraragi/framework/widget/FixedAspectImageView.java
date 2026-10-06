@@ -64,7 +64,7 @@ public class FixedAspectImageView extends ShapeableImageView {
         init(context, attrs, defStyle);
     }
 
-    @SuppressWarnings("ResourceType")
+    @SuppressWarnings("ResourceType") // indices into the sorted local attr arrays, not R.styleable ids
     private void init(Context context, AttributeSet attrs, int defStyle) {
         TypedArray a;
 

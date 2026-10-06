@@ -6,10 +6,12 @@
 #     call that crashed Android 9/10 (STAB-01) while CI stayed green, and a
 #     baselined AnimatorKeep hid icon animations that R8 broke in release.
 #  2. App sources suppress one of the ids (@Suppress / @SuppressLint /
-#     //noinspection / tools:ignore) without an explanatory comment on the
-#     same line (XML: an <!-- --> comment in or just above the element).
-#     Function-wide @Suppress("WrongConstant") with no reason let any new
-#     wrong constant in GalleryActivity.onCreate pass (STAB-03).
+#     Java @SuppressWarnings / //noinspection / tools:ignore) without an
+#     explanatory comment on the same line (XML: an <!-- --> comment in or
+#     just above the element). Function-wide @Suppress("WrongConstant") with
+#     no reason let any new wrong constant in GalleryActivity.onCreate pass
+#     (STAB-03). An annotation split over several lines is read as one, and
+#     a "//" inside a URL is not a comment (2026-10-06f).
 # These ids flag code that throws on some devices or silently stops working
 # in release builds; fix the code (SDK gate, right constant, permission
 # check, typed animator property) or suppress one call site with a reason.
@@ -52,10 +54,29 @@ done
 # Suppressions in shipped sources (unit/instrumented tests are exempt).
 ID_ALT=$(IFS='|'; echo "${IDS[*]}")
 WORD="(^|[^A-Za-z0-9_])($ID_ALT)([^A-Za-z0-9_]|$)"
-MARKER='@Suppress(Lint)?\(|@file:Suppress\(|noinspection|tools:ignore='
+MARKER='@Suppress(Lint|Warnings)?\(|@file:Suppress\(|noinspection|tools:ignore='
+# One "file:line:text" per suppression. A Kotlin/Java annotation whose
+# parentheses do not close on its line is joined with the following lines
+# (up to 10) so ids on continuation lines are seen.
 set +e
-HITS=$(grep -rnE --include='*.kt' --include='*.java' --include='*.xml' \
-  --exclude-dir=test --exclude-dir=androidTest "$MARKER" "$SOURCES" | grep -E "$WORD")
+HITS=$(find "$SOURCES" \( -name test -o -name androidTest \) -prune -o -type f \
+    \( -name '*.kt' -o -name '*.java' -o -name '*.xml' \) -print0 |
+  M="$MARKER" xargs -0 awk '
+    function balanced(s,   o, c) { o = gsub(/\(/, "(", s); c = gsub(/\)/, ")", s); return o <= c }
+    function flush() { if (open_) { print hit ":" buf; open_ = 0 } }
+    FNR == 1 { flush() }
+    open_ {
+      sub(/\r$/, "")
+      buf = buf " " $0
+      if (balanced(buf) || ++n >= 10) flush()
+      next
+    }
+    $0 ~ ENVIRON["M"] {
+      sub(/\r$/, "")
+      buf = $0; hit = FILENAME ":" FNR
+      if (FILENAME ~ /\.xml$/ || balanced(buf)) print hit ":" buf; else { open_ = 1; n = 0 }
+    }
+    END { flush() }' | grep -E "$WORD")
 status=$?
 set -e
 if [ "$status" -gt 1 ]; then
@@ -87,11 +108,12 @@ while IFS= read -r hit; do
       ;;
     *)
       # A //noinspection line is itself a comment: it needs a second one.
+      # "//" right after a ':' is a URL scheme, not a comment.
       if grep -q 'noinspection' <<< "$text"; then
-        if grep -qE 'noinspection.*(//|/\*)' <<< "$text"; then
+        if grep -qE 'noinspection.*([^:]//|/\*)' <<< "$text"; then
           continue
         fi
-      elif grep -qE '//|/\*' <<< "$text"; then
+      elif grep -qE '(^|[^:])//|/\*' <<< "$text"; then
         continue
       fi
       ;;
