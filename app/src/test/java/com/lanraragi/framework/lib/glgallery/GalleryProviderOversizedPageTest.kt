@@ -110,6 +110,31 @@ class GalleryProviderOversizedPageTest {
         assertTrue("a cached page is served without a new decode", provider.requested.isEmpty())
     }
 
+    /**
+     * Audit PERF-07: the budget counts the resident bytes, not width x height x 4.
+     * An RGB_565 page keeps its 2-byte source plus a 4-byte ARGB_8888 upload copy.
+     */
+    @Test
+    fun `non-8888 page is charged its source plus the upload copy`() {
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.RGB_565)
+        val page = Image.decode(BitmapDrawable(Resources.getSystem(), bitmap), hardware = false)!!
+        assertEquals(bitmap.allocationByteCount + 100 * 100 * 4, page.byteCount)
+
+        // A budget that holds an ARGB_8888 page of the same size refuses it.
+        val provider = TestProvider(cacheMaxBytes = 100 * 100 * 4)
+        val listener = RecordingListener()
+        provider.setListener(listener)
+        provider.setGLRoot(immediateGlRoot())
+        provider.notifyPageSucceed(2, page)
+        assertTrue(listener.succeeded.single().second.isUncached)
+        assertFalse(provider.hasCache(2))
+    }
+
+    @Test
+    fun `argb8888 page is charged four bytes per pixel`() {
+        assertEquals(100 * 100 * 4, image(100).byteCount)
+    }
+
     @Test
     fun `oversized page dropped during teardown is released`() {
         val provider = TestProvider(cacheMaxBytes = 16)

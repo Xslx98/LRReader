@@ -23,6 +23,7 @@ import com.lanraragi.reader.Analytics
 import java.io.FileInputStream
 import java.nio.channels.FileChannel
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.max
 import kotlin.math.min
 
 
@@ -34,6 +35,8 @@ class Image private constructor(
     targetHeight: Int = 0,
     /** Extra sampling factor; 2 on the retry after an OutOfMemoryError (audit C11). */
     sampleMultiplier: Int = 1,
+    /** Reader fit for no-target decodes, read once per [decode] call. */
+    pageFit: PageFit = PageFit.FIT,
     val release: () -> Unit? = {},
 ) {
     private val mDrawableRef = AtomicReference<Drawable?>(null)
@@ -53,6 +56,14 @@ class Image private constructor(
     val animated: Boolean
     val width: Int
     val height: Int
+
+    /**
+     * Native bytes this page keeps resident, for the reader cache budget (audit
+     * PERF-07): the decoded bitmap plus the ARGB_8888 upload copy [texImage]
+     * makes for other configs (an RGBA_F16 page holds 8 + 4 bytes per pixel).
+     * Fixed at decode, so the LRU sees the same size on put and on remove.
+     */
+    val byteCount: Int
 
     init {
         source?.let {
@@ -75,17 +86,17 @@ class Image private constructor(
                             // Sadly we must use software memory since we need copy it to tile buffer, fuck glgallery
                             // Idk it will cause how much performance regression
                             // Thumbnail loads pass an explicit target; the reader
-                            // passes none and keeps the screen-based sampling.
+                            // passes none and samples by its scale mode.
                             val sampleSize = computeDecodeSampleSize(
                                 info.size.width, info.size.height,
-                                targetWidth, targetHeight, sampleMultiplier
+                                targetWidth, targetHeight, sampleMultiplier, pageFit
                             )
                             if (Log.isLoggable(TAG, Log.DEBUG)) {
                                 Log.d(
                                     TAG,
                                     "decode ${info.size.width}x${info.size.height}" +
                                         " sample=$sampleSize" +
-                                        " target=${targetWidth}x$targetHeight"
+                                        " target=${targetWidth}x$targetHeight fit=$pageFit"
                                 )
                             }
                             decoder.setTargetSampleSize(sampleSize)
@@ -98,7 +109,7 @@ class Image private constructor(
                         // 重置流位置以便重新读取
                         source.channel.position(0)
                         val bitmap = decodeSampledBitmap(
-                            source, targetWidth, targetHeight, sampleMultiplier
+                            source, targetWidth, targetHeight, sampleMultiplier, pageFit
                         )
                         mDrawableRef.set(bitmap?.toDrawable(Resources.getSystem()))
                     } catch (fallbackException: Exception) {
@@ -109,7 +120,7 @@ class Image private constructor(
                 // Should we lazy decode it?
             } else {
                 val bitmap = decodeSampledBitmap(
-                    source, targetWidth, targetHeight, sampleMultiplier
+                    source, targetWidth, targetHeight, sampleMultiplier, pageFit
                 )
                 mDrawableRef.set(bitmap?.toDrawable(Resources.getSystem()))
             }
@@ -133,6 +144,12 @@ class Image private constructor(
             ?: initDrawable.intrinsicWidth
         height = (initDrawable as? BitmapDrawable)?.bitmap?.height
             ?: initDrawable.intrinsicHeight
+        val bitmap = (initDrawable as? BitmapDrawable)?.bitmap
+        byteCount = if (bitmap == null) {
+            width * height * ARGB_8888_BYTES
+        } else {
+            residentBytes(width, height, bitmap.allocationByteCount, bitmap.config)
+        }
         if (animated) initDrawable.callback = FrameClock()
     }
 
@@ -303,6 +320,14 @@ class Image private constructor(
         /** Bitmaps the native tile upload cannot read directly (it requires RGBA_8888). */
         internal fun needsArgb8888Copy(config: Bitmap.Config?): Boolean = config != Bitmap.Config.ARGB_8888
 
+        private const val ARGB_8888_BYTES = 4
+
+        /** See [byteCount]: [sourceBytes] plus a 4-byte-per-pixel upload copy when one is needed. */
+        internal fun residentBytes(width: Int, height: Int, sourceBytes: Int, config: Bitmap.Config?): Int {
+            val uploadCopy = width * height * ARGB_8888_BYTES
+            return if (needsArgb8888Copy(config)) sourceBytes + uploadCopy else sourceBytes
+        }
+
         internal const val DEFAULT_FRAME_DELAY_MS = 100L
         internal const val MIN_FRAME_DELAY_MS = 16L
         internal const val MAX_FRAME_DELAY_MS = 1000L
@@ -367,11 +392,61 @@ class Image private constructor(
         }
 
         /**
-         * Sample size for one decode: the screen-fit (or thumbnail-target) sample
-         * times [sampleMultiplier] (2 on the OOM retry). Deliberately ignores the
-         * file size (audit 2026-10-06c PERF-01) and has no pixel cap (user ruling,
-         * see [retryOnOutOfMemory]); memory is bounded by the fit itself plus the
-         * OOM retry. Explicit targets win; otherwise the screen size is used.
+         * Effective reader fit for decodes without a target. ReadingSettings
+         * installs a source that follows the reading direction and scale mode;
+         * until then (and in JVM tests) pages are sampled for FIT, the default.
+         */
+        @Volatile
+        @JvmStatic
+        var pageFitSource: () -> PageFit = { PageFit.FIT }
+
+        /**
+         * Reader page sample by scale mode (owner decision 2026-10-06, audits
+         * R1 / PERF-02): the decoded page is never smaller than what [fit]
+         * shows at 1x zoom, in EITHER orientation of the screen, so a rotation
+         * handled in place (decoded pages are kept) never shows a page below
+         * its 1x size.
+         * - FIT: the page fits inside the screen -> the larger ratio; the
+         *   smaller of the portrait and landscape samples.
+         * - FIT_WIDTH (pager fit width, every top-to-bottom page): the width
+         *   ratio against the longer screen side. Tall strips keep full width
+         *   whatever their height (the earlier "strips stay sharp" ruling);
+         *   wide pages are bounded.
+         * - FIT_HEIGHT: the height ratio against the longer screen side.
+         * - ORIGIN (origin / fixed scale): the page is drawn 1:1 from the
+         *   decoded bitmap, so the old rule stays: both decoded sides at or
+         *   above the current screen ([computeSampleSize]).
+         * Pinch zoom above 1x magnifies the decoded bitmap; nothing re-decodes.
+         * A non-positive screen size disables sampling.
+         */
+        @JvmStatic
+        internal fun readerSampleSize(
+            srcWidth: Int,
+            srcHeight: Int,
+            screenW: Int,
+            screenH: Int,
+            fit: PageFit,
+        ): Int {
+            if (screenW <= 0 || screenH <= 0) return 1
+            val longSide = max(screenW, screenH)
+            val sample = when (fit) {
+                PageFit.FIT -> min(
+                    max(srcWidth / screenW, srcHeight / screenH),
+                    max(srcWidth / screenH, srcHeight / screenW)
+                )
+                PageFit.FIT_WIDTH -> srcWidth / longSide
+                PageFit.FIT_HEIGHT -> srcHeight / longSide
+                PageFit.ORIGIN -> computeSampleSize(srcWidth, srcHeight, screenW, screenH)
+            }
+            return sample.coerceAtLeast(1)
+        }
+
+        /**
+         * Sample size for one decode: the thumbnail-target sample, or for the
+         * reader (no target) [readerSampleSize] for [fit], times
+         * [sampleMultiplier] (2 on the OOM retry). Deliberately ignores the file
+         * size (audit 2026-10-06c PERF-01); there is no pixel cap, the fit plus
+         * the OOM retry bound memory.
          */
         @JvmStatic
         internal fun computeDecodeSampleSize(
@@ -380,15 +455,14 @@ class Image private constructor(
             targetWidth: Int,
             targetHeight: Int,
             sampleMultiplier: Int,
-            fallbackWidth: Int = screenWidth,
-            fallbackHeight: Int = screenHeight,
+            fit: PageFit = pageFitSource(),
         ): Int {
-            val fit = if (targetWidth > 0 && targetHeight > 0) {
+            val sample = if (targetWidth > 0 && targetHeight > 0) {
                 computeSampleSize(srcWidth, srcHeight, targetWidth, targetHeight)
             } else {
-                computeSampleSize(srcWidth, srcHeight, fallbackWidth, fallbackHeight)
+                readerSampleSize(srcWidth, srcHeight, screenWidth, screenHeight, fit)
             }
-            return fit * sampleMultiplier.coerceAtLeast(1)
+            return sample * sampleMultiplier.coerceAtLeast(1)
         }
 
         /**
@@ -400,6 +474,7 @@ class Image private constructor(
             targetWidth: Int,
             targetHeight: Int,
             sampleMultiplier: Int,
+            pageFit: PageFit,
         ): Bitmap? {
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeStream(source, null, bounds)
@@ -407,17 +482,20 @@ class Image private constructor(
             val option = BitmapFactory.Options().apply {
                 inSampleSize = computeDecodeSampleSize(
                     bounds.outWidth, bounds.outHeight,
-                    targetWidth, targetHeight, sampleMultiplier
+                    targetWidth, targetHeight, sampleMultiplier, pageFit
                 )
             }
             return BitmapFactory.decodeStream(source, null, option)
         }
 
+        /** Reader page decode: sampled by the reader's scale mode ([pageFitSource]). */
         @JvmStatic
-        fun decode(stream: FileInputStream, hardware: Boolean = true): Image? =
-            retryOnOutOfMemory(rewind = { stream.channel.position(0) }) { multiplier ->
-                Image(stream, hardware = hardware, sampleMultiplier = multiplier)
+        fun decode(stream: FileInputStream, hardware: Boolean = true): Image? {
+            val fit = pageFitSource()
+            return retryOnOutOfMemory(rewind = { stream.channel.position(0) }) { multiplier ->
+                Image(stream, hardware = hardware, sampleMultiplier = multiplier, pageFit = fit)
             }
+        }
 
         /**
          * Decode with a target-size hint: the result is sampled so both
@@ -438,14 +516,18 @@ class Image private constructor(
                     targetWidth = targetWidth,
                     targetHeight = targetHeight,
                     sampleMultiplier = multiplier,
+                    // Conaco loads without a target keep the old screen rule
+                    // (both sides >= the screen), not a reader scale mode.
+                    pageFit = PageFit.ORIGIN,
                 )
             }
         }
 
         /**
          * Runs [attempt] at sample multiplier 1; on OutOfMemoryError rewinds and
-         * retries once at [OOM_RETRY_MULTIPLIER] (audit 2026-10-04 C11, user ruling:
-         * no general pixel cap). A second OOM or any exception yields null, which
+         * retries once at [OOM_RETRY_MULTIPLIER] (audit 2026-10-04 C11: no general
+         * pixel cap; since 2026-10-06 the scale-mode sample of [readerSampleSize]
+         * bounds pages that are large in one dimension). A second OOM or any exception yields null, which
          * callers already show as "decode failed" instead of a spinner forever.
          * [decodeResult] keeps the reason instead.
          */
