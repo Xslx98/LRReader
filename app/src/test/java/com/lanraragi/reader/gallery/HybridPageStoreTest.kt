@@ -1,5 +1,6 @@
 package com.lanraragi.reader.gallery
 
+import com.lanraragi.reader.download.DownloadPageRepair
 import com.lanraragi.reader.download.DurablePageWrite
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -36,6 +37,39 @@ class HybridPageStoreTest {
     fun pageFile_isNullUntilPagePathIsKnown() {
         setUp()
         assertNull(store.pageFile(3, null))
+    }
+
+    /** Audit 2026-10-06e P4-d: a damaged download-dir page goes to the download pipeline. */
+    @Test
+    fun handOverDamagedPage_marksItKeepsItAndReadsTheCacheFromNowOn() {
+        setUp()
+        var repairs = 0
+        val store = HybridPageStore(
+            downloadDir, warmDir, DurablePageWrite(usableBytes = { Long.MAX_VALUE }, syncFile = {}),
+            onRepairRequested = { repairs++ },
+        )
+        val page = File(downloadDir, "0004.png").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+
+        assertTrue(store.handOverDamagedPage(3, page))
+
+        assertTrue(DownloadPageRepair.isMarked(page))
+        assertArrayEquals("not deleted or replaced by the reader", byteArrayOf(1, 2, 3), page.readBytes())
+        assertNull("page 3 now resolves to the reader cache", store.pageFile(3, "arc/003.png"))
+        assertEquals(File(downloadDir, "0005.png"), store.pageFile(4, "arc/004.png"))
+        assertEquals(1, repairs)
+        assertFalse("handed over once per session", store.handOverDamagedPage(3, page))
+        assertEquals(1, repairs)
+    }
+
+    @Test
+    fun handOverDamagedPage_refusesAReaderCachePage() {
+        setUp()
+        val cached = File(warmDir, "page_3").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+
+        assertFalse(store.handOverDamagedPage(3, cached))
+
+        assertFalse(DownloadPageRepair.isMarked(cached))
+        assertEquals(File(downloadDir, "0004.png"), store.pageFile(3, "arc/003.png"))
     }
 
     @Test

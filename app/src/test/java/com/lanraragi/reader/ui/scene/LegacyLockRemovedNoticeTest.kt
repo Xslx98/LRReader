@@ -108,13 +108,56 @@ class LegacyLockRemovedNoticeTest {
         assertNull(ShadowDialog.getLatestDialog())
     }
 
+    /** Audit 06e: MainActivity is recreated on rotation; an unanswered notice must come back. */
+    @Test(timeout = 10_000)
+    fun recreateBeforeTheAnswer_showsTheNoticeAgain_untilAButtonIsTapped() {
+        storeWith("pattern_hash" to "c2hhMjU2")
+        launch()
+
+        LegacyLockRemovedNotice.showIfPending(activity)
+        ShadowLooper.idleMainLooper()
+        val first = ShadowDialog.getLatestDialog() as AlertDialog
+        assertTrue(first.isShowing)
+
+        // Rotation: MainActivity.onCreate2 calls showIfPending again.
+        ShadowDialog.reset()
+        controller.recreate()
+        activity = controller.get()
+        ShadowLooper.idleMainLooper()
+        assertFalse("closed with the old activity", first.isShowing)
+        assertTrue("not answered yet", LRRAuthManager.isLegacyLockRemovedNoticePending())
+        LegacyLockRemovedNotice.showIfPending(activity)
+        ShadowLooper.idleMainLooper()
+        val second = ShadowDialog.getLatestDialog() as AlertDialog
+        assertTrue(second.isShowing)
+
+        second.getButton(DialogInterface.BUTTON_NEGATIVE).performClick()
+        ShadowLooper.idleMainLooper()
+        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+    }
+
+    @Test(timeout = 10_000)
+    fun backAnswersTheNotice_aTapOutsideDoesNot() {
+        storeWith("pattern_hash" to "c2hhMjU2")
+        launch()
+
+        LegacyLockRemovedNotice.showIfPending(activity)
+        ShadowLooper.idleMainLooper()
+        val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+        assertFalse(shadowOf(dialog).isCancelableOnTouchOutside)
+
+        dialog.cancel()
+        ShadowLooper.idleMainLooper()
+        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+    }
+
     @Test(timeout = 10_000)
     fun sha256HashBesideACurrentPattern_staysLocked_noNotice() {
         storeWith("pattern_hash" to "c2hhMjU2", "pattern_hash_v2" to "cGJrZGYy", "pattern_salt" to "c2FsdA==")
         launch()
 
         assertTrue(SecuritySettings.isLockEnabled())
-        assertFalse(LRRAuthManager.consumeLegacyLockRemovedNotice())
+        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
     }
 
     @Test(timeout = 10_000)
@@ -122,7 +165,7 @@ class LegacyLockRemovedNoticeTest {
         storeWith("pattern_hash_v2" to "cGJrZGYy", "pattern_salt" to "c2FsdA==")
         launch()
 
-        assertFalse(LRRAuthManager.consumeLegacyLockRemovedNotice())
+        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
     }
 
     /** Entries as an older version left them in the secure store. */

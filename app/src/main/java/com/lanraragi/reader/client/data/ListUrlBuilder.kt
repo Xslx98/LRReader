@@ -82,7 +82,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
     constructor()
 
-    @Suppress("WrongConstant")
     private constructor(parcel: Parcel) {
         mode = parcel.readInt()
         pageIndex = parcel.readInt()

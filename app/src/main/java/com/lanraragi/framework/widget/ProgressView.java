@@ -26,6 +26,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.FloatProperty;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.Interpolator;
@@ -39,6 +40,54 @@ import java.util.ArrayList;
 
 // Base on android.graphics.drawable.MaterialProgressDrawable in L preview
 public class ProgressView extends View {
+
+    // Typed animator properties: string-named ones made ObjectAnimator find the
+    // setters by reflection, which only worked because R8 happens to keep View
+    // setters (audit 2026-10-06e STAB-02).
+    private static final FloatProperty<ProgressView> TRIM_START = new FloatProperty<ProgressView>("trimStart") {
+        @Override
+        public void setValue(ProgressView view, float value) {
+            view.setTrimStart(value);
+        }
+
+        @Override
+        public Float get(ProgressView view) {
+            return view.getTrimStart();
+        }
+    };
+    private static final FloatProperty<ProgressView> TRIM_END = new FloatProperty<ProgressView>("trimEnd") {
+        @Override
+        public void setValue(ProgressView view, float value) {
+            view.setTrimEnd(value);
+        }
+
+        @Override
+        public Float get(ProgressView view) {
+            return view.getTrimEnd();
+        }
+    };
+    private static final FloatProperty<ProgressView> TRIM_OFFSET = new FloatProperty<ProgressView>("trimOffset") {
+        @Override
+        public void setValue(ProgressView view, float value) {
+            view.setTrimOffset(value);
+        }
+
+        @Override
+        public Float get(ProgressView view) {
+            return view.getTrimOffset();
+        }
+    };
+    private static final FloatProperty<ProgressView> TRIM_ROTATION = new FloatProperty<ProgressView>("trimRotation") {
+        @Override
+        public void setValue(ProgressView view, float value) {
+            view.setTrimRotation(value);
+        }
+
+        @Override
+        public Float get(ProgressView view) {
+            return view.getTrimRotation();
+        }
+    };
 
     private static final Interpolator TRIM_START_INTERPOLATOR;
     private static final Interpolator TRIM_END_INTERPOLATOR;
@@ -97,22 +146,22 @@ public class ProgressView extends View {
     }
 
     private void setupAnimators() {
-        ObjectAnimator trimStart = ObjectAnimator.ofFloat(this, "trimStart", 0.0f, 0.75f);
+        ObjectAnimator trimStart = ObjectAnimator.ofFloat(this, TRIM_START, 0.0f, 0.75f);
         trimStart.setDuration(1333L);
         trimStart.setInterpolator(TRIM_START_INTERPOLATOR);
         trimStart.setRepeatCount(Animation.INFINITE);
 
-        ObjectAnimator trimEnd = ObjectAnimator.ofFloat(this, "trimEnd", 0.0f, 0.75f);
+        ObjectAnimator trimEnd = ObjectAnimator.ofFloat(this, TRIM_END, 0.0f, 0.75f);
         trimEnd.setDuration(1333L);
         trimEnd.setInterpolator(TRIM_END_INTERPOLATOR);
         trimEnd.setRepeatCount(Animation.INFINITE);
 
-        ObjectAnimator trimOffset = ObjectAnimator.ofFloat(this, "trimOffset", 0.0f, 0.25f);
+        ObjectAnimator trimOffset = ObjectAnimator.ofFloat(this, TRIM_OFFSET, 0.0f, 0.25f);
         trimOffset.setDuration(1333L);
         trimOffset.setInterpolator(LINEAR_INTERPOLATOR);
         trimOffset.setRepeatCount(Animation.INFINITE);
 
-        ObjectAnimator trimRotation = ObjectAnimator.ofFloat(this, "trimRotation", 0.0f, 720.0f);
+        ObjectAnimator trimRotation = ObjectAnimator.ofFloat(this, TRIM_ROTATION, 0.0f, 720.0f);
         trimRotation.setDuration(6665L);
         trimRotation.setInterpolator(LINEAR_INTERPOLATOR);
         trimRotation.setRepeatCount(Animation.INFINITE);

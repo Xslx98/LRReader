@@ -84,17 +84,24 @@ internal sealed interface PageLoadResult<out T> {
  * (unsupported format, out of memory twice) fails at once and is kept: a
  * re-download would bring the same bytes back. A damaged page in the
  * download directory ([ownedByDownload], hybrid mode) is never deleted on a
- * decode failure either; the download worker owns that file.
+ * decode failure either; the download worker owns that file. It is handed
+ * to the download side instead ([handOverDamaged], audit 2026-10-06e P4-d),
+ * which also points [pageFile] at the reader cache, so the retry fetches a
+ * fresh copy there.
  *
  * @param pageFile where the page lives now (may move from the reader cache
- *   to the download dir once the page list is known).
+ *   to the download dir once the page list is known, and back to the reader
+ *   cache once a damaged download-dir page was handed over).
  * @param fetch downloads the page into [pageFile] unless it is already there.
+ * @param handOverDamaged gives a damaged download-dir page to the download
+ *   pipeline for a re-download; true when [pageFile] now resolves elsewhere.
  */
 internal class PageLoadLoop<T>(
     private val pageFile: () -> File,
     private val fetch: suspend () -> Unit,
     private val decode: suspend (File) -> DecodeResult<T>,
     private val ownedByDownload: (File) -> Boolean,
+    private val handOverDamaged: (File) -> Boolean,
     private val retryDelay: suspend () -> Unit,
     private val sdkInt: Int = Build.VERSION.SDK_INT,
 ) {
@@ -128,11 +135,15 @@ internal class PageLoadLoop<T>(
             is DecodeResult.Ok -> PageLoadResult.Loaded(decoded.value)
             else -> {
                 val failure = PageFailure.ofDecode(decoded, format, sdkInt)
-                if (failure is PageFailure.Corrupt && !ownedByDownload(file)) {
-                    file.delete()
-                    failOrRetry(isLast, failure)
-                } else {
-                    PageLoadResult.Failed(failure)
+                when {
+                    failure !is PageFailure.Corrupt -> PageLoadResult.Failed(failure)
+                    !ownedByDownload(file) -> {
+                        file.delete()
+                        failOrRetry(isLast, failure)
+                    }
+                    // Not deleted: the download pipeline replaces it.
+                    handOverDamaged(file) -> failOrRetry(isLast, failure)
+                    else -> PageLoadResult.Failed(failure)
                 }
             }
         }

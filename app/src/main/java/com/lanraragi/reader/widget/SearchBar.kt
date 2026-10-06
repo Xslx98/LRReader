@@ -40,6 +40,7 @@ import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
 import android.util.AttributeSet
+import android.util.FloatProperty
 import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -92,6 +93,15 @@ class SearchBar : CardView,
 
         /** Max history rows shown in the suggestion list (triage decision, issue #12). */
         private const val HISTORY_SUGGESTION_LIMIT = 10
+
+        // Typed animator property: a "progress" string made ObjectAnimator find
+        // setProgress by reflection, which only worked because R8 happens to keep
+        // View setters (audit 2026-10-06e STAB-02).
+        private val PROGRESS = object : FloatProperty<SearchBar>("progress") {
+            override fun setValue(bar: SearchBar, value: Float) = bar.setProgress(value)
+
+            override fun get(bar: SearchBar): Float = bar.getProgress()
+        }
     }
 
     private var mState = STATE_NORMAL
@@ -530,7 +540,7 @@ class SearchBar : CardView,
         updateSuggestions()
         // Show suggestions list
         if (animation) {
-            val oa = ObjectAnimator.ofFloat(this, "progress", 1f)
+            val oa = ObjectAnimator.ofFloat(this, PROGRESS, 1f)
             oa.duration = ANIMATE_TIME
             oa.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
             oa.addListener(object : SimpleAnimatorListener() {
@@ -557,7 +567,7 @@ class SearchBar : CardView,
         imm.hideSoftInputFromWindow(this.windowToken, 0)
         // Hide suggestions list
         if (animation) {
-            val oa = ObjectAnimator.ofFloat(this, "progress", 0f)
+            val oa = ObjectAnimator.ofFloat(this, PROGRESS, 0f)
             oa.duration = ANIMATE_TIME
             oa.interpolator = AnimationUtils.SLOW_FAST_INTERPOLATOR
             oa.addListener(object : SimpleAnimatorListener() {
@@ -586,13 +596,11 @@ class SearchBar : CardView,
         }
     }
 
-    @Suppress("unused")
     fun setProgress(progress: Float) {
         mProgress = progress
         invalidate()
     }
 
-    @Suppress("unused")
     fun getProgress(): Float = mProgress
 
     override fun draw(canvas: Canvas) {

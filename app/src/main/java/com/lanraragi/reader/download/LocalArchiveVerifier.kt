@@ -20,7 +20,8 @@ object LocalArchiveVerifier {
      * keeps the dot), but the extension is unknown offline — any non-`.tmp`
      * file whose leading digits parse to the page number counts as that
      * page's candidate. A candidate is valid when it meets [minSizeBytes]
-     * (mirrors the worker's resume skip) and passes [validate].
+     * (mirrors the worker's resume skip), passes [validate] and is not
+     * marked for a re-download ([DownloadPageRepair], audit 2026-10-06e P4-d).
      */
     fun isComplete(
         dir: File?,
@@ -32,14 +33,16 @@ object LocalArchiveVerifier {
         val files = dir.listFiles() ?: return false
         val candidates = HashMap<Int, MutableList<File>>()
         for (f in files) {
-            if (!f.isFile || f.name.endsWith(".tmp")) continue
+            if (!f.isFile || f.name.endsWith(".tmp") || DownloadPageRepair.isMarker(f)) continue
             val dot = f.name.indexOf('.')
             if (dot <= 0) continue
             val page = f.name.substring(0, dot).toIntOrNull() ?: continue
             candidates.getOrPut(page) { mutableListOf() }.add(f)
         }
         return (1..pagecount).all { page ->
-            candidates[page].orEmpty().any { it.length() >= minSizeBytes && validate(it) }
+            candidates[page].orEmpty().any {
+                it.length() >= minSizeBytes && validate(it) && !DownloadPageRepair.isMarked(it)
+            }
         }
     }
 }

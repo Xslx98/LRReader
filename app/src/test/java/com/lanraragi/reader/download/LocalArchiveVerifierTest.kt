@@ -46,6 +46,17 @@ class LocalArchiveVerifierTest {
     }
 
     @Test
+    fun `a page marked for re-download is not complete and the marker is no page`() {
+        val dir = tmp.newFolder()
+        page(dir, "0001.jpg")
+        page(dir, "0002.jpg")
+        assertTrue(DownloadPageRepair.mark(File(dir, "0002.jpg")))
+        assertFalse(LocalArchiveVerifier.isComplete(dir, pagecount = 2))
+        DownloadPageRepair.clear(File(dir, "0002.jpg"))
+        assertTrue(LocalArchiveVerifier.isComplete(dir, pagecount = 2))
+    }
+
+    @Test
     fun `missing middle page fails`() {
         val dir = tmp.newFolder()
         page(dir, "0001.jpg")

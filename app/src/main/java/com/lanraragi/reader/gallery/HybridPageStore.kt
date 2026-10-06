@@ -3,11 +3,13 @@ package com.lanraragi.reader.gallery
 import android.util.Log
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.download.DownloadPageNaming
+import com.lanraragi.reader.download.DownloadPageRepair
 import com.lanraragi.reader.download.DurablePageWrite
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The reader's side of a **hybrid** session: an archive that has a download
@@ -31,12 +33,22 @@ import java.io.IOException
  * @param durable the worker's write guarantees (fsync, free-space floor,
  *   size cap) applied to every page this store lands in [downloadDir]
  *   (audit REL-04); a test seam.
+ * @param onRepairRequested called after a damaged page was handed to the
+ *   download pipeline ([handOverDamagedPage]); production re-queues a
+ *   finished download so the worker fetches the page again.
  */
 internal class HybridPageStore(
     val downloadDir: File,
     private val warmDir: File,
     private val durable: DurablePageWrite = DurablePageWrite.Production,
+    private val onRepairRequested: () -> Unit = {},
 ) {
+
+    /**
+     * Pages whose download-dir copy turned out damaged in this session
+     * ([handOverDamagedPage]); they are read from the reader cache instead.
+     */
+    private val damaged: MutableSet<Int> = ConcurrentHashMap.newKeySet()
 
     /**
      * The write policy for [target]: [durable] when it is a page of the
@@ -48,10 +60,28 @@ internal class HybridPageStore(
 
     /**
      * Where 0-based page [index] lives, or null until the server page path
-     * (which carries the extension) is known.
+     * (which carries the extension) is known — and null for a page handed
+     * over as damaged, which the session then reads from the reader cache.
      */
     fun pageFile(index: Int, pagePath: String?): File? =
-        pagePath?.let { DownloadPageNaming.pageFile(downloadDir, index, it) }
+        if (index in damaged) null else pagePath?.let { DownloadPageNaming.pageFile(downloadDir, index, it) }
+
+    /**
+     * A page of [downloadDir] whose body is damaged (the decoder rejected a
+     * format this device can decode) is not the reader's to delete or
+     * replace (audit 2026-10-06d PERF-01). Hand it to the download pipeline
+     * instead (audit 2026-10-06e P4-d): mark it for a re-download
+     * ([DownloadPageRepair]) and read page [index] from the reader cache for
+     * the rest of this session, so the caller can fetch it again there at
+     * once. Returns false — nothing done — for a file outside [downloadDir]
+     * or a page already handed over.
+     */
+    fun handOverDamagedPage(index: Int, file: File): Boolean {
+        if (file.parentFile != downloadDir || !damaged.add(index)) return false
+        if (!DownloadPageRepair.mark(file)) Log.w(TAG, "Damaged page $index could not be marked for re-download")
+        onRepairRequested()
+        return true
+    }
 
     /**
      * The download directory may not exist yet (READ tapped right after
@@ -85,7 +115,7 @@ internal class HybridPageStore(
      */
     fun adoptWarmCachedPage(index: Int, target: File): Boolean {
         val warm = File(warmDir, "page_$index")
-        if (!isPresent(warm)) return false
+        if (target.parentFile != downloadDir || !isPresent(warm)) return false
         if (!ReaderPageCache.validateImageFile(warm)) return false
         val parent = target.parentFile ?: return false
         val policy = durableWriteFor(target)

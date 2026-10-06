@@ -144,12 +144,7 @@ class SecurityScene : SolidScene(),
         super.onResume()
 
         if (secureStorageAvailable && isFingerprintAuthAvailable()) {
-            val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                .setTitle(getString(R.string.settings_privacy_pattern_protection_title))
-                .setNegativeButtonText(getString(android.R.string.cancel))
-                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-                .build()
-            mBiometricPrompt?.authenticate(promptInfo)
+            startFingerprintUnlock()
         }
 
         // Update lockout UI on resume
@@ -197,10 +192,9 @@ class SecurityScene : SolidScene(),
                 }
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    mFingerprintIcon.setImageResource(R.drawable.fingerprint_success)
-                    mFingerprintIcon.postDelayed({
-                        dismissAfterUnlock()
-                    }, SUCCESS_DELAY_MILLIS)
+                    // Unlocks only through the FingerprintVerified event, once
+                    // the CryptoObject cipher proved the key (SEC-01).
+                    viewModel.onFingerprintAuthenticated(result.cryptoObject?.cipher)
                 }
             })
 
@@ -377,6 +371,38 @@ class SecurityScene : SolidScene(),
             }
 
             is SecurityUiEvent.PatternUnverifiable -> showPatternUnverifiableDialog()
+
+            is SecurityUiEvent.FingerprintUnverified -> fingerprintError(true)
+
+            is SecurityUiEvent.FingerprintVerified -> {
+                mFingerprintIcon.setImageResource(R.drawable.fingerprint_success)
+                mFingerprintIcon.postDelayed({
+                    dismissAfterUnlock()
+                }, SUCCESS_DELAY_MILLIS)
+            }
+        }
+    }
+
+    /**
+     * Fingerprint unlock authenticates with the keystore-bound pattern key
+     * as CryptoObject, never with a bare prompt (audit 2026-10-06e SEC-01).
+     */
+    private fun startFingerprintUnlock() {
+        when (val start = viewModel.startFingerprintUnlock()) {
+            is SecurityViewModel.FingerprintStart.Ready -> {
+                val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                    .setTitle(getString(R.string.settings_privacy_pattern_protection_title))
+                    .setNegativeButtonText(getString(android.R.string.cancel))
+                    .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                    .build()
+                mBiometricPrompt?.authenticate(promptInfo, BiometricPrompt.CryptoObject(start.cipher))
+            }
+            is SecurityViewModel.FingerprintStart.TurnedOff -> {
+                mFingerprintIcon.visibility = View.INVISIBLE
+                ehContext?.let { Toast.makeText(it, start.reason, Toast.LENGTH_LONG).show() }
+            }
+            SecurityViewModel.FingerprintStart.Off,
+            SecurityViewModel.FingerprintStart.Unavailable -> Unit
         }
     }
 

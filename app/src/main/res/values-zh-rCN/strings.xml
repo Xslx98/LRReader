@@ -905,6 +905,7 @@
     <string name="lrr_reset_credentials">重置已保存的凭据</string>
     <string name="lrr_reset_credentials_confirm">清除所有已保存的服务器 API Key？服务器列表、书库、历史、收藏和下载都会保留。应用将重启，之后请重新输入 API Key。</string>
     <string name="security_fingerprint_changed">设备的指纹已变更，指纹解锁已关闭。可在隐私设置中重新开启。</string>
+    <string name="security_fingerprint_not_bound">指纹解锁已关闭：它从未经过指纹确认，无法信任。在隐私设置中重新设置图案即可重新开启。</string>
     <string name="security_pattern_unverifiable_message">设备的指纹已变更，而这个图案的保存方式只能用旧的指纹密钥验证。请重置应用锁以继续：这会清除图案和所有已保存的服务器 API Key，书库和下载不受影响。</string>
     <string name="lrr_boot_load_failed_title">启动错误</string>
     <string name="lrr_boot_load_failed_message">启动时无法加载已保存的服务器配置。当前以无配置状态运行，您可能需要重新配置或重新安装。\n\n详细信息：%1$s</string>

@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.IntProperty
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -483,7 +484,7 @@ class DownloadAdapter(
                 // motion. Always toward the latest TRUE value, never past it
                 // (no extrapolation); regressions (page retry reset) snap.
                 holder.progressGlide = ObjectAnimator
-                    .ofInt(holder.progressBar, "progress", target)
+                    .ofInt(holder.progressBar, PROGRESS_BAR_PROGRESS, target)
                     .apply {
                         duration = BAR_GLIDE_DURATION_MS
                         interpolator = LinearInterpolator()
@@ -741,5 +742,15 @@ class DownloadAdapter(
          * bar is still moving when the next true value lands and retargets it.
          */
         private const val BAR_GLIDE_DURATION_MS = 1700L
+
+        // Typed instead of a "progress" string: scripts/ci/check-dex-animators.sh
+        // forbids string-named (reflective) animators in app code (STAB-02).
+        private val PROGRESS_BAR_PROGRESS = object : IntProperty<ProgressBar>("progress") {
+            override fun setValue(bar: ProgressBar, value: Int) {
+                bar.progress = value
+            }
+
+            override fun get(bar: ProgressBar): Int = bar.progress
+        }
     }
 }

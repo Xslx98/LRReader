@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api.data
 
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import kotlinx.serialization.SerialName
@@ -22,14 +23,20 @@ class LRRSearchResult {
      * thumbnail route (see [LRRArchive.toTankArchive]). A null [tankBaseUrl]
      * drops tanks even when included: without a base URL there is no renderable
      * thumbnail route (mirrors toArchive's null-URL tolerance).
+     *
+     * Archive entries use [sourceProfileId] / [sourceBaseUrl], resolved once
+     * for the whole page rather than per entry by toArchive's defaults (audit
+     * 06e PERF-01: the URL lives in the encrypted store).
      */
     fun toArchiveList(
         includeTanks: Boolean = false,
         tankProfileId: Long = -1L,
         tankBaseUrl: String? = null,
+        sourceProfileId: Long = LRRAuthManager.getActiveProfileId(),
+        sourceBaseUrl: String? = LRRAuthManager.getServerUrl(),
     ): List<Archive> = data.mapNotNull { entry ->
         when {
-            !isTankoubonId(entry.arcid) -> entry.toArchive()
+            !isTankoubonId(entry.arcid) -> entry.toArchive(sourceProfileId, sourceBaseUrl)
             includeTanks && tankBaseUrl != null -> entry.toTankArchive(tankProfileId, tankBaseUrl)
             else -> null
         }
