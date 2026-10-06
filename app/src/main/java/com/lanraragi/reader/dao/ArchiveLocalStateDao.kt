@@ -95,6 +95,14 @@ interface ArchiveLocalStateDao {
      * partial row through here; use [update] or a read-modify-write merge
      * instead. Retained only as a test-seeding convenience for fresh inserts.
      */
+    /** Every row with all subsystems: the backup export (audit C05). */
+    @Query("SELECT * FROM ARCHIVE_LOCAL_STATE")
+    suspend fun getAllRows(): List<ArchiveLocalState>
+
+    /** A row that must not exist yet: a restored archive new to this device (audit C05). */
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertNew(state: ArchiveLocalState)
+
     @Deprecated("REPLACE wipes sibling-subsystem columns; use update() or a merge-write")
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(state: ArchiveLocalState)
