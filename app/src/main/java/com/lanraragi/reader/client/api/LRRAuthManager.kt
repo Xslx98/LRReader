@@ -89,6 +89,10 @@ object LRRAuthManager {
     private const val KEY_ALLOW_CLEARTEXT = "allow_cleartext"
     private const val KEY_PATTERN_SALT = "pattern_salt"
     private const val KEY_PATTERN_HASH_V2 = "pattern_hash_v2"
+    /** Pre-PBKDF2 SHA-256 pattern hash; only removed now. */
+    private const val KEY_PATTERN_HASH_V1 = "pattern_hash"
+    /** Plain-prefs flag: a [KEY_PATTERN_HASH_V1] lock was dropped and the user not told yet. */
+    private const val KEY_LEGACY_LOCK_REMOVED_NOTICE = "legacy_lock_removed_notice"
     private const val PBKDF2_ITERATIONS_V1 = 100_000  // Legacy, kept for migration
     private const val PBKDF2_ITERATIONS = 200_000
     private const val PBKDF2_KEY_BITS = 256
@@ -349,10 +353,15 @@ object LRRAuthManager {
         // Restore active profile (falls back to 0 when sPrefs is null)
         val prefs = sPrefs
         sActiveProfileId = prefs?.getLong(KEY_ACTIVE_PROFILE_ID, 0L) ?: 0L
-        // Migrate away from v1 SHA-256 pattern hash: remove stale key so hasPattern()
-        // correctly returns false and prompts the user to re-enroll with PBKDF2.
-        if (prefs?.contains("pattern_hash") == true) {
-            prefs.edit { remove("pattern_hash") }
+        // Migrate away from v1 SHA-256 pattern hash: it cannot be checked any
+        // more, so the lock is dropped and the app opens unlocked. Tell the
+        // user once ([consumeLegacyLockRemovedNotice], audit 06d SEC-08); the
+        // notice flag is committed first so the drop is never silent.
+        if (prefs?.contains(KEY_PATTERN_HASH_V1) == true) {
+            if (!hasPatternIn(prefs)) {
+                plainPrefs.edit(commit = true) { putBoolean(KEY_LEGACY_LOCK_REMOVED_NOTICE, true) }
+            }
+            prefs.edit { remove(KEY_PATTERN_HASH_V1) }
         }
         // Persist "was_configured" flag when a server URL exists, so we can detect
         // KeyStore corruption vs fresh install on next startup.
@@ -1157,6 +1166,21 @@ object LRRAuthManager {
      */
     @JvmStatic
     fun lockStateWithoutKeystore(): Boolean? = lockEnabledHint() ?: patternEvidenceWithoutKeystore()
+
+    /**
+     * True once after init dropped an app lock saved as the pre-PBKDF2
+     * SHA-256 hash (audit 2026-10-06d SEC-08): it cannot be checked, so the
+     * app now opens unlocked, and the user must be told to set a pattern
+     * again. Clears the flag.
+     */
+    @JvmStatic
+    fun consumeLegacyLockRemovedNotice(): Boolean {
+        awaitInit()
+        val plain = fastPlainPrefs()
+        val pending = plain?.getBoolean(KEY_LEGACY_LOCK_REMOVED_NOTICE, false) == true
+        if (pending) plain?.edit { remove(KEY_LEGACY_LOCK_REMOVED_NOTICE) }
+        return pending
+    }
 
     /**
      * Last resort when the secure store is unreadable: drop the encrypted

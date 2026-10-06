@@ -63,6 +63,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.CredentialResetDialog
+import com.lanraragi.reader.ui.scene.LegacyLockRemovedNotice
 import com.lanraragi.reader.ui.scene.ServerConfigScene
 import com.lanraragi.reader.ui.scene.ReauthPrompt
 import com.lanraragi.reader.ui.scene.ServerListScene
@@ -549,6 +550,9 @@ class MainActivity : StageActivity(),
             CredentialResetDialog.offerResetIfStuck(builder, this, onCancel = openServerList)
                 .show()
         }
+
+        // An old SHA-256 app lock was dropped on upgrade: say so once (SEC-08).
+        LegacyLockRemovedNotice.showIfPending(this)
 
         // Surface non-KeyStore boot failures (e.g., DB corruption, Room migration
         // error). Sticky one-shot — getAndSet(null) so each failure is shown

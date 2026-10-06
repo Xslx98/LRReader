@@ -928,6 +928,8 @@ Esta acción no se puede deshacer.</string>
     <string name="security_storage_unavailable_first_message">No se puede comprobar el bloqueo de la aplicación porque no se pudo abrir el almacenamiento seguro del dispositivo. Suele ser algo temporal: toca Reintentar para reiniciar la aplicación.</string>
     <string name="security_lock_state_unknown_first_message">No se puede comprobar el estado del bloqueo de la aplicación porque no se pudo abrir el almacenamiento seguro del dispositivo. Suele ser algo temporal: toca Reintentar para reiniciar la aplicación.</string>
     <string name="security_lock_state_unknown_message">No se puede comprobar el estado del bloqueo de la aplicación porque el almacenamiento seguro del dispositivo sigue sin poder abrirse. Vuelve a intentarlo o restablece las credenciales guardadas: se eliminarán todas las claves API guardadas y cualquier bloqueo de la aplicación. La biblioteca y las descargas se conservan.</string>
+    <string name="security_legacy_lock_removed_title">Bloqueo de la aplicación eliminado</string>
+    <string name="security_legacy_lock_removed_message">El bloqueo de la aplicación estaba guardado en un formato antiguo que esta versión ya no puede comprobar, así que se eliminó y la aplicación se abrió sin bloqueo. Vuelve a establecer un patrón para mantener la aplicación bloqueada.</string>
     <string name="security_reset_app_lock">Restablecer bloqueo</string>
     <string name="security_reset_app_lock_confirm">¿Restablecer el bloqueo y eliminar todas las claves API guardadas? Tendrás que volver a introducir las credenciales del servidor.</string>
     <string name="lrr_reset_credentials">Restablecer credenciales guardadas</string>

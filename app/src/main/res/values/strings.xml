@@ -952,6 +952,8 @@
     <string name="security_storage_unavailable_first_message">The app lock can\'t be checked because the device\'s secure storage could not be opened. This is often temporary: tap Try again to restart the app.</string>
     <string name="security_lock_state_unknown_first_message">The app lock state can\'t be checked because the device\'s secure storage could not be opened. This is often temporary: tap Try again to restart the app.</string>
     <string name="security_lock_state_unknown_message">The app lock state can\'t be checked because the device\'s secure storage still can\'t be opened. Try again, or reset saved credentials: this removes every saved server API key and any app lock. Your library and downloads are kept.</string>
+    <string name="security_legacy_lock_removed_title">App lock removed</string>
+    <string name="security_legacy_lock_removed_message">The app lock was saved in an old format that this version can no longer check, so it was removed and the app opened unlocked. Set a pattern again to keep the app locked.</string>
     <string name="security_reset_app_lock">Reset app lock</string>
     <string name="security_reset_app_lock_confirm">Reset the app lock and remove every saved API key? You will need to re-enter your server credentials.</string>
     <string name="lrr_reset_credentials">Reset saved credentials</string>

@@ -889,6 +889,8 @@
     <string name="security_storage_unavailable_first_message">無法開啟裝置的安全儲存空間，暫時無法驗證應用程式鎖。這通常是暫時的：點「重試」重新啟動應用程式。</string>
     <string name="security_lock_state_unknown_first_message">無法開啟裝置的安全儲存空間，暫時無法確認應用程式鎖狀態。這通常是暫時的：點「重試」重新啟動應用程式。</string>
     <string name="security_lock_state_unknown_message">裝置的安全儲存空間仍無法開啟，無法確認應用程式鎖狀態。可以重試，或重設已儲存的憑證：這會清除所有已儲存的伺服器 API Key 以及可能存在的應用程式鎖，書庫和下載不受影響。</string>
+    <string name="security_legacy_lock_removed_title">應用程式鎖已移除</string>
+    <string name="security_legacy_lock_removed_message">應用程式鎖以舊格式儲存，此版本已無法驗證，因此已被移除，應用程式在未鎖定狀態下開啟。請重新設定圖案以繼續鎖定應用程式。</string>
     <string name="security_reset_app_lock">重設應用程式鎖</string>
     <string name="security_reset_app_lock_confirm">重設應用程式鎖並清除所有已儲存的 API Key？之後需要重新輸入伺服器憑證。</string>
     <string name="lrr_reset_credentials">重設已儲存的憑證</string>

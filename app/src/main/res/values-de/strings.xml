@@ -832,6 +832,8 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="security_storage_unavailable_first_message">Die App-Sperre kann nicht geprüft werden, weil der sichere Speicher des Geräts nicht geöffnet werden konnte. Das ist oft nur vorübergehend: Tippe auf Erneut versuchen, um die App neu zu starten.</string>
     <string name="security_lock_state_unknown_first_message">Der Status der App-Sperre kann nicht geprüft werden, weil der sichere Speicher des Geräts nicht geöffnet werden konnte. Das ist oft nur vorübergehend: Tippe auf Erneut versuchen, um die App neu zu starten.</string>
     <string name="security_lock_state_unknown_message">Der Status der App-Sperre kann nicht geprüft werden, weil der sichere Speicher des Geräts weiterhin nicht geöffnet werden kann. Versuche es erneut oder setze die gespeicherten Zugangsdaten zurück: Dabei werden alle gespeicherten Server-API-Schlüssel und eine eventuelle App-Sperre entfernt. Bibliothek und Downloads bleiben erhalten.</string>
+    <string name="security_legacy_lock_removed_title">App-Sperre entfernt</string>
+    <string name="security_legacy_lock_removed_message">Die App-Sperre war in einem alten Format gespeichert, das diese Version nicht mehr prüfen kann. Sie wurde daher entfernt und die App ohne Sperre geöffnet. Lege erneut ein Sperrmuster fest, damit die App gesperrt bleibt.</string>
     <string name="security_reset_app_lock">App-Sperre zurücksetzen</string>
     <string name="security_reset_app_lock_confirm">App-Sperre zurücksetzen und alle gespeicherten API-Schlüssel entfernen? Du musst deine Server-Zugangsdaten danach neu eingeben.</string>
     <string name="lrr_reset_credentials">Gespeicherte Zugangsdaten zurücksetzen</string>
