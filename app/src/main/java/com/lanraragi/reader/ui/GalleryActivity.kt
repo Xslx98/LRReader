@@ -392,7 +392,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         WindowCompat.getInsetsController(w, w.decorView).show(WindowInsetsCompat.Type.systemBars())
     }
 
-    @Suppress("WrongConstant")
     override fun onCreate(savedInstanceState: Bundle?) {
         if (ReadingSettings.getReadingFullscreen()) {
             val w = window
@@ -482,7 +481,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         }
     }
 
-    @Suppress("WrongConstant")
     private fun onCreateView(savedInstanceState: Bundle?) {
         val galleryProvider = mGalleryProvider ?: run {
             if (canFinish) finish()

@@ -27,6 +27,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.util.FloatProperty;
 import androidx.annotation.ColorInt;
 import com.lanraragi.reader.R;
 import com.lanraragi.framework.lib.yorozuya.MathUtils;
@@ -35,6 +36,23 @@ import com.lanraragi.framework.lib.yorozuya.MathUtils;
  * A drawable that can draw a "Drawer hamburger" menu or an Arrow and animate between them.
  */
 public class DrawerArrowDrawable extends Drawable {
+
+    /**
+     * Typed animator property: a {@code "progress"} string made ObjectAnimator look
+     * up setProgress by reflection, and R8 renames it in release builds, so the icon
+     * never morphed there (audit 2026-10-06e STAB-02).
+     */
+    public static final FloatProperty<DrawerArrowDrawable> PROGRESS = new FloatProperty<DrawerArrowDrawable>("progress") {
+        @Override
+        public void setValue(DrawerArrowDrawable drawable, float value) {
+            drawable.setProgress(value);
+        }
+
+        @Override
+        public Float get(DrawerArrowDrawable drawable) {
+            return drawable.getProgress();
+        }
+    };
 
     private final Paint mPaint = new Paint();
 
@@ -174,12 +192,10 @@ public class DrawerArrowDrawable extends Drawable {
         return PixelFormat.TRANSLUCENT;
     }
 
-    @SuppressWarnings("unused")
     public float getProgress() {
         return mProgress;
     }
 
-    @SuppressWarnings("unused")
     public void setProgress(float progress) {
         if (progress == 1f) {
             setVerticalMirror(true);
@@ -204,7 +220,7 @@ public class DrawerArrowDrawable extends Drawable {
             if (duration <= 0) {
                 setProgress(endProgress);
             } else {
-                ObjectAnimator oa = ObjectAnimator.ofFloat(this, "progress", endProgress);
+                ObjectAnimator oa = ObjectAnimator.ofFloat(this, PROGRESS, endProgress);
                 oa.setDuration(duration);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                     oa.setAutoCancel(true);

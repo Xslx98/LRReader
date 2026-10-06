@@ -81,9 +81,11 @@ jobs:
           fi
           bash scripts/ci/check-baselines.sh "$BASE"
 
-      - name: No crash-class lint ids in the lint baseline
+      - name: No crash-class lint ids baselined or suppressed without a reason
         # NewApi & co. flag code that throws on some devices; a baselined
         # NewApi hid an Android 9/10 crash (audit 2026-10-06d STAB-11).
+        # Also fails on reasonless source suppressions of the same ids
+        # (audit 2026-10-06e STAB-03).
         run: bash scripts/ci/check-lint-crash-ids.sh
 
       - name: Detekt
@@ -101,6 +103,11 @@ jobs:
         # Line info kept and every class stamped r8-map-id-<pg_map_id>, so a
         # field crash frame names its mapping.txt (audit 2026-10-06d REL-04).
         run: bash scripts/ci/check-dex-retrace.sh
+
+      - name: No string-named property animators in release app code
+        # R8 renamed the drawables' setProgress, so their "progress" animators
+        # did nothing in release only (audit 2026-10-06e STAB-02).
+        run: bash scripts/ci/check-dex-animators.sh
 
       - name: Upload R8 mapping
         # Retraces release crash reports (audit 2026-10-06d REL-04). The R8

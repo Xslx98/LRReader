@@ -218,10 +218,10 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         val newAnimator: ObjectAnimator
         if (sliderPanel === mAutoTransferPanel) {
             sliderPanel.translationX = sliderPanel.width.toFloat()
-            newAnimator = ObjectAnimator.ofFloat(sliderPanel, "translationX", 0.0f)
+            newAnimator = ObjectAnimator.ofFloat(sliderPanel, View.TRANSLATION_X, 0.0f)
         } else {
             sliderPanel.translationY = sliderPanel.height.toFloat()
-            newAnimator = ObjectAnimator.ofFloat(sliderPanel, "translationY", 0.0f)
+            newAnimator = ObjectAnimator.ofFloat(sliderPanel, View.TRANSLATION_Y, 0.0f)
         }
 
         sliderPanel.visibility = View.VISIBLE
@@ -251,9 +251,9 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         }
         val newAnimator: ObjectAnimator
         if (sliderPanel === mAutoTransferPanel) {
-            newAnimator = ObjectAnimator.ofFloat(sliderPanel, "translationX", sliderPanel.width.toFloat())
+            newAnimator = ObjectAnimator.ofFloat(sliderPanel, View.TRANSLATION_X, sliderPanel.width.toFloat())
         } else {
-            newAnimator = ObjectAnimator.ofFloat(sliderPanel, "translationY", sliderPanel.height.toFloat())
+            newAnimator = ObjectAnimator.ofFloat(sliderPanel, View.TRANSLATION_Y, sliderPanel.height.toFloat())
         }
 
         newAnimator.duration = SLIDER_ANIMATION_DURING

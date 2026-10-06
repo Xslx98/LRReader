@@ -114,7 +114,7 @@ public class ViewTransition {
     }
 
     private void startAnimations(final View hiddenView, final View shownView) {
-        ObjectAnimator oa1 = ObjectAnimator.ofFloat(hiddenView, "alpha", 0f);
+        ObjectAnimator oa1 = ObjectAnimator.ofFloat(hiddenView, View.ALPHA, 0f);
         oa1.setDuration(ANIMATE_TIME);
         oa1.addListener(new SimpleAnimatorListener() {
             @Override
@@ -127,7 +127,7 @@ public class ViewTransition {
         mAnimator1 = oa1;
 
         shownView.setVisibility(View.VISIBLE);
-        ObjectAnimator oa2 = ObjectAnimator.ofFloat(shownView, "alpha", 1f);
+        ObjectAnimator oa2 = ObjectAnimator.ofFloat(shownView, View.ALPHA, 1f);
         oa2.setDuration(ANIMATE_TIME);
         oa2.addListener(new SimpleAnimatorListener() {
             @Override
