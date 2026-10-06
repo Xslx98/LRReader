@@ -110,9 +110,12 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- The reader handles rotation, fold/unfold, multi-window resizes and keyboard
+             attach in place (GalleryActivity.onConfigurationChanged): recreating it drops
+             the decoded-page cache and every GL texture (audit PERF-02). -->
         <activity
             android:name="com.lanraragi.reader.ui.GalleryActivity"
-            android:configChanges="screenSize|uiMode"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode"
             android:exported="false"
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.Gallery">
