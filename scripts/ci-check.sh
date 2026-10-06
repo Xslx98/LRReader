@@ -16,6 +16,7 @@ bash scripts/ci/check-baselines.sh "$BASE"
 bash scripts/ci/check-lint-crash-ids.sh
 bash scripts/ci/check-dex-logs.sh
 bash scripts/ci/check-dex-retrace.sh
+bash scripts/ci/check-dex-animators.sh
 bash scripts/ci/check-runcatching.sh
 bash scripts/ci/check-coverage.sh
 echo "ci-check: all gates passed"

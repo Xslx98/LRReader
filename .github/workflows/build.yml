@@ -102,6 +102,11 @@ jobs:
         # field crash frame names its mapping.txt (audit 2026-10-06d REL-04).
         run: bash scripts/ci/check-dex-retrace.sh
 
+      - name: No string-named property animators in release app code
+        # R8 renamed the drawables' setProgress, so their "progress" animators
+        # did nothing in release only (audit 2026-10-06e STAB-02).
+        run: bash scripts/ci/check-dex-animators.sh
+
       - name: Upload R8 mapping
         # Retraces release crash reports (audit 2026-10-06d REL-04). The R8
         # step above wrote build/release-mapping/mapping-<name>-<code>.txt
