@@ -893,6 +893,9 @@
     <string name="security_storage_unavailable_message">设备的安全存储暂时不可用，无法验证应用锁。可以重试，或重置应用锁：这会清除图案和所有已保存的服务器 API Key，书库和下载不受影响。</string>
     <string name="security_storage_retry">重试</string>
     <string name="security_storage_starting_message">设备的安全存储仍在启动，暂时无法验证应用锁。请稍等片刻，然后点「重试」。</string>
+    <string name="security_storage_unavailable_first_message">无法打开设备的安全存储，暂时无法验证应用锁。这通常是暂时的：点「重试」重新启动应用。</string>
+    <string name="security_lock_state_unknown_first_message">无法打开设备的安全存储，暂时无法确认应用锁状态。这通常是暂时的：点「重试」重新启动应用。</string>
+    <string name="security_lock_state_unknown_message">设备的安全存储仍无法打开，无法确认应用锁状态。可以重试，或重置已保存的凭据：这会清除所有已保存的服务器 API Key 以及可能存在的应用锁，书库和下载不受影响。</string>
     <string name="security_reset_app_lock">重置应用锁</string>
     <string name="security_reset_app_lock_confirm">重置应用锁并清除所有已保存的 API Key？之后需要重新输入服务器凭据。</string>
     <string name="lrr_reset_credentials">重置已保存的凭据</string>

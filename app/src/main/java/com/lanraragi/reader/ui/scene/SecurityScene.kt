@@ -25,6 +25,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
@@ -214,7 +215,7 @@ class SecurityScene : SolidScene(),
 
         // Fail closed: with the secure store unreadable the pattern cannot be
         // checked, but the app stays locked. Offer a retry, and a reset only
-        // when the store definitely failed to open.
+        // when the store definitely failed to open on two launches in a row.
         secureStorageAvailable = checkSecureStorage()
 
         return view
@@ -254,19 +255,31 @@ class SecurityScene : SolidScene(),
             .show()
     }
 
+    /**
+     * The store failed to open. Only "Try again" on the first failed launch,
+     * the reset too from the second in a row (audit 2026-10-06d SEC-01, see
+     * [StorageUnavailablePrompt]).
+     */
     private fun showStorageUnavailableDialog() {
         val ctx = ehContext ?: return
-        AlertDialog.Builder(ctx)
+        val prompt = viewModel.unavailablePrompt()
+        val builder = AlertDialog.Builder(ctx)
             .setTitle(R.string.lrr_keystore_failed_title)
-            .setMessage(R.string.security_storage_unavailable_message)
+            .setMessage(prompt.message)
             .setCancelable(false)
             .setPositiveButton(R.string.security_storage_retry) { _, _ ->
                 // A fresh process re-opens the keystore; a transient failure
                 // (system update, biometric re-enrolment) often clears.
                 (ctx.applicationContext as LRReaderApplication).restart()
             }
-            .setNegativeButton(R.string.security_reset_app_lock) { _, _ -> confirmResetAppLock() }
-            .show()
+        val resetButton = prompt.resetButton
+        val resetConfirm = prompt.resetConfirm
+        if (resetButton != null && resetConfirm != null) {
+            builder.setNegativeButton(resetButton) { _, _ ->
+                confirmResetAppLock(message = resetConfirm, button = resetButton)
+            }
+        }
+        builder.show()
     }
 
     private fun showPatternUnverifiableDialog() {
@@ -281,12 +294,16 @@ class SecurityScene : SolidScene(),
             .show()
     }
 
-    private fun confirmResetAppLock(onCancel: () -> Unit = ::showStorageUnavailableDialog) {
+    private fun confirmResetAppLock(
+        onCancel: () -> Unit = ::showStorageUnavailableDialog,
+        @StringRes message: Int = R.string.security_reset_app_lock_confirm,
+        @StringRes button: Int = R.string.security_reset_app_lock,
+    ) {
         val ctx = ehContext ?: return
         AlertDialog.Builder(ctx)
-            .setMessage(R.string.security_reset_app_lock_confirm)
+            .setMessage(message)
             .setCancelable(false)
-            .setPositiveButton(R.string.security_reset_app_lock) { _, _ ->
+            .setPositiveButton(button) { _, _ ->
                 LRRAuthManager.resetAppLockAndCredentials(ctx)
                 AppLockGate.reset()
                 (ctx.applicationContext as LRReaderApplication).restart()

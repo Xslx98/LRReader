@@ -806,6 +806,9 @@
     <string name="security_storage_unavailable_message">端末の安全なストレージが現在利用できないため、アプリロックを確認できません。再試行するか、アプリロックをリセットしてください。リセットするとパターンと保存済みのすべてのサーバー API キーが削除されます。ライブラリとダウンロードは残ります。</string>
     <string name="security_storage_retry">再試行</string>
     <string name="security_storage_starting_message">端末の安全なストレージがまだ起動中のため、アプリロックをまだ確認できません。しばらく待ってから「再試行」をタップしてください。</string>
+    <string name="security_storage_unavailable_first_message">端末の安全なストレージを開けなかったため、アプリロックを確認できません。一時的な問題であることが多いので、「再試行」をタップしてアプリを再起動してください。</string>
+    <string name="security_lock_state_unknown_first_message">端末の安全なストレージを開けなかったため、アプリロックの設定状態を確認できません。一時的な問題であることが多いので、「再試行」をタップしてアプリを再起動してください。</string>
+    <string name="security_lock_state_unknown_message">端末の安全なストレージを引き続き開けないため、アプリロックの設定状態を確認できません。再試行するか、保存済みの認証情報をリセットしてください。リセットすると保存済みのすべてのサーバー API キーと、設定されている場合はアプリロックが削除されます。ライブラリとダウンロードは残ります。</string>
     <string name="security_reset_app_lock">アプリロックをリセット</string>
     <string name="security_reset_app_lock_confirm">アプリロックをリセットし、保存済みのすべての API キーを削除しますか？サーバーの認証情報を再入力する必要があります。</string>
     <string name="lrr_reset_credentials">保存済みの認証情報をリセット</string>

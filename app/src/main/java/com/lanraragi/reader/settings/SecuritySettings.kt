@@ -77,6 +77,16 @@ object SecuritySettings {
     }
 
     /**
+     * Whether a lock is known to be set, as opposed to only "cannot be ruled
+     * out" ([isLockEnabled] is true for both). For the lock screen's wording:
+     * a user who never set a lock must not be told to reset one.
+     */
+    @JvmStatic
+    fun isLockKnownSet(): Boolean =
+        !Settings.getString(KEY_SECURITY, "").isNullOrEmpty() ||
+            LRRAuthManager.lockStateWithoutKeystore() == true
+
+    /**
      * Hash and store [pattern] in EncryptedSharedPreferences.
      * Pass null or empty string to clear the pattern.
      */

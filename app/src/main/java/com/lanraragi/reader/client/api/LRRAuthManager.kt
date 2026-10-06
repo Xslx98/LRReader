@@ -74,10 +74,11 @@ object LRRAuthManager {
     private const val KEY_CONFIGURED_HINT = "server_configured"
 
     /**
-     * Plain-prefs count of consecutive launches whose secure store failed to
-     * open; cleared by the next launch that opens it. A KeyStore error that
+     * Plain-prefs count of consecutive launches that SHOWED a screen while
+     * the secure store failed to open (see [countStoreFailureShown]);
+     * cleared by the next process start that opens it. A KeyStore error that
      * heals on the next launch must not offer the destructive credential
-     * reset (audit 2026-10-06c N-new-1).
+     * reset (audit 2026-10-06c N-new-1, 06d SEC-01).
      */
     private const val KEY_STORE_OPEN_FAILURES = "secure_store_open_failures"
     private const val RESET_OFFER_MIN_FAILED_LAUNCHES = 2
@@ -284,6 +285,7 @@ object LRRAuthManager {
         sInitDone = false
         sInitTimedOut = false
         sMainInitTimedOut = false
+        sStoreFailureCounted = false
         initTimeoutMs = INIT_TIMEOUT_MS
         mainThreadInitTimeoutMs = MAIN_THREAD_INIT_TIMEOUT_MS
         secureStoreCipher = { KeystoreValueCipher(KEYSTORE_ALIAS_SECURE_PREFS) }
@@ -369,15 +371,42 @@ object LRRAuthManager {
         }
     }
 
-    /** Count failed opens in a row; committed, the lock screen's retry kills the process. */
+    /**
+     * A store that opened ends the run of failed launches. A failed open is
+     * not counted here but by [countStoreFailureShown], when a screen shows
+     * it: init also runs for widget updates, download workers and other
+     * background starts, which could otherwise reach the reset threshold
+     * within seconds of a single KeyStore outage (audit 06c N-new-1 note).
+     */
     private fun recordStoreOpenOutcome(plainPrefs: SharedPreferences, opened: Boolean) {
-        if (opened) {
-            if (plainPrefs.contains(KEY_STORE_OPEN_FAILURES)) {
-                plainPrefs.edit(commit = true) { remove(KEY_STORE_OPEN_FAILURES) }
+        if (opened && plainPrefs.contains(KEY_STORE_OPEN_FAILURES)) {
+            plainPrefs.edit(commit = true) { remove(KEY_STORE_OPEN_FAILURES) }
+        }
+    }
+
+    /** Set once this process counted its failed store open, see [countStoreFailureShown]. */
+    @Volatile
+    private var sStoreFailureCounted = false
+    private val storeFailureCountLock = Any()
+
+    /**
+     * Count this process's failed store open once, the first time a screen
+     * asks whether to offer a reset (the lock screen, the "credentials
+     * unavailable" prompts), and return the count. So the count is of
+     * launches that showed the failure to the user — including a start
+     * after the lock screen's "Try again" restart: the user retried and the
+     * store still failed. Call only while the store is UNAVAILABLE.
+     * Committed: the lock screen's retry kills the process right after.
+     */
+    private fun countStoreFailureShown(): Int {
+        val plain = fastPlainPrefs() ?: return 0
+        synchronized(storeFailureCountLock) {
+            if (!sStoreFailureCounted) {
+                sStoreFailureCounted = true
+                val failures = plain.getInt(KEY_STORE_OPEN_FAILURES, 0) + 1
+                plain.edit(commit = true) { putInt(KEY_STORE_OPEN_FAILURES, failures) }
             }
-        } else {
-            val failures = plainPrefs.getInt(KEY_STORE_OPEN_FAILURES, 0) + 1
-            plainPrefs.edit(commit = true) { putInt(KEY_STORE_OPEN_FAILURES, failures) }
+            return plain.getInt(KEY_STORE_OPEN_FAILURES, 0)
         }
     }
 
@@ -1085,7 +1114,10 @@ object LRRAuthManager {
         }
     }
 
-    /** Launches in a row whose secure store failed to open, 0 after one that opened it. */
+    /**
+     * Launches in a row that showed the user a failed store open (see
+     * [countStoreFailureShown]), 0 after a start that opened it.
+     */
     @JvmStatic
     fun consecutiveStoreOpenFailures(): Int = fastPlainPrefs()?.getInt(KEY_STORE_OPEN_FAILURES, 0) ?: 0
 
@@ -1103,8 +1135,28 @@ object LRRAuthManager {
     @JvmStatic
     fun canOfferCredentialReset(): Boolean =
         secureStorageState() == SecureStorageState.UNAVAILABLE &&
-            consecutiveStoreOpenFailures() >= RESET_OFFER_MIN_FAILED_LAUNCHES &&
+            countStoreFailureShown() >= RESET_OFFER_MIN_FAILED_LAUNCHES &&
             !isLockSetOrUnknown()
+
+    /**
+     * Whether the lock screen's "store unavailable" prompt may offer the
+     * reset: the same two-launch rule as [canOfferCredentialReset] (audit
+     * 2026-10-06d SEC-01). On the first failed launch it offers only a
+     * retry, as the failure may heal by itself.
+     */
+    @JvmStatic
+    fun canOfferLockScreenReset(): Boolean =
+        secureStorageState() == SecureStorageState.UNAVAILABLE &&
+            countStoreFailureShown() >= RESET_OFFER_MIN_FAILED_LAUNCHES
+
+    /**
+     * Whether an app lock is set, from what is readable without the
+     * keystore: true / false, or null when that cannot be told (a legacy
+     * store not yet migrated and no mirror). Unlike [isLockSetOrUnknown]
+     * it does not fail closed; for wording only, never for gating.
+     */
+    @JvmStatic
+    fun lockStateWithoutKeystore(): Boolean? = lockEnabledHint() ?: patternEvidenceWithoutKeystore()
 
     /**
      * Last resort when the secure store is unreadable: drop the encrypted

@@ -82,7 +82,10 @@ class SecurityViewModel : ViewModel() {
         /** Init has not finished yet: transient, offer only a retry. */
         STARTING,
 
-        /** Init finished and the store could not be opened: retry or reset. */
+        /**
+         * Init finished and the store could not be opened: retry, plus the
+         * reset from the second failed launch ([unavailablePrompt]).
+         */
         UNAVAILABLE,
     }
 
@@ -91,6 +94,12 @@ class SecurityViewModel : ViewModel() {
         LRRAuthManager.SecureStorageState.STARTING -> StorageState.STARTING
         LRRAuthManager.SecureStorageState.UNAVAILABLE -> StorageState.UNAVAILABLE
     }
+
+    /** The UNAVAILABLE prompt's wording and whether it offers the reset (audit 06d SEC-01). */
+    internal fun unavailablePrompt(): StorageUnavailablePrompt.Text = StorageUnavailablePrompt.of(
+        lockKnownSet = SecuritySettings.isLockKnownSet(),
+        offerReset = LRRAuthManager.canOfferLockScreenReset(),
+    )
 
     private val _uiEvent = MutableSharedFlow<SecurityUiEvent>(extraBufferCapacity = 1)
 

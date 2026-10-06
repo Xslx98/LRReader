@@ -148,11 +148,15 @@ class CredentialResetOfferTest {
         assertResetHidden(showErrorDialog())
     }
 
-    /** One process start whose store fails to open (Robolectric has no AndroidKeyStore). */
+    /**
+     * One launch whose store fails to open (Robolectric has no AndroidKeyStore)
+     * and that shows the error prompt: only such launches count (audit 06d SEC-01).
+     */
     private fun failedLaunch() {
         LRRAuthManager.resetInitGateForTesting()
         LRRAuthManager.scheduleInitialize(activity, scope)
         scheduler.advanceUntilIdle()
+        showErrorDialog().dismiss()
     }
 
     /** One process start whose store opens. */
