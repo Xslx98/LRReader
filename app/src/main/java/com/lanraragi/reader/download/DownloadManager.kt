@@ -259,6 +259,16 @@ class DownloadManager(
         return Collections.unmodifiableList(list)
     }
 
+    /**
+     * Mutate the live download row of [arcid] on the main thread and persist
+     * it in issue order with every other download-row write. Returns false
+     * (nothing changed or written) when the download no longer exists, so a
+     * late detail-page or rating write cannot resurrect a deleted row
+     * (audit 2026-10-06b STAB-01).
+     */
+    fun updateDownloadInfo(arcid: String, mutate: (DownloadInfo) -> Unit): Boolean =
+        repo.updateInfo(arcid, mutate)
+
     // ── Listener methods ──────────────────────────────────────
 
     fun addDownloadInfoListener(listener: DownloadInfoListener) { eventBus.addDownloadInfoListener(listener) }

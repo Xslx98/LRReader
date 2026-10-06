@@ -565,6 +565,26 @@ class DownloadRepository(
         }
     }
 
+    /**
+     * Apply [mutate] to the live row of [arcid] and persist it through the
+     * ordered write queue (audit 2026-10-06b STAB-01). Main thread only, so
+     * the mutation cannot race a scheduler transition and the snapshot is
+     * taken in the same step.
+     *
+     * Returns false and writes nothing when [arcid] has no live row: the
+     * row was deleted (its delete is already queued), and an upsert issued
+     * now would land after that delete and bring the download back on the
+     * next cold start.
+     */
+    fun updateInfo(arcid: String, mutate: (DownloadInfo) -> Unit): Boolean {
+        assertMainThread()
+        val info = allInfoMap[arcid]
+        if (info == null) return false
+        mutate(info)
+        persistInfo(info)
+        return true
+    }
+
     // ═══════════════════════════════════════════════════════════
     // DB persistence helpers
     // ═══════════════════════════════════════════════════════════

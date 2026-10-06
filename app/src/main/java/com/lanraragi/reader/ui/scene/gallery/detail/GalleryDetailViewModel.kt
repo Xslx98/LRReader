@@ -245,7 +245,7 @@ class GalleryDetailViewModel : ViewModel() {
                 // Persist to local DownloadInfo if the archive is in the
                 // download list — keeps the Downloads page rating in sync
                 // without requiring a manual refresh.
-                syncRatingToDownloadInfo(arcid, rating)
+                withContext(Dispatchers.Main) { syncRatingToDownloadInfo(arcid, rating) }
                 AppEventBus.postArchiveRatingChangedEvent(ArchiveRatingChangedEvent(arcid, rating))
                 if (BuildConfig.DEBUG) android.util.Log.d(TAG, "Rating saved: $rating for $arcid")
             } catch (e: Exception) {
@@ -275,18 +275,14 @@ class GalleryDetailViewModel : ViewModel() {
      * present. The download list is the secondary surface for ratings;
      * keeping it consistent without a manual refresh is the whole point
      * of the optimistic-UI strategy.
+     *
+     * Main thread: the live row is mutated there and written through the
+     * download write queue (audit 2026-10-06b STAB-01). Serializing it from
+     * IO could commit a torn row mid-transition, and a direct write landing
+     * after a queued delete re-created the removed download.
      */
-    private suspend fun syncRatingToDownloadInfo(arcid: String, rating: Float) {
-        val dm = ServiceRegistry.dataModule.downloadManager
-        val info = withContext(Dispatchers.Main) {
-            dm.allDownloadInfoList.firstOrNull { it.arcid == arcid }
-        } ?: return
-        info.rating = rating
-        try {
-            ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Failed to persist rating to download DB", e)
-        }
+    private fun syncRatingToDownloadInfo(arcid: String, rating: Float) {
+        ServiceRegistry.dataModule.downloadManager.updateDownloadInfo(arcid) { it.rating = rating }
     }
 
     fun setState(state: Int) {
@@ -661,16 +657,13 @@ class GalleryDetailViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     /**
-     * Persists [info] to the downloads table. Fire-and-forget; runs on [Dispatchers.IO].
+     * Copies the freshly fetched [archive] into its download row, if the
+     * download still exists. Main thread: the live row is mutated there and
+     * persisted through the download write queue, so it cannot be written
+     * mid-transition or after a queued delete (audit 2026-10-06b STAB-01).
      */
-    fun persistDownloadInfo(info: DownloadInfo) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-            } catch (e: Exception) {
-                android.util.Log.e(TAG, "Failed to persist download info", e)
-            }
-        }
+    fun updateDownloadRowFromDetail(archive: Archive) {
+        downloadManager.updateDownloadInfo(archive.arcid) { it.updateInfo(archive) }
     }
 
     /**
