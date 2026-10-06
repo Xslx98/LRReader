@@ -10,6 +10,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRSearchResult
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.lib.yorozuya.MathUtils
@@ -166,8 +167,11 @@ class GallerySearchHelper(private val mCallback: Callback) {
         @JvmStatic
         fun convertLRRSearchResult(result: LRRSearchResult, page: Int): LRRPaginatedResult {
             val galleryInfoList = mutableListOf<Archive>()
-            result.data?.forEach { archive ->
-                galleryInfoList.add(archive.toArchive())
+            // One secure-store read per page, not per entry (audit 06e PERF-01).
+            val profileId = LRRAuthManager.getActiveProfileId()
+            val baseUrl = LRRAuthManager.getServerUrl()
+            result.data.forEach { archive ->
+                galleryInfoList.add(archive.toArchive(profileId, baseUrl))
             }
 
             val pageSize = galleryInfoList.size

@@ -7,6 +7,7 @@ import android.util.Base64
 import java.nio.ByteBuffer
 import java.security.GeneralSecurityException
 import java.security.KeyStore
+import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -28,42 +29,84 @@ interface ValueCipher {
 /**
  * AES-256-GCM with a non-exportable AndroidKeyStore key (no user
  * authentication, random IV per value). Blob = 12-byte IV + ciphertext+tag.
+ *
+ * The key handle is fetched from the KeyStore once and kept (audit 06e
+ * PERF-01): loading the KeyStore and looking the key up on every value cost
+ * several keystore2 binder round trips per secure read. The handle is
+ * dropped by [deleteKey] and whenever a crypto call fails, so a key that
+ * was invalidated or replaced is fetched again — and fails again, exactly
+ * as before — instead of being reused.
+ *
+ * [loadKey] / [removeKey] are seams for tests (Robolectric has no
+ * AndroidKeyStore).
  */
-class KeystoreValueCipher(private val alias: String) : ValueCipher {
+class KeystoreValueCipher internal constructor(
+    private val alias: String,
+    private val loadKey: (String) -> SecretKey,
+    private val removeKey: (String) -> Unit,
+) : ValueCipher {
+
+    constructor(alias: String) : this(alias, { loadOrCreateKeystoreKey(it) }, { deleteKeystoreKey(it) })
+
+    @Volatile
+    private var cachedKey: SecretKey? = null
+    private val keyLock = Any()
 
     private fun key(): SecretKey {
-        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
-        (keyStore.getKey(alias, null) as? SecretKey)?.let { return it }
-        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE)
-        generator.init(
-            KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(KEY_BITS)
-                .build()
-        )
-        return generator.generateKey()
+        cachedKey?.let { return it }
+        synchronized(keyLock) {
+            val current = cachedKey
+            if (current != null) return current
+            val loaded = loadKey(alias)
+            cachedKey = loaded
+            return loaded
+        }
     }
 
-    override fun encrypt(plain: ByteArray): ByteArray {
+    /** Forget [failed] unless another thread already replaced it. */
+    private fun dropKey(failed: SecretKey) {
+        synchronized(keyLock) {
+            if (cachedKey === failed) cachedKey = null
+        }
+    }
+
+    /** Runs [block] with the key; any crypto failure drops the cached handle first. */
+    private inline fun <T> withKey(block: (SecretKey) -> T): T {
+        val key = key()
+        try {
+            return block(key)
+        } catch (e: GeneralSecurityException) {
+            dropKey(key)
+            throw e
+        } catch (e: java.security.ProviderException) {
+            dropKey(key)
+            throw e
+        }
+    }
+
+    override fun encrypt(plain: ByteArray): ByteArray = withKey { key ->
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, key())
+        cipher.init(Cipher.ENCRYPT_MODE, key)
         val iv = cipher.iv
-        return ByteBuffer.allocate(iv.size + plain.size + TAG_BYTES)
+        ByteBuffer.allocate(iv.size + plain.size + TAG_BYTES)
             .put(iv).put(cipher.doFinal(plain)).array()
     }
 
     override fun decrypt(blob: ByteArray): ByteArray {
         if (blob.size < IV_BYTES + TAG_BYTES) throw GeneralSecurityException("Blob too short")
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(TAG_BYTES * 8, blob, 0, IV_BYTES))
-        return cipher.doFinal(blob, IV_BYTES, blob.size - IV_BYTES)
+        return withKey { key ->
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BYTES * 8, blob, 0, IV_BYTES))
+            cipher.doFinal(blob, IV_BYTES, blob.size - IV_BYTES)
+        }
     }
 
     /** Removes the key; every value encrypted with it becomes unreadable. */
     fun deleteKey() {
-        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
-        if (keyStore.containsAlias(alias)) keyStore.deleteEntry(alias)
+        synchronized(keyLock) {
+            cachedKey = null
+            removeKey(alias)
+        }
     }
 
     private companion object {
@@ -72,6 +115,26 @@ class KeystoreValueCipher(private val alias: String) : ValueCipher {
         const val KEY_BITS = 256
         const val IV_BYTES = 12
         const val TAG_BYTES = 16
+
+        fun loadOrCreateKeystoreKey(alias: String): SecretKey {
+            val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
+            val existing = keyStore.getKey(alias, null) as? SecretKey
+            if (existing != null) return existing
+            val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE)
+            generator.init(
+                KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .setKeySize(KEY_BITS)
+                    .build()
+            )
+            return generator.generateKey()
+        }
+
+        fun deleteKeystoreKey(alias: String) {
+            val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
+            if (keyStore.containsAlias(alias)) keyStore.deleteEntry(alias)
+        }
     }
 }
 
@@ -139,16 +202,44 @@ class KeystoreSecurePrefs private constructor(
         null
     }
 
+    /** A decrypted value and the exact stored text it came from. */
+    private class Opened(val stored: String, val type: Char, val payload: String)
+
+    /**
+     * Decrypted values by key (audit 06e PERF-01): the server URL and API key
+     * are read per request and per list entry, and each decrypt is a
+     * keystore2 operation. An entry is served only while the stored text is
+     * still the one it was decrypted from — every write seals with a fresh
+     * IV, so any write, by any path (this editor, the backing file, a reset),
+     * makes the entry miss. Editors also drop the keys they touch.
+     * Failures are not cached.
+     */
+    private val opened = ConcurrentHashMap<String, Opened>()
+
+    /** (type, payload) of [stored], the value of [key]; null when it does not decrypt. */
+    private fun unsealCached(key: String, stored: String): Pair<Char, String>? {
+        val hit = opened[key]
+        if (hit != null && hit.stored == stored) return hit.type to hit.payload
+        val plain = unseal(stored)
+        if (plain != null) opened[key] = Opened(stored, plain.first, plain.second)
+        return plain
+    }
+
+    /** Keys whose decrypted value is held in memory. Tests only. */
+    internal fun cachedKeysForTesting(): Set<String> = opened.keys.toSet()
+
     private fun read(key: String, type: Char): String? {
         val stored = backing.getString(key, null) ?: return null
-        val (t, payload) = unseal(stored) ?: return null
+        val (t, payload) = unsealCached(key, stored) ?: return null
         return if (t == type) payload else null
     }
 
     override fun getAll(): Map<String, *> =
         backing.all.entries
             .filter { (key, stored) -> key != CANARY_KEY && stored is String }
-            .mapNotNull { (key, stored) -> unseal(stored as String)?.let { (type, payload) -> key to decode(type, payload) } }
+            .mapNotNull { (key, stored) ->
+                unsealCached(key, stored as String)?.let { (type, payload) -> key to decode(type, payload) }
+            }
             .toMap()
 
     private fun decode(type: Char, payload: String): Any? = when (type) {
@@ -238,14 +329,22 @@ class KeystoreSecurePrefs private constructor(
             for (key in backing.all.keys) if (key != CANARY_KEY && key !in touched) inner.remove(key)
         }
 
+        /** Drops cached values this editor changed (all of them after clear()). */
+        private fun dropOpened() {
+            if (cleared) opened.clear() else touched.forEach { opened.remove(it) }
+        }
+
         override fun commit(): Boolean {
             applyClear()
-            return inner.commit()
+            val result = inner.commit()
+            dropOpened()
+            return result
         }
 
         override fun apply() {
             applyClear()
             inner.apply()
+            dropOpened()
         }
     }
 }
