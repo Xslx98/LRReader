@@ -585,6 +585,33 @@ class DownloadRepository(
         return true
     }
 
+    /**
+     * Persist a backup import after [importInfoBatch]: the new [labels],
+     * then the rows of [infos] that were actually imported, as one item of
+     * the ordered write queue (audit 2026-10-06b STAB-01). Rows skipped as
+     * duplicates are not written — their stale backup values would
+     * overwrite the live download. Saved labels are published on Main.
+     */
+    fun persistImport(labels: List<String>, infos: List<DownloadInfo>) {
+        assertMainThread()
+        val labelsToSave = labels.toList()
+        val rows = infos.filter { allInfoMap[it.arcid] === it }.map { it.snapshot() }
+        if (labelsToSave.isEmpty() && rows.isEmpty()) return
+        enqueueDbWrite("Failed to persist imported downloads") {
+            val dbRepo = ServiceRegistry.dataModule.downloadDbRepository
+            val saved = labelsToSave.map { dbRepo.addDownloadLabel(it) }
+            dbRepo.putDownloadInfoBatch(rows)
+            if (saved.isNotEmpty()) {
+                runOnMainThread {
+                    for (s in saved) {
+                        labelList.add(s)
+                        s.label?.let { labelSet.add(it) }
+                    }
+                }
+            }
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════
     // DB persistence helpers
     // ═══════════════════════════════════════════════════════════

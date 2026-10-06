@@ -419,20 +419,7 @@ class DownloadManager(
     fun addDownload(downloadInfoList: List<DownloadInfo>) {
         repo.assertMainThread()
         val newLabels = repo.importInfoBatch(downloadInfoList)
-        val infosToSave = ArrayList(downloadInfoList)
-        val labelsToPersist = ArrayList(newLabels)
-        scope.launch {
-            try {
-                val savedLabels = ArrayList<DownloadLabel>(labelsToPersist.size)
-                for (l in labelsToPersist) savedLabels.add(ServiceRegistry.dataModule.downloadDbRepository.addDownloadLabel(l))
-                for (info in infosToSave) ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info)
-                if (savedLabels.isNotEmpty()) {
-                    repo.runOnMainThread { for (s in savedLabels) { repo.labelList.add(s); s.label?.let { repo.labelSet.add(it) } } }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist imported downloads", e)
-            }
-        }
+        repo.persistImport(newLabels, downloadInfoList)
         eventBus.postToMain { eventBus.forEachListener { it.onReload() } }
     }
 
