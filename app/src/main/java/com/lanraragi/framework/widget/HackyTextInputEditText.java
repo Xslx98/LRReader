@@ -28,7 +28,7 @@ import java.lang.reflect.Method;
 // Avoid crash on some Meizu devices
 // https://github.com/android-in-china/Compatibility/issues/11
 // https://stackoverflow.com/questions/51891415/nullpointerexception-on-meizu-devices-in-editor-updatecursorpositionmz/52001305
-@SuppressLint("SoonBlockedPrivateApi")
+@SuppressLint("SoonBlockedPrivateApi") // Meizu-only mHint read, try/catch-guarded; skipped when blocked
 public class HackyTextInputEditText extends TextInputEditText {
 
   private static final boolean HAS_METHOD_UPDATE_CURSOR_POSITION_MZ;

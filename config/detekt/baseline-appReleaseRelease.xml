@@ -27,7 +27,7 @@
     <ID>CyclomaticComplexMethod:DownloadScheduler.kt$DownloadScheduler$internal fun dispatchEvent(event: DownloadEvent)</ID>
     <ID>CyclomaticComplexMethod:DownloadService.kt$DownloadService$override fun onFinish(info: DownloadInfo)</ID>
     <ID>CyclomaticComplexMethod:DownloadService.kt$DownloadService$private fun handleIntent(intent: Intent?)</ID>
-    <ID>CyclomaticComplexMethod:GalleryActivity.kt$GalleryActivity$@Suppress("WrongConstant") private fun onCreateView(savedInstanceState: Bundle?)</ID>
+    <ID>CyclomaticComplexMethod:GalleryActivity.kt$GalleryActivity$private fun onCreateView(savedInstanceState: Bundle?)</ID>
     <ID>CyclomaticComplexMethod:GallerySearchHelper.kt$GallerySearchHelper.Companion$@JvmStatic fun getSuitableTitleForUrlBuilder( resources: Resources, urlBuilder: ListUrlBuilder, appName: Boolean ): String?</ID>
     <ID>CyclomaticComplexMethod:GalleryStateHelper.kt$GalleryStateHelper$fun setState(newState: Int, animation: Boolean)</ID>
     <ID>CyclomaticComplexMethod:LRRApiUtils.kt$@JvmName("friendlyError") fun friendlyError(context: Context, e: Exception): String</ID>
@@ -158,7 +158,7 @@
     <ID>LongMethod:DownloadScheduler.kt$DownloadScheduler$internal fun dispatchEvent(event: DownloadEvent)</ID>
     <ID>LongMethod:DownloadService.kt$DownloadService$override fun onFinish(info: DownloadInfo)</ID>
     <ID>LongMethod:DownloadsScene.kt$DownloadsScene$@Suppress("DEPRECATION") override fun onCreateView3( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle? ): View?</ID>
-    <ID>LongMethod:GalleryActivity.kt$GalleryActivity$@Suppress("WrongConstant") private fun onCreateView(savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:GalleryActivity.kt$GalleryActivity$private fun onCreateView(savedInstanceState: Bundle?)</ID>
     <ID>LongMethod:GalleryDetailScene.kt$GalleryDetailScene$override fun onCreateView2( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle? ): View?</ID>
     <ID>LongMethod:GalleryDrawerHelper.kt$GalleryDrawerHelper$fun showAddQuickSearchDialog( list: List&lt;QuickSearch&gt;, adapter: ArrayAdapter&lt;QuickSearch&gt;, listView: ListView, tip: TextView )</ID>
     <ID>LongMethod:GalleryListScene.kt$GalleryListScene$override fun onCreateView2( inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle? ): View</ID>

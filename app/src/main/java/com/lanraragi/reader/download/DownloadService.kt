@@ -15,7 +15,6 @@
  */
 package com.lanraragi.reader.download
 
-import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -50,7 +49,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.CancellationException
 
-@SuppressLint("UnspecifiedImmutableFlag")
 class DownloadService : Service(), DownloadListener {
     private val TAG = "DownloadService"
     private var mNotifyManager: NotificationManager? = null
