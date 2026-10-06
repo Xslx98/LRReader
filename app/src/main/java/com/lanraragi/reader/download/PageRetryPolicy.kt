@@ -2,7 +2,11 @@ package com.lanraragi.reader.download
 
 import android.system.ErrnoException
 import android.system.OsConstants
+import com.lanraragi.reader.client.api.LRREmptyBodyException
 import com.lanraragi.reader.client.api.LRRHttpException
+import com.lanraragi.reader.client.api.LRRMissingFieldException
+import com.lanraragi.reader.client.api.LRRUnexpectedContentTypeException
+import com.lanraragi.reader.client.api.parseRetryAfterMillis
 import java.io.IOException
 import java.io.InterruptedIOException
 import kotlin.math.min
@@ -103,19 +107,40 @@ object PageRetryPolicy {
                 if (attempt >= TRANSIENT_ATTEMPTS) {
                     Decision.Fail(reason)
                 } else {
-                    val retryAfter = (e as? HttpStatusException)?.retryAfterMillis
+                    val retryAfter = retryAfterOf(e)
                     Decision.Retry(retryAfter?.coerceIn(0, MAX_RETRY_AFTER_MS) ?: backoff(attempt, random))
                 }
 
             DownloadFailureReason.CORRUPT,
             DownloadFailureReason.UNKNOWN ->
-                if (attempt >= OTHER_ATTEMPTS || (e is HttpStatusException)) {
+                if (attempt >= OTHER_ATTEMPTS || e is HttpStatusException || e is LRRHttpException) {
                     // An unexpected 4xx will not change on a retry.
                     Decision.Fail(reason)
                 } else {
                     Decision.Retry(BASE_DELAY_MS)
                 }
         }
+    }
+
+    /**
+     * Retry decision for the archive's page-list request (audit 2026-10-06e
+     * REL-02). Same budget and back-off as a page, except that a malformed
+     * answer (empty body, missing `pages`, not JSON) fails at once: the
+     * server did answer, and asking again returns the same thing. [Decision.Fail]
+     * and [Decision.Abort] both end the archive here — without a list there
+     * is no other page to go on with.
+     */
+    fun decideList(e: Throwable, attempt: Int, random: Random = Random.Default): Decision =
+        if (isMalformedResponse(e)) Decision.Fail(DownloadFailureReason.UNKNOWN) else decide(e, attempt, random)
+
+    private fun isMalformedResponse(e: Throwable): Boolean =
+        e is LRREmptyBodyException || e is LRRMissingFieldException ||
+            e is LRRUnexpectedContentTypeException || e !is IOException
+
+    private fun retryAfterOf(e: Throwable): Long? = when (e) {
+        is HttpStatusException -> e.retryAfterMillis
+        is LRRHttpException -> e.retryAfterMillis
+        else -> null
     }
 
     /** 1 s, 2 s, 4 s … capped at [MAX_BACKOFF_MS], ±20 % jitter. */
@@ -127,8 +152,7 @@ object PageRetryPolicy {
     }
 
     /** `Retry-After` in delta-seconds; the HTTP-date form is ignored. */
-    fun parseRetryAfter(header: String?): Long? =
-        header?.trim()?.toLongOrNull()?.takeIf { it >= 0 }?.let { it * 1000 }
+    fun parseRetryAfter(header: String?): Long? = parseRetryAfterMillis(header)
 
     private fun isNoSpace(e: Throwable): Boolean =
         generateSequence(e) { it.cause }.take(MAX_CAUSE_DEPTH).any { t ->

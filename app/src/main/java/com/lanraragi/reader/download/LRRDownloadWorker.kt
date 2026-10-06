@@ -228,8 +228,12 @@ class LRRDownloadWorker(
         val pageClient = env.pageClient
 
         // Step 1: Extract archive to get page list. Retry across network outages
-        // (bounded by waitBudget); genuine failures (non-network) stop the download.
+        // (bounded by waitBudget); other failures go through the page retry
+        // policy (audit 2026-10-06e REL-02): a 5xx / 429 / timeout / reset is
+        // retried with back-off (honouring Retry-After), a permanent answer
+        // (401/403/404/410, other 4xx, malformed body) stops the download.
         var pagePaths: Array<String>? = null
+        var listAttempt = 0
         while (pagePaths == null && !cancelled) {
             try {
                 pagePaths = LRRArchiveApi.getFileList(
@@ -261,13 +265,19 @@ class LRRDownloadWorker(
                     }
                     // network returned -- loop and retry getFileList
                 } else {
-                    Log.e(TAG, "Failed to extract archive", e)
-                    failureReason = PageRetryPolicy.classify(e)
-                    listener?.run {
-                        onPageFailure(0, "Extract failed: ${e.message}", 0, 0, 0)
-                        onFinish(0, 0, 0)
+                    listAttempt++
+                    Log.e(TAG, "Failed to extract archive (attempt $listAttempt)", e)
+                    when (val decision = PageRetryPolicy.decideList(e, listAttempt)) {
+                        is PageRetryPolicy.Decision.Retry -> delay(decision.delayMillis)
+                        is PageRetryPolicy.Decision.Fail -> {
+                            reportListFailure(decision.reason, e)
+                            return
+                        }
+                        is PageRetryPolicy.Decision.Abort -> {
+                            reportListFailure(decision.reason, e)
+                            return
+                        }
                     }
-                    return
                 }
             }
         }
@@ -424,6 +434,15 @@ class LRRDownloadWorker(
 
         // Step 4: Report finish
         listener?.onFinish(finished.get(), downloaded.get(), total)
+    }
+
+    /** The page list could not be fetched: the archive ends with [reason]. */
+    private fun reportListFailure(reason: DownloadFailureReason, e: Exception) {
+        failureReason = reason
+        listener?.run {
+            onPageFailure(0, "Extract failed: ${e.message}", 0, 0, 0)
+            onFinish(0, 0, 0)
+        }
     }
 
     /**

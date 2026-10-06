@@ -117,9 +117,14 @@ internal val EMPTY_REQUEST_BODY: RequestBody = ByteArray(0).toRequestBody()
  * locked, 400 "Server-side Progress Tracking is disabled"), so callers can
  * surface the server's reason instead of a bare status code. Null when the body
  * was absent or not a JSON error envelope (e.g. an HTML reverse-proxy page).
+ * [retryAfterMillis] is the response's `Retry-After` (delta-seconds form only),
+ * so a retrying caller can honour a 429/503 back-off request.
  */
-class LRRHttpException(val code: Int, val serverError: String? = null) :
-    IOException(serverError ?: "HTTP $code") {
+class LRRHttpException(
+    val code: Int,
+    val serverError: String? = null,
+    val retryAfterMillis: Long? = null,
+) : IOException(serverError ?: "HTTP $code") {
 
     /**
      * True for a 4xx that will fail again however often it is retried (400
@@ -141,6 +146,17 @@ class LRREmptyBodyException : IOException()
 
 /** Thrown when a required field is missing from the server's JSON response. */
 class LRRMissingFieldException(field: String) : IOException("Missing field: $field")
+
+/**
+ * Thrown when a 2xx response is not JSON (e.g. a reverse proxy's HTML login
+ * page). A malformed answer, not a transport error: retrying will not help.
+ */
+class LRRUnexpectedContentTypeException(contentType: String) :
+    IOException("Expected JSON response but got $contentType")
+
+/** `Retry-After` in milliseconds; only the delta-seconds form is understood. */
+internal fun parseRetryAfterMillis(header: String?): Long? =
+    header?.trim()?.toLongOrNull()?.takeIf { it >= 0 }?.let { it * 1000 }
 
 /**
  * Upper bound for a JSON body decoded by [decodeJsonBody]. The largest
@@ -302,11 +318,13 @@ internal fun ensureSuccess(response: Response) {
         // bare status code throws away. Reading the body here is safe: the caller
         // never reads it on the error path because this throws.
         val serverError = runCatching { response.body?.string()?.let(::parseLrrError) }.getOrNull()
-        throw LRRHttpException(response.code, serverError)
+        throw LRRHttpException(
+            response.code, serverError, parseRetryAfterMillis(response.header("Retry-After"))
+        )
     }
     val contentType = response.body?.contentType()
     if (contentType != null && !contentType.subtype.contains("json")) {
-        throw IOException("Expected JSON response but got $contentType")
+        throw LRRUnexpectedContentTypeException(contentType.toString())
     }
 }
 
