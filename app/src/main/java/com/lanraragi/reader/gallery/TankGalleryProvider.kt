@@ -448,6 +448,7 @@ class TankGalleryProvider(
 
     private fun friendlyPageError(e: Exception): String = when (e) {
         is IOException -> GetText.getString(R.string.lrr_error_load_pages_failed)
+        is PageDecodeException -> e.failure.message(appContext)
         else -> GetText.getString(R.string.error_decoding_failed)
     }
 
