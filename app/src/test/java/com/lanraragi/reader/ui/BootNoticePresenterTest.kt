@@ -177,6 +177,35 @@ class BootNoticePresenterTest {
         assertTrue(seenStamps.isEmpty())
     }
 
+    @Test(timeout = 10_000)
+    fun databaseFromANewerVersion_explainsTheDowngrade() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val file = context.getDatabasePath("downgrade-dialog-test.db")
+        file.parentFile!!.mkdirs()
+        android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(file, null).use {
+            it.execSQL("CREATE TABLE t(x)")
+            it.version = 999
+        }
+        val db = com.lanraragi.reader.dao.AppDatabase.build(context, file.name)
+        // The open the boot loader's first query triggers.
+        val failure = try {
+            db.openHelper.writableDatabase
+            null
+        } catch (e: IllegalStateException) {
+            e
+        } finally {
+            db.close()
+        }
+        file.parentFile!!.listFiles().orEmpty().filter { it.name.startsWith(file.name) }.forEach { it.delete() }
+
+        bootError.value = failure
+        startHost()
+
+        val dialog = showingDialogs().single()
+        val message = dialog.findViewById<android.widget.TextView>(android.R.id.message).text.toString()
+        assertEquals(controller.get().getString(R.string.lrr_boot_db_newer_message), message)
+    }
+
     private fun startHost() {
         controller = Robolectric.buildActivity(HostActivity::class.java).setup()
         idle()

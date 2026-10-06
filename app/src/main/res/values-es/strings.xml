@@ -940,6 +940,7 @@ Esta acción no se puede deshacer.</string>
     <string name="security_pattern_unverifiable_message">Las huellas del dispositivo cambiaron y este patrón se guardó de forma que solo puede comprobarse con la clave de huella anterior. Restablece el bloqueo para continuar: se eliminarán el patrón y todas las claves API guardadas. La biblioteca y las descargas se conservan.</string>
     <string name="lrr_boot_load_failed_title">Error de inicio</string>
     <string name="lrr_boot_load_failed_message">No se pudieron cargar tus perfiles de servidor guardados al iniciar. La aplicación se está ejecutando sin un perfil cargado; es posible que necesites reconfigurar o reinstalar.\n\nDetalles: %1$s</string>
+    <string name="lrr_boot_db_newer_message">La base de datos local la guardó una versión más reciente de LR Reader, por lo que esta versión no puede abrirla. El archivo no se ha modificado: vuelve a instalar la versión más reciente para recuperarlo todo o restablece la base de datos para empezar de cero aquí (la base de datos actual se aparta, no se elimina).</string>
     <string name="lrr_boot_load_failed_retry">Reintentar</string>
     <string name="lrr_boot_load_failed_reset_db">Restablecer base de datos</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">¿Restablecer la base de datos?</string>

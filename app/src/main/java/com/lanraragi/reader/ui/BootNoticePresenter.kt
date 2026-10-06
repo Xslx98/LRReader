@@ -6,6 +6,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.lanraragi.reader.R
+import com.lanraragi.reader.dao.DatabaseDowngradeException
 import com.lanraragi.reader.module.AppModule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -93,10 +94,16 @@ class BootNoticePresenter(
             .show()
 
     private fun showBootFailureDialog(err: Throwable): AlertDialog {
-        val detail = err.message ?: err.javaClass.simpleName
+        // A database from a newer app version gets its own explanation: the
+        // file is intact and reinstalling that version brings everything back.
+        val message = if (generateSequence(err) { it.cause }.take(MAX_CAUSE_DEPTH).any { it is DatabaseDowngradeException }) {
+            activity.getString(R.string.lrr_boot_db_newer_message)
+        } else {
+            activity.getString(R.string.lrr_boot_load_failed_message, err.message ?: err.javaClass.simpleName)
+        }
         return AlertDialog.Builder(activity)
             .setTitle(R.string.lrr_boot_load_failed_title)
-            .setMessage(activity.getString(R.string.lrr_boot_load_failed_message, detail))
+            .setMessage(message)
             .setPositiveButton(R.string.lrr_boot_load_failed_retry) { _, _ ->
                 acknowledge(err)
                 onRetry()
@@ -123,5 +130,10 @@ class BootNoticePresenter(
         noticeDialog?.dismiss()
         noticeDialog = null
         shownNotice = null
+    }
+
+    private companion object {
+        /** Cause-chain steps searched for the downgrade marker (guards a cyclic chain). */
+        const val MAX_CAUSE_DEPTH = 8
     }
 }

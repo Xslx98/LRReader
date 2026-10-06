@@ -821,6 +821,7 @@
     <string name="security_pattern_unverifiable_message">端末の指紋が変更され、このパターンは古い指紋キーでしか確認できない方式で保存されています。続けるにはアプリロックをリセットしてください。パターンと保存済みのすべてのサーバー API キーが削除されます。ライブラリとダウンロードは残ります。</string>
     <string name="lrr_boot_load_failed_title">起動エラー</string>
     <string name="lrr_boot_load_failed_message">起動時に保存済みのサーバープロファイルを読み込めませんでした。プロファイルが読み込まれていない状態で実行中です。再設定または再インストールが必要かもしれません。\n\n詳細：%1$s</string>
+    <string name="lrr_boot_db_newer_message">ローカルデータベースは新しいバージョンの LR Reader で保存されたため、このバージョンでは開けません。ファイルは変更されていません。新しいバージョンを再インストールするとすべて元に戻ります。または、データベースをリセットしてここで空の状態から始めることもできます(現在のデータベースは削除されず、別に保管されます)。</string>
     <string name="lrr_boot_load_failed_retry">再試行</string>
     <string name="lrr_boot_load_failed_reset_db">データベースをリセット</string>
     <string name="lrr_boot_load_failed_reset_db_confirm_title">データベースをリセットしますか？</string>

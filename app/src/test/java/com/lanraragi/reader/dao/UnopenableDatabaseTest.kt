@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -61,6 +62,23 @@ class UnopenableDatabaseTest {
         val repo = DownloadDbRepository(db.archiveLocalStateDao(), db.downloadDao(), db)
         assertEndsEmpty(repo.observeDownloads())
         assertEndsEmpty(repo.observeTankGroups())
+    }
+
+    @Test(timeout = 20_000)
+    fun query_failsAsADowngrade_andLeavesTheFileAlone() = runTest {
+        val failure = try {
+            db.miscDao().getAllServerProfiles()
+            null
+        } catch (e: IllegalStateException) {
+            e
+        }
+        val chain = generateSequence(failure as Throwable?) { it.cause }.take(8).toList()
+        val downgrade = chain.filterIsInstance<DatabaseDowngradeException>().singleOrNull()
+        assertNotNull("expected DatabaseDowngradeException in $chain", downgrade)
+        assertEquals(VERSION_FROM_THE_FUTURE, downgrade!!.onDiskVersion)
+        // Not quarantined: reinstalling the newer version must find every row.
+        assertTrue(dir.listFiles().orEmpty().none { it.name.startsWith(NAME + DatabaseQuarantine.MARKER) })
+        assertEquals(VERSION_FROM_THE_FUTURE, versionOnDisk())
     }
 
     private suspend fun <T> assertEndsEmpty(flow: Flow<T>) {

@@ -80,7 +80,8 @@ object DatabaseQuarantine {
 
 /**
  * Open-helper factory whose callback quarantines a corrupt database instead
- * of letting the platform default delete it. Everything else is delegated.
+ * of letting the platform default delete it, and reports a database from a
+ * newer app version as [DatabaseDowngradeException]. Everything else is delegated.
  */
 class QuarantiningOpenHelperFactory(
     private val delegate: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory()
@@ -103,8 +104,19 @@ class QuarantiningOpenHelperFactory(
         override fun onCreate(db: SupportSQLiteDatabase) = delegate.onCreate(db)
         override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) =
             delegate.onUpgrade(db, oldVersion, newVersion)
-        override fun onDowngrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) =
-            delegate.onDowngrade(db, oldVersion, newVersion)
+        /**
+         * A file written by a newer app version: Room has no downgrade path and
+         * throws. Kept as a typed failure, never quarantined here - the file is
+         * intact, and reinstalling the newer version opens it with every row.
+         * The boot-failure dialog explains it and offers the (quarantining) reset.
+         */
+        override fun onDowngrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+            try {
+                delegate.onDowngrade(db, oldVersion, newVersion)
+            } catch (e: IllegalStateException) {
+                throw DatabaseDowngradeException(oldVersion, newVersion, e)
+            }
+        }
         override fun onOpen(db: SupportSQLiteDatabase) = delegate.onOpen(db)
 
         override fun onCorruption(db: SupportSQLiteDatabase) {
@@ -127,3 +139,15 @@ class QuarantiningOpenHelperFactory(
         const val TAG = "DatabaseQuarantine"
     }
 }
+
+/**
+ * The database on disk was written by a newer app version (schema version
+ * [onDiskVersion] above [supportedVersion]), so this build cannot open it
+ * (audit 2026-10-06d STAB-02 AVD smoke). Lets the boot-failure dialog say so
+ * instead of showing Room's "migration required" text.
+ */
+class DatabaseDowngradeException(
+    val onDiskVersion: Int,
+    val supportedVersion: Int,
+    cause: Throwable,
+) : IllegalStateException("database version $onDiskVersion is newer than supported $supportedVersion", cause)
