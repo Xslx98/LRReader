@@ -1049,8 +1049,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     ) {
         val gv = mGalleryView ?: return
 
-        val oldReadingFullscreen = ReadingSettings.getReadingFullscreen()
-
         requestedOrientation = resolveOrientation(screenRotation)
         gv.layoutMode = layoutMode
         gv.setScaleMode(scaleMode)
@@ -1079,11 +1077,14 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mSliderController.layoutMode = layoutMode
         mInputHandler.layoutMode = layoutMode
 
-        if (oldReadingFullscreen != readingFullscreen) {
-            recreate()
-        }
-
         refreshStampsVisibility()
+    }
+
+    override fun onReadingFullscreenChanged() {
+        // The fullscreen window flags and SystemUiHelper are set up in
+        // onCreate only. An explicit recreate() is not suppressed by the
+        // manifest configChanges, which cover system config changes alone.
+        recreate()
     }
 
     // ======== Screen lightness ========
