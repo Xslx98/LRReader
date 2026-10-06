@@ -57,6 +57,14 @@ class Image private constructor(
     val width: Int
     val height: Int
 
+    /**
+     * Native bytes this page keeps resident, for the reader cache budget (audit
+     * PERF-07): the decoded bitmap plus the ARGB_8888 upload copy [texImage]
+     * makes for other configs (an RGBA_F16 page holds 8 + 4 bytes per pixel).
+     * Fixed at decode, so the LRU sees the same size on put and on remove.
+     */
+    val byteCount: Int
+
     init {
         source?.let {
             val fileSize = source.channel.size()
@@ -136,6 +144,12 @@ class Image private constructor(
             ?: initDrawable.intrinsicWidth
         height = (initDrawable as? BitmapDrawable)?.bitmap?.height
             ?: initDrawable.intrinsicHeight
+        val bitmap = (initDrawable as? BitmapDrawable)?.bitmap
+        byteCount = if (bitmap == null) {
+            width * height * ARGB_8888_BYTES
+        } else {
+            residentBytes(width, height, bitmap.allocationByteCount, bitmap.config)
+        }
         if (animated) initDrawable.callback = FrameClock()
     }
 
@@ -305,6 +319,14 @@ class Image private constructor(
 
         /** Bitmaps the native tile upload cannot read directly (it requires RGBA_8888). */
         internal fun needsArgb8888Copy(config: Bitmap.Config?): Boolean = config != Bitmap.Config.ARGB_8888
+
+        private const val ARGB_8888_BYTES = 4
+
+        /** See [byteCount]: [sourceBytes] plus a 4-byte-per-pixel upload copy when one is needed. */
+        internal fun residentBytes(width: Int, height: Int, sourceBytes: Int, config: Bitmap.Config?): Int {
+            val uploadCopy = width * height * ARGB_8888_BYTES
+            return if (needsArgb8888Copy(config)) sourceBytes + uploadCopy else sourceBytes
+        }
 
         internal const val DEFAULT_FRAME_DELAY_MS = 100L
         internal const val MIN_FRAME_DELAY_MS = 16L
