@@ -85,16 +85,18 @@ internal class DetailActionHandler(
                     scene.requestRefresh()
                 }
                 R.id.action_lrr_delete -> {
+                    val activity = scene.activity2
                     DeleteArchiveHelper.show(
-                        scene.activity2,
+                        activity,
                         viewModel.getEffectiveArchive(),
                         viewModel.getSourceProfileId(),
                     ) { title ->
-                        scene.showTip(
-                            scene.getString(R.string.lrr_delete_success, title),
-                            BaseScene.LENGTH_LONG
-                        )
-                        scene.onBackPressed()
+                        // show() returns early without an activity, so it is set here.
+                        if (activity != null) {
+                            deliverDeleteSuccess(scene, title, activity) {
+                                activity.showTip(it, BaseScene.LENGTH_LONG)
+                            }
+                        }
                     }
                 }
             }
@@ -246,5 +248,31 @@ internal class DetailActionHandler(
 
     companion object {
         private const val TAG = "DetailActionHandler"
+
+        /**
+         * Lands a finished server delete (audit 2026-10-06 N4). The DELETE runs
+         * on the app scope, so the user may have left the detail scene before it
+         * returns: a removed scene has no context (getString/showTip would throw
+         * IllegalStateException on Main) and must not finish anything. Only a
+         * scene still added shows the tip and closes itself; otherwise the
+         * success is reported through the (still alive) host activity.
+         */
+        @JvmStatic
+        internal fun deliverDeleteSuccess(
+            scene: BaseScene,
+            title: String,
+            hostContext: Context,
+            hostTip: (CharSequence) -> Unit,
+        ) {
+            if (scene.isAdded) {
+                scene.showTip(
+                    scene.getString(R.string.lrr_delete_success, title),
+                    BaseScene.LENGTH_LONG
+                )
+                scene.onBackPressed()
+            } else {
+                hostTip(hostContext.getString(R.string.lrr_delete_success, title))
+            }
+        }
     }
 }
