@@ -21,7 +21,7 @@ import org.junit.Test
  * 3 prefetch rows ≈ 18 distinct pages, before any scroll-back. If the
  * LRU is smaller than this it evicts tiles that are still on screen and
  * they flicker on rebind. These tests pin the budget above the working
- * set on every heap tier so a future shrink fails CI.
+ * set on every RAM tier so a future shrink fails CI.
  */
 class PageThumbnailCacheBudgetTest {
 
@@ -32,29 +32,36 @@ class PageThumbnailCacheBudgetTest {
     private val worstCaseEntryBytes = 700L * 1024
 
     @Test
-    fun budget_lowHeapStillExceedsWorkingSet() {
-        val low = PageThumbnailCache.budgetBytesFor(384L * 1024 * 1024)
+    fun budget_lowRamTierStillExceedsWorkingSet() {
+        val low = PageThumbnailCache.budgetBytesFor(2048L * 1024 * 1024, lowRam = false)
         val entries = low / worstCaseEntryBytes
         assertTrue(
-            "low-heap budget ($low bytes ≈ $entries entries) must hold the $workingSetEntries-page working set",
+            "low-tier budget ($low bytes ≈ $entries entries) must hold the $workingSetEntries-page working set",
             entries > workingSetEntries,
         )
     }
 
     @Test
     fun budget_growsWithHeap() {
-        val low = PageThumbnailCache.budgetBytesFor(384L * 1024 * 1024)
-        val mid = PageThumbnailCache.budgetBytesFor(768L * 1024 * 1024)
-        val high = PageThumbnailCache.budgetBytesFor(2048L * 1024 * 1024)
-        assertTrue("mid heap budget should exceed low", mid > low)
-        assertTrue("high heap budget should exceed mid", high > mid)
+        val low = PageThumbnailCache.budgetBytesFor(2048L * 1024 * 1024, lowRam = false)
+        val mid = PageThumbnailCache.budgetBytesFor(4096L * 1024 * 1024, lowRam = false)
+        val high = PageThumbnailCache.budgetBytesFor(8192L * 1024 * 1024, lowRam = false)
+        assertTrue("mid RAM budget should exceed low", mid > low)
+        assertTrue("high RAM budget should exceed mid", high > mid)
+    }
+
+    @Test
+    fun budget_lowRamDeviceGetsTheLowTierAndStillHoldsTheWorkingSet() {
+        val lowRam = PageThumbnailCache.budgetBytesFor(8192L * 1024 * 1024, lowRam = true)
+        assertTrue(lowRam == PageThumbnailCache.budgetBytesFor(2048L * 1024 * 1024, lowRam = false))
+        assertTrue(lowRam / worstCaseEntryBytes > workingSetEntries)
     }
 
     @Test
     fun budget_isClampedOnHugeHeap() {
-        // A 6 GB heap must not hand the page-thumb grid an unbounded
+        // A 24 GB device must not hand the page-thumb grid an unbounded
         // cache; it is a secondary surface behind the cover-image cache.
-        val huge = PageThumbnailCache.budgetBytesFor(6L * 1024 * 1024 * 1024)
-        assertTrue("huge-heap budget must stay capped", huge <= 64L * 1024 * 1024)
+        val huge = PageThumbnailCache.budgetBytesFor(24L * 1024 * 1024 * 1024, lowRam = false)
+        assertTrue("huge-RAM budget must stay capped", huge <= 64L * 1024 * 1024)
     }
 }

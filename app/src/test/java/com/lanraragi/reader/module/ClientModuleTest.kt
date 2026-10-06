@@ -5,7 +5,7 @@ import org.junit.Test
 
 /**
  * Unit tests for Conaco's cache sizing in [ClientModule]: the thumbnail memory
- * cache (total RAM) and the disk cache tiers (per-app heap limit).
+ * cache and the disk cache tiers, both from total RAM.
  */
 class ClientModuleTest {
 
@@ -26,35 +26,28 @@ class ClientModuleTest {
         assertEquals(16 * MB, ClientModule.thumbMemoryCacheSize(1024 * MB, lowRam = true))
     }
 
-    // --- Disk cache tiers: 80 / 160 / 320 MB ---
+    // --- Disk cache tiers on total RAM: 80 / 160 / 320 MB (audit C12/C19) ---
 
     @Test
-    fun tieredDiskCacheSize_256MB_returns80MB() {
-        assertEquals(80 * MB, ClientModule.tieredDiskCacheSize(256 * MB))
+    fun tieredDiskCacheSize_belowThreeGb_returns80MB() {
+        assertEquals(80 * MB, ClientModule.tieredDiskCacheSize(2048 * MB, lowRam = false))
+        assertEquals(80 * MB, ClientModule.tieredDiskCacheSize(3071 * MB, lowRam = false))
     }
 
     @Test
-    fun tieredDiskCacheSize_511MB_returns80MB() {
-        assertEquals(80 * MB, ClientModule.tieredDiskCacheSize(511 * MB))
+    fun tieredDiskCacheSize_threeToSixGb_returns160MB() {
+        assertEquals(160 * MB, ClientModule.tieredDiskCacheSize(3072 * MB, lowRam = false))
+        assertEquals(160 * MB, ClientModule.tieredDiskCacheSize(6143 * MB, lowRam = false))
     }
 
     @Test
-    fun tieredDiskCacheSize_512MB_returns160MB() {
-        assertEquals(160 * MB, ClientModule.tieredDiskCacheSize(512 * MB))
+    fun tieredDiskCacheSize_sixGbAndUp_returns320MB() {
+        assertEquals(320 * MB, ClientModule.tieredDiskCacheSize(6144 * MB, lowRam = false))
+        assertEquals(320 * MB, ClientModule.tieredDiskCacheSize(16384 * MB, lowRam = false))
     }
 
     @Test
-    fun tieredDiskCacheSize_999MB_returns160MB() {
-        assertEquals(160 * MB, ClientModule.tieredDiskCacheSize(999 * MB))
-    }
-
-    @Test
-    fun tieredDiskCacheSize_1GB_returns320MB() {
-        assertEquals(320 * MB, ClientModule.tieredDiskCacheSize(1024 * MB))
-    }
-
-    @Test
-    fun tieredDiskCacheSize_8GB_returns320MB() {
-        assertEquals(320 * MB, ClientModule.tieredDiskCacheSize(8192 * MB))
+    fun tieredDiskCacheSize_lowRamDevice_returns80MB() {
+        assertEquals(80 * MB, ClientModule.tieredDiskCacheSize(8192 * MB, lowRam = true))
     }
 }

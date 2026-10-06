@@ -72,12 +72,12 @@ object PageThumbnailCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable
 
     private const val MB: Long = 1024L * 1024
 
-    // Heap tiers (per-app limit from Runtime.maxMemory()), matching the
-    // thresholds the cover-image cache uses in ClientModule so the two
-    // caches scale together rather than fighting for the same heap.
-    private const val TIER_LOW: Long = 512 * MB
-    private const val TIER_MID: Long = 1024 * MB
-    private const val TIER_HIGH: Long = 3072 * MB
+    // Total-RAM tiers (audit 2026-10-04 C12/C19): the bitmaps live in
+    // native memory, so the Java heap limit (and largeHeap, now removed)
+    // never bounded this cache. The first two match ClientModule's disk tiers.
+    private const val TIER_LOW: Long = 3072 * MB
+    private const val TIER_MID: Long = 6144 * MB
+    private const val TIER_HIGH: Long = 12288 * MB
 
     // Page-thumb budgets per tier. Smaller than the cover cache (this is
     // a secondary surface) but every tier clears the ~18-page scroll
@@ -89,23 +89,26 @@ object PageThumbnailCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable
     private const val BUDGET_ULTRA: Long = 48 * MB
 
     /**
-     * Resolve the cache byte budget for the given per-app heap limit.
+     * Resolve the cache byte budget for the device's total RAM.
      * Tiered so low-RAM devices stay conservative while still holding
      * the grid's scroll working set:
-     *  - `< 512 MB` heap → 16 MB
-     *  - `< 1 GB`  heap → 24 MB
-     *  - `< 3 GB`  heap → 40 MB
-     *  - `>= 3 GB` heap → 48 MB
+     *  - low-RAM device or `< 3 GB` → 16 MB
+     *  - `< 6 GB`  → 24 MB
+     *  - `< 12 GB` → 40 MB
+     *  - `>= 12 GB` → 48 MB
      */
-    internal fun budgetBytesFor(maxMemoryBytes: Long): Int = when {
-        maxMemoryBytes < TIER_LOW -> BUDGET_LOW
-        maxMemoryBytes < TIER_MID -> BUDGET_MID
-        maxMemoryBytes < TIER_HIGH -> BUDGET_HIGH
+    internal fun budgetBytesFor(totalMemBytes: Long, lowRam: Boolean): Int = when {
+        lowRam || totalMemBytes < TIER_LOW -> BUDGET_LOW
+        totalMemBytes < TIER_MID -> BUDGET_MID
+        totalMemBytes < TIER_HIGH -> BUDGET_HIGH
         else -> BUDGET_ULTRA
     }.toInt()
 
     private val lru = object : LruCache<String, Bitmap>(
-        budgetBytesFor(Runtime.getRuntime().maxMemory())
+        budgetBytesFor(
+            com.lanraragi.framework.lib.yorozuya.OSUtils.getTotalMemory(),
+            com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
+        )
     ) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
