@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.util.size
@@ -28,6 +29,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.mapper.toArchive
@@ -35,6 +37,7 @@ import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
@@ -45,7 +48,13 @@ import com.lanraragi.framework.widget.FabLayout
  * Manages batch/bulk operations (start, stop, delete, move, random, drag toggle)
  * for the secondary FAB buttons. Extracted from DownloadsScene (W11-3).
  */
-internal class DownloadBatchOpsHelper(private val callback: Callback) {
+internal class DownloadBatchOpsHelper(
+    private val callback: Callback,
+    /** Builds the reader intent off Main (local copy vs streaming); a seam for tests. */
+    private val readIntentBuilder: suspend (Context, Archive, Boolean) -> Intent = { context, archive, complete ->
+        GalleryOpenHelper.buildReadIntent(context, archive, knownComplete = complete)
+    },
+) {
 
     interface Callback {
         val ehContext: Context?
@@ -54,6 +63,7 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
         val mList: List<DownloadInfo>?
         val mRecyclerView: EasyRecyclerView?
         val mFabLayout: FabLayout?
+        val viewLifecycleOwner: LifecycleOwner
         fun positionInList(position: Int): Int
         fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?)
         fun launchGallery(intent: Intent)
@@ -179,20 +189,25 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
         }
     }
 
-    private fun viewRandom(list: List<DownloadInfo>) {
-        if (list.isEmpty()) return
+    @VisibleForTesting
+    internal fun viewRandom(list: List<DownloadInfo>): Job? {
+        if (list.isEmpty()) return null
         val position = (Math.random() * list.size).toInt().coerceIn(0, list.size - 1)
-        val activity = callback.activity2 ?: return
+        val activity = callback.activity2 ?: return null
 
         // Route through GalleryOpenHelper so a fully-downloaded archive opens from local
         // files (and works offline) instead of always streaming from the server.
         val downloadInfo = list[position]
         val archive = downloadInfo.toArchive()
         val knownComplete = downloadInfo.state == DownloadState.FINISH
-        (activity as LifecycleOwner).lifecycleScope.launch {
+        // View-scoped like DownloadGalleryOpenHelper: launchGallery uses the
+        // scene's ActivityResultLauncher, which is unregistered once the scene
+        // is gone — launching it from the activity scope after the IO step
+        // would throw if the user left meanwhile.
+        return callback.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val intent = withContext(Dispatchers.IO) {
-                    GalleryOpenHelper.buildReadIntent(activity, archive, knownComplete = knownComplete)
+                    readIntentBuilder(activity, archive, knownComplete)
                 }
                 callback.launchGallery(intent)
             } catch (e: Exception) {

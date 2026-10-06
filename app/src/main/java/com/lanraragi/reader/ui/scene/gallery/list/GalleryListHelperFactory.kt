@@ -125,7 +125,7 @@ internal object GalleryListHelperFactory {
             override fun exitMultiSelect() { scene.multiSelectHelper?.exit() }
             override fun cancelTankMerge() { scene.cancelTankMerge() }
             override fun onSearchLoaded(params: GalleryListViewModel.SearchParams) {
-                scene.viewModel.search(params)
+                scene.shownSearch.onLoaded(params)
             }
         })
 

@@ -941,6 +941,7 @@ class DownloadsScene : ToolbarScene(),
         override val mList: List<DownloadInfo>? get() = this@DownloadsScene.mList
         override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.recyclerView
         override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null
+        override val viewLifecycleOwner get() = this@DownloadsScene.viewLifecycleOwner
         override fun positionInList(position: Int): Int = this@DownloadsScene.positionInList(position)
         override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?) =
             this@DownloadsScene.onClickPrimaryFab(view, fab)
