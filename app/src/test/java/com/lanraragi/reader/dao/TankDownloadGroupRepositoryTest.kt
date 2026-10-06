@@ -229,6 +229,82 @@ class TankDownloadGroupRepositoryTest {
         assertEquals(42, repo.getTankMemberArchives(TANK).single().pagecount)
     }
 
+    // ── REL-24: group writes are one transaction ─────────────────
+    // A SQLite trigger injects the failure at a chosen statement; without
+    // the transaction the statements before it would stay applied.
+
+    private fun failOn(trigger: String) {
+        db.openHelper.writableDatabase.execSQL(trigger)
+    }
+
+    private suspend fun assertFailsWithInjected(block: suspend () -> Unit) {
+        val error = try {
+            block()
+            null
+        } catch (e: android.database.SQLException) {
+            e
+        }
+        assertTrue("the injected failure must surface", error?.message.orEmpty().contains("injected"))
+    }
+
+    @Test
+    fun putTankGroup_failingMemberTag_leavesNoGroupRowAndNoTags() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
+        failOn(
+            "CREATE TRIGGER fail_tag BEFORE UPDATE OF DOWNLOAD_TANK_ID ON ARCHIVE_LOCAL_STATE " +
+                "WHEN NEW.ARCID = '$ARC_B' BEGIN SELECT RAISE(ABORT, 'injected'); END"
+        )
+
+        assertFailsWithInjected { repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B)) }
+
+        assertNull(repo.getTankGroup(TANK))
+        assertEquals(listOf(null, null), repo.observeDownloads().first().map { it.tankId })
+    }
+
+    @Test
+    fun removeDownloadsAndDissolveTankGroups_dropsMemberRowsAndGroupRow() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B))
+
+        repo.removeDownloadsAndDissolveTankGroups(listOf(ARC_A, ARC_B), listOf(TANK))
+
+        assertTrue(repo.observeDownloads().first().isEmpty())
+        assertNull(repo.getTankGroup(TANK))
+    }
+
+    @Test
+    fun removeDownloadsAndDissolveTankGroups_failingDissolve_keepsTheMemberRows() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B))
+        failOn(
+            "CREATE TRIGGER fail_dissolve BEFORE DELETE ON TANK_DOWNLOAD_GROUP " +
+                "BEGIN SELECT RAISE(ABORT, 'injected'); END"
+        )
+
+        assertFailsWithInjected { repo.removeDownloadsAndDissolveTankGroups(listOf(ARC_A, ARC_B), listOf(TANK)) }
+
+        val downloads = repo.observeDownloads().first()
+        assertEquals("a group row never outlives its members' rows", setOf(ARC_A, ARC_B), downloads.map { it.arcid }.toSet())
+        assertEquals(setOf(TANK), downloads.map { it.tankId }.toSet())
+    }
+
+    @Test
+    fun dissolveTankGroup_failingGroupDelete_keepsTheMemberTags() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A))
+        failOn(
+            "CREATE TRIGGER fail_dissolve BEFORE DELETE ON TANK_DOWNLOAD_GROUP " +
+                "BEGIN SELECT RAISE(ABORT, 'injected'); END"
+        )
+
+        assertFailsWithInjected { repo.dissolveTankGroup(TANK) }
+
+        assertEquals(TANK, repo.observeDownloads().first().single().tankId)
+    }
+
     private companion object {
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)

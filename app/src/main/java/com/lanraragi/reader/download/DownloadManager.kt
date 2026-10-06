@@ -24,6 +24,8 @@ import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.TankTagSyncFailedEvent
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.mapper.toDownloadInfoView
 import com.lanraragi.reader.client.api.LRRArchiveApi
@@ -471,48 +473,52 @@ class DownloadManager(
         serverProfileId: Long,
         memberIdsInOrder: List<String>,
     ) {
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.putTankGroup(
-                    tankId, serverProfileId, tankName, memberIdsInOrder
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to persist tank group $tankId", e)
-            }
+        launchTankGroupWrite("Failed to persist tank group $tankId") {
+            ServiceRegistry.dataModule.downloadDbRepository.putTankGroup(
+                tankId, serverProfileId, tankName, memberIdsInOrder
+            )
         }
-    }
-
-    /**
-     * Delete a downloaded tank card: stop + remove every member download
-     * row (the caller deletes the on-disk files, mirroring the single-row
-     * delete flow) and drop the group row.
-     */
-    fun deleteTankDownload(tankId: String, memberArcids: List<String>) {
-        repo.assertMainThread()
-        if (memberArcids.isNotEmpty()) deleteRangeDownload(memberArcids)
-        dissolveTankGroupAsync(tankId)
     }
 
     /** Untag every member and drop the group row (files/rows untouched). */
     fun dissolveTankGroupAsync(tankId: String) {
-        scope.launch {
-            try {
-                ServiceRegistry.dataModule.downloadDbRepository.dissolveTankGroup(tankId)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to dissolve tank group $tankId", e)
-            }
+        launchTankGroupWrite("Failed to dissolve tank group $tankId") {
+            ServiceRegistry.dataModule.downloadDbRepository.dissolveTankGroup(tankId)
         }
     }
 
     /** Remove one member from its downloaded-tank group (member removed app-side). */
     fun untagTankMemberAsync(tankId: String, arcid: String) {
+        launchTankGroupWrite("Failed to untag tank member $arcid") {
+            ServiceRegistry.dataModule.downloadDbRepository.removeTankGroupMember(tankId, arcid)
+        }
+    }
+
+    /**
+     * Runs one downloaded-tank group write (each is a single Room
+     * transaction). A failure is logged and surfaced as a Snackbar (audit
+     * 2026-10-04 REL-24): no reconciler repairs a group that was never
+     * written, and a dissolve that failed leaves the card for the user to
+     * delete again. Untag failures are also repaired by the next tank
+     * membership sync ([TankMembershipSync]).
+     */
+    private fun launchTankGroupWrite(failure: String, write: suspend () -> Unit) {
         scope.launch {
             try {
-                ServiceRegistry.dataModule.downloadDbRepository.removeTankGroupMember(tankId, arcid)
+                write()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to untag tank member $arcid", e)
+                Log.e(TAG, failure, e)
+                postTankGroupWriteFailed()
             }
         }
+    }
+
+    private fun postTankGroupWriteFailed() {
+        AppEventBus.postTankTagSyncFailedEvent(
+            TankTagSyncFailedEvent("", "", TankTagSyncFailedEvent.Kind.DOWNLOAD_GROUP)
+        )
     }
 
     // ── Stop / Delete ─────────────────────────────────────────
@@ -601,10 +607,15 @@ class DownloadManager(
         return legacy.size
     }
 
-    fun deleteRangeDownload(arcidList: List<String>) {
+    /**
+     * Stop and delete [arcidList]. [dissolveTankIds] are downloaded-tank
+     * cards deleted with these members: their group rows go in the same
+     * transaction as the member rows (audit 2026-10-04 REL-24).
+     */
+    fun deleteRangeDownload(arcidList: List<String>, dissolveTankIds: Collection<String> = emptyList()) {
         repo.assertMainThread()
         scheduler.stopRangeDownload(arcidList)
-        repo.deleteInfoRange(arcidList.toHashSet())
+        repo.deleteInfoRange(arcidList.toHashSet(), dissolveTankIds, ::postTankGroupWriteFailed)
         arcidList.forEach { DownloadResumeBanner.markResumed(it) }
         eventBus.forEachListener { it.onReload() }
         scheduler.ensureDownload()

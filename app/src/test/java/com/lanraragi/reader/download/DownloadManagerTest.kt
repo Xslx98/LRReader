@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
@@ -1006,6 +1007,78 @@ class DownloadManagerTest {
         assertEquals(1, purged)
         assertFalse(manager.containDownloadInfo("tok_imported"))
         assertTrue(manager.containDownloadInfo("tok_normal"))
+    }
+
+    // ── Tank card delete / group writes (audit 2026-10-04 REL-24) ──
+
+    private fun finishedRow(id: String, t: Long) = DownloadInfo().apply {
+        arcid = id
+        title = id
+        state = DownloadState.FINISH
+        time = t
+        serverProfileId = 1L
+    }
+
+    private fun tankGroupFailures(): MutableList<com.lanraragi.reader.event.TankTagSyncFailedEvent> {
+        val events = java.util.concurrent.CopyOnWriteArrayList<com.lanraragi.reader.event.TankTagSyncFailedEvent>()
+        testScope.launch { com.lanraragi.reader.event.AppEventBus.tankTagSyncFailedEvent.collect { events += it } }
+        return events
+    }
+
+    @Test
+    fun deleteRangeDownload_withTankCard_dropsMemberRowsAndGroupRow() {
+        manager.addDownload(listOf(finishedRow("tank_m1", 100L), finishedRow("tank_m2", 200L)))
+        val dbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        runBlocking {
+            manager.repo.awaitDbWrites()
+            dbRepo.putTankGroup("TANK_1", 1L, "Tank", listOf("tank_m1", "tank_m2"))
+        }
+
+        manager.deleteRangeDownload(listOf("tank_m1", "tank_m2"), listOf("TANK_1"))
+        runBlocking { manager.repo.awaitDbWrites() }
+
+        assertFalse(manager.containDownloadInfo("tank_m1"))
+        runBlocking {
+            assertNull(dbRepo.getTankGroup("TANK_1"))
+            assertTrue(dbRepo.getAllDownloadInfo().none { it.arcid.startsWith("tank_m") })
+        }
+    }
+
+    @Test
+    fun deleteRangeDownload_failingTankWrite_postsTheGroupFailureEvent() {
+        val events = tankGroupFailures()
+        manager.addDownload(listOf(finishedRow("tank_m1", 100L)))
+        val dbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        runBlocking {
+            manager.repo.awaitDbWrites()
+            dbRepo.putTankGroup("TANK_1", 1L, "Tank", listOf("tank_m1"))
+        }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER fail_dissolve BEFORE DELETE ON TANK_DOWNLOAD_GROUP BEGIN SELECT RAISE(ABORT, 'injected'); END"
+        )
+
+        manager.deleteRangeDownload(listOf("tank_m1"), listOf("TANK_1"))
+        runBlocking { manager.repo.awaitDbWrites() }
+
+        assertEquals(
+            listOf(com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.DOWNLOAD_GROUP),
+            events.map { it.kind },
+        )
+        runBlocking { assertNotNull("rolled back: the card is still there to delete again", dbRepo.getTankGroup("TANK_1")) }
+    }
+
+    @Test
+    fun dissolveTankGroupAsync_failure_postsTheGroupFailureEvent() {
+        val events = tankGroupFailures()
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER fail_dissolve BEFORE DELETE ON TANK_DOWNLOAD_GROUP BEGIN SELECT RAISE(ABORT, 'injected'); END"
+        )
+        runBlocking { ServiceRegistry.dataModule.downloadDbRepository.putTankGroup("TANK_1", 1L, "Tank", emptyList()) }
+
+        manager.dissolveTankGroupAsync("TANK_1")
+
+        awaitUntil { events.isNotEmpty() }
+        assertEquals(com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.DOWNLOAD_GROUP, events.single().kind)
     }
 
     @Test

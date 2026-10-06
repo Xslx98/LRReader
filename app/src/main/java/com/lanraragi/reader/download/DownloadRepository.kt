@@ -533,7 +533,17 @@ class DownloadRepository(
     /**
      * Remove a range of download infos from collections and DB.
      */
-    fun deleteInfoRange(arcidSet: Set<String>) {
+    /**
+     * Remove [arcidSet] from memory and the DB. [dissolveTankIds] are tank
+     * groups deleted with their members: the row removal and the group
+     * dissolve are ONE queued transaction (audit 2026-10-04 REL-24), and a
+     * failure of it reaches [onTankWriteFailed].
+     */
+    fun deleteInfoRange(
+        arcidSet: Set<String>,
+        dissolveTankIds: Collection<String> = emptyList(),
+        onTankWriteFailed: () -> Unit = {},
+    ) {
         assertMainThread()
         val arcidsToRemove = mutableListOf<String>()
         for (arcid in arcidSet) {
@@ -544,7 +554,15 @@ class DownloadRepository(
             }
         }
         allInfoList.removeAll { it.arcid in arcidSet }
-        if (arcidsToRemove.isNotEmpty()) removeInfoBatchFromDbByArcids(arcidsToRemove)
+        if (dissolveTankIds.isNotEmpty()) {
+            val tankIds = dissolveTankIds.toList()
+            enqueueDbWrite("Failed to delete tank downloads", onTankWriteFailed) {
+                ServiceRegistry.dataModule.downloadDbRepository
+                    .removeDownloadsAndDissolveTankGroups(arcidsToRemove, tankIds)
+            }
+        } else if (arcidsToRemove.isNotEmpty()) {
+            removeInfoBatchFromDbByArcids(arcidsToRemove)
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -565,7 +583,7 @@ class DownloadRepository(
         }
     }
 
-    private fun enqueueDbWrite(failure: String, block: suspend () -> Unit) {
+    private fun enqueueDbWrite(failure: String, onFailure: () -> Unit = {}, block: suspend () -> Unit) {
         dbWrites.trySend {
             try {
                 block()
@@ -573,6 +591,7 @@ class DownloadRepository(
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, failure, e)
+                onFailure()
             }
         }
     }

@@ -122,9 +122,7 @@ internal class DownloadBatchOpsHelper(private val callback: Callback) {
                 val arcids = expanded.arcids
                 deleteRange(context, infos, arcids) { deleteFiles ->
                     recyclerView.outOfCustomChoiceMode()
-                    callback.viewModel.deleteRangeDownloads(infos, arcids, deleteFiles)
-                    // Same as the single-card delete flow: the group row goes with its members.
-                    for (tankId in expanded.cardIds) callback.viewModel.downloadManager.dissolveTankGroupAsync(tankId)
+                    callback.viewModel.deleteRangeDownloads(infos, arcids, deleteFiles, expanded.cardIds)
                 }
             }
             4 -> { // Move — cards have no label home (no group-row label column)

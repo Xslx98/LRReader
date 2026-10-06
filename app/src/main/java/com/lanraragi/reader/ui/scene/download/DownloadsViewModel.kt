@@ -481,9 +481,11 @@ class DownloadsViewModel(
     fun deleteRangeDownloads(
         downloadInfoList: List<DownloadInfo>,
         arcidList: List<String>,
-        deleteFiles: Boolean
+        deleteFiles: Boolean,
+        tankCardIds: Collection<String> = emptyList(),
     ) {
-        downloadManager.deleteRangeDownload(arcidList)
+        // Checked tank cards: their group rows go with the member rows.
+        downloadManager.deleteRangeDownload(arcidList, tankCardIds)
         DownloadSettings.putRemoveImageFiles(deleteFiles)
         if (deleteFiles) {
             // Snapshot the list to avoid concurrent modification
