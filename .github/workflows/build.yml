@@ -224,5 +224,11 @@ jobs:
           cache: gradle
       # Gradle's own action replaces the third-party one that ran with
       # contents: write.
+      # Only the shipped APK's runtime classpath: Dependabot alerts then mean
+      # "reaches users". Build tooling (AGP, Kotlin plugin, Jetifier) and test
+      # classpaths are kept current by plugin bumps; Dependabot cannot update
+      # their undeclared transitive deps anyway (security_update_dependency_not_found).
       - name: Dependency Submission
         uses: gradle/actions/dependency-submission@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          dependency-graph-include-configurations: '^appReleaseReleaseRuntimeClasspath$'
