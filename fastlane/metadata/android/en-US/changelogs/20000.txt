@@ -1,0 +1,6 @@
+2.0: safer, steadier, Android 16 ready.
+New: backup and restore of servers, history, favourites and progress; Share diagnostics (crash reports stay on your phone); predictive back; fingerprint unlock bound to your pattern.
+Downloads retry server errors, repair damaged pages and pause when storage is full.
+The reader uses less memory and keeps your page on rotation.
+API keys move to a new encrypted store on first launch.
+Many stability and security fixes.
