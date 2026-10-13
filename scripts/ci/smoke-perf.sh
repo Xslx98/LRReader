@@ -131,6 +131,8 @@ until [ -z "$(adb shell pidof perfetto | tr -d '\r')" ]; do sleep 1; done
 adb pull "$TRACE_DEV" "$OUT_DIR/lrr-smoke.perfetto-trace" > /dev/null
 metric reader.pages_served "$(grep -c '/page' "$MOCK_LOG" || true)"
 
-$PYTHON -I scripts/ci/perf_extract.py --trace "$OUT_DIR/lrr-smoke.perfetto-trace" \
+# No `-I`: CI installs the perfetto package with `pip install --user`, which
+# isolated mode would hide.
+$PYTHON scripts/ci/perf_extract.py --trace "$OUT_DIR/lrr-smoke.perfetto-trace" \
   --out "$OUT_DIR/perf.json" ${GITHUB_STEP_SUMMARY:+--summary "$GITHUB_STEP_SUMMARY"} "${SETS[@]}"
 echo "perf: wrote $OUT_DIR/perf.json"
