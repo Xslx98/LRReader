@@ -215,7 +215,17 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run release smoke on an emulator
+      - name: Trace processor for the perf smoke
+        # scripts/ci/perf_extract.py reads the Perfetto trace with the
+        # `perfetto` package (pinned; it downloads trace_processor_shell).
+        run: python3 -m pip install --user perfetto==0.58.2
+
+      - name: Run release smoke and perf measurement on an emulator
+        # smoke-release.sh: crash gate through connect → list → detail →
+        # reader (mock LANraragi from scripts/ci/mock_lrr.py via adb reverse).
+        # smoke-perf.sh: cold start, PSS, list jank, reader trace sections
+        # into build/perf/perf.json; check-perf.sh judges it against
+        # scripts/ci/perf-budget.txt (record mode warns, gate mode fails).
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
@@ -223,7 +233,19 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: bash scripts/ci/smoke-release.sh app/build/outputs/apk/appRelease/release/app-appRelease-release.apk
+          script: |
+            bash scripts/ci/smoke-release.sh app/build/outputs/apk/appRelease/release/app-appRelease-release.apk
+            bash scripts/ci/smoke-perf.sh app/build/outputs/apk/appRelease/release/app-appRelease-release.apk build/perf
+            bash scripts/ci/check-perf.sh build/perf/perf.json
+
+      - name: Upload perf results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: perf-smoke
+          path: build/perf/
+          if-no-files-found: ignore
+          retention-days: 30
 
   dependency-submission:
     runs-on: ubuntu-latest

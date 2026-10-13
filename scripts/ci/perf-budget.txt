@@ -1,0 +1,20 @@
+# Perf budgets for scripts/ci/check-perf.sh, measured by smoke-perf.sh on the
+# CI emulator (API 34 x86_64, swiftshader) — not comparable to device numbers.
+# `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute).
+# mode record: a breach only warns (variance still being established).
+# mode gate:   a breach fails the job. Flip in its own dated commit once ~10
+#              green runs show the spread; re-seed the budgets from them.
+# Seeded 2026-10-13 from a local API 34 AVD run (x1.5 headroom for the slower
+# CI emulator); placeholders until the first CI runs replace them.
+mode record
+startup.cold.total_ms        700   tol 25%
+startup.cold.fully_drawn_ms  750   tol 25%
+pss.list_kb                70000   tol 15%
+pss.reader_kb             260000   tol 15%
+pss.after_reader_kb       150000   tol 15%
+list.jank_pct                 10   tol +10
+list.p99_ms                   60   tol 30%
+reader.page_decode.p99_ms     15   tol 50%
+reader.gl_frame.p99_ms        25   tol 50%
+reader.upload.p99_ms           5   tol 50%
+reader.pages_served           20   tol +100
