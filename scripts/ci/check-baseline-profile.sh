@@ -36,8 +36,11 @@ if [ ! -f "$APK" ]; then
   echo "::error::check-baseline-profile: no APK at $APK (run ./gradlew :app:assembleAppReleaseRelease)"
   exit 1
 fi
+# Listed once, matched from a here-string: `… | grep -q` under pipefail fails
+# with SIGPIPE when grep exits early (false negative seen on CI).
+ENTRIES=$(unzip -l "$APK" | awk '{ print $NF }')
 for entry in assets/dexopt/baseline.prof assets/dexopt/baseline.profm; do
-  if ! unzip -l "$APK" | awk '{ print $NF }' | grep -qx "$entry"; then
+  if ! grep -qx "$entry" <<< "$ENTRIES"; then
     echo "::error::check-baseline-profile: $APK has no $entry"
     exit 1
   fi

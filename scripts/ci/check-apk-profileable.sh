@@ -22,14 +22,17 @@ if [ -z "$APKANALYZER" ]; then
   exit 1
 fi
 
+# Matched from here-strings, not pipes: `… | grep -q` under pipefail fails with
+# SIGPIPE when grep exits early.
 MANIFEST=$("$APKANALYZER" manifest print "$APK" | tr -d '\r')
-if echo "$MANIFEST" | grep -q 'android:debuggable="true"'; then
+if grep -q 'android:debuggable="true"' <<< "$MANIFEST"; then
   echo "::error::check-apk-profileable: release APK is debuggable"
   exit 1
 fi
 # The packaged element is <profileable android:shell="true"/>, possibly with
 # the attribute printed on its own line.
-if ! echo "$MANIFEST" | tr '\n' ' ' | grep -Eq '<profileable[^>]*android:shell="true"'; then
+ONELINE=$(tr '\n' ' ' <<< "$MANIFEST")
+if ! grep -Eq '<profileable[^>]*android:shell="true"' <<< "$ONELINE"; then
   echo "::error::check-apk-profileable: release manifest has no <profileable android:shell=\"true\"/>"
   exit 1
 fi
