@@ -25,6 +25,7 @@ import android.os.Build;
 import android.os.Parcelable;
 import android.os.Process;
 import android.os.SystemClock;
+import android.os.Trace;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
@@ -43,6 +44,7 @@ import com.lanraragi.framework.lib.glview.util.ApiHelper;
 import com.lanraragi.framework.lib.glview.util.GalleryUtils;
 import com.lanraragi.framework.lib.glview.util.MotionEventHelper;
 import com.lanraragi.framework.lib.yorozuya.AssertUtils;
+import com.lanraragi.reader.util.TraceSections;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -566,9 +568,13 @@ public class GLRootView extends GLSurfaceView
                 mFreezeCondition.awaitUninterruptibly();
             }
 
+            // Perf trace section: GLSurfaceView frames never reach HWUI's
+            // frame stats (see com.lanraragi.reader.util.TraceSections).
+            Trace.beginSection(TraceSections.READER_GL_FRAME);
             try {
                 onDrawFrameLocked(gl);
             } finally {
+                Trace.endSection();
                 mRenderLock.unlock();
             }
 

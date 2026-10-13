@@ -39,6 +39,8 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
+import com.lanraragi.reader.util.TraceSections
+import com.lanraragi.reader.util.traceSection
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.widget.TileThumbNew
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
@@ -207,7 +209,7 @@ abstract class GalleryAdapterNew(
             }
     }
 
-    override fun onBindViewHolder(holder: GalleryHolder, position: Int) {
+    override fun onBindViewHolder(holder: GalleryHolder, position: Int): Unit = traceSection(TraceSections.LIST_BIND) {
         val archive = getDataAt(position) ?: return
         val arcid = archive.arcid
 

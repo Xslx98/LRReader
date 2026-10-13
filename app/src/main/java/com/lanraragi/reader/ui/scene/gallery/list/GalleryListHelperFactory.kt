@@ -126,6 +126,10 @@ internal object GalleryListHelperFactory {
             override fun cancelTankMerge() { scene.cancelTankMerge() }
             override fun onSearchLoaded(params: GalleryListViewModel.SearchParams) {
                 scene.shownSearch.onLoaded(params)
+                // Time-to-fully-drawn = first list page landed. Idempotent:
+                // the framework reports once per activity (androidx also
+                // swallows the pre-API-29 permission quirk).
+                scene.activity?.reportFullyDrawn()
             }
         })
 
