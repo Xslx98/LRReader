@@ -115,6 +115,12 @@ jobs:
         # 2026-10-13 PERF-11).
         run: bash scripts/ci/check-apk-profileable.sh
 
+      - name: Release APK must package the app's baseline profile
+        # app/src/main/baseline-prof.txt (scripts/perf/update-baseline-profile.sh)
+        # with enough app-class rules, compiled into assets/dexopt/ (audit
+        # 2026-10-13 PERF-03).
+        run: bash scripts/ci/check-baseline-profile.sh
+
       - name: Verify Log.v/d/i/w stripped from release DEX
         # Enforces proguard-rules.pro's -assumenosideeffects on Log.v/d/i/w on
         # the DEX the release build above produced.

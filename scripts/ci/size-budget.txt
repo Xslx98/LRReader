@@ -8,6 +8,6 @@ apk.download    2520000
 dex             3840000
 lib               10000
 res             1345000
-assets            10000
+assets            20000
 other              5000
 dex.method_refs   26400

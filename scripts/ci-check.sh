@@ -17,6 +17,7 @@ bash scripts/ci/check-baselines.sh "$BASE"
 bash scripts/ci/check-lint-crash-ids.sh
 bash scripts/ci/check-apk-size.sh
 bash scripts/ci/check-apk-profileable.sh
+bash scripts/ci/check-baseline-profile.sh
 bash scripts/ci/check-dex-logs.sh
 bash scripts/ci/check-dex-retrace.sh
 bash scripts/ci/check-dex-animators.sh

@@ -23,8 +23,13 @@ class BaselineProfileGenerator {
 
     @Test
     fun generate() {
+        // Few iterations on purpose: the managed emulator on the owner's
+        // machine has died twice past the 10-minute mark (host memory), and
+        // the hot path is deterministic enough that four passes converge.
         rule.collect(
             packageName = LrrScenario.PKG,
+            maxIterations = MAX_ITERATIONS,
+            stableIterations = STABLE_ITERATIONS,
             includeInStartupProfile = true,
         ) {
             pressHome()
@@ -37,5 +42,7 @@ class BaselineProfileGenerator {
     private companion object {
         const val FLINGS = 4
         const val PAGES = 10
+        const val MAX_ITERATIONS = 4
+        const val STABLE_ITERATIONS = 2
     }
 }

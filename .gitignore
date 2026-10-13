@@ -29,6 +29,7 @@ Thumbs.db
 # Native build cache
 /app/.cxx/
 /app/build/
+/benchmark/build/
 
 # Temp files
 /captures
