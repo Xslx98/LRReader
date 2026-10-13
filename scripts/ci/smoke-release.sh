@@ -77,7 +77,7 @@ MOCK_PORT=$MOCK_PORT MOCK_BIG_PAGES=40 MOCK_CHAPTERS=1 \
   $PYTHON -u scripts/ci/mock_lrr.py > "$MOCK_LOG" 2>&1 &
 MOCK_PID=$!
 trap 'kill $MOCK_PID 2>/dev/null || true; adb reverse --remove "tcp:$MOCK_PORT" >/dev/null 2>&1 || true' EXIT
-adb reverse "tcp:$MOCK_PORT" "tcp:$MOCK_PORT"
+adb reverse "tcp:$MOCK_PORT" "tcp:$MOCK_PORT" > /dev/null
 sleep 2
 if ! kill -0 "$MOCK_PID" 2>/dev/null; then
   echo "::error::release smoke: mock LANraragi did not start"
@@ -85,25 +85,8 @@ if ! kill -0 "$MOCK_PID" 2>/dev/null; then
   exit 1
 fi
 
-# A fresh install lands on the server-config scene. `input text` goes through
-# the active keyboard, and a composing one (Gboard on a zh-CN emulator turns
-# "://" into full-width punctuation) mangles the URL: disable the keyboards
-# while typing so the key events reach the field directly.
-IMES=$(adb shell ime list -s | tr -d '\r')
-ui tap resource-id "$PKG:id/server_url" 30
-for ime in $IMES; do adb shell ime disable "$ime" >/dev/null; done
-adb shell input text "$MOCK_URL"
-for ime in $IMES; do adb shell ime enable "$ime" >/dev/null; done
-sleep 1
-if ! ui has text "$MOCK_URL"; then
-  echo "::error::release smoke: server URL field does not read $MOCK_URL"
-  ui texts
-  exit 1
-fi
-# The cleartext row only appears for an http:// URL.
-ui tap resource-id "$PKG:id/checkbox_allow_cleartext"
-ui tap resource-id "$PKG:id/connect"
-ui wait resource-id "$PKG:id/thumb_new" 60
+# A fresh install lands on the server-config scene.
+ui connect "$PKG" "$MOCK_URL"
 check "connect and list" 3
 
 # The 40-page archive when the list shows titles, else the first card.
