@@ -64,6 +64,10 @@
         tools:ignore="UnusedAttribute">
         <!--        tools:targetApi="n">-->
 
+        <!-- Lets the shell profile the shipped (non-debuggable) release:
+             Perfetto / Studio profiler / Macrobenchmark attach to it. Adds no
+             debug surface. scripts/ci/check-apk-profileable.sh keeps it. -->
+        <profileable android:shell="true" />
 
 
         <meta-data
