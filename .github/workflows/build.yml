@@ -91,13 +91,28 @@ jobs:
       - name: Detekt
         run: ./gradlew detektMain
 
-      - name: Verify Log.v/d/i/w stripped from release DEX
-        # Enforces proguard-rules.pro's -assumenosideeffects on Log.v/d/i/w.
-        # minifyAppReleaseReleaseWithR8 instead of assembleAppReleaseRelease:
-        # CI has no signing keys, and this DEX is the one the signed APK ships.
+      - name: Build release with a throwaway key
+        # The real signing key never leaves the maintainer's machine. The size
+        # gate needs a packaged arm64 APK (zip layout, signing block); the DEX
+        # gates below read the R8 output this build produces.
         run: |
-          ./gradlew :app:minifyAppReleaseReleaseWithR8
-          bash scripts/ci/check-dex-logs.sh
+          set -euo pipefail
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/size.jks" -alias size \
+            -keyalg RSA -keysize 2048 -validity 1 -storepass sizepass -keypass sizepass \
+            -dname "CN=LRReader CI size"
+          RELEASE_STORE_FILE="$RUNNER_TEMP/size.jks" RELEASE_STORE_PASSWORD=sizepass \
+            RELEASE_KEY_ALIAS=size RELEASE_KEY_PASSWORD=sizepass \
+            ./gradlew :app:assembleAppReleaseRelease
+
+      - name: Release APK must stay within the size budget
+        # Per-category compressed bytes and DEX method references against
+        # scripts/ci/size-budget.txt (audit 2026-10-13 PERF-04).
+        run: bash scripts/ci/check-apk-size.sh
+
+      - name: Verify Log.v/d/i/w stripped from release DEX
+        # Enforces proguard-rules.pro's -assumenosideeffects on Log.v/d/i/w on
+        # the DEX the release build above produced.
+        run: bash scripts/ci/check-dex-logs.sh
 
       - name: Verify release DEX frames are retraceable
         # Line info kept and every class stamped r8-map-id-<pg_map_id>, so a

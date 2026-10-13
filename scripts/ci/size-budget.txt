@@ -1,0 +1,13 @@
+# Size budgets for scripts/ci/check-apk-size.sh (arm64 release APK, bytes;
+# dex.method_refs is a count). A metric fails above budget * (1 + tolerance).
+# Raise a budget only in the commit that explains the growth; never raise one
+# to make an unrelated change pass. Seeded 2026-10-13 from v2.0.0 (+~1 %).
+tolerance.percent 1.5
+apk.file        5300000
+apk.download    2520000
+dex             3840000
+lib               10000
+res             1345000
+assets            10000
+other              5000
+dex.method_refs   26400
