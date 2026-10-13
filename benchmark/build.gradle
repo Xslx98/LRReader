@@ -1,0 +1,70 @@
+// Macrobenchmarks + baseline profile generator for :app (perf measurement
+// design, Tier C). Not part of CI; run locally against the mock LANraragi:
+//
+//   MOCK_BIG_PAGES=40 MOCK_BIG_COUNT=30 MOCK_CHAPTERS=1 python3 -u scripts/ci/mock_lrr.py &
+//   adb reverse tcp:3939 tcp:3939
+//   ./gradlew :benchmark:connectedAppReleaseBenchmarkReleaseAndroidTest   # benchmarks
+//   ./gradlew :benchmark:collectAppReleaseNonMinifiedReleaseBaselineProfile # profile; scripts/perf/update-baseline-profile.sh
+//                                                                           # copies it to app/src/main/baseline-prof.txt
+//
+// Benchmarks run on the connected device/AVD (emulator errors suppressed:
+// the numbers are for regression tracking per device, never cross-host).
+// Profile generation needs a rooted image, so it uses the AOSP managed
+// device below (downloaded on first use).
+apply plugin: 'com.android.test'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'androidx.baselineprofile'
+
+android {
+    namespace 'com.lanraragi.reader.benchmark'
+    compileSdk 36
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    defaultConfig {
+        minSdk 28
+        targetSdk 36
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // The owner's AVDs are the Tier C default device (design decision
+        // 2026-10-13); macrobenchmark refuses emulators without this.
+        testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR,LOW-BATTERY,UNLOCKED"
+    }
+
+    // Mirrors :app's single flavor so variant names line up
+    // (appReleaseBenchmarkRelease / appReleaseNonMinifiedRelease).
+    flavorDimensions "distribute"
+    productFlavors {
+        appRelease {
+            dimension "distribute"
+        }
+    }
+
+    targetProjectPath = ':app'
+    experimentalProperties["android.experimental.self-instrumenting"] = true
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                pixel6Api34 {
+                    device = "Pixel 6"
+                    apiLevel = 34
+                    systemImageSource = "aosp"
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation libs.test.ext.junit
+    implementation libs.uiautomator
+    implementation libs.benchmark.macro.junit4
+}
+
+baselineProfile {
+    managedDevices += "pixel6Api34"
+    useConnectedDevices = false
+}

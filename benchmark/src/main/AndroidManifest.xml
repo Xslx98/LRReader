@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The app under test (self-instrumenting test module). -->
+    <queries>
+        <package android:name="com.lanraragi.reader" />
+    </queries>
+</manifest>
