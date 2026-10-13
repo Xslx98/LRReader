@@ -109,6 +109,12 @@ jobs:
         # scripts/ci/size-budget.txt (audit 2026-10-13 PERF-04).
         run: bash scripts/ci/check-apk-size.sh
 
+      - name: Release APK must be profileable
+        # <profileable android:shell="true"/> survives manifest merging, so
+        # Perfetto / Macrobenchmark attach to the shipped build (audit
+        # 2026-10-13 PERF-11).
+        run: bash scripts/ci/check-apk-profileable.sh
+
       - name: Verify Log.v/d/i/w stripped from release DEX
         # Enforces proguard-rules.pro's -assumenosideeffects on Log.v/d/i/w on
         # the DEX the release build above produced.
