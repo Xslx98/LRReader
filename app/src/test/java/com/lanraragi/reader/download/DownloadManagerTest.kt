@@ -935,39 +935,60 @@ class DownloadManagerTest {
     // FGS budget pause (Android 15 dataSync 6h cap)
     // ═══════════════════════════════════════════════════════════
 
+    /**
+     * Seeds one running, one queued and one idle row as the scheduler owns
+     * them (a running task sits in activeTasks, a queued one in waitList).
+     * Seeded by hand: startDownload would spawn a real worker whose immediate
+     * failure (unreachable test URL + Unconfined scope) can flip the state
+     * before the pause runs.
+     */
+    private fun seedSchedulerOwnedRows() {
+        for (id in listOf("tok_fgs_active", "tok_fgs_waiting", "tok_fgs_idle")) {
+            val info = DownloadInfo().apply { arcid = id; title = id }
+            manager.addDownload(info.toArchive(), null, DownloadState.NONE)
+        }
+        val rows = manager.allDownloadInfoList.associateBy { it.arcid }
+        rows.getValue("tok_fgs_active").state = DownloadState.DOWNLOAD
+        manager.scheduler.activeTasks.add(rows.getValue("tok_fgs_active"))
+        rows.getValue("tok_fgs_waiting").state = DownloadState.WAIT
+        manager.scheduler.waitList.add(rows.getValue("tok_fgs_waiting"))
+    }
+
+    private fun assertPausedAndFlagged(arcids: List<String>) {
+        // Running and queued downloads are both offered back by the banner...
+        assertEquals(setOf("tok_fgs_active", "tok_fgs_waiting"), arcids.toSet())
+        // ...and both were stopped resumably.
+        val rows = manager.allDownloadInfoList.associateBy { it.arcid }
+        assertEquals(DownloadState.NONE, rows.getValue("tok_fgs_active").state)
+        assertEquals(DownloadState.NONE, rows.getValue("tok_fgs_waiting").state)
+        assertTrue(manager.scheduler.activeTasks.isEmpty())
+        assertTrue(manager.scheduler.waitList.isEmpty())
+    }
+
     @Test
-    fun pauseAllForSystemBudget_flagsActiveDownloadsForResumeBanner_andStopsThem() {
+    fun pauseAllForSystemBudget_flagsRunningAndQueuedDownloadsForResumeBanner_andStopsThem() {
         DownloadResumeBanner.clear()
-
-        // One active and one idle row. Seed deterministically: startDownload
-        // would spawn a real worker whose immediate failure (unreachable test
-        // URL + Unconfined scope) can flip the state before the pause runs.
-        val active = DownloadInfo().apply { arcid = "tok_fgs_active"; title = "Active" }
-        manager.addDownload(active.toArchive(), null, DownloadState.NONE)
-        val idle = DownloadInfo().apply { arcid = "tok_fgs_idle"; title = "Idle" }
-        manager.addDownload(idle.toArchive(), null, DownloadState.NONE)
-        manager.allDownloadInfoList.first { it.arcid == "tok_fgs_active" }.state =
-            DownloadState.DOWNLOAD
-
-        var updateAllSeen = false
-        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
-            override fun onUpdateAll() { updateAllSeen = true }
-        })
+        seedSchedulerOwnedRows()
 
         manager.pauseAllForSystemBudget()
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
 
-        // The active download is flagged for the "timed out — retry" banner...
         val snapshot = DownloadResumeBanner.consume()
         assertTrue("Expected TimedOut, got $snapshot", snapshot is DownloadResumeBanner.Snapshot.TimedOut)
-        val arcids = (snapshot as DownloadResumeBanner.Snapshot.TimedOut).arcids
-        assertTrue("tok_fgs_active" in arcids)
-        // ...the idle row is not...
-        assertTrue("tok_fgs_idle" !in arcids)
-        // ...and the stop-everything broadcast fired (scheduler-tracked rows
-        // are flipped by stopAllDownload; the hand-seeded state above is not
-        // scheduler-tracked, so assert the observable stop signal instead).
-        assertTrue(updateAllSeen)
+        assertPausedAndFlagged((snapshot as DownloadResumeBanner.Snapshot.TimedOut).arcids)
+    }
+
+    @Test
+    fun pauseAllForSystemLimit_flagsRunningAndQueuedDownloadsForResumeBanner_andStopsThem() {
+        DownloadResumeBanner.clear()
+        seedSchedulerOwnedRows()
+
+        manager.pauseAllForSystemLimit()
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        val snapshot = DownloadResumeBanner.consume()
+        assertTrue("Expected SystemLimited, got $snapshot", snapshot is DownloadResumeBanner.Snapshot.SystemLimited)
+        assertPausedAndFlagged((snapshot as DownloadResumeBanner.Snapshot.SystemLimited).arcids)
     }
 
     @Test
