@@ -87,7 +87,8 @@ class TankNameSuggesterTest {
 
     @Test
     fun majorityTokensIgnoreShortAndNumericOnes() {
-        assertNull(suggest("A 1", "B 1", "C 1"))
+        // No usable shared token: the first title as given is the starting point.
+        assertEquals("A 1", suggest("A 1", "B 1", "C 1"))
     }
 
     // ---- edge cases ----
@@ -99,15 +100,23 @@ class TankNameSuggesterTest {
     }
 
     @Test
-    fun emptyOrUnrelatedTitlesGiveNothing() {
+    fun emptyTitlesGiveNothing() {
         assertNull(suggest())
         assertNull(suggest("", "  "))
-        assertNull(suggest("Alpha", "Gamma", "beta"))
-        assertNull(suggest("第1话", "第2话"))
     }
 
     @Test
-    fun oneCharacterResultsAreRejected() {
-        assertNull(suggest("小 第1话", "小 第2话"))
+    fun unrelatedTitlesFallBackToTheFirstTitleStripped() {
+        assertEquals("Alpha", suggest("Alpha", "Gamma", "beta"))
+        assertEquals("甲作品", suggest("[A社] 甲作品 第3卷", "乙故事", "丙传说"))
+        // A blank first title is skipped.
+        assertEquals("Gamma", suggest(" ", "Gamma", "beta", "Delta"))
+    }
+
+    @Test
+    fun fallbackKeepsTheFirstTitleWhenStrippingLeavesTooLittle() {
+        assertEquals("第1话", suggest("第1话", "第2话"))
+        // One shared character is too short to be a name; the first title is kept whole.
+        assertEquals("小 第1话", suggest("小 第1话", "小 第2话"))
     }
 }

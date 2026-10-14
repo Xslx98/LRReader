@@ -11,8 +11,9 @@ import kotlin.math.ceil
  * episode markers ([EpisodeMarkers], plus a trailing bare number) → clean
  * separator residue. Then the common token PREFIX + SUFFIX across titles;
  * if that is shorter than [MIN_LENGTH], the tokens present in at least
- * half of the titles; else null (leave the box empty). 番外 is a kind,
- * not an ordinal, so it is kept.
+ * half of the titles; else the first title, so the user edits a starting
+ * point instead of typing from nothing. 番外 is a kind, not an ordinal, so
+ * it is kept.
  */
 object TankNameSuggester {
 
@@ -28,8 +29,21 @@ object TankNameSuggester {
     private val WHITESPACE = Regex("\\s+")
     private val NO_LETTERS = Regex("^[0-9\\p{Punct}\\s]*$")
 
-    /** The suggestion, or null when the titles share nothing usable. */
-    fun suggest(titles: List<String>): String? {
+    /** The suggestion; null only when every title is blank. */
+    fun suggest(titles: List<String>): String? = common(titles) ?: firstTitle(titles)
+
+    /**
+     * Fallback when the titles share nothing usable: the first non-blank
+     * title, stripped of its volume noise unless that leaves too little, then
+     * as given.
+     */
+    private fun firstTitle(titles: List<String>): String? {
+        val first = titles.firstOrNull { it.isNotBlank() } ?: return null
+        return strip(first).takeIf { it.length >= MIN_LENGTH } ?: first.trim()
+    }
+
+    /** What the titles have in common, or null when they share nothing usable. */
+    private fun common(titles: List<String>): String? {
         val stripped = titles.map { strip(it) }.filter { it.isNotEmpty() }
         if (stripped.isEmpty()) return null
         if (stripped.size == 1) return stripped.single().takeIf { it.length >= MIN_LENGTH }
