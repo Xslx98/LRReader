@@ -21,7 +21,6 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.dao.ServerProfile
@@ -205,19 +204,8 @@ class ServerListScene : BaseScene() {
     private fun applyProfileSwitch(profile: ServerProfile) {
         val ctx = getEHContext() ?: return
 
-        // Update LRRAuthManager
-        try {
-            LRRAuthManager.setServerUrl(profile.url)
-            val profileApiKey = LRRAuthManager.getApiKeyForProfile(profile.id)
-            LRRAuthManager.setApiKey(profileApiKey)
-            LRRAuthManager.setServerName(profile.name)
-            LRRAuthManager.setActiveProfileId(profile.id)
-            LRRAuthManager.setAllowCleartext(profile.allowCleartext)
-            LRRAuthManager.bumpServerConfigVersion()
-        } catch (e: LRRSecureStorageUnavailableException) {
-            dialogHelper.showSecureStorageErrorDialog()
-            return
-        }
+        // The view model has already pointed LRRAuthManager at the profile, off
+        // the main thread (audit 2026-10-13 STAB-10).
 
         // Clear caches so previous server's content doesn't appear under new
         // server. Off the main thread: the disk caches delete their files

@@ -116,13 +116,32 @@ class ServerListViewModel : ViewModel() {
                     // clears it for all others without a window where none is active. Other
                     // columns (name/url/allowCleartext) are untouched and thus preserved.
                     profileRepository.activateExclusive(profile.id)
+                    // Every secure-store access is an AndroidKeyStore AES-GCM call (a
+                    // binder round trip into keystore2), so the session switch runs
+                    // here rather than in the Scene on main (audit 2026-10-13 STAB-10).
+                    applySessionFor(profile)
                 }
-                // Scene handles LRRAuthManager update, cache clearing, DM reload, and navigation
+                // Scene handles cache clearing, toasts and navigation
                 _uiEvent.emit(ServerListUiEvent.ProfileActivated(profile))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: LRRSecureStorageUnavailableException) {
+                Log.e(TAG, "Secure storage unavailable while switching profile", e)
+                _uiEvent.emit(ServerListUiEvent.SecureStorageError)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to activate profile", e)
             }
         }
+    }
+
+    /** Points the auth session at [profile]. Blocking keystore work: call off main. */
+    private fun applySessionFor(profile: ServerProfile) {
+        LRRAuthManager.setServerUrl(profile.url)
+        LRRAuthManager.setApiKey(LRRAuthManager.getApiKeyForProfile(profile.id))
+        LRRAuthManager.setServerName(profile.name)
+        LRRAuthManager.setActiveProfileId(profile.id)
+        LRRAuthManager.setAllowCleartext(profile.allowCleartext)
+        LRRAuthManager.bumpServerConfigVersion()
     }
 
     // -------------------------------------------------------------------------

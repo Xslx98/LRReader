@@ -50,6 +50,13 @@ interface ICoroutineModule {
      */
     val decoderDispatcher: CoroutineDispatcher
 
+    /**
+     * Dispatcher for blocking work started from UI code that must not join
+     * [ioScope]'s job (a `withContext` inside a lifecycle-bound coroutine):
+     * keystore crypto, APK parsing, prefs reads.
+     */
+    val ioDispatcher: CoroutineDispatcher
+
     /** Cancels all scopes managed by this module. */
     fun destroy()
 }

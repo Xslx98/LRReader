@@ -11,8 +11,32 @@ class DownloadResumeBannerTest {
     /** Stands in for the prefs-backed store: its contents outlive the in-memory banner state. */
     private class FakeStore : DownloadResumeBanner.InterruptedStore {
         var saved: Set<String> = emptySet()
+        var writes = 0
         override fun load(): Set<String> = saved
-        override fun save(arcids: Set<String>) { saved = arcids.toSet() }
+        override fun save(arcids: Set<String>) { saved = arcids.toSet(); writes++ }
+    }
+
+    @Test
+    fun markResumed_batch_clearsEveryEntryWithOneStoreWrite() {
+        DownloadResumeBanner.markInterrupted(listOf("a", "b", "c", "d"))
+        DownloadResumeBanner.markTimedOut("a", "A")
+        store.writes = 0
+
+        DownloadResumeBanner.markResumed(listOf("a", "b", "c", "x"))
+
+        assertEquals(1, store.writes)
+        assertEquals(setOf("d"), store.saved)
+        assertEquals(DownloadResumeBanner.Snapshot.Interrupted(listOf("d"), 1), DownloadResumeBanner.consume())
+    }
+
+    @Test
+    fun markResumed_batch_withNoInterruptedArcid_doesNotWrite() {
+        DownloadResumeBanner.markInterrupted(listOf("a"))
+        store.writes = 0
+
+        DownloadResumeBanner.markResumed(listOf("x", "y"))
+
+        assertEquals(0, store.writes)
     }
 
     private val store = FakeStore()

@@ -205,10 +205,14 @@ class TankGalleryProvider(
 
     override fun getStartPage(): Int = startPageValue
 
+    override fun writeLocalProgress(page: Int) {
+        saveReadingProgress(appContext, seed.tankId, page)
+    }
+
     override fun putStartPage(page: Int) {
         if (page != startPageBaseline) userNavigated = true
         startPageValue = page
-        saveReadingProgress(appContext, seed.tankId, page)
+        saveLocalProgressSoon(page)
         TankProgress.markPending(appContext, seed.tankId, page)
         progressSyncer.submit(page)
     }

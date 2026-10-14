@@ -15,6 +15,24 @@
   ~ limitations under the License.
   -->
 
-<merge>
-    <include layout="@layout/scene_toolbar"/>
-</merge>
+<!-- Edge-to-edge is enforced from API 35 (docs: EDGE_TO_EDGE "方案 B"): the root
+     pads itself out of the system bars and its toolbar colour shows through the
+     transparent status bar; the inner layer gives the content its window
+     background (audit 2026-10-13 STAB-09). scene_toolbar itself stays inset-free:
+     MainActivity's scenes get their insets from the DrawerLayout. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/toolbarColor"
+    android:fitsSystemWindows="true"
+    tools:ignore="Overdraw">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?android:attr/windowBackground">
+
+        <include layout="@layout/scene_toolbar" />
+    </FrameLayout>
+</FrameLayout>

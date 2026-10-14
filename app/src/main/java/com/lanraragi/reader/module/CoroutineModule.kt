@@ -7,6 +7,7 @@ import android.util.Log
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.Crash
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -100,6 +101,8 @@ class CoroutineModule(
      */
     @kotlin.OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     override val decoderDispatcher = Dispatchers.IO.limitedParallelism(DECODER_PARALLELISM)
+
+    override val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
     override fun destroy() {
         applicationScope.cancel()

@@ -51,6 +51,22 @@ abstract class GalleryProvider2 : GalleryProvider() {
      */
     open fun putScrollFraction(fraction: Float) {}
 
+    private val deferredLocalSave = DeferredProgressSave { page -> writeLocalProgress(page) }
+
+    /** Writes the local reading position [page]; [saveLocalProgressSoon] calls it at most once a second. */
+    protected open fun writeLocalProgress(page: Int) {}
+
+    /** Records [page] as the local reading position, written within a second (audit 2026-10-13 PERF-10). */
+    protected fun saveLocalProgressSoon(page: Int) = deferredLocalSave.submit(page)
+
+    /** Writes a recorded local position now: the reader is pausing or the provider stopping. */
+    fun flushLocalProgress() = deferredLocalSave.flush()
+
+    override fun stop() {
+        flushLocalProgress()
+        super.stop()
+    }
+
     /**
      * @return without extension
      */
