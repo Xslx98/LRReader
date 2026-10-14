@@ -20,6 +20,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.Animatable;
 import android.os.Process;
 import android.os.SystemClock;
+import android.os.Trace;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -30,6 +31,7 @@ import com.lanraragi.framework.lib.glview.glrenderer.NativeTexture;
 import com.lanraragi.framework.lib.glview.glrenderer.Texture;
 import com.lanraragi.framework.lib.glview.view.GLRoot;
 import com.lanraragi.framework.lib.yorozuya.thread.InfiniteThreadExecutor;
+import com.lanraragi.reader.util.TraceSections;
 import com.lanraragi.framework.lib.yorozuya.thread.PVLock;
 import com.lanraragi.framework.lib.yorozuya.thread.PriorityThreadFactory;
 
@@ -268,6 +270,16 @@ public class ImageTexture implements Texture, Animatable {
     private boolean uploadNextTile(GLCanvas canvas) {
         if (mUploadIndex == mTiles.length) return true;
 
+        // Perf trace section (see com.lanraragi.reader.util.TraceSections).
+        Trace.beginSection(TraceSections.READER_UPLOAD);
+        try {
+            return uploadNextTileTraced(canvas);
+        } finally {
+            Trace.endSection();
+        }
+    }
+
+    private boolean uploadNextTileTraced(GLCanvas canvas) {
         synchronized (mTiles) {
             Tile next = mTiles[mUploadIndex++];
 

@@ -231,7 +231,12 @@ class MainActivity : StageActivity(),
             Announcer(SecurityScene::class.java)
         } else if (!LRRAuthManager.isConfiguredFast()) {
             // LANraragi: show server config if not yet configured
-            Announcer(ServerConfigScene::class.java)
+            val announcer = Announcer(ServerConfigScene::class.java)
+            // Benchmark builds only (PerfSeam): auto-fill and submit the form.
+            PerfSeam.serverUrlFrom(intent)?.let { url ->
+                announcer.setArgs(Bundle().apply { putString(ServerConfigScene.KEY_PERF_SERVER_URL, url) })
+            }
+            announcer
         } else {
             val args = Bundle()
             args.putString(GalleryListScene.KEY_ACTION, GalleryListScene.ACTION_HOMEPAGE)

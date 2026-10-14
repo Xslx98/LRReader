@@ -20,6 +20,8 @@ import android.util.Log
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
 import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.util.TraceSections
+import com.lanraragi.reader.util.traceSection
 import java.io.FileInputStream
 import java.nio.channels.FileChannel
 import java.util.concurrent.atomic.AtomicReference
@@ -492,8 +494,10 @@ class Image private constructor(
         @JvmStatic
         fun decode(stream: FileInputStream, hardware: Boolean = true): Image? {
             val fit = pageFitSource()
-            return retryOnOutOfMemory(rewind = { stream.channel.position(0) }) { multiplier ->
-                Image(stream, hardware = hardware, sampleMultiplier = multiplier, pageFit = fit)
+            return traceSection(TraceSections.READER_DECODE) {
+                retryOnOutOfMemory(rewind = { stream.channel.position(0) }) { multiplier ->
+                    Image(stream, hardware = hardware, sampleMultiplier = multiplier, pageFit = fit)
+                }
             }
         }
 
@@ -543,8 +547,10 @@ class Image private constructor(
         fun decodeResult(stream: FileInputStream, hardware: Boolean = true): DecodeResult<Image> {
             // Sampled by the reader's scale mode, read once, like [decode].
             val fit = pageFitSource()
-            return decodeWithOomRetry(rewind = { stream.channel.position(0) }) { multiplier ->
-                Image(stream, hardware = hardware, sampleMultiplier = multiplier, pageFit = fit)
+            return traceSection(TraceSections.READER_DECODE) {
+                decodeWithOomRetry(rewind = { stream.channel.position(0) }) { multiplier ->
+                    Image(stream, hardware = hardware, sampleMultiplier = multiplier, pageFit = fit)
+                }
             }
         }
 

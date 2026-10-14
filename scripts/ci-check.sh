@@ -3,17 +3,21 @@
 # push cannot go red on a check that was skipped here (local `detekt` is not
 # CI's `detektMain`, and the DEX / schema / baseline checks are not Gradle
 # tasks). Usage, from the repo root: bash scripts/ci-check.sh [base-ref]
-# The base for the baseline check defaults to origin/main.
+# The base for the baseline check defaults to origin/main. The release build
+# signs with local.properties (a worktree needs RELEASE_STORE_FILE).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 BASE="${1:-origin/main}"
 ./gradlew app:assembleAppReleaseDebug app:testAppReleaseDebugUnitTest app:lintAppReleaseDebug \
-  detektMain :app:minifyAppReleaseReleaseWithR8 app:jacocoTestReport
+  detektMain :app:assembleAppReleaseRelease app:jacocoTestReport
 bash scripts/ci/check-schemas.sh
 bash scripts/ci/check-jitpack-aars.sh
 bash scripts/ci/check-baselines.sh "$BASE"
 bash scripts/ci/check-lint-crash-ids.sh
+bash scripts/ci/check-apk-size.sh
+bash scripts/ci/check-apk-profileable.sh
+bash scripts/ci/check-baseline-profile.sh
 bash scripts/ci/check-dex-logs.sh
 bash scripts/ci/check-dex-retrace.sh
 bash scripts/ci/check-dex-animators.sh

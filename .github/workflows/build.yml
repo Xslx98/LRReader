@@ -91,13 +91,40 @@ jobs:
       - name: Detekt
         run: ./gradlew detektMain
 
-      - name: Verify Log.v/d/i/w stripped from release DEX
-        # Enforces proguard-rules.pro's -assumenosideeffects on Log.v/d/i/w.
-        # minifyAppReleaseReleaseWithR8 instead of assembleAppReleaseRelease:
-        # CI has no signing keys, and this DEX is the one the signed APK ships.
+      - name: Build release with a throwaway key
+        # The real signing key never leaves the maintainer's machine. The size
+        # gate needs a packaged arm64 APK (zip layout, signing block); the DEX
+        # gates below read the R8 output this build produces.
         run: |
-          ./gradlew :app:minifyAppReleaseReleaseWithR8
-          bash scripts/ci/check-dex-logs.sh
+          set -euo pipefail
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/size.jks" -alias size \
+            -keyalg RSA -keysize 2048 -validity 1 -storepass sizepass -keypass sizepass \
+            -dname "CN=LRReader CI size"
+          RELEASE_STORE_FILE="$RUNNER_TEMP/size.jks" RELEASE_STORE_PASSWORD=sizepass \
+            RELEASE_KEY_ALIAS=size RELEASE_KEY_PASSWORD=sizepass \
+            ./gradlew :app:assembleAppReleaseRelease
+
+      - name: Release APK must stay within the size budget
+        # Per-category compressed bytes and DEX method references against
+        # scripts/ci/size-budget.txt (audit 2026-10-13 PERF-04).
+        run: bash scripts/ci/check-apk-size.sh
+
+      - name: Release APK must be profileable
+        # <profileable android:shell="true"/> survives manifest merging, so
+        # Perfetto / Macrobenchmark attach to the shipped build (audit
+        # 2026-10-13 PERF-11).
+        run: bash scripts/ci/check-apk-profileable.sh
+
+      - name: Release APK must package the app's baseline profile
+        # app/src/main/baseline-prof.txt (scripts/perf/update-baseline-profile.sh)
+        # with enough app-class rules, compiled into assets/dexopt/ (audit
+        # 2026-10-13 PERF-03).
+        run: bash scripts/ci/check-baseline-profile.sh
+
+      - name: Verify Log.v/d/i/w stripped from release DEX
+        # Enforces proguard-rules.pro's -assumenosideeffects on Log.v/d/i/w on
+        # the DEX the release build above produced.
+        run: bash scripts/ci/check-dex-logs.sh
 
       - name: Verify release DEX frames are retraceable
         # Line info kept and every class stamped r8-map-id-<pg_map_id>, so a
@@ -200,7 +227,17 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run release smoke on an emulator
+      - name: Trace processor for the perf smoke
+        # scripts/ci/perf_extract.py reads the Perfetto trace with the
+        # `perfetto` package (pinned; it downloads trace_processor_shell).
+        run: python3 -m pip install --user perfetto==0.58.2
+
+      - name: Run release smoke and perf measurement on an emulator
+        # smoke-release.sh: crash gate through connect → list → detail →
+        # reader (mock LANraragi from scripts/ci/mock_lrr.py via adb reverse).
+        # smoke-perf.sh: cold start, PSS, list jank, reader trace sections
+        # into build/perf/perf.json; check-perf.sh judges it against
+        # scripts/ci/perf-budget.txt (record mode warns, gate mode fails).
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
@@ -208,7 +245,19 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: bash scripts/ci/smoke-release.sh app/build/outputs/apk/appRelease/release/app-appRelease-release.apk
+          script: |
+            bash scripts/ci/smoke-release.sh app/build/outputs/apk/appRelease/release/app-appRelease-release.apk
+            bash scripts/ci/smoke-perf.sh app/build/outputs/apk/appRelease/release/app-appRelease-release.apk build/perf
+            bash scripts/ci/check-perf.sh build/perf/perf.json
+
+      - name: Upload perf results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: perf-smoke
+          path: build/perf/
+          if-no-files-found: ignore
+          retention-days: 30
 
   dependency-submission:
     runs-on: ubuntu-latest

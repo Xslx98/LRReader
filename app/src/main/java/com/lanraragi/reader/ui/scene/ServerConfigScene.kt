@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputLayout
+import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
@@ -129,6 +130,15 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         collectFlow(viewLifecycleOwner, viewModel.connecting) { isConnecting ->
             if (!isConnecting) {
                 hideProgress()
+            }
+        }
+        // Benchmark seam (PerfSeam, BuildConfig.PERF_SEAM): MainActivity passed
+        // the server to connect to; fill the form as the user would and submit.
+        if (BuildConfig.PERF_SEAM && savedInstanceState == null) {
+            arguments?.getString(KEY_PERF_SERVER_URL)?.let { url ->
+                mServerUrl?.setText(url)
+                mCleartextCheckbox?.isChecked = true
+                doConnectionAttempt(navigateOnSuccess = true)
             }
         }
     }
@@ -297,5 +307,10 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
 
     private fun hideProgress() {
         mProgress?.visibility = View.GONE
+    }
+
+    companion object {
+        /** Argument set by MainActivity from [com.lanraragi.reader.ui.PerfSeam] (benchmark builds only). */
+        const val KEY_PERF_SERVER_URL = "perf_server_url"
     }
 }
