@@ -437,6 +437,27 @@ class ServerListViewModelTest {
         assertEquals("B", activated.profile.name)
     }
 
+    @Test
+    fun activateProfile_pointsTheAuthSessionAtTheProfileBeforeReporting() {
+        insertProfile("A", "https://a.com", isActive = true)
+        val id2 = insertProfile("B", "https://b.com", isActive = false)
+        LRRAuthManager.setApiKeyForProfile(id2, "key-b")
+        val profileB = ServerProfile(id = id2, name = "B", url = "https://b.com", isActive = false)
+        val versionBefore = LRRAuthManager.serverConfigVersion
+
+        val vm = ServerListViewModel()
+        val events = vm.uiEvent.collectInto(eventScope)
+        vm.activateProfile(profileB)
+        awaitUntil { events.any { it is ServerListViewModel.ServerListUiEvent.ProfileActivated } }
+
+        // Done by the view model (off main) by the time the Scene hears of it.
+        assertEquals("https://b.com", LRRAuthManager.getServerUrl())
+        assertEquals("key-b", LRRAuthManager.getApiKey())
+        assertEquals("B", LRRAuthManager.getServerName())
+        assertEquals(id2, LRRAuthManager.getActiveProfileId())
+        assertTrue(LRRAuthManager.serverConfigVersion > versionBefore)
+    }
+
     // ── deleteProfile ──────────────────────────────────────────────
 
     @Test

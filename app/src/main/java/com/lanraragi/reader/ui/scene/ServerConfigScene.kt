@@ -12,10 +12,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputLayout
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -23,6 +25,8 @@ import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Server configuration scene for LANraragi Reader.
@@ -92,22 +96,28 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
             }
         })
 
-        // Pre-fill existing settings
-        val savedUrl = LRRAuthManager.getServerUrl()
-        val savedKey = LRRAuthManager.getApiKey()
-        if (savedUrl != null) {
-            mServerUrl?.setText(savedUrl)
-        }
-        if (savedKey != null) {
-            mApiKey?.setText(savedKey)
-        }
-        updateCleartextRowVisibility(savedUrl.orEmpty())
-
         return view
+    }
+
+    /**
+     * Pre-fills the saved URL and key. Each read is an AndroidKeyStore decrypt
+     * behind the store's init gate, so it runs off main (audit 2026-10-13
+     * STAB-10); a field the user (or restored state) already filled is kept.
+     */
+    private fun prefillSavedSettings() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (savedUrl, savedKey) = withContext(ServiceRegistry.coroutineModule.ioDispatcher) {
+                LRRAuthManager.getServerUrl() to LRRAuthManager.getApiKey()
+            }
+            if (savedUrl != null && mServerUrl?.text.isNullOrEmpty()) mServerUrl?.setText(savedUrl)
+            if (savedKey != null && mApiKey?.text.isNullOrEmpty()) mApiKey?.setText(savedKey)
+            updateCleartextRowVisibility(mServerUrl?.text?.toString().orEmpty())
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        prefillSavedSettings()
         // View-scoped so the previous fragment-scoped collectors no longer stack
         // one set per re-attach. These three are replay=0 one-shot results of a
         // multi-second connection test that keeps running in the background, and

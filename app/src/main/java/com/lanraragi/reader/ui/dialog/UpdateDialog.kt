@@ -23,7 +23,10 @@ import com.lanraragi.reader.updater.ApkDownloader
 import com.lanraragi.reader.updater.ApkSigner
 import com.lanraragi.reader.updater.DownloadProgress
 import com.lanraragi.reader.updater.GhRelease
+import com.lanraragi.reader.ServiceRegistry
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 
@@ -148,7 +151,7 @@ object UpdateDialog {
                     }
                     DownloadProgress.Success -> {
                         progressDialog.dismiss()
-                        installApp(activity, dest)
+                        verifyThenInstall(scope, activity, dest)
                     }
                     is DownloadProgress.Failed -> {
                         Analytics.recordException(progress.cause)
@@ -179,12 +182,26 @@ object UpdateDialog {
     }
 
     /**
+     * Checks [apkFile]'s signer, then [installApp]. Parsing and verifying the
+     * whole APK's signature is file IO plus crypto, so it runs off main
+     * (audit 2026-10-13 STAB-10).
+     */
+    private fun verifyThenInstall(scope: CoroutineScope, activity: Activity, apkFile: File) {
+        scope.launch {
+            val sameSigner = withContext(ServiceRegistry.coroutineModule.ioDispatcher) {
+                ApkSigner.matchesInstalled(activity, apkFile)
+            }
+            installApp(activity, apkFile, sameSigner)
+        }
+    }
+
+    /**
      * Fire system PackageInstaller intent. Gated on canRequestPackageInstalls; if false,
      * routes to [showInstallPermissionDialog] which jumps the user to system settings and
      * registers an observer to auto-retry on return.
      */
-    private fun installApp(activity: Activity, apkFile: File) {
-        if (!ApkSigner.matchesInstalled(activity, apkFile)) {
+    private fun installApp(activity: Activity, apkFile: File, sameSigner: Boolean) {
+        if (!sameSigner) {
             // Another key: the installer would refuse it anyway (audit SEC-12).
             apkFile.delete()
             if (isActivityAlive(activity)) {
@@ -261,7 +278,7 @@ object UpdateDialog {
                 if (!leftForeground) return
                 owner.lifecycle.removeObserver(this)
                 if (apkFile.exists() && activity.packageManager.canRequestPackageInstalls()) {
-                    installApp(activity, apkFile)
+                    verifyThenInstall(owner.lifecycleScope, activity, apkFile)
                 }
                 // else: permission still not granted, or APK evicted — silent
             }
