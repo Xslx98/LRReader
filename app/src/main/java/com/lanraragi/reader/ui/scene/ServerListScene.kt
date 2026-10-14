@@ -230,8 +230,9 @@ class ServerListScene : BaseScene() {
             }
         }
 
-        // Reload download manager on main thread (repo.assertMainThread)
-        ServiceRegistry.dataModule.downloadManager.reload()
+        // Downloads are left alone: the list is global and each worker keeps
+        // fetching from its row's source profile, so a switch must not stop
+        // the queue (audit 2026-10-13 STAB-02).
 
         Toast.makeText(
             ctx,
@@ -251,9 +252,6 @@ class ServerListScene : BaseScene() {
 
     private fun handleProfileAdded(event: ServerListViewModel.ServerListUiEvent.ProfileAdded) {
         val ctx = getEHContext() ?: return
-
-        // Reload download manager on main thread
-        ServiceRegistry.dataModule.downloadManager.reload()
 
         Toast.makeText(
             ctx,

@@ -624,6 +624,11 @@ class DownloadManager(
 
     // ── Reload ────────────────────────────────────────────────
 
+    /**
+     * Stops every running and queued download, then re-reads the list from
+     * the database. Not for server-profile changes: the list is global and
+     * workers fetch from each row's source profile (audit 2026-10-13 STAB-02).
+     */
     fun reload() {
         repo.assertMainThread()
         stopAllDownload()
