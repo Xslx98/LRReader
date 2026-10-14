@@ -535,7 +535,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         recycler.adapter = adapter
 
         recycler.addOnScrollListener(
-            PrefetchScrollListener(spanCount) { page ->
+            PrefetchScrollListener(spanCount, onWindow = pageThumbsViewModel::retainWindow) { page ->
                 pageThumbsViewModel.requestPage(page)
             }
         )

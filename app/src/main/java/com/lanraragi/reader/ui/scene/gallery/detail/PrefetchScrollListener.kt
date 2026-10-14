@@ -41,10 +41,15 @@ import androidx.recyclerview.widget.RecyclerView
  * prefetch creates *view holders* ahead of time but does not fetch
  * *content*. Per-page thumbnails come from the server, so we need to
  * trigger the HTTP request explicitly during scroll.
+ *
+ * Before each dispatch [onWindow] receives the positions worth keeping
+ * (the visible range with [rowsAhead] rows on either side), so the grid can
+ * cancel requests for positions a fling has already left (audit 2026-10-13 PERF-01).
  */
 internal class PrefetchScrollListener(
     private val spanCount: Int,
     private val rowsAhead: Int = ROWS_AHEAD_DEFAULT,
+    private val onWindow: (positions: IntRange) -> Unit = {},
     private val onPrefetch: (page: Int) -> Unit,
 ) : RecyclerView.OnScrollListener() {
 
@@ -72,6 +77,11 @@ internal class PrefetchScrollListener(
         // the *destination* — without including it in the prefetch
         // window the user lands on placeholders).
         val targetEnd = (lastVisible + rowsAhead * spanCount).coerceAtMost(itemCount - 1)
+        // Keep the same band behind the viewport: rows just scrolled past
+        // (or bound by RecyclerView's own prefetch on an upward scroll)
+        // would otherwise be cancelled and refetched on every direction change.
+        val keepStart = (firstVisible - rowsAhead * spanCount).coerceAtLeast(0)
+        onWindow(keepStart..targetEnd)
         for (p in firstVisible..targetEnd) {
             onPrefetch(p)
         }

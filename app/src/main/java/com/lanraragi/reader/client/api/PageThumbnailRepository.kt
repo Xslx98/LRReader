@@ -14,6 +14,7 @@ import android.graphics.BitmapFactory
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -22,7 +23,6 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Per-page thumbnail loader for the detail-page preview grid.
@@ -40,12 +40,14 @@ import java.util.concurrent.ConcurrentHashMap
  *     backoff schedule until either a 200 lands or [BACKOFFS_MS]
  *     exhaust.
  *
- * **Scope:** in-flight `async` blocks live on
- * `ServiceRegistry.coroutineModule.ioScope` so a Scene leaving does
- * not cancel a thumbnail download mid-flight (its result still lands
- * in [PageThumbnailCache] and the next entry hits the cache). The
- * ViewModel-side observer is what cancels on Scene leave; the
- * underlying network work is allowed to finish cheaply.
+ * **Scope:** a fetch runs on `ServiceRegistry.coroutineModule.ioScope`
+ * so one cancelled caller does not abort it for the others sharing it,
+ * but it is reference-counted: once every caller awaiting it has been
+ * cancelled (the grid scrolled past the page, the Scene left), the
+ * fetch is cancelled too. Abandoned fetches would otherwise hold the
+ * FIFO [semaphore] ahead of the pages now on screen and their late
+ * results would evict on-screen tiles from the small
+ * [PageThumbnailCache] (audit 2026-10-13 PERF-01).
  */
 object PageThumbnailRepository {
 
@@ -71,15 +73,27 @@ object PageThumbnailRepository {
 
     private val semaphore = Semaphore(PARALLEL_FETCHES)
 
-    /** Deferred-keyed in-flight registry for dedup of concurrent identical requests. */
-    private val inFlight = ConcurrentHashMap<String, Deferred<Result<Bitmap>>>()
+    /** One shared fetch and the number of callers currently awaiting it. */
+    private class InFlight {
+        lateinit var deferred: Deferred<Result<Bitmap>>
+        var waiters = 0
+    }
+
+    /** In-flight registry for dedup of concurrent identical requests; guarded by itself. */
+    private val inFlight = HashMap<String, InFlight>()
+
+    /** Number of fetches currently registered; for tests. */
+    internal fun inFlightCount(): Int = synchronized(inFlight) { inFlight.size }
 
     /**
      * Load the thumbnail for ([arcid], [page]). Order of operations:
      *  1. Hit [PageThumbnailCache] → return immediately.
-     *  2. Hit [inFlight] → await the existing Deferred.
+     *  2. Hit [inFlight] → await the existing fetch.
      *  3. Otherwise start a new fetch, register it, and return its
      *     result.
+     *
+     * Cancelling the caller cancels the fetch when no other caller is
+     * still awaiting it.
      *
      * @param baseUrl LANraragi base URL of the **source** server
      *   (resolve via [resolveSourceBaseUrl] in the caller — the
@@ -89,21 +103,39 @@ object PageThumbnailRepository {
         PageThumbnailCache.get(arcid, page)?.let { return Result.success(it) }
 
         val key = "$arcid|$page"
-        val deferred = inFlight.computeIfAbsent(key) {
-            ServiceRegistry.coroutineModule.ioScope.async {
-                try {
-                    // Re-check cache after acquiring slot — another
-                    // caller may have completed while we waited.
-                    PageThumbnailCache.get(arcid, page)?.let {
-                        return@async Result.success(it)
+        val entry = synchronized(inFlight) {
+            val e = inFlight[key] ?: InFlight().also { created ->
+                created.deferred = ServiceRegistry.coroutineModule.ioScope.async(start = CoroutineStart.LAZY) {
+                    try {
+                        // Re-check cache after acquiring slot — another
+                        // caller may have completed while we waited.
+                        PageThumbnailCache.get(arcid, page)?.let {
+                            return@async Result.success(it)
+                        }
+                        fetchWithBackoff(arcid, page, baseUrl)
+                    } finally {
+                        synchronized(inFlight) { inFlight.remove(key, created) }
                     }
-                    fetchWithBackoff(arcid, page, baseUrl)
-                } finally {
-                    inFlight.remove(key)
                 }
+                inFlight[key] = created
             }
+            e.waiters++
+            e
         }
-        return deferred.await()
+        entry.deferred.start()
+        try {
+            return entry.deferred.await()
+        } finally {
+            // The last waiter leaving an unfinished fetch abandons it.
+            // Unregister under the lock so no new caller can join it.
+            val abandoned = synchronized(inFlight) {
+                entry.waiters--
+                val orphaned = entry.waiters == 0 && !entry.deferred.isCompleted
+                if (orphaned) inFlight.remove(key, entry)
+                orphaned
+            }
+            if (abandoned) entry.deferred.cancel()
+        }
     }
 
     /**
