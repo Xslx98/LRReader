@@ -15,7 +15,9 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.widget.GalleryInfoContentHelper
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -33,6 +35,20 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
      * page * LRR_PAGE_SIZE (audit NET-2). Main-thread only.
      */
     private val pageOffsets = PageOffsetTracker(LRR_PAGE_SIZE)
+
+    /** The in-flight load. Main-thread only. */
+    private var loadJob: Job? = null
+
+    /**
+     * Starts [block] as the list's load, cancelling the previous one: the
+     * ContentLayout drops a superseded task's result by its id anyway, so a
+     * fast filter/sort/category change otherwise left every older
+     * `/api/search` request and JSON parse running (audit 2026-10-13 PERF-12).
+     */
+    internal fun replaceLoad(block: suspend CoroutineScope.() -> Unit): Job {
+        loadJob?.cancel()
+        return ServiceRegistry.coroutineModule.ioScope.launch(block = block).also { loadJob = it }
+    }
 
     interface Callback {
         fun getHostContext(): Context?
@@ -108,7 +124,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
             order = sortOrder
         )
 
-        ServiceRegistry.coroutineModule.ioScope.launch {
+        replaceLoad {
             try {
                 val loadResult = pagingSource.load(
                     PagingSource.LoadParams.Refresh(
