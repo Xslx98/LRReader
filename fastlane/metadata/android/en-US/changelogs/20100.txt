@@ -1,0 +1,5 @@
+2.1: faster and steadier.
+New: when the selected archives share no common name, a new tankoubon is pre-named after the first one.
+Faster cold start. Long strip pages use far less graphics memory. Detail-page thumbnails no longer wait behind pages you scrolled past.
+Switching servers no longer stops downloads, and every download stopped by the system can be retried.
+Fixed: toolbar and buttons hidden behind the system bars on Android 15+; safer upload and download-list import.
