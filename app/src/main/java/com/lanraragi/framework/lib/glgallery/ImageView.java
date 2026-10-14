@@ -22,6 +22,8 @@ import com.lanraragi.framework.lib.glview.anim.AlphaAnimation;
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
 import com.lanraragi.framework.lib.glview.glrenderer.Texture;
 import com.lanraragi.framework.lib.glview.image.ImageTexture;
+import com.lanraragi.framework.lib.glview.image.TileRegions;
+import com.lanraragi.framework.lib.glview.view.GLRoot;
 import com.lanraragi.framework.lib.glview.view.GLView;
 import com.lanraragi.framework.lib.yorozuya.AnimationUtils;
 import com.lanraragi.framework.lib.yorozuya.MathUtils;
@@ -55,6 +57,8 @@ class ImageView extends GLView implements ImageTexture.Callback {
     private final RectF mSrcActual = new RectF();
     private final RectF mDstActual = new RectF();
     private final Rect mValidRect = new Rect();
+    private final RectF mScreenInTexture = new RectF();
+    private final int[] mRootPosition = new int[2];
 
     private int mScaleMode = SCALE_FIT;
     private int mStartPosition = START_POSITION_TOP_RIGHT;
@@ -589,6 +593,18 @@ class ImageView extends GLView implements ImageTexture.Callback {
             srcActual.setEmpty();
             dstActual.setEmpty();
         }
+
+        // Tell the texture where the screen is, so it uploads the tiles near
+        // it first and releases those far away (audit 2026-10-13 PERF-02).
+        GLRoot root = getGLRoot();
+        if (root != null) {
+            getPositionInRoot(mRootPosition);
+            TileRegions.screenInTexture(mScreenInTexture, dst, mRootPosition[0], mRootPosition[1],
+                    root.getWidth(), root.getHeight(), width, height);
+        } else {
+            mScreenInTexture.setEmpty();
+        }
+        mImageTexture.setScreenRegion(mScreenInTexture);
 
         mPositionInRootDirty = false;
     }
