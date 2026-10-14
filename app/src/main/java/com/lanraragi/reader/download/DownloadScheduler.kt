@@ -188,9 +188,9 @@ internal class DownloadScheduler(
         activeWorkers.clear()
         speedTracker.stop()
         if (stopped.isEmpty()) return null
+        DownloadResumeBanner.markResumed(stopped.map { it.arcid })
         for (info in stopped) {
             info.state = DownloadState.NONE
-            DownloadResumeBanner.markResumed(info.arcid)
             progressTracker.clear(info.arcid)
             repo.persistInfo(info)
             eventBus.getDownloadListener()?.onCancel(info)

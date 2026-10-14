@@ -374,29 +374,22 @@ class DownloadManager(
 
     fun startRangeDownload(arcidList: List<String>) {
         repo.assertMainThread()
-        var update = false
         val changed = ArrayList<DownloadInfo>()
-        val downloadOrder = DownloadSettings.getDownloadOrder()
-        if (downloadOrder) {
-            for (arcid in arcidList) {
-                val info = repo.allInfoMap[arcid] ?: continue
-                if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
-                    DownloadResumeBanner.markResumed(arcid)
-                    update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); changed.add(info)
-                }
-            }
-        } else {
-            for (arcid in arcidList.reversed()) {
-                val info = repo.allInfoMap[arcid] ?: continue
-                if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) {
-                    DownloadResumeBanner.markResumed(arcid)
-                    update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); changed.add(info)
-                }
+        val ordered = if (DownloadSettings.getDownloadOrder()) arcidList else arcidList.reversed()
+        for (arcid in ordered) {
+            val info = repo.allInfoMap[arcid]
+            if (info != null && info.state in RESTARTABLE_STATES) {
+                info.state = DownloadState.WAIT
+                scheduler.waitList.add(info)
+                changed.add(info)
             }
         }
-        // One transaction for the whole range instead of one per row.
-        if (changed.isNotEmpty()) repo.persistInfoBatch(changed)
-        if (update) { eventBus.forEachListener { it.onUpdateAll() }; scheduler.ensureDownload() }
+        if (changed.isEmpty()) return
+        // One banner write and one transaction for the whole range instead of one per row.
+        DownloadResumeBanner.markResumed(changed.map { it.arcid })
+        repo.persistInfoBatch(changed)
+        eventBus.forEachListener { it.onUpdateAll() }
+        scheduler.ensureDownload()
     }
 
     fun startAllDownload() {
@@ -406,12 +399,12 @@ class DownloadManager(
         val downloadOrder = DownloadSettings.getDownloadOrder()
         for (info in repo.allInfoList) {
             if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED) {
-                DownloadResumeBanner.markResumed(info.arcid)
                 update = true; info.state = DownloadState.WAIT
                 if (downloadOrder) scheduler.waitList.add(info) else scheduler.waitList.add(0, info)
                 changed.add(info)
             }
         }
+        DownloadResumeBanner.markResumed(changed.map { it.arcid })
         if (changed.isNotEmpty()) repo.persistInfoBatch(changed)
         if (update) { eventBus.forEachListener { it.onUpdateAll() }; scheduler.ensureDownload() }
     }
@@ -617,7 +610,7 @@ class DownloadManager(
         repo.assertMainThread()
         scheduler.stopRangeDownload(arcidList)
         repo.deleteInfoRange(arcidList.toHashSet(), dissolveTankIds, ::postTankGroupWriteFailed)
-        arcidList.forEach { DownloadResumeBanner.markResumed(it) }
+        DownloadResumeBanner.markResumed(arcidList)
         eventBus.forEachListener { it.onReload() }
         scheduler.ensureDownload()
     }
@@ -729,6 +722,9 @@ class DownloadManager(
     companion object {
         private val TAG = DownloadManager::class.java.simpleName
         private const val RATING_SYNC_PREFS = "download_rating_sync"
+
+        /** States a range start re-queues. */
+        private val RESTARTABLE_STATES = setOf(DownloadState.NONE, DownloadState.FAILED, DownloadState.FINISH)
         const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"
 
         /**

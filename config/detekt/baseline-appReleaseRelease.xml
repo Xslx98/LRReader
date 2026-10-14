@@ -423,9 +423,7 @@
     <ID>UnreachableCode:DownloadListInfosExecutor.kt$DownloadListInfosExecutor.Companion$arr[i].arcid ?: ""</ID>
     <ID>UnreachableCode:DownloadListInfosExecutor.kt$DownloadListInfosExecutor.Companion$arr[j].arcid ?: ""</ID>
     <ID>UnreachableCode:DownloadManager.kt$DownloadManager$RatingSyncSnapshot(info, arcid, info.serverProfileId, info.rating)</ID>
-    <ID>UnreachableCode:DownloadManager.kt$DownloadManager$if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED || info.state == DownloadState.FINISH) { DownloadResumeBanner.markResumed(arcid) update = true; info.state = DownloadState.WAIT; scheduler.waitList.add(info); changed.add(info) }</ID>
     <ID>UnreachableCode:DownloadManager.kt$DownloadManager$val arcid = info.arcid ?: return@mapNotNull null</ID>
-    <ID>UnreachableCode:DownloadManager.kt$DownloadManager$val info = repo.allInfoMap[arcid] ?: continue</ID>
     <ID>UnreachableCode:DownloadRepository.kt$DownloadRepository$allInfoList.remove(info)</ID>
     <ID>UnreachableCode:DownloadRepository.kt$DownloadRepository$allInfoMap.remove(arcid)</ID>
     <ID>UnreachableCode:DownloadRepository.kt$DownloadRepository$removeInfoFromDbByArcid(arcid)</ID>

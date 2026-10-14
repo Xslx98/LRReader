@@ -6,7 +6,9 @@ import androidx.core.content.edit
 /**
  * [DownloadResumeBanner.InterruptedStore] backed by SharedPreferences, so the
  * interrupted-download record survives the process that wrote it (A47).
- * Writes use commit(): the record is taken just as a process may die again.
+ * Recording uses commit(): the record is taken just as a process may die
+ * again. Removals use apply(): they run on the main thread, and a lost one
+ * only re-offers a download that was already resumed.
  */
 class PrefsInterruptedStore(private val prefs: SharedPreferences) : DownloadResumeBanner.InterruptedStore {
 
@@ -15,6 +17,10 @@ class PrefsInterruptedStore(private val prefs: SharedPreferences) : DownloadResu
 
     override fun save(arcids: Set<String>) {
         prefs.edit(commit = true) { putStringSet(KEY, arcids.toSet()) }
+    }
+
+    override fun saveAfterRemoval(arcids: Set<String>) {
+        prefs.edit { putStringSet(KEY, arcids.toSet()) }
     }
 
     private companion object {

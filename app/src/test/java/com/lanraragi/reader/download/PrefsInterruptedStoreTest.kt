@@ -29,4 +29,13 @@ class PrefsInterruptedStoreTest {
         PrefsInterruptedStore(prefs).save(emptySet())
         assertEquals(emptySet<String>(), PrefsInterruptedStore(prefs).load())
     }
+
+    @Test
+    fun removalIsVisibleToALaterStore() {
+        PrefsInterruptedStore(prefs).save(setOf("a", "b"))
+
+        PrefsInterruptedStore(prefs).saveAfterRemoval(setOf("b"))
+
+        assertEquals(setOf("b"), PrefsInterruptedStore(prefs).load())
+    }
 }

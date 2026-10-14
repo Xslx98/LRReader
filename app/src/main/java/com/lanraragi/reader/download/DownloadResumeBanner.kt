@@ -19,6 +19,13 @@ object DownloadResumeBanner {
     interface InterruptedStore {
         fun load(): Set<String>
         fun save(arcids: Set<String>)
+
+        /**
+         * Store [arcids] after a removal. Losing a removal to process death only
+         * re-offers an already resumed download, so it need not be durable the
+         * way [save] is (audit 2026-10-13 STAB-05).
+         */
+        fun saveAfterRemoval(arcids: Set<String>) = save(arcids)
     }
 
     private class MemoryStore : InterruptedStore {
@@ -56,18 +63,28 @@ object DownloadResumeBanner {
         paused[arcid] = title ?: arcid
     }
 
+    fun markResumed(arcid: String) = markResumed(listOf(arcid))
+
+    /**
+     * Clears every banner entry of [arcids] with at most one store write, so a
+     * start/stop/delete loop over many rows does not rewrite the prefs file
+     * once per row (audit 2026-10-13 STAB-05).
+     */
     @Synchronized
-    fun markResumed(arcid: String) {
-        paused.remove(arcid)
-        // Also drop any timed-out entry: this is the "clear the banner for this
-        // arcid" call used by network-resume AND by stop/delete paths. Without
-        // clearing timedOut too, deleting a download that already gave up left a
-        // ghost "N downloads timed out" Snackbar on the next foreground.
-        timedOut.remove(arcid)
-        storageFull.remove(arcid)
-        systemLimited.remove(arcid)
+    fun markResumed(arcids: Collection<String>) {
+        if (arcids.isEmpty()) return
+        for (arcid in arcids) {
+            paused.remove(arcid)
+            // Also drop any timed-out entry: this is the "clear the banner for this
+            // arcid" call used by network-resume AND by stop/delete paths. Without
+            // clearing timedOut too, deleting a download that already gave up left a
+            // ghost "N downloads timed out" Snackbar on the next foreground.
+            timedOut.remove(arcid)
+            storageFull.remove(arcid)
+            systemLimited.remove(arcid)
+        }
         val interrupted = interruptedStore.load()
-        if (arcid in interrupted) interruptedStore.save(interrupted - arcid)
+        if (arcids.any { it in interrupted }) interruptedStore.saveAfterRemoval(interrupted - arcids.toSet())
     }
 
     /** Record downloads the boot-time reset took out of the queue. */
