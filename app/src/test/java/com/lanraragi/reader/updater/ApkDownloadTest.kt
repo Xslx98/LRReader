@@ -248,6 +248,18 @@ class ApkDownloadTest {
     }
 
     @Test
+    fun aMirrorAssetWithoutADigestIsRefusedBeforeAnyRequest() {
+        val asset = GhReleaseAsset(browserDownloadUrl = "https://dl.xslx.site/lrreader/LRReader-v9.9.9-arm64.apk", size = 10)
+
+        val events = runBlocking {
+            ApkDownloader.download(asset, File(context.cacheDir, "nodigest-only.apk"), OkHttpClient()).toList()
+        }
+
+        val failed = events.single() as DownloadProgress.Failed
+        assertTrue("expected a refusal, not a network error: ${failed.cause}", failed.cause is SecurityException)
+    }
+
+    @Test
     fun mirrorBytesWithoutADigestAreNeverFetchedTheFallbackIsUsed() {
         val apk = ByteArray(2_000) { 9 }
         val server = serve(apk)
