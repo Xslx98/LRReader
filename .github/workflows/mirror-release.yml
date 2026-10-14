@@ -1,0 +1,155 @@
+name: Mirror release
+
+# Copies the latest published release's APK and a latest.json to the China
+# download mirror (dl.xslx.site/lrreader/, see UpdateMirror in the app). The
+# mirror is untrusted by the app: it checks every APK against the release's
+# SHA-256 digest and signer, so this job only has to keep the mirror current.
+# Secrets (set by the maintainer, never in this file):
+#   DL_SSH_KEY      ed25519 private key of the dlpush account
+#   DL_KNOWN_HOSTS  known_hosts line(s) of the mirror host
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to mirror (default: the latest release)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-release
+  cancel-in-progress: false
+
+env:
+  REPO: ${{ github.repository }}
+  DL_TARGET: dlpush@162.14.97.60
+  MIRROR_BASE: https://dl.xslx.site/lrreader/
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Resolve the tag (latest, non-prerelease only)
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Passed through env, never interpolated into the script.
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          TAG="${EVENT_TAG:-${INPUT_TAG:-}}"
+          LATEST=$(gh api "repos/$REPO/releases/latest" --jq .tag_name)
+          if [ -z "$TAG" ]; then TAG="$LATEST"; fi
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::unexpected tag '$TAG'"
+            exit 1
+          fi
+          # Only the latest release may replace latest.json: re-running an
+          # older tag must not roll the mirror back.
+          PRERELEASE=$(gh api "repos/$REPO/releases/tags/$TAG" --jq .prerelease)
+          if [ "$TAG" != "$LATEST" ] || [ "$PRERELEASE" != "false" ]; then
+            echo "::notice::$TAG is not the latest non-prerelease release ($LATEST); nothing to mirror"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Download the APKs and check them against the release digests
+        if: steps.resolve.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/mirror"
+          mkdir -p "$OUT"
+          gh api "repos/$REPO/releases/tags/$TAG" > "$RUNNER_TEMP/release.json"
+          # APKs only: the R8 mapping stays on GitHub.
+          gh release download "$TAG" --repo "$REPO" -p 'LRReader-*.apk' -D "$OUT"
+          shopt -s nullglob
+          APKS=("$OUT"/LRReader-*.apk)
+          if [ "${#APKS[@]}" -eq 0 ]; then
+            echo "::error::release $TAG has no LRReader-*.apk asset"
+            exit 1
+          fi
+          for APK in "${APKS[@]}"; do
+            NAME=$(basename "$APK")
+            EXPECTED=$(jq -r --arg n "$NAME" '.assets[] | select(.name == $n) | .digest // empty' "$RUNNER_TEMP/release.json")
+            ACTUAL="sha256:$(sha256sum "$APK" | cut -d' ' -f1)"
+            if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$ACTUAL" ]; then
+              echo "::error::$NAME digest '$EXPECTED' does not match the download ($ACTUAL)"
+              exit 1
+            fi
+            echo "OK: $NAME $ACTUAL"
+          done
+
+      - name: Build latest.json
+        if: steps.resolve.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          # A subset of GitHub's releases/latest with the same field names;
+          # .apk assets only, download URLs pointing at the mirror.
+          jq --arg base "$MIRROR_BASE" '{
+              tag_name, name, html_url, prerelease, body, published_at,
+              assets: [ .assets[] | select(.name | endswith(".apk")) | {
+                name, size, content_type, digest,
+                browser_download_url: ($base + .name)
+              } ]
+            }' "$RUNNER_TEMP/release.json" > "$RUNNER_TEMP/mirror/latest.json"
+          jq -e '.assets | length > 0' "$RUNNER_TEMP/mirror/latest.json" > /dev/null
+          jq 'del(.body)' "$RUNNER_TEMP/mirror/latest.json"
+
+      - name: Upload to the mirror (APKs first, latest.json last)
+        if: steps.resolve.outputs.skip != 'true'
+        env:
+          DL_SSH_KEY: ${{ secrets.DL_SSH_KEY }}
+          DL_KNOWN_HOSTS: ${{ secrets.DL_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DL_SSH_KEY" ] || [ -z "$DL_KNOWN_HOSTS" ]; then
+            echo "::error::secrets DL_SSH_KEY and DL_KNOWN_HOSTS must be set"
+            exit 1
+          fi
+          KEY="$RUNNER_TEMP/dl_key"
+          KH="$RUNNER_TEMP/dl_known_hosts"
+          ( umask 077; printf '%s\n' "$DL_SSH_KEY" > "$KEY"; printf '%s\n' "$DL_KNOWN_HOSTS" > "$KH" )
+          chmod 600 "$KEY" "$KH"
+          SSH="ssh -i $KEY -o UserKnownHostsFile=$KH -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes"
+          # The server side is `rrsync -wo -no-del`: write-only into its own
+          # directory, so the remote path stays empty and nothing is deleted.
+          rsync -t -e "$SSH" "$RUNNER_TEMP"/mirror/LRReader-*.apk "$DL_TARGET:"
+          # latest.json goes last: it must never point at an APK not yet uploaded.
+          rsync -t -e "$SSH" "$RUNNER_TEMP/mirror/latest.json" "$DL_TARGET:"
+
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/dl_key" "$RUNNER_TEMP/dl_known_hosts"
+
+      - name: Check the mirror answers
+        if: steps.resolve.outputs.skip != 'true'
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          # The runner is outside China, so the mirror redirects it to GitHub:
+          # only check that it answers (200 or 302); never fail the job here.
+          CODE=$(curl -sS -o "$RUNNER_TEMP/served.json" -w '%{http_code}' --max-redirs 0 \
+            "${MIRROR_BASE}latest.json" || true)
+          case "$CODE" in
+            200)
+              SERVED=$(jq -r .tag_name "$RUNNER_TEMP/served.json" 2>/dev/null || true)
+              if [ "$SERVED" = "$TAG" ]; then
+                echo "OK: mirror serves $TAG"
+              else
+                echo "::warning::mirror latest.json reports '$SERVED', expected $TAG"
+              fi
+              ;;
+            302) echo "OK: mirror answered 302 (redirect for non-China clients)" ;;
+            *) echo "::warning::mirror latest.json answered HTTP '$CODE'" ;;
+          esac
