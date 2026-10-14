@@ -37,7 +37,8 @@ class ReaderBenchmark {
                 MemoryUsageMetric(MemoryUsageMetric.Mode.Max),
             ),
             compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
-            startupMode = StartupMode.COLD,
+            // COLD would kill the process setupBlock just launched to the list.
+            startupMode = StartupMode.WARM,
             iterations = ITERATIONS,
             setupBlock = { launchToList() },
         ) {
