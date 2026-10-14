@@ -6,7 +6,9 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
  * Checks around the self-update download (audit 2026-10-04 C46). The APK is
  * the one thing the app installs over itself, so nothing about it is taken
  * on trust from the API response:
- *  - it is fetched only from this repository's GitHub release downloads;
+ *  - it is fetched only from this repository's GitHub release downloads or
+ *    the China mirror ([UpdateMirror], untrusted: its bytes must carry a
+ *    digest that matches);
  *  - the file name comes from a fixed safe alphabet;
  *  - the downloaded bytes must match the asset's size and SHA-256 digest
  *    as GitHub reports them.
@@ -18,11 +20,20 @@ internal object ApkIntegrity {
     const val FALLBACK_NAME = "LRReader-update.apk"
     private val SAFE_NAME = Regex("""^[A-Za-z0-9._-]{1,100}\.apk$""")
 
-    /** True only for an https URL of a release download of this repository. */
+    /**
+     * True only for an https URL of a release download of this repository, or
+     * of the mirror's `/lrreader/` directory (exact host, no wildcard).
+     */
     fun isTrustedUrl(url: String): Boolean {
-        val parsed = url.toHttpUrlOrNull()
-        return parsed != null && parsed.isHttps && parsed.host == HOST && parsed.encodedPath.startsWith(PATH_PREFIX)
+        val parsed = url.toHttpUrlOrNull() ?: return false
+        val githubRelease = parsed.isHttps && parsed.host == HOST && parsed.encodedPath.startsWith(PATH_PREFIX)
+        return githubRelease || UpdateMirror.isMirrorUrl(url)
     }
+
+    /** Whether [digest] is a SHA-256 digest [mismatch] can check. */
+    fun hasSha256(digest: String?): Boolean =
+        digest != null && digest.startsWith(SHA256_PREFIX, ignoreCase = true) &&
+            digest.length > SHA256_PREFIX.length
 
     /** [name] when it is a plain `.apk` file name, else [FALLBACK_NAME]. */
     fun safeFileName(name: String?): String =
