@@ -1,6 +1,8 @@
 package com.lanraragi.reader.updater
 
 import android.content.Context
+import android.util.Log
+import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -8,6 +10,8 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.flowOf
 import okhttp3.Call
@@ -82,18 +86,46 @@ object ApkDownloader {
      * The whole APK (15-25 MB) streams inside one call; the default [client] is the shared
      * large-file client, which has no call cap, so a slow link can't abort it mid-stream
      * (see INetworkModule.largeFileClient).
+     *
+     * [fallbackUrl] (the GitHub download, see [UpdateMirror.fallbackFor]) is tried once when
+     * the first attempt fails for any reason — network, non-2xx, size or digest mismatch —
+     * after the leftover file is deleted, against the same size and digest. The mirror is
+     * untrusted: its bytes are only accepted with a SHA-256 digest to check them against.
      */
     fun download(
         asset: GhReleaseAsset,
         dest: File,
         client: OkHttpClient = ServiceRegistry.networkModule.largeFileClient,
         isTrustedUrl: (String) -> Boolean = ApkIntegrity::isTrustedUrl,
+        fallbackUrl: String? = null,
     ): Flow<DownloadProgress> {
-        val url = asset.browserDownloadUrl
-        return if (isTrustedUrl(url)) {
-            verifiedDownload(asset, url, dest, client)
-        } else {
-            flowOf(DownloadProgress.Failed(SecurityException("Untrusted update URL: $url")))
+        val first = attempt(asset, asset.browserDownloadUrl, dest, client, isTrustedUrl)
+        if (fallbackUrl == null) return first
+        return flow {
+            var failure: DownloadProgress.Failed? = null
+            first.collect { if (it is DownloadProgress.Failed) failure = it else emit(it) }
+            if (failure != null) {
+                if (BuildConfig.DEBUG) Log.w(TAG, "Mirror download failed, retrying from GitHub: ${failure?.cause}")
+                dest.delete()
+                emitAll(attempt(asset, fallbackUrl, dest, client, isTrustedUrl))
+            }
+        }
+    }
+
+    private fun attempt(
+        asset: GhReleaseAsset,
+        url: String,
+        dest: File,
+        client: OkHttpClient,
+        isTrustedUrl: (String) -> Boolean,
+    ): Flow<DownloadProgress> {
+        val mirror = UpdateMirror.isMirrorUrl(url)
+        return when {
+            !isTrustedUrl(url) ->
+                flowOf(DownloadProgress.Failed(SecurityException("Untrusted update URL: $url")))
+            mirror && !ApkIntegrity.hasSha256(asset.digest) ->
+                flowOf(DownloadProgress.Failed(SecurityException("Mirror APK without a SHA-256 digest")))
+            else -> verifiedDownload(asset, url, dest, client, if (mirror) UpdateMirror.userAgent else null)
         }
     }
 
@@ -102,8 +134,11 @@ object ApkDownloader {
         url: String,
         dest: File,
         client: OkHttpClient,
+        userAgent: String?,
     ): Flow<DownloadProgress> = callbackFlow {
-        val request = Request.Builder().url(url).build()
+        val request = Request.Builder().url(url)
+            .apply { if (userAgent != null) header("User-Agent", userAgent) }
+            .build()
         val call = client.newCall(request)
         // Tracks whether we reached Success cleanly. Read from awaitClose to decide whether
         // to delete the dest file. AtomicBoolean because onResponse (OkHttp dispatcher thread)
@@ -195,6 +230,7 @@ object ApkDownloader {
         .flowOn(Dispatchers.IO)
 
     const val UPDATES_DIR = "updates"
+    private const val TAG = "ApkDownloader"
     private const val BUFFER_SIZE = 8 * 1024              // 8 KB read buffer
     private const val EMIT_INTERVAL_BYTES = 256 * 1024L   // emit InProgress every 256 KB
 }

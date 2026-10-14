@@ -21,6 +21,27 @@ class ApkIntegrityTest {
     }
 
     @Test
+    fun theMirrorIsTrustedOnlyOnItsExactHostHttpsAndDirectory() {
+        assertTrue(ApkIntegrity.isTrustedUrl("https://dl.xslx.site/lrreader/LRReader-v2.1.0-arm64.apk"))
+        assertTrue(ApkIntegrity.isTrustedUrl("https://dl.xslx.site/lrreader/latest.json"))
+        assertFalse(ApkIntegrity.isTrustedUrl("http://dl.xslx.site/lrreader/LRReader-v2.1.0-arm64.apk"))
+        assertFalse(ApkIntegrity.isTrustedUrl("https://dl.xslx.site.evil.com/lrreader/LRReader-v2.1.0-arm64.apk"))
+        assertFalse(ApkIntegrity.isTrustedUrl("https://evil.dl.xslx.site/lrreader/LRReader-v2.1.0-arm64.apk"))
+        assertFalse(ApkIntegrity.isTrustedUrl("https://dl.xslx.site/other/LRReader-v2.1.0-arm64.apk"))
+        assertFalse(ApkIntegrity.isTrustedUrl("https://dl.xslx.site/lrreader-evil/a.apk"))
+        assertFalse(ApkIntegrity.isTrustedUrl("https://dl.xslx.site/lrreader/../other/a.apk"))
+        assertFalse(ApkIntegrity.isTrustedUrl("https://dl.xslx.site/LRReader-v2.1.0-arm64.apk"))
+    }
+
+    @Test
+    fun onlyASha256DigestCounts() {
+        assertTrue(ApkIntegrity.hasSha256("sha256:" + "ab".repeat(32)))
+        assertFalse(ApkIntegrity.hasSha256(null))
+        assertFalse(ApkIntegrity.hasSha256("sha256:"))
+        assertFalse(ApkIntegrity.hasSha256("md5:00"))
+    }
+
+    @Test
     fun fileNamesAreReducedToAPlainApkName() {
         assertEquals("LRReader-v1.28.0-arm64.apk", ApkIntegrity.safeFileName("LRReader-v1.28.0-arm64.apk"))
         assertEquals(ApkIntegrity.FALLBACK_NAME, ApkIntegrity.safeFileName("../../shared_prefs/x.apk"))

@@ -152,4 +152,38 @@ class GhReleaseTest {
         val release = json.decodeFromString<GhRelease>(payload)
         assertEquals(11400, release.versionCode)
     }
+
+    @Test
+    fun parseMirrorLatestJson() {
+        // dl.xslx.site/lrreader/latest.json: GitHub's field names, .apk assets only,
+        // download URLs rewritten to the mirror, published_at passed through.
+        val payload = """
+            {
+                "tag_name": "v2.1.0",
+                "name": "v2.1.0 — Faster / 更快",
+                "html_url": "https://github.com/Xslx98/LRReader/releases/tag/v2.1.0",
+                "prerelease": false,
+                "body": "## What's New",
+                "published_at": "2026-10-14T08:00:00Z",
+                "assets": [
+                    {
+                        "name": "LRReader-v2.1.0-arm64.apk",
+                        "size": 5281041,
+                        "content_type": "application/vnd.android.package-archive",
+                        "digest": "sha256:${"ab".repeat(32)}",
+                        "browser_download_url": "https://dl.xslx.site/lrreader/LRReader-v2.1.0-arm64.apk"
+                    }
+                ]
+            }
+        """.trimIndent()
+        val release = json.decodeFromString<GhRelease>(payload)
+        val asset = release.apkAsset!!
+        assertEquals("v2.1.0", release.tagName)
+        assertEquals("https://dl.xslx.site/lrreader/LRReader-v2.1.0-arm64.apk", asset.browserDownloadUrl)
+        assertEquals("sha256:${"ab".repeat(32)}", asset.digest)
+        assertEquals(5281041L, asset.size)
+        // The -arm64 asset name does not carry the version pattern: the tag does.
+        assertEquals(20100, release.versionCode)
+        assertTrue(ApkIntegrity.isTrustedUrl(asset.browserDownloadUrl))
+    }
 }

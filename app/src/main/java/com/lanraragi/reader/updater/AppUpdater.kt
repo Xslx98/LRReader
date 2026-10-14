@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -31,8 +32,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * timestamp is advanced. Failed checks (network error) leave the cooldown intact
  * so the next attempt isn't pushed out by a transient failure.
  *
- * Network: single GET to api.github.com/repos/Xslx98/LRReader/releases/latest
+ * Network: GET the China mirror's latest.json ([UpdateMirror], short timeouts),
+ * and when that fails in any way, GET api.github.com/repos/Xslx98/LRReader/releases/latest
  * (unauthenticated; 60 req/hr per IP — well below the 1-day throttle ceiling).
+ * Only both failing is a [UpdateResult.NetworkError]. The mirror is not trusted:
+ * the downloaded APK is still checked against its digest and signer.
  *
  * No on-disk persistence — the previous self-hosted-JSON file dance was removed
  * along with the legacy UpdateInfo/UpdateContent EhViewer scaffold.
@@ -78,7 +82,7 @@ object AppUpdater {
         }
         try {
             val release = try {
-                fetchLatestRelease(ServiceRegistry.networkModule.okHttpClient)
+                fetchRelease(ServiceRegistry.networkModule.okHttpClient)
             } catch (t: Throwable) {
                 // A cancelled caller (scene destroyed mid-check) is not a network
                 // error — don't record it or return a bogus result (NET-3).
@@ -112,9 +116,48 @@ object AppUpdater {
         }
     }
 
-    private suspend fun fetchLatestRelease(client: OkHttpClient): GhRelease? {
+    /**
+     * The latest release from the mirror when it answers with one, else from
+     * GitHub. Null or a thrown exception (GitHub's, as before) means both failed.
+     */
+    internal suspend fun fetchRelease(
+        client: OkHttpClient,
+        mirrorUrl: String = UpdateMirror.LATEST_JSON_URL,
+        githubUrl: String = LATEST_RELEASE_URL,
+    ): GhRelease? = fetchFromMirror(client, mirrorUrl) ?: fetchLatestRelease(client, githubUrl)
+
+    /**
+     * The mirror's latest.json, or null on any failure (network, timeout,
+     * non-2xx including 429, unparsable or tag-less body). Uses its own short
+     * timeouts on a derived client so the shared client is untouched.
+     */
+    private suspend fun fetchFromMirror(client: OkHttpClient, url: String): GhRelease? {
+        val mirrorClient = client.newBuilder()
+            .connectTimeout(UpdateMirror.JSON_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(UpdateMirror.JSON_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
         val request = Request.Builder()
-            .url(LATEST_RELEASE_URL)
+            .url(url)
+            .header("Accept", "application/json")
+            .header("User-Agent", UpdateMirror.userAgent)
+            .build()
+        return try {
+            mirrorClient.newCall(request).await().use { response ->
+                val body = if (response.isSuccessful) response.body?.string() else null
+                if (body == null && BuildConfig.DEBUG) Log.w(TAG, "Update mirror non-2xx: ${response.code}")
+                body?.let { updateJson.decodeFromString<GhRelease>(it) }?.takeIf { it.tagName.isNotBlank() }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "Update mirror failed, falling back to GitHub: $e")
+            null
+        }
+    }
+
+    private suspend fun fetchLatestRelease(client: OkHttpClient, url: String): GhRelease? {
+        val request = Request.Builder()
+            .url(url)
             .header("Accept", "application/vnd.github+json")
             .build()
         client.newCall(request).await().use { response ->

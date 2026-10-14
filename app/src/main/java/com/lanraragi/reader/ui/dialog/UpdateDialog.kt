@@ -23,6 +23,7 @@ import com.lanraragi.reader.updater.ApkDownloader
 import com.lanraragi.reader.updater.ApkSigner
 import com.lanraragi.reader.updater.DownloadProgress
 import com.lanraragi.reader.updater.GhRelease
+import com.lanraragi.reader.updater.UpdateMirror
 import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -142,7 +143,8 @@ object UpdateDialog {
             .create()
 
         val job = scope.launch {
-            ApkDownloader.download(asset, dest).collect { progress ->
+            // A mirror-served APK falls back to the GitHub download once if it fails.
+            ApkDownloader.download(asset, dest, fallbackUrl = UpdateMirror.fallbackFor(release)).collect { progress ->
                 when (progress) {
                     is DownloadProgress.InProgress -> {
                         val pct = progress.percent.coerceIn(0, 100)

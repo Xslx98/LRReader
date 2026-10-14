@@ -193,4 +193,75 @@ class ApkDownloadTest {
         assertEquals(0, server.requestCount)
         server.shutdown()
     }
+
+    // ── mirror → GitHub fallback ──────────────────────────────────────
+
+    private fun downloadWithFallback(asset: GhReleaseAsset, dest: File, fallbackUrl: String) = runBlocking {
+        ApkDownloader.download(asset, dest, OkHttpClient(), isTrustedUrl = { true }, fallbackUrl = fallbackUrl).toList()
+    }
+
+    @Test
+    fun failedFirstDownloadIsRetriedOnceFromTheFallbackWithTheSameChecks() {
+        val apk = ByteArray(50_000) { (it % 251).toByte() }
+        val server = MockWebServer().apply {
+            enqueue(MockResponse().setResponseCode(429))
+            enqueue(MockResponse().setBody(Buffer().write(apk)))
+            start()
+        }
+        val dest = File(context.cacheDir, "fallback.apk")
+        val asset = GhReleaseAsset(
+            browserDownloadUrl = server.url("/mirror/a.apk").toString(),
+            size = apk.size.toLong(), digest = "sha256:${sha256(apk)}",
+        )
+
+        val events = downloadWithFallback(asset, dest, server.url("/github/a.apk").toString())
+
+        assertEquals(DownloadProgress.Success, events.last())
+        assertTrue(events.none { it is DownloadProgress.Failed })
+        assertTrue(dest.readBytes().contentEquals(apk))
+        assertEquals("/mirror/a.apk", server.takeRequest().path)
+        assertEquals("/github/a.apk", server.takeRequest().path)
+        server.shutdown()
+    }
+
+    @Test
+    fun aTamperedFirstDownloadIsDiscardedAndTheFallbackMustAlsoMatch() {
+        val apk = ByteArray(10_000) { 3 }
+        val tampered = ByteArray(10_000) { 4 }
+        val server = MockWebServer().apply {
+            enqueue(MockResponse().setBody(Buffer().write(tampered)))
+            enqueue(MockResponse().setBody(Buffer().write(tampered)))
+            start()
+        }
+        val dest = File(context.cacheDir, "tampered.apk")
+        val asset = GhReleaseAsset(
+            browserDownloadUrl = server.url("/mirror/a.apk").toString(),
+            size = apk.size.toLong(), digest = "sha256:${sha256(apk)}",
+        )
+
+        val events = downloadWithFallback(asset, dest, server.url("/github/a.apk").toString())
+
+        assertTrue(events.last() is DownloadProgress.Failed)
+        assertEquals(2, server.requestCount)
+        assertFalse(dest.exists())
+        server.shutdown()
+    }
+
+    @Test
+    fun mirrorBytesWithoutADigestAreNeverFetchedTheFallbackIsUsed() {
+        val apk = ByteArray(2_000) { 9 }
+        val server = serve(apk)
+        val dest = File(context.cacheDir, "nodigest.apk")
+        // The real mirror URL: no request leaves for it, the missing digest fails it first.
+        val asset = GhReleaseAsset(
+            browserDownloadUrl = "https://dl.xslx.site/lrreader/LRReader-v9.9.9-arm64.apk", size = apk.size.toLong(),
+        )
+
+        val events = downloadWithFallback(asset, dest, server.url("/github/a.apk").toString())
+
+        assertEquals(DownloadProgress.Success, events.last())
+        assertEquals(1, server.requestCount)
+        assertEquals("/github/a.apk", server.takeRequest().path)
+        server.shutdown()
+    }
 }
