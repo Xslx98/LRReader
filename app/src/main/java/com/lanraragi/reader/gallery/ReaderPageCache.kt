@@ -287,7 +287,11 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         durable?.checkRoom(cacheDir)
         val tmpFile = File(cacheDir, "${cacheFile.name}.${Thread.currentThread().id}.tmp")
         try {
-            val call = client.newCall(Request.Builder().url(url).get().build())
+            // Same as the download worker: images don't compress, and OkHttp's
+            // transparent gzip would drop Content-Length, which the
+            // completeness check and the progress bar rely on.
+            val request = Request.Builder().url(url).get().header("Accept-Encoding", "identity").build()
+            val call = client.newCall(request)
             onCallCreated?.invoke(call)
             val (contentLength, totalRead) = fetchToTemp(call, tmpFile, pageIndex, progressCallback, durable)
             val problem = pageProblem(tmpFile, contentLength, totalRead)
