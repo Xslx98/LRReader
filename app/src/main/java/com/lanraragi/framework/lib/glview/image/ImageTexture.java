@@ -88,7 +88,14 @@ public class ImageTexture implements Texture, Animatable {
     private final AtomicBoolean mFrameDirty = new AtomicBoolean();
     private final AtomicBoolean mNeedRelease = new AtomicBoolean();
     private final AtomicBoolean mReleased = new AtomicBoolean();
-    private int mUploadIndex = 0;
+    // Viewport-relative tile regions in texture coordinates (render thread only).
+    // Until the view reports where the page sits, every tile counts as near.
+    private final RectF mScreenRegion = new RectF();
+    private final RectF mUploadRegion = new RectF();
+    private final RectF mKeepRegion = new RectF();
+    private boolean mHasRegions = false;
+    private volatile boolean mRecycled = false;
+    private Uploader mUploader;
     private boolean mImageBusy = false;
     private Runnable mAnimateRunnable = null;
 
@@ -269,9 +276,64 @@ public class ImageTexture implements Texture, Animatable {
         return mRunning.get();
     }
 
-    private boolean uploadNextTile(GLCanvas canvas) {
-        if (mUploadIndex == mTiles.length) return true;
+    /**
+     * Where the screen is relative to this page, in texture coordinates
+     * (see {@link TileRegions#screenInTexture}). Tiles near the screen are
+     * uploaded ahead of time, nearest first; tiles far from it give their GL
+     * texture back and are uploaded again when they come near
+     * (audit 2026-10-13 PERF-02). An empty rect means "unknown": every tile
+     * then counts as near, as before this existed.
+     */
+    @RenderThread
+    public void setScreenRegion(RectF screen) {
+        if (mRecycled) return;
+        if (screen.isEmpty()) {
+            mHasRegions = false;
+        } else {
+            mScreenRegion.set(screen);
+            TileRegions.band(mUploadRegion, screen, TileRegions.UPLOAD_MARGIN_SCREENS);
+            TileRegions.band(mKeepRegion, screen, TileRegions.KEEP_MARGIN_SCREENS);
+            mHasRegions = true;
+            synchronized (mTiles) {
+                for (Tile t : mTiles) {
+                    if (t.image != null && t.isLoaded() && !overlaps(mKeepRegion, t)) {
+                        t.yield();
+                        t.preloaded = false;
+                    }
+                }
+            }
+        }
+        Uploader uploader = mUploader;
+        if (uploader != null) {
+            uploader.addTexture(this);
+        }
+    }
 
+    private static boolean overlaps(RectF region, Tile t) {
+        return region.intersects(t.offsetX, t.offsetY,
+                t.offsetX + t.contentWidth, t.offsetY + t.contentHeight);
+    }
+
+    /** The not-yet-preloaded tile nearest the screen within the upload band, or null. */
+    private Tile nextTileToUpload() {
+        if (mRecycled) return null;
+        Tile best = null;
+        float bestGap = Float.MAX_VALUE;
+        for (Tile t : mTiles) {
+            if (t.image == null || t.preloaded) continue;
+            if (!mHasRegions) return t;
+            if (!overlaps(mUploadRegion, t)) continue;
+            float gap = TileRegions.gap(mScreenRegion, t.offsetX, t.offsetY,
+                    t.offsetX + t.contentWidth, t.offsetY + t.contentHeight);
+            if (gap < bestGap) {
+                best = t;
+                bestGap = gap;
+            }
+        }
+        return best;
+    }
+
+    private boolean uploadNextTile(GLCanvas canvas) {
         // Perf trace section (see com.lanraragi.reader.util.TraceSections).
         Trace.beginSection(TraceSections.READER_UPLOAD);
         try {
@@ -283,22 +345,21 @@ public class ImageTexture implements Texture, Animatable {
 
     private boolean uploadNextTileTraced(GLCanvas canvas) {
         synchronized (mTiles) {
-            Tile next = mTiles[mUploadIndex++];
+            Tile next = nextTileToUpload();
+            if (next == null) return true;
+            // One attempt per tile: a failed upload is retried by the draw-time
+            // bind, and retrying here would spin the idle uploader every frame.
+            next.preloaded = true;
+            boolean hasBeenLoad = next.isLoaded();
+            next.updateContent(canvas);
 
-            // Make sure tile has not already been recycled by the time
-            // this is called (race condition in onGLIdle)
-            if (next.image != null) {
-                boolean hasBeenLoad = next.isLoaded();
-                next.updateContent(canvas);
-
-                // It will take some time for a texture to be drawn for the first
-                // time. When scrolling, we need to draw several tiles on the screen
-                // at the same time. It may cause a UI jank even these textures has
-                // been uploaded.
-                if (!hasBeenLoad) next.draw(canvas, 0, 0);
-            }
+            // It will take some time for a texture to be drawn for the first
+            // time. When scrolling, we need to draw several tiles on the screen
+            // at the same time. It may cause a UI jank even these textures has
+            // been uploaded.
+            if (!hasBeenLoad && next.isLoaded()) next.draw(canvas, 0, 0);
+            return nextTileToUpload() == null;
         }
-        return mUploadIndex == mTiles.length;
     }
 
     @Override
@@ -417,11 +478,15 @@ public class ImageTexture implements Texture, Animatable {
         return mOpaque;
     }
 
+    /** Nothing left to upload ahead of time for the current screen position. */
     public boolean isReady() {
-        return mUploadIndex == mTiles.length;
+        synchronized (mTiles) {
+            return nextTileToUpload() == null;
+        }
     }
 
     public void recycle() {
+        mRecycled = true;
         mRunning.lazySet(false);
 
         for (Tile mTile : mTiles) {
@@ -476,7 +541,9 @@ public class ImageTexture implements Texture, Animatable {
         }
 
         public synchronized void addTexture(ImageTexture t) {
-            if (t.isReady()) return;
+            // Remembered so a later screen move can queue the texture again.
+            t.mUploader = this;
+            if (t.isReady() || mTextures.contains(t)) return;
             mTextures.addLast(t);
 
             if (mIsQueued) return;
@@ -514,6 +581,8 @@ public class ImageTexture implements Texture, Animatable {
         public int contentWidth;
         public int contentHeight;
         public int borderSize;
+        // The idle uploader has handled this tile since it was assigned or yielded.
+        public boolean preloaded;
         @TileType
         private int mTileType;
 
@@ -566,6 +635,7 @@ public class ImageTexture implements Texture, Animatable {
         private void invalidate() {
             invalidateContent();
             image = null;
+            preloaded = false;
         }
 
         public void free() {
