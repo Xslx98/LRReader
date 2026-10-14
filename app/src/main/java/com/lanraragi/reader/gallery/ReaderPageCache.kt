@@ -330,6 +330,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
         durable: DurablePageWrite?,
     ): Long {
         val buffer = ByteArray(BUFFER_SIZE)
+        val throttle = ProgressThrottle()
         var totalRead = 0L
         while (true) {
             val read = input.read(buffer)
@@ -338,7 +339,8 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
             totalRead += read
             durable?.checkSize(totalRead)
             if (progressCallback != null && contentLength > 0) {
-                progressCallback.onProgress(pageIndex, totalRead.toFloat() / contentLength)
+                val fraction = totalRead.toFloat() / contentLength
+                if (throttle.shouldEmit(fraction)) progressCallback.onProgress(pageIndex, fraction)
             }
         }
         // The reader cache is disposable: no fsync, a page torn by an OS
