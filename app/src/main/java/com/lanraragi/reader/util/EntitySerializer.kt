@@ -2,6 +2,10 @@ package com.lanraragi.reader.util
 
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.download.DownloadManager
+import java.io.FilterInputStream
+import java.io.IOException
+import java.io.InputStream
 
 /**
  * CSV serialization for the download list import/export feature.
@@ -111,5 +115,39 @@ fun archiveFromCsvLine(csv: String): Archive? {
         )
     } catch (e: NumberFormatException) {
         null
+    }
+}
+
+/**
+ * Largest download-list CSV the importer reads. A row is a few hundred
+ * bytes, so this is far above any real list but keeps a wrongly picked
+ * video or archive from being read into memory.
+ */
+const val MAX_DOWNLOAD_CSV_BYTES: Long = 8L * 1024 * 1024
+
+/** The picked download-list file exceeds [MAX_DOWNLOAD_CSV_BYTES]. */
+class DownloadCsvTooLargeException(maxBytes: Long) : IOException("CSV larger than $maxBytes bytes")
+
+/**
+ * Stream a download-list CSV line by line into archives, skipping the
+ * header and unparseable lines. Reads at most [maxBytes] bytes and throws
+ * [DownloadCsvTooLargeException] beyond that. Does not close [input].
+ */
+fun readDownloadCsv(input: InputStream, maxBytes: Long = MAX_DOWNLOAD_CSV_BYTES): List<Archive> =
+    CappedInputStream(input, maxBytes).bufferedReader(Charsets.UTF_8).lineSequence()
+        .filterNot { it.startsWith(DownloadManager.DOWNLOAD_INFO_HEADER) }
+        .mapNotNull(::archiveFromCsvLine)
+        .toList()
+
+private class CappedInputStream(input: InputStream, private val maxBytes: Long) : FilterInputStream(input) {
+    private var count = 0L
+
+    override fun read(): Int = super.read().also { if (it >= 0) add(1) }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int = super.read(b, off, len).also { if (it > 0) add(it.toLong()) }
+
+    private fun add(n: Long) {
+        count += n
+        if (count > maxBytes) throw DownloadCsvTooLargeException(maxBytes)
     }
 }
