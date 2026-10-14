@@ -25,6 +25,7 @@ import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
+import com.lanraragi.framework.lib.glview.image.ImageTexture;
 import com.lanraragi.framework.lib.glview.image.ImageWrapper;
 import com.lanraragi.framework.lib.glview.view.GLRoot;
 import com.lanraragi.framework.lib.image.Image;
@@ -83,16 +84,20 @@ public abstract class GalleryProvider implements MemoryTrimmable {
         mStopped = true;
         MemoryTrim.unregister(this);
         mImageCache.evictAll();
+        ImageTexture.trimFreeTiles();
     }
 
     /**
      * Audit 2026-10-04 C12: give decoded pages back under memory pressure. TRIM
      * keeps the most recently used quarter (the pages around the current one);
      * CLEAR drops all of them. Pages on screen hold their own reference.
+     * Pooled free GL tiles are pure reuse cache and go on either action
+     * (audit 2026-10-13 PERF-02).
      */
     @UiThread
     @Override
     public void onTrimMemory(@NonNull MemoryTrim.Action action) {
+        ImageTexture.trimFreeTiles();
         if (action == MemoryTrim.Action.CLEAR) {
             mImageCache.evictAll();
         } else if (action == MemoryTrim.Action.TRIM) {

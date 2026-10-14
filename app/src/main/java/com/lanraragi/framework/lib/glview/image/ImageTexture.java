@@ -60,9 +60,14 @@ public class ImageTexture implements Texture, Animatable {
     private static final long UPLOAD_TILE_LIMIT = 4; // ms
     private static final Executor sThreadExecutor;
     private static final PVLock sPVLock;
-    private static final Object sFreeTileLock = new Object();
-    private static Tile sSmallFreeTileHead = null;
-    private static Tile sLargeFreeTileHead = null;
+    // Freed tiles keep their GL texture for reuse. The pools are capped (about
+    // 8 MB small + 16 MB large of RGBA texture) so the tiles of one tall page do
+    // not stay in VRAM for the rest of the session, and trimFreeTiles() empties
+    // them on memory pressure and reader exit (audit 2026-10-13 PERF-02).
+    private static final int MAX_FREE_SMALL_TILES = 32;
+    private static final int MAX_FREE_LARGE_TILES = 16;
+    private static final BoundedFreeList<Tile> sSmallFreeTiles = new BoundedFreeList<>(MAX_FREE_SMALL_TILES);
+    private static final BoundedFreeList<Tile> sLargeFreeTiles = new BoundedFreeList<>(MAX_FREE_LARGE_TILES);
 
     static {
         sThreadExecutor = new InfiniteThreadExecutor(10 * 1000, new LinkedList<Runnable>(),
@@ -158,28 +163,25 @@ public class ImageTexture implements Texture, Animatable {
     }
 
     private static Tile obtainSmallTile() {
-        synchronized (sFreeTileLock) {
-            Tile result = sSmallFreeTileHead;
-            if (result == null) {
-                return new Tile();
-            } else {
-                sSmallFreeTileHead = result.nextFreeTile;
-                result.nextFreeTile = null;
-            }
-            return result;
-        }
+        Tile result = sSmallFreeTiles.poll();
+        return result != null ? result : new Tile();
     }
 
     private static Tile obtainLargeTile() {
-        synchronized (sFreeTileLock) {
-            Tile result = sLargeFreeTileHead;
-            if (result == null) {
-                return new Tile();
-            } else {
-                sLargeFreeTileHead = result.nextFreeTile;
-                result.nextFreeTile = null;
-            }
-            return result;
+        Tile result = sLargeFreeTiles.poll();
+        return result != null ? result : new Tile();
+    }
+
+    /**
+     * Release the GL textures of every pooled free tile. Safe on any thread:
+     * the texture ids are queued on the canvas and deleted on the GL thread.
+     */
+    public static void trimFreeTiles() {
+        for (Tile tile : sSmallFreeTiles.drain()) {
+            tile.recycle();
+        }
+        for (Tile tile : sLargeFreeTiles.drain()) {
+            tile.recycle();
         }
     }
 
@@ -509,26 +511,17 @@ public class ImageTexture implements Texture, Animatable {
         public int offsetX;
         public int offsetY;
         public ImageWrapper image;
-        public Tile nextFreeTile;
         public int contentWidth;
         public int contentHeight;
         public int borderSize;
         @TileType
         private int mTileType;
 
-        private static void freeSmallTile(Tile tile) {
+        private static void freeTile(Tile tile, BoundedFreeList<Tile> pool) {
             tile.invalidate();
-            synchronized (sFreeTileLock) {
-                tile.nextFreeTile = sSmallFreeTileHead;
-                sSmallFreeTileHead = tile;
-            }
-        }
-
-        private static void freeLargeTile(Tile tile) {
-            tile.invalidate();
-            synchronized (sFreeTileLock) {
-                tile.nextFreeTile = sLargeFreeTileHead;
-                sLargeFreeTileHead = tile;
+            if (!pool.offer(tile)) {
+                // Pool full: give the texture back instead of keeping it.
+                tile.recycle();
             }
         }
 
@@ -578,10 +571,10 @@ public class ImageTexture implements Texture, Animatable {
         public void free() {
             switch (mTileType) {
                 case TILE_SMALL:
-                    freeSmallTile(this);
+                    freeTile(this, sSmallFreeTiles);
                     break;
                 case TILE_LARGE:
-                    freeLargeTile(this);
+                    freeTile(this, sLargeFreeTiles);
                     break;
                 default:
                     throw new IllegalStateException("Not support tile type: " + mTileType);
