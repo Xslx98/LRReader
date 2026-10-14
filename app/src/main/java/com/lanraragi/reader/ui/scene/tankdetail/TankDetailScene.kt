@@ -605,7 +605,15 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         recycler.itemAnimator = null
         recycler.adapter = adapter
         recycler.addOnScrollListener(
-            PrefetchScrollListener(spanCount) { position ->
+            PrefetchScrollListener(
+                spanCount,
+                onWindow = { positions ->
+                    // Global pages grow with position; member headers map to null.
+                    val first = positions.firstNotNullOfOrNull(adapter::globalAt)
+                    val last = positions.reversed().firstNotNullOfOrNull(adapter::globalAt)
+                    pageThumbsViewModel.retainWindow(if (first != null && last != null) first..last else IntRange.EMPTY)
+                },
+            ) { position ->
                 adapter.globalAt(position)?.let { pageThumbsViewModel.requestPage(it) }
             }
         )

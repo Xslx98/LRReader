@@ -39,11 +39,11 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.CommonOperations
-import com.lanraragi.reader.util.archiveFromCsvLine
+import com.lanraragi.reader.util.readDownloadCsv
 import com.lanraragi.reader.util.toCSV
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.framework.util.ExceptionUtils
-import com.hippo.yorozuya.IOUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -180,6 +180,9 @@ class DownloadFragment : PreferenceFragmentCompat(),
     private fun importDownloadItems() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "*/*"
+        // Exported lists are .csv; providers label those text/csv,
+        // text/comma-separated-values, application/csv or text/plain.
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, CSV_MIME_TYPES)
         try {
             importFileLauncher.launch(intent)
         } catch (e: Throwable) {
@@ -218,24 +221,17 @@ class DownloadFragment : PreferenceFragmentCompat(),
         dialog.setCancelable(false)
         dialog.show()
 
+        // Resolve before leaving main: requireActivity() on the IO thread
+        // throws once the fragment is detached.
+        val resolver = requireContext().applicationContext.contentResolver
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             var importCount = 0
             try {
                 // Parse the CSV on IO; the file read is the only IO work here.
-                val archives = requireActivity().contentResolver.openInputStream(uri)?.use { inputStream ->
-                    val content = IOUtils.readString(inputStream, StandardCharsets.UTF_8.name())
-                    content.split("\n").mapNotNull { line ->
-                        if (line.startsWith(DownloadManager.DOWNLOAD_INFO_HEADER)) {
-                            null
-                        } else {
-                            archiveFromCsvLine(line)
-                        }
-                    }
-                }
-                if (archives == null) {
-                    mainHandler.post { dismissAndShowResult(dialog, 0) }
-                    return@launch
-                }
+                // Streamed with a size cap, so a wrongly picked large file fails
+                // fast instead of being read into memory.
+                val archives = resolver.openInputStream(uri)?.use { readDownloadCsv(it) }
+                    ?: return@launch
 
                 // DownloadManager / DownloadRepository require main-thread access; the
                 // facade calls persist asynchronously, so this stays cheap on the UI thread.
@@ -260,22 +256,30 @@ class DownloadFragment : PreferenceFragmentCompat(),
                     }
                     count
                 }
-            } catch (e: IOException) {
-                // importCount stays 0
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Provider failures (SecurityException on a revoked grant), a
+                // too-large or unreadable file: report "import failed", not a crash.
+                Log.e(TAG, "Download list import failed", e)
+            } finally {
+                // Also on cancellation, so the non-cancelable dialog never sticks.
+                val result = importCount
+                mainHandler.post { dismissAndShowResult(dialog, result) }
             }
-            val result = importCount
-            mainHandler.post { dismissAndShowResult(dialog, result) }
         }
     }
 
     @Suppress("DEPRECATION")
     private fun dismissAndShowResult(dialog: ProgressDialog, result: Int) {
+        // Dismiss even when detached: a fragment whose view went away while its
+        // own activity lives on would otherwise leave the dialog up for good.
+        try {
+            if (dialog.isShowing) dialog.dismiss()
+        } catch (e: IllegalArgumentException) {
+            ExceptionUtils.throwIfFatal(e)
+        }
         if (isAdded && activity != null) {
-            try {
-                if (dialog.isShowing) dialog.dismiss()
-            } catch (e: IllegalArgumentException) {
-                ExceptionUtils.throwIfFatal(e)
-            }
             if (result > 0) {
                 Toast.makeText(
                     activity,
@@ -469,5 +473,9 @@ class DownloadFragment : PreferenceFragmentCompat(),
         const val KEY_CLEAN_INVALID_DOWNLOAD = "clean_invalid_download"
 
         private val mainHandler = Handler(Looper.getMainLooper())
+
+        private val CSV_MIME_TYPES = arrayOf(
+            "text/csv", "text/comma-separated-values", "application/csv", "text/plain"
+        )
     }
 }

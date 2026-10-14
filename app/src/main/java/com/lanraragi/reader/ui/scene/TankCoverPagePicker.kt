@@ -68,7 +68,9 @@ class TankCoverPagePicker(
         grid.layoutManager = GridLayoutManager(context, spanCount)
         grid.itemAnimator = null
         grid.adapter = adapter
-        grid.addOnScrollListener(PrefetchScrollListener(spanCount) { page -> viewModel.requestPage(page) })
+        grid.addOnScrollListener(
+            PrefetchScrollListener(spanCount, onWindow = viewModel::retainWindow) { page -> viewModel.requestPage(page) }
+        )
 
         collectJob = lifecycleOwner.lifecycleScope.launch {
             launch {

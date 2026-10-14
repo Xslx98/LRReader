@@ -83,7 +83,8 @@ class GalleryUploadHelper(private val mCallback: Callback) {
         // slow provider (cloud / SAF). Resolve the name off the main thread,
         // then build the request and start the upload back on main.
         owner.lifecycleScope.launch {
-            val fileName = withContext(Dispatchers.IO) { getFileNameFromUri(context, uri) } ?: "upload_archive"
+            val fileName = withContext(Dispatchers.IO) { getFileNameFromUri(context, uri) }
+                ?: GalleryListViewModel.FALLBACK_UPLOAD_NAME
             val request = GalleryListViewModel.UploadRequest(
                 displayName = fileName,
                 cacheDir = context.cacheDir,
@@ -144,15 +145,19 @@ class GalleryUploadHelper(private val mCallback: Callback) {
         builder.show()
     }
 
-    private fun getFileNameFromUri(context: Context, uri: Uri): String? {
-        var name: String? = null
+    /**
+     * The picked document's display name, or null when the provider has none
+     * or its query fails (revoked grant, buggy provider): a missing name only
+     * costs the default file name, so it must not crash the launching scope.
+     */
+    private fun getFileNameFromUri(context: Context, uri: Uri): String? = try {
         context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (idx >= 0) name = cursor.getString(idx)
-            }
+            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (cursor.moveToFirst() && idx >= 0) cursor.getString(idx) else null
         }
-        return name
+    } catch (e: Exception) {
+        Log.e(TAG, "Cannot query the picked document's name", e)
+        null
     }
 
     companion object {

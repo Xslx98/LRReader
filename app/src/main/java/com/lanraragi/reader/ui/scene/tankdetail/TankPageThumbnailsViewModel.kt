@@ -8,7 +8,9 @@ import com.lanraragi.reader.client.api.PageThumbnailRepository
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.gallery.TankPageMap
 import com.lanraragi.reader.tankoubon.TankPageGridLayout
+import com.lanraragi.reader.ui.scene.gallery.detail.PageFetchJobs
 import com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel.PageState
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +44,7 @@ class TankPageThumbnailsViewModel : ViewModel() {
     private var members: List<Archive> = emptyList()
     private var pageMap: TankPageMap? = null
     private var baseUrl: String? = null
+    private val pageJobs = PageFetchJobs()
 
     /** Identity of the current source so a re-bind with the same members is a no-op. */
     private var sourceKey: String? = null
@@ -51,6 +54,7 @@ class TankPageThumbnailsViewModel : ViewModel() {
         val key = newBaseUrl + "|" + newMembers.joinToString(",") { it.arcid + ":" + it.pagecount }
         if (key == sourceKey) return
         sourceKey = key
+        pageJobs.cancelAll()
         members = newMembers
         baseUrl = newBaseUrl
         pageMap = TankPageMap(newMembers.map { it.pagecount })
@@ -75,12 +79,28 @@ class TankPageThumbnailsViewModel : ViewModel() {
 
         _pageStates.update { it + (global0 to PageState.Loading) }
         val key = sourceKey
-        viewModelScope.launch(Dispatchers.IO + ServiceRegistry.coroutineModule.exceptionHandler) {
+        val job = viewModelScope.launch(
+            Dispatchers.IO + ServiceRegistry.coroutineModule.exceptionHandler,
+            start = CoroutineStart.LAZY,
+        ) {
             val result = PageThumbnailRepository.loadThumbnail(member.arcid, page0, url)
             if (sourceKey != key) return@launch
             _pageStates.update { current ->
                 if (result.isSuccess) current - global0 else current + (global0 to PageState.Failed)
             }
+        }
+        pageJobs.track(global0, job)
+        job.start()
+    }
+
+    /**
+     * Cancels requests for global pages outside [window] and returns them to
+     * idle; see [com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel.retainWindow].
+     */
+    fun retainWindow(window: IntRange) {
+        val cancelled = pageJobs.cancelOutside(window)
+        if (cancelled.isNotEmpty()) {
+            _pageStates.update { current -> current.filterNot { (p, s) -> p in cancelled && s is PageState.Loading } }
         }
     }
 

@@ -21,6 +21,7 @@ import com.lanraragi.reader.client.api.PageThumbnailRepository
 import com.lanraragi.reader.client.api.probeSourceHealthy
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -101,6 +102,7 @@ class PageThumbnailsViewModel : ViewModel() {
     private var currentArcid: String? = null
     private var currentBaseUrl: String? = null
     private var initJob: Job? = null
+    private val pageJobs = PageFetchJobs()
 
     /**
      * Begin loading the page list for [arcid]. Idempotent — calling
@@ -184,8 +186,9 @@ class PageThumbnailsViewModel : ViewModel() {
         if (PageThumbnailCache.get(arcid, page) != null) return
 
         _pageStates.update { it + (page to PageState.Loading) }
-        viewModelScope.launch(
-            Dispatchers.IO + ServiceRegistry.coroutineModule.exceptionHandler
+        val job = viewModelScope.launch(
+            Dispatchers.IO + ServiceRegistry.coroutineModule.exceptionHandler,
+            start = CoroutineStart.LAZY,
         ) {
             val result = PageThumbnailRepository.loadThumbnail(arcid, page, baseUrl)
             // Race-guard: drop the result if a navigation reset the VM.
@@ -197,6 +200,22 @@ class PageThumbnailsViewModel : ViewModel() {
                     current + (page to PageState.Failed)
                 }
             }
+        }
+        pageJobs.track(page, job)
+        job.start()
+    }
+
+    /**
+     * Cancel the requests of pages outside [window] (the visible range plus
+     * the prefetch rows) and return them to idle, so a fling does not leave
+     * every page it passed queued ahead of the pages now on screen. They are
+     * requested again when scrolled back into view. Same threading contract
+     * as [requestPage].
+     */
+    fun retainWindow(window: IntRange) {
+        val cancelled = pageJobs.cancelOutside(window)
+        if (cancelled.isNotEmpty()) {
+            _pageStates.update { current -> current.filterNot { (p, s) -> p in cancelled && s is PageState.Loading } }
         }
     }
 
@@ -221,6 +240,7 @@ class PageThumbnailsViewModel : ViewModel() {
     fun resetForNewEntry() {
         initJob?.cancel()
         initJob = null
+        pageJobs.cancelAll()
         currentArcid = null
         currentBaseUrl = null
         _state.value = State.Idle

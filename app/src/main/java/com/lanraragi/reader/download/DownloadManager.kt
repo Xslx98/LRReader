@@ -569,12 +569,14 @@ class DownloadManager(
 
     private fun pauseAllActive(mark: (String, String?) -> Unit) {
         repo.assertMainThread()
-        for (di in repo.allInfoList) {
-            if (di.state == DownloadState.WAIT || di.state == DownloadState.DOWNLOAD) {
-                mark(di.arcid, di.title)
-            }
+        val affected = repo.allInfoList.filter {
+            it.state == DownloadState.WAIT || it.state == DownloadState.DOWNLOAD
         }
+        // Stop first, then mark: stopping a running task clears its banner
+        // flag (DownloadScheduler.stopCurrentDownload), which would undo a
+        // mark made beforehand for exactly the downloads that were running.
         stopAllDownload()
+        for (di in affected) mark(di.arcid, di.title)
     }
 
     fun deleteDownload(arcid: String) {
@@ -622,6 +624,11 @@ class DownloadManager(
 
     // ── Reload ────────────────────────────────────────────────
 
+    /**
+     * Stops every running and queued download, then re-reads the list from
+     * the database. Not for server-profile changes: the list is global and
+     * workers fetch from each row's source profile (audit 2026-10-13 STAB-02).
+     */
     fun reload() {
         repo.assertMainThread()
         stopAllDownload()

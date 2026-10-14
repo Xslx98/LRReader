@@ -1,11 +1,16 @@
 package com.lanraragi.reader.dao
 
+import com.lanraragi.reader.util.DownloadCsvTooLargeException
 import com.lanraragi.reader.util.archiveFromCsvLine
+import com.lanraragi.reader.util.readDownloadCsv
 import com.lanraragi.reader.util.toCSV
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
+import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.DownloadState
+import java.io.ByteArrayInputStream
 
 /**
  * Validates that [DownloadInfo.toCSV] produces a 20-column line that
@@ -64,5 +69,26 @@ class DownloadInfoCsvTest {
         assertEquals("https://old/t.jpg", parsed.thumbnailUrl)
         assertEquals(3.0f, parsed.rating, 0.001f)
         assertEquals(listOf("japanese"), parsed.tags["lang"])
+    }
+
+    private val sampleFile =
+        DownloadManager.DOWNLOAD_INFO_HEADER + "\n" +
+            "0,a1,A,null,t,0,null,null,1.0,false,EN,[],0,0,0,0,0,-2,null,0\r\n" +
+            "not a csv line\n" +
+            "0,a2,B,null,t,0,null,null,2.0,false,EN,[],0,0,0,0,0,-2,null,0\n"
+
+    @Test
+    fun readDownloadCsv_skipsHeaderAndBadLines() {
+        val archives = readDownloadCsv(ByteArrayInputStream(sampleFile.toByteArray()))
+        assertEquals(listOf("a1", "a2"), archives.map { it.arcid })
+    }
+
+    @Test
+    fun readDownloadCsv_rejectsFileOverTheCap() {
+        val bytes = sampleFile.toByteArray()
+        assertEquals(2, readDownloadCsv(ByteArrayInputStream(bytes), maxBytes = bytes.size.toLong()).size)
+        assertThrows(DownloadCsvTooLargeException::class.java) {
+            readDownloadCsv(ByteArrayInputStream(bytes), maxBytes = bytes.size - 1L)
+        }
     }
 }

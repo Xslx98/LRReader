@@ -40,6 +40,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
+import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.parcelize.Parcelize
 
@@ -170,7 +171,7 @@ class GalleryListViewModel : ViewModel() {
     fun uploadArchive(req: UploadRequest) {
         if (uploadJob?.isActive == true) return // ignore re-entrant taps while busy
         uploadJob = viewModelScope.launch(Dispatchers.IO) {
-            var tempFile: File? = null
+            var stagingDir: File? = null
             try {
                 _uploadState.value = UploadUiState.Preparing
 
@@ -187,8 +188,13 @@ class GalleryListViewModel : ViewModel() {
                     return@launch
                 }
 
-                val target = File(req.cacheDir, req.displayName)
-                tempFile = target
+                // The multipart filename becomes the archive's server-side
+                // name, so the copy keeps the picked name — but inside a fresh
+                // private directory and reduced to one safe path segment: a
+                // provider's DISPLAY_NAME is untrusted ("../databases/x.db").
+                val dir = Files.createTempDirectory(req.cacheDir.toPath(), "upload").toFile()
+                stagingDir = dir
+                val target = File(dir, safeUploadFileName(req.displayName))
                 req.openStream().use { input ->
                     if (input == null) throw IOException("Cannot open file")
                     FileOutputStream(target).use { fos -> input.copyTo(fos) }
@@ -218,7 +224,7 @@ class GalleryListViewModel : ViewModel() {
                 Log.e(TAG, "Upload failed", e)
                 _uploadState.value = UploadUiState.Failed(e)
             } finally {
-                tempFile?.takeIf { it.exists() }?.delete()
+                stagingDir?.deleteRecursively()
             }
         }
     }
@@ -536,6 +542,23 @@ class GalleryListViewModel : ViewModel() {
 
         /** Upload progress is reported on a 0..100 scale. */
         private const val PERCENT_MAX = 100
+
+        /** Name used when the picked document's name is unusable. */
+        internal const val FALLBACK_UPLOAD_NAME = "upload_archive"
+
+        /** Upper bound on the staged file name, below common 255-byte filesystem limits. */
+        private const val MAX_UPLOAD_NAME_CHARS = 120
+
+        /**
+         * Reduce an untrusted display name to one plain path segment: keep the
+         * part after the last `/` or `\`, drop control characters, and fall back
+         * to [FALLBACK_UPLOAD_NAME] for blank, `.` or `..` names.
+         */
+        internal fun safeUploadFileName(raw: String?): String {
+            val lastSegment = raw.orEmpty().substringAfterLast('/').substringAfterLast('\\')
+            val cleaned = lastSegment.filterNot { it.isISOControl() }.trim().takeLast(MAX_UPLOAD_NAME_CHARS)
+            return if (cleaned.isEmpty() || cleaned == "." || cleaned == "..") FALLBACK_UPLOAD_NAME else cleaned
+        }
 
         /** Max archives processed in parallel by [runBatch]. */
         private const val BATCH_CONCURRENCY = 4

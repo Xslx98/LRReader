@@ -146,6 +146,19 @@ class PrefetchScrollListenerTest {
     }
 
     @Test
+    fun `window keeps the prefetch band on both sides of the viewport`() {
+        buildGrid(itemCount = 60)
+        val windows = mutableListOf<IntRange>()
+        recycler.addOnScrollListener(PrefetchScrollListener(SPAN_COUNT, onWindow = { windows.add(it) }) {})
+
+        recycler.scrollBy(0, ITEM_HEIGHT_PX * 6)
+        ShadowLooper.idleMainLooper()
+
+        // Rows 6..8 visible (pages 18..26) + 3 rows ahead (..35) + 3 rows behind (9..).
+        assertEquals(9..35, windows.last())
+    }
+
+    @Test
     fun `prefetch window is clamped to the item count`() {
         buildGrid(itemCount = 10)
         val pages = mutableListOf<Int>()
