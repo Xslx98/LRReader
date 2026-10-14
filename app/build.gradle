@@ -180,9 +180,20 @@ detekt {
 
 // The :benchmark build types compile the same sources as appReleaseRelease,
 // which detektAppReleaseRelease already covers against its baseline; their
-// auto-created detekt tasks would need duplicate baselines.
+// auto-created detekt tasks would need duplicate baselines, and merely
+// disabling them still schedules their Kotlin compilation under detektMain
+// (two extra variants compiled in parallel pushed CI into a compiler OOM).
+// Pin detektMain to the two shipped variants instead.
 tasks.matching { it.name ==~ /detektAppRelease(BenchmarkRelease|NonMinifiedRelease).*/ }.configureEach {
     enabled = false
+}
+// afterEvaluate: the detekt plugin wires the variant tasks in after the
+// Android variants exist, so an earlier override would be appended to.
+afterEvaluate {
+    tasks.named('detektMain').configure { t ->
+        t.setDependsOn([])
+        t.dependsOn('detektAppReleaseDebug', 'detektAppReleaseRelease')
+    }
 }
 
 // W0-5: forbid string-concatenated baseUrl in LRR API code.
