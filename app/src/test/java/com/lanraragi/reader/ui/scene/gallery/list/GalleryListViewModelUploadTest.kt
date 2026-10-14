@@ -171,4 +171,44 @@ class GalleryListViewModelUploadTest {
         assertEquals("PUT", upload.method)
         assertEquals("/api/archives/upload", upload.path)
     }
+
+    @Test
+    fun uploadArchive_hostileDisplayName_staysInsideStagingDirAndIsCleanedUp() {
+        server.enqueue(
+            MockResponse().setResponseCode(400)
+                .setBody("""{"success":0,"error":"This ID does not exist"}""")
+        )
+        server.enqueue(MockResponse().setBody("""{"success":1,"id":"newarcid"}"""))
+        // A file the traversal name would overwrite and then delete.
+        val cacheDir = File(ctx.cacheDir, "upload-traversal").apply { deleteRecursively(); mkdirs() }
+        val victim = File(cacheDir.parentFile, "victim.db").apply { writeText("keep me") }
+
+        val vm = GalleryListViewModel()
+        vm.uploadArchive(
+            GalleryListViewModel.UploadRequest(
+                displayName = "../victim.db",
+                cacheDir = cacheDir,
+                openStream = { ByteArrayInputStream(ByteArray(100) { it.toByte() }) }
+            )
+        )
+
+        val terminal = awaitTerminal(vm)
+        assertTrue("expected Success, was $terminal", terminal is GalleryListViewModel.UploadUiState.Success)
+        assertEquals("keep me", victim.readText())
+        server.awaitRequest()
+        val upload = server.awaitRequest().body.readUtf8()
+        assertTrue("multipart filename should be the last segment", upload.contains("filename=\"victim.db\""))
+        awaitUntil(message = "staging dir must be removed") { cacheDir.listFiles()!!.isEmpty() }
+    }
+
+    @Test
+    fun safeUploadFileName_keepsOneSafeSegment() {
+        assertEquals("a.zip", GalleryListViewModel.safeUploadFileName("a.zip"))
+        assertEquals("eh.db", GalleryListViewModel.safeUploadFileName("../databases/eh.db"))
+        assertEquals("x.cbz", GalleryListViewModel.safeUploadFileName("..\\..\\x.cbz"))
+        assertEquals("ab.zip", GalleryListViewModel.safeUploadFileName("a\u0000b.zip"))
+        for (bad in listOf(null, "", "  ", ".", "..", "dir/", "../..")) {
+            assertEquals(GalleryListViewModel.FALLBACK_UPLOAD_NAME, GalleryListViewModel.safeUploadFileName(bad))
+        }
+    }
 }
