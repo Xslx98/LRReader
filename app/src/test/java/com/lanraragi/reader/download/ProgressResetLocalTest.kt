@@ -63,7 +63,7 @@ class ProgressResetLocalTest {
 
     @Test
     fun `reading another server's download stores the position under that server`() {
-        openDownload("arc-b", sourceProfileId = 2).putStartPage(30)
+        openDownload("arc-b", sourceProfileId = 2).apply { putStartPage(30); flushLocalProgress() }
 
         assertEquals(setOf("2:arc-b", "2:arc-b_ts"), keys())
         assertEquals(30, openDownload("arc-b", sourceProfileId = 2).getStartPage())
@@ -71,7 +71,7 @@ class ProgressResetLocalTest {
 
     @Test
     fun `reset of another server's download read while this profile is active reopens at the start`() {
-        openDownload("arc-b", sourceProfileId = 2).putStartPage(30)
+        openDownload("arc-b", sourceProfileId = 2).apply { putStartPage(30); flushLocalProgress() }
 
         DownloadManager.clearLocalProgress(ctx, "arc-b", sourceProfileId = 2)
 
@@ -86,6 +86,7 @@ class ProgressResetLocalTest {
 
         assertEquals(30, reopened.getStartPage())
         reopened.putStartPage(31)
+        reopened.flushLocalProgress()
         assertEquals("the next save goes to the source key", 31, LocalReadingProgress.prefs(ctx).getInt("2:arc-b", -1))
         assertEquals(31, openDownload("arc-b", sourceProfileId = 2).getStartPage())
     }
@@ -133,7 +134,7 @@ class ProgressResetLocalTest {
 
     @Test
     fun `a legacy row is read and saved under the active profile`() {
-        openDownload("arc-legacy", sourceProfileId = 0).putStartPage(3)
+        openDownload("arc-legacy", sourceProfileId = 0).apply { putStartPage(3); flushLocalProgress() }
 
         assertTrue(LocalReadingProgress.prefs(ctx).contains("1:arc-legacy"))
         assertEquals(3, openDownload("arc-legacy", sourceProfileId = 0).getStartPage())
@@ -156,7 +157,7 @@ class ProgressResetLocalTest {
 
     @Test
     fun `a page read on another server's download updates that server's tracker flow`() {
-        openDownload("arc-t", sourceProfileId = 2).putStartPage(6)
+        openDownload("arc-t", sourceProfileId = 2).apply { putStartPage(6); flushLocalProgress() }
 
         // The detail header observes the source profile's flow (audit 2026-10-06c C37 note).
         assertEquals(6, ReadingProgressTracker.progressFlow(2, "arc-t").value)

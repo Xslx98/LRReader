@@ -485,14 +485,19 @@ class LRRGalleryProvider(
 
     override fun getStartPage(): Int = startPageValue
 
+    override fun writeLocalProgress(page: Int) {
+        saveReadingProgress(context, arcId, page, progressProfileId)
+    }
+
     override fun putStartPage(page: Int) {
         if (page != startPageBaseline) {
             userNavigated = true
         }
         startPageValue = page
 
-        // Persist locally for instant restore on next open
-        saveReadingProgress(context, arcId, page, progressProfileId)
+        // Persist locally for instant restore on next open (deferred, see
+        // GalleryProvider2.saveLocalProgressSoon)
+        saveLocalProgressSoon(page)
 
         // Sync progress to LANraragi server (1-indexed), serialized and
         // conflated so the last page of a fast-flip burst — not an

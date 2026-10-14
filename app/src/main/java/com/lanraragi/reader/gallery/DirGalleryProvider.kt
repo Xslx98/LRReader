@@ -260,15 +260,19 @@ class DirGalleryProvider : GalleryProvider2 {
 
     override fun getStartPage(): Int = startPageValue
 
+    override fun writeLocalProgress(page: Int) {
+        val ctx = context
+        val id = arcId
+        if (ctx != null && id != null) saveReadingProgress(ctx, id, page, progressProfileId)
+    }
+
     override fun putStartPage(page: Int) {
         readAnchor = page
         if (page != startPageBaseline) {
             userNavigated = true
         }
         startPageValue = page
-        if (context != null && arcId != null) {
-            saveReadingProgress(context, arcId!!, page, progressProfileId)
-        }
+        saveLocalProgressSoon(page)
         // Sync progress to LANraragi server (1-indexed), serialized and
         // conflated — see ReadingProgressSyncer. The syncer awaits the
         // source-profile URL and drops the send if it resolves to null.

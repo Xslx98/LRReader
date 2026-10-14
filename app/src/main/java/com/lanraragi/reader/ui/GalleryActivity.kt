@@ -785,6 +785,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         if (gv != null && provider != null && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
             provider.putScrollFraction(gv.currentScrollFraction)
         }
+        // The local position is written at most once a second; write the latest
+        // now, before the screen we return to reads it.
+        provider?.flushLocalProgress()
         // Suspend auto page-turn while backgrounded; resumed in onResume().
         mInputHandler.pauseAutoRead()
         mGLRootView?.onPause()
