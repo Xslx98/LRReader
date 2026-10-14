@@ -44,6 +44,19 @@ class DownloadManagerTest {
     private lateinit var manager: DownloadManager
     private lateinit var testScope: CoroutineScope
 
+    /**
+     * Strong references for listeners registered via [listen].
+     * [DownloadEventBus] holds listeners weakly, so an anonymous listener
+     * nothing else references can be collected by any GC before the event
+     * fires, and the test then waits for a callback that can never arrive.
+     */
+    private val heldListeners = mutableListOf<DownloadInfoListener>()
+
+    private fun listen(listener: DownloadInfoListener) {
+        heldListeners += listener
+        manager.addDownloadInfoListener(listener)
+    }
+
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
@@ -202,7 +215,7 @@ class DownloadManagerTest {
     @Test
     fun startDownload_addsInfoToListAndNotifies() {
         val notifications = mutableListOf<String>()
-        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
+        listen(object : FakeDownloadInfoListener() {
             override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
                 notifications.add("add:${info.arcid}")
             }
@@ -257,7 +270,7 @@ class DownloadManagerTest {
         manager.addDownload(existing.toArchive(), null, DownloadState.NONE)
         var adds = 0
         var updateAlls = 0
-        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
+        listen(object : FakeDownloadInfoListener() {
             override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) { adds++ }
             override fun onUpdateAll() { updateAlls++ }
         })
@@ -458,7 +471,7 @@ class DownloadManagerTest {
                 events.add("updateLabels")
             }
         }
-        manager.addDownloadInfoListener(listener)
+        listen(listener)
 
         val gallery = DownloadInfo().apply {
             arcid = "tok_5001"
@@ -514,7 +527,7 @@ class DownloadManagerTest {
         runBlocking { ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info) }
 
         val events = mutableListOf<String>()
-        manager.addDownloadInfoListener(object : FakeDownloadInfoListener() {
+        listen(object : FakeDownloadInfoListener() {
             override fun onReload() {
                 events.add("reload")
             }
@@ -526,10 +539,11 @@ class DownloadManagerTest {
         // Reload — should pick up the DB-inserted download
         manager.reload()
 
-        // Condition-based wait: the reload pipeline hops through a real IO
-        // dispatch, so a fixed sleep races it under full-suite load (observed
-        // flaking at 200 ms). Poll with a generous deadline instead; the
-        // normal case still completes in a few iterations.
+        // With the Unconfined test scope and inline Room executors the reload
+        // queue item and its publish run inline, so this normally returns on
+        // the first check; the wait only guards against that changing. Its
+        // old flakes (here and at a 200 ms sleep before) were the listener
+        // being collected — see [listen].
         awaitUntil(timeoutMs = 5_000, message = "reload never reported") { "reload" in events }
 
         // After reload, our download should be present (DB may also contain
