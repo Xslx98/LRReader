@@ -21,6 +21,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -139,6 +140,30 @@ class DownloadServiceTest {
         awaitUntil { shadow.stopSelfResultId == 3 }
         // A plain stopSelf() would destroy the service whatever is still queued.
         assertEquals(0, shadow.stopSelfId)
+    }
+
+    /** Audit PERF-06 / STAB-06: no wake lock while every running download only waits for the network. */
+    @Test
+    fun networkWait_releasesTheWakeLockUntilADownloadCanRunAgain() {
+        val a = com.lanraragi.reader.dao.DownloadInfo().apply { arcid = "wait_a"; title = "A" }
+        val b = com.lanraragi.reader.dao.DownloadInfo().apply { arcid = "wait_b"; title = "B" }
+        manager.scheduler.activeTasks.addAll(listOf(a, b))
+        try {
+            val service = Robolectric.buildService(DownloadService::class.java).create()
+                .also { controller = it }.get()
+            val wakeLock = org.robolectric.shadows.ShadowPowerManager.getLatestWakeLock()
+            assertTrue("held while downloading", wakeLock.isHeld)
+
+            service.onNetworkWait(a, true)
+            assertTrue("b still downloads", wakeLock.isHeld)
+            service.onNetworkWait(b, true)
+            assertFalse("everything waits for the network", wakeLock.isHeld)
+
+            service.onNetworkWait(a, false)
+            assertTrue("a resumed", wakeLock.isHeld)
+        } finally {
+            manager.scheduler.activeTasks.removeAll(listOf(a, b))
+        }
     }
 
     /** Audit 2026-10-04 C34 / STAB-14: a refused startForeground pauses the queue once, as "system limit". */

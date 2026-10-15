@@ -240,6 +240,9 @@ class DownloadManager(
     fun getNoneDownloadInfo(arcid: String): DownloadInfo? = scheduler.getNoneDownloadInfo(arcid)
     val isIdle: Boolean get() = scheduler.isIdle
 
+    /** Arcids of the downloads running right now. Main thread only. */
+    val activeArcids: List<String> get() = scheduler.activeTasks.map { it.arcid }
+
     val labelList: List<DownloadLabel> get() { repo.assertMainThread(); return repo.labelList }
     val allDownloadInfoList: List<DownloadInfo> get() {
         repo.assertMainThread()

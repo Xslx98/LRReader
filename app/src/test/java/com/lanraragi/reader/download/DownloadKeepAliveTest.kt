@@ -65,4 +65,15 @@ class DownloadKeepAliveTest {
         keepAlive.release()
         assertFalse(keepAlive.isHeld)
     }
+
+    @Test
+    fun shouldHold_onlyWhileSomeActiveDownloadIsNotWaitingForTheNetwork() {
+        assertTrue("between downloads", DownloadKeepAlive.shouldHold(emptyList(), emptySet()))
+        assertTrue(DownloadKeepAlive.shouldHold(listOf("a", "b"), setOf("a")))
+        assertFalse(DownloadKeepAlive.shouldHold(listOf("a", "b"), setOf("a", "b")))
+        assertTrue(
+            "a stale waiting entry of a download no longer active does not count",
+            DownloadKeepAlive.shouldHold(listOf("b"), setOf("a")),
+        )
+    }
 }

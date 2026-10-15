@@ -21,7 +21,8 @@ import android.util.Log
  * acquires in `onCreate` and releases in `onDestroy`. The service already
  * lives exactly while there is download work (it `stopSelf`s as soon as the
  * scheduler reports idle), so that bracket maps cleanly onto "downloads are
- * running".
+ * running". Within the session it lets go while every active download is
+ * waiting for the network and takes them again on resume ([shouldHold]).
  *
  * Both locks are **non-reference-counted**; [acquire]/[release] are idempotent
  * and `isHeld`-guarded, so repeated calls are safe. Locks are process-scoped:
@@ -88,6 +89,19 @@ class DownloadKeepAlive(context: Context) {
         get() = wakeLock?.isHeld == true || wifiLock?.isHeld == true
 
     companion object {
+        /**
+         * Whether the locks should be held for [active] downloads, of which
+         * [waitingForNetwork] are suspended until the network comes back. A
+         * download waiting for the network needs no CPU or radio — it resumes
+         * on a connectivity callback — so when every active download waits,
+         * holding the locks only drains the battery, for up to the resume
+         * timeout per download or for good with "never" (audit PERF-06 /
+         * STAB-06). An empty [active] set (between two downloads, or just
+         * started) keeps them: the service stops as soon as it is idle.
+         */
+        fun shouldHold(active: Collection<String>, waitingForNetwork: Set<String>): Boolean =
+            active.isEmpty() || active.any { it !in waitingForNetwork }
+
         private const val TAG = "DownloadKeepAlive"
         private const val WAKE_TAG = "LRReader:download"
         private const val WIFI_TAG = "LRReader:download-wifi"
