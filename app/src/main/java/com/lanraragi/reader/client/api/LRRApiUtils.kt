@@ -368,6 +368,9 @@ fun friendlyError(context: Context, e: Exception): String {
         e is java.io.InterruptedIOException  -> context.getString(R.string.lrr_timeout_error)
         e is java.net.ConnectException       -> context.getString(R.string.lrr_connect_error_check)
         e is java.net.UnknownHostException   -> context.getString(R.string.lrr_dns_error)
+        // A certificate nothing trusts (or one that changed since it was
+        // trusted): point at the edit dialog, whose test offers to trust it.
+        isCertificateTrustFailure(e)         -> context.getString(R.string.lrr_cert_untrusted_error)
         e is javax.net.ssl.SSLException      -> context.getString(R.string.lrr_ssl_error)
         else -> e.message ?: e.javaClass.simpleName
     }

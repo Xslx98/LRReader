@@ -137,6 +137,15 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
             hideProgress()
             showSecureStorageErrorDialog()
         }
+        // A self-signed (or changed) certificate: ask, then repeat the same
+        // attempt once it is trusted (audit C27 phase 2).
+        collectFlowWhileCreated(viewLifecycleOwner, viewModel.untrustedCertificate) { event ->
+            hideProgress()
+            val ctx = ehContext ?: return@collectFlowWhileCreated
+            CertificateTrustDialog.show(ctx, event.certificate) {
+                doConnectionAttempt(event.navigateOnSuccess)
+            }
+        }
         // connecting is a StateFlow whose current value replays on restart, so
         // the STARTED-gated default is fine here.
         collectFlow(viewLifecycleOwner, viewModel.connecting) { isConnecting ->
