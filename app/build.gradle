@@ -168,6 +168,12 @@ android {
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
+// Room writes app/schemas/<version>.json as a side effect, outside the KSP
+// task's declared outputs, so a build-cache hit would skip the export and
+// scripts/ci/check-schemas.sh would have nothing fresh to compare.
+tasks.matching { it.name.startsWith('ksp') }.configureEach {
+    outputs.doNotCacheIf('Room schema export is not a declared output') { true }
+}
 
 detekt {
     config.setFrom("$rootDir/config/detekt/detekt.yml")
