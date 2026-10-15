@@ -121,7 +121,7 @@ class AppLockUpgradeFailClosedTest {
         assertTrue("store still opening: locked", AppLockGate.isLocked())
         assertTrue(AppLockGate.isLocked())
 
-        // The migration finishes (legacy store copied and removed) and the store opens without a pattern.
+        // Init finishes (legacy store handled and removed) and the store opens without a pattern.
         File(ctx.applicationInfo.dataDir, "shared_prefs/lrr_auth_encrypted.xml").delete()
         LRRAuthManager.secureStoreCipher = { InMemoryValueCipher() }
         scheduler.advanceUntilIdle()
