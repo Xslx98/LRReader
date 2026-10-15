@@ -1,0 +1,66 @@
+<!--
+  Source of app/src/main/res/mipmap-*/ic_launcher_foreground.webp (adaptive icon foreground,
+  108dp canvas = 432 units; the launcher mask shows the centre 72dp = 72..360).
+  Style: Material product icon - stacked paper layers, 1dp edge tint/shade, 45-degree long shadow.
+  Render each density losslessly: mdpi 108, hdpi 162, xhdpi 216, xxhdpi 324, xxxhdpi 432 px.
+  fastlane icon.png = this foreground on white, centre 288x288 scaled to 512x512.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432">
+  <defs>
+    <clipPath id="kpl"><path d="M159 157 C178 159 200 165 212 173 L212 259 C202 255 182 249 159 245 Z"/></clipPath>
+    <clipPath id="kpr"><path d="M272 157 C253 159 231 165 219 173 L219 259 C229 255 249 249 272 245 Z"/></clipPath>
+    <clipPath id="kbook">
+      <path d="M144 172 L152 172 L152 251 C175 253 195 259 210 266 L221 266 C236 259 256 253 279 251 L279 172 L287 172 L287 267 L232 267 L228 273 L203 273 L199 267 L144 267 Z"/>
+      <path d="M159 157 C178 159 200 165 212 173 L212 259 C202 255 182 249 159 245 Z"/>
+      <path d="M272 157 C253 159 231 165 219 173 L219 259 C229 255 249 249 272 245 Z"/>
+    </clipPath>
+    <filter id="f1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.2"/></filter>
+    <filter id="f3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+    <linearGradient id="ls" gradientUnits="userSpaceOnUse" x1="215" y1="215" x2="360" y2="360">
+      <stop offset="0" stop-color="#00695C" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#00695C" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="finish" gradientUnits="userSpaceOnUse" cx="95" cy="78" r="390">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- long shadow, 45 degrees down-right -->
+  <path d="M287 172 L487 372 L344 467 L144 267 L199 267 L203 273 L228 273 L232 267 L287 267 Z" fill="url(#ls)"/>
+
+  <!-- contact shadow of the whole book -->
+  <g transform="translate(0 1.5)" fill="#004D40" opacity="0.2" filter="url(#f1)">
+    <path d="M144 172 L152 172 L152 251 C175 253 195 259 210 266 L221 266 C236 259 256 253 279 251 L279 172 L287 172 L287 267 L232 267 L228 273 L203 273 L199 267 L144 267 Z"/>
+    <path d="M159 157 C178 159 200 165 212 173 L212 259 C202 255 182 249 159 245 Z"/>
+    <path d="M272 157 C253 159 231 165 219 173 L219 259 C229 255 249 249 272 245 Z"/>
+  </g>
+
+  <!-- cover, one shade darker -->
+  <path d="M144 172 L152 172 L152 251 C175 253 195 259 210 266 L221 266 C236 259 256 253 279 251 L279 172 L287 172 L287 267 L232 267 L228 273 L203 273 L199 267 L144 267 Z" fill="#00796B"/>
+
+  <!-- pages cast a shadow onto the cover -->
+  <g transform="translate(0 2.5)" fill="#00251F" opacity="0.38" filter="url(#f3)">
+    <path d="M159 157 C178 159 200 165 212 173 L212 259 C202 255 182 249 159 245 Z"/>
+    <path d="M272 157 C253 159 231 165 219 173 L219 259 C229 255 249 249 272 245 Z"/>
+  </g>
+
+  <!-- pages -->
+  <g fill="#009688">
+    <path d="M159 157 C178 159 200 165 212 173 L212 259 C202 255 182 249 159 245 Z"/>
+    <path d="M272 157 C253 159 231 165 219 173 L219 259 C229 255 249 249 272 245 Z"/>
+  </g>
+
+  <!-- 1dp tint on top edges, 1dp shade on bottom edges -->
+  <g clip-path="url(#kpl)" fill="none" stroke-width="3">
+    <path d="M159 157 C178 159 200 165 212 173" stroke="#4DB6AC"/>
+    <path d="M212 259 C202 255 182 249 159 245" stroke="#00796B"/>
+  </g>
+  <g clip-path="url(#kpr)" fill="none" stroke-width="3">
+    <path d="M272 157 C253 159 231 165 219 173" stroke="#4DB6AC"/>
+    <path d="M219 259 C229 255 249 249 272 245" stroke="#00796B"/>
+  </g>
+
+  <!-- finish: soft top-left light, limited to the book so the transparent area stays clean -->
+  <rect width="432" height="432" fill="url(#finish)" clip-path="url(#kbook)"/>
+</svg>
