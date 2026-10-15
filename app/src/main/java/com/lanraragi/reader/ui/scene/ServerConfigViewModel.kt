@@ -8,6 +8,7 @@ import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
+import com.lanraragi.reader.client.api.ServerCertificate
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +76,17 @@ class ServerConfigViewModel : ViewModel() {
     /** Emitted when EncryptedSharedPreferences are unavailable. */
     val secureStorageError: Flow<Unit> = _secureStorageError.receiveAsFlow()
 
+    /** A certificate the user must decide on, with the attempt to repeat once trusted. */
+    data class UntrustedCertificate(
+        val certificate: ServerCertificate,
+        val navigateOnSuccess: Boolean
+    )
+
+    private val _untrustedCertificate = Channel<UntrustedCertificate>(Channel.BUFFERED)
+
+    /** Emitted when the server's certificate is not trusted (audit C27 phase 2). */
+    val untrustedCertificate: Flow<UntrustedCertificate> = _untrustedCertificate.receiveAsFlow()
+
     // -------------------------------------------------------------------------
     // Connection logic
     // -------------------------------------------------------------------------
@@ -119,6 +131,10 @@ class ServerConfigViewModel : ViewModel() {
                 is LRRUrlHelper.ConnectResult.Success ->
                     onConnectSuccess(r.resolvedUrl, r.info, candidateKey, navigateOnSuccess, allowCleartext)
                 is LRRUrlHelper.ConnectResult.Failure -> onConnectFailure(r.error)
+                is LRRUrlHelper.ConnectResult.UntrustedCertificate -> {
+                    _connecting.value = false
+                    _untrustedCertificate.trySend(UntrustedCertificate(r.certificate, navigateOnSuccess))
+                }
             }
         }
     }

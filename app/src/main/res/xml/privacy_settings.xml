@@ -26,6 +26,16 @@
         android:key="clear_search_history"
         android:title="@string/settings_privacy_clear_search_history" />
 
+    <!-- Self-signed HTTPS (audit C27 phase 2): see ServerTrust. -->
+    <Preference
+        android:key="import_ca_certificate"
+        android:title="@string/settings_privacy_import_ca"
+        android:summary="@string/settings_privacy_import_ca_summary" />
+
+    <Preference
+        android:key="trusted_certificates"
+        android:title="@string/settings_privacy_trusted_certificates" />
+
     <!-- LANraragi: Analytics settings removed (Firebase not used) -->
 
 </PreferenceScreen>

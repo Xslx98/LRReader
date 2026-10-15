@@ -8,6 +8,7 @@ import okhttp3.ConnectionPool
 import okhttp3.CookieJar
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
+import com.lanraragi.reader.client.api.ServerTrust
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -51,7 +52,14 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
     }
 
     override val okHttpClient: OkHttpClient by lazy {
+        // Self-signed servers the user trusted, and imported CAs scoped to
+        // configured servers (audit C27 phase 2). Every derived client
+        // inherits this; see ServerTrust for why the updater is unaffected.
+        ServerTrust.attach(context)
+        val trust = ServerTrust.serverClientTrust
         OkHttpClient.Builder()
+            .sslSocketFactory(trust.socketFactory, trust.trustManager)
+            .hostnameVerifier(ServerTrust.hostnameVerifier)
             .dispatcher(dispatcher)
             .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
             .followRedirects(true)

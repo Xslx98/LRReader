@@ -30,10 +30,12 @@
     base-config       → system CAs only
     debug-overrides   → system + user CAs (Charles, mitmproxy, etc.)
 
-  Release builds do NOT trust user-installed CAs. If you need to point a
-  release build at a self-signed HTTPS LANraragi server, install the CA
-  via the system trust store. There is no in-app CA import or certificate
-  pinning yet (audit C27 phase 2).
+  Release builds do NOT trust user-installed CAs: that store would vouch for
+  every host, the update download included. Self-signed HTTPS servers are
+  handled in the app instead (audit C27 phase 2, `ServerTrust`): a
+  certificate the user trusted for one host:port, or a CA imported under
+  Settings > Privacy that only vouches for configured servers. Both apply
+  only after these system anchors reject a certificate.
 -->
 <network-security-config>
 

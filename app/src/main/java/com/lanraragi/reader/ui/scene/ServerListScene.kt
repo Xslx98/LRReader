@@ -184,6 +184,15 @@ class ServerListScene : BaseScene() {
                 ).show()
             }
 
+            is ServerListViewModel.ServerListUiEvent.UntrustedCertificate -> {
+                // Re-enable the dialog's button; trusting the certificate
+                // presses it again, repeating the same test (audit C27 phase 2).
+                val dialog = if (event.forEdit) dialogHelper.currentEditDialog else dialogHelper.currentAddDialog
+                val save = dialog?.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                save?.isEnabled = true
+                CertificateTrustDialog.show(ctx, event.certificate) { save?.performClick() }
+            }
+
             is ServerListViewModel.ServerListUiEvent.AddConnectionFailed -> {
                 dialogHelper.currentAddDialog
                     ?.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)

@@ -3,6 +3,7 @@ package com.lanraragi.reader.client.api
 import android.util.Log
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import java.net.URI
 import java.util.concurrent.TimeUnit
@@ -237,6 +238,15 @@ object LRRUrlHelper {
 
         /** All attempts failed (network error or a cleartext refusal). */
         data class Failure(val error: Exception) : ConnectResult
+
+        /**
+         * An HTTPS server answered with a certificate nothing trusts yet (or
+         * one that differs from the certificate trusted for it before). The
+         * caller shows it; once the user trusts it ([ServerTrust.trust]) the
+         * same attempt succeeds. Never followed by the HTTP fallback: a TLS
+         * server is listening there, so plain HTTP cannot be the answer.
+         */
+        data class UntrustedCertificate(val certificate: ServerCertificate) : ConnectResult
     }
 
     /**
@@ -255,6 +265,13 @@ object LRRUrlHelper {
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .writeTimeout(5, TimeUnit.SECONDS)
+            // Imported CAs may vouch for the candidate: this client only
+            // ever talks to the server being tested (audit C27 phase 2).
+            .sslSocketFactory(
+                ServerTrust.candidateClientTrust.socketFactory,
+                ServerTrust.candidateClientTrust.trustManager,
+            )
+            .hostnameVerifier(ServerTrust.hostnameVerifier)
             .apply {
                 networkInterceptors().removeAll {
                     it is LRRAuthInterceptor || it is LRRCleartextRejectionInterceptor
@@ -314,6 +331,7 @@ object LRRUrlHelper {
                     throw ce
                 } catch (e: Exception) {
                     Log.d(TAG, "Explicit URL failed: ${e.message}")
+                    untrustedCertificate(e, rawInput)?.let { return it }
                     // No fallback for an explicit scheme: retrying an https://
                     // URL over http:// would downgrade the key to cleartext.
                     return ConnectResult.Failure(e)
@@ -332,6 +350,7 @@ object LRRUrlHelper {
                 throw ce
             } catch (e1: Exception) {
                 Log.d(TAG, "HTTPS failed: ${e1.message}")
+                untrustedCertificate(e1, httpsUrl)?.let { return it }
             }
 
             // Fallback to HTTP -- only for private / LAN addresses, or when the
@@ -358,6 +377,12 @@ object LRRUrlHelper {
      */
     private fun cleartextRefused(message: String): ConnectResult =
         ConnectResult.Failure(LRRCleartextRefusedException(message))
+
+    /** [error] as an untrusted-certificate result for [url], or null for any other failure. */
+    private fun untrustedCertificate(error: Exception, url: String): ConnectResult.UntrustedCertificate? {
+        val parsed = url.toHttpUrlOrNull() ?: return null
+        return untrustedCertificateIn(error, parsed.host, parsed.port)?.let { ConnectResult.UntrustedCertificate(it) }
+    }
 
     /** Probe [httpUrl] as the plain-HTTP fallback and wrap the outcome. */
     private suspend fun httpFallback(

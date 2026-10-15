@@ -311,6 +311,7 @@ dependencies {
     testImplementation libs.robolectric
     testImplementation libs.joor
     testImplementation libs.okhttp.mockwebserver
+    testImplementation libs.okhttp.tls
     testImplementation libs.coroutines.test
     testImplementation libs.serialization.json
     testImplementation libs.paging.testing

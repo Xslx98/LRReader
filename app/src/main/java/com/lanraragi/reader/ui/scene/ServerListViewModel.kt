@@ -14,9 +14,12 @@ import com.lanraragi.reader.tankoubon.TankTagOutbox
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
+import com.lanraragi.reader.client.api.ServerCertificate
+import com.lanraragi.reader.client.api.ServerTrust
 import com.lanraragi.reader.client.api.ServerCapabilityCache
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -88,6 +91,13 @@ class ServerListViewModel : ViewModel() {
 
         /** Connection test failed during add — Scene re-enables button, auth is restored. */
         data class AddConnectionFailed(val cause: Exception) : ServerListUiEvent
+
+        /**
+         * The add (or edit, [forEdit]) connection test met a certificate
+         * nothing trusts: Scene re-enables the dialog's button and asks the
+         * user; trusting it repeats the test (audit C27 phase 2).
+         */
+        data class UntrustedCertificate(val certificate: ServerCertificate, val forEdit: Boolean) : ServerListUiEvent
     }
 
     // -------------------------------------------------------------------------
@@ -196,6 +206,7 @@ class ServerListViewModel : ViewModel() {
                     ServiceRegistry.dataModule.historyRepository
                         .purgeDeletedProfile(profile.id)
                     purgeServerState(profile)
+                    forgetPinIfUnused(profile)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete profile", e)
@@ -260,6 +271,8 @@ class ServerListViewModel : ViewModel() {
                     )
                 is LRRUrlHelper.ConnectResult.Failure ->
                     _uiEvent.trySend(ServerListUiEvent.EditConnectionFailed(r.error))
+                is LRRUrlHelper.ConnectResult.UntrustedCertificate ->
+                    _uiEvent.trySend(ServerListUiEvent.UntrustedCertificate(r.certificate, forEdit = true))
             }
         }
     }
@@ -376,6 +389,8 @@ class ServerListViewModel : ViewModel() {
                     performAddProfile(name, r.resolvedUrl, finalKey, r.info, r.usedHttpFallback, allowCleartext)
                 is LRRUrlHelper.ConnectResult.Failure ->
                     _uiEvent.trySend(ServerListUiEvent.AddConnectionFailed(r.error))
+                is LRRUrlHelper.ConnectResult.UntrustedCertificate ->
+                    _uiEvent.trySend(ServerListUiEvent.UntrustedCertificate(r.certificate, forEdit = false))
             }
         }
     }
@@ -469,6 +484,19 @@ class ServerListViewModel : ViewModel() {
      * tag retries, tank cover choices, local reading positions (audit
      * 2026-10-06 C37). Base URLs are stored without a trailing slash.
      */
+    /**
+     * A deleted server's pinned certificate goes with it, unless another
+     * server uses the same host:port (audit C27 phase 2).
+     */
+    private suspend fun forgetPinIfUnused(profile: ServerProfile) {
+        val url = profile.url.toHttpUrlOrNull() ?: return
+        val stillUsed = profileRepository.getAllProfiles().any { other ->
+            other.url.toHttpUrlOrNull()
+                ?.let { it.host == url.host && it.port == url.port } == true
+        }
+        if (!stillUsed) ServerTrust.forgetPin(url.host, url.port)
+    }
+
     private fun purgeServerState(profile: ServerProfile) {
         val baseUrl = profile.url.removeSuffix("/")
         ServerCapabilityCache.forget(baseUrl)
