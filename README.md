@@ -26,6 +26,10 @@ An Android client for [LANraragi](https://github.com/Difegue/LANraragi), built u
 > Release 仅提供 arm64-v8a APK（Android 9+）。应用内可自动检查并安装更新。
 >
 > Releases ship an arm64-v8a APK only (Android 9+). The app can check for and install updates itself.
+>
+> 从 1.x 直接升级到 2.2 及以上版本时，旧版保存的 API Key 和图案应用锁无法再读取：应用会提示为每个服务器重新输入 API Key，并提醒重新设置图案。先升级到 2.0 或 2.1 再升级则不受影响。
+>
+> Updating straight from 1.x to 2.2 or later: API keys and the pattern lock saved by those versions can no longer be read. The app asks you to re-enter the API key for each server and to set the pattern again. Going through 2.0 or 2.1 first avoids this.
 
 ## 🚀 三步开始使用 | Get Started in Three Steps
 
@@ -82,7 +86,7 @@ Tap **Test connection**; seeing the server name and version means you are in —
 | 🔄 **进度同步 / Progress Sync** | 阅读进度与服务器双向同步，跨设备续读；本地进度按服务器分开保存，离线时的进度联网后自动补发 / Two-way reading-progress sync with the server; local progress is kept per server, and progress made offline is sent once the network is back |
 | 📊 **阅读统计 / Reading Stats** | 阅读量、分服务器统计与标签偏好分析 / Reading totals, per-server breakdown and tag-preference analysis |
 | 🖼️ **页面预览 / Page Previews** | 详情页全页面缩略图网格，支持跳页与密度调节 / Per-page thumbnail grid on detail page with jump-to-page and configurable density |
-| ⬇️ **离线下载 / Offline Download** | 后台下载整本档案，断点续传 + 断网自动等网恢复；失败原因显示在卡片和通知上，存储空间不足时整队暂停；打开阅读器时下载自动让路 / Background archive download with resume and automatic recovery after network loss; failure reasons on the card and notification, the whole queue pauses when storage runs out, and downloads step aside while you read |
+| ⬇️ **离线下载 / Offline Download** | 后台下载整本档案，断点续传 + 断网自动等网恢复（等网期间不占用唤醒锁，省电）；失败原因显示在卡片和通知上，存储空间不足时整队暂停；打开阅读器时下载自动让路 / Background archive download with resume and automatic recovery after network loss (no wake lock is held while waiting for the network); failure reasons on the card and notification, the whole queue pauses when storage runs out, and downloads step aside while you read |
 | ☑️ **多选批量 / Batch Operations** | 长按后滑动即可连续多选：批量下载、加分类、加入合订本（带汇入动画，无合订本时直接新建）、清 NEW、删除 / Long-press then slide to select a run of rows: batch download, categorize, add to tankoubon (with a merge animation; creates one when none exists), clear-new, delete |
 | 🏷️ **标签翻译 / Tag Translation** | 中文环境下自动翻译标签 / Auto-translate tags in Chinese locale (EhTagDatabase) |
 | ⭐ **档案评分 / Archive Rating** | 基于标签的 emoji 星级评分 / Tag-based emoji star rating |
@@ -199,7 +203,7 @@ This project is built upon the following open-source projects:
 
 ### 依赖库 | Dependencies
 
-- [AndroidX](https://developer.android.com/jetpack/androidx) (AppCompat, Room, Paging, RecyclerView, Biometric, Security)
+- [AndroidX](https://developer.android.com/jetpack/androidx) (AppCompat, Room, Paging, RecyclerView, Biometric)
 - [OkHttp](https://github.com/square/okhttp) - HTTP client
 - [kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization) - JSON serialization
 - [kotlinx-coroutines](https://github.com/Kotlin/kotlinx.coroutines) - Async programming

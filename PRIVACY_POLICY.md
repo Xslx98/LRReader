@@ -1,6 +1,6 @@
 # Privacy Policy - LR Reader | 隐私政策
 
-**生效日期 | Effective Date:** 2026-10-06
+**生效日期 | Effective Date:** 2026-10-15
 
 LR Reader（以下简称"本应用"）是一个开源的 LANraragi Android 客户端，用于连接用户自建的漫画/档案管理服务器。本隐私政策说明应用如何处理您的数据。
 
@@ -63,7 +63,7 @@ The App sends no data to any analytics platform or advertising network.
 | `ACCESS_NETWORK_STATE` | 判断网络是否可用、是否为计费网络，以暂停或恢复下载 / Detect connectivity and metered networks to pause or resume downloads |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC` | 在后台下载档案 / Download archives in the background |
 | `POST_NOTIFICATIONS` | 显示下载进度通知 / Show download progress notifications |
-| `WAKE_LOCK` | 下载过程中保持 CPU 运行 / Keep the CPU awake while downloading |
+| `WAKE_LOCK` | 下载过程中保持 CPU 运行，等待网络恢复时释放 / Keep the CPU awake while downloading; released while waiting for the network |
 | `USE_BIOMETRIC` | 用指纹解锁应用锁（可选）/ Unlock the app lock with a fingerprint (optional) |
 | `REQUEST_INSTALL_PACKAGES` | 安装您确认下载的应用更新 / Install an app update you chose to download |
 
