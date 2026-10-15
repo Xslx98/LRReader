@@ -305,7 +305,18 @@ object ServerTrust {
         override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) =
             system.checkClientTrusted(chain, authType)
 
-        override fun getAcceptedIssuers(): Array<X509Certificate> = system.acceptedIssuers
+        /**
+         * Empty on purpose. Validation never reads it (it goes through the
+         * system trust manager), and a client is never asked for it — only a
+         * server requesting client certificates is. But OkHttp's
+         * `sslSocketFactory(factory, trustManager)` reads it eagerly to build
+         * a certificate-chain cleaner for a non-platform trust manager:
+         * forwarding the system's list parsed every system root CA on the
+         * thread building the client, ~140 ms of the 2.2 cold start
+         * (macrobenchmark, API 34). The cleaner only serves
+         * CertificatePinner, which the app does not use.
+         */
+        override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
     }
 
     /**
