@@ -3,6 +3,7 @@ package com.lanraragi.reader.ui.scene
 import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.awaitViewModelIdle
 import com.lanraragi.reader.collectInto
 import android.content.Context
 import androidx.room.Room
@@ -456,6 +457,29 @@ class ServerListViewModelTest {
         assertEquals("B", LRRAuthManager.getServerName())
         assertEquals(id2, LRRAuthManager.getActiveProfileId())
         assertTrue(LRRAuthManager.serverConfigVersion > versionBefore)
+    }
+
+    @Test
+    fun activateProfile_withNoCollector_clearsCachesAndKeepsTheEventForTheNextView() {
+        insertProfile("A", "https://a.com", isActive = true)
+        val id2 = insertProfile("B", "https://b.com", isActive = false)
+        val profileB = ServerProfile(id = id2, name = "B", url = "https://b.com", isActive = false)
+        val cleared = java.util.concurrent.atomic.AtomicInteger()
+        ServiceRegistry.registerCacheable(object : com.lanraragi.reader.module.Cacheable {
+            override fun clearCache() { cleared.incrementAndGet() }
+        })
+
+        // The scene's view is gone (Back / rotation) while the switch runs.
+        val vm = ServerListViewModel()
+        vm.activateProfile(profileB)
+        awaitViewModelIdle(vm)
+
+        // The previous server's caches go even though no scene heard of it.
+        awaitUntil { cleared.get() == 1 }
+        // The re-attached view still gets the result exactly once.
+        val events = vm.uiEvent.collectInto(eventScope)
+        awaitUntil { events.any { it is ServerListViewModel.ServerListUiEvent.ProfileActivated } }
+        assertEquals(1, events.size)
     }
 
     // ── deleteProfile ──────────────────────────────────────────────

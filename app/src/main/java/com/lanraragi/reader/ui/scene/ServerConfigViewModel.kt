@@ -11,12 +11,12 @@ import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -55,20 +55,25 @@ class ServerConfigViewModel : ViewModel() {
         val navigateOnSuccess: Boolean
     )
 
-    private val _connectSuccess = MutableSharedFlow<ConnectSuccess>(extraBufferCapacity = 1)
+    // Buffered channels, not replay=0 SharedFlows: the connection test runs in
+    // viewModelScope (activity-scoped) and outlives the scene's view, so a
+    // result that lands while the view is destroyed (Back, rotation, a drawer
+    // scene on top) waits for the next collector instead of being dropped —
+    // onConnectSuccess has already switched the server by then.
+    private val _connectSuccess = Channel<ConnectSuccess>(Channel.BUFFERED)
 
     /** Emitted once per successful connection. */
-    val connectSuccess: SharedFlow<ConnectSuccess> = _connectSuccess.asSharedFlow()
+    val connectSuccess: Flow<ConnectSuccess> = _connectSuccess.receiveAsFlow()
 
-    private val _connectFailure = MutableSharedFlow<Exception>(extraBufferCapacity = 1)
+    private val _connectFailure = Channel<Exception>(Channel.BUFFERED)
 
     /** Emitted once per failed connection with the causal exception. */
-    val connectFailure: SharedFlow<Exception> = _connectFailure.asSharedFlow()
+    val connectFailure: Flow<Exception> = _connectFailure.receiveAsFlow()
 
-    private val _secureStorageError = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val _secureStorageError = Channel<Unit>(Channel.BUFFERED)
 
     /** Emitted when EncryptedSharedPreferences are unavailable. */
-    val secureStorageError: SharedFlow<Unit> = _secureStorageError.asSharedFlow()
+    val secureStorageError: Flow<Unit> = _secureStorageError.receiveAsFlow()
 
     // -------------------------------------------------------------------------
     // Connection logic
@@ -194,7 +199,7 @@ class ServerConfigViewModel : ViewModel() {
         }
 
         _connecting.value = false
-        _connectSuccess.tryEmit(ConnectSuccess(resolvedUrl, info, navigateOnSuccess))
+        _connectSuccess.trySend(ConnectSuccess(resolvedUrl, info, navigateOnSuccess))
     }
 
     /**
@@ -204,9 +209,9 @@ class ServerConfigViewModel : ViewModel() {
     private fun onConnectFailure(e: Exception) {
         _connecting.value = false
         if (e is LRRSecureStorageUnavailableException) {
-            _secureStorageError.tryEmit(Unit)
+            _secureStorageError.trySend(Unit)
         } else {
-            _connectFailure.tryEmit(e)
+            _connectFailure.trySend(e)
         }
     }
 
