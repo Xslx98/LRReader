@@ -11,8 +11,6 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.util.Log
 import androidx.core.content.edit
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
@@ -45,7 +43,8 @@ class LRRSecureStorageUnavailableException(message: String) : IOException(messag
  * Manages LANraragi server connection settings (server URL and API key).
  * Stores credentials in [KeystoreSecurePrefs] (AES-GCM values under an
  * AndroidKeyStore key). Installs from before audit C49 kept them in the
- * deprecated EncryptedSharedPreferences; [initialize] copies them over once.
+ * deprecated EncryptedSharedPreferences, which can no longer be read;
+ * [initialize] asks for them again once (see [abandonLegacyStore]).
  */
 object LRRAuthManager {
 
@@ -56,8 +55,10 @@ object LRRAuthManager {
      * leaving room for the rest of the frame (audit 2026-10-06 N5).
      */
     private const val MAIN_THREAD_INIT_TIMEOUT_MS = 2_000L
-    /** Legacy EncryptedSharedPreferences file, read once by [migrateLegacyStore]. */
+    /** Legacy EncryptedSharedPreferences file, unreadable now (see [abandonLegacyStore]). */
     private const val PREF_NAME = "lrr_auth_encrypted"
+    /** androidx.security's MasterKey.DEFAULT_MASTER_KEY_ALIAS, the legacy store's key. */
+    private const val LEGACY_MASTER_KEY_ALIAS = "_androidx_security_master_key_"
     private const val SECURE_PREF_NAME = "lrr_auth_secure"
     private const val KEYSTORE_ALIAS_SECURE_PREFS = "lrr_secure_prefs_key"
     /** Plain-prefs flag: the legacy store was copied (or there was none). */
@@ -323,7 +324,7 @@ object LRRAuthManager {
                 secureStoreCipher(),
             )
             if (!plainPrefs.getBoolean(KEY_SECURE_STORE_MIGRATED, false)) {
-                migrateLegacyStore(context.applicationContext, secure)
+                abandonLegacyStore(context.applicationContext, plainPrefs, secure)
                 plainPrefs.edit(commit = true) { putBoolean(KEY_SECURE_STORE_MIGRATED, true) }
                 deleteLegacyStore(context.applicationContext)
             }
@@ -421,40 +422,43 @@ object LRRAuthManager {
     }
 
     /**
-     * Copy every entry of the legacy EncryptedSharedPreferences store into
-     * [target] (audit C49 / SEC-17). A store that cannot be opened right now
-     * (KeyStore hiccup) throws, nothing is marked migrated and the next
-     * launch retries — the same outcome the old init had for that failure.
+     * Installs from before v2.0 kept credentials in androidx.security's
+     * EncryptedSharedPreferences; v2.0 and v2.1 copied them into
+     * [KeystoreSecurePrefs] on first launch (audit C49 / SEC-17). That
+     * library is gone (ruling R26), so an install updated straight from v1.x
+     * cannot read them any more: the API keys must be entered again and an
+     * app lock set there is lost. Both are said rather than left silent —
+     * the startup reauth prompt for the keys, the lock-removed notice
+     * ([isLegacyLockRemovedNoticePending]) for the lock. The caller then
+     * marks the store handled and deletes it.
      */
-    @Throws(GeneralSecurityException::class, IOException::class)
-    private fun migrateLegacyStore(context: Context, target: SharedPreferences) {
+    private fun abandonLegacyStore(context: Context, plainPrefs: SharedPreferences, target: SharedPreferences) {
         if (!legacyStoreFile(context).exists()) return
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        val legacy = EncryptedSharedPreferences.create(
-            context,
-            PREF_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-        if (!SecurePrefsMigration.copyAll(legacy, target)) {
-            throw IOException("Writing the migrated secure store failed")
+        Log.e(TAG, "Credentials saved before v2.0 cannot be read; asking for them again")
+        // Plain flag every version since v1.12.4 writes with the pattern.
+        if (plainPrefs.contains(KEY_PATTERN_KEYSTORE_BOUND) && !hasPatternIn(target)) {
+            plainPrefs.edit(commit = true) {
+                putBoolean(KEY_LEGACY_LOCK_REMOVED_NOTICE, true)
+                remove(KEY_PATTERN_KEYSTORE_BOUND)
+            }
+            deletePatternKeystoreKey()
+        }
+        if (plainPrefs.getBoolean(KEY_WAS_CONFIGURED, false)) {
+            sNeedsReauthentication = true
         }
     }
 
     private fun legacyStoreFile(context: Context) =
         java.io.File(context.applicationInfo.dataDir, "shared_prefs/$PREF_NAME.xml")
 
-    /** Drop the legacy file and its master key once their content lives in the new store. */
+    /** Drop the legacy file and its master key (see [abandonLegacyStore]). */
     private fun deleteLegacyStore(context: Context) {
         context.deleteSharedPreferences(PREF_NAME)
         try {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
-            if (keyStore.containsAlias(MasterKey.DEFAULT_MASTER_KEY_ALIAS)) {
-                keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
+            if (keyStore.containsAlias(LEGACY_MASTER_KEY_ALIAS)) {
+                keyStore.deleteEntry(LEGACY_MASTER_KEY_ALIAS)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to delete the legacy credential master key", e)
@@ -1069,10 +1073,10 @@ object LRRAuthManager {
     /**
      * Whether a pattern is stored, from plaintext only: true / false, or null
      * when the legacy EncryptedSharedPreferences store (whose key names are
-     * encrypted) has not been migrated yet. The legacy check comes first:
-     * the migration copies into the new store before it marks itself done
-     * and deletes the legacy file, so once the legacy store is seen as gone
-     * the new store's slots read next are complete.
+     * encrypted) has not been handled yet. The legacy check comes first:
+     * init settles the legacy store's lock (see [abandonLegacyStore]) before
+     * it marks itself done and deletes the legacy file, so once the legacy
+     * store is seen as gone the slots read next are final.
      */
     private fun patternEvidenceWithoutKeystore(): Boolean? {
         val plain = fastPlainPrefs()

@@ -127,25 +127,4 @@ class KeystoreSecurePrefsTest {
         prefs.edit().putString("id", "5").commit()
         assertEquals(0L, prefs.getLong("id", 0L))
     }
-
-    @Test
-    fun legacy_entries_migrate_with_their_types() {
-        val ctx: Context = ApplicationProvider.getApplicationContext()
-        val legacy = ctx.getSharedPreferences("legacy_test", Context.MODE_PRIVATE)
-        legacy.edit().clear()
-            .putString("server_url", "http://192.168.1.10:3000")
-            .putString("api_key_profile_3", "k3")
-            .putLong("active_profile_id", 3L)
-            .putBoolean("allow_cleartext", true)
-            .commit()
-        val target = KeystoreSecurePrefs.open(backing, cipher)
-
-        assertTrue(SecurePrefsMigration.copyAll(legacy, target))
-
-        val reopened = KeystoreSecurePrefs.open(backing, cipher)
-        assertEquals("http://192.168.1.10:3000", reopened.getString("server_url", null))
-        assertEquals("k3", reopened.getString("api_key_profile_3", null))
-        assertEquals(3L, reopened.getLong("active_profile_id", 0L))
-        assertTrue(reopened.getBoolean("allow_cleartext", false))
-    }
 }

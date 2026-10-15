@@ -295,6 +295,11 @@ class Image private constructor(
             // Catch all exceptions (ClassCastException, NPE from race, etc.)
             Analytics.recordException(e)
             return
+        } catch (e: OutOfMemoryError) {
+            // An Error, which the catch above does not see: the sticker bitmap
+            // allocation would kill the GL thread (audit STAB-07). Skip the
+            // tile like prepareBitmap does.
+            Log.e(TAG, "OOM preparing a texture upload", e)
         }
     }
 

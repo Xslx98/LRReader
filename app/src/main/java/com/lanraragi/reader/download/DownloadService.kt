@@ -86,6 +86,11 @@ class DownloadService : Service(), DownloadListener {
      *  access is on the main thread. */
     private val mPausedArcids = HashSet<String>()
 
+    /** Arcids whose worker is suspended until the network returns; drives
+     *  [syncKeepAlive]. Kept apart from [mPausedArcids], which only exists
+     *  for the notification. Main thread only. */
+    private val mNetworkWaitArcids = HashSet<String>()
+
     /**
      * Service-scoped CoroutineScope for background awaits (notably
      * [DownloadManager.awaitInitAsync]). Cancelled in [onDestroy] to clean
@@ -495,6 +500,8 @@ class DownloadService : Service(), DownloadListener {
     }
 
     override fun onStart(info: DownloadInfo) {
+        mNetworkWaitArcids.remove(info.arcid)
+        syncKeepAlive()
         if (mNotifyManager == null) {
             return
         }
@@ -589,6 +596,8 @@ class DownloadService : Service(), DownloadListener {
     }
 
     override fun onFinish(info: DownloadInfo) {
+        mNetworkWaitArcids.remove(info.arcid)
+        syncKeepAlive()
         if (mNotifyManager == null) {
             return
         }
@@ -730,6 +739,8 @@ class DownloadService : Service(), DownloadListener {
     }
 
     override fun onCancel(info: DownloadInfo) {
+        mNetworkWaitArcids.remove(info.arcid)
+        syncKeepAlive()
         if (mNotifyManager == null) {
             return
         }
@@ -742,6 +753,8 @@ class DownloadService : Service(), DownloadListener {
     }
 
     override fun onNetworkWait(info: DownloadInfo, waiting: Boolean) {
+        if (waiting) mNetworkWaitArcids.add(info.arcid) else mNetworkWaitArcids.remove(info.arcid)
+        syncKeepAlive()
         if (mNotifyManager == null) return
         if (waiting) {
             mPausedArcids.add(info.arcid)
@@ -792,6 +805,16 @@ class DownloadService : Service(), DownloadListener {
             if (id == just.arcid) just.state else dm.getDownloadState(id)
         }
         return TankNotificationPolicy.completion(states)
+    }
+
+    /**
+     * Holds the CPU + Wi-Fi locks unless every active download is waiting
+     * for the network ([DownloadKeepAlive.shouldHold]).
+     */
+    private fun syncKeepAlive() {
+        val keepAlive = mKeepAlive ?: return
+        val active = mDownloadManager?.activeArcids ?: return
+        if (DownloadKeepAlive.shouldHold(active, mNetworkWaitArcids)) keepAlive.acquire() else keepAlive.release()
     }
 
     private fun checkStopSelf() {

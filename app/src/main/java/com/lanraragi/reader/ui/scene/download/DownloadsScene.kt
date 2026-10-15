@@ -37,6 +37,7 @@ import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -608,11 +609,11 @@ class DownloadsScene : ToolbarScene(),
         }
     }
 
-    /** Applies DiffUtil against [mLastSnapshot] and dispatches updates to [mAdapter]. */
+    /** Dispatches the change from [mLastSnapshot] to [newList] to [mAdapter] (see [DownloadListDiff]). */
     private fun dispatchDiffUpdate(newList: MutableList<DownloadInfo>) {
-        val result = DiffUtil.calculateDiff(DownloadInfoDiffCallback(mLastSnapshot, newList))
+        val old = mLastSnapshot
         mLastSnapshot = newList
-        mAdapter?.let { result.dispatchUpdatesTo(it) }
+        mAdapter?.let { DownloadListDiff.dispatch(old, newList, AdapterListUpdateCallback(it)) }
     }
 
     /**

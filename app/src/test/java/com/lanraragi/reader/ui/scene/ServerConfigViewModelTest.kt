@@ -168,6 +168,26 @@ class ServerConfigViewModelTest {
     // ═══════════════════════════════════════════════════════════
 
     @Test
+    fun attemptConnection_successWithNoCollector_isDeliveredToTheNextCollector() {
+        server.enqueue(MockResponse().setBody(SERVER_INFO_JSON).setResponseCode(200))
+
+        // The scene's view is destroyed (Back / rotation) while the test runs.
+        val vm = ServerConfigViewModel()
+        val baseUrl = server.url("").toString().removeSuffix("/")
+        vm.attemptConnection(baseUrl, null, true)
+        awaitViewModelIdle(vm)
+
+        // The re-attached view still navigates: the result waited for it.
+        val successes = mutableListOf<ServerConfigViewModel.ConnectSuccess>()
+        val job = CoroutineScope(Dispatchers.Unconfined).launch {
+            vm.connectSuccess.collect { successes.add(it) }
+        }
+        assertEquals(1, successes.size)
+        assertTrue(successes.single().navigateOnSuccess)
+        job.cancel()
+    }
+
+    @Test
     fun attemptConnection_success_emitsConnectSuccessAndPersistsProfile() {
         val oldId = runBlocking {
             db.miscDao().insertServerProfile(

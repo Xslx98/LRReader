@@ -119,12 +119,14 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         super.onViewCreated(view, savedInstanceState)
         prefillSavedSettings()
         // View-scoped so the previous fragment-scoped collectors no longer stack
-        // one set per re-attach. These three are replay=0 one-shot results of a
+        // one set per re-attach. These three are one-shot results of a
         // multi-second connection test that keeps running in the background, and
         // by the time they fire onConnectSuccess has already committed the global
         // config; losing them in a STOPPED window would leave the switched server
         // active with no navigation, error, or feedback. Collect for the whole
-        // view lifetime (viewLifecycleOwner still cancels on view destroy).
+        // view lifetime (viewLifecycleOwner still cancels on view destroy); a
+        // result that lands while the view is gone stays buffered in the view
+        // model's channel until this collector restarts.
         collectFlowWhileCreated(viewLifecycleOwner, viewModel.connectSuccess) { result ->
             handleConnectSuccess(result)
         }

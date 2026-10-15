@@ -1,6 +1,5 @@
 package com.lanraragi.reader.ui.scene
 
-import kotlinx.coroutines.launch
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,7 +16,6 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.android.resource.AttrResources
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -135,7 +133,7 @@ class ServerListScene : BaseScene() {
             mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
         }
 
-        // Observe one-shot UI events. These are replay=0 events that drive
+        // Observe one-shot UI events. These are buffered channel events that drive
         // state-machine transitions (ProfileActivated → applyProfileSwitch,
         // ProfileAdded/EditSaved → navigation/dialog dismissal); losing one in a
         // STOPPED window would split Room's active flag from LRRAuthManager or
@@ -205,18 +203,8 @@ class ServerListScene : BaseScene() {
         val ctx = getEHContext() ?: return
 
         // The view model has already pointed LRRAuthManager at the profile, off
-        // the main thread (audit 2026-10-13 STAB-10).
-
-        // Clear caches so previous server's content doesn't appear under new
-        // server. Off the main thread: the disk caches delete their files
-        // and may wait for in-flight readers.
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                ServiceRegistry.clearAllCaches()
-            } catch (e: Exception) {
-                android.util.Log.w("ServerListScene", "Cache clear after profile switch failed")
-            }
-        }
+        // the main thread (audit 2026-10-13 STAB-10), and cleared the previous
+        // server's caches.
 
         // Downloads are left alone: the list is global and each worker keeps
         // fetching from its row's source profile, so a switch must not stop

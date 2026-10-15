@@ -18,12 +18,12 @@ import com.lanraragi.reader.client.api.ServerCapabilityCache
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -53,10 +53,15 @@ class ServerListViewModel : ViewModel() {
     // One-shot events
     // -------------------------------------------------------------------------
 
-    private val _uiEvent = MutableSharedFlow<ServerListUiEvent>(extraBufferCapacity = 4)
+    // A buffered channel, not a replay=0 SharedFlow: the work behind these
+    // events runs in viewModelScope (activity-scoped) and outlives the scene's
+    // view, so an event that fires while the view is destroyed (Back, rotation,
+    // a covering scene) waits here for the next collector instead of being
+    // dropped.
+    private val _uiEvent = Channel<ServerListUiEvent>(Channel.BUFFERED)
 
-    /** One-shot UI events (toasts, navigation, errors). */
-    val uiEvent: SharedFlow<ServerListUiEvent> = _uiEvent.asSharedFlow()
+    /** One-shot UI events (toasts, navigation, errors), each delivered once. */
+    val uiEvent: Flow<ServerListUiEvent> = _uiEvent.receiveAsFlow()
 
     sealed interface ServerListUiEvent {
         data class ShowToast(val message: String) : ServerListUiEvent
@@ -121,15 +126,33 @@ class ServerListViewModel : ViewModel() {
                     // here rather than in the Scene on main (audit 2026-10-13 STAB-10).
                     applySessionFor(profile)
                 }
-                // Scene handles cache clearing, toasts and navigation
-                _uiEvent.emit(ServerListUiEvent.ProfileActivated(profile))
+                clearCachesAfterSwitch()
+                // Scene handles toasts and navigation
+                _uiEvent.send(ServerListUiEvent.ProfileActivated(profile))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: LRRSecureStorageUnavailableException) {
                 Log.e(TAG, "Secure storage unavailable while switching profile", e)
-                _uiEvent.emit(ServerListUiEvent.SecureStorageError)
+                _uiEvent.send(ServerListUiEvent.SecureStorageError)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to activate profile", e)
+            }
+        }
+    }
+
+    /**
+     * Drops the previous server's caches so its content cannot show up under
+     * the new one. Runs here rather than in the scene so it happens even when
+     * the scene's view is gone by the time the switch commits; off main on the
+     * application IO scope, since the disk caches delete their files and may
+     * wait for in-flight readers.
+     */
+    private fun clearCachesAfterSwitch() {
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                ServiceRegistry.clearAllCaches()
+            } catch (e: Exception) {
+                Log.e(TAG, "Cache clear after profile switch failed", e)
             }
         }
     }
@@ -157,7 +180,7 @@ class ServerListViewModel : ViewModel() {
             // the row goes, or the deleted server keeps receiving the key.
             if (wasActive) LRRAuthManager.clearActiveSession()
         } catch (e: LRRSecureStorageUnavailableException) {
-            _uiEvent.tryEmit(ServerListUiEvent.SecureStorageError)
+            _uiEvent.trySend(ServerListUiEvent.SecureStorageError)
             return
         }
         viewModelScope.launch {
@@ -236,7 +259,7 @@ class ServerListViewModel : ViewModel() {
                         profile, position, newName, r.resolvedUrl, newKey, r.usedHttpFallback, allowCleartext
                     )
                 is LRRUrlHelper.ConnectResult.Failure ->
-                    _uiEvent.tryEmit(ServerListUiEvent.EditConnectionFailed(r.error))
+                    _uiEvent.trySend(ServerListUiEvent.EditConnectionFailed(r.error))
             }
         }
     }
@@ -270,7 +293,7 @@ class ServerListViewModel : ViewModel() {
                         // the edit aborts with Room and live auth untouched.
                         LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
                     } catch (e: LRRSecureStorageUnavailableException) {
-                        _uiEvent.emit(ServerListUiEvent.SecureStorageError)
+                        _uiEvent.send(ServerListUiEvent.SecureStorageError)
                         return@withContext false
                     }
                     // Durable Room write next. A failure propagates to the outer
@@ -290,15 +313,15 @@ class ServerListViewModel : ViewModel() {
                             profileRepository.getAllProfiles().map { it.id }
                         )
                     } catch (e: LRRSecureStorageUnavailableException) {
-                        _uiEvent.emit(ServerListUiEvent.SecureStorageError)
+                        _uiEvent.send(ServerListUiEvent.SecureStorageError)
                         return@withContext false
                     }
                     true
                 }
                 if (!committed) return@launch
-                _uiEvent.emit(ServerListUiEvent.EditSaved(position, updated))
+                _uiEvent.send(ServerListUiEvent.EditSaved(position, updated))
                 if (usedHttpFallback) {
-                    _uiEvent.emit(ServerListUiEvent.ShowToastRes(
+                    _uiEvent.send(ServerListUiEvent.ShowToastRes(
                         com.lanraragi.reader.R.string.lrr_https_fallback_warning
                     ))
                 }
@@ -312,7 +335,7 @@ class ServerListViewModel : ViewModel() {
                 // re-enables instead of soft-locking with the Save button stuck
                 // disabled and no feedback.
                 Log.e(TAG, "Failed to save edited profile", e)
-                _uiEvent.emit(ServerListUiEvent.EditConnectionFailed(e))
+                _uiEvent.send(ServerListUiEvent.EditConnectionFailed(e))
             }
         }
     }
@@ -352,7 +375,7 @@ class ServerListViewModel : ViewModel() {
                 is LRRUrlHelper.ConnectResult.Success ->
                     performAddProfile(name, r.resolvedUrl, finalKey, r.info, r.usedHttpFallback, allowCleartext)
                 is LRRUrlHelper.ConnectResult.Failure ->
-                    _uiEvent.tryEmit(ServerListUiEvent.AddConnectionFailed(r.error))
+                    _uiEvent.trySend(ServerListUiEvent.AddConnectionFailed(r.error))
             }
         }
     }
@@ -390,7 +413,7 @@ class ServerListViewModel : ViewModel() {
                         LRRAuthManager.setApiKeyForProfile(id, finalKey)
                     } catch (e: LRRSecureStorageUnavailableException) {
                         profileRepository.delete(newProfile.copy(id = id))
-                        _uiEvent.emit(ServerListUiEvent.SecureStorageError)
+                        _uiEvent.send(ServerListUiEvent.SecureStorageError)
                         return@withContext -1L
                     }
                     profileRepository.activateExclusive(id)
@@ -403,7 +426,7 @@ class ServerListViewModel : ViewModel() {
                         LRRAuthManager.setAllowCleartext(savedAllowCleartext)
                         LRRAuthManager.bumpServerConfigVersion()
                     } catch (e: LRRSecureStorageUnavailableException) {
-                        _uiEvent.emit(ServerListUiEvent.SecureStorageError)
+                        _uiEvent.send(ServerListUiEvent.SecureStorageError)
                         return@withContext -1L
                     }
                     id
@@ -417,7 +440,7 @@ class ServerListViewModel : ViewModel() {
                     isActive = true,
                     allowCleartext = savedAllowCleartext
                 )
-                _uiEvent.emit(
+                _uiEvent.send(
                     ServerListUiEvent.ProfileAdded(
                         profile = profile,
                         newId = newId,
@@ -435,7 +458,7 @@ class ServerListViewModel : ViewModel() {
                 // the live global auth was not switched (it runs only after the
                 // Room insert succeeds).
                 Log.e(TAG, "Failed to add profile", e)
-                _uiEvent.emit(ServerListUiEvent.AddConnectionFailed(e))
+                _uiEvent.send(ServerListUiEvent.AddConnectionFailed(e))
             }
         }
     }

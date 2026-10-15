@@ -150,6 +150,16 @@ class ArchiveLocalStateDaoTest {
     }
 
     @Test
+    fun resetTransientDownloadStates_reportsTheQueueOldestFirst() = runTest {
+        // Inserted out of order: rowid order must not decide (A47).
+        dao.upsert(row("third", downloadState = DownloadState.WAIT, downloadTime = 30L))
+        dao.upsert(row("first", downloadState = DownloadState.DOWNLOAD, downloadTime = 10L))
+        dao.upsert(row("second", downloadState = DownloadState.WAIT, downloadTime = 20L))
+
+        assertEquals(listOf("first", "second", "third"), dao.resetTransientDownloadStates())
+    }
+
+    @Test
     fun observeAllDownloads_emitsOnInsert() = runTest {
         // Initial empty state
         val initial = dao.observeAllDownloads().first()

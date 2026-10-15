@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.job
@@ -60,6 +61,17 @@ fun <T> SharedFlow<T>.collectInto(scope: CoroutineScope): List<T> {
         onSubscription { subscribed.complete(Unit) }.collect { events.add(it) }
     }
     runBlocking { subscribed.await() }
+    return events
+}
+
+/**
+ * Collect a buffered (channel-backed) flow into a list on [scope]. Such a
+ * flow keeps undelivered values until a collector arrives, so there is no
+ * subscription race to guard against.
+ */
+fun <T> Flow<T>.collectInto(scope: CoroutineScope): List<T> {
+    val events = CopyOnWriteArrayList<T>()
+    scope.launch { collect { events.add(it) } }
     return events
 }
 
