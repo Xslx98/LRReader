@@ -3,6 +3,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -37,5 +38,24 @@ class PrefsInterruptedStoreTest {
         PrefsInterruptedStore(prefs).saveAfterRemoval(setOf("b"))
 
         assertEquals(setOf("b"), PrefsInterruptedStore(prefs).load())
+    }
+
+    @Test
+    fun theQueueOrderSurvives() {
+        val queued = listOf("c", "a", "d", "b")
+        PrefsInterruptedStore(prefs).save(queued.toCollection(LinkedHashSet()))
+
+        assertEquals(queued, PrefsInterruptedStore(prefs).load().toList())
+    }
+
+    @Test
+    fun aRecordFromAnOlderVersionIsStillRead_andReplacedOnTheNextWrite() {
+        prefs.edit().clear().putStringSet("download_interrupted_arcids", setOf("a", "b")).commit()
+
+        assertEquals(setOf("a", "b"), PrefsInterruptedStore(prefs).load())
+
+        PrefsInterruptedStore(prefs).saveAfterRemoval(setOf("b"))
+        assertEquals(setOf("b"), PrefsInterruptedStore(prefs).load())
+        assertFalse(prefs.contains("download_interrupted_arcids"))
     }
 }

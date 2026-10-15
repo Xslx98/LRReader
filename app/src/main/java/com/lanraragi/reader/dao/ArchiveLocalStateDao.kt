@@ -173,7 +173,8 @@ interface ArchiveLocalStateDao {
      * [com.lanraragi.reader.download.DownloadState] integers.
      *
      * Returns the arcids that were reset, read in the same transaction, so the
-     * interrupted queue can be offered back to the user.
+     * interrupted queue can be offered back to the user. They come in the order
+     * they were queued (oldest first), so a resume restarts them in that order (A47).
      */
     @Transaction
     suspend fun resetTransientDownloadStates(): List<String> {
@@ -182,7 +183,10 @@ interface ArchiveLocalStateDao {
         return arcids
     }
 
-    @Query("SELECT ARCID FROM ARCHIVE_LOCAL_STATE WHERE DOWNLOAD_STATE = 1 OR DOWNLOAD_STATE = 2")
+    @Query(
+        "SELECT ARCID FROM ARCHIVE_LOCAL_STATE WHERE DOWNLOAD_STATE = 1 OR DOWNLOAD_STATE = 2 " +
+            "ORDER BY DOWNLOAD_TIME, ARCID"
+    )
     suspend fun getTransientDownloadArcids(): List<String>
 
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_STATE = 0 WHERE DOWNLOAD_STATE = 1 OR DOWNLOAD_STATE = 2")
