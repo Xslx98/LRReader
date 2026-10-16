@@ -79,9 +79,9 @@ class ServerTrustTest {
         server.start()
     }
 
-    private fun selfSigned(name: String = LOOPBACK) = HeldCertificate.Builder()
+    private fun selfSigned(vararg names: String = LOOPBACK_NAMES) = HeldCertificate.Builder()
         .commonName("lrr.test")
-        .addSubjectAlternativeName(name)
+        .apply { names.forEach { addSubjectAlternativeName(it) } }
         .build()
 
     private fun client(trust: ServerTrust.Trust) = OkHttpClient.Builder()
@@ -146,7 +146,7 @@ class ServerTrustTest {
     @Test
     fun pinnedCertificate_waivesTheHostnameCheck() {
         // Issued for another name, as a server reached by its IP address is.
-        serve(selfSigned(name = "some.other.name"))
+        serve(selfSigned("some.other.name"))
         ServerTrust.trust(untrusted(failure())!!)
 
         assertEquals(200, get())
@@ -205,9 +205,11 @@ class ServerTrustTest {
 
     // ── imported CAs ─────────────────────────────────────────────────────
 
-    private fun caAndLeaf(name: String = LOOPBACK): Pair<HeldCertificate, HeldCertificate> {
+    private fun caAndLeaf(vararg names: String = LOOPBACK_NAMES): Pair<HeldCertificate, HeldCertificate> {
         val ca = HeldCertificate.Builder().commonName("Home CA").certificateAuthority(0).build()
-        val leaf = HeldCertificate.Builder().commonName("lrr.home").addSubjectAlternativeName(name).signedBy(ca).build()
+        val leaf = HeldCertificate.Builder().commonName("lrr.home")
+            .apply { names.forEach { addSubjectAlternativeName(it) } }
+            .signedBy(ca).build()
         return ca to leaf
     }
 
@@ -244,7 +246,7 @@ class ServerTrustTest {
 
     @Test
     fun importedCa_stillChecksTheHostName() {
-        val (ca, leaf) = caAndLeaf(name = "some.other.name")
+        val (ca, leaf) = caAndLeaf("some.other.name")
         serve(leaf, ca)
         ServerTrust.importCertificates(ca.certificatePem().toByteArray())
 
@@ -346,8 +348,12 @@ class ServerTrustTest {
     private companion object {
         fun unset(): Nothing = throw IllegalStateException("not set up in this test")
 
-        /** MockWebServer listens on the loopback address and its URLs use it. */
-        const val LOOPBACK = "127.0.0.1"
+        /**
+         * MockWebServer listens on loopback; its URLs use the address's canonical
+         * name, which is "127.0.0.1" on Windows but "localhost" on the Linux CI
+         * runner. Certificates that must pass the hostname check carry both.
+         */
+        val LOOPBACK_NAMES = arrayOf("127.0.0.1", "localhost")
 
         const val SERVER_INFO_JSON = """{"name":"Test Server","version":"0.9.0","archives_per_page":100}"""
     }
