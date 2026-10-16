@@ -1,0 +1,5 @@
+2.2: self-signed HTTPS and calmer downloads.
+New: HTTPS servers with a self-signed certificate - check the fingerprint and trust it, or import your own CA under Settings > Privacy.
+Downloads waiting for the network no longer keep the phone awake; interrupted downloads resume in their original order. Long download lists switch labels without stutter.
+Fixed: leaving the server screen mid-connect no longer loses the result.
+Updating straight from 1.x: re-enter your API keys and app lock.

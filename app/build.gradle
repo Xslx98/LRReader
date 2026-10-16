@@ -23,8 +23,8 @@ android {
         minSdkVersion 28
         targetSdkVersion 36
         // versionCode = MAJOR * 10000 + MINOR * 100 + PATCH
-        versionCode 20100
-        versionName "2.1.0"
+        versionCode 20200
+        versionName "2.2.0"
         vectorDrawables.useSupportLibrary = true
         resourceConfigurations += ['en', 'zh', 'zh-rCN', 'zh-rHK', 'zh-rTW', 'es', 'ja', 'ko', 'fr', 'de', 'th']
         // Benchmark-only seam (MainActivity: intent extra lrr.perf.server
