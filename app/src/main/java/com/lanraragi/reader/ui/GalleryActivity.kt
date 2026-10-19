@@ -31,7 +31,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
 import com.lanraragi.reader.BuildConfig
@@ -61,18 +60,13 @@ import com.lanraragi.reader.ui.gallery.GalleryImageOperations
 import com.lanraragi.reader.ui.gallery.GalleryInputHandler
 import com.lanraragi.reader.ui.gallery.GalleryMenuHelper
 import com.lanraragi.reader.ui.gallery.GallerySliderController
-import com.lanraragi.reader.ui.gallery.GalleryStampOps
-import com.lanraragi.reader.ui.gallery.LRRStampsBackend
 import com.lanraragi.reader.ui.gallery.ReaderChromeController
 import com.lanraragi.reader.ui.gallery.ReaderContinuationController
-import com.lanraragi.reader.ui.gallery.ReaderStampsController
-import com.lanraragi.reader.ui.gallery.StampsBackend
-import com.lanraragi.reader.ui.gallery.TankStampsBackend
+import com.lanraragi.reader.ui.gallery.ReaderStampsCoordinator
 import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
 import com.lanraragi.reader.widget.ReversibleSeekBar
-import com.lanraragi.reader.widget.StampOverlayView
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.framework.lib.glgallery.SimpleAdapter
@@ -165,9 +159,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
     private var mTankProgress: TankoubonProgressSync? = null
 
-    private var mStamps: ReaderStampsController? = null
-    private var mStampOverlay: StampOverlayView? = null
-    private var mStampOps: GalleryStampOps? = null
+    private val mStampsCoordinator = ReaderStampsCoordinator(this) { mGalleryView }
 
     // --- Extracted helpers ---
     private val mInputHandler = GalleryInputHandler(this)
@@ -403,35 +395,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // tank progress.
         mArchive?.let { mTankProgress = TankoubonProgressSync(it.arcid) }
 
-        // Stamp overlay read path. Requires a server-backed identity — a
-        // per-archive session's mArchive, or a tank session's provider
-        // (global pages routed per member by TankStampsBackend). The legacy
-        // local-file DIR path without an archive gets no controller and the
-        // overlay stays gone. mArchive is final here (see the
-        // continuation-block comment above).
-        mStampOverlay = findViewById(R.id.stamp_overlay)
-        val stampsBackend: StampsBackend? = mArchive?.let { archive ->
-            LRRStampsBackend(archive.arcid, archive.serverProfileId)
-        } ?: mTankSeed?.let { seed ->
-            (mGalleryProvider as? TankGalleryProvider)?.let { provider ->
-                TankStampsBackend(provider, seed.profileId)
-            }
-        }
-        stampsBackend?.let { backend ->
-            val stamps = ReaderStampsController(
-                scope = lifecycleScope,
-                backend = backend,
-                onDataChanged = { onStampsDataChanged() },
-            )
-            mStamps = stamps
-            mStampOverlay?.stampsProvider = { page0 -> stamps.stampsForDisplayPage(page0) }
-            mStampOverlay?.let { overlay ->
-                val ops = GalleryStampOps(this, stamps, overlay)
-                overlay.callback = ops
-                mStampOps = ops
-            }
-            refreshStampsVisibility()
-        }
+        // Stamp overlay. mArchive is final here (see the continuation-block
+        // comment above).
+        mStampsCoordinator.setUp(lifecycleScope, mArchive, mTankSeed, mGalleryProvider)
     }
 
     private fun onCreateView(savedInstanceState: Bundle?) {
@@ -634,10 +600,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
         mChrome.clear()
         mContinuation = null
-        mStampOps?.dismissCard()
-        mStampOps = null
-        mStamps = null
-        mStampOverlay = null
+        mStampsCoordinator.clear()
 
         super.onDestroy()
     }
@@ -648,8 +611,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     }
 
     internal fun handleBack() {
-        if (mStampOverlay?.placing == true) {
-            mStampOps?.exitPlacementMode()
+        if (mStampsCoordinator.isPlacing) {
+            mStampsCoordinator.exitPlacementMode()
         } else if (mContinuation?.isShowing == true) {
             mContinuation?.hide()
         } else {
@@ -756,7 +719,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         // The floating stamp card is anchored in screen pixels of the old layout.
-        mStampOps?.dismissCard()
+        mStampsCoordinator.dismissCard()
         // Some devices re-show the system bars on rotation; restore the
         // immersive state the slider last asked for.
         applySystemUiState()
@@ -903,48 +866,13 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     // ======== Reader stamps ========
 
     internal fun refreshStampsVisibility() {
-        val overlay = mStampOverlay ?: return
-        val stamps = mStamps
-        val visible = stamps != null &&
-            stamps.support != ReaderStampsController.Support.UNSUPPORTED &&
-            (ReadingSettings.getReaderStamps() || stamps.sessionVisible)
-        // The per-frame transform collection feeds only this overlay — keep
-        // it off while hidden. Enabling requests a render, so a fresh
-        // snapshot follows the (possibly stale) synchronous pump below.
-        mGalleryView?.setPageTransformCollectionEnabled(visible)
-        overlay.isVisible = visible
-        if (visible) {
-            pumpStampTransforms()
-        }
+        mStampsCoordinator.refreshVisibility()
     }
 
-    private fun onStampsDataChanged() {
-        // A support probe may resolve to UNSUPPORTED while the user is mid
-        // placement (e.g. the pre-0.9.8 404 lands after the menu tap). Kill
-        // the mode here — the overlay would otherwise keep eating touches
-        // while refreshStampsVisibility() hides it. Fires at most once:
-        // exitPlacementMode() clears `placing`.
-        if (mStamps?.support == ReaderStampsController.Support.UNSUPPORTED &&
-            mStampOverlay?.placing == true
-        ) {
-            mStampOps?.exitPlacementMode()
-            Toast.makeText(this, R.string.stamps_unsupported, Toast.LENGTH_LONG).show()
-        }
-        refreshStampsVisibility()
-        mStampOverlay?.invalidate()
-    }
-
-    private fun pumpStampTransforms() {
-        val overlay = mStampOverlay ?: return
-        val transforms = mGalleryView?.getPageTransforms().orEmpty()
-        overlay.transforms = transforms
-        mStamps?.ensureVisiblePagesLoaded(transforms.map { it.index })
-    }
-
-    internal fun areStampsAvailable(): Boolean = mStampOps?.isAvailable() == true
+    internal fun areStampsAvailable(): Boolean = mStampsCoordinator.isAvailable()
 
     internal fun startStampPlacement() {
-        mStampOps?.startPlacementMode()
+        mStampsCoordinator.startPlacement()
     }
 
     internal fun jumpToPage(page0: Int) {
@@ -952,7 +880,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     }
 
     internal fun showStampedPagesDialog() {
-        mStampOps?.showStampedPagesDialog()
+        mStampsCoordinator.showStampedPagesDialog()
     }
 
     // ======== GalleryMenuHelper.SettingsCallback ========
@@ -1032,7 +960,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                     // frame). Accepted residual: zoom/pan on the SAME page keeps
                     // the card without tracking the marker — it self-heals on
                     // outside tap.
-                    mStampOps?.dismissCard()
+                    mStampsCoordinator.dismissCard()
                     // Reaching the last page silently warms the next-archive
                     // resolution so the continuation panel (or the
                     // swipe-through jump) is instant on the first forward
@@ -1045,9 +973,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                 NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)
                 NOTIFY_KEY_LONG_PRESS_PAGE -> mImageOps.showPageDialog(mValue)
-                NOTIFY_KEY_PAGE_TRANSFORMS -> {
-                    if (mStampOverlay?.isVisible == true) pumpStampTransforms()
-                }
+                NOTIFY_KEY_PAGE_TRANSFORMS -> mStampsCoordinator.onPageTransformsChanged()
             }
             mNotifyTaskPool.push(this)
         }
