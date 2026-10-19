@@ -145,7 +145,9 @@ ui wait resource-id "$PKG:id/thumb_new" 15
 check "back to the list" 2
 
 # drawer_to NAV_ITEM_ID MARKER_ID LABEL: open the drawer, pick an item, wait
-# for a view only that destination has, then come back to the list.
+# for a view only that destination has, then come back to the list. Markers must
+# show at any screen width: toolbar actions marked showAsAction="always" (CI's
+# small emulator moves "ifRoom" ones into the overflow menu).
 drawer_to() {
   ui tap resource-id "$PKG:id/search_menu" 10
   ui tap resource-id "$PKG:id/$1" 10
@@ -155,7 +157,7 @@ drawer_to() {
   ui wait resource-id "$PKG:id/thumb_new" 15
   check "back from $3" 2
 }
-drawer_to nav_downloads "$PKG:id/sort_download_list" "downloads page"
+drawer_to nav_downloads "$PKG:id/action_start_all" "downloads page"
 drawer_to nav_history "$PKG:id/action_clear_all" "history page"
 
 # Settings is its own activity; its sub-screens are PreferenceFragments the
