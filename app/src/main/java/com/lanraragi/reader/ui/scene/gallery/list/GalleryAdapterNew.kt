@@ -63,6 +63,9 @@ abstract class GalleryAdapterNew(
 
     private val mLayoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
     private val mPaddingTopSB: Int = mResources.getDimensionPixelOffset(R.dimen.gallery_padding_top_search_bar)
+
+    /** Room under the last row so the FAB menu never covers it (the list clips to its padding off). */
+    private val mPaddingBottomFab: Int = mResources.getDimensionPixelOffset(R.dimen.gallery_padding_bottom_fab)
     private var mListDecoration: MarginItemDecoration? = null
     private var mGirdDecoration: MarginItemDecoration? = null
 
@@ -94,7 +97,7 @@ abstract class GalleryAdapterNew(
             mRecyclerView.paddingLeft,
             mRecyclerView.paddingTop + mPaddingTopSB,
             mRecyclerView.paddingRight,
-            mRecyclerView.paddingBottom
+            mRecyclerView.paddingBottom + mPaddingBottomFab
         )
     }
 
