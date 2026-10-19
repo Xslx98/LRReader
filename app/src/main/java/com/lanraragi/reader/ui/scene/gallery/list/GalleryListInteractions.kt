@@ -38,6 +38,8 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
         if (archive != null && !isTankoubonId(archive.arcid)) {
             publishReadingContext(archive, position)
         }
+        // The row lights up briefly when the user comes back to the list.
+        archive?.let { scene.rowHighlighter.mark(it.arcid) }
         // Tank rows route to TankDetailScene inside the helper funnel.
         return scene.itemActionHelper?.onItemClick(view, archive) ?: false
     }

@@ -145,6 +145,7 @@ class GalleryListScene : BaseScene(),
         get() = ::recyclerView.isInitialized
 
     internal val tankMerge = GalleryTankMergeHelper(this)
+    internal val rowHighlighter = GalleryRowHighlighter(this)
     private val events = GalleryListEvents(this)
     private val interactions = GalleryListInteractions(this)
     internal var uploadHelper: GalleryUploadHelper? = null
@@ -537,6 +538,7 @@ class GalleryListScene : BaseScene(),
         mDrawerHelper?.onResume()
 
         events.drainOnResume()
+        rowHighlighter.flushAfterReturn()
 
         // Auto-refresh when active server config changed (edit/switch/add)
         val currentVersion = LRRAuthManager.serverConfigVersion
