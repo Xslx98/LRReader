@@ -169,6 +169,7 @@ object TagEditDialog {
         val colorTag = AttrResources.getAttrColor(activity, R.attr.tagBackgroundColor)
         val colorNamespace = AttrResources.getAttrColor(activity, R.attr.tagGroupBackgroundColor)
         val colorNamespaceText = AttrResources.getAttrColor(activity, R.attr.tagGroupTextColor)
+        val colorTagText = AttrResources.getAttrColor(activity, R.attr.tagTextColor)
 
         val rootLayout = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
@@ -217,6 +218,7 @@ object TagEditDialog {
                 for ((tagIndex, tagText) in group.tags.withIndex()) {
                     val chip = buildTagChip(
                         activity, density, colorTag, tagText,
+                        textColor = colorTagText,
                         onEdit = {
                             showEditTagDialog(activity, tagText) { newTag ->
                                 if (newTag.isNotBlank()) {
@@ -234,7 +236,7 @@ object TagEditDialog {
                 }
 
                 // [+] add tag button
-                val addBtn = createAddButton(activity, density, colorTag)
+                val addBtn = createAddButton(activity, density, colorTag, colorTagText)
                 addBtn.setOnClickListener {
                     showAddTagDialog(activity, group.namespace) { newTag ->
                         if (newTag.isNotBlank()) {
@@ -313,10 +315,12 @@ object TagEditDialog {
         tagText: String,
         onEdit: () -> Unit,
         onDelete: () -> Unit,
+        textColor: Int = Color.WHITE,
     ): View = buildEditableChip(
         context = context,
         density = density,
         color = colorTag,
+        textColor = textColor,
         labelText = tagText,
         bold = false,
         deleteDescription = context.getString(R.string.lrr_delete_tag, tagText),
@@ -419,14 +423,14 @@ object TagEditDialog {
 
     /**
      * Create a tag-styled [TextView] matching item_gallery_tag.xml appearance.
-     * CardMessage style: 14sp, singleLine, ellipsize end, white text.
+     * CardMessage style: 14sp, singleLine, ellipsize end.
      */
-    private fun createTagTextView(activity: Activity, density: Float): TextView {
+    private fun createTagTextView(activity: Activity, density: Float, textColor: Int): TextView {
         return TextView(activity).apply {
             val hPad = (12 * density).toInt()
             val vPad = (4 * density).toInt()
             setPadding(hPad, vPad, hPad, vPad)
-            setTextColor(Color.WHITE)
+            setTextColor(textColor)
             textSize = 14f
             maxLines = 1
             isSingleLine = true
@@ -443,8 +447,8 @@ object TagEditDialog {
     /**
      * Create a small [+] button styled as a tag chip.
      */
-    private fun createAddButton(activity: Activity, density: Float, color: Int): TextView {
-        return createTagTextView(activity, density).apply {
+    private fun createAddButton(activity: Activity, density: Float, color: Int, textColor: Int): TextView {
+        return createTagTextView(activity, density, textColor).apply {
             text = "+"
             setTypeface(null, Typeface.BOLD)
             background = RoundSideRectDrawable(color)
