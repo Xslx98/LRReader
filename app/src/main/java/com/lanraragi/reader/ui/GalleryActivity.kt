@@ -619,57 +619,27 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                 provider.putScrollFraction(gv.currentScrollFraction)
             }
         }
-        var task = mNotifyTaskPool.pop()
-        if (task == null) {
-            task = NotifyTask()
-        }
-        task.setData(NOTIFY_KEY_CURRENT_INDEX, index)
-        mainHandler.post(task)
+        postNotify(NOTIFY_KEY_CURRENT_INDEX, index)
     }
 
     override fun onTapSliderArea() {
-        var task = mNotifyTaskPool.pop()
-        if (task == null) {
-            task = NotifyTask()
-        }
-        task.setData(NOTIFY_KEY_TAP_SLIDER_AREA, 0)
-        mainHandler.post(task)
+        postNotify(NOTIFY_KEY_TAP_SLIDER_AREA, 0)
     }
 
     override fun onTapMenuArea() {
-        var task = mNotifyTaskPool.pop()
-        if (task == null) {
-            task = NotifyTask()
-        }
-        task.setData(NOTIFY_KEY_TAP_MENU_AREA, 0)
-        mainHandler.post(task)
+        postNotify(NOTIFY_KEY_TAP_MENU_AREA, 0)
     }
 
     override fun onTapErrorText(index: Int) {
-        var task = mNotifyTaskPool.pop()
-        if (task == null) {
-            task = NotifyTask()
-        }
-        task.setData(NOTIFY_KEY_TAP_ERROR_TEXT, index)
-        mainHandler.post(task)
+        postNotify(NOTIFY_KEY_TAP_ERROR_TEXT, index)
     }
 
     override fun onLongPressPage(index: Int) {
-        var task = mNotifyTaskPool.pop()
-        if (task == null) {
-            task = NotifyTask()
-        }
-        task.setData(NOTIFY_KEY_LONG_PRESS_PAGE, index)
-        mainHandler.post(task)
+        postNotify(NOTIFY_KEY_LONG_PRESS_PAGE, index)
     }
 
     override fun onPageTransformsChanged() {
-        var task = mNotifyTaskPool.pop()
-        if (task == null) {
-            task = NotifyTask()
-        }
-        task.setData(NOTIFY_KEY_PAGE_TRANSFORMS, 0)
-        mainHandler.post(task)
+        postNotify(NOTIFY_KEY_PAGE_TRANSFORMS, 0)
     }
 
     override fun onAutoTransferDone() {
@@ -790,6 +760,13 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
     // ======== NotifyTask (UI-thread dispatch) ========
 
+    /** Runs [key] with [value] on the UI thread through a pooled [NotifyTask]. */
+    private fun postNotify(key: Int, value: Int) {
+        val task = mNotifyTaskPool.pop() ?: NotifyTask()
+        task.setData(key, value)
+        mainHandler.post(task)
+    }
+
     private inner class NotifyTask : Runnable {
 
         private var mKey = 0
@@ -845,12 +822,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
             val provider = mGalleryProvider ?: return
             val size = provider.size()
-            var task = mNotifyTaskPool.pop()
-            if (task == null) {
-                task = NotifyTask()
-            }
-            task.setData(NOTIFY_KEY_SIZE, size)
-            mainHandler.post(task)
+            postNotify(NOTIFY_KEY_SIZE, size)
         }
 
         override fun onPageSucceed(index: Int, image: com.lanraragi.framework.lib.glview.image.ImageWrapper) {
