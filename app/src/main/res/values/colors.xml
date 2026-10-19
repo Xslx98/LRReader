@@ -48,7 +48,7 @@
 
     <color name="progress_light">@color/colorAccent</color>
 
-    <color name="tag_group_background_light">@color/colorAccent</color>
+    <color name="tag_group_background_light">@color/teal_50</color>
 
     <color name="tag_background_light">@color/colorPrimary</color>
 
@@ -61,15 +61,13 @@
     <color name="icon_color_black">@color/grey_100</color>
 
     <color name="red_500">#fff44336</color>
+    <color name="teal_50">#ffe0f2f1</color>
+    <color name="teal_100">#ffb2dfdb</color>
     <color name="teal_500">#ff009688</color>
     <color name="teal_700">#ff00796b</color>
     <color name="teal_800">#ff00695c</color>
+    <color name="teal_900">#ff004d40</color>
     <color name="teal_a700">#ff00BFA5</color>
-    <color name="purple_500">#ff9c27b0</color>
-    <color name="purple_700">#ff7b1fa2</color>
-    <color name="purple_800">#ff6a1b9a</color>
-    <color name="purple_vivid">#ffBF5AF2</color>
-    <color name="purple_a200">#ffe040fb</color>
     <color name="purple_a400">#ffd500f9</color>
     <color name="purple_a700">#ffaa00ff</color>
     <color name="cyan_600">#ff00acc1</color>
@@ -91,7 +89,7 @@
 
     <color name="colorPrimary" >@color/teal_500</color>
     <color name="colorPrimaryDark">@color/teal_700</color>
-    <color name="colorAccent">@color/purple_a200</color>
+    <color name="colorAccent">@color/teal_700</color>
 
     <color name="translucent_bg">#80ffffff</color>
 

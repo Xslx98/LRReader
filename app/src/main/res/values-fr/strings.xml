@@ -152,7 +152,7 @@
     <string name="refresh">Rafraîchir</string>
     <string name="file_chooser_title">Ouvrir avec</string>
     <string name="favorited">Ajoutée à catégories</string>
-    <string name="not_favorited">Non ajoutée à catégories</string>
+    <string name="not_favorited">Ajouter à une catégorie</string>
 
     <!-- Rating -->
 
@@ -840,9 +840,6 @@ Cette action est irréversible.</string>
     <string name="settings_read_picture_decoding_method_origin">Décodage système</string>
     <string name="settings_read_reverse_volume_page">Reverse volume key translation direction</string>
     <string name="settings_read_screen_rotation_sensor">Auto rotate</string>
-    <string name="theme_black">Thème noir</string>
-    <string name="theme_dark">Thème sombre</string>
-    <string name="theme_light">Thème clair</string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">Dynamique</string>
     <string name="lrr_save_and_connect">Enregistrer et connecter</string>

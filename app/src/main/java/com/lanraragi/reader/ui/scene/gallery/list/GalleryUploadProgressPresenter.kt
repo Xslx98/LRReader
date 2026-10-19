@@ -41,7 +41,7 @@ class GalleryUploadProgressPresenter(private val scene: GalleryListScene) {
                 show()
                 progressTitle?.setText(R.string.lrr_upload_uploading)
                 progressBar?.progress = state.percent
-                progressPercent?.text = "${state.percent}%"
+                progressPercent?.text = scene.getString(R.string.lrr_upload_percent, state.percent)
             }
 
             is GalleryListViewModel.UploadUiState.DuplicateSkipped -> {

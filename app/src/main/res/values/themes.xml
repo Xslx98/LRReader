@@ -50,6 +50,7 @@
         <item name="guideBackgroundColor">@color/guide_bg</item>
         <item name="guideTitleColor">?android:attr/textColorPrimaryInverse</item>
         <item name="tagGroupBackgroundColor">@color/tag_group_background_light</item>
+        <item name="tagGroupTextColor">@color/teal_800</item>
         <item name="tagBackgroundColor">@color/tag_background_light</item>
         <item name="serverBadge0Bg">@color/lrr_server_badge_0_bg_light</item>
         <item name="serverBadge1Bg">@color/lrr_server_badge_1_bg_light</item>
@@ -69,6 +70,7 @@
         <item name="serverBadge7Fg">@color/lrr_server_badge_7_fg_light</item>
         <item name="serverActiveRowBg">@color/lrr_server_active_row_bg_light</item>
         <item name="serverActiveNameColor">@color/teal_700</item>
+        <item name="filledButtonColor">@color/teal_700</item>
         <item name="galleryDetailHeaderTitleColor">?android:attr/textColorPrimaryInverse</item>
         <item name="galleryDetailHeaderBackgroundColor">?attr/contentColorThemePrimary</item>
         <item name="galleryDetailButtonBackgroundColor">
@@ -125,7 +127,7 @@
         <item name="toolbarColor">?android:attr/colorBackground</item>
         <item name="textColorThemePrimary">@color/teal_a700</item>
         <item name="textColorThemePrimary2">@color/light_blue_A200</item>
-        <item name="textColorThemeAccent">@color/purple_vivid</item>
+        <item name="textColorThemeAccent">@color/teal_a700</item>
         <item name="drawableColorPrimary">@color/primary_drawable_dark</item>
         <item name="drawableColorSecondary">@color/secondary_drawable_dark</item>
         <item name="drawableColorThemePrimary">@color/teal_a700</item>
@@ -134,11 +136,12 @@
         <item name="contentColorThemeAccent">?attr/contentColorPrimary</item>
         <item name="contentColorReactive">@color/content_reactive_dark</item>
         <item name="widgetColorThemePrimary">@color/teal_700</item>
-        <item name="widgetColorThemeAccent">@color/purple_500</item>
+        <item name="widgetColorThemeAccent">@color/teal_700</item>
         <item name="progressColor">@color/teal_a700</item>
         <item name="guideBackgroundColor">#e5303030</item>
         <item name="guideTitleColor">?android:attr/textColorPrimary</item>
-        <item name="tagGroupBackgroundColor">@color/purple_700</item>
+        <item name="tagGroupBackgroundColor">@color/teal_900</item>
+        <item name="tagGroupTextColor">@color/teal_100</item>
         <item name="tagBackgroundColor">@color/teal_700</item>
         <item name="serverBadge0Bg">@color/lrr_server_badge_0_bg_dark</item>
         <item name="serverBadge1Bg">@color/lrr_server_badge_1_bg_dark</item>
@@ -158,6 +161,7 @@
         <item name="serverBadge7Fg">@color/lrr_server_badge_7_fg_dark</item>
         <item name="serverActiveRowBg">@color/lrr_server_active_row_bg_dark</item>
         <item name="serverActiveNameColor">@color/teal_a700</item>
+        <item name="filledButtonColor">@color/teal_700</item>
         <item name="galleryDetailHeaderTitleColor">?android:attr/textColorPrimary</item>
         <item name="galleryDetailHeaderBackgroundColor">?attr/contentColorThemePrimary</item>
         <item name="galleryDetailButtonBackgroundColor">
@@ -209,7 +213,7 @@
         <item name="toolbarColor">@android:color/black</item>
         <item name="textColorThemePrimary">@color/teal_a700</item>
         <item name="textColorThemePrimary2">@color/light_blue_A200</item>
-        <item name="textColorThemeAccent">@color/purple_vivid</item>
+        <item name="textColorThemeAccent">@color/teal_a700</item>
         <item name="drawableColorPrimary">@color/primary_drawable_black</item>
         <item name="drawableColorSecondary">@color/secondary_drawable_black</item>
         <item name="drawableColorThemePrimary">@color/teal_a700</item>
@@ -218,11 +222,12 @@
         <item name="contentColorThemeAccent">?attr/contentColorPrimary</item>
         <item name="contentColorReactive">@color/content_reactive_black</item>
         <item name="widgetColorThemePrimary">@color/teal_700</item>
-        <item name="widgetColorThemeAccent">@color/purple_500</item>
+        <item name="widgetColorThemeAccent">@color/teal_700</item>
         <item name="progressColor">@color/teal_a700</item>
         <item name="guideBackgroundColor">#e5000000</item>
         <item name="guideTitleColor">?android:attr/textColorPrimary</item>
-        <item name="tagGroupBackgroundColor">@color/purple_800</item>
+        <item name="tagGroupBackgroundColor">@color/teal_900</item>
+        <item name="tagGroupTextColor">@color/teal_100</item>
         <item name="tagBackgroundColor">@color/teal_800</item>
         <item name="serverBadge0Bg">@color/lrr_server_badge_0_bg_dark</item>
         <item name="serverBadge1Bg">@color/lrr_server_badge_1_bg_dark</item>
@@ -242,6 +247,7 @@
         <item name="serverBadge7Fg">@color/lrr_server_badge_7_fg_dark</item>
         <item name="serverActiveRowBg">@color/lrr_server_active_row_bg_dark</item>
         <item name="serverActiveNameColor">@color/teal_a700</item>
+        <item name="filledButtonColor">@color/teal_700</item>
         <item name="galleryDetailHeaderTitleColor">?android:attr/textColorPrimary</item>
         <item name="galleryDetailHeaderBackgroundColor">@android:color/black</item>
         <item name="galleryDetailButtonBackgroundColor">

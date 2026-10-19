@@ -24,9 +24,6 @@
     <string name="app_name">LR Reader</string>
 
     <!-- Theme -->
-    <string name="theme_light">ธีมสีสว่าง</string>
-    <string name="theme_dark">ธีมสีมืด</string>
-    <string name="theme_black">ธีมสีดำ</string>
 
     <string name="homepage">หน้าหลัก</string>
     <string name="subscription">การสมัครสมาชิก</string>
@@ -161,7 +158,7 @@
     <string name="refresh">รีเฟรช</string>
     <string name="file_chooser_title">เปิดด้วย</string>
     <string name="favorited">เพิ่มในหมวดหมู่แล้ว</string>
-    <string name="not_favorited">ยังไม่เพิ่มหมวดหมู่</string>
+    <string name="not_favorited">เพิ่มไปยังหมวดหมู่</string>
 
     <!-- Rating -->
 

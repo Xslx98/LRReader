@@ -49,10 +49,8 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/server_url_layout"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:minWidth="@dimen/single_max_width"
                 android:hint="@string/lrr_server_url_hint">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -68,10 +66,8 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/api_key_layout"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:minWidth="@dimen/single_max_width"
                 android:hint="@string/lrr_api_key_hint"
                 app:helperTextEnabled="true"
                 app:helperText="@string/lrr_api_key_helper"
@@ -140,35 +136,37 @@
 
             </LinearLayout>
 
+            <!-- CONNECT is the screen's action (filled); TEST is the secondary
+                 check (text button), both in the primary hue. -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
-                android:gravity="bottom"
-                style="?attr/buttonBarStyle">
+                android:gravity="center_vertical">
 
                 <Button
                     android:id="@+id/test_connection"
-                    style="?attr/buttonBarNegativeButtonStyle"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="?attr/colorAccent"
+                    android:layout_marginEnd="8dp"
+                    android:textColor="?attr/serverActiveNameColor"
                     android:textStyle="bold"
                     android:text="@string/lrr_test_connection"/>
 
                 <Button
                     android:id="@+id/connect"
-                    style="?attr/buttonBarPositiveButtonStyle"
+                    style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="?attr/colorPrimary"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/white"
                     android:textStyle="bold"
+                    app:backgroundTint="?attr/filledButtonColor"
                     android:text="@string/lrr_connect"/>
 
             </LinearLayout>

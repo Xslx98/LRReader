@@ -25,9 +25,6 @@
     <string name="app_name">LR Reader</string>
 
     <!-- Theme -->
-    <string name="theme_light">밝은 테마</string>
-    <string name="theme_dark">어두운 테마</string>
-    <string name="theme_black">검정색 테마</string>
 
     <string name="homepage">홈</string>
     <string name="subscription">구독</string>
@@ -162,7 +159,7 @@
     <string name="refresh">새로고침</string>
     <string name="file_chooser_title">다음으로 열기</string>
     <string name="favorited">카테고리에 있음</string>
-    <string name="not_favorited">카테고리에 없음</string>
+    <string name="not_favorited">카테고리에 추가</string>
     <string name="copy_tag">태그 복사</string>
 
     <!-- Rating -->

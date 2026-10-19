@@ -22,9 +22,6 @@
     <!---->
     <string name="app_name">LR Reader</string>
     <!-- Theme -->
-    <string name="theme_light">ライトテーマ</string>
-    <string name="theme_dark">ダークテーマ</string>
-    <string name="theme_black">ブラックテーマ</string>
     <!-- Category -->
     <string name="homepage">ホームページ</string>
     <string name="subscription">タグの購読</string>
@@ -130,7 +127,7 @@
     <string name="refresh">更新</string>
     <string name="file_chooser_title">アプリで開く</string>
     <string name="favorited">カテゴリ済み</string>
-    <string name="not_favorited">未カテゴリ</string>
+    <string name="not_favorited">カテゴリに追加</string>
     <string name="copy_tag">タグをコピー</string>
     <!-- Rating -->
     <!-- Gallery Info -->

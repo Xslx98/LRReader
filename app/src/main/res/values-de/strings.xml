@@ -120,7 +120,7 @@
     <string name="refresh">Neu laden</string>
     <string name="file_chooser_title">Öffnen mit</string>
     <string name="favorited">Zur Kategorie hinzugefügt</string>
-    <string name="not_favorited">Nicht Zur Kategorie hinzugefügt</string>
+    <string name="not_favorited">Zu Kategorie hinzufügen</string>
     <string name="copy_tag">Tag kopieren</string>
     <string name="copied_to_clipboard">Text in Zwischenablage kopiert</string>
     <string name="no_download_info">Downloads werden hier angezeigt</string>
@@ -741,9 +741,6 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="settings_read_picture_decoding_method">Bild-Dekodierungsmethode</string>
     <string name="settings_read_picture_decoding_method_native">Open-Source C++ Dekodierungsbibliothek</string>
     <string name="settings_read_picture_decoding_method_origin">System-Dekodierung</string>
-    <string name="theme_black">Schwarzes Design</string>
-    <string name="theme_dark">Dunkles Design</string>
-    <string name="theme_light">Helles Design</string>
     <string name="lrr_category_label_dynamic">Dynamisch</string>
     <string name="lrr_save_and_connect">Speichern &amp; Verbinden</string>
     <string name="lrr_error_title">Fehler aufgetreten</string>

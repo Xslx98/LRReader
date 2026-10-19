@@ -1,15 +1,18 @@
 package com.lanraragi.reader.ui
 
 import android.annotation.SuppressLint
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.graphics.Typeface
 import android.view.MenuItem
+import android.view.View
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.navigation.NavigationView
+import com.hippo.android.resource.AttrResources
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.LRReaderApplication
@@ -53,27 +56,25 @@ class MainNavDrawer(
      * status bar (portrait) and navigation bar.
      */
     fun applyCutoutInsets(drawerLayout: AppDrawerLayout) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            drawerLayout.setOnApplyWindowInsetsListener { v, insets ->
-                val cutout = insets.displayCutout
-                if (cutout != null) {
-                    val left = Math.max(
-                        0,
-                        insets.systemWindowInsetLeft - cutout.safeInsetLeft
-                    )
-                    val top = insets.systemWindowInsetTop // keep top for status bar
-                    val right = Math.max(
-                        0,
-                        insets.systemWindowInsetRight - cutout.safeInsetRight
-                    )
-                    val bottom = insets.systemWindowInsetBottom // keep bottom for nav bar
-                    @Suppress("DEPRECATION")
-                    return@setOnApplyWindowInsetsListener v.onApplyWindowInsets(
-                        insets.replaceSystemWindowInsets(left, top, right, bottom)
-                    )
-                }
-                v.onApplyWindowInsets(insets)
+        drawerLayout.setOnApplyWindowInsetsListener { v, insets ->
+            val cutout = insets.displayCutout
+            if (cutout != null) {
+                val left = Math.max(
+                    0,
+                    insets.systemWindowInsetLeft - cutout.safeInsetLeft
+                )
+                val top = insets.systemWindowInsetTop // keep top for status bar
+                val right = Math.max(
+                    0,
+                    insets.systemWindowInsetRight - cutout.safeInsetRight
+                )
+                val bottom = insets.systemWindowInsetBottom // keep bottom for nav bar
+                @Suppress("DEPRECATION")
+                return@setOnApplyWindowInsetsListener v.onApplyWindowInsets(
+                    insets.replaceSystemWindowInsets(left, top, right, bottom)
+                )
             }
+            v.onApplyWindowInsets(insets)
         }
     }
 
@@ -93,11 +94,27 @@ class MainNavDrawer(
                 ServiceRegistry.dataModule.profileRepository.observeAll()
                     .map { profiles -> profiles.firstOrNull { it.isActive } }
                     .distinctUntilChanged()
-                    .collect { active ->
-                        serverLine.text = active?.let(::formatServerLine)
-                            ?: activity.getString(R.string.lrr_no_servers)
-                    }
+                    .collect { active -> bindServerLine(serverLine, active) }
             }
+        }
+    }
+
+    /**
+     * "name · host:port", ellipsized at the end, with an open padlock after it
+     * when the server is plain HTTP — said where the active server is always
+     * visible (audit C27). The padlock's meaning is in the content description.
+     */
+    private fun bindServerLine(serverLine: TextView, active: ServerProfile?) {
+        val line = active?.let(::formatServerLine) ?: activity.getString(R.string.lrr_no_servers)
+        val unencrypted = active != null && LRRUrlHelper.isUnencrypted(active.url)
+        serverLine.text = line
+        val dot = serverLine.compoundDrawablesRelative[0]
+        val lock = if (unencrypted) ContextCompat.getDrawable(activity, R.drawable.v_lock_open_x14) else null
+        serverLine.setCompoundDrawablesRelativeWithIntrinsicBounds(dot, null, lock, null)
+        serverLine.contentDescription = if (unencrypted) {
+            "$line · ${activity.getString(R.string.lrr_unencrypted_connection)}"
+        } else {
+            null
         }
     }
 
@@ -106,45 +123,41 @@ class MainNavDrawer(
         val host = parsed?.host.orEmpty()
         val port = parsed?.port?.takeIf { it != 80 && it != 443 }
         val hostPort = if (port != null) "$host:$port" else host
-        val line = if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
+        return if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
             profile.name
         } else {
             "${profile.name} · $hostPort"
         }
-        // Plain HTTP: say so where the active server is always visible (audit C27).
-        return if (LRRUrlHelper.isUnencrypted(profile.url)) {
-            "$line · ${activity.getString(R.string.lrr_unencrypted_connection)}"
-        } else {
-            line
-        }
     }
 
     /**
-     * Theme-toggle row styling lives entirely in the layout (theme-aware
-     * attrs: serverActiveNameColor / textColorSecondary / dividerColor),
-     * so Light/Dark/Black need no per-theme color branching here.
+     * Light / Dark / Black segments; the current theme is highlighted with the
+     * active-server row tint (theme attrs, so no per-theme branching here) and
+     * marked selected for TalkBack. Tapping another segment applies it.
      */
-    fun bindThemeRow(changeTheme: TextView) {
-        changeTheme.text = getThemeText()
-        changeTheme.setOnClickListener {
-            AppearanceSettings.putTheme(getNextTheme())
-            (activity.application as LRReaderApplication).recreate()
+    fun bindThemeSwitch(container: View) {
+        val current = AppearanceSettings.getTheme()
+        val segments = listOf(
+            R.id.theme_light to AppearanceSettings.THEME_LIGHT,
+            R.id.theme_dark to AppearanceSettings.THEME_DARK,
+            R.id.theme_black to AppearanceSettings.THEME_BLACK,
+        )
+        for ((id, theme) in segments) {
+            val segment = container.findViewById<TextView>(id) ?: continue
+            val selected = theme == current
+            segment.isSelected = selected
+            if (selected) {
+                segment.setBackgroundResource(R.drawable.nav_theme_segment_selected_bg)
+                segment.setTextColor(AttrResources.getAttrColor(activity, R.attr.serverActiveNameColor))
+                segment.setTypeface(segment.typeface, Typeface.BOLD)
+            }
+            segment.setOnClickListener {
+                if (AppearanceSettings.getTheme() != theme) {
+                    AppearanceSettings.putTheme(theme)
+                    (activity.application as LRReaderApplication).recreate()
+                }
+            }
         }
-    }
-
-    private fun getThemeText(): String {
-        val resId = when (AppearanceSettings.getTheme()) {
-            AppearanceSettings.THEME_DARK -> R.string.theme_dark
-            AppearanceSettings.THEME_BLACK -> R.string.theme_black
-            else -> R.string.theme_light
-        }
-        return activity.getString(resId)
-    }
-
-    private fun getNextTheme(): Int = when (AppearanceSettings.getTheme()) {
-        AppearanceSettings.THEME_DARK -> AppearanceSettings.THEME_BLACK
-        AppearanceSettings.THEME_BLACK -> AppearanceSettings.THEME_LIGHT
-        else -> AppearanceSettings.THEME_DARK
     }
 
     @SuppressLint("NonConstantResourceId")

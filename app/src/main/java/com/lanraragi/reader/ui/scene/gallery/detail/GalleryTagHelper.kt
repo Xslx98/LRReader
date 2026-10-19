@@ -71,6 +71,7 @@ object GalleryTagHelper {
 
         val colorTag = AttrResources.getAttrColor(context, R.attr.tagBackgroundColor)
         val colorName = AttrResources.getAttrColor(context, R.attr.tagGroupBackgroundColor)
+        val colorNameText = AttrResources.getAttrColor(context, R.attr.tagGroupTextColor)
 
         for (tg in tagGroups) {
             val ll = inflater.inflate(R.layout.gallery_tag_group, tagsLayout, false) as LinearLayout
@@ -83,6 +84,7 @@ object GalleryTagHelper {
             ll.addView(tgName)
             tgName.text = readableTagName ?: tg.namespace
             tgName.background = RoundSideRectDrawable(colorName)
+            tgName.setTextColor(colorNameText)
 
             val awl = AutoWrapLayout(context)
             ll.addView(awl, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)

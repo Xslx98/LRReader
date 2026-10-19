@@ -168,6 +168,7 @@ object TagEditDialog {
 
         val colorTag = AttrResources.getAttrColor(activity, R.attr.tagBackgroundColor)
         val colorNamespace = AttrResources.getAttrColor(activity, R.attr.tagGroupBackgroundColor)
+        val colorNamespaceText = AttrResources.getAttrColor(activity, R.attr.tagGroupTextColor)
 
         val rootLayout = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
@@ -191,6 +192,7 @@ object TagEditDialog {
                 // whole group and all its tags.
                 val nsChip = buildNamespaceChip(
                     activity, density, colorNamespace, group.namespace,
+                    textColor = colorNamespaceText,
                     onEdit = {
                         showEditNamespaceDialog(activity, group) {
                             rebuildViews()
@@ -253,7 +255,7 @@ object TagEditDialog {
                 val hPad = (16 * density).toInt()
                 val vPad = (8 * density).toInt()
                 setPadding(hPad, vPad, hPad, vPad)
-                setTextColor(Color.WHITE)
+                setTextColor(colorNamespaceText)
                 textSize = 14f
                 gravity = Gravity.CENTER
                 background = RoundSideRectDrawable(colorNamespace)
@@ -340,10 +342,12 @@ object TagEditDialog {
         namespace: String,
         onEdit: () -> Unit,
         onDelete: () -> Unit,
+        textColor: Int = Color.WHITE,
     ): View = buildEditableChip(
         context = context,
         density = density,
         color = colorNamespace,
+        textColor = textColor,
         labelText = namespace,
         bold = true,
         deleteDescription = context.getString(R.string.lrr_delete_namespace, namespace),
@@ -364,6 +368,7 @@ object TagEditDialog {
         color: Int,
         labelText: String,
         bold: Boolean,
+        textColor: Int = Color.WHITE,
         deleteDescription: String,
         onEdit: () -> Unit,
         onDelete: () -> Unit,
@@ -377,7 +382,7 @@ object TagEditDialog {
         val label = TextView(context).apply {
             text = labelText
             setPadding(hPad, vPad, gap, vPad)
-            setTextColor(Color.WHITE)
+            setTextColor(textColor)
             textSize = 14f
             maxLines = 1
             isSingleLine = true
@@ -390,7 +395,7 @@ object TagEditDialog {
         val deleteButton = TextView(context).apply {
             text = "✕"
             setPadding(gap, vPad, hPad, vPad)
-            setTextColor(Color.WHITE)
+            setTextColor(textColor)
             textSize = 14f
             gravity = Gravity.CENTER
             minimumWidth = touchTarget

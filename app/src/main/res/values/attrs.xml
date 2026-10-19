@@ -59,6 +59,8 @@
         <attr name="progressColor" format="color" />
 
         <attr name="tagGroupBackgroundColor" format="color" />
+        <!-- Label on a tagGroupBackgroundColor (namespace) chip. -->
+        <attr name="tagGroupTextColor" format="color" />
         <attr name="tagBackgroundColor" format="color" />
 
         <!--
@@ -97,6 +99,8 @@
              dark mode instead of the app theme. -->
         <attr name="serverActiveRowBg" format="color" />
         <attr name="serverActiveNameColor" format="color" />
+        <!-- Fill of a screen's one primary action button (white label, WCAG AA in every theme). -->
+        <attr name="filledButtonColor" format="color" />
 
         <attr name="galleryDetailHeaderTitleColor" format="color" />
         <attr name="galleryDetailHeaderBackgroundColor" format="color" />
