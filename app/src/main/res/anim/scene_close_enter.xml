@@ -15,16 +15,21 @@
   ~ limitations under the License.
   -->
 
+<!-- Back: the scene below slides in from the left and fades in.
+     Keep in step with StageActivity's predictive-back animation. -->
 <set
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@anim/decelerate_quart"
+    android:shareInterpolator="true">
+
+    <translate
+        android:fromXDelta="-10%"
+        android:toXDelta="0%"
+        android:duration="250" />
 
     <alpha
-        android:fromAlpha="0.7"
+        android:fromAlpha="0.0"
         android:toAlpha="1.0"
-        android:fillEnabled="true"
-        android:fillBefore="true"
-        android:fillAfter="true"
-        android:interpolator="@anim/decelerate_terz"
-        android:duration="250"/>
+        android:duration="250" />
 
 </set>
