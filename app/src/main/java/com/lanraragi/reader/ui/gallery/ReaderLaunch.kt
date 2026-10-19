@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.gallery.TankGalleryProvider
 import com.lanraragi.reader.gallery.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.ui.GalleryActivity.Companion.DATA_IN_EVENT
@@ -72,6 +73,17 @@ class ReaderLaunch {
         archive?.let { outState.putParcelable(KEY_ARCHIVE, it) }
         tankSeed?.let { outState.putParcelable(KEY_TANK_SEED, it) }
         outState.putInt(KEY_PAGE, page)
+    }
+
+    /** What the reader's top bar names: the tank, the archive or the directory. */
+    fun displayTitle(): String? =
+        tankSeed?.tankName ?: archive?.title ?: filename?.trimEnd('/')?.substringAfterLast('/')
+
+    /** Title of the tank member holding global page [page0]; null outside tank sessions. */
+    fun tankMemberTitle(provider: GalleryProvider2?, page0: Int): String? {
+        val seed = tankSeed ?: return null
+        val arcid = (provider as? TankGalleryProvider)?.locateMember(page0)?.first
+        return seed.members.firstOrNull { it.arcid == arcid }?.title
     }
 
     fun createProvider(context: Context): GalleryProvider2? =

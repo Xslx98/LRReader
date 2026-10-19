@@ -118,6 +118,24 @@ class ReaderChromeController(private val activity: Activity) {
         autoTransferPanel.setOnClickListener { v -> input.toggleAutoRead(v) }
     }
 
+    /**
+     * Wires the top bar into the menu [slider] shows and hides; it shows
+     * [title] and follows the slider's page.
+     */
+    fun bindTopBar(
+        slider: GallerySliderController,
+        callback: ReaderTopBar.Callback,
+        title: CharSequence?,
+        memberTitleAt: (Int) -> String?,
+    ) {
+        val root = ViewUtils.`$$`(activity, R.id.reader_top_bar)
+        val topBar = ReaderTopBar(root, callback, memberTitleAt)
+        topBar.setTitle(title)
+        topBar.setPage(slider.currentIndex, slider.size)
+        slider.setTopBar(root)
+        slider.onPageChanged = topBar::setPage
+    }
+
     /** Keep-screen-on, orientation, brightness and the display cutout, from the saved settings. */
     fun applyInitialWindowSettings() {
         setKeepScreenOn(ReadingSettings.getKeepScreenOn())

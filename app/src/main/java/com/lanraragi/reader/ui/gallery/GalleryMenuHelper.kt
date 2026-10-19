@@ -57,6 +57,29 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         fun onReadingFullscreenChanged()
     }
 
+    companion object {
+        /** Hands [callback] the stored settings, after one was changed outside the dialog. */
+        fun applyStoredSettings(callback: SettingsCallback) {
+            callback.onSettingsApplied(
+                ReadingSettings.getScreenRotation(),
+                ReadingSettings.getReadingDirection(),
+                ReadingSettings.getPageScaling(),
+                ReadingSettings.getStartPosition(),
+                ReadingSettings.getKeepScreenOn(),
+                ReadingSettings.getShowClock(),
+                ReadingSettings.getShowProgress(),
+                ReadingSettings.getShowBattery(),
+                ReadingSettings.getShowPageInterval(),
+                ReadingSettings.getVolumePage(),
+                ReadingSettings.getReverseVolumePage(),
+                ReadingSettings.getReadingFullscreen(),
+                ReadingSettings.getCustomScreenLightness(),
+                ReadingSettings.getScreenLightness(),
+                ReadingSettings.getStartTransferTime(),
+            )
+        }
+    }
+
     val view: View
     private val mScreenRotation: Spinner
     private val mReadingDirection: Spinner

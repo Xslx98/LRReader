@@ -862,6 +862,8 @@
     <string name="cd_start_download">ダウンロード開始</string>
     <string name="cd_stop_download">ダウンロード停止</string>
     <string name="cd_start_auto_read">自動送りを開始</string>
+    <string name="cd_reader_settings">閲覧設定</string>
+    <string name="reader_top_bar_page">%1$d / %2$d ページ</string>
     <string name="cd_stop_auto_read">自動送りを停止</string>
     <string name="cd_downloaded">ダウンロード済み</string>
     <string name="cd_random">ランダム</string>

@@ -1013,6 +1013,9 @@
     <string name="cd_start_download">Start download</string>
     <string name="cd_stop_download">Stop download</string>
     <string name="cd_start_auto_read">Start auto page-turn</string>
+    <string name="cd_reader_settings">Reading settings</string>
+    <string name="reader_top_bar_page">Page %1$d / %2$d</string>
+    <string name="reader_top_bar_tank_page" translatable="false">%1$s · %2$s</string>
     <string name="cd_stop_auto_read">Stop auto page-turn</string>
     <string name="cd_downloaded">Downloaded</string>
     <string name="cd_random">Random</string>
