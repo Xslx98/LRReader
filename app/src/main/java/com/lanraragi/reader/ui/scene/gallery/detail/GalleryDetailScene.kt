@@ -20,17 +20,14 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewParent
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import com.lanraragi.reader.event.AppEventBus
 import com.hippo.android.resource.AttrResources
-import com.hippo.drawerlayout.DrawerLayout
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
@@ -271,33 +268,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         AssertUtils.assertNotNull(context)
 
         val actionsScrollView = ViewUtils.`$$`(view, R.id.actions_scroll_view)
-        setDrawerGestureBlocker(object : DrawerLayout.GestureBlocker {
-            private fun transformPointToViewLocal(point: IntArray, child: View) {
-                var currentChild = child
-                var viewParent: ViewParent? = currentChild.parent
-
-                while (viewParent is View) {
-                    val parentView = viewParent
-                    point[0] += parentView.scrollX - currentChild.left
-                    point[1] += parentView.scrollY - currentChild.top
-
-                    if (parentView is DrawerLayout) {
-                        break
-                    }
-
-                    currentChild = parentView
-                    viewParent = currentChild.parent
-                }
-            }
-
-            override fun shouldBlockGesture(ev: MotionEvent): Boolean {
-                val point = intArrayOf(ev.x.toInt(), ev.y.toInt())
-                transformPointToViewLocal(point, actionsScrollView)
-                return !isDrawersVisible() &&
-                    point[0] > 0 && point[0] < actionsScrollView.width &&
-                    point[1] > 0 && point[1] < actionsScrollView.height
-            }
-        })
+        setDrawerGestureBlocker(ScrollAreaGestureBlocker(actionsScrollView) { isDrawersVisible() })
 
         val nonNullContext = requireContext()
         val drawable = DrawableManager.getVectorDrawable(nonNullContext, R.drawable.big_sad_pandroid)
