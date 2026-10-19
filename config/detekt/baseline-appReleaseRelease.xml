@@ -136,7 +136,6 @@
     <ID>InstanceOfCheckForException:HistoryScene.kt$HistoryScene$e is CancellationException</ID>
     <ID>InstanceOfCheckForException:LRRCategoriesViewModel.kt$LRRCategoriesViewModel$e is CancellationException</ID>
     <ID>InstanceOfCheckForException:LRRDownloadWorker.kt$LRRDownloadWorker$e is CancellationException</ID>
-    <ID>InstanceOfCheckForException:MainActivity.kt$MainActivity$e is kotlinx.coroutines.CancellationException</ID>
     <ID>InstanceOfCheckForException:PageThumbnailRepository.kt$PageThumbnailRepository$e is LRRHttpException</ID>
     <ID>InstanceOfCheckForException:ServerConfigViewModel.kt$ServerConfigViewModel$e is CancellationException</ID>
     <ID>InstanceOfCheckForException:ServerListViewModel.kt$ServerListViewModel$e is CancellationException</ID>

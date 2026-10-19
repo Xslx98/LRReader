@@ -18,7 +18,6 @@ package com.lanraragi.reader.ui
 
 import android.annotation.SuppressLint
 import android.util.Log
-import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.VisibleForTesting
@@ -77,9 +76,6 @@ import com.lanraragi.framework.scene.SceneFactory
 import com.lanraragi.framework.scene.SceneFragment
 import com.lanraragi.framework.scene.StageActivity
 import androidx.lifecycle.lifecycleScope
-import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.client.api.isTankoubonId
-import com.lanraragi.reader.gallery.TankSessionRouter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -254,7 +250,7 @@ class MainActivity : StageActivity(),
             val arcid = intent.getStringExtra(ContinueReadingShortcut.KEY_ARCID)
             val profileId = intent.getLongExtra(ContinueReadingShortcut.KEY_PROFILE_ID, -1L)
             if (!arcid.isNullOrEmpty() && profileId > 0) {
-                openContinueReading(arcid, profileId)
+                ContinueReadingLauncher.open(this, arcid, profileId)
             }
             // Deliberately fall through as "unhandled": the default scene
             // stack builds underneath and the reader lands on top, so BACK
@@ -280,65 +276,6 @@ class MainActivity : StageActivity(),
         }
 
         return false
-    }
-
-    /**
-     * Continue-reading deep link (issue #15): rebuild the Archive from its
-     * history snapshot and route through the canonical read-intent path
-     * (position restore + offline handling ride along for free). No snapshot
-     * means the row is gone — stay on the main list.
-     */
-    private fun openContinueReading(arcid: String, profileId: Long) {
-        lifecycleScope.launch {
-            val archive = try {
-                withContext(Dispatchers.IO) {
-                    // Profile gone (deleted since publish) or history row gone:
-                    // both mean the shortcut is stale — self-heal by removing
-                    // it and stay on the main list with a toast (issue #16).
-                    if (ServiceRegistry.dataModule.profileRepository.findById(profileId) == null) {
-                        null
-                    } else {
-                        ServiceRegistry.dataModule.historyRepository
-                            .getArchiveSnapshot(arcid, profileId)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "continue-reading snapshot load failed", e)
-                null
-            }
-            if (archive == null) {
-                ContinueReadingShortcut.remove(this@MainActivity)
-                // The widget may point at the same stale target (it shares the
-                // deep-link contract) — re-render it from surviving history.
-                ContinueReadingWidget.refreshSafely()
-                Toast.makeText(
-                    this@MainActivity, R.string.continue_reading_unavailable, Toast.LENGTH_SHORT
-                ).show()
-                return@launch
-            }
-            // Tank history rows resume the whole-tank composite session (the
-            // membership re-fetch needs the server; a transient failure keeps
-            // the shortcut and just toasts).
-            if (isTankoubonId(archive.arcid)) {
-                try {
-                    val tankIntent = withContext(Dispatchers.IO) {
-                        TankSessionRouter.buildResumeIntent(
-                            this@MainActivity, archive.arcid, archive.serverProfileId
-                        )
-                    }
-                    startActivity(tankIntent)
-                } catch (e: Exception) {
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    Toast.makeText(
-                        this@MainActivity,
-                        friendlyError(this@MainActivity, e),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                return@launch
-            }
-            startActivity(GalleryOpenHelper.buildReadIntent(this@MainActivity, archive))
-        }
     }
 
     override fun onUnrecognizedIntent(intent: Intent?) {
