@@ -313,6 +313,8 @@ class HistoryScene : ToolbarScene(),
         batchCountView = null
     }
 
+    override fun hasInSceneBack(): Boolean = multiSelectHelper?.isActive == true
+
     override fun onBackPressed() {
         // Back leaves multi-select mode before leaving the scene.
         val multiSelect = multiSelectHelper

@@ -466,6 +466,11 @@ class MainActivity : StageActivity(),
         }
     }
 
+    override fun onPredictiveBackCancelled(top: SceneFragment) {
+        super.onPredictiveBackCancelled(top)
+        if (top is BaseScene) top.applySceneChrome()
+    }
+
     override fun onSceneViewDestroyed(scene: SceneFragment) {
         super.onSceneViewDestroyed(scene)
 
@@ -557,11 +562,14 @@ class MainActivity : StageActivity(),
     }
 
     @SuppressLint("RtlHardcoded")
+    override fun hasInterceptBack(): Boolean {
+        val drawer = mDrawerLayout ?: return false
+        return drawer.isDrawerOpen(Gravity.LEFT) || drawer.isDrawerOpen(Gravity.RIGHT)
+    }
+
     override fun onInterceptBack(): Boolean {
-        val drawer = mDrawerLayout
-        val open = drawer != null &&
-            (drawer.isDrawerOpen(Gravity.LEFT) || drawer.isDrawerOpen(Gravity.RIGHT))
-        if (open) drawer?.closeDrawers()
+        val open = hasInterceptBack()
+        if (open) mDrawerLayout?.closeDrawers()
         return open
     }
 
@@ -571,9 +579,11 @@ class MainActivity : StageActivity(),
     }
 
     override fun onDrawerOpened(drawerView: View) {
+        updateBackCallback()
     }
 
     override fun onDrawerClosed(drawerView: View) {
+        updateBackCallback()
     }
 
     override fun onDrawerStateChanged(drawerView: View, newState: Int) {

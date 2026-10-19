@@ -553,6 +553,8 @@ class GalleryListScene : BaseScene(),
         interactions.onBackPressed()
     }
 
+    override fun hasInSceneBack(): Boolean = interactions.hasInSceneBack()
+
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
         interactions.onItemClick(view, position)
 

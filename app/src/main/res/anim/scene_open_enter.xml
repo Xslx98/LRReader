@@ -15,26 +15,21 @@
   ~ limitations under the License.
   -->
 
+<!-- Forward: the new scene slides in from the right and fades in.
+     Keep in step with StageActivity's predictive-back animation. -->
 <set
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shareInterpolator="false">
+    android:interpolator="@anim/decelerate_quart"
+    android:shareInterpolator="true">
+
+    <translate
+        android:fromXDelta="10%"
+        android:toXDelta="0%"
+        android:duration="250" />
 
     <alpha
         android:fromAlpha="0.0"
         android:toAlpha="1.0"
-        android:interpolator="@anim/decelerate_quart"
-        android:fillEnabled="true"
-        android:fillBefore="false"
-        android:fillAfter="true"
-        android:duration="200"/>
-
-    <translate
-        android:fromYDelta="8%"
-        android:toYDelta="0"
-        android:fillEnabled="true"
-        android:fillBefore="true"
-        android:fillAfter="true"
-        android:interpolator="@anim/decelerate_quint"
-        android:duration="350"/>
+        android:duration="250" />
 
 </set>

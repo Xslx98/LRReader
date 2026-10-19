@@ -442,6 +442,9 @@ class DownloadsScene : ToolbarScene(),
         return draw.createView()
     }
 
+    override fun hasInSceneBack(): Boolean =
+        ::mRecyclerView.isInitialized && mRecyclerView.isInCustomChoice
+
     override fun onBackPressed() {
         if (::mRecyclerView.isInitialized && mRecyclerView.isInCustomChoice) {
             mRecyclerView.outOfCustomChoiceMode()

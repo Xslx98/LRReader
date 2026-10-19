@@ -15,27 +15,21 @@
   ~ limitations under the License.
   -->
 
+<!-- Back: the closing scene slides to the right and fades out.
+     Keep in step with StageActivity's predictive-back animation. -->
 <set
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shareInterpolator="false">
+    android:interpolator="@anim/decelerate_quart"
+    android:shareInterpolator="true">
+
+    <translate
+        android:fromXDelta="0%"
+        android:toXDelta="10%"
+        android:duration="250" />
 
     <alpha
         android:fromAlpha="1.0"
         android:toAlpha="0.0"
-        android:interpolator="@android:interpolator/linear"
-        android:fillEnabled="true"
-        android:fillBefore="false"
-        android:fillAfter="true"
-        android:startOffset="100"
-        android:duration="150"/>
-
-    <translate
-        android:fromYDelta="0%"
-        android:toYDelta="8%"
-        android:fillEnabled="true"
-        android:fillBefore="true"
-        android:fillAfter="true"
-        android:interpolator="@anim/accelerate_quart"
-        android:duration="250"/>
+        android:duration="250" />
 
 </set>

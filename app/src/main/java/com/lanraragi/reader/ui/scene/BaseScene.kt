@@ -215,22 +215,27 @@ abstract class BaseScene : SceneFragment() {
         return null
     }
 
-    @SuppressLint("RtlHardcoded")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Update left drawer locked state
+        applySceneChrome()
+
+        // Hide soft ime
+        AppHelper.hideSoftInput(requireActivity())
+    }
+
+    /**
+     * This scene's left-drawer lock and checked nav item. Also re-applied when
+     * a predictive back that revealed the scene below is abandoned.
+     */
+    @SuppressLint("RtlHardcoded")
+    fun applySceneChrome() {
         if (needShowLeftDrawer()) {
             setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
         } else {
             setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
         }
-
-        // Update nav checked item
         setNavCheckedItem(getNavCheckedItem())
-
-        // Hide soft ime
-        AppHelper.hideSoftInput(requireActivity())
     }
 
     open fun createThemeContext(@StyleRes style: Int) {

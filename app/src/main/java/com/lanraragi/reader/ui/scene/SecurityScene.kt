@@ -115,6 +115,9 @@ class SecurityScene : SolidScene(),
         activity?.moveTaskToBack(true)
     }
 
+    /** Back never leaves the lock screen (see [onBackPressed]), so it never animates away. */
+    override fun hasInSceneBack(): Boolean = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

@@ -65,7 +65,6 @@
     <string name="gallery_gl_fallback_action_close">Retour</string>
     <string name="gallery_gl_fallback_toast">OpenGL non disponible, impossible d\'afficher la galerie</string>
 
-    <string name="press_twice_exit">Appuyez encore une fois pour quitter</string>
     <string name="get_it">Compris</string>
 
 
