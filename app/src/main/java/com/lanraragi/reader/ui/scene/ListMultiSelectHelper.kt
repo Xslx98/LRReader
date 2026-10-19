@@ -1,6 +1,5 @@
 package com.lanraragi.reader.ui.scene
 
-import com.lanraragi.reader.ui.Haptics
 import androidx.core.util.size
 import com.hippo.easyrecyclerview.EasyRecyclerView
 
@@ -55,7 +54,6 @@ class ListMultiSelectHelper(
             if (!rv.isInCustomChoice) return false
         }
         rv.toggleItemChecked(position)
-        Haptics.longPress(rv)
         // The finger is still down: the same touch stream becomes a drag.
         dragSelect?.startDrag(position)
         return true

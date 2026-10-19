@@ -7,14 +7,10 @@ import android.view.View
 /**
  * The app's few haptic moments, in system feedback constants only. Plain
  * performHapticFeedback honours the system touch-feedback switch and the
- * view's own setting, so there is no in-app toggle.
+ * view's own setting, so there is no in-app toggle. (Long-press into
+ * multi-select needs none: the list widgets' long-click already buzzes.)
  */
 object Haptics {
-
-    /** A long-press that starts a selection. */
-    fun longPress(view: View?) {
-        view?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-    }
 
     /** A drag selection crossing one more item. */
     fun tick(view: View?) {
