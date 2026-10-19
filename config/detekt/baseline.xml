@@ -194,7 +194,6 @@
     <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
     <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun reportIfLocallyComplete(): Boolean</ID>
     <ID>ReturnCount:LRRUtils.kt$LRRUtils$@JvmStatic fun getCategoryColor(category: Int): Int</ID>
-    <ID>ReturnCount:MainActivity.kt$MainActivity$private fun handleIntent(intent: Intent?): Boolean</ID>
     <ID>ReturnCount:NaturalComparator.kt$NaturalComparator$override fun compare(o1: String?, o2: String?): Int</ID>
     <ID>ReturnCount:PageThumbnailsViewModel.kt$PageThumbnailsViewModel$fun requestPage(page: Int)</ID>
     <ID>ReturnCount:ReaderPageCache.kt$ReaderPageCache$fun validateImageFile(file: File): Boolean</ID>

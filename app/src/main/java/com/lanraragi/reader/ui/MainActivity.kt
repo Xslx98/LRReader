@@ -46,7 +46,6 @@ import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.settings.NetworkSettings
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.client.TagTranslationDatabase
-import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.DatabaseResetNotice
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -58,8 +57,6 @@ import com.lanraragi.reader.ui.scene.ServerListScene
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.ui.scene.SecurityScene
-import com.lanraragi.reader.ui.scene.SolidScene
-import com.lanraragi.reader.client.LRRUrlOpener
 import com.lanraragi.reader.widget.AppDrawerLayout
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.scene.SceneFactory
@@ -127,6 +124,8 @@ class MainActivity : StageActivity(),
     private var mNavView: NavigationView? = null
     private var mRightDrawer: FrameLayout? = null
 
+    private val mRouter = MainIntentRouter(this)
+
     private val mNotices = MainActivityNotices(this, host = { mDrawerLayout })
 
     private val mDatabaseReset = DatabaseResetFlow(this, restart = { triggerRebirth() })
@@ -177,145 +176,10 @@ class MainActivity : StageActivity(),
         }
     }
 
-    // LANraragi: simplified -- only security gate and server config gate remain
-    private fun processAnnouncer(announcer: Announcer): Announcer {
-        if (sceneCount == 0) {
-            if (SecuritySettings.isLockEnabled()) {
-                val newArgs = Bundle()
-                newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
-                newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
-                return Announcer(SecurityScene::class.java).setArgs(newArgs)
-            } else if (!LRRAuthManager.isConfiguredFast()) {
-                val newArgs = Bundle()
-                newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
-                newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
-                return Announcer(ServerConfigScene::class.java).setArgs(newArgs)
-            }
-        }
-        return announcer
-    }
+    override fun onUnrecognizedIntent(intent: Intent?) = mRouter.onUnrecognizedIntent(intent)
 
-    private fun handleIntent(intent: Intent?): Boolean {
-        if (intent == null) {
-            return false
-        }
-
-        val action = intent.action
-        if (ContinueReadingShortcut.ACTION_CONTINUE_READING == action) {
-            val arcid = intent.getStringExtra(ContinueReadingShortcut.KEY_ARCID)
-            val profileId = intent.getLongExtra(ContinueReadingShortcut.KEY_PROFILE_ID, -1L)
-            if (!arcid.isNullOrEmpty() && profileId > 0) {
-                ContinueReadingLauncher.open(this, arcid, profileId)
-            }
-            // Deliberately fall through as "unhandled": the default scene
-            // stack builds underneath and the reader lands on top, so BACK
-            // from the reader returns to the main list.
-            return false
-        }
-        if (Intent.ACTION_VIEW == action) {
-            val uri = intent.data ?: return false
-            val announcer = LRRUrlOpener.parseUrl(uri.toString())
-            if (announcer != null) {
-                startScene(processAnnouncer(announcer))
-                return true
-            }
-        } else if (Intent.ACTION_SEND == action) {
-            // Shared images used to launch the EhViewer image search; LANraragi
-            // has no image-search API, so only shared text becomes a keyword search.
-            if ("text/plain" == intent.type) {
-                val builder = ListUrlBuilder()
-                builder.keyword = intent.getStringExtra(Intent.EXTRA_TEXT)
-                startScene(processAnnouncer(GalleryListScene.getStartAnnouncer(builder)))
-                return true
-            }
-        }
-
-        return false
-    }
-
-    override fun onUnrecognizedIntent(intent: Intent?) {
-        if (isGateSceneShowing()) {
-            // Defer while the security/config gate is showing; replayed by
-            // maybeReplayPendingGateRequest once the gate clears (#57).
-            if (intent != null && intent.action != null) {
-                pendingGateIntent = intent
-                pendingGateAnnouncer = null
-            }
-            return
-        }
-
-        if (!handleIntent(intent)) {
-            var handleUrl = false
-            if (intent != null && Intent.ACTION_VIEW == intent.action) {
-                handleUrl = true
-                Toast.makeText(this, R.string.error_cannot_parse_the_url, Toast.LENGTH_SHORT).show()
-            }
-
-            if (sceneCount == 0) {
-                if (handleUrl) {
-                    finish()
-                } else {
-                    val args = Bundle()
-                    args.putString(
-                        GalleryListScene.KEY_ACTION,
-                        AppearanceSettings.getLaunchPageGalleryListSceneAction()
-                    )
-                    startScene(
-                        processAnnouncer(Announcer(GalleryListScene::class.java).setArgs(args))
-                    )
-                }
-            }
-        }
-    }
-
-    override fun onStartSceneFromIntent(clazz: Class<*>, args: Bundle?): Announcer? {
-        // App-lock guard: while a SolidScene gate (SecurityScene lock prompt /
-        // ServerConfigScene) is showing, starting the requested scene would
-        // remove or bury the gate WITHOUT an unlock — most target scenes are
-        // LAUNCH_MODE_SINGLE_TASK, so StageActivity.startScene pops everything
-        // above an existing instance, lock prompt included. That let a
-        // notification tap bypass the pattern lock straight from the shade.
-        // Defer instead of dropping: the request replays once the gate clears
-        // (successful unlock / completed config).
-        if (isGateSceneShowing()) {
-            pendingGateAnnouncer = Announcer(clazz).setArgs(args)
-            pendingGateIntent = null
-            return null
-        }
-        return processAnnouncer(Announcer(clazz).setArgs(args))
-    }
-
-    // ── Deferred deep links while a gate scene shows (audit #57) ──
-
-    /** Scene-start request deferred while a SolidScene gate was showing. */
-    private var pendingGateAnnouncer: Announcer? = null
-
-    /** Recognized intent deferred while a SolidScene gate was showing. */
-    private var pendingGateIntent: Intent? = null
-
-    private fun isGateSceneShowing(): Boolean {
-        val top = topSceneClass
-        return top != null && SolidScene::class.java.isAssignableFrom(top)
-    }
-
-    /**
-     * Replay a request that arrived while the security/config gate was
-     * showing. Called (posted) after every scene transaction: once the gate
-     * is no longer on top — the only ways off the stack are a successful
-     * unlock or a completed server config — the buffered request runs
-     * through the normal (re-gated) dispatch paths.
-     */
-    private fun maybeReplayPendingGateRequest() {
-        if (isGateSceneShowing()) return
-        val announcer = pendingGateAnnouncer
-        val intent = pendingGateIntent
-        pendingGateAnnouncer = null
-        pendingGateIntent = null
-        when {
-            announcer != null -> startScene(processAnnouncer(announcer))
-            intent != null -> handleIntent(intent)
-        }
-    }
+    override fun onStartSceneFromIntent(clazz: Class<*>, args: Bundle?): Announcer? =
+        mRouter.onStartSceneFromIntent(clazz, args)
 
     /**
      * Request POST_NOTIFICATIONS once on Android 13+. Without the grant, download
@@ -572,7 +436,7 @@ class MainActivity : StageActivity(),
         // dismissal topSceneClass still reads as the gate. One handler hop
         // later the stack is settled.
         mainHandler.post {
-            maybeReplayPendingGateRequest()
+            mRouter.maybeReplayPendingGateRequest()
             // The lock screen may just have gone: show what waited for it.
             bootNotices?.maybeShow()
         }
