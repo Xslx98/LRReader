@@ -26,7 +26,6 @@ import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -370,20 +369,16 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
     @Override
     public void start() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                animatedImageDrawable.start();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            animatedImageDrawable.start();
         }
     }
 
     @Override
     public void stop() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                animatedImageDrawable.stop();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            animatedImageDrawable.stop();
         }
 
     }
@@ -391,10 +386,8 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
     @Override
     public boolean isRunning() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                return animatedImageDrawable.isRunning();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            return animatedImageDrawable.isRunning();
         }
         return false;
 
