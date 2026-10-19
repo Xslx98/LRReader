@@ -1,7 +1,6 @@
 package com.lanraragi.reader.ui
 
 import android.annotation.SuppressLint
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.graphics.Typeface
@@ -57,27 +56,25 @@ class MainNavDrawer(
      * status bar (portrait) and navigation bar.
      */
     fun applyCutoutInsets(drawerLayout: AppDrawerLayout) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            drawerLayout.setOnApplyWindowInsetsListener { v, insets ->
-                val cutout = insets.displayCutout
-                if (cutout != null) {
-                    val left = Math.max(
-                        0,
-                        insets.systemWindowInsetLeft - cutout.safeInsetLeft
-                    )
-                    val top = insets.systemWindowInsetTop // keep top for status bar
-                    val right = Math.max(
-                        0,
-                        insets.systemWindowInsetRight - cutout.safeInsetRight
-                    )
-                    val bottom = insets.systemWindowInsetBottom // keep bottom for nav bar
-                    @Suppress("DEPRECATION")
-                    return@setOnApplyWindowInsetsListener v.onApplyWindowInsets(
-                        insets.replaceSystemWindowInsets(left, top, right, bottom)
-                    )
-                }
-                v.onApplyWindowInsets(insets)
+        drawerLayout.setOnApplyWindowInsetsListener { v, insets ->
+            val cutout = insets.displayCutout
+            if (cutout != null) {
+                val left = Math.max(
+                    0,
+                    insets.systemWindowInsetLeft - cutout.safeInsetLeft
+                )
+                val top = insets.systemWindowInsetTop // keep top for status bar
+                val right = Math.max(
+                    0,
+                    insets.systemWindowInsetRight - cutout.safeInsetRight
+                )
+                val bottom = insets.systemWindowInsetBottom // keep bottom for nav bar
+                @Suppress("DEPRECATION")
+                return@setOnApplyWindowInsetsListener v.onApplyWindowInsets(
+                    insets.replaceSystemWindowInsets(left, top, right, bottom)
+                )
             }
+            v.onApplyWindowInsets(insets)
         }
     }
 

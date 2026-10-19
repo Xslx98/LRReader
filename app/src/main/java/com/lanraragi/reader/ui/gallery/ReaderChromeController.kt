@@ -2,7 +2,6 @@ package com.lanraragi.reader.ui.gallery
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import android.os.Build
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
@@ -127,15 +126,13 @@ class ReaderChromeController(private val activity: Activity) {
             ReadingSettings.getCustomScreenLightness(),
             ReadingSettings.getScreenLightness()
         )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            activity.window.attributes.layoutInDisplayCutoutMode =
-                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        activity.window.attributes.layoutInDisplayCutoutMode =
+            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
-            val galleryHeader = activity.findViewById<GalleryHeader>(R.id.gallery_header)
-            galleryHeader.setOnApplyWindowInsetsListener { _, insets ->
-                galleryHeader.setDisplayCutout(insets.displayCutout)
-                insets
-            }
+        val galleryHeader = activity.findViewById<GalleryHeader>(R.id.gallery_header)
+        galleryHeader.setOnApplyWindowInsetsListener { _, insets ->
+            galleryHeader.setDisplayCutout(insets.displayCutout)
+            insets
         }
     }
 

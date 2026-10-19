@@ -1199,17 +1199,6 @@
     <issue
         id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/reader/ui/GalleryActivity.kt"
-            line="604"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
         errorLine1="    @RequiresApi(api = Build.VERSION_CODES.P)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -1391,17 +1380,6 @@
         <location
             file="src/main/java/com/lanraragi/framework/widget/LoadImageViewNew.java"
             line="394"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/reader/ui/MainActivity.kt"
-            line="433"
             column="13"/>
     </issue>
 
@@ -2182,17 +2160,6 @@
             file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryAdapterNew.kt"
             line="246"
             column="42"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="                uploadProgressPercent?.text = &quot;${state.percent}%&quot;"
-        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryListScene.kt"
-            line="650"
-            column="47"/>
     </issue>
 
     <issue
