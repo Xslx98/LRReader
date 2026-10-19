@@ -51,8 +51,6 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.gallery.ReadingContext
 import com.lanraragi.reader.gallery.ReadingContextStore
 import com.lanraragi.reader.settings.AppearanceSettings
@@ -67,9 +65,7 @@ import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.hippo.refreshlayout.RefreshLayout
 import com.hippo.ripple.Ripple
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.reader.util.DetachBuffer
 import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.reader.util.collectFlowWhileCreated
 import com.lanraragi.framework.view.ViewTransition
 import com.lanraragi.framework.widget.ContentLayout
 import com.lanraragi.framework.widget.FabLayout
@@ -121,29 +117,13 @@ class GalleryListScene : BaseScene(),
     private var mPressBackTime: Long = 0
     private var mRestoredState = GalleryStateHelper.STATE_NORMAL
 
-    /**
-     * arcids deleted while this scene was off-screen (covered by the detail page).
-     * Drained in [onResume] so the RecyclerView remove + reflow animation plays
-     * after the user is actually looking at the list, not while it's hidden.
-     */
-    private val deletionBuffer = DetachBuffer<String>()
-
-    // Tank membership edits made on the detail page while this list was
-    // covered; replayed in onResume so the merge choreography plays on screen.
-    private val tankMembershipBuffer = DetachBuffer<TankMembershipChangedEvent>()
-
-    // Batch results (per-item failure dialog + ClearNew badge refresh) that
-    // arrived while this list was detached under a pushed scene; replayed in
-    // onResume once the view and batchOpsHelper exist again.
-    private val batchResultBuffer = DetachBuffer<GalleryListViewModel.BatchResult>()
-
     // Stable per-instance token stamped on batches this scene starts. The
     // ViewModel is activity-scoped and shared, so its result is broadcast to
     // every stacked list instance's collector; matching on this token keeps
     // handling/buffering to the one scene that ran the batch. Scene-level (not
     // in the per-view Callback object) so it survives view recreation, matching
     // the fragment-scoped collector.
-    private val batchOwnerToken = Any()
+    internal val batchOwnerToken = Any()
 
     internal lateinit var downloadManager: DownloadManager
         private set
@@ -168,7 +148,8 @@ class GalleryListScene : BaseScene(),
     internal val isListViewCreated: Boolean
         get() = ::recyclerView.isInitialized
 
-    private val tankMerge = GalleryTankMergeHelper(this)
+    internal val tankMerge = GalleryTankMergeHelper(this)
+    private val events = GalleryListEvents(this)
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
     internal var mHistoryStore: ProfileSearchHistoryStore? = null
@@ -270,88 +251,7 @@ class GalleryListScene : BaseScene(),
         // old full-range rebind on every favourite toggle updated nothing.)
         viewModel.startObservingDownloads()
 
-        // Observe download events to refresh adapter items.
-        // collectFlowWhileCreated(fragment): deliberate whole-lifetime collection —
-        // handlers null-guard `adapter` (no-op while detached) and a re-attach
-        // rebinds every row anyway; STARTED gating would drop rebinds for events
-        // landing while backgrounded.
-        collectFlowWhileCreated(this, viewModel.downloadEvent) { event ->
-            when (event) {
-                is GalleryListViewModel.DownloadEvent.BulkChanged -> {
-                    // Payload bind: flips only the downloaded badge, so cached
-                    // holders keep their thumbnail requests running.
-                    adapter?.notifyItemRangeChanged(
-                        0,
-                        adapter?.itemCount ?: 0,
-                        GalleryAdapterNew.PAYLOAD_DOWNLOAD_BADGE,
-                    )
-                }
-            }
-        }
-
-        // Server-side archive deletion: drop the row from this list. If the scene is
-        // currently visible, remove inline so the user sees the fade + reflow animation.
-        // If hidden (covered by the detail page), defer to onResume so the animation
-        // plays after the back-stack pop instead of being burned off-screen.
-        // collectFlowWhileCreated(fragment): deletions typically arrive while this
-        // list is detached under the detail scene that performed the delete — a
-        // view-scoped collector would lose them. The deletionBuffer + onResume
-        // replay depend on whole-lifetime collection.
-        collectFlowWhileCreated(this, AppEventBus.archiveDeletedEvent) { event ->
-            deletionBuffer.deliverOrBuffer(event.arcid, ready = isResumed) {
-                removeArchiveLocally(it)
-            }
-        }
-
-        // Reader changed an archive's cover: rebind that row (new stamp → new
-        // key + bust URL). Whole-lifetime like the deletion collector — the
-        // reader is a separate activity, so this list is stopped meanwhile;
-        // notifyItemChanged on a stopped view is applied at the next layout.
-        collectFlowWhileCreated(this, AppEventBus.archiveCoverChangedEvent) { event ->
-            val helper = mHelper ?: return@collectFlowWhileCreated
-            val position = helper.getData().indexOfFirst { it.arcid == event.arcid }
-            if (position >= 0) adapter?.notifyItemChanged(position)
-        }
-
-        // Rating saved on the detail page: update the row in place. Whole-
-        // lifetime like the cover collector — this list is covered then.
-        collectFlowWhileCreated(this, AppEventBus.archiveRatingChangedEvent) { event ->
-            val list = mHelper?.getData() ?: return@collectFlowWhileCreated
-            val i = list.indexOfFirst { it.arcid == event.arcid }
-            if (i >= 0) {
-                list[i] = list[i].copy(rating = event.rating)
-                adapter?.notifyItemChanged(i)
-            }
-        }
-
-        // Detail-page Tankoubons › Edit: same whole-lifetime collection and
-        // onResume replay as deletions — the edit happens while this list is
-        // covered, and the merge animation must play after the pop-back.
-        collectFlowWhileCreated(this, AppEventBus.tankMembershipChangedEvent) { event ->
-            tankMembershipBuffer.deliverOrBuffer(event, ready = isResumed) {
-                tankMerge.onTankMembershipChanged(it)
-            }
-        }
-
-        // collectFlowWhileCreated(fragment): a batch runs in viewModelScope and
-        // can finish while this list is detached under a detail scene the user
-        // pushed mid-run. A view-scoped collector (onViewCreated +
-        // viewLifecycleOwner) would lose the replay=0 result, dropping the
-        // per-item failure dialog after a partial delete and skipping ClearNew's
-        // badge refresh. Buffer while detached and replay in onResume, same as
-        // archiveDeletedEvent above.
-        //
-        // The ViewModel is activity-scoped (shared by every stacked list
-        // instance), so this replay=0 result is broadcast to all of them. Only
-        // the scene that started the batch (owner token match) may handle or
-        // buffer it; the rest ignore it, or a covered instance would replay a
-        // duplicate dialog / spurious refresh on pop-back.
-        collectFlowWhileCreated(this, viewModel.batchResultEvent) { result ->
-            if (result.owner !== batchOwnerToken) return@collectFlowWhileCreated
-            batchResultBuffer.deliverOrBuffer(result, ready = isResumed && batchOpsHelper != null) {
-                batchOpsHelper?.onBatchResult(it)
-            }
-        }
+        events.install()
 
         if (savedInstanceState == null) {
             onInit()
@@ -762,28 +662,7 @@ class GalleryListScene : BaseScene(),
         }
         mDrawerHelper?.onResume()
 
-        // Drain deletions that arrived while we were hidden, deferred one frame so
-        // the RecyclerView has laid out before the remove animation kicks off.
-        // Only once the RecyclerView exists, else keep them buffered.
-        if (::recyclerView.isInitialized) {
-            val drained = mutableListOf<String>()
-            deletionBuffer.drain { drained.add(it) }
-            if (drained.isNotEmpty()) {
-                recyclerView.post { drained.forEach { removeArchiveLocally(it) } }
-            }
-            val membership = mutableListOf<TankMembershipChangedEvent>()
-            tankMembershipBuffer.drain { membership.add(it) }
-            if (membership.isNotEmpty()) {
-                recyclerView.post { membership.forEach { tankMerge.onTankMembershipChanged(it) } }
-            }
-        }
-
-        // Replay batch results that completed while this list was detached. Only
-        // once batchOpsHelper is live, else keep them buffered (never drain into
-        // a null helper).
-        if (batchOpsHelper != null) {
-            batchResultBuffer.drain { batchOpsHelper?.onBatchResult(it) }
-        }
+        events.drainOnResume()
 
         // Auto-refresh when active server config changed (edit/switch/add)
         val currentVersion = LRRAuthManager.serverConfigVersion
@@ -900,20 +779,6 @@ class GalleryListScene : BaseScene(),
     /** Settles an in-flight merge (end state applied, feedback delivered). */
     internal fun cancelTankMerge() {
         tankMerge.cancelTankMerge()
-    }
-
-    private fun removeArchiveLocally(arcid: String) {
-        // Removal left-shifts every later adapter position but the checked
-        // SparseArray does not remap — an in-flight multi-select must not
-        // survive it (same rationale as the getPageData refresh funnel).
-        multiSelectHelper?.exit()
-        val helper = mHelper ?: return
-        for (i in 0 until helper.size()) {
-            if (helper.getDataAtEx(i)?.arcid == arcid) {
-                helper.removeAt(i)
-                return
-            }
-        }
     }
 
     private inner class GalleryListAdapter(
