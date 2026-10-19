@@ -18,7 +18,6 @@ package com.lanraragi.reader.ui
 
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Typeface
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -32,7 +31,6 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
-import com.hippo.android.resource.AttrResources
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
@@ -59,6 +57,7 @@ import com.lanraragi.reader.ui.gallery.GalleryMenuHelper
 import com.lanraragi.reader.ui.gallery.GallerySliderController
 import com.lanraragi.reader.ui.gallery.ReaderChromeController
 import com.lanraragi.reader.ui.gallery.ReaderContinuationController
+import com.lanraragi.reader.ui.gallery.ReaderGalleryViews
 import com.lanraragi.reader.ui.gallery.ReaderSessionSetup
 import com.lanraragi.reader.ui.gallery.ReaderStampsCoordinator
 import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
@@ -71,13 +70,9 @@ import com.lanraragi.framework.lib.glgallery.SimpleAdapter
 import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.util.BackDispatch
 import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
-import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
-import javax.microedition.khronos.egl.EGL10
-import javax.microedition.khronos.egl.EGLContext
-import javax.microedition.khronos.egl.EGLDisplay
 
 class GalleryActivity : BaseActivity(), GalleryView.Listener,
     GalleryInputHandler.Callback, GalleryMenuHelper.SettingsCallback {
@@ -333,7 +328,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             mSliderController.currentIndex
         }
 
-        if (!isEglAvailable()) {
+        if (!ReaderGalleryViews.isEglAvailable()) {
             galleryProvider.stop()
             showGlFallbackView()
             return
@@ -344,46 +339,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mGLRootView = glRootView
         val galleryAdapter = GalleryAdapter(glRootView, galleryProvider)
         mGalleryAdapter = galleryAdapter
-        val resources = resources
         mPageFit = ReadingSettings.getPageFit()
-        val galleryView = GalleryView.Builder(this, galleryAdapter)
-            .setListener(this)
-            .setLayoutMode(ReadingSettings.getReadingDirection())
-            .setScaleMode(ReadingSettings.getPageScaling())
-            .setStartPosition(ReadingSettings.getStartPosition())
-            .setStartPage(startPage)
-            .setBackgroundColor(AttrResources.getAttrColor(this, android.R.attr.colorBackground))
-            .setEdgeColor(
-                AttrResources.getAttrColor(this, R.attr.colorEdgeEffect) and 0xffffff or 0x33000000
-            )
-            .setPagerInterval(
-                if (ReadingSettings.getShowPageInterval())
-                    resources.getDimensionPixelOffset(R.dimen.gallery_pager_interval) else 0
-            )
-            // Vertical (LAYOUT_TOP_TO_BOTTOM) mode is the project's
-            // long-strip / webtoon view: the standard convention
-            // across Mihon / Tachiyomi / Yokai is *no* gap between
-            // pages so the strip reads continuously. The user-visible
-            // "show page interval" toggle still governs pager-mode
-            // spacing (where the gap is a useful visual separator
-            // between discrete pages).
-            .setScrollInterval(0)
-            .setPageMinHeight(resources.getDimensionPixelOffset(R.dimen.gallery_page_min_height))
-            .setPageInfoInterval(resources.getDimensionPixelOffset(R.dimen.gallery_page_info_interval))
-            .setProgressColor(
-                ResourcesUtils.getAttrColor(this, androidx.appcompat.R.attr.colorPrimary)
-            )
-            .setProgressSize(resources.getDimensionPixelOffset(R.dimen.gallery_progress_size))
-            .setPageTextColor(
-                AttrResources.getAttrColor(this, android.R.attr.textColorSecondary)
-            )
-            .setPageTextSize(resources.getDimensionPixelOffset(R.dimen.gallery_page_text_size))
-            .setPageTextTypeface(Typeface.DEFAULT)
-            .setErrorTextColor(resources.getColor(R.color.red_500, null))
-            .setErrorTextSize(resources.getDimensionPixelOffset(R.dimen.gallery_error_text_size))
-            .setDefaultErrorString(resources.getString(R.string.error_unknown))
-            .setEmptyString(resources.getString(R.string.error_empty))
-            .build()
+        val galleryView = ReaderGalleryViews.build(this, galleryAdapter, this, startPage)
         mGalleryView = galleryView
         glRootView.setContentPane(galleryView)
         glRootView.setOnGenericMotionListener(mInputHandler::handleGenericMotion)
@@ -452,28 +409,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         if (GuideSettings.getGuideGallery()) {
             val mainLayout = ViewUtils.`$$`(this, R.id.main) as FrameLayout
             mainLayout.addView(GalleryGuideView(this))
-        }
-    }
-
-    private fun isEglAvailable(): Boolean {
-        val egl = EGLContext.getEGL() as EGL10
-        val display: EGLDisplay = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY)
-            ?: return false
-        if (display == EGL10.EGL_NO_DISPLAY) {
-            return false
-        }
-        val version = IntArray(2)
-        if (!egl.eglInitialize(display, version)) {
-            return false
-        }
-        return try {
-            val numConfig = IntArray(1)
-            egl.eglChooseConfig(display, intArrayOf(EGL10.EGL_NONE), null, 0, numConfig)
-                && numConfig[0] > 0
-        } catch (e: Exception) {
-            false
-        } finally {
-            egl.eglTerminate(display)
         }
     }
 

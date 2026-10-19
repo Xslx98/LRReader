@@ -278,7 +278,6 @@
     <ID>ReturnCount:PageThumbnailsViewModel.kt$PageThumbnailsViewModel$fun requestPage(page: Int)</ID>
     <ID>ReturnCount:ReaderPageCache.kt$ReaderPageCache$fun validateImageFile(file: File): Boolean</ID>
     <ID>ReturnCount:StampOverlayView.kt$StampOverlayView$@SuppressLint("ClickableViewAccessibility") // performClick IS called on the tap path (onTouchUp) override fun onTouchEvent(event: MotionEvent): Boolean</ID>
-    <ID>ReturnFromFinally:GalleryActivity.kt$GalleryActivity$finally { egl.eglTerminate(display) }</ID>
     <ID>SafeCast:BaseScene.kt$BaseScene$if (activity is MainActivity) activity else null</ID>
     <ID>SpreadOperator:DownloadListInfosExecutor.kt$DownloadListInfosExecutor$(*arr)</ID>
     <ID>SwallowedException:ArchiverDownloadProgress.kt$ArchiverDownloadProgress$@Suppress("TooGenericExceptionCaught") e: RuntimeException</ID>
