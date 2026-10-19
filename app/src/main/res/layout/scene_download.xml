@@ -42,17 +42,20 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
+                <!-- The list takes what the indicator leaves: the indicator
+                     sizes to its text (RES-7: a fixed 40dp, further squeezed
+                     by layout weights, clipped it at large font scales). -->
                 <com.lanraragi.reader.widget.MyEasyRecyclerView
                     android:id="@+id/recycler_view"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="5" />
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
 
                 <com.sxj.paginationlib.PaginationIndicator
                     android:id="@+id/indicator"
                     android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:minHeight="40dp"
                     android:visibility="gone"
                     app:number_tip_count="5"
                     app:count_text="@string/pagination_count"
