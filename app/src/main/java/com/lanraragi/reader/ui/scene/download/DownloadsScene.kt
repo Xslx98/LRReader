@@ -38,7 +38,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.AdapterListUpdateCallback
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -73,7 +72,6 @@ import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.widget.MyEasyRecyclerView
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
-import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.hippo.ripple.Ripple
 import com.lanraragi.framework.scene.Announcer
@@ -968,43 +966,5 @@ class DownloadsScene : ToolbarScene(),
          * this and skips the full rebind (image load, tag render, etc.).
          */
         const val PAYLOAD_PROGRESS = "progress"
-    }
-}
-
-/**
- * DiffUtil callback for DownloadInfo lists.
- *
- * Identity: [DownloadInfo.arcid]. Content comparison covers only persistent
- * / structural fields — transient progress (speed / downloaded / total /
- * finished / remaining) is intentionally excluded because it flows through
- * [DownloadsScene.dispatchProgressChanges] with the `PAYLOAD_PROGRESS`
- * payload, not through DiffUtil. Including those fields here would defeat
- * that split and (prior to the W35-3b post-mortem fix) led to frozen
- * progress due to shared-reference mutation. See ADR-001 Option D.
- */
-internal class DownloadInfoDiffCallback(
-    private val oldList: List<DownloadInfo>,
-    private val newList: List<DownloadInfo>
-) : DiffUtil.Callback() {
-
-    override fun getOldListSize(): Int = oldList.size
-
-    override fun getNewListSize(): Int = newList.size
-
-    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        return oldList[oldItemPosition].arcid == newList[newItemPosition].arcid
-    }
-
-    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        val oldItem = oldList[oldItemPosition]
-        val newItem = newList[newItemPosition]
-        return oldItem.state == newItem.state &&
-            oldItem.legacy == newItem.legacy &&
-            ObjectUtils.equal(oldItem.label, newItem.label) &&
-            ObjectUtils.equal(oldItem.title, newItem.title) &&
-            ObjectUtils.equal(oldItem.thumb, newItem.thumb) &&
-            // Tank cards: a membership reconcile can change ONLY the missing
-            // count (Done → Incomplete) — that must re-bind the status line.
-            oldItem.tankMissingCount == newItem.tankMissingCount
     }
 }
