@@ -621,7 +621,6 @@
     <string name="guide_gallery_left">Tourner la page</string>
     <string name="guide_gallery_right">Tourner la page</string>
     <string name="guide_gallery_menu">Menu</string>
-    <string name="guide_gallery_progress">Progrès</string>
     <string name="guide_gallery_long_click">Maintenez pour ouvrir le menu de page</string>
 
     <!-- Readable Time -->

@@ -624,7 +624,6 @@
     <string name="guide_gallery_left">Cambiar página</string>
     <string name="guide_gallery_right">Cambiar página</string>
     <string name="guide_gallery_menu">Menú</string>
-    <string name="guide_gallery_progress">Progreso</string>
     <string name="guide_gallery_long_click">Pulsación larga para abrir el menú de página</string>
 
     <!-- Readable Time -->

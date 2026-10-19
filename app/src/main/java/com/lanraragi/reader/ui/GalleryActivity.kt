@@ -693,8 +693,10 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                     mContinuation?.onPageShown(mValue, mGalleryProvider?.size() ?: 0)
                     mTankProgress?.onPageShown(mValue)
                 }
-                NOTIFY_KEY_TAP_MENU_AREA -> showSettingsDialog()
-                NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
+                // GalleryView still splits the centre column into a menu and
+                // a slider area; both halves (and the menu keys) toggle the
+                // one menu. The settings dialog opens from the top bar.
+                NOTIFY_KEY_TAP_MENU_AREA, NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.toggleMenu()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)
                 NOTIFY_KEY_LONG_PRESS_PAGE -> mImageOps.showPageDialog(mValue)
                 NOTIFY_KEY_PAGE_TRANSFORMS -> mStampsCoordinator.onPageTransformsChanged()

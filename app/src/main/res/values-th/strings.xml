@@ -591,7 +591,6 @@
     <string name="guide_gallery_left">เปลี่ยนหน้า</string>
     <string name="guide_gallery_right">เปลี่ยนหน้า</string>
     <string name="guide_gallery_menu">เมนู</string>
-    <string name="guide_gallery_progress">ความคืบหน้า</string>
     <string name="guide_gallery_long_click">แตะค้างไว้เพื่อเปิดหน้าเมนู</string>
 
     <!-- Readable Time -->

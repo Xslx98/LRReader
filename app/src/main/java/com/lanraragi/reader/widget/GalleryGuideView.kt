@@ -37,13 +37,12 @@ class GalleryGuideView @JvmOverloads constructor(
 
     private val mBgColor: Int
     private val mPaint: Paint
-    private val mPoints = FloatArray(3 * 4)
+    private val mPoints = FloatArray(2 * 4)
     private var mStep = 0
 
     private var mLeftText: TextView? = null
     private var mRightText: TextView? = null
     private var mMenuText: TextView? = null
-    private var mProgressText: TextView? = null
     private var mLongClickText: TextView? = null
 
     init {
@@ -64,7 +63,6 @@ class GalleryGuideView @JvmOverloads constructor(
         mLeftText = null
         mRightText = null
         mMenuText = null
-        mProgressText = null
         mLongClickText = null
 
         when (mStep) {
@@ -79,7 +77,6 @@ class GalleryGuideView @JvmOverloads constructor(
         mLeftText = getChildAt(0) as TextView
         mRightText = getChildAt(1) as TextView
         mMenuText = getChildAt(2) as TextView
-        mProgressText = getChildAt(3) as TextView
     }
 
     private fun bind2() {
@@ -107,11 +104,7 @@ class GalleryGuideView @JvmOverloads constructor(
                 )
                 mMenuText?.measure(
                     MeasureSpec.makeMeasureSpec(widthSize / 3, MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(heightSize / 2, MeasureSpec.EXACTLY)
-                )
-                mProgressText?.measure(
-                    MeasureSpec.makeMeasureSpec(widthSize / 3, MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(heightSize / 2, MeasureSpec.EXACTLY)
+                    MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY)
                 )
             }
             else -> {
@@ -133,8 +126,8 @@ class GalleryGuideView @JvmOverloads constructor(
             0 -> {
                 mLeftText?.layout(0, 0, width / 3, height)
                 mRightText?.layout(width * 2 / 3, 0, width, height)
-                mMenuText?.layout(width / 3, 0, width * 2 / 3, height / 2)
-                mProgressText?.layout(width / 3, height / 2, width * 2 / 3, height)
+                // The whole centre column toggles the menu.
+                mMenuText?.layout(width / 3, 0, width * 2 / 3, height)
             }
             else -> {
                 mLongClickText?.layout(0, 0, width, height)
@@ -155,11 +148,6 @@ class GalleryGuideView @JvmOverloads constructor(
             mPoints[5] = 0f
             mPoints[6] = (w * 2 / 3).toFloat()
             mPoints[7] = h.toFloat()
-
-            mPoints[8] = (w / 3).toFloat()
-            mPoints[9] = (h / 2).toFloat()
-            mPoints[10] = (w * 2 / 3).toFloat()
-            mPoints[11] = (h / 2).toFloat()
         }
     }
 

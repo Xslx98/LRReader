@@ -39,11 +39,4 @@
         android:gravity="center"
         style="@style/Guide.Title"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/guide_gallery_progress"
-        android:gravity="center"
-        style="@style/Guide.Title"/>
-
 </merge>

@@ -595,7 +595,6 @@
     <string name="guide_gallery_left">翻頁</string>
     <string name="guide_gallery_right">翻頁</string>
     <string name="guide_gallery_menu">選單</string>
-    <string name="guide_gallery_progress">進度條</string>
     <string name="guide_gallery_long_click">長按以開啟頁面選單</string>
 
     <!-- Readable Time -->

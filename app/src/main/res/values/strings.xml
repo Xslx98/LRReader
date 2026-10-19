@@ -726,7 +726,6 @@
     <string name="guide_gallery_left">Turn Page</string>
     <string name="guide_gallery_right">Turn Page</string>
     <string name="guide_gallery_menu">Menu</string>
-    <string name="guide_gallery_progress">Progress</string>
     <string name="guide_gallery_long_click">Long click to open page menu</string>
 
     <!-- Readable Time -->

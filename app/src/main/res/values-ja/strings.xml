@@ -537,7 +537,6 @@
     <string name="guide_gallery_left">ページをめくる</string>
     <string name="guide_gallery_right">ページをめくる</string>
     <string name="guide_gallery_menu">メニュー</string>
-    <string name="guide_gallery_progress">プログレスバー</string>
     <string name="guide_gallery_long_click">メニューを呼び出すには、長押ししてください</string>
     <!-- Readable Time -->
     <string name="from_the_future">未来から</string>

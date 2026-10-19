@@ -598,7 +598,6 @@
     <string name="guide_gallery_left">페이지 넘기기</string>
     <string name="guide_gallery_right">페이지 넘기기</string>
     <string name="guide_gallery_menu">메뉴</string>
-    <string name="guide_gallery_progress">독서 진행도</string>
     <string name="guide_gallery_long_click">페이지 메뉴를 열려면 길게 누르세요.</string>
 
     <!-- Readable Time -->

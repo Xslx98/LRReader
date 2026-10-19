@@ -601,7 +601,6 @@
     <string name="guide_gallery_left">翻页</string>
     <string name="guide_gallery_right">翻页</string>
     <string name="guide_gallery_menu">菜单</string>
-    <string name="guide_gallery_progress">进度条</string>
     <string name="guide_gallery_long_click">长按打开页面菜单</string>
 
     <!-- Readable Time -->

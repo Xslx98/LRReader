@@ -194,8 +194,6 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
     // --- Show/hide the menu: top bar, slider panel and auto-turn button ---
 
-    fun onTapSliderArea() = toggleMenu()
-
     fun toggleMenu() {
         if (isMenuShown) hideMenu() else showMenu()
     }
