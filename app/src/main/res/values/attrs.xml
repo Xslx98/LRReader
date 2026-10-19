@@ -97,6 +97,8 @@
              dark mode instead of the app theme. -->
         <attr name="serverActiveRowBg" format="color" />
         <attr name="serverActiveNameColor" format="color" />
+        <!-- Fill of a screen's one primary action button (white label, WCAG AA in every theme). -->
+        <attr name="filledButtonColor" format="color" />
 
         <attr name="galleryDetailHeaderTitleColor" format="color" />
         <attr name="galleryDetailHeaderBackgroundColor" format="color" />
