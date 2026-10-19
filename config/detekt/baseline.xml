@@ -44,7 +44,6 @@
     <ID>EmptyFunctionBlock:AppProxySelector.kt$AppProxySelector.NullProxySelector${}</ID>
     <ID>EmptyFunctionBlock:BookmarksDraw.kt$BookmarksDraw.ScrollListener${}</ID>
     <ID>EmptyFunctionBlock:DownloadLabelsScene.kt$DownloadLabelsScene.LabelAdapter${}</ID>
-    <ID>EmptyFunctionBlock:GalleryActivity.kt$GalleryActivity.NotifyTask.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:GalleryDetailViewModel.kt$GalleryDetailViewModel.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:GalleryListScene.kt$GalleryListScene.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:GalleryMenuHelper.kt$GalleryMenuHelper.&lt;no name provided&gt;${}</ID>

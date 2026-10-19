@@ -17,27 +17,20 @@
 package com.lanraragi.reader.ui
 
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Typeface
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
-import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.hippo.android.resource.AttrResources
@@ -70,6 +63,7 @@ import com.lanraragi.reader.ui.gallery.GalleryMenuHelper
 import com.lanraragi.reader.ui.gallery.GallerySliderController
 import com.lanraragi.reader.ui.gallery.GalleryStampOps
 import com.lanraragi.reader.ui.gallery.LRRStampsBackend
+import com.lanraragi.reader.ui.gallery.ReaderChromeController
 import com.lanraragi.reader.ui.gallery.ReaderContinuationController
 import com.lanraragi.reader.ui.gallery.ReaderStampsController
 import com.lanraragi.reader.ui.gallery.StampsBackend
@@ -77,7 +71,6 @@ import com.lanraragi.reader.ui.gallery.TankStampsBackend
 import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
-import com.lanraragi.reader.widget.GalleryHeader
 import com.lanraragi.reader.widget.ReversibleSeekBar
 import com.lanraragi.reader.widget.StampOverlayView
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
@@ -86,10 +79,7 @@ import com.lanraragi.framework.lib.glgallery.SimpleAdapter
 import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.framework.util.BackDispatch
-import com.lanraragi.framework.util.SystemUiHelper
-import com.lanraragi.framework.widget.ColorView
 import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
-import com.lanraragi.framework.lib.yorozuya.MathUtils
 import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import java.io.File
@@ -138,14 +128,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         private const val NOTIFY_KEY_TAP_ERROR_TEXT = 5
         private const val NOTIFY_KEY_LONG_PRESS_PAGE = 6
         private const val NOTIFY_KEY_PAGE_TRANSFORMS = 7
-
-        @JvmStatic
-        private fun resolveOrientation(screenRotation: Int): Int = when (screenRotation) {
-            1 -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-            2 -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            3 -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
-            else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -175,12 +157,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     /** Scale-mode fit the cached decoded pages were sampled for (Image.readerSampleSize). */
     private var mPageFit: PageFit? = null
 
-    private var mSystemUiHelper: SystemUiHelper? = null
-
-    private var mMaskView: ColorView? = null
-    private var mClock: View? = null
-    private var mProgress: View? = null
-    private var mBattery: View? = null
+    private val mChrome = ReaderChromeController(this)
 
     private var canFinish = false
 
@@ -376,35 +353,11 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         startActivity(intent)
     }
 
-    /**
-     * recreate() keeps the window's decor view, so turning fullscreen off from
-     * the reader menu inherits the immersive SystemUiHelper flags and hidden
-     * system bars of the instance being replaced. A fresh launch has none.
-     */
-    private fun showSystemBarsLeftByFullscreen() {
-        val w = window
-        w.clearFlags(
-            WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION or
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-        )
-        @Suppress("DEPRECATION") // SystemUiHelper sets these legacy flags.
-        w.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-        WindowCompat.getInsetsController(w, w.decorView).show(WindowInsetsCompat.Type.systemBars())
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         if (ReadingSettings.getReadingFullscreen()) {
-            val w = window
-            w.setFlags(
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION
-            )
-            w.setFlags(
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-            )
+            mChrome.applyFullscreenWindowFlags()
         } else {
-            showSystemBarsLeftByFullscreen()
+            mChrome.showSystemBarsLeftByFullscreen()
         }
         super.onCreate(savedInstanceState)
         // Locked: BaseActivity handed off to the lock screen (this intent is
@@ -566,36 +519,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             GalleryImageOperations.CoverTarget.Archive(it.arcid, it.serverProfileId)
         }
 
-        // System UI helper
-        if (ReadingSettings.getReadingFullscreen()) {
-            val w = window
-            w.setFlags(
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION
-            )
-            w.setFlags(
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-            )
-            val systemUiHelper = SystemUiHelper(
-                this, SystemUiHelper.LEVEL_IMMERSIVE,
-                SystemUiHelper.FLAG_LAYOUT_IN_SCREEN_OLDER_DEVICES or SystemUiHelper.FLAG_IMMERSIVE_STICKY
-            )
-            mSystemUiHelper = systemUiHelper
-            systemUiHelper.hide()
-        }
-
-        // Header views
-        mMaskView = ViewUtils.`$$`(this, R.id.mask) as ColorView
-        val clock = ViewUtils.`$$`(this, R.id.clock)
-        mClock = clock
-        val progress = ViewUtils.`$$`(this, R.id.progress) as TextView
-        mProgress = progress
-        val battery = ViewUtils.`$$`(this, R.id.battery)
-        mBattery = battery
-        clock.visibility = if (ReadingSettings.getShowClock()) View.VISIBLE else View.GONE
-        progress.visibility = if (ReadingSettings.getShowProgress()) View.VISIBLE else View.GONE
-        battery.visibility = if (ReadingSettings.getShowBattery()) View.VISIBLE else View.GONE
+        mChrome.setUpSystemUi()
+        val progress = mChrome.bindHeader()
 
         // Slider controller
         val seekBarPanel = ViewUtils.`$$`(this, R.id.seek_bar_panel)
@@ -607,7 +532,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mSliderController.setViews(
             seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, progress
         )
-        mSliderController.setSystemUiHelper(mSystemUiHelper)
+        mSliderController.setSystemUiHelper(mChrome.systemUiHelper)
         mSliderController.setGalleryView(galleryView)
 
         mInputHandler.autoTransferPanel = autoTransferPanel
@@ -637,33 +562,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             )
         }
 
-        // Keep screen on
-        if (ReadingSettings.getKeepScreenOn()) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-
-        // Orientation
-        requestedOrientation = resolveOrientation(ReadingSettings.getScreenRotation())
-
-        // Screen lightness
-        setScreenLightness(
-            ReadingSettings.getCustomScreenLightness(),
-            ReadingSettings.getScreenLightness()
-        )
-
-        // Cutout
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            window.attributes.layoutInDisplayCutoutMode =
-                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-
-            val galleryHeader = findViewById<GalleryHeader>(R.id.gallery_header)
-            galleryHeader.setOnApplyWindowInsetsListener { _, insets ->
-                galleryHeader.setDisplayCutout(insets.displayCutout)
-                insets
-            }
-        }
+        mChrome.applyInitialWindowSettings()
 
         if (GuideSettings.getGuideGallery()) {
             val mainLayout = ViewUtils.`$$`(this, R.id.main) as FrameLayout
@@ -733,11 +632,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         }
         mGalleryProvider = null
 
-        mSystemUiHelper = null
-        mMaskView = null
-        mClock = null
-        mProgress = null
-        mBattery = null
+        mChrome.clear()
         mContinuation = null
         mStampOps?.dismissCard()
         mStampOps = null
@@ -836,12 +731,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     }
 
     private fun applySystemUiState() {
-        val uiHelper = mSystemUiHelper ?: return
-        if (mSliderController.isShowSystemUi) {
-            uiHelper.show()
-        } else {
-            uiHelper.hide()
-        }
+        mChrome.applySystemUiState(mSliderController.isShowSystemUi)
     }
 
     /**
@@ -1078,7 +968,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     ) {
         val gv = mGalleryView ?: return
 
-        requestedOrientation = resolveOrientation(screenRotation)
+        mChrome.applySettings(screenRotation, keepScreenOn, showClock, showProgress, showBattery)
         val pageFit = PageFit.of(layoutMode, scaleMode)
         if (pageFit != mPageFit) {
             // Decoded pages are sampled for the old fit (a FIT-sampled wide
@@ -1092,15 +982,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         gv.setScaleMode(scaleMode)
         gv.setStartPosition(startPosition)
 
-        if (keepScreenOn) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-        mClock?.visibility = if (showClock) View.VISIBLE else View.GONE
-        mProgress?.visibility = if (showProgress) View.VISIBLE else View.GONE
-        mBattery?.visibility = if (showBattery) View.VISIBLE else View.GONE
-
         gv.setPagerInterval(
             if (showPageInterval) resources.getDimensionPixelOffset(R.dimen.gallery_pager_interval) else 0
         )
@@ -1110,7 +991,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // mode's discrete-page separator).
         gv.setScrollInterval(0)
 
-        setScreenLightness(customScreenLightness, screenLightness)
+        mChrome.setScreenLightness(customScreenLightness, screenLightness)
 
         mSliderController.layoutMode = layoutMode
         mInputHandler.layoutMode = layoutMode
@@ -1125,30 +1006,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         recreate()
     }
 
-    // ======== Screen lightness ========
-
-    private fun setScreenLightness(enable: Boolean, lightness: Int) {
-        val maskView = mMaskView ?: return
-        val w = window
-        val lp = w.attributes
-        if (enable) {
-            val clampedLightness = MathUtils.clamp(lightness, 0, 200)
-            if (clampedLightness > 100) {
-                maskView.setColor(0)
-                lp.screenBrightness = Math.max((clampedLightness - 100) / 100.0f, 0.01f)
-            } else {
-                maskView.setColor(
-                    MathUtils.lerp(0xde, 0x00, clampedLightness / 100.0f) shl 24
-                )
-                lp.screenBrightness = 0.01f
-            }
-        } else {
-            maskView.setColor(0)
-            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-        }
-        w.attributes = lp
-    }
-
     // ======== NotifyTask (UI-thread dispatch) ========
 
     private inner class NotifyTask : Runnable {
@@ -1159,27 +1016,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         fun setData(key: Int, value: Int) {
             mKey = key
             mValue = value
-        }
-
-        private fun doTapMenuArea() {
-            val builder = AlertDialog.Builder(this@GalleryActivity)
-            val helper = GalleryMenuHelper(
-                builder.context,
-                this@GalleryActivity,
-                object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                        if (fromUser) {
-                            setScreenLightness(true, progress)
-                        }
-                    }
-                    override fun onStartTrackingTouch(seekBar: SeekBar) {}
-                    override fun onStopTrackingTouch(seekBar: SeekBar) {}
-                }
-            )
-            val dialog = builder.setTitle(R.string.gallery_menu_title)
-                .setView(helper.view)
-                .show()
-            mImageOps.applyImmersiveToDialog(dialog)
         }
 
         override fun run() {
@@ -1204,7 +1040,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                     mContinuation?.onPageShown(mValue, mGalleryProvider?.size() ?: 0)
                     mTankProgress?.onPageShown(mValue)
                 }
-                NOTIFY_KEY_TAP_MENU_AREA -> doTapMenuArea()
+                NOTIFY_KEY_TAP_MENU_AREA ->
+                    mChrome.showSettingsDialog(this@GalleryActivity, mImageOps::applyImmersiveToDialog)
                 NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)
                 NOTIFY_KEY_LONG_PRESS_PAGE -> mImageOps.showPageDialog(mValue)
