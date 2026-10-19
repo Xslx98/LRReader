@@ -33,13 +33,9 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.AppearanceSettings
 import androidx.lifecycle.ViewModelProvider
-import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.ui.scene.BaseScene
-import com.lanraragi.reader.ui.scene.TankoubonDetailScene
-import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
@@ -106,6 +102,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private var mTankBinder: DetailTankoubonBinder? = null
     private var mActionHandler: DetailActionHandler? = null
     private val mRating by lazy { DetailRatingController(viewModel) }
+    private val mEditActions by lazy { DetailEditActions(this, viewModel) }
 
     // Read by GalleryDetailEvents.
     internal val sourceError: DetailSourceErrorBanner get() = mSourceError
@@ -344,8 +341,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             section = tankSection,
             container = ViewUtils.`$$`(tankSection, R.id.detail_tankoubons_container) as LinearLayout,
             edit = ViewUtils.`$$`(tankSection, R.id.detail_tankoubons_edit) as TextView,
-            onTankClick = { tank -> openTankoubonDetail(tank) },
-            onEditClick = { showTankMembershipDialog() },
+            onTankClick = { tank -> mEditActions.openTankoubonDetail(tank) },
+            onEditClick = { mEditActions.showTankMembershipDialog() },
         )
 
         val actionHandler = DetailActionHandler(this, viewModel, viewLifecycleOwner)
@@ -359,24 +356,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mRating.bind(rating, ratingText)
 
         mEditTagsBtn = ViewUtils.`$$`(tags, R.id.edit_tags_btn) as? android.widget.ImageButton
-        mEditTagsBtn?.let { btn ->
-            val isLrr = LRRAuthManager.getServerUrl() != null
-            btn.visibility = if (isLrr) View.VISIBLE else View.GONE
-            btn.setOnClickListener {
-                val ad = viewModel.archiveDetail.value
-                if (ad != null) {
-                    TagEditDialog.show(
-                        activity2, ad.archive.arcid,
-                        ad.tagGroups, viewModel.getSourceProfileId()
-                    ) {
-                        if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
-                            adjustViewVisibility(STATE_REFRESH, true)
-                            request()
-                        }
-                    }
-                }
-            }
-        }
+        mEditActions.bindEditTagsButton(mEditTagsBtn)
 
         mProgress = ViewUtils.`$$`(mainView, R.id.progress)
 
@@ -592,24 +572,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
 
         return mActionHandler?.onLongClick(v, mContext ?: return false, activity) ?: false
-    }
-
-
-    private fun openTankoubonDetail(tank: LRRTankoubonApi.Tankoubon) {
-        val args = Bundle().apply {
-            putString(TankoubonDetailScene.KEY_TANK_ID, tank.id)
-            putString(TankoubonDetailScene.KEY_TANK_NAME, tank.name)
-            putLong(TankoubonDetailScene.KEY_PROFILE_ID, viewModel.getSourceProfileId())
-        }
-        startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
-    }
-
-    private fun showTankMembershipDialog() {
-        val arcid = viewModel.getEffectiveArcid() ?: return
-        TankoubonDialogHelper.showMembershipDialog(
-            activity2, arcid, viewModel.getSourceProfileId(),
-            archiveTitle = viewModel.getEffectiveArchive()?.title,
-        ) { viewModel.loadArchiveTankoubons() }
     }
 
 
