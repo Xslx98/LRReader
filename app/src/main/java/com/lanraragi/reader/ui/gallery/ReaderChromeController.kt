@@ -134,6 +134,16 @@ class ReaderChromeController(private val activity: Activity) {
         topBar.setPage(slider.currentIndex, slider.size)
         slider.setTopBar(root)
         slider.onPageChanged = topBar::setPage
+        // The menu brings back the system status bar, which would sit on top
+        // of the reader's own clock and battery; the top bar shows the page.
+        val header = ViewUtils.`$$`(activity, R.id.gallery_header)
+        slider.onMenuVisibilityChanged = { shown ->
+            header.animate().cancel()
+            header.animate()
+                .alpha(if (shown) 0f else 1f)
+                .setDuration(HEADER_FADE_DURATION)
+                .start()
+        }
     }
 
     /** Keep-screen-on, orientation, brightness and the display cutout, from the saved settings. */
@@ -240,6 +250,9 @@ class ReaderChromeController(private val activity: Activity) {
     }
 
     companion object {
+        /** Matches the menu's slide-in timing. */
+        private const val HEADER_FADE_DURATION = 150L
+
         @JvmStatic
         fun resolveOrientation(screenRotation: Int): Int = when (screenRotation) {
             1 -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
