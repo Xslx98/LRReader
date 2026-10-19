@@ -38,8 +38,6 @@ import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.settings.ReadingSettings
-import com.lanraragi.reader.util.MemoryTrim
-import com.lanraragi.framework.lib.image.PageFit
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.GalleryActivityEvent
@@ -58,16 +56,14 @@ import com.lanraragi.reader.ui.gallery.ReaderChromeController
 import com.lanraragi.reader.ui.gallery.ReaderContinuationController
 import com.lanraragi.reader.ui.gallery.ReaderGalleryViews
 import com.lanraragi.reader.ui.gallery.ReaderLaunch
+import com.lanraragi.reader.ui.gallery.ReaderPageHost
 import com.lanraragi.reader.ui.gallery.ReaderSessionSetup
 import com.lanraragi.reader.ui.gallery.ReaderStampsCoordinator
 import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
 import com.lanraragi.reader.widget.ReversibleSeekBar
-import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.framework.lib.glgallery.SimpleAdapter
-import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.util.BackDispatch
 import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
@@ -120,13 +116,11 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     private val mLaunch = ReaderLaunch()
     private val mReadingSession = ReadingSessionTracker()
 
-    private var mGLRootView: GLRootView? = null
-    private var mGalleryView: GalleryView? = null
+    private val mPageHost = ReaderPageHost(this)
+    private val mGalleryView: GalleryView?
+        get() = mPageHost.galleryView
     private var mGalleryProvider: GalleryProvider2? = null
-    private var mGalleryAdapter: GalleryAdapter? = null
 
-    /** Scale-mode fit the cached decoded pages were sampled for (Image.readerSampleSize). */
-    private var mPageFit: PageFit? = null
 
     private val mChrome = ReaderChromeController(this)
 
@@ -303,18 +297,11 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         }
 
         setContentView(R.layout.activity_gallery)
-        val glRootView = ViewUtils.`$$`(this, R.id.gl_root_view) as GLRootView
-        mGLRootView = glRootView
-        val galleryAdapter = GalleryAdapter(glRootView, galleryProvider)
-        mGalleryAdapter = galleryAdapter
-        mPageFit = ReadingSettings.getPageFit()
-        val galleryView = ReaderGalleryViews.build(this, galleryAdapter, this, startPage)
-        mGalleryView = galleryView
-        glRootView.setContentPane(galleryView)
-        glRootView.setOnGenericMotionListener(mInputHandler::handleGenericMotion)
-        galleryProvider.galleryView = galleryView
-        galleryProvider.setListener(galleryAdapter)
-        galleryProvider.setGLRoot(glRootView)
+        val galleryView = mPageHost.attach(
+            galleryProvider, this, startPage, mInputHandler::handleGenericMotion
+        ) {
+            mGalleryProvider?.let { postNotify(NOTIFY_KEY_SIZE, it.size()) }
+        }
 
         // Setup helpers
         mInputHandler.galleryView = galleryView
@@ -395,25 +382,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // runnable) so none run against a destroyed Activity/window.
         mainHandler.removeCallbacksAndMessages(null)
 
-        // Detach the content pane before dropping references: this is the ONLY
-        // path that runs GalleryView.onDetachFromRoot → removeAllPages →
-        // page unbind → ImageTexture.recycle(). Without it no reader session
-        // ever tears down its pages, and a session ending on an animated page
-        // (GIF/AWebP) leaks the texture's AnimateRunnable worker thread — a GC
-        // root pinning the decoded page — for the process lifetime. Lock the
-        // render thread so the detach cannot race an in-flight frame.
-        mGLRootView?.let { root ->
-            root.lockRenderThread()
-            try {
-                root.setContentPane(null)
-            } finally {
-                root.unlockRenderThread()
-            }
-        }
-        mGLRootView = null
-        mGalleryView = null
-        mGalleryAdapter?.clearUploader()
-        mGalleryAdapter = null
+        mPageHost.detach()
         mGalleryProvider?.let { provider ->
             provider.setListener(null)
             provider.stop()
@@ -460,17 +429,14 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
     override fun onPause() {
         super.onPause()
-        val gv = mGalleryView
         val provider = mGalleryProvider
-        if (gv != null && provider != null && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
-            provider.putScrollFraction(gv.currentScrollFraction)
-        }
+        mPageHost.saveScrollFraction(provider)
         // The local position is written at most once a second; write the latest
         // now, before the screen we return to reads it.
         provider?.flushLocalProgress()
         // Suspend auto page-turn while backgrounded; resumed in onResume().
         mInputHandler.pauseAutoRead()
-        mGLRootView?.onPause()
+        mPageHost.onPause()
     }
 
     override fun onResume() {
@@ -479,7 +445,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // the security re-prompt — when CLEAR_TOP pops us, we end up
         // finishing. Don't touch GL resources on a doomed activity.
         if (isFinishing) return
-        mGLRootView?.onResume()
+        mPageHost.onResume()
         mInputHandler.resumeAutoRead()
     }
 
@@ -571,11 +537,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             // mode only: pager modes always report 0 and would just
             // overwrite a saved fraction with 0 every time the user
             // crossed a page boundary.
-            val gv = mGalleryView
-            if (provider != null && gv != null
-                && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
-                provider.putScrollFraction(gv.currentScrollFraction)
-            }
+            mPageHost.saveScrollFraction(provider)
         }
         postNotify(NOTIFY_KEY_CURRENT_INDEX, index)
     }
@@ -676,30 +638,10 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         customScreenLightness: Boolean, screenLightness: Int,
         transferTime: Int
     ) {
-        val gv = mGalleryView ?: return
+        if (mGalleryView == null) return
 
         mChrome.applySettings(screenRotation, keepScreenOn, showClock, showProgress, showBattery)
-        val pageFit = PageFit.of(layoutMode, scaleMode)
-        if (pageFit != mPageFit) {
-            // Decoded pages are sampled for the old fit (a FIT-sampled wide
-            // page is far too small for fit height): drop the cached ones so
-            // they re-decode for the new mode. Pages on screen keep their
-            // texture until they are bound again.
-            mPageFit = pageFit
-            mGalleryProvider?.onTrimMemory(MemoryTrim.Action.CLEAR)
-        }
-        gv.layoutMode = layoutMode
-        gv.setScaleMode(scaleMode)
-        gv.setStartPosition(startPosition)
-
-        gv.setPagerInterval(
-            if (showPageInterval) resources.getDimensionPixelOffset(R.dimen.gallery_pager_interval) else 0
-        )
-        // See onCreateView for the rationale: long-strip mode runs
-        // with no inter-page gap regardless of the user's
-        // showPageInterval choice (which governs only the pager
-        // mode's discrete-page separator).
-        gv.setScrollInterval(0)
+        mPageHost.applySettings(mGalleryProvider, layoutMode, scaleMode, startPosition, showPageInterval)
 
         mChrome.setScreenLightness(customScreenLightness, screenLightness)
 
@@ -765,34 +707,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                 NOTIFY_KEY_PAGE_TRANSFORMS -> mStampsCoordinator.onPageTransformsChanged()
             }
             mNotifyTaskPool.push(this)
-        }
-    }
-
-    // ======== GalleryAdapter ========
-
-    private inner class GalleryAdapter(
-        glRootView: GLRootView,
-        provider: GalleryProvider
-    ) : SimpleAdapter(glRootView, provider) {
-
-        override fun onDataChanged() {
-            super.onDataChanged()
-
-            val provider = mGalleryProvider ?: return
-            val size = provider.size()
-            postNotify(NOTIFY_KEY_SIZE, size)
-        }
-
-        override fun onPageSucceed(index: Int, image: com.lanraragi.framework.lib.glview.image.ImageWrapper) {
-            super.onPageSucceed(index, image)
-            // Setting the page image doesn't by itself flip GalleryView
-            // back into a fill cycle — it just paints the new texture
-            // on the next render. Pending intra-page restores in
-            // ScrollLayoutManager are gated on `target.isLoaded()`,
-            // so without an explicit requestFill here they'd never
-            // get a second chance after the target page's image
-            // arrives async.
-            mGalleryView?.requestFill()
         }
     }
 }
