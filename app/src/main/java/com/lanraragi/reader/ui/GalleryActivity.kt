@@ -45,10 +45,7 @@ import com.lanraragi.framework.lib.image.PageFit
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.GalleryActivityEvent
-import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.DirGalleryProvider
 import com.lanraragi.reader.gallery.ForegroundReading
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.LRRGalleryProvider
@@ -62,6 +59,7 @@ import com.lanraragi.reader.ui.gallery.GalleryMenuHelper
 import com.lanraragi.reader.ui.gallery.GallerySliderController
 import com.lanraragi.reader.ui.gallery.ReaderChromeController
 import com.lanraragi.reader.ui.gallery.ReaderContinuationController
+import com.lanraragi.reader.ui.gallery.ReaderSessionSetup
 import com.lanraragi.reader.ui.gallery.ReaderStampsCoordinator
 import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
@@ -71,12 +69,10 @@ import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.framework.lib.glgallery.SimpleAdapter
 import com.lanraragi.framework.lib.glview.view.GLRootView
-import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.framework.util.BackDispatch
 import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
 import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 import javax.microedition.khronos.egl.EGL10
@@ -181,40 +177,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             return
         }
 
-        when (mAction) {
-            ACTION_DIR -> {
-                val filename = mFilename
-                if (filename != null) {
-                    val uniFile = UniFile.fromFile(File(filename)) ?: return
-                    val archive = mArchive
-                    mGalleryProvider = if (archive != null) {
-                        DirGalleryProvider(
-                            uniFile, this, archive.arcid, archive.serverProfileId,
-                            archive.progress, archive.lastreadtime,
-                        ).also {
-                            it.expectedPageCount = archive.pagecount
-                        }
-                    } else {
-                        DirGalleryProvider(uniFile)
-                    }
-                }
-            }
-            ACTION_LRR -> {
-                val archive = mArchive
-                if (archive != null) {
-                    val downloadDir = mDownloadDir?.let(::File)
-                    mGalleryProvider = LRRGalleryProvider(
-                        this, archive.arcid, archive.serverProfileId, downloadDir
-                    )
-                }
-            }
-            ACTION_TANK -> {
-                val seed = mTankSeed
-                if (seed != null) {
-                    mGalleryProvider = TankGalleryProvider(this, seed)
-                }
-            }
-        }
+        mGalleryProvider = ReaderSessionSetup.createProvider(
+            this, mAction, mFilename, mDownloadDir, mArchive, mTankSeed
+        )
         // KEY_PAGE override (e.g. a detail-page thumbnail tap) so the
         // provider warms / consumes the decoded slot for the page the
         // reader actually opens on. -1 = use saved progress.
@@ -256,53 +221,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         }
         mPage = intent.getIntExtra(KEY_PAGE, -1)
         buildProvider()
-        // Reader entry counts as reading: ensure history-subsystem
-        // membership for the archive so per-archive state (intra-page
-        // scroll fraction, etc.) lands on a row that the history
-        // queries can see. This is the only place a single archive enters
-        // history: opening its detail page or starting its download is
-        // not reading (audit 2026-10-04). Fire-and-forget on the
-        // app-wide IO scope.
-        mArchive?.let { archive ->
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                try {
-                    ServiceRegistry.dataModule.historyRepository.putHistoryInfo(archive)
-                } catch (e: Exception) {
-                    Log.w("GalleryActivity", "Failed to record history: ${e.message}")
-                }
-            }
-        }
-        // Tank sessions get ONE history row for the whole tank (tank-only
-        // bookkeeping): a pseudo-archive keyed by the TANK_ id whose
-        // thumbnail rides the tank cover route. HistoryScene branches its
-        // click on isTankoubonId and resumes the composite session.
-        mTankSeed?.let { seed ->
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                try {
-                    val url = resolveSourceBaseUrl(
-                        seed.profileId, ServiceRegistry.dataModule.profileLookupCache
-                    )
-                    val pseudo = Archive(
-                        arcid = seed.tankId,
-                        title = seed.tankName,
-                        tags = emptyMap(),
-                        pagecount = seed.members.sumOf { it.pagecount.coerceAtLeast(0) },
-                        progress = 0,
-                        extension = "",
-                        filename = "",
-                        thumbnailUrl = LRRTankoubonApi.getTankoubonThumbnailUrl(url, seed.tankId),
-                        rating = 0f,
-                        isnew = false,
-                        lastreadtime = 0L,
-                        summary = null,
-                        serverProfileId = seed.profileId,
-                    )
-                    ServiceRegistry.dataModule.historyRepository.putHistoryInfo(pseudo)
-                } catch (e: Exception) {
-                    Log.w("GalleryActivity", "Failed to record tank history: ${e.message}")
-                }
-            }
-        }
+        ReaderSessionSetup.recordHistory(mArchive, mTankSeed)
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
