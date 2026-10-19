@@ -50,6 +50,7 @@
         <item name="guideBackgroundColor">@color/guide_bg</item>
         <item name="guideTitleColor">?android:attr/textColorPrimaryInverse</item>
         <item name="tagGroupBackgroundColor">@color/tag_group_background_light</item>
+        <item name="tagGroupTextColor">@color/teal_800</item>
         <item name="tagBackgroundColor">@color/tag_background_light</item>
         <item name="serverBadge0Bg">@color/lrr_server_badge_0_bg_light</item>
         <item name="serverBadge1Bg">@color/lrr_server_badge_1_bg_light</item>
@@ -139,7 +140,8 @@
         <item name="progressColor">@color/teal_a700</item>
         <item name="guideBackgroundColor">#e5303030</item>
         <item name="guideTitleColor">?android:attr/textColorPrimary</item>
-        <item name="tagGroupBackgroundColor">@color/purple_700</item>
+        <item name="tagGroupBackgroundColor">@color/teal_900</item>
+        <item name="tagGroupTextColor">@color/teal_100</item>
         <item name="tagBackgroundColor">@color/teal_700</item>
         <item name="serverBadge0Bg">@color/lrr_server_badge_0_bg_dark</item>
         <item name="serverBadge1Bg">@color/lrr_server_badge_1_bg_dark</item>
@@ -224,7 +226,8 @@
         <item name="progressColor">@color/teal_a700</item>
         <item name="guideBackgroundColor">#e5000000</item>
         <item name="guideTitleColor">?android:attr/textColorPrimary</item>
-        <item name="tagGroupBackgroundColor">@color/purple_800</item>
+        <item name="tagGroupBackgroundColor">@color/teal_900</item>
+        <item name="tagGroupTextColor">@color/teal_100</item>
         <item name="tagBackgroundColor">@color/teal_800</item>
         <item name="serverBadge0Bg">@color/lrr_server_badge_0_bg_dark</item>
         <item name="serverBadge1Bg">@color/lrr_server_badge_1_bg_dark</item>
