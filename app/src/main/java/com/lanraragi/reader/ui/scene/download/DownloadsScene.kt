@@ -56,7 +56,6 @@ import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
 import com.lanraragi.reader.ui.scene.download.part.MyPageChangeListener
-import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.widget.MyEasyRecyclerView
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
@@ -109,7 +108,7 @@ class DownloadsScene : ToolbarScene(),
             return viewModel.downloadList.value
         }
 
-    private val listDispatcher by lazy {
+    internal val listDispatcher by lazy {
         DownloadListDispatcher(viewModel, adapter = { mAdapter }, list = { mList })
     }
 
@@ -126,7 +125,7 @@ class DownloadsScene : ToolbarScene(),
     private var mTip: TextView? = null
 
     /** Last [com.lanraragi.reader.download.DownloadManager.loadError] (audit C34 / STAB-13). */
-    private var mLoadError: Throwable? = null
+    internal var loadError: Throwable? = null
     private lateinit var mFabLayout: FabLayout
     private var mAdapter: RecyclerView.Adapter<*>? = null
     private var mOriginalAdapter: DownloadAdapter? = null
@@ -246,12 +245,12 @@ class DownloadsScene : ToolbarScene(),
         updatePaginationIndicator()
     }
 
-    private fun updatePaginationIndicator() {
+    internal fun updatePaginationIndicator() {
         mPaginationHelper?.updatePaginationIndicator(mPaginationIndicator, mList, myPageChangeListener)
     }
 
     @SuppressLint("StringFormatMatches")
-    private fun updateTitle() {
+    internal fun updateTitle() {
         try {
             setTitle(
                 getString(
@@ -424,91 +423,7 @@ class DownloadsScene : ToolbarScene(),
         updateTitle()
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
 
-        // A failed load from the database must not look like "no downloads":
-        // the tip shows the error and retries on tap (audit 2026-10-04 C34).
-        collectFlow(viewLifecycleOwner, viewModel.downloadManager.loadError) { error ->
-            mLoadError = error
-            updateView()
-        }
-
-        // Subscribe to the structural list StateFlow (Room Flow, label-
-        // filtered). Transient progress flows separately via progressMap
-        // below. DiffUtil compares structural fields only.
-        collectFlow(viewLifecycleOwner, viewModel.downloadList) { list ->
-            if (mAdapter == null || searching) return@collectFlow
-            listDispatcher.dispatchDiffUpdate(ArrayList(list))
-            updateTitle()
-            updatePaginationIndicator()
-            updateView()
-        }
-
-        // Subscribe to the live progress map. For each arcid whose snapshot
-        // changed since the last emission, fire a targeted
-        // notifyItemChanged(pos, PAYLOAD_PROGRESS) so only the progress views
-        // repaint — no DiffUtil, no full rebind. Fixes the progress-freeze
-        // bug introduced by the earlier mutating-combine approach.
-        collectFlow(viewLifecycleOwner, viewModel.progressMap) { progressMap ->
-            if (mAdapter == null || searching) return@collectFlow
-            listDispatcher.dispatchProgressChanges(progressMap)
-        }
-
-        // Observe filter loading state
-        collectFlow(viewLifecycleOwner, viewModel.filterLoading) { loading ->
-            if (loading) {
-                mProgressView.visibility = View.VISIBLE
-                mRecyclerView.visibility = View.GONE
-            } else {
-                mProgressView.visibility = View.GONE
-                mRecyclerView.visibility = View.VISIBLE
-            }
-        }
-
-        // Observe filter/sort/search completion
-        collectFlow(viewLifecycleOwner, viewModel.filterSearchDone) {
-            if (!isAdded) return@collectFlow
-            updateAdapter()
-            // The downloadList collector skips updates while searching, so the
-            // count in the title and the empty view must be refreshed here.
-            updateTitle()
-            updatePaginationIndicator()
-            updateView()
-        }
-
-        // ── Observe DownloadInfoListener events from ViewModel (sealed dispatch) ──
-
-        collectFlow(viewLifecycleOwner, viewModel.downloadEvent) { event ->
-            when (event) {
-                // Structural events are covered by the downloadList Flow
-                // above; transient progress by the progressMap Flow. These
-                // listener callbacks exist only so downstream consumers
-                // (e.g. the rating sync path inside GalleryDetailViewModel)
-                // can react — the Scene itself just refreshes its empty-view.
-                is DownloadUiEvent.ItemAdded,
-                is DownloadUiEvent.ItemRemoved,
-                is DownloadUiEvent.DiffUpdate,
-                is DownloadUiEvent.Reloaded,
-                is DownloadUiEvent.ItemUpdated -> {
-                    updateView()
-                }
-                is DownloadUiEvent.Replaced -> {
-                    updateForLabel()
-                    updateView()
-                }
-                is DownloadUiEvent.LabelRenamed -> {
-                    viewModel.handleLabelRenamed(event.from, event.to)
-                    updateForLabel()
-                    updateView()
-                }
-                is DownloadUiEvent.LabelDeleted -> {
-                    viewModel.resetToDefaultLabel()
-                    updateForLabel()
-                    updateView()
-                }
-                is DownloadUiEvent.LabelsChanged -> {
-                    downloadLabelDraw?.updateDownloadLabels()
-                }
-            }
-        }
+        DownloadsEvents(this, viewModel).install(viewLifecycleOwner)
     }
 
     override fun onResume() {
@@ -575,10 +490,27 @@ class DownloadsScene : ToolbarScene(),
         else -> false
     }
 
+    /** False until onCreateView3 attached the list adapter, and again after onDestroyView. */
+    internal val hasAdapter: Boolean get() = mAdapter != null
+
+    internal fun showFilterLoading(loading: Boolean) {
+        if (loading) {
+            mProgressView.visibility = View.VISIBLE
+            mRecyclerView.visibility = View.GONE
+        } else {
+            mProgressView.visibility = View.GONE
+            mRecyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    internal fun updateDownloadLabels() {
+        downloadLabelDraw?.updateDownloadLabels()
+    }
+
     fun updateView() {
         val viewTransition = mViewTransition ?: return
         val tip = mTip
-        if (mLoadError != null && tip != null) {
+        if (loadError != null && tip != null) {
             tip.setText(R.string.downloads_load_failed)
             tip.setOnClickListener { viewModel.downloadManager.retryLoading() }
             viewTransition.showView(1)
@@ -711,7 +643,7 @@ class DownloadsScene : ToolbarScene(),
         mSearchHelper?.startSearching()
     }
 
-    private fun updateAdapter() {
+    internal fun updateAdapter() {
         // 检查 Fragment 是否已附加，如果未附加则延迟创建适配器
         if (!isAdded) {
             return
