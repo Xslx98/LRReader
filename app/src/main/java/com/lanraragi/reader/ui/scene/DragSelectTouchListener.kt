@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.ui.Haptics
 import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.ViewGroup
@@ -153,6 +154,7 @@ class DragSelectTouchListener(
         // (zero leaves multi-select mode in every host).
         diff.check.forEach { selection.setChecked(it, true) }
         diff.uncheck.forEach { selection.setChecked(it, false) }
+        if (diff.check.isNotEmpty() || diff.uncheck.isNotEmpty()) Haptics.tick(recyclerView)
         current = target
     }
 

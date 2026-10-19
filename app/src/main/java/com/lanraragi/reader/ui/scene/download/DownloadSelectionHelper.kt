@@ -15,6 +15,7 @@
  */
 package com.lanraragi.reader.ui.scene.download
 
+import com.lanraragi.reader.ui.Haptics
 import android.view.Gravity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
@@ -83,6 +84,7 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
             recyclerView.intoCustomChoiceMode()
         }
         recyclerView.toggleItemChecked(position)
+        Haptics.longPress(recyclerView)
         // The finger is still down: the same touch stream becomes a drag.
         dragSelect?.startDrag(position)
         return true

@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.ui.Haptics
 import android.os.Bundle
 import android.view.View
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -127,6 +128,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         if (!recyclerView.isLaidOut) {
             // Nothing on screen to animate (view just re-attached): settle silently.
             host.applyEndState()
+            Haptics.confirm(recyclerView)
             onDone()
             return
         }
