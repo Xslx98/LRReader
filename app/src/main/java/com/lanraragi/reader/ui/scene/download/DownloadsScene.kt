@@ -18,8 +18,6 @@ package com.lanraragi.reader.ui.scene.download
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
-import androidx.core.graphics.drawable.toDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -28,7 +26,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.res.ResourcesCompat
 import android.util.Log
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -36,15 +33,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.android.resource.AttrResources
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.FastScroller
-import com.hippo.easyrecyclerview.HandlerDrawable
-import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadInfo
@@ -54,13 +47,11 @@ import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter
-import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
 import com.lanraragi.reader.ui.scene.download.part.MyPageChangeListener
 import com.lanraragi.reader.widget.MyEasyRecyclerView
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.hippo.ripple.Ripple
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.util.DrawableManager
 import com.lanraragi.framework.view.ViewTransition
@@ -354,36 +345,9 @@ class DownloadsScene : ToolbarScene(),
                 viewModel.setPageSize(newPageSize)
             }
         }
-        mLayoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
-        mLayoutManager.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()))
-        mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
-
-        // Configure drag-related RecyclerView properties
-        mDragDropHelper?.configureRecyclerView(mRecyclerView)
-
-        mRecyclerView.setItemViewCacheSize(100)
-        mRecyclerView.layoutManager = mLayoutManager
-        mRecyclerView.selector = Ripple.generateRippleDrawable(
-            context,
-            !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
-            Color.TRANSPARENT.toDrawable()
+        mLayoutManager = DownloadListViews.configureList(
+            this, context, mRecyclerView, mSelectionHelper, mDragDropHelper
         )
-        mRecyclerView.setDrawSelectorOnTop(true)
-        mRecyclerView.clipToPadding = false
-        mRecyclerView.setOnItemClickListener(this)
-        mRecyclerView.setOnItemLongClickListener(this)
-        mRecyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        mRecyclerView.setCustomCheckedListener(mSelectionHelper?.choiceListener)
-        mSelectionHelper?.attachDragSelect(mRecyclerView)
-        val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
-        val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
-        val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
-        val decoration = MarginItemDecoration(interval, paddingH, paddingV, paddingH, paddingV)
-        mRecyclerView.addItemDecoration(decoration)
-        decoration.applyPaddings(mRecyclerView)
-
-        // Attach drag-drop manager to RecyclerView
-        mDragDropHelper?.attachToRecyclerView(mRecyclerView)
 
         if (mInitPosition >= 0 && viewModel.indexPage.value != 1) {
             mPaginationHelper?.initPage(mInitPosition, mList, mRecyclerView, mPaginationIndicator)
@@ -391,25 +355,9 @@ class DownloadsScene : ToolbarScene(),
             mInitPosition = -1
         }
 
-        fastScroller.attachToRecyclerView(mRecyclerView)
-        val handlerDrawable = HandlerDrawable()
-        handlerDrawable.setColor(AttrResources.getAttrColor(context, R.attr.widgetColorThemeAccent))
-        fastScroller.setHandlerDrawable(handlerDrawable)
-        fastScroller.setOnDragHandlerListener(this)
+        DownloadListViews.configureFastScroller(context, fastScroller, mRecyclerView, this)
 
-        mFabLayout.setExpanded(false, true)
-        mFabLayout.setHidePrimaryFab(false)
-        mFabLayout.setAutoCancel(false)
-        mFabLayout.setOnClickFabListener(this)
-        mFabLayout.setOnExpandListener(this)
-        mActionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
-        mFabLayout.primaryFab.setImageDrawable(mActionFabDrawable)
-        val fab = mFabLayout.getSecondaryFabAt(6)
-        if (DRAG_ENABLE) {
-            fab.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.v_mobile_hand_left_x24, context.theme))
-        } else {
-            fab.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.v_mobile_hand_left_off_x24, context.theme))
-        }
+        mActionFabDrawable = DownloadListViews.configureFab(this, context, mFabLayout)
         addAboveSnackView(mFabLayout)
 
         updateView()
