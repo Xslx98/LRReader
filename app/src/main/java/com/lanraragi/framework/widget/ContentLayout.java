@@ -59,7 +59,7 @@ import java.util.List;
 
 public class ContentLayout extends FrameLayout {
 
-    private ProgressView mProgressView;
+    private View mProgressView;
     private TextView mTipView;
     private ViewGroup mContentView;
 
@@ -131,6 +131,20 @@ public class ContentLayout extends FrameLayout {
 
     public RefreshLayout getRefreshLayout() {
         return mRefreshLayout;
+    }
+
+    /**
+     * Shows {@code loadingView} instead of the centred spinner while the
+     * content loads (e.g. a skeleton of the list). Call before
+     * {@link #setHelper(ContentHelper)}.
+     */
+    public void setLoadingView(@NonNull View loadingView) {
+        int index = indexOfChild(mProgressView);
+        removeView(mProgressView);
+        loadingView.setId(R.id.progress);
+        loadingView.setVisibility(mProgressView.getVisibility());
+        addView(loadingView, index, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        mProgressView = loadingView;
     }
 
     public void setHelper(ContentHelper helper) {
@@ -212,7 +226,7 @@ public class ContentLayout extends FrameLayout {
         public static final int GOTO_NEXT_PAGE = 2;
         public static final int GOTO_LAST_PAGE = 3;
 
-        private ProgressView mProgressView;
+        private View mProgressView;
         private TextView mTipView;
         private ViewGroup mContentView;
 

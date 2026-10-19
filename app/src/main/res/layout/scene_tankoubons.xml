@@ -19,17 +19,20 @@
         app:titleTextColor="@android:color/white"
         app:navigationIconTint="@android:color/white" />
 
-    <!-- Progress shown while loading tankoubons -->
+    <!-- Loading state while loading tankoubons -->
     <FrameLayout
         android:id="@+id/progress"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone">
 
-        <ProgressBar
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+        <!-- Skeleton rows; stay blank for loads under 150 ms. -->
+        <com.lanraragi.reader.widget.SkeletonView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:skeletonShape="list"
+            app:skeletonCoverWidth="56dp"
+            app:skeletonCoverHeight="80dp" />
 
     </FrameLayout>
 

@@ -260,4 +260,14 @@
         <attr name="appWidgetRadius" format="dimension" />
     </declare-styleable>
 
+    <declare-styleable name="SkeletonView">
+        <attr name="skeletonShape" format="enum">
+            <enum name="list" value="0" />
+            <enum name="grid" value="1" />
+            <enum name="text" value="2" />
+        </attr>
+        <attr name="skeletonCoverWidth" format="dimension" />
+        <attr name="skeletonCoverHeight" format="dimension" />
+    </declare-styleable>
+
 </resources>
