@@ -377,21 +377,6 @@ class GalleryListScene : BaseScene(),
             inflater, resources,
             recyclerView, AppearanceSettings.getListMode()
         )
-        mAdapterImpl?.setThumbItemClickListener(object : GalleryAdapterNew.OnThumbItemClickListener {
-            override fun onThumbItemClick(position: Int, view: View, archive: Archive?) {
-                // The thumb owns its own click listener (bypasses the
-                // EasyRecyclerView item-click path) — in multi-select mode it
-                // must toggle the row instead of opening the tag-chip popup.
-                // Tank rows stay untoggleable here too.
-                if (multiSelectHelper?.isActive == true &&
-                    archive != null && isTankoubonId(archive.arcid)
-                ) {
-                    return
-                }
-                if (multiSelectHelper?.toggleChecked(position) == true) return
-                tagChipHelper?.onThumbItemClick(position, view, archive)
-            }
-        })
         recyclerView.selector = Ripple.generateRippleDrawable(
             context, !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
             Color.TRANSPARENT.toDrawable()
@@ -400,60 +385,7 @@ class GalleryListScene : BaseScene(),
         recyclerView.setClipToPadding(false)
         recyclerView.setOnItemClickListener(this)
         recyclerView.setOnItemLongClickListener(this)
-        val batchBar = ViewUtils.`$$`(mainLayout, R.id.batch_action_bar)
-        batchOpsHelper = GalleryBatchOpsHelper(batchBar, object : GalleryBatchOpsHelper.Callback {
-            override val activity: Activity? get() = activity2
-            override val viewModel: GalleryListViewModel get() = this@GalleryListScene.viewModel
-            override val downloadManager: DownloadManager
-                get() = this@GalleryListScene.downloadManager
-
-            override fun selectedArchives(): List<Archive> =
-                multiSelectHelper?.checkedPositions()
-                    ?.mapNotNull { mHelper?.getDataAtEx(it) }
-                    .orEmpty()
-                    // select-all can still visually check tank rows; they must
-                    // never reach a batch op
-                    .filterNot { isTankoubonId(it.arcid) }
-
-            override fun activeProfileId(): Long = LRRAuthManager.getActiveProfileId()
-            override fun isSelectionActive(): Boolean = multiSelectHelper?.isActive == true
-            override fun exitSelection() { multiSelectHelper?.exit() }
-            override fun checkAllSelection() { multiSelectHelper?.checkAll() }
-            override fun refreshList() { mHelper?.refresh() }
-            override fun showTip(message: String) {
-                this@GalleryListScene.showTip(message, LENGTH_SHORT)
-            }
-            override fun showTipWithAction(message: String, actionText: String, action: () -> Unit) {
-                this@GalleryListScene.showTip(message, LENGTH_LONG, actionText, action)
-            }
-            override fun animateTankMerge(
-                op: GalleryListViewModel.BatchOp.AddToTankoubon,
-                succeeded: List<String>,
-                onDone: () -> Unit,
-            ) {
-                tankMerge.runTankMerge(op.tankId, op.tankName, op.wasEmpty, succeeded, onDone)
-            }
-            override fun openTankoubon(tankId: String, tankName: String) {
-                tankMerge.openTankoubonDetail(tankId, tankName)
-            }
-            override fun batchOwnerToken(): Any = this@GalleryListScene.batchOwnerToken
-        })
-        val multiSelect = ListMultiSelectHelper(
-            recyclerView = { if (::recyclerView.isInitialized) recyclerView else null },
-            longClickListener = { this },
-            onModeChanged = { active -> batchOpsHelper?.onModeChanged(active) },
-            onCheckedChanged = { count -> batchOpsHelper?.onCheckedChanged(count) },
-        )
-        multiSelectHelper = multiSelect
-        // intoCustomChoiceMode() is a no-op unless the custom choice mode is
-        // configured, and it dispatches to the listener without a null check —
-        // both calls below are required before the mode can be entered.
-        recyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        recyclerView.setCustomCheckedListener(multiSelect.choiceListener)
-        // Tank pseudo-rows are passed over by a drag, never checked.
-        multiSelect.attachDragSelect(recyclerView) { position ->
-            mHelper?.getDataAtEx(position)?.let { !isTankoubonId(it.arcid) } ?: false
-        }
+        mAdapterImpl?.let { GalleryListSelection.bind(this, it, mainLayout) }
         recyclerView.addOnScrollListener(mOnScrollListener)
         fastScroller.setPadding(
             fastScroller.paddingLeft, fastScroller.paddingTop + paddingTopSB,
