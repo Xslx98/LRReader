@@ -47,8 +47,6 @@ import com.lanraragi.reader.settings.NetworkSettings
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.client.data.ListUrlBuilder
-import com.lanraragi.reader.dao.AppDatabase
-import com.lanraragi.reader.dao.DatabaseQuarantine
 import com.lanraragi.reader.dao.DatabaseResetNotice
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -70,7 +68,6 @@ import com.lanraragi.framework.scene.StageActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import java.io.File
@@ -131,6 +128,8 @@ class MainActivity : StageActivity(),
     private var mRightDrawer: FrameLayout? = null
 
     private val mNotices = MainActivityNotices(this, host = { mDrawerLayout })
+
+    private val mDatabaseReset = DatabaseResetFlow(this, restart = { triggerRebirth() })
 
     private val mNavDrawer = MainNavDrawer(
         this,
@@ -412,7 +411,7 @@ class MainActivity : StageActivity(),
             activity = this,
             isLockScreenUp = ::isLockScreenUp,
             onRetry = ::triggerRebirth,
-            onResetDatabase = ::showResetDatabaseConfirm,
+            onResetDatabase = mDatabaseReset::showConfirm,
             onResetNoticeSeen = { stamp -> DatabaseResetNotice.markSeen(Settings.getPreferences(), stamp) },
         ).also { it.install() }
 
@@ -481,47 +480,6 @@ class MainActivity : StageActivity(),
         if (AppLockGate.isLocked()) return true
         val top = topSceneClass
         return top != null && SecurityScene::class.java.isAssignableFrom(top)
-    }
-
-    /**
-     * Second-stage confirm for the destructive "reset database" branch of
-     * the boot-failure dialog ([BootNoticePresenter]).
-     * Cancellable so back / outside-tap aborts; positive button calls
-     * [resetDatabaseAndRestart].
-     */
-    private fun showResetDatabaseConfirm() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.lrr_boot_load_failed_reset_db_confirm_title)
-            .setMessage(R.string.lrr_boot_load_failed_reset_db_confirm_message)
-            .setPositiveButton(R.string.lrr_boot_load_failed_reset_db_confirm_yes) { _, _ ->
-                resetDatabaseAndRestart()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setCancelable(true)
-            .show()
-    }
-
-    /**
-     * Move `eh.db` (plus its `-journal`, `-wal`, `-shm` siblings) aside to
-     * `eh.db.broken-<millis>` on IO, then trigger a process restart so the
-     * next `AppDatabase.getInstance` call rebuilds an empty schema. The old
-     * file is kept for manual recovery (audit C04).
-     */
-    private fun resetDatabaseAndRestart() {
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    val moved = DatabaseQuarantine.quarantine(applicationContext.getDatabasePath(AppDatabase.DB_NAME))
-                    // The user chose this reset: no "database was damaged" notice
-                    // after the restart (REL-02). Committed, the process dies next.
-                    val stamp = moved?.let { DatabaseQuarantine.stampOf(it, AppDatabase.DB_NAME) }
-                    if (stamp != null) DatabaseResetNotice.markSeen(Settings.getPreferences(), stamp, commit = true)
-                } catch (t: Throwable) {
-                    Log.e(TAG, "database quarantine failed during boot-failure reset", t)
-                }
-            }
-            triggerRebirth()
-        }
     }
 
     /**
