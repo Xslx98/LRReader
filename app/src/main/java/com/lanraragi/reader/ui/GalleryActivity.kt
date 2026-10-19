@@ -24,6 +24,7 @@ import android.os.Looper
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -272,7 +273,17 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // Stamp overlay. mLaunch.archive is final here (see the continuation-block
         // comment above).
         mStampsCoordinator.setUp(lifecycleScope, mLaunch.archive, mLaunch.tankSeed, mGalleryProvider)
+
+        // The result goes back however the reader is left, so a plain back can
+        // stay with the system (cross-activity predictive back preview).
+        setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, readerResult())
+        // Placement mode and the continuation panel show or hide views, so a
+        // layout pass is where back starts or stops being ours.
+        window.decorView.viewTreeObserver.addOnGlobalLayoutListener(updateBackCallback)
+        updateBackCallback.onGlobalLayout()
     }
+
+    private fun readerResult(): Intent = Intent().putExtra(EXTRA_RESULT_ARCHIVE, mLaunch.archive)
 
     private fun onCreateView(savedInstanceState: Bundle?) {
         val galleryProvider = mGalleryProvider ?: run {
@@ -356,6 +367,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // Drop pending posts (queued NotifyTasks + the 300ms onWindowFocusChanged
         // runnable) so none run against a destroyed Activity/window.
         mainHandler.removeCallbacksAndMessages(null)
+        window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(updateBackCallback)
 
         mPageHost.detach()
         mGalleryProvider?.let { provider ->
@@ -371,9 +383,15 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         super.onDestroy()
     }
 
-    // Always enabled: leaving the reader must carry the result archive back.
-    private val backCallback = object : OnBackPressedCallback(true) {
+    // Enabled only while back means something inside the reader (stamp
+    // placement, the continuation panel); otherwise the system finishes the
+    // reader with its predictive preview. The result is set in onCreate.
+    private val backCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() = handleBack()
+    }
+
+    private val updateBackCallback = ViewTreeObserver.OnGlobalLayoutListener {
+        backCallback.isEnabled = mStampsCoordinator.isPlacing || mContinuation?.isShowing == true
     }
 
     internal fun handleBack() {
@@ -382,9 +400,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         } else if (mContinuation?.isShowing == true) {
             mContinuation?.hide()
         } else {
-            val intent = Intent()
-            intent.putExtra(EXTRA_RESULT_ARCHIVE, mLaunch.archive)
-            setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, intent)
+            setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, readerResult())
             BackDispatch.passThrough(onBackPressedDispatcher, backCallback)
         }
     }
