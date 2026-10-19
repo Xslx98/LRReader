@@ -10,7 +10,7 @@ Features:
 • Tag translation — auto-translate tags in Chinese (EhTagDatabase)
 • Archive rating — emoji-based star rating system
 • Category management — browse, create, edit LANraragi categories
-• Secure — API keys encrypted with the Android Keystore, pattern app lock, plain-HTTP servers marked
+• Secure — API keys encrypted with the Android Keystore, pattern app lock, plain-HTTP servers marked, self-signed HTTPS servers trusted by certificate fingerprint or your own CA
 • Multi-server — configure and switch between multiple LANraragi instances
 • Upload & URL download — add archives directly from the app
 • Private by design — no analytics; crash reports stay on the device unless you share them
