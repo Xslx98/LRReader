@@ -50,7 +50,6 @@ import com.lanraragi.reader.gallery.LRRGalleryProvider
 import com.lanraragi.reader.gallery.NextArchiveResolver
 import com.lanraragi.reader.gallery.ReadingSessionTracker
 import com.lanraragi.reader.gallery.TankGalleryProvider
-import com.lanraragi.reader.gallery.TankSessionSeed
 import com.lanraragi.reader.ui.gallery.GalleryImageOperations
 import com.lanraragi.reader.ui.gallery.GalleryInputHandler
 import com.lanraragi.reader.ui.gallery.GalleryMenuHelper
@@ -58,6 +57,7 @@ import com.lanraragi.reader.ui.gallery.GallerySliderController
 import com.lanraragi.reader.ui.gallery.ReaderChromeController
 import com.lanraragi.reader.ui.gallery.ReaderContinuationController
 import com.lanraragi.reader.ui.gallery.ReaderGalleryViews
+import com.lanraragi.reader.ui.gallery.ReaderLaunch
 import com.lanraragi.reader.ui.gallery.ReaderSessionSetup
 import com.lanraragi.reader.ui.gallery.ReaderStampsCoordinator
 import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
@@ -117,21 +117,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    private var mAction: String? = null
-    private var mFilename: String? = null
-    private var mDownloadDir: String? = null
-    private var mArchive: Archive? = null
-
-    /**
-     * Whole-tank composite session seed ([ACTION_TANK]). Mutually exclusive
-     * with [mArchive]: a tank session deliberately has NO per-archive
-     * identity, which self-disables every per-archive side channel wired
-     * through `mArchive?.let` (continuation panel, per-archive tank
-     * progress sync, stamps, history write, reading-session tracking) —
-     * their tank-level replacements live in the provider / later commits.
-     */
-    private var mTankSeed: TankSessionSeed? = null
-    private var mPage = 0
+    private val mLaunch = ReaderLaunch()
     private val mReadingSession = ReadingSessionTracker()
 
     private var mGLRootView: GLRootView? = null
@@ -172,13 +158,11 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             return
         }
 
-        mGalleryProvider = ReaderSessionSetup.createProvider(
-            this, mAction, mFilename, mDownloadDir, mArchive, mTankSeed
-        )
+        mGalleryProvider = mLaunch.createProvider(this)
         // KEY_PAGE override (e.g. a detail-page thumbnail tap) so the
         // provider warms / consumes the decoded slot for the page the
         // reader actually opens on. -1 = use saved progress.
-        mGalleryProvider?.initialPageOverride = mPage
+        mGalleryProvider?.initialPageOverride = mLaunch.page
     }
 
     // ======== Sticky event ========
@@ -190,8 +174,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         val cache = AppEventBus.galleryActivityEvent.replayCache
         if (cache.isNotEmpty()) {
             val event = cache[cache.size - 1]
-            mArchive = event.archive
-            mPage = event.pagePosition
+            mLaunch.archive = event.archive
+            mLaunch.page = event.pagePosition
             buildProvider()
             onCreateView(null)
         }
@@ -205,27 +189,16 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             return
         }
 
-        mAction = intent.action
-        mFilename = intent.getStringExtra(KEY_FILENAME)
-        mDownloadDir = intent.getStringExtra(KEY_DOWNLOAD_DIR)
-        mArchive = intent.getParcelableExtra(KEY_ARCHIVE)
-        mTankSeed = intent.getParcelableExtra(KEY_TANK_SEED)
-        val onEvent = intent.getBooleanExtra(DATA_IN_EVENT, false)
+        val onEvent = mLaunch.readIntent(intent)
         if (!onEvent) {
             canFinish = true
         }
-        mPage = intent.getIntExtra(KEY_PAGE, -1)
         buildProvider()
-        ReaderSessionSetup.recordHistory(mArchive, mTankSeed)
+        ReaderSessionSetup.recordHistory(mLaunch.archive, mLaunch.tankSeed)
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
-        mAction = savedInstanceState.getString(KEY_ACTION)
-        mFilename = savedInstanceState.getString(KEY_FILENAME)
-        mDownloadDir = savedInstanceState.getString(KEY_DOWNLOAD_DIR)
-        mArchive = savedInstanceState.getParcelable(KEY_ARCHIVE)
-        mTankSeed = savedInstanceState.getParcelable(KEY_TANK_SEED)
-        mPage = savedInstanceState.getInt(KEY_PAGE, -1)
+        mLaunch.restore(savedInstanceState)
         mSliderController.currentIndex = savedInstanceState.getInt(KEY_CURRENT_INDEX)
         mImageOps.pendingSaveFileName = savedInstanceState.getString(KEY_PENDING_SAVE_FILE)
         buildProvider()
@@ -233,12 +206,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString(KEY_ACTION, mAction)
-        outState.putString(KEY_FILENAME, mFilename)
-        outState.putString(KEY_DOWNLOAD_DIR, mDownloadDir)
-        mArchive?.let { outState.putParcelable(KEY_ARCHIVE, it) }
-        mTankSeed?.let { outState.putParcelable(KEY_TANK_SEED, it) }
-        outState.putInt(KEY_PAGE, mPage)
+        mLaunch.save(outState)
         outState.putInt(KEY_CURRENT_INDEX, mSliderController.currentIndex)
         outState.putString(KEY_PENDING_SAVE_FILE, mImageOps.pendingSaveFileName)
     }
@@ -293,7 +261,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // reached setContentView(R.layout.activity_gallery) — it is absent on
         // the GL-fallback layout and on the finish-early (no provider) path,
         // hence the nullable lookup. Runs after both init paths (intent /
-        // sticky event) so mArchive is final here.
+        // sticky event) so mLaunch.archive is final here.
         findViewById<View>(R.id.continuation_scrim)?.let { scrim ->
             mContinuation = ReaderContinuationController(
                 root = scrim,
@@ -301,17 +269,17 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                 resolver = NextArchiveResolver(ServiceRegistry.networkModule.okHttpClient),
                 launchNext = { next -> launchNextArchive(next) },
             )
-            mArchive?.let { mContinuation?.setCurrentArchive(it.arcid) }
+            mLaunch.archive?.let { mContinuation?.setCurrentArchive(it.arcid) }
         }
 
         // Tank-level progress sync. Deliberately outside the scrim block: a
         // GL-fallback layout without the continuation overlay must still sync
         // tank progress.
-        mArchive?.let { mTankProgress = TankoubonProgressSync(it.arcid) }
+        mLaunch.archive?.let { mTankProgress = TankoubonProgressSync(it.arcid) }
 
-        // Stamp overlay. mArchive is final here (see the continuation-block
+        // Stamp overlay. mLaunch.archive is final here (see the continuation-block
         // comment above).
-        mStampsCoordinator.setUp(lifecycleScope, mArchive, mTankSeed, mGalleryProvider)
+        mStampsCoordinator.setUp(lifecycleScope, mLaunch.archive, mLaunch.tankSeed, mGalleryProvider)
     }
 
     private fun onCreateView(savedInstanceState: Bundle?) {
@@ -323,7 +291,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
         // Get start page
         val startPage: Int = if (savedInstanceState == null) {
-            if (mPage >= 0) mPage else galleryProvider.getStartPage()
+            if (mLaunch.page >= 0) mLaunch.page else galleryProvider.getStartPage()
         } else {
             mSliderController.currentIndex
         }
@@ -351,13 +319,13 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // Setup helpers
         mInputHandler.galleryView = galleryView
         mImageOps.galleryProvider = galleryProvider
-        mImageOps.archive = mArchive
-        // Tank sessions keep mArchive null (composite reader invariant); an
+        mImageOps.archive = mLaunch.archive
+        // Tank sessions keep mLaunch.archive null (composite reader invariant); an
         // archive session always has one, including downloaded copies read
         // offline. A bare directory session has no server to write to.
-        mImageOps.coverTarget = mTankSeed?.let {
+        mImageOps.coverTarget = mLaunch.tankSeed?.let {
             GalleryImageOperations.CoverTarget.Tank(it.tankId, it.profileId)
-        } ?: mArchive?.let {
+        } ?: mLaunch.archive?.let {
             GalleryImageOperations.CoverTarget.Archive(it.arcid, it.serverProfileId)
         }
 
@@ -395,9 +363,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // pages; completion = crossing the tank's end) — tank-only
         // bookkeeping, and the shortcut/widget deep link resumes the
         // composite session via MainActivity's isTankoubonId branch.
-        mArchive?.let {
+        mLaunch.archive?.let {
             mReadingSession.start(it.arcid, it.serverProfileId, startPage, it.pagecount)
-        } ?: mTankSeed?.let { seed ->
+        } ?: mLaunch.tankSeed?.let { seed ->
             mReadingSession.start(
                 seed.tankId, seed.profileId, startPage,
                 (mGalleryProvider?.size() ?: 0).coerceAtLeast(0),
@@ -471,7 +439,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             mContinuation?.hide()
         } else {
             val intent = Intent()
-            intent.putExtra(EXTRA_RESULT_ARCHIVE, mArchive)
+            intent.putExtra(EXTRA_RESULT_ARCHIVE, mLaunch.archive)
             setResult(DownloadsScene.LOCAL_GALLERY_INFO_CHANGE, intent)
             BackDispatch.passThrough(onBackPressedDispatcher, backCallback)
         }
@@ -486,7 +454,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     override fun onStop() {
         super.onStop()
         ForegroundReading.exit()
-        val currentPage = mSliderController.currentIndex.takeIf { it >= 0 } ?: mPage
+        val currentPage = mSliderController.currentIndex.takeIf { it >= 0 } ?: mLaunch.page
         mReadingSession.stop(currentPage)
     }
 
@@ -524,19 +492,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // Before onCreate finished (redirected straight from onCreate) there
         // is no current page yet: keep the page the original intent asked for.
         val currentPage = mSliderController.currentIndex.takeIf { it >= 0 }
-            ?: mPage.takeIf { mGalleryProvider != null }
+            ?: mLaunch.page.takeIf { mGalleryProvider != null }
             ?: original.getIntExtra(KEY_PAGE, -1)
-        return Intent(this, GalleryActivity::class.java).apply {
-            action = original.action
-            // Preserve action-specific extras (filename / uri / archive),
-            // then override KEY_PAGE with the page the user was actually on.
-            original.extras?.let { putExtras(it) }
-            original.data?.let { data = it }
-            putExtra(KEY_PAGE, currentPage)
-            // Don't carry over DATA_IN_EVENT — sticky-event consumption
-            // already happened on the original launch.
-            removeExtra(DATA_IN_EVENT)
-        }
+        return ReaderLaunch.resumeIntent(this, original, currentPage)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
