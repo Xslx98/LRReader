@@ -51,8 +51,6 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.gallery.ReadingContext
-import com.lanraragi.reader.gallery.ReadingContextStore
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -71,9 +69,6 @@ import com.lanraragi.framework.widget.ContentLayout
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRClientProvider
-import com.lanraragi.reader.client.api.TankoubonSupportGate
-import com.lanraragi.reader.client.api.isTankoubonId
 
 class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
@@ -93,6 +88,10 @@ class GalleryListScene : BaseScene(),
     internal lateinit var searchBar: SearchBar
     internal lateinit var searchFab: View
     internal lateinit var fabLayout: FabLayout
+
+    /** True once onCreateView2 has created the FAB menu. */
+    internal val isFabLayoutCreated: Boolean
+        get() = ::fabLayout.isInitialized
     internal var floatingActionButton: FloatingActionButton? = null
     internal var viewTransition: ViewTransition? = null
     private var mAdapterImpl: GalleryListAdapter? = null
@@ -114,7 +113,6 @@ class GalleryListScene : BaseScene(),
     internal val shownSearch = ShownSearchState()
     private var mLastServerConfigVersion = LRRAuthManager.serverConfigVersion
     private var mNavCheckedId = 0
-    private var mPressBackTime: Long = 0
     private var mRestoredState = GalleryStateHelper.STATE_NORMAL
 
     // Stable per-instance token stamped on batches this scene starts. The
@@ -150,6 +148,7 @@ class GalleryListScene : BaseScene(),
 
     internal val tankMerge = GalleryTankMergeHelper(this)
     private val events = GalleryListEvents(this)
+    private val interactions = GalleryListInteractions(this)
     internal var uploadHelper: GalleryUploadHelper? = null
     private var mSearchHelper: GallerySearchHelper? = null
     internal var mHistoryStore: ProfileSearchHistoryStore? = null
@@ -568,20 +567,6 @@ class GalleryListScene : BaseScene(),
         return mDrawerHelper?.onCreateDrawerView(inflater, container, savedInstanceState)
     }
 
-    private fun checkDoubleClickExit(): Boolean {
-        if (stackIndex != 0) {
-            return false
-        }
-        val time = System.currentTimeMillis()
-        return if (time - mPressBackTime > BACK_PRESSED_INTERVAL) {
-            mPressBackTime = time
-            showTip(R.string.press_twice_exit, LENGTH_SHORT)
-            true
-        } else {
-            false
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         // Re-sync the history snapshot: the active profile may have changed
@@ -608,96 +593,17 @@ class GalleryListScene : BaseScene(),
     }
 
     override fun onBackPressed() {
-        tagChipHelper?.dismissPopup()
-        val multiSelect = multiSelectHelper
-        if (multiSelect != null && multiSelect.isActive) {
-            multiSelect.exit()
-            return
-        }
-
-        if (::fabLayout.isInitialized && fabLayout.isExpanded) {
-            fabLayout.isExpanded = false
-            return
-        }
-
-        val filterHelper = filterHelper
-        val urlBuilder = mUrlBuilder
-        if (filterHelper != null && urlBuilder != null && filterHelper.filterOpen && filterHelper.removeLastFilterTag()) {
-            urlBuilder.set(
-                filterHelper.listToString(filterHelper.filterTagList),
-                ListUrlBuilder.MODE_FILTER
-            )
-            filterHelper.updateFilterIcon(filterHelper.filterTagList.size)
-
-            urlBuilder.pageIndex = 0
-            onUpdateUrlBuilder()
-            mHelper?.refresh()
-            stateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
-            return
-        }
-
-        val handle = listSearchHelper?.handleSearchBackPress() ?: false
-        if (!handle && !checkDoubleClickExit()) {
-            finish()
-        }
+        interactions.onBackPressed()
     }
 
-    override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        val archive = mHelper?.getDataAtEx(position)
-        // In multi-select mode a click toggles the row instead of navigating —
-        // the library does not toggle on click by itself (mirrors downloads).
-        // Tank pseudo-entries are NOT selectable (batch ops don't apply).
-        multiSelectHelper?.let {
-            if (it.isActive) {
-                if (archive != null && isTankoubonId(archive.arcid)) return true
-                return it.toggleChecked(position)
-            }
-        }
-        // No reading context for tank rows: they never anchor an OnlineSearch
-        // continuation (reading a member publishes ReadingContext.Tankoubon).
-        if (archive != null && !isTankoubonId(archive.arcid)) {
-            publishReadingContext(archive, position)
-        }
-        // Tank rows route to TankDetailScene inside the helper funnel.
-        return itemActionHelper?.onItemClick(view, archive) ?: false
-    }
-
-    /**
-     * Capture the browse/search context so the reader can offer "continue to the
-     * next archive in this list". Best-effort: must never break navigation.
-     */
-    private fun publishReadingContext(archive: Archive, position: Int) {
-        val baseUrl = LRRClientProvider.getBaseUrl()
-        val params = shownSearch.forReadingContext()
-        ReadingContextStore.publish(
-            ReadingContext.OnlineSearch(
-                sourceProfileId = LRRAuthManager.getActiveProfileId(),
-                sourceBaseUrl = baseUrl,
-                filter = params.filter,
-                category = params.category,
-                sortby = params.sortby,
-                order = params.order,
-                newonly = params.newonly,
-                untaggedonly = params.untaggedonly,
-                anchorArcid = archive.arcid,
-                anchorIndex = position,
-                // Same fold decision the paging source made for this list, so
-                // resolver windows reproduce the raw indexing the user saw.
-                groupbyTanks = AppearanceSettings.getGroupTanks() &&
-                    !TankoubonSupportGate.isUnsupported(baseUrl),
-            )
-        )
-    }
+    override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
+        interactions.onItemClick(view, position)
 
     override fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean =
         onListItemLongClick(position)
 
     /** Long-press enters multi-select — except on tank pseudo-entries. */
-    internal fun onListItemLongClick(position: Int): Boolean {
-        val archive = mHelper?.getDataAtEx(position)
-        if (archive != null && isTankoubonId(archive.arcid)) return true // swallow: no menu, no selection
-        return multiSelectHelper?.enterAndCheck(position) ?: false
-    }
+    internal fun onListItemLongClick(position: Int): Boolean = interactions.onItemLongClick(position)
 
     override fun onClick(v: View) {
         listSearchHelper?.onSearchFabClick()
@@ -729,8 +635,6 @@ class GalleryListScene : BaseScene(),
 
     companion object {
         private const val TAG = "GalleryListScene"
-
-        private const val BACK_PRESSED_INTERVAL = 2000
 
         const val KEY_ACTION = "action"
         const val ACTION_HOMEPAGE = "action_homepage"
