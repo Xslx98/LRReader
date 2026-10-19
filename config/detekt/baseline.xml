@@ -8,8 +8,6 @@
     <ID>ComplexCondition:GalleryInputHandler.kt$GalleryInputHandler$keyCode == KeyEvent.KEYCODE_PAGE_UP || keyCode == KeyEvent.KEYCODE_PAGE_DOWN || keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT || keyCode == KeyEvent.KEYCODE_DPAD_DOWN || keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_MENU</ID>
     <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene$ListUrlBuilder.MODE_NORMAL == builder.mode &amp;&amp; LRRUtils.NONE == category &amp;&amp; builder.categoryId == null &amp;&amp; TextUtils.isEmpty(keyword)</ID>
     <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene$filterHelper != null &amp;&amp; urlBuilder != null &amp;&amp; filterHelper.filterOpen &amp;&amp; filterHelper.removeLastFilterTag()</ID>
-    <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene$helper == null || root == null || !::recyclerView.isInitialized || succeeded.isEmpty()</ID>
-    <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene.&lt;no name provided&gt;$provisional != null &amp;&amp; insertAt != null &amp;&amp; insertAt in plan.removals &amp;&amp; insertAt &lt; helper.size()</ID>
     <ID>ComplexCondition:LRRApiUtils.kt$arcid.length != 40 || !arcid.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }</ID>
     <ID>ComplexCondition:QuickSearchViewModel.kt$QuickSearchViewModel$fromPosition &lt; 0 || fromPosition &gt;= currentList.size || toPosition &lt; 0 || toPosition &gt;= currentList.size</ID>
     <ID>ComplexCondition:ReaderPageCache.kt$ReaderPageCache$header[0] == 0x47.toByte() &amp;&amp; header[1] == 0x49.toByte() &amp;&amp; header[2] == 0x46.toByte() &amp;&amp; header[3] == 0x38.toByte()</ID>
