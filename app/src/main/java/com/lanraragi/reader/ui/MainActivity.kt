@@ -38,7 +38,6 @@ import androidx.appcompat.app.AlertDialog
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.hippo.drawerlayout.DrawerLayout
-import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
@@ -53,7 +52,6 @@ import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DatabaseQuarantine
 import com.lanraragi.reader.dao.DatabaseResetNotice
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.CredentialResetDialog
 import com.lanraragi.reader.ui.scene.LegacyLockRemovedNotice
@@ -78,17 +76,11 @@ import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.scene.SceneFactory
 import com.lanraragi.framework.scene.SceneFragment
 import com.lanraragi.framework.scene.StageActivity
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.isTankoubonId
-import com.lanraragi.reader.client.api.parseBaseUrl
 import com.lanraragi.reader.gallery.TankSessionRouter
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
@@ -187,6 +179,12 @@ class MainActivity : StageActivity(),
     private var mRightDrawer: FrameLayout? = null
 
     private val mNotices = MainActivityNotices(this, host = { mDrawerLayout })
+
+    private val mNavDrawer = MainNavDrawer(
+        this,
+        openSettings = { settingsLauncher.launch(Intent(this, SettingsActivity::class.java)) },
+        closeDrawers = { mDrawerLayout?.closeDrawers() },
+    )
 
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -459,31 +457,7 @@ class MainActivity : StageActivity(),
         mDrawerLayout = drawerLayout
         drawerLayout.setDrawerListener(this)
 
-        // Strip display cutout insets on left/right so fitsSystemWindows doesn't pad
-        // for the notch/punch-hole area in landscape. Top/bottom are preserved for
-        // status bar (portrait) and navigation bar.
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            drawerLayout.setOnApplyWindowInsetsListener { v, insets ->
-                val cutout = insets.displayCutout
-                if (cutout != null) {
-                    val left = Math.max(
-                        0,
-                        insets.systemWindowInsetLeft - cutout.safeInsetLeft
-                    )
-                    val top = insets.systemWindowInsetTop // keep top for status bar
-                    val right = Math.max(
-                        0,
-                        insets.systemWindowInsetRight - cutout.safeInsetRight
-                    )
-                    val bottom = insets.systemWindowInsetBottom // keep bottom for nav bar
-                    @Suppress("DEPRECATION")
-                    return@setOnApplyWindowInsetsListener v.onApplyWindowInsets(
-                        insets.replaceSystemWindowInsets(left, top, right, bottom)
-                    )
-                }
-                v.onApplyWindowInsets(insets)
-            }
-        }
+        mNavDrawer.applyCutoutInsets(drawerLayout)
         val navView = ViewUtils.`$$`(this, R.id.nav_view) as NavigationView
         mNavView = navView
         mRightDrawer = ViewUtils.`$$`(this, R.id.right_drawer) as FrameLayout
@@ -494,16 +468,10 @@ class MainActivity : StageActivity(),
         )
 
         navView.setNavigationItemSelectedListener(this)
-        bindNavHeader(navView)
+        mNotices.observeTankTagSyncFailures()
+        mNavDrawer.bindHeader(navView)
 
-        // Theme-toggle row styling lives entirely in the layout (theme-aware
-        // attrs: serverActiveNameColor / textColorSecondary / dividerColor),
-        // so Light/Dark/Black need no per-theme color branching here.
-        mChangeTheme.text = getThemeText()
-        mChangeTheme.setOnClickListener {
-            AppearanceSettings.putTheme(getNextTheme())
-            (application as LRReaderApplication).recreate()
-        }
+        mNavDrawer.bindThemeRow(mChangeTheme)
 
         if (savedState == null) {
             onInit()
@@ -578,49 +546,6 @@ class MainActivity : StageActivity(),
                         SettingsActivity.SCREEN_ADVANCED
                     )
             )
-        }
-    }
-
-    /**
-     * Binds the drawer header: static app version line plus the active-server
-     * pill. The pill tracks the active [ServerProfile] via Room — it re-emits
-     * on any profile-table change (rename, URL edit, switch, delete), so the
-     * header self-updates without an explicit event channel.
-     */
-    private fun bindNavHeader(navView: NavigationView) {
-        val header = navView.getHeaderView(0)
-        header.findViewById<TextView>(R.id.nav_header_version)?.text =
-            getString(R.string.nav_header_version_format, BuildConfig.VERSION_NAME)
-        mNotices.observeTankTagSyncFailures()
-        val serverLine = header.findViewById<TextView>(R.id.nav_header_server) ?: return
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                ServiceRegistry.dataModule.profileRepository.observeAll()
-                    .map { profiles -> profiles.firstOrNull { it.isActive } }
-                    .distinctUntilChanged()
-                    .collect { active ->
-                        serverLine.text = active?.let(::formatServerLine)
-                            ?: getString(R.string.lrr_no_servers)
-                    }
-            }
-        }
-    }
-
-    private fun formatServerLine(profile: ServerProfile): String {
-        val parsed = runCatching { parseBaseUrl(profile.url) }.getOrNull()
-        val host = parsed?.host.orEmpty()
-        val port = parsed?.port?.takeIf { it != 80 && it != 443 }
-        val hostPort = if (port != null) "$host:$port" else host
-        val line = if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
-            profile.name
-        } else {
-            "${profile.name} · $hostPort"
-        }
-        // Plain HTTP: say so where the active server is always visible (audit C27).
-        return if (LRRUrlHelper.isUnencrypted(profile.url)) {
-            "$line · ${getString(R.string.lrr_unencrypted_connection)}"
-        } else {
-            line
         }
     }
 
@@ -725,21 +650,6 @@ class MainActivity : StageActivity(),
     override fun onStop() {
         mNotices.onStop()
         super.onStop()
-    }
-
-    private fun getThemeText(): String {
-        val resId = when (AppearanceSettings.getTheme()) {
-            AppearanceSettings.THEME_DARK -> R.string.theme_dark
-            AppearanceSettings.THEME_BLACK -> R.string.theme_black
-            else -> R.string.theme_light
-        }
-        return getString(resId)
-    }
-
-    private fun getNextTheme(): Int = when (AppearanceSettings.getTheme()) {
-        AppearanceSettings.THEME_DARK -> AppearanceSettings.THEME_BLACK
-        AppearanceSettings.THEME_BLACK -> AppearanceSettings.THEME_LIGHT
-        else -> AppearanceSettings.THEME_DARK
     }
 
     private fun onInit() {
@@ -941,58 +851,7 @@ class MainActivity : StageActivity(),
         return open
     }
 
-    @SuppressLint("NonConstantResourceId", "RtlHardcoded")
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        // Don't select twice
-        if (item.isChecked) {
-            return false
-        }
-
-        val id = item.itemId
-
-        when (item.itemId) {
-            R.id.nav_homepage -> {
-                val navHomepage = Bundle()
-                navHomepage.putString(GalleryListScene.KEY_ACTION, GalleryListScene.ACTION_HOMEPAGE)
-                startSceneFirstly(
-                    Announcer(GalleryListScene::class.java).setArgs(navHomepage)
-                )
-            }
-            R.id.nav_favourite -> startScene(Announcer(LRRCategoriesScene::class.java))
-            R.id.nav_tankoubons -> startScene(Announcer(TankoubonsScene::class.java))
-            R.id.nav_history -> startScene(Announcer(HistoryScene::class.java))
-            R.id.nav_downloads -> startScene(Announcer(DownloadsScene::class.java))
-            R.id.nav_stats -> startScene(
-                Announcer(com.lanraragi.reader.ui.scene.stats.ReadingStatsScene::class.java)
-            )
-            R.id.nav_settings -> {
-                settingsLauncher.launch(Intent(this, SettingsActivity::class.java))
-            }
-            R.id.nav_server_config -> {
-                // Show server list if profiles exist, otherwise direct to config
-                lifecycleScope.launch {
-                    try {
-                        val profileCount = withContext(Dispatchers.IO) {
-                            ServiceRegistry.dataModule.profileRepository.getAllProfiles().size
-                        }
-                        if (profileCount > 0) {
-                            startScene(Announcer(ServerListScene::class.java))
-                        } else {
-                            startScene(Announcer(ServerConfigScene::class.java))
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to load server profiles", e)
-                    }
-                }
-            }
-        }
-
-        if (id != R.id.nav_stub) {
-            mDrawerLayout?.closeDrawers()
-        }
-
-        return true
-    }
+    override fun onNavigationItemSelected(item: MenuItem): Boolean = mNavDrawer.onItemSelected(item)
 
     override fun onDrawerSlide(drawerView: View, percent: Float) {
     }
