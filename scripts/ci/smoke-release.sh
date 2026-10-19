@@ -2,8 +2,10 @@
 # Runtime smoke of the minified release APK on a running emulator/device:
 # install, cold start, rotate, background and foreground again, then — against
 # the mock LANraragi in scripts/ci/mock_lrr.py — connect, open the list, a
-# detail page and the reader, turn 20 pages and come back; fail on any crash
-# of the app process. Unit tests run the debug build only, and R8 keep-rule
+# detail page and the reader, turn 20 pages, open the reader's settings
+# dialog and slider menu, rotate inside the reader, come back, then visit
+# Downloads, History and Settings from the drawer; fail on any crash of the
+# app process. Unit tests run the debug build only, and R8 keep-rule
 # mistakes (a stripped serializer, a reflectively created class) crash only
 # the release build: v1.15.1 shipped a launch crash with green CI, and the
 # first-screen-only smoke never reached the reader (audit 2026-10-13).
@@ -111,8 +113,62 @@ for _ in $(seq 1 $PAGE_TURNS); do
 done
 check "reader $PAGE_TURNS page turns" 5
 
+# ---- Reader chrome and in-place rotation ---------------------------------
+# The centre column is split by GalleryView's MENU_AREA (upper half: the
+# settings dialog) and SLIDER_AREA (lower half: the slider menu).
+CX=$((W / 2))
+adb shell input tap "$CX" $((H / 4))
+ui wait resource-id "$PKG:id/reading_direction" 10
+check "reader settings dialog" 2
+adb shell input keyevent KEYCODE_BACK
+check "reader settings dialog closed" 2
+adb shell input tap "$CX" $((H * 3 / 4))
+ui wait resource-id "$PKG:id/seek_bar_panel" 10
+check "reader slider menu" 2
+adb shell input tap "$CX" $((H * 3 / 4))
+check "reader slider menu closed" 3
+# The reader handles rotation in place (configChanges, PERF-02): the GL view
+# re-lays out its pages instead of the activity being recreated.
+adb shell settings put system user_rotation 1
+check "reader rotate to landscape" 6
+adb shell settings put system user_rotation 0
+check "reader rotate back" 6
+
 adb shell input keyevent KEYCODE_BACK
 check "back from reader" 5
+
+# ---- Drawer destinations: Downloads, History, Settings -------------------
+adb shell input keyevent KEYCODE_BACK
+ui wait resource-id "$PKG:id/thumb_new" 15
+check "back to the list" 2
+
+# drawer_to NAV_ITEM_ID MARKER_ID LABEL: open the drawer, pick an item, wait
+# for a view only that destination has, then come back to the list.
+drawer_to() {
+  ui tap resource-id "$PKG:id/search_menu" 10
+  ui tap resource-id "$PKG:id/$1" 10
+  ui wait resource-id "$2" 20
+  check "$3" 3
+  adb shell input keyevent KEYCODE_BACK
+  ui wait resource-id "$PKG:id/thumb_new" 15
+  check "back from $3" 2
+}
+drawer_to nav_downloads "$PKG:id/sort_download_list" "downloads page"
+drawer_to nav_history "$PKG:id/action_clear_all" "history page"
+
+# Settings is its own activity; its sub-screens are PreferenceFragments the
+# framework instantiates by class name, the kind of path R8 keep rules break.
+ui tap resource-id "$PKG:id/search_menu" 10
+ui tap resource-id "$PKG:id/nav_settings" 10
+ui wait resource-id "$PKG:id/settings" 20
+check "settings page" 3
+ui tap resource-id "android:id/title" 10
+check "settings sub-screen" 3
+adb shell input keyevent KEYCODE_BACK
+check "back from settings sub-screen" 2
+adb shell input keyevent KEYCODE_BACK
+ui wait resource-id "$PKG:id/thumb_new" 15
+check "back from settings" 2
 
 PAGES_SERVED=$(grep -c "/page" "$MOCK_LOG" || true)
 echo "mock served $PAGES_SERVED page requests"
