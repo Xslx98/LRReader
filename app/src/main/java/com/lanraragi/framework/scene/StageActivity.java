@@ -609,10 +609,10 @@ public abstract class StageActivity extends BaseActivity {
             return;
         }
 
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.detach(fragment);
-        transaction.attach(fragment);
-        transaction.commitAllowingStateLoss();
+        // Two transactions: a detach and an attach in the same one cancel out
+        // and the view is never recreated (lint DetachAndAttachSameFragment).
+        fragmentManager.beginTransaction().detach(fragment).commitAllowingStateLoss();
+        fragmentManager.beginTransaction().attach(fragment).commitAllowingStateLoss();
         onTransactScene();
         postUpdateBackCallback();
     }

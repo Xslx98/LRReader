@@ -167,17 +167,6 @@
     </issue>
 
     <issue
-        id="DetachAndAttachSameFragment"
-        message="Calling detach() and attach() in the same FragmentTransaction is a no-op, meaning it does not recreate the Fragment&apos;s view. If you would like the view to be recreated, separate these operations into separate transactions."
-        errorLine1="        FragmentTransaction transaction = fragmentManager.beginTransaction();"
-        errorLine2="                                                          ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/scene/StageActivity.java"
-            line="567"
-            column="59"/>
-    </issue>
-
-    <issue
         id="AndroidGradlePluginVersion"
         message="A newer version of com.android.application than 8.13.2 is available: 9.4.0"
         errorLine1="agp = &quot;8.13.2&quot;"
