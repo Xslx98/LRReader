@@ -46,6 +46,16 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     companion object {
         private const val SLIDER_ANIMATION_DURING = 150L
         private const val HIDE_SLIDER_DELAY = 3000L
+
+        /**
+         * Left offset of a [bubbleWidth]-wide bubble centred on [thumbCenter],
+         * kept inside a [rowWidth]-wide row.
+         */
+        @JvmStatic
+        fun bubbleOffset(thumbCenter: Float, bubbleWidth: Int, rowWidth: Int): Float {
+            val max = (rowWidth - bubbleWidth).coerceAtLeast(0).toFloat()
+            return (thumbCenter - bubbleWidth / 2f).coerceIn(0f, max)
+        }
     }
 
     private var mSeekBarPanel: View? = null
@@ -58,6 +68,9 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     private var mGalleryView: GalleryView? = null
 
     private var mTopBar: View? = null
+    private var mBubble: TextView? = null
+    private var mTracking = false
+    private val mLocation = IntArray(2)
 
     /** Running show/hide animators, one per menu panel. */
     private val mPanelAnimators = HashMap<View, ObjectAnimator>()
@@ -123,6 +136,11 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         mTopBar = topBar
     }
 
+    /** The page bubble shown over the thumb while the slider is dragged. */
+    fun setBubble(bubble: TextView?) {
+        mBubble = bubble
+    }
+
     fun setSystemUiHelper(helper: SystemUiHelper?) {
         mSystemUiHelper = helper
     }
@@ -160,7 +178,9 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
             end = rightText
             seekBar.setReverse(false)
         }
-        start.text = (currentIndex + 1).toString()
+        // Fixed ends: the first page at the start of the reading direction,
+        // the page count at its end. The bubble shows the dragged-to page.
+        start.text = "1"
         end.text = size.toString()
         seekBar.max = size - 1
         seekBar.progress = currentIndex
@@ -168,28 +188,45 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
     // --- SeekBar.OnSeekBarChangeListener ---
 
-    @SuppressLint("SetTextI18n")
     override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-        val start = if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT) {
-            mRightText
-        } else {
-            mLeftText
-        }
-        if (fromUser && start != null) {
-            start.text = (progress + 1).toString()
-        }
+        if (mTracking) showBubble(seekBar, progress)
     }
 
     override fun onStartTrackingTouch(seekBar: SeekBar) {
         mainHandler.removeCallbacks(mHideSliderRunnable)
+        mTracking = true
+        showBubble(seekBar, seekBar.progress)
     }
 
     override fun onStopTrackingTouch(seekBar: SeekBar) {
+        mTracking = false
+        mBubble?.visibility = View.INVISIBLE
         mainHandler.postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
         val progress = seekBar.progress
         if (progress != currentIndex && mGalleryView != null) {
             mGalleryView!!.setCurrentPage(progress)
         }
+    }
+
+    /** Puts the 1-indexed [progress] page in the bubble, centred over the thumb. */
+    private fun showBubble(seekBar: SeekBar, progress: Int) {
+        val bubble = mBubble ?: return
+        val row = bubble.parent as? View ?: return
+        val thumb = seekBar.thumb ?: return
+        bubble.text = (progress + 1).toString()
+        bubble.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        // ReversibleSeekBar mirrors its drawing, not its thumb bounds.
+        var thumbX = seekBar.paddingLeft - seekBar.thumbOffset + thumb.bounds.exactCenterX()
+        if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT) thumbX = seekBar.width - thumbX
+        seekBar.getLocationInWindow(mLocation)
+        val seekBarX = mLocation[0]
+        row.getLocationInWindow(mLocation)
+        bubble.translationX = bubbleOffset(
+            thumbCenter = seekBarX - mLocation[0] + thumbX,
+            bubbleWidth = bubble.measuredWidth,
+            rowWidth = row.width,
+        )
+        bubble.visibility = View.VISIBLE
     }
 
     // --- Show/hide the menu: top bar, slider panel and auto-turn button ---
@@ -294,6 +331,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         removeCallbacks()
         mPanelAnimators.values.toList().forEach { it.cancel() }
         mTopBar = null
+        mBubble = null
         mSeekBarPanel = null
         mAutoTransferPanel = null
         mLeftText = null

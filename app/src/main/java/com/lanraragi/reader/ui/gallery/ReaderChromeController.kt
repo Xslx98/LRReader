@@ -111,6 +111,7 @@ class ReaderChromeController(private val activity: Activity) {
         slider.setViews(
             seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, progress
         )
+        slider.setBubble(ViewUtils.`$$`(activity, R.id.seek_bar_bubble) as TextView)
         slider.setSystemUiHelper(systemUiHelper)
         slider.setGalleryView(galleryView)
 
