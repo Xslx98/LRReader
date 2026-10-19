@@ -24,6 +24,6 @@
 
     <path
         android:fillColor="?attr/drawableColorThemePrimary"
-        android:pathData="@string/pd_heart_outline"/>
+        android:pathData="@string/pd_category_outline"/>
 
 </vector>

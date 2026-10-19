@@ -24,6 +24,7 @@
 
     <path
         android:fillColor="@android:color/black"
-        android:pathData="@string/pd_heart"/>
+        android:fillType="evenOdd"
+        android:pathData="@string/pd_category"/>
 
 </vector>

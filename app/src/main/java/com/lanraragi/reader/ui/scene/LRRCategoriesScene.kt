@@ -365,7 +365,7 @@ class LRRCategoriesScene : BaseScene() {
             holder.search.visibility = View.GONE
 
             // Uniform icon
-            holder.icon.setImageResource(R.drawable.v_heart_primary_x48)
+            holder.icon.setImageResource(R.drawable.v_category_primary_x48)
 
             // Click to browse
             holder.itemView.setOnClickListener { onCategoryClick(cat) }

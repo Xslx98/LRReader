@@ -480,8 +480,8 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
 
     private fun ensureHeartDrawables() {
         val ctx = ehContext ?: return
-        DrawableManager.getVectorDrawable(ctx, R.drawable.v_heart_primary_x48)?.let { setActionDrawable(mHeart, it) }
-        DrawableManager.getVectorDrawable(ctx, R.drawable.v_heart_outline_primary_x48)?.let {
+        DrawableManager.getVectorDrawable(ctx, R.drawable.v_category_primary_x48)?.let { setActionDrawable(mHeart, it) }
+        DrawableManager.getVectorDrawable(ctx, R.drawable.v_category_outline_primary_x48)?.let {
             setActionDrawable(mHeartOutline, it)
         }
     }

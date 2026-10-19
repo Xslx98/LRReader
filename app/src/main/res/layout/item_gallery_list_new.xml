@@ -110,7 +110,7 @@
                 android:layout_height="16dp"
                 android:visibility="gone"
                 android:contentDescription="@string/favorited"
-                app:srcCompat="@drawable/v_heart_x16" />
+                app:srcCompat="@drawable/v_category_x16" />
 
             <TextView
                 android:id="@+id/simple_language"
