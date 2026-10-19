@@ -722,6 +722,12 @@ public class LockPatternView extends View {
     }
 
     @Override
+    public boolean performClick() {
+        // A finished stroke counts as a click for accessibility services.
+        return super.performClick();
+    }
+
+    @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
         if (!mInputEnabled || !isEnabled()) {
             return false;
@@ -733,6 +739,7 @@ public class LockPatternView extends View {
                 return true;
             case MotionEvent.ACTION_UP:
                 handleActionUp(event);
+                performClick();
                 return true;
             case MotionEvent.ACTION_MOVE:
                 handleActionMove(event);
