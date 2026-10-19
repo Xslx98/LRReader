@@ -26,7 +26,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
-import com.lanraragi.reader.event.AppEventBus
 import com.hippo.android.resource.AttrResources
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.LRReaderApplication
@@ -39,8 +38,6 @@ import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.TankoubonDetailScene
-import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.reader.util.collectFlowWhileCreated
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
@@ -109,6 +106,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private var mTankBinder: DetailTankoubonBinder? = null
     private var mActionHandler: DetailActionHandler? = null
     private val mRating by lazy { DetailRatingController(viewModel) }
+
+    // Read by GalleryDetailEvents.
+    internal val sourceError: DetailSourceErrorBanner get() = mSourceError
+    internal val ratingController: DetailRatingController get() = mRating
+    internal val actionHandler: DetailActionHandler? get() = mActionHandler
+    internal val tankBinder: DetailTankoubonBinder? get() = mTankBinder
+    internal val headerBinder: DetailHeaderBinder? get() = mHeaderBinder
+    internal val isStateNormal: Boolean get() = mState == STATE_NORMAL
 
     /** Shortcut delegating to [GalleryDetailViewModel.action]. */
     private var mAction: String?
@@ -404,98 +409,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // UI-4: every collector below is view-scoped. The scene framework
-        // detaches covered scenes (view destroyed, fragment alive); the previous
-        // fragment-scoped launches stacked one collector set per re-attach.
-
-        // Capture the server-side rating exactly once per detail-page
-        // entry. The cache-hit / process-death-restore paths take
-        // STATE_NORMAL straight from `prepareData` and never reach
-        // `onGetArchiveDetailSuccessInternal`, so the capture lives here.
-        // (StateFlow replay + the isNaN guard make re-subscription a no-op.)
-        collectFlow(viewLifecycleOwner, viewModel.archiveDetail) { ad ->
-        }
-        // Drive REFRESH→NORMAL transitions off the dedicated load-event
-        // SharedFlow rather than the deduped archiveDetail StateFlow.
-        // A refresh that returns identical content would otherwise leave
-        // the spinner up forever (StateFlow distinct-emit eats the value
-        // and `collect` never fires). detailLoaded fires unconditionally
-        // on every successful API response.
-        // collectFlowWhileCreated: a refresh completing while the app is
-        // backgrounded must still flip mState — STARTED gating would drop
-        // the event and leave a permanent spinner on return.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailLoaded) { ad ->
-            if (mState != STATE_NORMAL) {
-                onGetArchiveDetailSuccess(ad)
-            }
-            // A successful refresh after a banner-flagged failure also dismisses
-            // the source-error banner — the live data is now displayed and the
-            // warning no longer applies.
-            mSourceError.hide()
-        }
-        // collectFlowWhileCreated: error arm of the same state machine.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailError) { e ->
-            onGetGalleryDetailFailure(e)
-        }
-        // Cache-first failure: page is already painted from local data
-        // (LRU cache or a degraded ArchiveDetail seeded from the nav-arg
-        // Archive). Show a non-blocking banner so the user can read the
-        // archive offline and retry the source server when it returns.
-        // collectFlowWhileCreated: banner state must not be lost to a
-        // backgrounded window.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailErrorBanner) { e ->
-            mSourceError.show(e)
-        }
-        // After a rollback the optimistic write to currentRating /
-        // archiveDetail has been reverted on the IO thread; reflect the
-        // restored value on the rating bar and toast the error so the
-        // user knows their change did not stick.
-        // collectFlowWhileCreated: losing the event would leave the rating
-        // bar showing the rolled-back optimistic value.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.ratingError) { e ->
-            mRating.onRatingError(view, getEHContext(), e)
-        }
-        // Observe download state changes from ViewModel (replaces DownloadHelper listener)
-        collectFlow(viewLifecycleOwner, viewModel.downloadState) {
-            mActionHandler?.updateDownloadText()
-        }
-        // Observe local reading progress so the header refreshes whenever the
-        // reader writes a new page (StateFlow replays its current value to new
-        // collectors, so this also covers returning from the reader to a paused
-        // detail Scene). Replaces the previous one-shot onResume re-read.
-        collectFlow(viewLifecycleOwner, viewModel.localReadingPage) { localPage0 ->
-            applyLocalReadingProgress(localPage0)
-        }
-        // "Belongs to Tankoubons" section — an empty list keeps it hidden.
-        collectFlow(viewLifecycleOwner, viewModel.archiveTankoubons) { tanks ->
-            mTankBinder?.bind(tanks)
-        }
-        // The reader (a separate activity on top) sets the cover while this
-        // scene is STOPPED. A replay-0 SharedFlow drops emissions that have
-        // no live subscriber, so collect for the whole view lifetime (the
-        // view survives under another activity); the reload is a cache-key
-        // change plus a fetch, harmless while stopped.
-        collectFlowWhileCreated(viewLifecycleOwner, AppEventBus.archiveCoverChangedEvent) { event ->
-            val archive = viewModel.archive.value ?: return@collectFlowWhileCreated
-            if (archive.arcid == event.arcid) mHeaderBinder?.reloadCover(archive)
-        }
+        GalleryDetailEvents(this, viewModel).install(viewLifecycleOwner, view)
 
         // ----- Page-thumbnail grid wiring -----
         pageThumbs.observe(viewLifecycleOwner)
-    }
-
-    private fun applyLocalReadingProgress(localPage0: Int) {
-        // Sentinel: SP has never been written, defer to server-reported progress.
-        if (localPage0 == com.lanraragi.reader.gallery.ReadingProgressTracker.NO_LOCAL_PROGRESS) return
-        val ad = viewModel.archiveDetail.value
-        val archive = viewModel.archive.value
-        val totalPages = ad?.archive?.pagecount ?: archive?.pagecount ?: return
-        val localPage1 = localPage0 + 1
-        // Local progress is authoritative once the reader has written it, so
-        // sync the binder unconditionally — including going backwards. The
-        // ArchiveDetail itself stays immutable; bindReadProgress is the
-        // single point that owns the displayed value.
-        mHeaderBinder?.bindReadProgress(localPage1, totalPages)
     }
 
     override fun onDestroyView() {
