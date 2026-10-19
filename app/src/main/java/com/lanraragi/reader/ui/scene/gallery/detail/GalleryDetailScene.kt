@@ -78,12 +78,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     // Below header
     private var mBelowHeader: View? = null
 
-    // Source-server error banner (shown when the source LANraragi
-    // server is unreachable / orphan / has deleted the archive but
-    // we still have local-cache data to display).
-    private var mSourceErrorBanner: View? = null
-    private var mSourceErrorText: TextView? = null
-    private var mSourceErrorRetry: View? = null
+    private val mSourceError by lazy {
+        DetailSourceErrorBanner(
+            viewModel,
+            context = { getEHContext() },
+            onRetry = { requestRefresh() },
+            keepPageNormal = { if (mState != STATE_NORMAL) adjustViewVisibility(STATE_NORMAL, true) },
+        )
+    }
 
     // Actions
     private var mActions: View? = null
@@ -306,13 +308,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val belowHeader: View = mainView.findViewById(R.id.below_header)
         mBelowHeader = belowHeader
-        mSourceErrorBanner = belowHeader.findViewById(R.id.source_error_banner)
-        mSourceErrorText = belowHeader.findViewById(R.id.source_error_text)
-        mSourceErrorRetry = belowHeader.findViewById(R.id.source_error_retry)
-        mSourceErrorRetry?.setOnClickListener {
-            mSourceErrorBanner?.visibility = View.GONE
-            requestRefresh()
-        }
+        mSourceError.bind(belowHeader)
         val isDarkTheme = !AttrResources.getAttrBoolean(nonNullContext, androidx.appcompat.R.attr.isLightTheme)
         mHeader = ViewUtils.`$$`(belowHeader, R.id.header)
         val colorBg = ViewUtils.`$$`(mHeader, R.id.color_bg)
@@ -507,7 +503,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             // A successful refresh after a banner-flagged failure also dismisses
             // the source-error banner — the live data is now displayed and the
             // warning no longer applies.
-            mSourceErrorBanner?.visibility = View.GONE
+            mSourceError.hide()
         }
         // collectFlowWhileCreated: error arm of the same state machine.
         collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailError) { e ->
@@ -520,7 +516,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // collectFlowWhileCreated: banner state must not be lost to a
         // backgrounded window.
         collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailErrorBanner) { e ->
-            showSourceErrorBanner(e)
+            mSourceError.show(e)
         }
         // After a rollback the optimistic write to currentRating /
         // archiveDetail has been reverted on the IO thread; reflect the
@@ -626,9 +622,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionGroup = null
         mRead = null
         mBelowHeader = null
-        mSourceErrorBanner = null
-        mSourceErrorText = null
-        mSourceErrorRetry = null
+        mSourceError.clear()
 
         mActions = null
         mHeartGroup = null
@@ -845,69 +839,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             val error = ExceptionUtils.getReadableString(e)
             tip.text = error
             adjustViewVisibility(STATE_FAILED, true)
-        }
-    }
-
-    /**
-     * Show the cache-first error banner above the detail content. The
-     * page is already rendered (LRU detail cache hit, or a degraded
-     * detail seeded from the navigation Archive) so we keep the user
-     * on STATE_NORMAL and surface the failure as a dismissible bar
-     * with a Retry button. A subsequent successful load auto-hides it
-     * via the [GalleryDetailViewModel.detailLoaded] observer.
-     */
-    private fun showSourceErrorBanner(e: Exception) {
-        val ctx = getEHContext() ?: return
-        val banner = mSourceErrorBanner ?: return
-        val text = mSourceErrorText ?: return
-        text.text = tieredSourceErrorText(ctx, e)
-        banner.visibility = View.VISIBLE
-        // The banner is informational on top of cached data — make sure
-        // the page itself stays in NORMAL so the cached content remains
-        // interactive (cancel buttons, read button, etc.).
-        if (mState != STATE_NORMAL) {
-            adjustViewVisibility(STATE_NORMAL, true)
-        }
-    }
-
-    /**
-     * Map a fetch failure to a tiered, user-actionable string. The four
-     * tiers (orphan / unreachable / 404 / generic) match the cross-
-     * server UX patterns established by Plex / email clients / RSS
-     * readers — distinguishing why the source is unavailable lets the
-     * user decide whether to retry, switch profiles, or give up.
-     *
-     * Profile name is looked up against the same [ProfileLookupCache]
-     * the auth interceptor uses, so the banner shows the user-chosen
-     * server label rather than a raw URL.
-     */
-    private fun tieredSourceErrorText(ctx: android.content.Context, e: Exception): String {
-        val sid = viewModel.getEffectiveArchive()?.serverProfileId ?: 0L
-        // Profile name comes from the same in-memory cache the auth
-        // interceptor consults, so the banner mirrors what the user
-        // sees in ServerListScene. If the lookup misses (orphan path
-        // is handled below; this guards against the rare race where
-        // the profile is deleted between request fire and response)
-        // the placeholder collapses to empty rather than crashing the
-        // resource formatter — the message still reads correctly.
-        val profileName = ServiceRegistry.dataModule.profileLookupCache
-            .findById(sid)?.name ?: ""
-        return when {
-            e is com.lanraragi.reader.client.api.OrphanProfileException ->
-                ctx.getString(R.string.lrr_detail_source_profile_orphan)
-            // LANraragi returns HTTP 400 ("Invalid id") for unknown
-            // arcids on /api/archives/{arcid}/metadata — semantically
-            // equivalent to the archive having been deleted server-side.
-            // 404 is also handled for forward-compat with Shinobu / future
-            // servers that follow the more conventional REST mapping.
-            e is com.lanraragi.reader.client.api.LRRHttpException &&
-                (e.code == 400 || e.code == 404) ->
-                ctx.getString(R.string.lrr_detail_source_archive_deleted, profileName)
-            e is java.net.UnknownHostException ||
-                e is java.net.SocketTimeoutException ||
-                e is java.net.ConnectException ->
-                ctx.getString(R.string.lrr_detail_source_unreachable, profileName)
-            else -> com.lanraragi.reader.client.api.friendlyError(ctx, e)
         }
     }
 

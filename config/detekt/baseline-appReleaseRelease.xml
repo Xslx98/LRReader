@@ -660,7 +660,6 @@
     <ID>UseOrEmpty:DownloadSearchHelper.kt$DownloadSearchHelper$searchKey ?: ""</ID>
     <ID>UseOrEmpty:EntityMapper.kt$thumb ?: ""</ID>
     <ID>UseOrEmpty:EntityMapper.kt$title ?: ""</ID>
-    <ID>UseOrEmpty:GalleryDetailScene.kt$GalleryDetailScene$ServiceRegistry.dataModule.profileLookupCache .findById(sid)?.name ?: ""</ID>
     <ID>UseOrEmpty:GalleryDrawerHelper.kt$GalleryDrawerHelper$q.name ?: ""</ID>
     <ID>UseOrEmpty:GalleryImageOperations.kt$GalleryImageOperations$filename ?: ""</ID>
     <ID>UseOrEmpty:GalleryListSearchHelper.kt$GalleryListSearchHelper$e.message ?: ""</ID>
