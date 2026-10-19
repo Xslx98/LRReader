@@ -168,6 +168,23 @@
         <item name="android:fontFamily">@dimen/text_more_super_small</item>
     </style>
 
+    <!-- One segment of the drawer's theme switch: same type as the
+         NavigationView items, secondary until selected. -->
+    <style name="NavThemeSegment">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textAppearance">?attr/textAppearanceSubtitle2</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+    </style>
+
     <style name="CustomChipChoice" parent="@style/Widget.MaterialComponents.Chip.Action">
         <item name="textColor">@android:color/white</item>
         <!--        <item name="android:textColor">@color/text_color_chip_state_list</item>-->

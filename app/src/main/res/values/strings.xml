@@ -80,9 +80,6 @@
     <string name="lrr_category_create_inline">+ New Category…</string>
 
     <!-- Theme -->
-    <string name="theme_light">Light Theme</string>
-    <string name="theme_dark">Dark Theme</string>
-    <string name="theme_black">Black Theme</string>
 
     <string name="homepage">Homepage</string>
     <string name="subscription">Subscription</string>

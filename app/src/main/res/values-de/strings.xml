@@ -741,9 +741,6 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="settings_read_picture_decoding_method">Bild-Dekodierungsmethode</string>
     <string name="settings_read_picture_decoding_method_native">Open-Source C++ Dekodierungsbibliothek</string>
     <string name="settings_read_picture_decoding_method_origin">System-Dekodierung</string>
-    <string name="theme_black">Schwarzes Design</string>
-    <string name="theme_dark">Dunkles Design</string>
-    <string name="theme_light">Helles Design</string>
     <string name="lrr_category_label_dynamic">Dynamisch</string>
     <string name="lrr_save_and_connect">Speichern &amp; Verbinden</string>
     <string name="lrr_error_title">Fehler aufgetreten</string>

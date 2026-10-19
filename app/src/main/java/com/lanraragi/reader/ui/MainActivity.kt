@@ -28,7 +28,6 @@ import android.view.Gravity
 import android.view.MenuItem
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
@@ -217,7 +216,7 @@ class MainActivity : StageActivity(),
         val navView = ViewUtils.`$$`(this, R.id.nav_view) as NavigationView
         mNavView = navView
         mRightDrawer = ViewUtils.`$$`(this, R.id.right_drawer) as FrameLayout
-        val mChangeTheme = ViewUtils.`$$`(this, R.id.change_theme) as TextView
+        val themeSwitch = ViewUtils.`$$`(this, R.id.theme_switch)
 
         drawerLayout.setStatusBarColor(
             ResourcesUtils.getAttrColor(this, androidx.appcompat.R.attr.colorPrimaryDark)
@@ -227,7 +226,7 @@ class MainActivity : StageActivity(),
         mNotices.observeTankTagSyncFailures()
         mNavDrawer.bindHeader(navView)
 
-        mNavDrawer.bindThemeRow(mChangeTheme)
+        mNavDrawer.bindThemeSwitch(themeSwitch)
 
         if (savedState == null) {
             onInit()

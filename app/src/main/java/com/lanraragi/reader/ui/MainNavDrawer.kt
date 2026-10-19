@@ -4,13 +4,16 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.graphics.Typeface
 import android.view.MenuItem
+import android.view.View
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.navigation.NavigationView
+import com.hippo.android.resource.AttrResources
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.LRReaderApplication
@@ -131,31 +134,33 @@ class MainNavDrawer(
     }
 
     /**
-     * Theme-toggle row styling lives entirely in the layout (theme-aware
-     * attrs: serverActiveNameColor / textColorSecondary / dividerColor),
-     * so Light/Dark/Black need no per-theme color branching here.
+     * Light / Dark / Black segments; the current theme is highlighted with the
+     * active-server row tint (theme attrs, so no per-theme branching here) and
+     * marked selected for TalkBack. Tapping another segment applies it.
      */
-    fun bindThemeRow(changeTheme: TextView) {
-        changeTheme.text = getThemeText()
-        changeTheme.setOnClickListener {
-            AppearanceSettings.putTheme(getNextTheme())
-            (activity.application as LRReaderApplication).recreate()
+    fun bindThemeSwitch(container: View) {
+        val current = AppearanceSettings.getTheme()
+        val segments = listOf(
+            R.id.theme_light to AppearanceSettings.THEME_LIGHT,
+            R.id.theme_dark to AppearanceSettings.THEME_DARK,
+            R.id.theme_black to AppearanceSettings.THEME_BLACK,
+        )
+        for ((id, theme) in segments) {
+            val segment = container.findViewById<TextView>(id) ?: continue
+            val selected = theme == current
+            segment.isSelected = selected
+            if (selected) {
+                segment.setBackgroundResource(R.drawable.nav_theme_segment_selected_bg)
+                segment.setTextColor(AttrResources.getAttrColor(activity, R.attr.serverActiveNameColor))
+                segment.setTypeface(segment.typeface, Typeface.BOLD)
+            }
+            segment.setOnClickListener {
+                if (AppearanceSettings.getTheme() != theme) {
+                    AppearanceSettings.putTheme(theme)
+                    (activity.application as LRReaderApplication).recreate()
+                }
+            }
         }
-    }
-
-    private fun getThemeText(): String {
-        val resId = when (AppearanceSettings.getTheme()) {
-            AppearanceSettings.THEME_DARK -> R.string.theme_dark
-            AppearanceSettings.THEME_BLACK -> R.string.theme_black
-            else -> R.string.theme_light
-        }
-        return activity.getString(resId)
-    }
-
-    private fun getNextTheme(): Int = when (AppearanceSettings.getTheme()) {
-        AppearanceSettings.THEME_DARK -> AppearanceSettings.THEME_BLACK
-        AppearanceSettings.THEME_BLACK -> AppearanceSettings.THEME_LIGHT
-        else -> AppearanceSettings.THEME_DARK
     }
 
     @SuppressLint("NonConstantResourceId")

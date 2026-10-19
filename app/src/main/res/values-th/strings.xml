@@ -24,9 +24,6 @@
     <string name="app_name">LR Reader</string>
 
     <!-- Theme -->
-    <string name="theme_light">ธีมสีสว่าง</string>
-    <string name="theme_dark">ธีมสีมืด</string>
-    <string name="theme_black">ธีมสีดำ</string>
 
     <string name="homepage">หน้าหลัก</string>
     <string name="subscription">การสมัครสมาชิก</string>

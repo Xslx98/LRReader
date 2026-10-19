@@ -19,9 +19,6 @@
     <string name="app_name">LR Reader</string>
 
     <!-- Theme -->
-    <string name="theme_light">亮色主题</string>
-    <string name="theme_dark">暗色主题</string>
-    <string name="theme_black">黑色主题</string>
 
     <string name="homepage">主页</string>
     <string name="subscription">订阅</string>

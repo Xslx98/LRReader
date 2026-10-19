@@ -22,9 +22,6 @@
     <!---->
     <string name="app_name">LR Reader</string>
     <!-- Theme -->
-    <string name="theme_light">ライトテーマ</string>
-    <string name="theme_dark">ダークテーマ</string>
-    <string name="theme_black">ブラックテーマ</string>
     <!-- Category -->
     <string name="homepage">ホームページ</string>
     <string name="subscription">タグの購読</string>

@@ -840,9 +840,6 @@ Cette action est irréversible.</string>
     <string name="settings_read_picture_decoding_method_origin">Décodage système</string>
     <string name="settings_read_reverse_volume_page">Reverse volume key translation direction</string>
     <string name="settings_read_screen_rotation_sensor">Auto rotate</string>
-    <string name="theme_black">Thème noir</string>
-    <string name="theme_dark">Thème sombre</string>
-    <string name="theme_light">Thème clair</string>
     <string name="yes">Yes</string>
     <string name="lrr_category_label_dynamic">Dynamique</string>
     <string name="lrr_save_and_connect">Enregistrer et connecter</string>

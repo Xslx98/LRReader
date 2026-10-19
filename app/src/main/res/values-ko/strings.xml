@@ -25,9 +25,6 @@
     <string name="app_name">LR Reader</string>
 
     <!-- Theme -->
-    <string name="theme_light">밝은 테마</string>
-    <string name="theme_dark">어두운 테마</string>
-    <string name="theme_black">검정색 테마</string>
 
     <string name="homepage">홈</string>
     <string name="subscription">구독</string>

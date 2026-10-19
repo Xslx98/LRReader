@@ -679,9 +679,6 @@
     <string name="settings_privacy_delete_confirm_countdown_summary_on">El botón Eliminar permanece deshabilitado durante 3 segundos antes de poder pulsarse.</string>
     <string name="settings_privacy_delete_confirm_countdown_summary_off">El botón Eliminar se puede pulsar de inmediato. Más rápido, pero es más fácil eliminar por error.</string>
     <string name="download_service">Servicio de descarga</string>
-    <string name="theme_light">Tema claro</string>
-    <string name="theme_dark">Tema oscuro</string>
-    <string name="theme_black">Tema negro</string>
     <string name="settings_eh_theme">Tema</string>
     <string name="settings_eh_theme_light">Claro</string>
     <string name="settings_eh_theme_dark">Oscuro</string>
