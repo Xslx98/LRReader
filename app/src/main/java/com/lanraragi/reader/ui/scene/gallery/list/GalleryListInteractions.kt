@@ -21,7 +21,6 @@ import com.lanraragi.reader.ui.scene.BaseScene
  */
 class GalleryListInteractions(private val scene: GalleryListScene) {
 
-    private var pressBackTime: Long = 0
 
     fun onItemClick(view: View, position: Int): Boolean {
         val archive = scene.mHelper?.getDataAtEx(position)
@@ -107,30 +106,24 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
         }
 
         val handle = scene.listSearchHelper?.handleSearchBackPress() ?: false
-        if (!handle && !checkDoubleClickExit()) {
+        if (!handle) {
             scene.finish()
         }
+    }
+
+    /**
+     * Whether [onBackPressed] would stay in the scene. On the home scene a back
+     * that would leave goes to the system instead (back-to-home preview).
+     */
+    fun hasInSceneBack(): Boolean {
+        if (scene.multiSelectHelper?.isActive == true) return true
+        if (scene.isFabLayoutCreated && scene.fabLayout.isExpanded) return true
+        val filterHelper = scene.filterHelper
+        if (filterHelper != null && filterHelper.filterOpen && filterHelper.filterTagList.size > 1) return true
+        return scene.listSearchHelper?.isSearchBackPending() == true
     }
 
     /** Drops the last tag of an open tag filter; false when the filter is closed or empty. */
     private fun removeLastOpenFilterTag(filterHelper: GalleryFilterHelper): Boolean =
         filterHelper.filterOpen && filterHelper.removeLastFilterTag()
-
-    private fun checkDoubleClickExit(): Boolean {
-        if (scene.stackIndex != 0) {
-            return false
-        }
-        val time = System.currentTimeMillis()
-        return if (time - pressBackTime > BACK_PRESSED_INTERVAL) {
-            pressBackTime = time
-            scene.showTip(R.string.press_twice_exit, BaseScene.LENGTH_SHORT)
-            true
-        } else {
-            false
-        }
-    }
-
-    private companion object {
-        const val BACK_PRESSED_INTERVAL = 2000
-    }
 }

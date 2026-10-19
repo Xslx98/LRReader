@@ -95,6 +95,26 @@ public class SceneFragment extends Fragment {
         finish();
     }
 
+    /**
+     * Whether back currently means something inside this scene (leave
+     * multi-select, collapse a search bar, ...) instead of leaving it. Every
+     * {@link #onBackPressed()} override that sometimes stays in the scene must
+     * report those states here: the stage gives such a back no predictive
+     * animation, and on the root scene it hands a back that means "leave" to
+     * the system (back-to-home preview).
+     */
+    public boolean hasInSceneBack() {
+        return false;
+    }
+
+    /** Tells the stage that {@link #hasInSceneBack()} may have changed. */
+    public void invalidateBack() {
+        FragmentActivity activity = getActivity();
+        if (activity instanceof StageActivity) {
+            ((StageActivity) activity).updateBackCallback();
+        }
+    }
+
     @Override
     @SuppressWarnings("deprecation")
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {

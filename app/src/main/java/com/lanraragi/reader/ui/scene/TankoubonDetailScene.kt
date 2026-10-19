@@ -370,6 +370,8 @@ class TankoubonDetailScene : BaseScene() {
             .show()
     }
 
+    override fun hasInSceneBack(): Boolean = mPickingTarget || selection.isActive
+
     override fun onBackPressed() {
         // Back leaves "pick target", then multi-select, before leaving the scene.
         if (mPickingTarget) {

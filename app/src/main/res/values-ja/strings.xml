@@ -55,7 +55,6 @@
     <string name="gallery_gl_fallback_message">このデバイスでは現在EGLを初期化できません。戻ってしばらくしてから再試行してください。</string>
     <string name="gallery_gl_fallback_action_close">戻る</string>
     <string name="gallery_gl_fallback_toast">OpenGLが利用できないため、ギャラリーを表示できません</string>
-    <string name="press_twice_exit">もう一度押して終了します。</string>
     <string name="get_it">了解</string>
     <!-- Select scene -->
     <!-- Update -->

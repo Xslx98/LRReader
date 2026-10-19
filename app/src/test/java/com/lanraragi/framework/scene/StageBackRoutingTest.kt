@@ -32,6 +32,9 @@ class StageBackRoutingTest {
 
     class CountingScene : SceneFragment() {
         var backs = 0
+        var inSceneBack = false
+
+        override fun hasInSceneBack(): Boolean = inSceneBack
 
         override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View =
             FrameLayout(inflater.context)
@@ -54,6 +57,8 @@ class StageBackRoutingTest {
         override fun onCreate2(savedInstanceState: Bundle?) {
             setContentView(FrameLayout(this).apply { id = CONTAINER_ID })
         }
+
+        override fun hasInterceptBack(): Boolean = intercept
 
         override fun onInterceptBack(): Boolean {
             if (intercept) intercepted++
@@ -97,6 +102,7 @@ class StageBackRoutingTest {
     fun anInterceptedBackNeverReachesTheScene() {
         val stage = stageWithScenes(1)
         stage.intercept = true
+        stage.updateBackCallback()
 
         stage.onBackPressedDispatcher.onBackPressed()
 
@@ -112,6 +118,47 @@ class StageBackRoutingTest {
         stage.onBackPressedDispatcher.onBackPressed()
 
         assertTrue(stage.isFinishing)
+    }
+
+    @Test
+    fun aRootSceneWithNothingToDoLeavesBackToTheSystem() {
+        val stage = stageWithScenes(1)
+
+        assertFalse(stage.onBackPressedDispatcher.hasEnabledCallbacks())
+        stage.onBackPressedDispatcher.onBackPressed()
+
+        assertEquals(0, stage.topScene().backs)
+        assertTrue(stage.isFinishing)
+    }
+
+    @Test
+    fun aRootSceneWithInSceneStateKeepsBack() {
+        val stage = stageWithScenes(1)
+        stage.topScene().inSceneBack = true
+        stage.topScene().invalidateBack()
+
+        stage.onBackPressedDispatcher.onBackPressed()
+
+        assertEquals(1, stage.topScene().backs)
+        assertFalse(stage.isFinishing)
+    }
+
+    @Test
+    fun aTagWithoutItsSceneIsSkipped() {
+        val stage = stageWithScenes(2)
+        val bottom = stage.findSceneByTag("0") as CountingScene
+        val top = stage.findSceneByTag("1") as CountingScene
+        // The FragmentManager lost the top scene behind the tag list's back (STAB-05).
+        stage.supportFragmentManager.beginTransaction().remove(top).commitNow()
+
+        stage.onBackPressedDispatcher.onBackPressed()
+
+        ShadowLooper.idleMainLooper()
+        // That back re-shows the scene below instead of leaving it.
+        assertEquals(0, bottom.backs)
+        assertEquals(1, stage.sceneCount)
+        assertFalse(bottom.isDetached)
+        assertFalse(stage.isFinishing)
     }
 
     private companion object {

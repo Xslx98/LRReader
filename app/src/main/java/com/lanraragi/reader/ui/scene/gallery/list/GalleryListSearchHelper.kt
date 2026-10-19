@@ -128,6 +128,14 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
      * Handle back press for search states.
      * @return true if the back press was consumed by search state logic
      */
+    /** Whether [handleSearchBackPress] would consume a back now. */
+    fun isSearchBackPending(): Boolean = when (callback.getStateHelper()?.state) {
+        GalleryStateHelper.STATE_SIMPLE_SEARCH,
+        GalleryStateHelper.STATE_SEARCH,
+        GalleryStateHelper.STATE_SEARCH_SHOW_LIST -> true
+        else -> false
+    }
+
     fun handleSearchBackPress(): Boolean {
         val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
         return when (currentState) {
