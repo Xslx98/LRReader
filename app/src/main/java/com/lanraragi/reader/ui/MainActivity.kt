@@ -466,6 +466,11 @@ class MainActivity : StageActivity(),
         }
     }
 
+    override fun onPredictiveBackCancelled(top: SceneFragment) {
+        super.onPredictiveBackCancelled(top)
+        if (top is BaseScene) top.applySceneChrome()
+    }
+
     override fun onSceneViewDestroyed(scene: SceneFragment) {
         super.onSceneViewDestroyed(scene)
 

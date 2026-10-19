@@ -126,7 +126,7 @@ public class SceneFragment extends Fragment {
         // Notify
         FragmentActivity activity = getActivity();
         if (activity instanceof StageActivity) {
-            ((StageActivity) activity).onSceneViewCreated(this, savedInstanceState);
+            ((StageActivity) activity).dispatchSceneViewCreated(this, savedInstanceState);
         }
     }
 
@@ -137,7 +137,7 @@ public class SceneFragment extends Fragment {
         // Notify
         FragmentActivity activity = getActivity();
         if (activity instanceof StageActivity) {
-            ((StageActivity) activity).onSceneViewDestroyed(this);
+            ((StageActivity) activity).dispatchSceneViewDestroyed(this);
         }
     }
 
