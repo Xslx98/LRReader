@@ -120,7 +120,6 @@
     <ID>LoopWithTooManyJumpStatements:DownloadFragment.kt$DownloadFragment$for</ID>
     <ID>LoopWithTooManyJumpStatements:DownloadManager.kt$DownloadManager$for</ID>
     <ID>LoopWithTooManyJumpStatements:DownloadRepository.kt$DownloadRepository$for</ID>
-    <ID>LoopWithTooManyJumpStatements:DownloadsScene.kt$DownloadsScene$for</ID>
     <ID>LoopWithTooManyJumpStatements:LRRDownloadWorker.kt$LRRDownloadWorker$while</ID>
     <ID>LoopWithTooManyJumpStatements:LRRGalleryProvider.kt$LRRGalleryProvider$for</ID>
     <ID>LoopWithTooManyJumpStatements:LocalArchiveVerifier.kt$LocalArchiveVerifier$for</ID>

@@ -10,7 +10,7 @@ import com.lanraragi.reader.dao.DownloadInfo
  * Identity: [DownloadInfo.arcid]. Content comparison covers only persistent
  * / structural fields — transient progress (speed / downloaded / total /
  * finished / remaining) is intentionally excluded because it flows through
- * [DownloadsScene.dispatchProgressChanges] with the `PAYLOAD_PROGRESS`
+ * [DownloadListDispatcher.dispatchProgressChanges] with the `PAYLOAD_PROGRESS`
  * payload, not through DiffUtil. Including those fields here would defeat
  * that split and (prior to the W35-3b post-mortem fix) led to frozen
  * progress due to shared-reference mutation. See ADR-001 Option D.

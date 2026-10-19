@@ -41,7 +41,6 @@
     <ID>DoubleMutabilityForCollection:AppDrawerLayout.kt$AppDrawerLayout$private var mAboveSnackViewList: MutableList&lt;View&gt;? = null</ID>
     <ID>DoubleMutabilityForCollection:ArchiveCoverStamps.kt$ArchiveCoverStamps$@Volatile private var loaded: MutableMap&lt;String, Long&gt;? = null</ID>
     <ID>DoubleMutabilityForCollection:DownloadRepository.kt$DownloadRepository$var list = getInfoListForLabel(info.label)</ID>
-    <ID>DoubleMutabilityForCollection:DownloadsScene.kt$DownloadsScene$private var mLastSnapshot: MutableList&lt;DownloadInfo&gt; = ArrayList()</ID>
     <ID>DoubleMutabilityForCollection:GalleryDetailScene.kt$GalleryDetailScene$/** Rating when the scene was opened, used to detect changes on exit. */ private var properties: MutableMap&lt;String, String&gt;? = null</ID>
     <ID>DoubleMutabilityForCollection:ReaderStampsController.kt$ReaderStampsController$private var stampedPages: MutableSet&lt;Int&gt;? = null</ID>
     <ID>DoubleMutabilityForCollection:SearchBar.kt$SearchBar$private var mSuggestionList: MutableList&lt;Suggestion&gt;</ID>
@@ -178,7 +177,6 @@
     <ID>LoopWithTooManyJumpStatements:DownloadFragment.kt$DownloadFragment$for</ID>
     <ID>LoopWithTooManyJumpStatements:DownloadManager.kt$DownloadManager$for</ID>
     <ID>LoopWithTooManyJumpStatements:DownloadRepository.kt$DownloadRepository$for</ID>
-    <ID>LoopWithTooManyJumpStatements:DownloadsScene.kt$DownloadsScene$for</ID>
     <ID>LoopWithTooManyJumpStatements:LRRDownloadWorker.kt$LRRDownloadWorker$while</ID>
     <ID>LoopWithTooManyJumpStatements:LRRGalleryProvider.kt$LRRGalleryProvider$for</ID>
     <ID>LoopWithTooManyJumpStatements:LocalArchiveVerifier.kt$LocalArchiveVerifier$for</ID>

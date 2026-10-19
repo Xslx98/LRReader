@@ -35,7 +35,6 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -110,14 +109,9 @@ class DownloadsScene : ToolbarScene(),
             return viewModel.downloadList.value
         }
 
-    private var mLastSnapshot: MutableList<DownloadInfo> = ArrayList()
-
-    /**
-     * Most recent progress map observed from [DownloadsViewModel.progressMap].
-     * Used to compute a per-arcid delta and dispatch only the changed rows
-     * via `notifyItemChanged(pos, PAYLOAD_PROGRESS)`.
-     */
-    private var mLastProgressMap: Map<String, ProgressSnapshot> = emptyMap()
+    private val listDispatcher by lazy {
+        DownloadListDispatcher(viewModel, adapter = { mAdapter }, list = { mList })
+    }
 
     /*---------------
      List pagination
@@ -247,7 +241,7 @@ class DownloadsScene : ToolbarScene(),
     fun updateForLabel() {
         viewModel.updateForLabel()
 
-        dispatchDiffUpdate(mList?.let { ArrayList(it) } ?: ArrayList())
+        listDispatcher.dispatchDiffUpdate(mList?.let { ArrayList(it) } ?: ArrayList())
         updateTitle()
         updatePaginationIndicator()
     }
@@ -442,7 +436,7 @@ class DownloadsScene : ToolbarScene(),
         // below. DiffUtil compares structural fields only.
         collectFlow(viewLifecycleOwner, viewModel.downloadList) { list ->
             if (mAdapter == null || searching) return@collectFlow
-            dispatchDiffUpdate(ArrayList(list))
+            listDispatcher.dispatchDiffUpdate(ArrayList(list))
             updateTitle()
             updatePaginationIndicator()
             updateView()
@@ -455,7 +449,7 @@ class DownloadsScene : ToolbarScene(),
         // bug introduced by the earlier mutating-combine approach.
         collectFlow(viewLifecycleOwner, viewModel.progressMap) { progressMap ->
             if (mAdapter == null || searching) return@collectFlow
-            dispatchProgressChanges(progressMap)
+            listDispatcher.dispatchProgressChanges(progressMap)
         }
 
         // Observe filter loading state
@@ -597,50 +591,6 @@ class DownloadsScene : ToolbarScene(),
             viewTransition.showView(1)
         } else {
             viewTransition.showView(0)
-        }
-    }
-
-    /** Dispatches the change from [mLastSnapshot] to [newList] to [mAdapter] (see [DownloadListDiff]). */
-    private fun dispatchDiffUpdate(newList: MutableList<DownloadInfo>) {
-        val old = mLastSnapshot
-        mLastSnapshot = newList
-        mAdapter?.let { DownloadListDiff.dispatch(old, newList, AdapterListUpdateCallback(it)) }
-    }
-
-    /**
-     * Dispatch targeted progress updates for any arcid whose [ProgressSnapshot]
-     * changed since the last emission. Uses a payload so [DownloadAdapter]
-     * can rebind only the progress / speed / percent views — no full item
-     * rebind, no image re-fetch.
-     */
-    private fun dispatchProgressChanges(newMap: Map<String, ProgressSnapshot>) {
-        val oldMap = mLastProgressMap
-        mLastProgressMap = newMap
-        val list = mList ?: return
-        val adapter = mAdapter ?: return
-        // Collect arcids whose snapshot meaningfully differs (or was
-        // added/removed). ProgressSnapshot is a data class so `!=` compares
-        // by value — same arcid, same fields → skip.
-        val affected = HashSet<String>()
-        for ((arcid, snap) in newMap) {
-            if (oldMap[arcid] != snap) affected.add(arcid)
-        }
-        for (arcid in oldMap.keys) {
-            if (arcid !in newMap) affected.add(arcid)
-        }
-        if (affected.isEmpty()) return
-        // A member's tick must repaint the CARD that folds it (the member
-        // row itself is not on the display list).
-        for (arcid in affected.toList()) {
-            viewModel.tankCardIdFor(arcid)?.let { affected.add(it) }
-        }
-        for ((indexInList, info) in list.withIndex()) {
-            val id = info.arcid ?: continue
-            if (id !in affected) continue
-            // Null = not on the page currently shown; notifying the modulo
-            // position would rebind the wrong visible row.
-            val inPagePos = viewModel.adapterPositionForListIndex(indexInList) ?: continue
-            adapter.notifyItemChanged(inPagePos, PAYLOAD_PROGRESS)
         }
     }
 
