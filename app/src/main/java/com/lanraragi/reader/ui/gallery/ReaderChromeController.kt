@@ -5,11 +5,13 @@ import android.content.pm.ActivityInfo
 import android.os.Build
 import android.view.View
 import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.framework.lib.yorozuya.MathUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.util.SystemUiHelper
@@ -17,6 +19,7 @@ import com.lanraragi.framework.widget.ColorView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.widget.GalleryHeader
+import com.lanraragi.reader.widget.ReversibleSeekBar
 
 /**
  * The reader window around the GL page view: fullscreen and system-bar
@@ -88,6 +91,32 @@ class ReaderChromeController(private val activity: Activity) {
         progress.visibility = if (ReadingSettings.getShowProgress()) View.VISIBLE else View.GONE
         battery.visibility = if (ReadingSettings.getShowBattery()) View.VISIBLE else View.GONE
         return progress
+    }
+
+    /**
+     * Wires the bottom menu — page slider and auto page-turn button — to the
+     * page view. [progress] is the header progress text the slider updates.
+     */
+    fun bindSlider(
+        slider: GallerySliderController,
+        input: GalleryInputHandler,
+        galleryView: GalleryView,
+        progress: TextView,
+    ) {
+        val seekBarPanel = ViewUtils.`$$`(activity, R.id.seek_bar_panel)
+        val autoTransferPanel = ViewUtils.`$$`(activity, R.id.auto_transfer) as ImageView
+        val leftText = ViewUtils.`$$`(seekBarPanel, R.id.left) as TextView
+        val rightText = ViewUtils.`$$`(seekBarPanel, R.id.right) as TextView
+        val seekBar = ViewUtils.`$$`(seekBarPanel, R.id.seek_bar) as ReversibleSeekBar
+
+        slider.setViews(
+            seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, progress
+        )
+        slider.setSystemUiHelper(systemUiHelper)
+        slider.setGalleryView(galleryView)
+
+        input.autoTransferPanel = autoTransferPanel
+        autoTransferPanel.setOnClickListener { v -> input.toggleAutoRead(v) }
     }
 
     /** Keep-screen-on, orientation, brightness and the display cutout, from the saved settings. */

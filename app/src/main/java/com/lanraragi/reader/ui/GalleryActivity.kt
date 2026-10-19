@@ -25,8 +25,6 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -62,7 +60,6 @@ import com.lanraragi.reader.ui.gallery.ReaderStampsCoordinator
 import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
-import com.lanraragi.reader.widget.ReversibleSeekBar
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.framework.util.BackDispatch
 import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
@@ -319,21 +316,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mChrome.setUpSystemUi()
         val progress = mChrome.bindHeader()
 
-        // Slider controller
-        val seekBarPanel = ViewUtils.`$$`(this, R.id.seek_bar_panel)
-        val autoTransferPanel = ViewUtils.`$$`(this, R.id.auto_transfer) as ImageView
-        val leftText = ViewUtils.`$$`(seekBarPanel, R.id.left) as TextView
-        val rightText = ViewUtils.`$$`(seekBarPanel, R.id.right) as TextView
-        val seekBar = ViewUtils.`$$`(seekBarPanel, R.id.seek_bar) as ReversibleSeekBar
-
-        mSliderController.setViews(
-            seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, progress
-        )
-        mSliderController.setSystemUiHelper(mChrome.systemUiHelper)
-        mSliderController.setGalleryView(galleryView)
-
-        mInputHandler.autoTransferPanel = autoTransferPanel
-        autoTransferPanel.setOnClickListener { v -> mInputHandler.toggleAutoRead(v) }
+        mChrome.bindSlider(mSliderController, mInputHandler, galleryView, progress)
 
         val size = galleryProvider.size()
         mSliderController.size = size
