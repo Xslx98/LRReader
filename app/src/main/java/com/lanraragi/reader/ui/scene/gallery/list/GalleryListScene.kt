@@ -36,8 +36,6 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import com.lanraragi.reader.ServiceRegistry
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hippo.android.resource.AttrResources
@@ -150,12 +148,12 @@ class GalleryListScene : BaseScene(),
     private val events = GalleryListEvents(this)
     private val interactions = GalleryListInteractions(this)
     internal var uploadHelper: GalleryUploadHelper? = null
-    private var mSearchHelper: GallerySearchHelper? = null
+    internal var mSearchHelper: GallerySearchHelper? = null
     internal var mHistoryStore: ProfileSearchHistoryStore? = null
     internal var listSearchHelper: GalleryListSearchHelper? = null
     private var mDrawerHelper: GalleryDrawerHelper? = null
-    private var mFabHelper: GalleryFabHelper? = null
-    private var searchBarHelper: GallerySearchBarHelper? = null
+    internal var mFabHelper: GalleryFabHelper? = null
+    internal var searchBarHelper: GallerySearchBarHelper? = null
 
     private val uploadProgress = GalleryUploadProgressPresenter(this)
 
@@ -393,48 +391,7 @@ class GalleryListScene : BaseScene(),
 
         refreshLayout.setHeaderTranslationY(paddingTopSB.toFloat())
 
-        leftDrawable = DrawerArrowDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
-        rightDrawable = AddDeleteDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
-        searchBar.setLeftDrawable(leftDrawable)
-        searchBar.setRightDrawable(rightDrawable)
-        searchBar.setHelper(searchBarHelper)
-        searchBar.setOnStateChangeListener(searchBarHelper)
-        GallerySearchHelper.setSearchBarHint(context, searchBar)
-        mSearchHelper?.let { searchBar.setSuggestionProvider(it.createSuggestionProvider()) }
-        val historyStore = ProfileSearchHistoryStore(
-            viewLifecycleOwner.lifecycleScope,
-            ServiceRegistry.dataModule.searchHistoryRepository,
-        )
-        mHistoryStore = historyStore
-        searchBar.setHistoryStore(historyStore)
-        historyStore.refresh()
-
-        searchLayout.setHelper(searchBarHelper)
-        searchLayout.setPadding(
-            searchLayout.paddingLeft, searchLayout.paddingTop + paddingTopSB,
-            searchLayout.paddingRight, searchLayout.paddingBottom + paddingBottomFab
-        )
-
-        fabLayout.setAutoCancel(true)
-        fabLayout.isExpanded = false
-        fabLayout.setHidePrimaryFab(false)
-        fabLayout.setOnClickFabListener(mFabHelper)
-        fabLayout.setOnExpandListener(mFabHelper)
-        addAboveSnackView(fabLayout)
-
-        actionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
-        fabLayout.primaryFab.setImageDrawable(actionFabDrawable)
-
-        searchFab.setOnClickListener(this)
-
-        if (LRRAuthManager.getServerUrl() == null) {
-            val fabUpload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_upload)
-            val fabUrlDownload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_url_download)
-            if (fabUpload != null) fabLayout.removeView(fabUpload)
-            if (fabUrlDownload != null) fabLayout.removeView(fabUrlDownload)
-        }
-
-        searchBarMover = SearchBarMover(searchBarHelper, searchBar, recyclerView, searchLayout)
+        GalleryListChrome.bind(this, context, mainLayout, paddingTopSB, paddingBottomFab)
 
         onUpdateUrlBuilder()
 
