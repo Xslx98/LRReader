@@ -19,46 +19,23 @@ package com.lanraragi.reader.ui.scene.gallery.detail
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewParent
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.RatingBar
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.lanraragi.reader.event.AppEventBus
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import com.hippo.android.resource.AttrResources
-import com.hippo.drawerlayout.DrawerLayout
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.AppearanceSettings
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.ArchiveDetail
-import com.lanraragi.reader.domain.buildRatingEmoji
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.ui.scene.BaseScene
-import com.lanraragi.reader.ui.scene.TankoubonDetailScene
-import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.reader.util.collectFlowWhileCreated
-import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
@@ -90,12 +67,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     // Below header
     private var mBelowHeader: View? = null
 
-    // Source-server error banner (shown when the source LANraragi
-    // server is unreachable / orphan / has deleted the archive but
-    // we still have local-cache data to display).
-    private var mSourceErrorBanner: View? = null
-    private var mSourceErrorText: TextView? = null
-    private var mSourceErrorRetry: View? = null
+    private val mSourceError by lazy {
+        DetailSourceErrorBanner(
+            viewModel,
+            context = { getEHContext() },
+            onRetry = { requestRefresh() },
+            keepPageNormal = { if (mState != STATE_NORMAL) adjustViewVisibility(STATE_NORMAL, true) },
+        )
+    }
 
     // Actions
     private var mActions: View? = null
@@ -114,11 +93,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
      Page-thumbnail grid
      ---------------*/
     private lateinit var pageThumbsViewModel: PageThumbnailsViewModel
-    private var mPageThumbRecycler: RecyclerView? = null
-    private var mPageThumbProgress: ProgressBar? = null
-    private var mPageThumbEmpty: TextView? = null
-    private var mPageThumbAdapter: PageThumbnailAdapter? = null
-    private var mPageThumbSpanCount: Int = 0
+    private lateinit var pageThumbs: DetailPageThumbs
 
     /*---------------
      Extracted helpers
@@ -126,6 +101,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     private var mHeaderBinder: DetailHeaderBinder? = null
     private var mTankBinder: DetailTankoubonBinder? = null
     private var mActionHandler: DetailActionHandler? = null
+    private val mRating by lazy { DetailRatingController(viewModel) }
+    private val mEditActions by lazy { DetailEditActions(this, viewModel) }
+
+    // Read by GalleryDetailEvents.
+    internal val sourceError: DetailSourceErrorBanner get() = mSourceError
+    internal val ratingController: DetailRatingController get() = mRating
+    internal val actionHandler: DetailActionHandler? get() = mActionHandler
+    internal val tankBinder: DetailTankoubonBinder? get() = mTankBinder
+    internal val headerBinder: DetailHeaderBinder? get() = mHeaderBinder
+    internal val isStateNormal: Boolean get() = mState == STATE_NORMAL
 
     /** Shortcut delegating to [GalleryDetailViewModel.action]. */
     private var mAction: String?
@@ -211,6 +196,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // archive entry, mirroring [GalleryDetailViewModel.resetForNewEntry].
         pageThumbsViewModel =
             ViewModelProvider(requireActivity())[PageThumbnailsViewModel::class.java]
+        pageThumbs = DetailPageThumbs(this, viewModel, pageThumbsViewModel)
 
         if (savedInstanceState == null) {
             onInit()
@@ -284,33 +270,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         AssertUtils.assertNotNull(context)
 
         val actionsScrollView = ViewUtils.`$$`(view, R.id.actions_scroll_view)
-        setDrawerGestureBlocker(object : DrawerLayout.GestureBlocker {
-            private fun transformPointToViewLocal(point: IntArray, child: View) {
-                var currentChild = child
-                var viewParent: ViewParent? = currentChild.parent
-
-                while (viewParent is View) {
-                    val parentView = viewParent
-                    point[0] += parentView.scrollX - currentChild.left
-                    point[1] += parentView.scrollY - currentChild.top
-
-                    if (parentView is DrawerLayout) {
-                        break
-                    }
-
-                    currentChild = parentView
-                    viewParent = currentChild.parent
-                }
-            }
-
-            override fun shouldBlockGesture(ev: MotionEvent): Boolean {
-                val point = intArrayOf(ev.x.toInt(), ev.y.toInt())
-                transformPointToViewLocal(point, actionsScrollView)
-                return !isDrawersVisible() &&
-                    point[0] > 0 && point[0] < actionsScrollView.width &&
-                    point[1] > 0 && point[1] < actionsScrollView.height
-            }
-        })
+        setDrawerGestureBlocker(ScrollAreaGestureBlocker(actionsScrollView) { isDrawersVisible() })
 
         val nonNullContext = requireContext()
         val drawable = DrawableManager.getVectorDrawable(nonNullContext, R.drawable.big_sad_pandroid)
@@ -321,13 +281,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val belowHeader: View = mainView.findViewById(R.id.below_header)
         mBelowHeader = belowHeader
-        mSourceErrorBanner = belowHeader.findViewById(R.id.source_error_banner)
-        mSourceErrorText = belowHeader.findViewById(R.id.source_error_text)
-        mSourceErrorRetry = belowHeader.findViewById(R.id.source_error_retry)
-        mSourceErrorRetry?.setOnClickListener {
-            mSourceErrorBanner?.visibility = View.GONE
-            requestRefresh()
-        }
+        mSourceError.bind(belowHeader)
         val isDarkTheme = !AttrResources.getAttrBoolean(nonNullContext, androidx.appcompat.R.attr.isLightTheme)
         mHeader = ViewUtils.`$$`(belowHeader, R.id.header)
         val colorBg = ViewUtils.`$$`(mHeader, R.id.color_bg)
@@ -387,8 +341,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             section = tankSection,
             container = ViewUtils.`$$`(tankSection, R.id.detail_tankoubons_container) as LinearLayout,
             edit = ViewUtils.`$$`(tankSection, R.id.detail_tankoubons_edit) as TextView,
-            onTankClick = { tank -> openTankoubonDetail(tank) },
-            onEditClick = { showTankMembershipDialog() },
+            onTankClick = { tank -> mEditActions.openTankoubonDetail(tank) },
+            onEditClick = { mEditActions.showTankMembershipDialog() },
         )
 
         val actionHandler = DetailActionHandler(this, viewModel, viewLifecycleOwner)
@@ -399,70 +353,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             mHeaderBinder?.updateFavoriteDrawable(arcid)
         }
 
-        // Make rating bar interactive. LANraragi only supports integer
-        // ratings (1-5), but we keep stepSize=0.5 for smooth drag feedback.
-        // The value is ceiled to an integer on touch release.
-        rating.setIsIndicator(false)
-        rating.stepSize = 0.5f
-        rating.onRatingBarChangeListener =
-            RatingBar.OnRatingBarChangeListener { _, ratingValue, fromUser ->
-                if (!fromUser || viewModel.archiveDetail.value == null) return@OnRatingBarChangeListener
-                // Live preview: show the emoji for the rounded value while dragging
-                ratingText.text = buildRatingEmoji(
-                    kotlin.math.ceil(ratingValue).toInt()
-                )
-            }
-        @android.annotation.SuppressLint("ClickableViewAccessibility")
-        rating.setOnTouchListener { _, event ->
-            if (event.action == android.view.MotionEvent.ACTION_UP
-                || event.action == android.view.MotionEvent.ACTION_CANCEL
-            ) {
-                // Defer the read to the next frame. dispatchTouchEvent
-                // calls OnTouchListener BEFORE View.onTouchEvent, so
-                // reading rating.rating synchronously here snapshots the
-                // pre-touch value on a *tap* gesture (DOWN→UP with no
-                // MOVE in between). Drag still appears to work because
-                // MOVE events let RatingBar.onTouchEvent update the
-                // progress en route. post() runs after RatingBar's own
-                // onTouchEvent has applied the UP coordinates.
-                rating.post {
-                    if (viewModel.archiveDetail.value == null) return@post
-                    // Ceil to integer: 0.5→1, 1.5→2, 4.5→5, etc.
-                    val finalRating = kotlin.math.ceil(rating.rating).coerceIn(0f, 5f)
-                    rating.rating = finalRating
-                    ratingText.text = if (finalRating > 0f) {
-                        buildRatingEmoji(finalRating.toInt())
-                    } else {
-                        "Not rated"
-                    }
-                    // Single business entry point: the ViewModel does the
-                    // optimistic write across every SSOT and runs the PUT.
-                    // The Scene only renders.
-                    viewModel.submitRating(finalRating)
-                }
-            }
-            false // Don't consume — let RatingBar handle the touch
-        }
+        mRating.bind(rating, ratingText)
 
         mEditTagsBtn = ViewUtils.`$$`(tags, R.id.edit_tags_btn) as? android.widget.ImageButton
-        mEditTagsBtn?.let { btn ->
-            val isLrr = LRRAuthManager.getServerUrl() != null
-            btn.visibility = if (isLrr) View.VISIBLE else View.GONE
-            btn.setOnClickListener {
-                val ad = viewModel.archiveDetail.value
-                if (ad != null) {
-                    TagEditDialog.show(
-                        activity2, ad.archive.arcid,
-                        ad.tagGroups, viewModel.getSourceProfileId()
-                    ) {
-                        if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
-                            adjustViewVisibility(STATE_REFRESH, true)
-                            request()
-                        }
-                    }
-                }
-            }
-        }
+        mEditActions.bindEditTagsButton(mEditTagsBtn)
 
         mProgress = ViewUtils.`$$`(mainView, R.id.progress)
 
@@ -487,354 +381,18 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         viewModel.downloadManager.addDownloadInfoListener(viewModel.downloadInfoListener)
 
-        setupPageThumbnailGrid(view)
+        pageThumbs.setUp(view)
 
         return view
-    }
-
-    /**
-     * Wire up the per-page thumbnail grid at the bottom of the
-     * detail page. Splits the spanCount calculation, adapter
-     * binding and scroll-listener install into one place so the
-     * onCreateView2 critical path stays readable.
-     */
-    private fun setupPageThumbnailGrid(view: View) {
-        val recycler = view.findViewById<RecyclerView>(R.id.page_thumb_recycler) ?: return
-        val progress = view.findViewById<ProgressBar>(R.id.page_thumb_progress)
-        val empty = view.findViewById<TextView>(R.id.page_thumb_empty)
-        val jumpButton = view.findViewById<TextView>(R.id.page_thumb_jump)
-
-        mPageThumbRecycler = recycler
-        mPageThumbProgress = progress
-        mPageThumbEmpty = empty
-
-        val displayMetrics = resources.displayMetrics
-        // Target tile width is resolved at bind time from the user's
-        // AppearanceSettings.KEY_DETAIL_PAGE_THUMB_SIZE preference,
-        // not hard-coded — so a user can pick a chunkier (large)
-        // or denser (small) grid without rebuilding the app. SPAN_MIN
-        // / SPAN_MAX still clamp the result so an extreme display
-        // never collapses the grid or runs more than 6 columns.
-        val targetWidthPx = resources.getDimensionPixelSize(
-            AppearanceSettings.getDetailPageThumbSizeResId()
-        ).coerceAtLeast(1)
-        val spanCount = (displayMetrics.widthPixels / targetWidthPx)
-            .coerceIn(SPAN_MIN, SPAN_MAX)
-        mPageThumbSpanCount = spanCount
-
-        val adapter = PageThumbnailAdapter(
-            onPageClick = { page0 -> openReaderAtPage(page0) },
-            onPageRetry = { page0 -> pageThumbsViewModel.retryPage(page0) },
-        )
-        mPageThumbAdapter = adapter
-
-        recycler.layoutManager = GridLayoutManager(view.context, spanCount)
-        // Disable item-change animations so the partial rebind on
-        // notifyItemChanged(pos, PAYLOAD) does not flash the thumbnail.
-        recycler.itemAnimator = null
-        recycler.adapter = adapter
-
-        recycler.addOnScrollListener(
-            PrefetchScrollListener(spanCount, onWindow = pageThumbsViewModel::retainWindow) { page ->
-                pageThumbsViewModel.requestPage(page)
-            }
-        )
-
-        jumpButton?.setOnClickListener { showJumpToPageDialog() }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // UI-4: every collector below is view-scoped. The scene framework
-        // detaches covered scenes (view destroyed, fragment alive); the previous
-        // fragment-scoped launches stacked one collector set per re-attach.
-
-        // Capture the server-side rating exactly once per detail-page
-        // entry. The cache-hit / process-death-restore paths take
-        // STATE_NORMAL straight from `prepareData` and never reach
-        // `onGetArchiveDetailSuccessInternal`, so the capture lives here.
-        // (StateFlow replay + the isNaN guard make re-subscription a no-op.)
-        collectFlow(viewLifecycleOwner, viewModel.archiveDetail) { ad ->
-        }
-        // Drive REFRESH→NORMAL transitions off the dedicated load-event
-        // SharedFlow rather than the deduped archiveDetail StateFlow.
-        // A refresh that returns identical content would otherwise leave
-        // the spinner up forever (StateFlow distinct-emit eats the value
-        // and `collect` never fires). detailLoaded fires unconditionally
-        // on every successful API response.
-        // collectFlowWhileCreated: a refresh completing while the app is
-        // backgrounded must still flip mState — STARTED gating would drop
-        // the event and leave a permanent spinner on return.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailLoaded) { ad ->
-            if (mState != STATE_NORMAL) {
-                onGetArchiveDetailSuccess(ad)
-            }
-            // A successful refresh after a banner-flagged failure also dismisses
-            // the source-error banner — the live data is now displayed and the
-            // warning no longer applies.
-            mSourceErrorBanner?.visibility = View.GONE
-        }
-        // collectFlowWhileCreated: error arm of the same state machine.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailError) { e ->
-            onGetGalleryDetailFailure(e)
-        }
-        // Cache-first failure: page is already painted from local data
-        // (LRU cache or a degraded ArchiveDetail seeded from the nav-arg
-        // Archive). Show a non-blocking banner so the user can read the
-        // archive offline and retry the source server when it returns.
-        // collectFlowWhileCreated: banner state must not be lost to a
-        // backgrounded window.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.detailErrorBanner) { e ->
-            showSourceErrorBanner(e)
-        }
-        // After a rollback the optimistic write to currentRating /
-        // archiveDetail has been reverted on the IO thread; reflect the
-        // restored value on the rating bar and toast the error so the
-        // user knows their change did not stick.
-        // collectFlowWhileCreated: losing the event would leave the rating
-        // bar showing the rolled-back optimistic value.
-        collectFlowWhileCreated(viewLifecycleOwner, viewModel.ratingError) { e ->
-            rebindRatingFromViewModel()
-            val ctx = getEHContext()
-            if (ctx != null) {
-                android.widget.Toast.makeText(
-                    ctx,
-                    com.lanraragi.reader.client.api.friendlyError(ctx, e),
-                    android.widget.Toast.LENGTH_LONG,
-                ).show()
-            }
-        }
-        // Observe download state changes from ViewModel (replaces DownloadHelper listener)
-        collectFlow(viewLifecycleOwner, viewModel.downloadState) {
-            mActionHandler?.updateDownloadText()
-        }
-        // Observe local reading progress so the header refreshes whenever the
-        // reader writes a new page (StateFlow replays its current value to new
-        // collectors, so this also covers returning from the reader to a paused
-        // detail Scene). Replaces the previous one-shot onResume re-read.
-        collectFlow(viewLifecycleOwner, viewModel.localReadingPage) { localPage0 ->
-            applyLocalReadingProgress(localPage0)
-        }
-        // "Belongs to Tankoubons" section — an empty list keeps it hidden.
-        collectFlow(viewLifecycleOwner, viewModel.archiveTankoubons) { tanks ->
-            mTankBinder?.bind(tanks)
-        }
-        // The reader (a separate activity on top) sets the cover while this
-        // scene is STOPPED. A replay-0 SharedFlow drops emissions that have
-        // no live subscriber, so collect for the whole view lifetime (the
-        // view survives under another activity); the reload is a cache-key
-        // change plus a fetch, harmless while stopped.
-        collectFlowWhileCreated(viewLifecycleOwner, AppEventBus.archiveCoverChangedEvent) { event ->
-            val archive = viewModel.archive.value ?: return@collectFlowWhileCreated
-            if (archive.arcid == event.arcid) mHeaderBinder?.reloadCover(archive)
-        }
+        GalleryDetailEvents(this, viewModel).install(viewLifecycleOwner, view)
 
         // ----- Page-thumbnail grid wiring -----
-        // Kick off the page-list fetch as soon as we have an archive in
-        // the nav-arg. Independent of detail metadata so it runs in
-        // parallel with `requestGalleryDetail` and we don't gate the
-        // thumbnail grid behind a slow metadata response.
-        // Raw view-scoped launch: a per-attach one-shot (`first()`), must NOT
-        // sit inside repeatOnLifecycle or it would re-run on every foreground
-        // return.
-        viewLifecycleOwner.lifecycleScope.launch(
-            ServiceRegistry.coroutineModule.exceptionHandler
-        ) {
-            val arc = viewModel.archive.filterNotNull().first()
-            mPageThumbAdapter?.submitArcid(arc.arcid)
-            pageThumbsViewModel.start(arc.arcid, arc.serverProfileId)
-        }
-        // State machine drives top-level visibility: spinner vs empty
-        // text vs RecyclerView populated with pageCount empty slots.
-        collectFlow(viewLifecycleOwner, pageThumbsViewModel.state) { state ->
-            applyPageThumbsState(state)
-        }
-        // Per-page status snapshot drives partial cell rebinds.
-        collectFlow(viewLifecycleOwner, pageThumbsViewModel.pageStates) { states ->
-            mPageThumbAdapter?.submitStates(states)
-        }
-    }
-
-    /**
-     * Snap the rating bar + emoji label back to the ViewModel's current
-     * rating. Used after an in-flight PUT was rolled back (the
-     * optimistic write reverted on a background thread, the UI element
-     * needs to follow).
-     */
-    private fun rebindRatingFromViewModel() {
-        val mainView = view ?: return
-        val ratingBar = ViewUtils.`$$`(mainView, R.id.rating) as? RatingBar
-        val ratingTextView = ViewUtils.`$$`(mainView, R.id.rating_text) as? TextView
-        val current = viewModel.currentRating.value ?: 0f
-        if (ratingBar != null) ratingBar.rating = current
-        if (ratingTextView != null) {
-            // Match DetailHeaderBinder.bindViewSecond's "Not rated"
-            // fallback verbatim so a rollback does not cause the label to
-            // flip styles versus the load path.
-            ratingTextView.text = if (current > 0f) {
-                buildRatingEmoji(current.toInt())
-            } else {
-                "Not rated"
-            }
-        }
-    }
-
-    private fun applyLocalReadingProgress(localPage0: Int) {
-        // Sentinel: SP has never been written, defer to server-reported progress.
-        if (localPage0 == com.lanraragi.reader.gallery.ReadingProgressTracker.NO_LOCAL_PROGRESS) return
-        val ad = viewModel.archiveDetail.value
-        val archive = viewModel.archive.value
-        val totalPages = ad?.archive?.pagecount ?: archive?.pagecount ?: return
-        val localPage1 = localPage0 + 1
-        // Local progress is authoritative once the reader has written it, so
-        // sync the binder unconditionally — including going backwards. The
-        // ArchiveDetail itself stays immutable; bindReadProgress is the
-        // single point that owns the displayed value.
-        mHeaderBinder?.bindReadProgress(localPage1, totalPages)
-    }
-
-    /**
-     * Apply a [PageThumbnailsViewModel.State] snapshot to the grid UI.
-     * Toggles visibility between recycler / spinner / empty-text and,
-     * on Loaded transitions, primes the initial prefetch window so the
-     * user sees thumbnails populating without waiting for a scroll.
-     */
-    private fun applyPageThumbsState(state: PageThumbnailsViewModel.State) {
-        val recycler = mPageThumbRecycler ?: return
-        val progress = mPageThumbProgress
-        val empty = mPageThumbEmpty
-        when (state) {
-            is PageThumbnailsViewModel.State.Idle -> {
-                recycler.visibility = View.VISIBLE
-                progress?.visibility = View.GONE
-                empty?.visibility = View.GONE
-            }
-            is PageThumbnailsViewModel.State.Loading -> {
-                recycler.visibility = View.INVISIBLE
-                progress?.visibility = View.VISIBLE
-                empty?.visibility = View.GONE
-            }
-            is PageThumbnailsViewModel.State.Loaded -> {
-                recycler.visibility = View.VISIBLE
-                progress?.visibility = View.GONE
-                empty?.visibility = View.GONE
-                mPageThumbAdapter?.submitPageCount(state.pageCount)
-                // The PrefetchScrollListener only fires on scroll, so the
-                // first-viewport request kick comes from here. Posts to
-                // the recycler so layout has applied before we calculate
-                // visible rows.
-                recycler.post { triggerInitialThumbPrefetch(state.pageCount) }
-            }
-            is PageThumbnailsViewModel.State.Error -> {
-                recycler.visibility = View.GONE
-                progress?.visibility = View.GONE
-                if (empty != null) {
-                    empty.visibility = View.VISIBLE
-                    empty.text = errorTextFor(state.tier)
-                }
-            }
-        }
-    }
-
-    private fun errorTextFor(tier: PageThumbnailsViewModel.ErrorTier): String {
-        val resId = when (tier) {
-            PageThumbnailsViewModel.ErrorTier.UNREACHABLE -> R.string.lrr_page_thumbnails_unreachable
-            PageThumbnailsViewModel.ErrorTier.DELETED -> R.string.lrr_page_thumbnails_deleted
-            PageThumbnailsViewModel.ErrorTier.GENERIC -> R.string.lrr_page_thumbnails_generic
-        }
-        return getString(resId)
-    }
-
-    /**
-     * Request thumbnails for the initial viewport plus the standard
-     * prefetch window. Repository requests are idempotent so callers
-     * (this method and the scroll listener) coexist without dedup
-     * logic here.
-     */
-    private fun triggerInitialThumbPrefetch(pageCount: Int) {
-        val span = mPageThumbSpanCount.coerceAtLeast(1)
-        // Visible rows ≈ recycler height / approx item height. Use a
-        // fixed envelope (3 visible + 3 prefetch) instead — close
-        // enough for the small grid heights we use and avoids a
-        // measure-dependent calculation that would race the initial
-        // layout pass.
-        val initialCount = (span * INITIAL_ROWS).coerceAtMost(pageCount)
-        for (page in 0 until initialCount) {
-            pageThumbsViewModel.requestPage(page)
-        }
-    }
-
-    /**
-     * Open the reader at the given 0-indexed [page0]. Reuses the
-     * shared [com.lanraragi.reader.ui.GalleryOpenHelper] so the local /
-     * stream path selection and warmup behaviour stay identical to
-     * the regular "Read" button.
-     */
-    private fun openReaderAtPage(page0: Int) {
-        val archive = viewModel.getEffectiveArchive() ?: return
-        val ctx = getEHContext() ?: return
-        // Tank-flow members read in the whole-tank session; the tapped
-        // member-local page maps to its global page inside it.
-        com.lanraragi.reader.gallery.TankSessionRouter
-            .tankIntentFor(ctx, archive.arcid, memberPage0 = page0)
-            ?.let { tankIntent ->
-                startActivity(tankIntent)
-                return
-            }
-        viewLifecycleOwner.lifecycleScope.launch(
-            ServiceRegistry.coroutineModule.exceptionHandler
-        ) {
-            val intent = withContext(Dispatchers.IO) {
-                com.lanraragi.reader.ui.GalleryOpenHelper.buildReadIntent(
-                    ctx,
-                    archive,
-                    startPage = page0,
-                )
-            }
-            startActivity(intent)
-        }
-    }
-
-    /**
-     * Prompt for a 1-indexed page number and snap the grid to that
-     * page. Does not open the reader — that path is reserved for
-     * thumbnail taps so the two interactions stay distinct.
-     */
-    private fun showJumpToPageDialog() {
-        val ctx = getEHContext() ?: return
-        val loaded = pageThumbsViewModel.state.value as? PageThumbnailsViewModel.State.Loaded ?: return
-        val pageCount = loaded.pageCount
-        if (pageCount <= 0) return
-
-        val container = FrameLayout(ctx).apply {
-            val pad = resources.getDimensionPixelSize(R.dimen.keyline_margin)
-            setPadding(pad, pad / 2, pad, pad / 2)
-        }
-        val input = EditText(ctx).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.lrr_page_thumbnails_jump_dialog_hint, pageCount)
-        }
-        container.addView(input)
-
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.lrr_page_thumbnails_jump_dialog_title)
-            .setView(container)
-            .setPositiveButton(R.string.lrr_page_thumbnails_jump_dialog_ok) { dialog, _ ->
-                val raw = input.text?.toString()?.trim()?.toIntOrNull()
-                if (raw == null || raw < 1 || raw > pageCount) {
-                    android.widget.Toast.makeText(
-                        ctx,
-                        getString(R.string.lrr_page_thumbnails_jump_dialog_out_of_range, pageCount),
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
-                    return@setPositiveButton
-                }
-                mPageThumbRecycler?.scrollToPosition(raw - 1)
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        pageThumbs.observe(viewLifecycleOwner)
     }
 
     override fun onDestroyView() {
@@ -857,9 +415,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionGroup = null
         mRead = null
         mBelowHeader = null
-        mSourceErrorBanner = null
-        mSourceErrorText = null
-        mSourceErrorRetry = null
+        mSourceError.clear()
 
         mActions = null
         mHeartGroup = null
@@ -873,14 +429,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionHandler?.destroy()
         mActionHandler = null
 
-        // Detach the adapter explicitly so RecyclerView clears its view
-        // pool — otherwise the pooled view holders keep references to
-        // the previous detail page's Activity context.
-        mPageThumbRecycler?.adapter = null
-        mPageThumbRecycler = null
-        mPageThumbProgress = null
-        mPageThumbEmpty = null
-        mPageThumbAdapter = null
+        pageThumbs.clear()
 
         properties = null
     }
@@ -1026,24 +575,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
 
-    private fun openTankoubonDetail(tank: LRRTankoubonApi.Tankoubon) {
-        val args = Bundle().apply {
-            putString(TankoubonDetailScene.KEY_TANK_ID, tank.id)
-            putString(TankoubonDetailScene.KEY_TANK_NAME, tank.name)
-            putLong(TankoubonDetailScene.KEY_PROFILE_ID, viewModel.getSourceProfileId())
-        }
-        startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
-    }
-
-    private fun showTankMembershipDialog() {
-        val arcid = viewModel.getEffectiveArcid() ?: return
-        TankoubonDialogHelper.showMembershipDialog(
-            activity2, arcid, viewModel.getSourceProfileId(),
-            archiveTitle = viewModel.getEffectiveArchive()?.title,
-        ) { viewModel.loadArchiveTankoubons() }
-    }
-
-
     internal fun onGetArchiveDetailSuccess(result: ArchiveDetail) {
         try {
             onGetArchiveDetailSuccessInternal(result)
@@ -1086,69 +617,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
     }
 
-    /**
-     * Show the cache-first error banner above the detail content. The
-     * page is already rendered (LRU detail cache hit, or a degraded
-     * detail seeded from the navigation Archive) so we keep the user
-     * on STATE_NORMAL and surface the failure as a dismissible bar
-     * with a Retry button. A subsequent successful load auto-hides it
-     * via the [GalleryDetailViewModel.detailLoaded] observer.
-     */
-    private fun showSourceErrorBanner(e: Exception) {
-        val ctx = getEHContext() ?: return
-        val banner = mSourceErrorBanner ?: return
-        val text = mSourceErrorText ?: return
-        text.text = tieredSourceErrorText(ctx, e)
-        banner.visibility = View.VISIBLE
-        // The banner is informational on top of cached data — make sure
-        // the page itself stays in NORMAL so the cached content remains
-        // interactive (cancel buttons, read button, etc.).
-        if (mState != STATE_NORMAL) {
-            adjustViewVisibility(STATE_NORMAL, true)
-        }
-    }
-
-    /**
-     * Map a fetch failure to a tiered, user-actionable string. The four
-     * tiers (orphan / unreachable / 404 / generic) match the cross-
-     * server UX patterns established by Plex / email clients / RSS
-     * readers — distinguishing why the source is unavailable lets the
-     * user decide whether to retry, switch profiles, or give up.
-     *
-     * Profile name is looked up against the same [ProfileLookupCache]
-     * the auth interceptor uses, so the banner shows the user-chosen
-     * server label rather than a raw URL.
-     */
-    private fun tieredSourceErrorText(ctx: android.content.Context, e: Exception): String {
-        val sid = viewModel.getEffectiveArchive()?.serverProfileId ?: 0L
-        // Profile name comes from the same in-memory cache the auth
-        // interceptor consults, so the banner mirrors what the user
-        // sees in ServerListScene. If the lookup misses (orphan path
-        // is handled below; this guards against the rare race where
-        // the profile is deleted between request fire and response)
-        // the placeholder collapses to empty rather than crashing the
-        // resource formatter — the message still reads correctly.
-        val profileName = ServiceRegistry.dataModule.profileLookupCache
-            .findById(sid)?.name ?: ""
-        return when {
-            e is com.lanraragi.reader.client.api.OrphanProfileException ->
-                ctx.getString(R.string.lrr_detail_source_profile_orphan)
-            // LANraragi returns HTTP 400 ("Invalid id") for unknown
-            // arcids on /api/archives/{arcid}/metadata — semantically
-            // equivalent to the archive having been deleted server-side.
-            // 404 is also handled for forward-compat with Shinobu / future
-            // servers that follow the more conventional REST mapping.
-            e is com.lanraragi.reader.client.api.LRRHttpException &&
-                (e.code == 400 || e.code == 404) ->
-                ctx.getString(R.string.lrr_detail_source_archive_deleted, profileName)
-            e is java.net.UnknownHostException ||
-                e is java.net.SocketTimeoutException ||
-                e is java.net.ConnectException ->
-                ctx.getString(R.string.lrr_detail_source_unreachable, profileName)
-            else -> com.lanraragi.reader.client.api.friendlyError(ctx, e)
-        }
-    }
-
     companion object {
         private const val REQUEST_CODE_COMMENT_GALLERY = 0
 
@@ -1167,21 +635,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         private const val KEY_ARCHIVE_DETAIL = "archive_detail"
         private const val KEY_REQUEST_ID = "request_id"
-
-        // Thumbnail grid column count is derived from screen width:
-        // floor(screen_width / target_tile_width), clamped here so a
-        // foldable / tablet never blows past 6 columns and a narrow
-        // phone never collapses below 3. The target tile width is
-        // resolved per-bind from AppearanceSettings.getDetailPageThumb
-        // SizeResId() so the user's small/medium/large preference
-        // takes effect on next Scene entry.
-        private const val SPAN_MIN: Int = 3
-        private const val SPAN_MAX: Int = 6
-
-        // Initial request window: span_count × this many rows.
-        // 4 rows cover the typical visible viewport + one row of
-        // prefetch headroom; the scroll listener picks up the rest.
-        private const val INITIAL_ROWS: Int = 4
 
         private const val TRANSITION_ANIMATION_DISABLED = true
     }

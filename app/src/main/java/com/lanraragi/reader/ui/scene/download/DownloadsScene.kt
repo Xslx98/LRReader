@@ -18,8 +18,6 @@ package com.lanraragi.reader.ui.scene.download
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
-import androidx.core.graphics.drawable.toDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -28,54 +26,26 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.res.ResourcesCompat
-import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import com.lanraragi.reader.util.suspendRunCatching
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import androidx.recyclerview.widget.AdapterListUpdateCallback
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.android.resource.AttrResources
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.hippo.drawerlayout.DrawerLayout
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.FastScroller
-import com.hippo.easyrecyclerview.HandlerDrawable
-import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.gallery.TankMemberSeed
-import com.lanraragi.reader.gallery.TankSeedStore
-import com.lanraragi.reader.gallery.TankSessionSeed
-import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.download.DownloadService
-import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.download.ProgressSnapshot
-import com.lanraragi.reader.download.TankFillDispatcher
-import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter
-import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter.Companion.DRAG_ENABLE
 import com.lanraragi.reader.ui.scene.download.part.MyPageChangeListener
-import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.widget.MyEasyRecyclerView
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
-import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.hippo.ripple.Ripple
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.util.DrawableManager
 import com.lanraragi.framework.view.ViewTransition
@@ -123,14 +93,9 @@ class DownloadsScene : ToolbarScene(),
             return viewModel.downloadList.value
         }
 
-    private var mLastSnapshot: MutableList<DownloadInfo> = ArrayList()
-
-    /**
-     * Most recent progress map observed from [DownloadsViewModel.progressMap].
-     * Used to compute a per-arcid delta and dispatch only the changed rows
-     * via `notifyItemChanged(pos, PAYLOAD_PROGRESS)`.
-     */
-    private var mLastProgressMap: Map<String, ProgressSnapshot> = emptyMap()
+    internal val listDispatcher by lazy {
+        DownloadListDispatcher(viewModel, adapter = { mAdapter }, list = { mList })
+    }
 
     /*---------------
      List pagination
@@ -145,7 +110,7 @@ class DownloadsScene : ToolbarScene(),
     private var mTip: TextView? = null
 
     /** Last [com.lanraragi.reader.download.DownloadManager.loadError] (audit C34 / STAB-13). */
-    private var mLoadError: Throwable? = null
+    internal var loadError: Throwable? = null
     private lateinit var mFabLayout: FabLayout
     private var mAdapter: RecyclerView.Adapter<*>? = null
     private var mOriginalAdapter: DownloadAdapter? = null
@@ -169,7 +134,7 @@ class DownloadsScene : ToolbarScene(),
         get() = viewModel.searchKey.value
         set(value) { viewModel.setSearchKey(value) }
 
-    private var mInitPosition = -1
+    private val deepLink by lazy { DownloadDeepLink(this, viewModel) }
 
     var searching: Boolean
         get() = viewModel.searching.value
@@ -179,51 +144,24 @@ class DownloadsScene : ToolbarScene(),
         ActivityResultContracts.StartActivityForResult()
     ) { result -> mGalleryOpenHelper?.updateReadProcess(result) }
 
+    private val tankCards by lazy {
+        DownloadTankCards(this, viewModel, launchGallery = { galleryActivityLauncher.launch(it) })
+    }
+
 
     override fun getNavCheckedItem(): Int = R.id.nav_downloads
 
     private fun handleArguments(args: Bundle?) {
-        if (args == null) return
+        deepLink.handle(args)
+    }
 
-        if (ACTION_CLEAR_DOWNLOAD_SERVICE == args.getString(KEY_ACTION)) {
-            DownloadService.Companion.clear()
-        }
+    /** True once onCreateView3 has created the list view. */
+    internal val isListViewCreated: Boolean get() = ::mRecyclerView.isInitialized
 
-        val arcid = args.getString(KEY_ARCID) ?: return
-        // The DownloadManager's in-memory list may still be loading on a cold
-        // start (it initializes asynchronously). Reading getDownloadInfo before
-        // that completes returns null and the deep link — e.g. tapping the
-        // "download complete" notification — silently no-ops. Await init first,
-        // then do the lookup on the main thread (where the manager's mutators
-        // are asserted to run). ::mRecyclerView.isInitialized already guards the
-        // case where the view isn't built yet (stashes mInitPosition).
-        lifecycleScope.launch {
-            try {
-                // awaitInitAsync asserts it is NOT on the main thread when init
-                // is still pending (the case this whole block exists for), so
-                // hop to IO for the wait; the lookup below resumes on Main.
-                withContext(Dispatchers.IO) {
-                    viewModel.downloadManager.awaitInitAsync()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "awaitInitAsync failed; deep-link lookup skipped", e)
-                return@launch
-            }
-            val info = viewModel.downloadManager.getDownloadInfo(arcid) ?: return@launch
-            viewModel.selectLabel(info.label)
-            updateForLabel()
-            updateView()
-
-            val list = mList
-            if (list != null) {
-                val position = list.indexOf(info)
-                if (position >= 0 && ::mRecyclerView.isInitialized) {
-                    mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
-                } else {
-                    mInitPosition = position
-                }
-            }
-        }
+    /** Turns the pagination to the page of list [position], and scrolls to it when [scroll]. */
+    internal fun showListPosition(position: Int, scroll: Boolean) {
+        mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
+        if (scroll) mRecyclerView.scrollToPosition(listIndexInPage(position))
     }
 
     override fun onNewArguments(args: Bundle) {
@@ -256,17 +194,17 @@ class DownloadsScene : ToolbarScene(),
     fun updateForLabel() {
         viewModel.updateForLabel()
 
-        dispatchDiffUpdate(mList?.let { ArrayList(it) } ?: ArrayList())
+        listDispatcher.dispatchDiffUpdate(mList?.let { ArrayList(it) } ?: ArrayList())
         updateTitle()
         updatePaginationIndicator()
     }
 
-    private fun updatePaginationIndicator() {
+    internal fun updatePaginationIndicator() {
         mPaginationHelper?.updatePaginationIndicator(mPaginationIndicator, mList, myPageChangeListener)
     }
 
     @SuppressLint("StringFormatMatches")
-    private fun updateTitle() {
+    internal fun updateTitle() {
         try {
             setTitle(
                 getString(
@@ -370,62 +308,15 @@ class DownloadsScene : ToolbarScene(),
                 viewModel.setPageSize(newPageSize)
             }
         }
-        mLayoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
-        mLayoutManager.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()))
-        mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
-
-        // Configure drag-related RecyclerView properties
-        mDragDropHelper?.configureRecyclerView(mRecyclerView)
-
-        mRecyclerView.setItemViewCacheSize(100)
-        mRecyclerView.layoutManager = mLayoutManager
-        mRecyclerView.selector = Ripple.generateRippleDrawable(
-            context,
-            !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
-            Color.TRANSPARENT.toDrawable()
+        mLayoutManager = DownloadListViews.configureList(
+            this, context, mRecyclerView, mSelectionHelper, mDragDropHelper
         )
-        mRecyclerView.setDrawSelectorOnTop(true)
-        mRecyclerView.clipToPadding = false
-        mRecyclerView.setOnItemClickListener(this)
-        mRecyclerView.setOnItemLongClickListener(this)
-        mRecyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        mRecyclerView.setCustomCheckedListener(mSelectionHelper?.choiceListener)
-        mSelectionHelper?.attachDragSelect(mRecyclerView)
-        val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
-        val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
-        val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
-        val decoration = MarginItemDecoration(interval, paddingH, paddingV, paddingH, paddingV)
-        mRecyclerView.addItemDecoration(decoration)
-        decoration.applyPaddings(mRecyclerView)
 
-        // Attach drag-drop manager to RecyclerView
-        mDragDropHelper?.attachToRecyclerView(mRecyclerView)
+        deepLink.restorePendingPosition()
 
-        if (mInitPosition >= 0 && viewModel.indexPage.value != 1) {
-            mPaginationHelper?.initPage(mInitPosition, mList, mRecyclerView, mPaginationIndicator)
-            mRecyclerView.scrollToPosition(listIndexInPage(mInitPosition))
-            mInitPosition = -1
-        }
+        DownloadListViews.configureFastScroller(context, fastScroller, mRecyclerView, this)
 
-        fastScroller.attachToRecyclerView(mRecyclerView)
-        val handlerDrawable = HandlerDrawable()
-        handlerDrawable.setColor(AttrResources.getAttrColor(context, R.attr.widgetColorThemeAccent))
-        fastScroller.setHandlerDrawable(handlerDrawable)
-        fastScroller.setOnDragHandlerListener(this)
-
-        mFabLayout.setExpanded(false, true)
-        mFabLayout.setHidePrimaryFab(false)
-        mFabLayout.setAutoCancel(false)
-        mFabLayout.setOnClickFabListener(this)
-        mFabLayout.setOnExpandListener(this)
-        mActionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
-        mFabLayout.primaryFab.setImageDrawable(mActionFabDrawable)
-        val fab = mFabLayout.getSecondaryFabAt(6)
-        if (DRAG_ENABLE) {
-            fab.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.v_mobile_hand_left_x24, context.theme))
-        } else {
-            fab.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.v_mobile_hand_left_off_x24, context.theme))
-        }
+        mActionFabDrawable = DownloadListViews.configureFab(this, context, mFabLayout)
         addAboveSnackView(mFabLayout)
 
         updateView()
@@ -439,91 +330,7 @@ class DownloadsScene : ToolbarScene(),
         updateTitle()
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
 
-        // A failed load from the database must not look like "no downloads":
-        // the tip shows the error and retries on tap (audit 2026-10-04 C34).
-        collectFlow(viewLifecycleOwner, viewModel.downloadManager.loadError) { error ->
-            mLoadError = error
-            updateView()
-        }
-
-        // Subscribe to the structural list StateFlow (Room Flow, label-
-        // filtered). Transient progress flows separately via progressMap
-        // below. DiffUtil compares structural fields only.
-        collectFlow(viewLifecycleOwner, viewModel.downloadList) { list ->
-            if (mAdapter == null || searching) return@collectFlow
-            dispatchDiffUpdate(ArrayList(list))
-            updateTitle()
-            updatePaginationIndicator()
-            updateView()
-        }
-
-        // Subscribe to the live progress map. For each arcid whose snapshot
-        // changed since the last emission, fire a targeted
-        // notifyItemChanged(pos, PAYLOAD_PROGRESS) so only the progress views
-        // repaint — no DiffUtil, no full rebind. Fixes the progress-freeze
-        // bug introduced by the earlier mutating-combine approach.
-        collectFlow(viewLifecycleOwner, viewModel.progressMap) { progressMap ->
-            if (mAdapter == null || searching) return@collectFlow
-            dispatchProgressChanges(progressMap)
-        }
-
-        // Observe filter loading state
-        collectFlow(viewLifecycleOwner, viewModel.filterLoading) { loading ->
-            if (loading) {
-                mProgressView.visibility = View.VISIBLE
-                mRecyclerView.visibility = View.GONE
-            } else {
-                mProgressView.visibility = View.GONE
-                mRecyclerView.visibility = View.VISIBLE
-            }
-        }
-
-        // Observe filter/sort/search completion
-        collectFlow(viewLifecycleOwner, viewModel.filterSearchDone) {
-            if (!isAdded) return@collectFlow
-            updateAdapter()
-            // The downloadList collector skips updates while searching, so the
-            // count in the title and the empty view must be refreshed here.
-            updateTitle()
-            updatePaginationIndicator()
-            updateView()
-        }
-
-        // ── Observe DownloadInfoListener events from ViewModel (sealed dispatch) ──
-
-        collectFlow(viewLifecycleOwner, viewModel.downloadEvent) { event ->
-            when (event) {
-                // Structural events are covered by the downloadList Flow
-                // above; transient progress by the progressMap Flow. These
-                // listener callbacks exist only so downstream consumers
-                // (e.g. the rating sync path inside GalleryDetailViewModel)
-                // can react — the Scene itself just refreshes its empty-view.
-                is DownloadUiEvent.ItemAdded,
-                is DownloadUiEvent.ItemRemoved,
-                is DownloadUiEvent.DiffUpdate,
-                is DownloadUiEvent.Reloaded,
-                is DownloadUiEvent.ItemUpdated -> {
-                    updateView()
-                }
-                is DownloadUiEvent.Replaced -> {
-                    updateForLabel()
-                    updateView()
-                }
-                is DownloadUiEvent.LabelRenamed -> {
-                    viewModel.handleLabelRenamed(event.from, event.to)
-                    updateForLabel()
-                    updateView()
-                }
-                is DownloadUiEvent.LabelDeleted -> {
-                    viewModel.resetToDefaultLabel()
-                    updateForLabel()
-                    updateView()
-                }
-                is DownloadUiEvent.LabelsChanged -> {
-                    downloadLabelDraw?.updateDownloadLabels()
-                }
-            }
-        }
+        DownloadsEvents(this, viewModel).install(viewLifecycleOwner)
     }
 
     override fun onResume() {
@@ -590,10 +397,27 @@ class DownloadsScene : ToolbarScene(),
         else -> false
     }
 
+    /** False until onCreateView3 attached the list adapter, and again after onDestroyView. */
+    internal val hasAdapter: Boolean get() = mAdapter != null
+
+    internal fun showFilterLoading(loading: Boolean) {
+        if (loading) {
+            mProgressView.visibility = View.VISIBLE
+            mRecyclerView.visibility = View.GONE
+        } else {
+            mProgressView.visibility = View.GONE
+            mRecyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    internal fun updateDownloadLabels() {
+        downloadLabelDraw?.updateDownloadLabels()
+    }
+
     fun updateView() {
         val viewTransition = mViewTransition ?: return
         val tip = mTip
-        if (mLoadError != null && tip != null) {
+        if (loadError != null && tip != null) {
             tip.setText(R.string.downloads_load_failed)
             tip.setOnClickListener { viewModel.downloadManager.retryLoading() }
             viewTransition.showView(1)
@@ -606,50 +430,6 @@ class DownloadsScene : ToolbarScene(),
             viewTransition.showView(1)
         } else {
             viewTransition.showView(0)
-        }
-    }
-
-    /** Dispatches the change from [mLastSnapshot] to [newList] to [mAdapter] (see [DownloadListDiff]). */
-    private fun dispatchDiffUpdate(newList: MutableList<DownloadInfo>) {
-        val old = mLastSnapshot
-        mLastSnapshot = newList
-        mAdapter?.let { DownloadListDiff.dispatch(old, newList, AdapterListUpdateCallback(it)) }
-    }
-
-    /**
-     * Dispatch targeted progress updates for any arcid whose [ProgressSnapshot]
-     * changed since the last emission. Uses a payload so [DownloadAdapter]
-     * can rebind only the progress / speed / percent views — no full item
-     * rebind, no image re-fetch.
-     */
-    private fun dispatchProgressChanges(newMap: Map<String, ProgressSnapshot>) {
-        val oldMap = mLastProgressMap
-        mLastProgressMap = newMap
-        val list = mList ?: return
-        val adapter = mAdapter ?: return
-        // Collect arcids whose snapshot meaningfully differs (or was
-        // added/removed). ProgressSnapshot is a data class so `!=` compares
-        // by value — same arcid, same fields → skip.
-        val affected = HashSet<String>()
-        for ((arcid, snap) in newMap) {
-            if (oldMap[arcid] != snap) affected.add(arcid)
-        }
-        for (arcid in oldMap.keys) {
-            if (arcid !in newMap) affected.add(arcid)
-        }
-        if (affected.isEmpty()) return
-        // A member's tick must repaint the CARD that folds it (the member
-        // row itself is not on the display list).
-        for (arcid in affected.toList()) {
-            viewModel.tankCardIdFor(arcid)?.let { affected.add(it) }
-        }
-        for ((indexInList, info) in list.withIndex()) {
-            val id = info.arcid ?: continue
-            if (id !in affected) continue
-            // Null = not on the page currently shown; notifying the modulo
-            // position would rebind the wrong visible row.
-            val inPagePos = viewModel.adapterPositionForListIndex(indexInList) ?: continue
-            adapter.notifyItemChanged(inPagePos, PAYLOAD_PROGRESS)
         }
     }
 
@@ -739,94 +519,11 @@ class DownloadsScene : ToolbarScene(),
 
     // ── Tank download cards (Track 2) ─────────────────────────
 
-    /**
-     * Open a tank card: rebuild the whole-tank composite session from the
-     * PERSISTED group snapshot (works fully offline for downloaded
-     * members; pagecounts ride the member rows' archive_json).
-     */
-    internal fun openTankCard(info: DownloadInfo) {
-        val activity = activity2 ?: return
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val members = withContext(Dispatchers.IO) {
-                    ServiceRegistry.dataModule.downloadDbRepository
-                        .getTankMemberArchives(info.arcid)
-                }
-                if (members.isEmpty()) return@launch
-                val seed = TankSessionSeed(
-                    tankId = info.arcid,
-                    tankName = info.title.orEmpty(),
-                    profileId = info.serverProfileId,
-                    members = members.map { TankMemberSeed(it.arcid, it.title, it.pagecount) },
-                )
-                TankSeedStore.publish(seed)
-                galleryActivityLauncher.launch(GalleryOpenHelper.buildTankReadIntent(activity, seed))
-            } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                Log.e(TAG, "Failed to open tank card ${info.arcid}", e)
-            }
-        }
-    }
+    internal fun openTankCard(info: DownloadInfo) = tankCards.open(info)
 
-    /**
-     * Card start control (spec 2026-09-21 §4): fill the tank through the
-     * shared [TankFillDispatcher] — members already on disk are skipped,
-     * partial / failed ones restart, and group ids WITHOUT a download row
-     * (the INCOMPLETE case) get their metadata from the source server
-     * before enqueueing. Unreachable metadata is reported, never silently
-     * dropped; the group row is re-tagged with the full membership.
-     */
-    internal fun onTankCardStart(card: DownloadInfo) {
-        val context = ehContext ?: return
-        val tankId = card.arcid
-        val profileId = card.serverProfileId
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val data = ServiceRegistry.dataModule
-                val (ids, resolved) = withContext(Dispatchers.IO) {
-                    val ids = data.downloadDbRepository.getTankGroupMemberIds(tankId)
-                    val present = data.downloadDbRepository.getTankMemberArchives(tankId)
-                    val url = suspendRunCatching {
-                        resolveSourceBaseUrl(profileId, data.profileLookupCache)
-                    }.getOrNull()
-                    val client = ServiceRegistry.networkModule.okHttpClient
-                    ids to TankFillDispatcher.resolveMembers(ids, present) { id ->
-                        if (url == null) {
-                            null
-                        } else {
-                            suspendRunCatching {
-                                LRRArchiveApi.getArchiveMetadata(client, url, id)
-                                    .toArchive(sourceProfileId = profileId, sourceBaseUrl = url)
-                            }.getOrNull()
-                        }
-                    }
-                }
-                val ctx = ehContext ?: return@launch
-                val dm = viewModel.downloadManager
-                val plan = TankFillDispatcher.plan(resolved.members) { dm.getDownloadState(it) }
-                TankFillDispatcher.dispatch(ctx, dm, plan, tankId, card.title.orEmpty(), profileId, ids)
-                Toast.makeText(ctx, TankFillDispatcher.feedback(resources, plan), Toast.LENGTH_SHORT).show()
-                if (resolved.unresolved.isNotEmpty()) {
-                    val n = resolved.unresolved.size
-                    Toast.makeText(
-                        ctx, resources.getQuantityString(R.plurals.tank_fill_unreachable, n, n), Toast.LENGTH_LONG
-                    ).show()
-                }
-            } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                Log.e(TAG, "Failed to start tank card", e)
-                Toast.makeText(context, R.string.error_unknown, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+    internal fun onTankCardStart(card: DownloadInfo) = tankCards.start(card)
 
-    /** Card stop control: halt every member still queued or downloading. */
-    internal fun onTankCardStop(card: DownloadInfo) {
-        val active = viewModel.tankMembersOf(card.arcid)
-            .filter { it.state == DownloadState.WAIT || it.state == DownloadState.DOWNLOAD }
-            .map { it.arcid }
-        if (active.isNotEmpty()) viewModel.stopRangeDownloads(active)
-    }
+    internal fun onTankCardStop(card: DownloadInfo) = tankCards.stop(card)
 
     override fun onClickTitle() {
         mSearchHelper?.enterSearchMode(true)
@@ -853,7 +550,7 @@ class DownloadsScene : ToolbarScene(),
         mSearchHelper?.startSearching()
     }
 
-    private fun updateAdapter() {
+    internal fun updateAdapter() {
         // 检查 Fragment 是否已附加，如果未附加则延迟创建适配器
         if (!isAdded) {
             return
@@ -951,8 +648,6 @@ class DownloadsScene : ToolbarScene(),
     }
 
     companion object {
-        private val TAG = DownloadsScene::class.java.simpleName
-
         const val KEY_ARCID = "arcid"
         const val KEY_ACTION = "action"
         private const val KEY_LABEL = "label"
@@ -968,43 +663,5 @@ class DownloadsScene : ToolbarScene(),
          * this and skips the full rebind (image load, tag render, etc.).
          */
         const val PAYLOAD_PROGRESS = "progress"
-    }
-}
-
-/**
- * DiffUtil callback for DownloadInfo lists.
- *
- * Identity: [DownloadInfo.arcid]. Content comparison covers only persistent
- * / structural fields — transient progress (speed / downloaded / total /
- * finished / remaining) is intentionally excluded because it flows through
- * [DownloadsScene.dispatchProgressChanges] with the `PAYLOAD_PROGRESS`
- * payload, not through DiffUtil. Including those fields here would defeat
- * that split and (prior to the W35-3b post-mortem fix) led to frozen
- * progress due to shared-reference mutation. See ADR-001 Option D.
- */
-internal class DownloadInfoDiffCallback(
-    private val oldList: List<DownloadInfo>,
-    private val newList: List<DownloadInfo>
-) : DiffUtil.Callback() {
-
-    override fun getOldListSize(): Int = oldList.size
-
-    override fun getNewListSize(): Int = newList.size
-
-    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        return oldList[oldItemPosition].arcid == newList[newItemPosition].arcid
-    }
-
-    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        val oldItem = oldList[oldItemPosition]
-        val newItem = newList[newItemPosition]
-        return oldItem.state == newItem.state &&
-            oldItem.legacy == newItem.legacy &&
-            ObjectUtils.equal(oldItem.label, newItem.label) &&
-            ObjectUtils.equal(oldItem.title, newItem.title) &&
-            ObjectUtils.equal(oldItem.thumb, newItem.thumb) &&
-            // Tank cards: a membership reconcile can change ONLY the missing
-            // count (Done → Incomplete) — that must re-bind the status line.
-            oldItem.tankMissingCount == newItem.tankMissingCount
     }
 }

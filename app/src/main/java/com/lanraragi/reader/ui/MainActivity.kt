@@ -18,12 +18,9 @@ package com.lanraragi.reader.ui
 
 import android.annotation.SuppressLint
 import android.util.Log
-import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import android.content.Context
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.annotation.VisibleForTesting
-import android.net.ConnectivityManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -37,11 +34,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.IdRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
-import androidx.core.net.toUri
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.hippo.drawerlayout.DrawerLayout
-import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
@@ -49,66 +44,30 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.settings.NetworkSettings
-import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.client.TagTranslationDatabase
-import com.lanraragi.reader.download.DownloadResumeBanner
-import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.download.DownloadService
-import com.lanraragi.reader.client.data.ListUrlBuilder
-import com.lanraragi.reader.dao.AppDatabase
-import com.lanraragi.reader.dao.DatabaseQuarantine
 import com.lanraragi.reader.dao.DatabaseResetNotice
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.CredentialResetDialog
 import com.lanraragi.reader.ui.scene.LegacyLockRemovedNotice
 import com.lanraragi.reader.ui.scene.ServerConfigScene
 import com.lanraragi.reader.ui.scene.ReauthPrompt
 import com.lanraragi.reader.ui.scene.ServerListScene
-import com.lanraragi.reader.ui.scene.download.DownloadLabelsScene
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
-import com.lanraragi.reader.ui.scene.LRRCategoriesScene
-import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
-import com.lanraragi.reader.ui.scene.history.HistoryScene
-import com.lanraragi.reader.ui.scene.gallery.list.QuickSearchScene
 import com.lanraragi.reader.ui.scene.SecurityScene
-import com.lanraragi.reader.ui.scene.SolidScene
-import com.lanraragi.reader.ui.scene.TankoubonDetailScene
-import com.lanraragi.reader.ui.scene.tankdetail.TankDetailScene
-import com.lanraragi.reader.ui.scene.TankoubonsScene
-import com.lanraragi.reader.client.LRRUrlOpener
 import com.lanraragi.reader.widget.AppDrawerLayout
-import com.lanraragi.framework.network.Network
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.scene.SceneFactory
 import com.lanraragi.framework.scene.SceneFragment
 import com.lanraragi.framework.scene.StageActivity
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.client.api.isTankoubonId
-import com.lanraragi.reader.client.api.parseBaseUrl
-import com.lanraragi.reader.gallery.TankSessionRouter
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import java.io.File
-import com.lanraragi.reader.settings.UpdateSettings
-import com.lanraragi.reader.updater.AppUpdater
-import com.lanraragi.reader.updater.UpdateAdvisories
-import com.lanraragi.reader.updater.GhRelease
-import com.lanraragi.reader.ui.dialog.UpdateDialog
 
 class MainActivity : StageActivity(),
     NavigationView.OnNavigationItemSelectedListener, DrawerLayout.DrawerListener {
@@ -120,9 +79,6 @@ class MainActivity : StageActivity(),
          * MainActivity can tell them from intents sent by other apps.
          */
         const val INTERNAL_SCENE_ENTRY = "com.lanraragi.reader.ui.InternalSceneEntry"
-
-        /** How long onStart waits for the download list to load before showing the resume banner. */
-        private const val DOWNLOADS_INIT_WAIT_MS = 10_000L
 
         /**
          * Scenes another app may open through the exported MainActivity:
@@ -155,43 +111,7 @@ class MainActivity : StageActivity(),
         const val KEY_RESTART: String = "restart"
 
         init {
-            registerLaunchMode(SecurityScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-
-            registerLaunchMode(ServerConfigScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(ServerListScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(GalleryListScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
-            registerLaunchMode(QuickSearchScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(GalleryDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
-
-            registerLaunchMode(DownloadsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(DownloadLabelsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(LRRCategoriesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(TankoubonsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
-            registerLaunchMode(TankoubonDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
-            registerLaunchMode(TankDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
-            registerLaunchMode(HistoryScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
-            registerLaunchMode(
-                com.lanraragi.reader.ui.scene.stats.ReadingStatsScene::class.java,
-                SceneFragment.LAUNCH_MODE_SINGLE_TASK
-            )
-
-            // Scene factory registrations (replaces reflection-based newInstance())
-            SceneFactory.register(SecurityScene::class.java.name) { SecurityScene() }
-            SceneFactory.register(ServerConfigScene::class.java.name) { ServerConfigScene() }
-            SceneFactory.register(ServerListScene::class.java.name) { ServerListScene() }
-            SceneFactory.register(GalleryListScene::class.java.name) { GalleryListScene() }
-            SceneFactory.register(QuickSearchScene::class.java.name) { QuickSearchScene() }
-            SceneFactory.register(GalleryDetailScene::class.java.name) { GalleryDetailScene() }
-            SceneFactory.register(DownloadsScene::class.java.name) { DownloadsScene() }
-            SceneFactory.register(DownloadLabelsScene::class.java.name) { DownloadLabelsScene() }
-            SceneFactory.register(LRRCategoriesScene::class.java.name) { LRRCategoriesScene() }
-            SceneFactory.register(TankoubonsScene::class.java.name) { TankoubonsScene() }
-            SceneFactory.register(TankoubonDetailScene::class.java.name) { TankoubonDetailScene() }
-            SceneFactory.register(TankDetailScene::class.java.name) { TankDetailScene() }
-            SceneFactory.register(HistoryScene::class.java.name) { HistoryScene() }
-            SceneFactory.register(
-                com.lanraragi.reader.ui.scene.stats.ReadingStatsScene::class.java.name
-            ) { com.lanraragi.reader.ui.scene.stats.ReadingStatsScene() }
+            MainScenes.register()
         }
     }
 
@@ -203,6 +123,18 @@ class MainActivity : StageActivity(),
     private var mDrawerLayout: AppDrawerLayout? = null
     private var mNavView: NavigationView? = null
     private var mRightDrawer: FrameLayout? = null
+
+    private val mRouter = MainIntentRouter(this)
+
+    private val mNotices = MainActivityNotices(this, host = { mDrawerLayout })
+
+    private val mDatabaseReset = DatabaseResetFlow(this, restart = { triggerRebirth() })
+
+    private val mNavDrawer = MainNavDrawer(
+        this,
+        openSettings = { settingsLauncher.launch(Intent(this, SettingsActivity::class.java)) },
+        closeDrawers = { mDrawerLayout?.closeDrawers() },
+    )
 
     private val settingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -244,204 +176,10 @@ class MainActivity : StageActivity(),
         }
     }
 
-    // LANraragi: simplified -- only security gate and server config gate remain
-    private fun processAnnouncer(announcer: Announcer): Announcer {
-        if (sceneCount == 0) {
-            if (SecuritySettings.isLockEnabled()) {
-                val newArgs = Bundle()
-                newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
-                newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
-                return Announcer(SecurityScene::class.java).setArgs(newArgs)
-            } else if (!LRRAuthManager.isConfiguredFast()) {
-                val newArgs = Bundle()
-                newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
-                newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
-                return Announcer(ServerConfigScene::class.java).setArgs(newArgs)
-            }
-        }
-        return announcer
-    }
+    override fun onUnrecognizedIntent(intent: Intent?) = mRouter.onUnrecognizedIntent(intent)
 
-    private fun handleIntent(intent: Intent?): Boolean {
-        if (intent == null) {
-            return false
-        }
-
-        val action = intent.action
-        if (ContinueReadingShortcut.ACTION_CONTINUE_READING == action) {
-            val arcid = intent.getStringExtra(ContinueReadingShortcut.KEY_ARCID)
-            val profileId = intent.getLongExtra(ContinueReadingShortcut.KEY_PROFILE_ID, -1L)
-            if (!arcid.isNullOrEmpty() && profileId > 0) {
-                openContinueReading(arcid, profileId)
-            }
-            // Deliberately fall through as "unhandled": the default scene
-            // stack builds underneath and the reader lands on top, so BACK
-            // from the reader returns to the main list.
-            return false
-        }
-        if (Intent.ACTION_VIEW == action) {
-            val uri = intent.data ?: return false
-            val announcer = LRRUrlOpener.parseUrl(uri.toString())
-            if (announcer != null) {
-                startScene(processAnnouncer(announcer))
-                return true
-            }
-        } else if (Intent.ACTION_SEND == action) {
-            // Shared images used to launch the EhViewer image search; LANraragi
-            // has no image-search API, so only shared text becomes a keyword search.
-            if ("text/plain" == intent.type) {
-                val builder = ListUrlBuilder()
-                builder.keyword = intent.getStringExtra(Intent.EXTRA_TEXT)
-                startScene(processAnnouncer(GalleryListScene.getStartAnnouncer(builder)))
-                return true
-            }
-        }
-
-        return false
-    }
-
-    /**
-     * Continue-reading deep link (issue #15): rebuild the Archive from its
-     * history snapshot and route through the canonical read-intent path
-     * (position restore + offline handling ride along for free). No snapshot
-     * means the row is gone — stay on the main list.
-     */
-    private fun openContinueReading(arcid: String, profileId: Long) {
-        lifecycleScope.launch {
-            val archive = try {
-                withContext(Dispatchers.IO) {
-                    // Profile gone (deleted since publish) or history row gone:
-                    // both mean the shortcut is stale — self-heal by removing
-                    // it and stay on the main list with a toast (issue #16).
-                    if (ServiceRegistry.dataModule.profileRepository.findById(profileId) == null) {
-                        null
-                    } else {
-                        ServiceRegistry.dataModule.historyRepository
-                            .getArchiveSnapshot(arcid, profileId)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "continue-reading snapshot load failed", e)
-                null
-            }
-            if (archive == null) {
-                ContinueReadingShortcut.remove(this@MainActivity)
-                // The widget may point at the same stale target (it shares the
-                // deep-link contract) — re-render it from surviving history.
-                ContinueReadingWidget.refreshSafely()
-                Toast.makeText(
-                    this@MainActivity, R.string.continue_reading_unavailable, Toast.LENGTH_SHORT
-                ).show()
-                return@launch
-            }
-            // Tank history rows resume the whole-tank composite session (the
-            // membership re-fetch needs the server; a transient failure keeps
-            // the shortcut and just toasts).
-            if (isTankoubonId(archive.arcid)) {
-                try {
-                    val tankIntent = withContext(Dispatchers.IO) {
-                        TankSessionRouter.buildResumeIntent(
-                            this@MainActivity, archive.arcid, archive.serverProfileId
-                        )
-                    }
-                    startActivity(tankIntent)
-                } catch (e: Exception) {
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    Toast.makeText(
-                        this@MainActivity,
-                        friendlyError(this@MainActivity, e),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                return@launch
-            }
-            startActivity(GalleryOpenHelper.buildReadIntent(this@MainActivity, archive))
-        }
-    }
-
-    override fun onUnrecognizedIntent(intent: Intent?) {
-        if (isGateSceneShowing()) {
-            // Defer while the security/config gate is showing; replayed by
-            // maybeReplayPendingGateRequest once the gate clears (#57).
-            if (intent != null && intent.action != null) {
-                pendingGateIntent = intent
-                pendingGateAnnouncer = null
-            }
-            return
-        }
-
-        if (!handleIntent(intent)) {
-            var handleUrl = false
-            if (intent != null && Intent.ACTION_VIEW == intent.action) {
-                handleUrl = true
-                Toast.makeText(this, R.string.error_cannot_parse_the_url, Toast.LENGTH_SHORT).show()
-            }
-
-            if (sceneCount == 0) {
-                if (handleUrl) {
-                    finish()
-                } else {
-                    val args = Bundle()
-                    args.putString(
-                        GalleryListScene.KEY_ACTION,
-                        AppearanceSettings.getLaunchPageGalleryListSceneAction()
-                    )
-                    startScene(
-                        processAnnouncer(Announcer(GalleryListScene::class.java).setArgs(args))
-                    )
-                }
-            }
-        }
-    }
-
-    override fun onStartSceneFromIntent(clazz: Class<*>, args: Bundle?): Announcer? {
-        // App-lock guard: while a SolidScene gate (SecurityScene lock prompt /
-        // ServerConfigScene) is showing, starting the requested scene would
-        // remove or bury the gate WITHOUT an unlock — most target scenes are
-        // LAUNCH_MODE_SINGLE_TASK, so StageActivity.startScene pops everything
-        // above an existing instance, lock prompt included. That let a
-        // notification tap bypass the pattern lock straight from the shade.
-        // Defer instead of dropping: the request replays once the gate clears
-        // (successful unlock / completed config).
-        if (isGateSceneShowing()) {
-            pendingGateAnnouncer = Announcer(clazz).setArgs(args)
-            pendingGateIntent = null
-            return null
-        }
-        return processAnnouncer(Announcer(clazz).setArgs(args))
-    }
-
-    // ── Deferred deep links while a gate scene shows (audit #57) ──
-
-    /** Scene-start request deferred while a SolidScene gate was showing. */
-    private var pendingGateAnnouncer: Announcer? = null
-
-    /** Recognized intent deferred while a SolidScene gate was showing. */
-    private var pendingGateIntent: Intent? = null
-
-    private fun isGateSceneShowing(): Boolean {
-        val top = topSceneClass
-        return top != null && SolidScene::class.java.isAssignableFrom(top)
-    }
-
-    /**
-     * Replay a request that arrived while the security/config gate was
-     * showing. Called (posted) after every scene transaction: once the gate
-     * is no longer on top — the only ways off the stack are a successful
-     * unlock or a completed server config — the buffered request runs
-     * through the normal (re-gated) dispatch paths.
-     */
-    private fun maybeReplayPendingGateRequest() {
-        if (isGateSceneShowing()) return
-        val announcer = pendingGateAnnouncer
-        val intent = pendingGateIntent
-        pendingGateAnnouncer = null
-        pendingGateIntent = null
-        when {
-            announcer != null -> startScene(processAnnouncer(announcer))
-            intent != null -> handleIntent(intent)
-        }
-    }
+    override fun onStartSceneFromIntent(clazz: Class<*>, args: Bundle?): Announcer? =
+        mRouter.onStartSceneFromIntent(clazz, args)
 
     /**
      * Request POST_NOTIFICATIONS once on Android 13+. Without the grant, download
@@ -475,31 +213,7 @@ class MainActivity : StageActivity(),
         mDrawerLayout = drawerLayout
         drawerLayout.setDrawerListener(this)
 
-        // Strip display cutout insets on left/right so fitsSystemWindows doesn't pad
-        // for the notch/punch-hole area in landscape. Top/bottom are preserved for
-        // status bar (portrait) and navigation bar.
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            drawerLayout.setOnApplyWindowInsetsListener { v, insets ->
-                val cutout = insets.displayCutout
-                if (cutout != null) {
-                    val left = Math.max(
-                        0,
-                        insets.systemWindowInsetLeft - cutout.safeInsetLeft
-                    )
-                    val top = insets.systemWindowInsetTop // keep top for status bar
-                    val right = Math.max(
-                        0,
-                        insets.systemWindowInsetRight - cutout.safeInsetRight
-                    )
-                    val bottom = insets.systemWindowInsetBottom // keep bottom for nav bar
-                    @Suppress("DEPRECATION")
-                    return@setOnApplyWindowInsetsListener v.onApplyWindowInsets(
-                        insets.replaceSystemWindowInsets(left, top, right, bottom)
-                    )
-                }
-                v.onApplyWindowInsets(insets)
-            }
-        }
+        mNavDrawer.applyCutoutInsets(drawerLayout)
         val navView = ViewUtils.`$$`(this, R.id.nav_view) as NavigationView
         mNavView = navView
         mRightDrawer = ViewUtils.`$$`(this, R.id.right_drawer) as FrameLayout
@@ -510,22 +224,16 @@ class MainActivity : StageActivity(),
         )
 
         navView.setNavigationItemSelectedListener(this)
-        bindNavHeader(navView)
+        mNotices.observeTankTagSyncFailures()
+        mNavDrawer.bindHeader(navView)
 
-        // Theme-toggle row styling lives entirely in the layout (theme-aware
-        // attrs: serverActiveNameColor / textColorSecondary / dividerColor),
-        // so Light/Dark/Black need no per-theme color branching here.
-        mChangeTheme.text = getThemeText()
-        mChangeTheme.setOnClickListener {
-            AppearanceSettings.putTheme(getNextTheme())
-            (application as LRReaderApplication).recreate()
-        }
+        mNavDrawer.bindThemeRow(mChangeTheme)
 
         if (savedState == null) {
             onInit()
-            checkDownloadLocation()
+            mNotices.checkDownloadLocation()
             if (NetworkSettings.getCellularNetworkWarning()) {
-                checkCellularNetwork()
+                mNotices.checkCellularNetwork()
             }
         } else {
             onRestore(savedState)
@@ -567,14 +275,14 @@ class MainActivity : StageActivity(),
             activity = this,
             isLockScreenUp = ::isLockScreenUp,
             onRetry = ::triggerRebirth,
-            onResetDatabase = ::showResetDatabaseConfirm,
+            onResetDatabase = mDatabaseReset::showConfirm,
             onResetNoticeSeen = { stamp -> DatabaseResetNotice.markSeen(Settings.getPreferences(), stamp) },
         ).also { it.install() }
 
         // Cold-start auto update check. No-op if user disabled the toggle, the
         // 1-day throttle hasn't expired, or the latest release is the skipped
         // version. Surfaces newer release via Snackbar with "View" action.
-        maybeAutoCheckUpdates()
+        mNotices.maybeAutoCheckUpdates()
 
         purgeLegacyHeaderCustomization()
 
@@ -594,77 +302,6 @@ class MainActivity : StageActivity(),
                         SettingsActivity.SCREEN_ADVANCED
                     )
             )
-        }
-    }
-
-    /**
-     * Binds the drawer header: static app version line plus the active-server
-     * pill. The pill tracks the active [ServerProfile] via Room — it re-emits
-     * on any profile-table change (rename, URL edit, switch, delete), so the
-     * header self-updates without an explicit event channel.
-     */
-    /**
-     * Tank tag materialization failures (spec 2026-09-22 §5.3) are
-     * best-effort follow-ups of a membership write that already succeeded;
-     * whichever scene is up, the shell names the tank in a Snackbar. Queued
-     * tag retries and local download-group write failures (REL-24) use the
-     * same channel with a message that names no tank.
-     */
-    private fun observeTankTagSyncFailures() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                AppEventBus.tankTagSyncFailedEvent.collect { event ->
-                    val host = mDrawerLayout ?: return@collect
-                    val text = when (event.kind) {
-                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.TAGS ->
-                            getString(R.string.tank_tag_sync_failed, event.tankName)
-                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.CATEGORIES ->
-                            getString(R.string.tank_category_sync_failed, event.tankName)
-                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.TAGS_PENDING ->
-                            getString(R.string.tank_tag_sync_pending)
-                        com.lanraragi.reader.event.TankTagSyncFailedEvent.Kind.DOWNLOAD_GROUP ->
-                            getString(R.string.tank_download_group_failed)
-                    }
-                    Snackbar.make(host, text, Snackbar.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    private fun bindNavHeader(navView: NavigationView) {
-        val header = navView.getHeaderView(0)
-        header.findViewById<TextView>(R.id.nav_header_version)?.text =
-            getString(R.string.nav_header_version_format, BuildConfig.VERSION_NAME)
-        observeTankTagSyncFailures()
-        val serverLine = header.findViewById<TextView>(R.id.nav_header_server) ?: return
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                ServiceRegistry.dataModule.profileRepository.observeAll()
-                    .map { profiles -> profiles.firstOrNull { it.isActive } }
-                    .distinctUntilChanged()
-                    .collect { active ->
-                        serverLine.text = active?.let(::formatServerLine)
-                            ?: getString(R.string.lrr_no_servers)
-                    }
-            }
-        }
-    }
-
-    private fun formatServerLine(profile: ServerProfile): String {
-        val parsed = runCatching { parseBaseUrl(profile.url) }.getOrNull()
-        val host = parsed?.host.orEmpty()
-        val port = parsed?.port?.takeIf { it != 80 && it != 443 }
-        val hostPort = if (port != null) "$host:$port" else host
-        val line = if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
-            profile.name
-        } else {
-            "${profile.name} · $hostPort"
-        }
-        // Plain HTTP: say so where the active server is always visible (audit C27).
-        return if (LRRUrlHelper.isUnencrypted(profile.url)) {
-            "$line · ${getString(R.string.lrr_unencrypted_connection)}"
-        } else {
-            line
         }
     }
 
@@ -710,47 +347,6 @@ class MainActivity : StageActivity(),
     }
 
     /**
-     * Second-stage confirm for the destructive "reset database" branch of
-     * the boot-failure dialog ([BootNoticePresenter]).
-     * Cancellable so back / outside-tap aborts; positive button calls
-     * [resetDatabaseAndRestart].
-     */
-    private fun showResetDatabaseConfirm() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.lrr_boot_load_failed_reset_db_confirm_title)
-            .setMessage(R.string.lrr_boot_load_failed_reset_db_confirm_message)
-            .setPositiveButton(R.string.lrr_boot_load_failed_reset_db_confirm_yes) { _, _ ->
-                resetDatabaseAndRestart()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setCancelable(true)
-            .show()
-    }
-
-    /**
-     * Move `eh.db` (plus its `-journal`, `-wal`, `-shm` siblings) aside to
-     * `eh.db.broken-<millis>` on IO, then trigger a process restart so the
-     * next `AppDatabase.getInstance` call rebuilds an empty schema. The old
-     * file is kept for manual recovery (audit C04).
-     */
-    private fun resetDatabaseAndRestart() {
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    val moved = DatabaseQuarantine.quarantine(applicationContext.getDatabasePath(AppDatabase.DB_NAME))
-                    // The user chose this reset: no "database was damaged" notice
-                    // after the restart (REL-02). Committed, the process dies next.
-                    val stamp = moved?.let { DatabaseQuarantine.stampOf(it, AppDatabase.DB_NAME) }
-                    if (stamp != null) DatabaseResetNotice.markSeen(Settings.getPreferences(), stamp, commit = true)
-                } catch (t: Throwable) {
-                    Log.e(TAG, "database quarantine failed during boot-failure reset", t)
-                }
-            }
-            triggerRebirth()
-        }
-    }
-
-    /**
      * Restart the whole app process, finishing this task's activities first so the
      * relaunch starts from a clean stack. The process-rebirth mechanics live in
      * [LRReaderApplication.restart].
@@ -760,218 +356,19 @@ class MainActivity : StageActivity(),
         (application as LRReaderApplication).restart()
     }
 
-    /** Waits for the download list before showing the resume banner; one per start. */
-    private var resumeBannerJob: Job? = null
-
     override fun onStart() {
         super.onStart()
         // LANraragi: EhViewer auto-update check disabled
-        resumeBannerJob?.cancel()
-        resumeBannerJob = lifecycleScope.launch {
-            // At cold start the download list loads in the background and records
-            // downloads a killed process left queued (A47) as it goes; wait for it
-            // so they are offered now rather than on the next foreground. Past the
-            // timeout, show whatever is already recorded.
-            withTimeoutOrNull(DOWNLOADS_INIT_WAIT_MS) {
-                withContext(Dispatchers.IO) {
-                    ServiceRegistry.dataModule.downloadManager.awaitInitAsync(timeoutMs = Long.MAX_VALUE)
-                }
-            }
-            if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                maybeShowDownloadResumeBanner()
-            }
-        }
+        mNotices.onStart()
     }
 
     override fun onStop() {
-        // A waiter from this start must not consume the banner for the next one:
-        // two waiters would each consume, the second Snackbar replacing the first.
-        resumeBannerJob?.cancel()
-        resumeBannerJob = null
+        mNotices.onStop()
         super.onStop()
-    }
-
-    /**
-     * On return to the foreground, surface any downloads that paused waiting for
-     * the network or gave up after the wait timeout. One-shot (consume()).
-     */
-    private fun maybeShowDownloadResumeBanner() {
-        // Note: if app-lock is active, this fires in onStart() before SecurityScene
-        // is pushed in onResume(), so the Snackbar appears briefly behind the lock and
-        // its consumed state will not re-show after unlock. Accepted v1 limitation.
-        val host = mDrawerLayout ?: return
-        when (val snapshot = DownloadResumeBanner.consume()) {
-            is DownloadResumeBanner.Snapshot.Paused -> {
-                Snackbar.make(
-                    host,
-                    getString(R.string.download_resume_paused_snackbar),
-                    Snackbar.LENGTH_LONG,
-                ).setAction(R.string.download_resume_view_action) {
-                    startScene(Announcer(DownloadsScene::class.java))
-                }.show()
-            }
-            is DownloadResumeBanner.Snapshot.StorageFull -> showRequeueSnackbar(
-                host,
-                resources.getQuantityString(
-                    R.plurals.download_resume_storage_full_snackbar, snapshot.count, snapshot.count
-                ),
-                R.string.download_resume_resume_action,
-                snapshot.arcids,
-            )
-            is DownloadResumeBanner.Snapshot.SystemLimited -> showRequeueSnackbar(
-                host,
-                resources.getQuantityString(
-                    R.plurals.download_resume_system_limit_snackbar, snapshot.count, snapshot.count
-                ),
-                R.string.download_resume_resume_action,
-                snapshot.arcids,
-            )
-            is DownloadResumeBanner.Snapshot.TimedOut -> showRequeueSnackbar(
-                host,
-                resources.getQuantityString(
-                    R.plurals.download_resume_timed_out_snackbar, snapshot.count, snapshot.count
-                ),
-                R.string.download_resume_retry_action,
-                snapshot.arcids,
-            )
-            is DownloadResumeBanner.Snapshot.Interrupted -> showRequeueSnackbar(
-                host,
-                resources.getQuantityString(
-                    R.plurals.download_resume_interrupted_snackbar, snapshot.count, snapshot.count
-                ),
-                R.string.download_resume_resume_action,
-                snapshot.arcids,
-            )
-            DownloadResumeBanner.Snapshot.None -> { /* nothing to show */ }
-        }
-    }
-
-    /** A Snackbar whose action puts [arcids] back in the download queue. */
-    private fun showRequeueSnackbar(host: View, message: String, actionRes: Int, arcids: List<String>) {
-        Snackbar.make(host, message, Snackbar.LENGTH_LONG).setAction(actionRes) {
-            val intent = Intent(this, DownloadService::class.java)
-                .setAction(DownloadService.ACTION_START_RANGE)
-                .putStringArrayListExtra(DownloadService.KEY_ARCID_LIST, ArrayList(arcids))
-            startService(intent)
-        }.show()
-    }
-
-    private fun getThemeText(): String {
-        val resId = when (AppearanceSettings.getTheme()) {
-            AppearanceSettings.THEME_DARK -> R.string.theme_dark
-            AppearanceSettings.THEME_BLACK -> R.string.theme_black
-            else -> R.string.theme_light
-        }
-        return getString(resId)
-    }
-
-    private fun getNextTheme(): Int = when (AppearanceSettings.getTheme()) {
-        AppearanceSettings.THEME_DARK -> AppearanceSettings.THEME_BLACK
-        AppearanceSettings.THEME_BLACK -> AppearanceSettings.THEME_LIGHT
-        else -> AppearanceSettings.THEME_DARK
-    }
-
-    private fun checkDownloadLocation() {
-        // getDownloadLocation + ensureDir stat/mkdirs the download root — keep
-        // that off the main thread's first-frame path.
-        lifecycleScope.launch {
-            val valid = withContext(Dispatchers.IO) {
-                val uniFile = DownloadSettings.getDownloadLocation()
-                // null == uniFile for first start
-                uniFile == null || uniFile.ensureDir()
-            }
-            if (valid || isFinishing) return@launch
-            AlertDialog.Builder(this@MainActivity)
-                .setTitle(R.string.waring)
-                .setMessage(R.string.invalid_download_location)
-                .setPositiveButton(R.string.get_it, null)
-                .show()
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun checkCellularNetwork() {
-        if (Network.getActiveNetworkType(this) == ConnectivityManager.TYPE_MOBILE) {
-            showTip(R.string.cellular_network_warning, BaseScene.LENGTH_SHORT)
-        }
     }
 
     private fun onInit() {
         // EH cookie auth check removed -- login state is managed via LRRAuthManager
-    }
-
-    /**
-     * Cold-start auto check. Honors the user toggle; all other guards
-     * (1-day throttle, skip-version, versionCode comparison) are internal
-     * to AppUpdater and surfaced via the sealed UpdateResult.
-     *
-     * Failure modes (network error, GitHub API non-2xx, unparseable tag) are
-     * silent — user discovers via the next day's check or via manual entry.
-     */
-    private fun maybeAutoCheckUpdates() {
-        if (!UpdateSettings.getAutoCheckUpdates()) return
-
-        lifecycleScope.launch {
-            val result = AppUpdater.update(manualChecking = false)
-            if (result is AppUpdater.UpdateResult.NewerAvailable) {
-                showUpdateSnackbar(result.release)
-            }
-            // UpToDate / NetworkError / Skipped — auto path is silent for all of these.
-            // AppUpdater handles throttle, skip-version, and putUpdateTime internally.
-            // Advisories share the update check's toggle and daily throttle:
-            // Skipped means no network round trip today.
-            if (result !is AppUpdater.UpdateResult.Skipped) maybeShowAdvisory()
-        }
-    }
-
-    /**
-     * Shows the first unseen advisory.json notice for this version, once
-     * (audit C46): the only way to warn users of a bad build, since Android
-     * cannot roll an app back.
-     */
-    private suspend fun maybeShowAdvisory() {
-        val advisories = withContext(Dispatchers.IO) {
-            UpdateAdvisories.fetch(ServiceRegistry.networkModule.okHttpClient)
-        }
-        val locale = resources.configuration.locales[0]
-        val advisory = UpdateAdvisories.pick(
-            advisories, BuildConfig.VERSION_CODE, UpdateSettings.getSeenAdvisories(), locale
-        )
-        if (advisory != null && !isFinishing && !isDestroyed) {
-            UpdateSettings.markAdvisorySeen(advisory.id)
-            val builder = AlertDialog.Builder(this)
-                .setTitle(R.string.update_advisory_title)
-                .setMessage(advisory.messageFor(locale))
-                .setPositiveButton(android.R.string.ok, null)
-            val url = advisory.safeUrl
-            if (url != null) {
-                builder.setNeutralButton(R.string.update_advisory_details) { _, _ -> openAdvisoryUrl(url) }
-            }
-            builder.show()
-        }
-    }
-
-    @SuppressLint("UnsafeImplicitIntentLaunch")
-    private fun openAdvisoryUrl(url: String) {
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-        } catch (e: ActivityNotFoundException) {
-            Log.e(TAG, "No browser for the advisory link", e)
-        }
-    }
-
-    private fun showUpdateSnackbar(release: GhRelease) {
-        val host = mDrawerLayout ?: return
-        val versionLabel = release.tagName
-        Snackbar.make(
-            host,
-            getString(R.string.update_snackbar_text, versionLabel),
-            Snackbar.LENGTH_LONG,
-        )
-            .setAction(R.string.update_snackbar_action) {
-                UpdateDialog.showUpdateDialog(this, release)
-            }
-            .show()
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
@@ -1039,7 +436,7 @@ class MainActivity : StageActivity(),
         // dismissal topSceneClass still reads as the gate. One handler hop
         // later the stack is settled.
         mainHandler.post {
-            maybeReplayPendingGateRequest()
+            mRouter.maybeReplayPendingGateRequest()
             // The lock screen may just have gone: show what waited for it.
             bootNotices?.maybeShow()
         }
@@ -1169,58 +566,7 @@ class MainActivity : StageActivity(),
         return open
     }
 
-    @SuppressLint("NonConstantResourceId", "RtlHardcoded")
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        // Don't select twice
-        if (item.isChecked) {
-            return false
-        }
-
-        val id = item.itemId
-
-        when (item.itemId) {
-            R.id.nav_homepage -> {
-                val navHomepage = Bundle()
-                navHomepage.putString(GalleryListScene.KEY_ACTION, GalleryListScene.ACTION_HOMEPAGE)
-                startSceneFirstly(
-                    Announcer(GalleryListScene::class.java).setArgs(navHomepage)
-                )
-            }
-            R.id.nav_favourite -> startScene(Announcer(LRRCategoriesScene::class.java))
-            R.id.nav_tankoubons -> startScene(Announcer(TankoubonsScene::class.java))
-            R.id.nav_history -> startScene(Announcer(HistoryScene::class.java))
-            R.id.nav_downloads -> startScene(Announcer(DownloadsScene::class.java))
-            R.id.nav_stats -> startScene(
-                Announcer(com.lanraragi.reader.ui.scene.stats.ReadingStatsScene::class.java)
-            )
-            R.id.nav_settings -> {
-                settingsLauncher.launch(Intent(this, SettingsActivity::class.java))
-            }
-            R.id.nav_server_config -> {
-                // Show server list if profiles exist, otherwise direct to config
-                lifecycleScope.launch {
-                    try {
-                        val profileCount = withContext(Dispatchers.IO) {
-                            ServiceRegistry.dataModule.profileRepository.getAllProfiles().size
-                        }
-                        if (profileCount > 0) {
-                            startScene(Announcer(ServerListScene::class.java))
-                        } else {
-                            startScene(Announcer(ServerConfigScene::class.java))
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to load server profiles", e)
-                    }
-                }
-            }
-        }
-
-        if (id != R.id.nav_stub) {
-            mDrawerLayout?.closeDrawers()
-        }
-
-        return true
-    }
+    override fun onNavigationItemSelected(item: MenuItem): Boolean = mNavDrawer.onItemSelected(item)
 
     override fun onDrawerSlide(drawerView: View, percent: Float) {
     }
