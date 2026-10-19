@@ -162,7 +162,7 @@
     <string name="refresh">새로고침</string>
     <string name="file_chooser_title">다음으로 열기</string>
     <string name="favorited">카테고리에 있음</string>
-    <string name="not_favorited">카테고리에 없음</string>
+    <string name="not_favorited">카테고리에 추가</string>
     <string name="copy_tag">태그 복사</string>
 
     <!-- Rating -->

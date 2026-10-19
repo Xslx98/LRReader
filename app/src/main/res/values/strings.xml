@@ -245,7 +245,7 @@
     <string name="refresh">Refresh</string>
     <string name="file_chooser_title">Open with</string>
     <string name="favorited">Categorized</string>
-    <string name="not_favorited">Not categorized</string>
+    <string name="not_favorited">Add to category</string>
     <string name="copy_tag">Copy</string>
 
     <!-- Rating -->

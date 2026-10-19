@@ -161,7 +161,7 @@
     <string name="refresh">รีเฟรช</string>
     <string name="file_chooser_title">เปิดด้วย</string>
     <string name="favorited">เพิ่มในหมวดหมู่แล้ว</string>
-    <string name="not_favorited">ยังไม่เพิ่มหมวดหมู่</string>
+    <string name="not_favorited">เพิ่มไปยังหมวดหมู่</string>
 
     <!-- Rating -->
 

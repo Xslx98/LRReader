@@ -120,7 +120,7 @@
     <string name="refresh">Neu laden</string>
     <string name="file_chooser_title">Öffnen mit</string>
     <string name="favorited">Zur Kategorie hinzugefügt</string>
-    <string name="not_favorited">Nicht Zur Kategorie hinzugefügt</string>
+    <string name="not_favorited">Zu Kategorie hinzufügen</string>
     <string name="copy_tag">Tag kopieren</string>
     <string name="copied_to_clipboard">Text in Zwischenablage kopiert</string>
     <string name="no_download_info">Downloads werden hier angezeigt</string>

@@ -152,7 +152,7 @@
     <string name="refresh">Actualizar</string>
     <string name="file_chooser_title">Abrir con</string>
     <string name="favorited">Categoría</string>
-    <string name="not_favorited">No En categorías</string>
+    <string name="not_favorited">Añadir a una categoría</string>
     <string name="copy_tag">Copiar etiqueta</string>
 
     <!-- Rating -->

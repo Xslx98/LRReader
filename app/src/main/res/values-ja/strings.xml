@@ -130,7 +130,7 @@
     <string name="refresh">更新</string>
     <string name="file_chooser_title">アプリで開く</string>
     <string name="favorited">カテゴリ済み</string>
-    <string name="not_favorited">未カテゴリ</string>
+    <string name="not_favorited">カテゴリに追加</string>
     <string name="copy_tag">タグをコピー</string>
     <!-- Rating -->
     <!-- Gallery Info -->

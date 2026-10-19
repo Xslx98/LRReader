@@ -157,7 +157,7 @@
     <string name="refresh">重新整理</string>
     <string name="file_chooser_title">選擇開啟方式</string>
     <string name="favorited">已分類</string>
-    <string name="not_favorited">未分類</string>
+    <string name="not_favorited">加入分類</string>
     <string name="copy_tag">複製</string>
 
     <!-- Rating -->

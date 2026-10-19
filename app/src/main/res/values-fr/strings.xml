@@ -152,7 +152,7 @@
     <string name="refresh">Rafraîchir</string>
     <string name="file_chooser_title">Ouvrir avec</string>
     <string name="favorited">Ajoutée à catégories</string>
-    <string name="not_favorited">Non ajoutée à catégories</string>
+    <string name="not_favorited">Ajouter à une catégorie</string>
 
     <!-- Rating -->
 
