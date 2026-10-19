@@ -23,6 +23,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.lanraragi.framework.lib.glview.anim.Animation;
+import com.lanraragi.framework.lib.glview.anim.AnimatorDurationScale;
 import com.lanraragi.framework.lib.glview.anim.FloatAnimation;
 import com.lanraragi.framework.lib.glview.view.GLView;
 import com.lanraragi.framework.lib.glview.widget.GLEdgeView;
@@ -625,7 +626,9 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
             endScale = MIN_SCALE;
         }
 
-        mSmoothScaler.startSmoothScaler(x, y, startScale, endScale, 300);
+        // Follows the system animator scale; at 0 the zoom is instant.
+        mSmoothScaler.startSmoothScaler(x, y, startScale, endScale,
+                (int) AnimatorDurationScale.scale(DOUBLE_TAP_SCALE_DURATION));
     }
 
     @Override
@@ -1316,6 +1319,8 @@ class ScrollLayoutManager extends GalleryView.LayoutManager {
             }
         }
     }
+
+    private static final long DOUBLE_TAP_SCALE_DURATION = 300L;
 
     private class SmoothScaler extends Animation {
 
