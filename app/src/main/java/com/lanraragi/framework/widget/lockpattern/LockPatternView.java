@@ -560,9 +560,9 @@ public class LockPatternView extends View {
             }
             addCellToPattern(cell);
             if (mEnableHapticFeedback) {
+                // Honours the system touch-feedback switch (no FLAG_IGNORE_GLOBAL_SETTING).
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY,
-                        HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
-                        | HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
             }
             return cell;
         }
