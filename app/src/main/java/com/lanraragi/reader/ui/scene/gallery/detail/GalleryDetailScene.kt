@@ -19,27 +19,16 @@ package com.lanraragi.reader.ui.scene.gallery.detail
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewParent
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.RatingBar
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.event.AppEventBus
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import com.hippo.android.resource.AttrResources
 import com.hippo.drawerlayout.DrawerLayout
 import com.lanraragi.reader.Analytics
@@ -48,7 +37,6 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.AppearanceSettings
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.buildRatingEmoji
@@ -114,11 +102,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
      Page-thumbnail grid
      ---------------*/
     private lateinit var pageThumbsViewModel: PageThumbnailsViewModel
-    private var mPageThumbRecycler: RecyclerView? = null
-    private var mPageThumbProgress: ProgressBar? = null
-    private var mPageThumbEmpty: TextView? = null
-    private var mPageThumbAdapter: PageThumbnailAdapter? = null
-    private var mPageThumbSpanCount: Int = 0
+    private lateinit var pageThumbs: DetailPageThumbs
 
     /*---------------
      Extracted helpers
@@ -211,6 +195,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         // archive entry, mirroring [GalleryDetailViewModel.resetForNewEntry].
         pageThumbsViewModel =
             ViewModelProvider(requireActivity())[PageThumbnailsViewModel::class.java]
+        pageThumbs = DetailPageThumbs(this, viewModel, pageThumbsViewModel)
 
         if (savedInstanceState == null) {
             onInit()
@@ -487,60 +472,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         viewModel.downloadManager.addDownloadInfoListener(viewModel.downloadInfoListener)
 
-        setupPageThumbnailGrid(view)
+        pageThumbs.setUp(view)
 
         return view
-    }
-
-    /**
-     * Wire up the per-page thumbnail grid at the bottom of the
-     * detail page. Splits the spanCount calculation, adapter
-     * binding and scroll-listener install into one place so the
-     * onCreateView2 critical path stays readable.
-     */
-    private fun setupPageThumbnailGrid(view: View) {
-        val recycler = view.findViewById<RecyclerView>(R.id.page_thumb_recycler) ?: return
-        val progress = view.findViewById<ProgressBar>(R.id.page_thumb_progress)
-        val empty = view.findViewById<TextView>(R.id.page_thumb_empty)
-        val jumpButton = view.findViewById<TextView>(R.id.page_thumb_jump)
-
-        mPageThumbRecycler = recycler
-        mPageThumbProgress = progress
-        mPageThumbEmpty = empty
-
-        val displayMetrics = resources.displayMetrics
-        // Target tile width is resolved at bind time from the user's
-        // AppearanceSettings.KEY_DETAIL_PAGE_THUMB_SIZE preference,
-        // not hard-coded — so a user can pick a chunkier (large)
-        // or denser (small) grid without rebuilding the app. SPAN_MIN
-        // / SPAN_MAX still clamp the result so an extreme display
-        // never collapses the grid or runs more than 6 columns.
-        val targetWidthPx = resources.getDimensionPixelSize(
-            AppearanceSettings.getDetailPageThumbSizeResId()
-        ).coerceAtLeast(1)
-        val spanCount = (displayMetrics.widthPixels / targetWidthPx)
-            .coerceIn(SPAN_MIN, SPAN_MAX)
-        mPageThumbSpanCount = spanCount
-
-        val adapter = PageThumbnailAdapter(
-            onPageClick = { page0 -> openReaderAtPage(page0) },
-            onPageRetry = { page0 -> pageThumbsViewModel.retryPage(page0) },
-        )
-        mPageThumbAdapter = adapter
-
-        recycler.layoutManager = GridLayoutManager(view.context, spanCount)
-        // Disable item-change animations so the partial rebind on
-        // notifyItemChanged(pos, PAYLOAD) does not flash the thumbnail.
-        recycler.itemAnimator = null
-        recycler.adapter = adapter
-
-        recycler.addOnScrollListener(
-            PrefetchScrollListener(spanCount, onWindow = pageThumbsViewModel::retainWindow) { page ->
-                pageThumbsViewModel.requestPage(page)
-            }
-        )
-
-        jumpButton?.setOnClickListener { showJumpToPageDialog() }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -631,29 +565,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
 
         // ----- Page-thumbnail grid wiring -----
-        // Kick off the page-list fetch as soon as we have an archive in
-        // the nav-arg. Independent of detail metadata so it runs in
-        // parallel with `requestGalleryDetail` and we don't gate the
-        // thumbnail grid behind a slow metadata response.
-        // Raw view-scoped launch: a per-attach one-shot (`first()`), must NOT
-        // sit inside repeatOnLifecycle or it would re-run on every foreground
-        // return.
-        viewLifecycleOwner.lifecycleScope.launch(
-            ServiceRegistry.coroutineModule.exceptionHandler
-        ) {
-            val arc = viewModel.archive.filterNotNull().first()
-            mPageThumbAdapter?.submitArcid(arc.arcid)
-            pageThumbsViewModel.start(arc.arcid, arc.serverProfileId)
-        }
-        // State machine drives top-level visibility: spinner vs empty
-        // text vs RecyclerView populated with pageCount empty slots.
-        collectFlow(viewLifecycleOwner, pageThumbsViewModel.state) { state ->
-            applyPageThumbsState(state)
-        }
-        // Per-page status snapshot drives partial cell rebinds.
-        collectFlow(viewLifecycleOwner, pageThumbsViewModel.pageStates) { states ->
-            mPageThumbAdapter?.submitStates(states)
-        }
+        pageThumbs.observe(viewLifecycleOwner)
     }
 
     /**
@@ -694,149 +606,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mHeaderBinder?.bindReadProgress(localPage1, totalPages)
     }
 
-    /**
-     * Apply a [PageThumbnailsViewModel.State] snapshot to the grid UI.
-     * Toggles visibility between recycler / spinner / empty-text and,
-     * on Loaded transitions, primes the initial prefetch window so the
-     * user sees thumbnails populating without waiting for a scroll.
-     */
-    private fun applyPageThumbsState(state: PageThumbnailsViewModel.State) {
-        val recycler = mPageThumbRecycler ?: return
-        val progress = mPageThumbProgress
-        val empty = mPageThumbEmpty
-        when (state) {
-            is PageThumbnailsViewModel.State.Idle -> {
-                recycler.visibility = View.VISIBLE
-                progress?.visibility = View.GONE
-                empty?.visibility = View.GONE
-            }
-            is PageThumbnailsViewModel.State.Loading -> {
-                recycler.visibility = View.INVISIBLE
-                progress?.visibility = View.VISIBLE
-                empty?.visibility = View.GONE
-            }
-            is PageThumbnailsViewModel.State.Loaded -> {
-                recycler.visibility = View.VISIBLE
-                progress?.visibility = View.GONE
-                empty?.visibility = View.GONE
-                mPageThumbAdapter?.submitPageCount(state.pageCount)
-                // The PrefetchScrollListener only fires on scroll, so the
-                // first-viewport request kick comes from here. Posts to
-                // the recycler so layout has applied before we calculate
-                // visible rows.
-                recycler.post { triggerInitialThumbPrefetch(state.pageCount) }
-            }
-            is PageThumbnailsViewModel.State.Error -> {
-                recycler.visibility = View.GONE
-                progress?.visibility = View.GONE
-                if (empty != null) {
-                    empty.visibility = View.VISIBLE
-                    empty.text = errorTextFor(state.tier)
-                }
-            }
-        }
-    }
-
-    private fun errorTextFor(tier: PageThumbnailsViewModel.ErrorTier): String {
-        val resId = when (tier) {
-            PageThumbnailsViewModel.ErrorTier.UNREACHABLE -> R.string.lrr_page_thumbnails_unreachable
-            PageThumbnailsViewModel.ErrorTier.DELETED -> R.string.lrr_page_thumbnails_deleted
-            PageThumbnailsViewModel.ErrorTier.GENERIC -> R.string.lrr_page_thumbnails_generic
-        }
-        return getString(resId)
-    }
-
-    /**
-     * Request thumbnails for the initial viewport plus the standard
-     * prefetch window. Repository requests are idempotent so callers
-     * (this method and the scroll listener) coexist without dedup
-     * logic here.
-     */
-    private fun triggerInitialThumbPrefetch(pageCount: Int) {
-        val span = mPageThumbSpanCount.coerceAtLeast(1)
-        // Visible rows ≈ recycler height / approx item height. Use a
-        // fixed envelope (3 visible + 3 prefetch) instead — close
-        // enough for the small grid heights we use and avoids a
-        // measure-dependent calculation that would race the initial
-        // layout pass.
-        val initialCount = (span * INITIAL_ROWS).coerceAtMost(pageCount)
-        for (page in 0 until initialCount) {
-            pageThumbsViewModel.requestPage(page)
-        }
-    }
-
-    /**
-     * Open the reader at the given 0-indexed [page0]. Reuses the
-     * shared [com.lanraragi.reader.ui.GalleryOpenHelper] so the local /
-     * stream path selection and warmup behaviour stay identical to
-     * the regular "Read" button.
-     */
-    private fun openReaderAtPage(page0: Int) {
-        val archive = viewModel.getEffectiveArchive() ?: return
-        val ctx = getEHContext() ?: return
-        // Tank-flow members read in the whole-tank session; the tapped
-        // member-local page maps to its global page inside it.
-        com.lanraragi.reader.gallery.TankSessionRouter
-            .tankIntentFor(ctx, archive.arcid, memberPage0 = page0)
-            ?.let { tankIntent ->
-                startActivity(tankIntent)
-                return
-            }
-        viewLifecycleOwner.lifecycleScope.launch(
-            ServiceRegistry.coroutineModule.exceptionHandler
-        ) {
-            val intent = withContext(Dispatchers.IO) {
-                com.lanraragi.reader.ui.GalleryOpenHelper.buildReadIntent(
-                    ctx,
-                    archive,
-                    startPage = page0,
-                )
-            }
-            startActivity(intent)
-        }
-    }
-
-    /**
-     * Prompt for a 1-indexed page number and snap the grid to that
-     * page. Does not open the reader — that path is reserved for
-     * thumbnail taps so the two interactions stay distinct.
-     */
-    private fun showJumpToPageDialog() {
-        val ctx = getEHContext() ?: return
-        val loaded = pageThumbsViewModel.state.value as? PageThumbnailsViewModel.State.Loaded ?: return
-        val pageCount = loaded.pageCount
-        if (pageCount <= 0) return
-
-        val container = FrameLayout(ctx).apply {
-            val pad = resources.getDimensionPixelSize(R.dimen.keyline_margin)
-            setPadding(pad, pad / 2, pad, pad / 2)
-        }
-        val input = EditText(ctx).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.lrr_page_thumbnails_jump_dialog_hint, pageCount)
-        }
-        container.addView(input)
-
-        AlertDialog.Builder(ctx)
-            .setTitle(R.string.lrr_page_thumbnails_jump_dialog_title)
-            .setView(container)
-            .setPositiveButton(R.string.lrr_page_thumbnails_jump_dialog_ok) { dialog, _ ->
-                val raw = input.text?.toString()?.trim()?.toIntOrNull()
-                if (raw == null || raw < 1 || raw > pageCount) {
-                    android.widget.Toast.makeText(
-                        ctx,
-                        getString(R.string.lrr_page_thumbnails_jump_dialog_out_of_range, pageCount),
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
-                    return@setPositiveButton
-                }
-                mPageThumbRecycler?.scrollToPosition(raw - 1)
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         // Leaving the page (not a rotation, not the reader opening — that is
@@ -873,14 +642,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionHandler?.destroy()
         mActionHandler = null
 
-        // Detach the adapter explicitly so RecyclerView clears its view
-        // pool — otherwise the pooled view holders keep references to
-        // the previous detail page's Activity context.
-        mPageThumbRecycler?.adapter = null
-        mPageThumbRecycler = null
-        mPageThumbProgress = null
-        mPageThumbEmpty = null
-        mPageThumbAdapter = null
+        pageThumbs.clear()
 
         properties = null
     }
@@ -1167,21 +929,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         private const val KEY_ARCHIVE_DETAIL = "archive_detail"
         private const val KEY_REQUEST_ID = "request_id"
-
-        // Thumbnail grid column count is derived from screen width:
-        // floor(screen_width / target_tile_width), clamped here so a
-        // foldable / tablet never blows past 6 columns and a narrow
-        // phone never collapses below 3. The target tile width is
-        // resolved per-bind from AppearanceSettings.getDetailPageThumb
-        // SizeResId() so the user's small/medium/large preference
-        // takes effect on next Scene entry.
-        private const val SPAN_MIN: Int = 3
-        private const val SPAN_MAX: Int = 6
-
-        // Initial request window: span_count × this many rows.
-        // 4 rows cover the typical visible viewport + one row of
-        // prefetch headroom; the scroll listener picks up the rest.
-        private const val INITIAL_ROWS: Int = 4
 
         private const val TRANSITION_ANIMATION_DISABLED = true
     }
