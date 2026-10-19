@@ -515,7 +515,6 @@
     <string name="guide_gallery_left">Seiten umblättern</string>
     <string name="guide_gallery_right">Seiten umblättern</string>
     <string name="guide_gallery_menu">Menü</string>
-    <string name="guide_gallery_progress">Fortschitt</string>
     <string name="guide_gallery_long_click">Drücken und halten, um Seitemenü zu öffnen</string>
     <string name="from_the_future">Von der Zukunft</string>
     <string name="just_now">Gerade</string>
@@ -885,6 +884,8 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="cd_start_download">Download starten</string>
     <string name="cd_stop_download">Download stoppen</string>
     <string name="cd_start_auto_read">Automatische Übertragung starten</string>
+    <string name="cd_reader_settings">Leseeinstellungen</string>
+    <string name="reader_top_bar_page">Seite %1$d / %2$d</string>
     <string name="cd_stop_auto_read">Automatische Übertragung stoppen</string>
     <string name="cd_downloaded">Heruntergeladen</string>
     <string name="cd_random">Zufällig</string>

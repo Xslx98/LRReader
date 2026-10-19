@@ -624,7 +624,6 @@
     <string name="guide_gallery_left">Cambiar página</string>
     <string name="guide_gallery_right">Cambiar página</string>
     <string name="guide_gallery_menu">Menú</string>
-    <string name="guide_gallery_progress">Progreso</string>
     <string name="guide_gallery_long_click">Pulsación larga para abrir el menú de página</string>
 
     <!-- Readable Time -->
@@ -981,6 +980,8 @@ Esta acción no se puede deshacer.</string>
     <string name="cd_start_download">Iniciar descarga</string>
     <string name="cd_stop_download">Detener descarga</string>
     <string name="cd_start_auto_read">Iniciar transferencia automática</string>
+    <string name="cd_reader_settings">Ajustes de lectura</string>
+    <string name="reader_top_bar_page">Página %1$d / %2$d</string>
     <string name="cd_stop_auto_read">Detener transferencia automática</string>
     <string name="cd_downloaded">Descargado</string>
     <string name="cd_random">Aleatorio</string>

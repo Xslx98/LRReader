@@ -629,7 +629,6 @@
     <string name="guide_gallery_left">翻頁</string>
     <string name="guide_gallery_right">翻頁</string>
     <string name="guide_gallery_menu">選單</string>
-    <string name="guide_gallery_progress">進度條</string>
     <string name="guide_gallery_long_click">長按開啟頁面選單</string>
 
     <!-- Readable Time -->
@@ -942,6 +941,8 @@
     <string name="cd_start_download">開始下載</string>
     <string name="cd_stop_download">停止下載</string>
     <string name="cd_start_auto_read">開始自動翻頁</string>
+    <string name="cd_reader_settings">閲讀設定</string>
+    <string name="reader_top_bar_page">第 %1$d / %2$d 頁</string>
     <string name="cd_stop_auto_read">停止自動翻頁</string>
     <string name="cd_downloaded">已下載</string>
     <string name="cd_random">隨機</string>

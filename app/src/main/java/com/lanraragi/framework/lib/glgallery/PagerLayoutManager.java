@@ -25,6 +25,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 
 import com.lanraragi.framework.lib.glview.anim.Animation;
+import com.lanraragi.framework.lib.glview.anim.AnimatorDurationScale;
 import com.lanraragi.framework.lib.glview.anim.FloatAnimation;
 import com.lanraragi.framework.lib.glview.view.GLView;
 import com.lanraragi.framework.lib.glview.widget.GLEdgeView;
@@ -470,7 +471,9 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
             }
             final float pageDelta = 7 * (float) Math.abs(mOffset) / (width + mInterval);
             int duration = (int) ((pageDelta + 1) * 100);
-            mSmoothScroller.startSmoothScroll(dx, 0, duration);
+            // The settle after a drag follows the system animator scale;
+            // at 0 it snaps. The user-driven drag and fling are unscaled.
+            mSmoothScroller.startSmoothScroll(dx, 0, (int) AnimatorDurationScale.scale(duration));
         }
     }
 
@@ -492,7 +495,8 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
             }
         }
 
-        mSmoothScaler.startSmoothScaler(x, y, scale, endScale, 300);
+        mSmoothScaler.startSmoothScaler(x, y, scale, endScale,
+                (int) AnimatorDurationScale.scale(DOUBLE_TAP_SCALE_DURATION));
     }
 
     @Override
@@ -1050,6 +1054,8 @@ class PagerLayoutManager extends GalleryView.LayoutManager {
             }
         }
     }
+
+    private static final long DOUBLE_TAP_SCALE_DURATION = 300L;
 
     private class SmoothScaler extends Animation {
 

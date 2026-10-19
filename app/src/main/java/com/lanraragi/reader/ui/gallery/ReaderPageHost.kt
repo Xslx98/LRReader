@@ -5,6 +5,7 @@ import android.view.View
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.framework.lib.glgallery.SimpleAdapter
+import com.lanraragi.framework.lib.glview.anim.AnimatorDurationScale
 import com.lanraragi.framework.lib.glview.image.ImageWrapper
 import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.lib.image.PageFit
@@ -47,6 +48,7 @@ class ReaderPageHost(private val activity: Activity) {
         val adapter = PageAdapter(glRootView, provider, onDataChanged)
         this.adapter = adapter
         pageFit = ReadingSettings.getPageFit()
+        AnimatorDurationScale.refresh(activity)
         val galleryView = ReaderGalleryViews.build(activity, adapter, listener, startPage)
         this.galleryView = galleryView
         glRootView.setContentPane(galleryView)
@@ -106,6 +108,8 @@ class ReaderPageHost(private val activity: Activity) {
     }
 
     fun onResume() {
+        // The scale may have changed in system settings while we were away.
+        AnimatorDurationScale.refresh(activity)
         glRootView?.onResume()
     }
 

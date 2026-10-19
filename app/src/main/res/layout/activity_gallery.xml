@@ -72,6 +72,80 @@
 
     </com.lanraragi.reader.widget.GalleryHeader>
 
+    <!-- Shown with the bottom slider as one menu; ReaderTopBar pads it below
+         the status bar and the display cutout. -->
+    <LinearLayout
+        android:id="@+id/reader_top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@color/gallery_top_bar_background"
+        android:gravity="center_vertical"
+        android:minHeight="56dp"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:visibility="invisible">
+
+        <ImageButton
+            android:id="@+id/reader_top_bar_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_back"
+            android:src="@drawable/v_arrow_left_dark_x24" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/reader_top_bar_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/reader_top_bar_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/reader_top_bar_direction"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/settings_read_reading_direction"
+            android:src="@drawable/v_swap_horiz_black_x24" />
+
+        <ImageButton
+            android:id="@+id/reader_top_bar_rotation"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/settings_read_screen_rotation"
+            android:src="@drawable/v_screen_rotation_x24" />
+
+        <ImageButton
+            android:id="@+id/reader_top_bar_settings"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_reader_settings"
+            android:src="@drawable/v_settings_dark_x24" />
+    </LinearLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -79,16 +153,41 @@
         android:fitsSystemWindows="true"
         android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/auto_transfer"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="12dp"
-            android:contentDescription="@string/cd_start_auto_read"
-            android:visibility="invisible"
-            android:layout_gravity="end"
-            android:src="@drawable/ic_start_play_24" />
+        <FrameLayout
+            android:id="@+id/seek_bar_bubble_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/auto_transfer"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:contentDescription="@string/cd_start_auto_read"
+                android:visibility="invisible"
+                android:layout_gravity="end"
+                android:src="@drawable/ic_start_play_24" />
+
+            <!-- The page the slider thumb points at while it is dragged;
+                 GallerySliderController moves it over the thumb. -->
+            <TextView
+                android:id="@+id/seek_bar_bubble"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|bottom"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/reader_page_bubble"
+                android:gravity="center"
+                android:minWidth="48dp"
+                android:paddingStart="12dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:visibility="invisible" />
+        </FrameLayout>
 
         <com.lanraragi.reader.widget.SeekBarPanel
             android:id="@+id/seek_bar_panel"

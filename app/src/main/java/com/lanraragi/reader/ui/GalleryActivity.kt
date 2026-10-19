@@ -57,6 +57,7 @@ import com.lanraragi.reader.ui.gallery.ReaderLaunch
 import com.lanraragi.reader.ui.gallery.ReaderPageHost
 import com.lanraragi.reader.ui.gallery.ReaderSessionSetup
 import com.lanraragi.reader.ui.gallery.ReaderStampsCoordinator
+import com.lanraragi.reader.ui.gallery.ReaderTopBar
 import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
@@ -68,7 +69,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 
 class GalleryActivity : BaseActivity(), GalleryView.Listener,
-    GalleryInputHandler.Callback, GalleryMenuHelper.SettingsCallback {
+    GalleryInputHandler.Callback, GalleryMenuHelper.SettingsCallback, ReaderTopBar.Callback {
 
     companion object {
         const val ACTION_DIR = "dir"
@@ -317,6 +318,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         val progress = mChrome.bindHeader()
 
         mChrome.bindSlider(mSliderController, mInputHandler, galleryView, progress)
+        mChrome.bindTopBar(mSliderController, this, mLaunch.displayTitle()) { page0 ->
+            mLaunch.tankMemberTitle(mGalleryProvider, page0)
+        }
 
         val size = galleryProvider.size()
         mSliderController.size = size
@@ -629,6 +633,25 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         recreate()
     }
 
+    // ======== ReaderTopBar.Callback ========
+
+    override fun onTopBarBack() = onBackPressedDispatcher.onBackPressed()
+
+    override fun onTopBarSettings() {
+        mSliderController.hideMenu()
+        showSettingsDialog()
+    }
+
+    override fun onTopBarSettingChanged() = GalleryMenuHelper.applyStoredSettings(this)
+
+    override fun onTopBarPopup(open: Boolean) {
+        if (open) mSliderController.holdAutoHide() else mSliderController.resumeAutoHide()
+    }
+
+    private fun showSettingsDialog() {
+        mChrome.showSettingsDialog(this, mImageOps::applyImmersiveToDialog)
+    }
+
     // ======== NotifyTask (UI-thread dispatch) ========
 
     /** Runs [key] with [value] on the UI thread through a pooled [NotifyTask]. */
@@ -670,9 +693,10 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                     mContinuation?.onPageShown(mValue, mGalleryProvider?.size() ?: 0)
                     mTankProgress?.onPageShown(mValue)
                 }
-                NOTIFY_KEY_TAP_MENU_AREA ->
-                    mChrome.showSettingsDialog(this@GalleryActivity, mImageOps::applyImmersiveToDialog)
-                NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.onTapSliderArea()
+                // GalleryView still splits the centre column into a menu and
+                // a slider area; both halves (and the menu keys) toggle the
+                // one menu. The settings dialog opens from the top bar.
+                NOTIFY_KEY_TAP_MENU_AREA, NOTIFY_KEY_TAP_SLIDER_AREA -> mSliderController.toggleMenu()
                 NOTIFY_KEY_TAP_ERROR_TEXT -> mGalleryProvider?.forceRequest(mValue)
                 NOTIFY_KEY_LONG_PRESS_PAGE -> mImageOps.showPageDialog(mValue)
                 NOTIFY_KEY_PAGE_TRANSFORMS -> mStampsCoordinator.onPageTransformsChanged()

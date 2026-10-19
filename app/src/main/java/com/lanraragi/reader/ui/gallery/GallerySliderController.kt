@@ -16,7 +16,9 @@
 
 package com.lanraragi.reader.ui.gallery
 
+import android.animation.Animator
 import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.annotation.SuppressLint
 import android.view.View
 import androidx.core.view.isVisible
@@ -32,8 +34,9 @@ import com.lanraragi.framework.lib.yorozuya.AnimationUtils
 import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener
 
 /**
- * Controls the page seek bar panel and auto-transfer button animations,
- * progress text updates, and show/hide behavior.
+ * Controls the reader menu — the top bar, the page seek bar panel and the
+ * auto-transfer button — with its show/hide animations, plus the progress
+ * text updates.
  * Extracted from GalleryActivity to reduce its responsibility scope.
  */
 class GallerySliderController : SeekBar.OnSeekBarChangeListener {
@@ -43,6 +46,16 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     companion object {
         private const val SLIDER_ANIMATION_DURING = 150L
         private const val HIDE_SLIDER_DELAY = 3000L
+
+        /**
+         * Left offset of a [bubbleWidth]-wide bubble centred on [thumbCenter],
+         * kept inside a [rowWidth]-wide row.
+         */
+        @JvmStatic
+        fun bubbleOffset(thumbCenter: Float, bubbleWidth: Int, rowWidth: Int): Float {
+            val max = (rowWidth - bubbleWidth).coerceAtLeast(0).toFloat()
+            return (thumbCenter - bubbleWidth / 2f).coerceIn(0f, max)
+        }
     }
 
     private var mSeekBarPanel: View? = null
@@ -54,8 +67,23 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     private var mSystemUiHelper: SystemUiHelper? = null
     private var mGalleryView: GalleryView? = null
 
-    private var mSeekBarPanelAnimator: ObjectAnimator? = null
-    private var mAutoTransferAnimator: ObjectAnimator? = null
+    private var mTopBar: View? = null
+    private var mBubble: TextView? = null
+    private var mTracking = false
+    private val mLocation = IntArray(2)
+
+    /** Running show/hide animators, one per menu panel. */
+    private val mPanelAnimators = HashMap<View, ObjectAnimator>()
+
+    /** Whether the menu (top bar, slider and auto-turn button) is shown or showing. */
+    var isMenuShown: Boolean = false
+        private set
+
+    /** Told when the menu starts showing (true) or hiding (false). */
+    var onMenuVisibilityChanged: ((Boolean) -> Unit)? = null
+
+    /** Told the current 0-indexed page and the page count whenever either changes. */
+    var onPageChanged: ((index: Int, size: Int) -> Unit)? = null
 
     var layoutMode: Int = 0
         set(value) {
@@ -84,28 +112,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         mAutoTransferPanel?.requestLayout()
     }
 
-    private val mShowSliderListener = object : SimpleAnimatorListener() {
-        override fun onAnimationEnd(animation: android.animation.Animator) {
-            mSeekBarPanelAnimator = null
-            mAutoTransferAnimator = null
-        }
-    }
-
-    private val mHideSliderListener = object : SimpleAnimatorListener() {
-        override fun onAnimationEnd(animation: android.animation.Animator) {
-            mSeekBarPanelAnimator = null
-            mSeekBarPanel?.visibility = View.INVISIBLE
-            mAutoTransferAnimator = null
-            mAutoTransferPanel?.visibility = View.INVISIBLE
-        }
-    }
-
-    private val mHideSliderRunnable = Runnable {
-        if (mSeekBarPanel != null) {
-            hideSlider(mSeekBarPanel!!, mSeekBarPanelAnimator)
-            hideSlider(mAutoTransferPanel, mAutoTransferAnimator)
-        }
-    }
+    private val mHideSliderRunnable = Runnable { hideMenu() }
 
     fun setViews(
         seekBarPanel: View?,
@@ -124,6 +131,16 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         mSeekBar?.setOnSeekBarChangeListener(this)
     }
 
+    /** The reader top bar, shown and hidden with the slider. */
+    fun setTopBar(topBar: View?) {
+        mTopBar = topBar
+    }
+
+    /** The page bubble shown over the thumb while the slider is dragged. */
+    fun setBubble(bubble: TextView?) {
+        mBubble = bubble
+    }
+
     fun setSystemUiHelper(helper: SystemUiHelper?) {
         mSystemUiHelper = helper
     }
@@ -134,6 +151,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
     @SuppressLint("SetTextI18n")
     fun updateProgress() {
+        onPageChanged?.invoke(currentIndex, size)
         val progress = mProgress ?: return
         if (size <= 0 || currentIndex < 0) {
             progress.text = null
@@ -160,7 +178,9 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
             end = rightText
             seekBar.setReverse(false)
         }
-        start.text = (currentIndex + 1).toString()
+        // Fixed ends: the first page at the start of the reading direction,
+        // the page count at its end. The bubble shows the dragged-to page.
+        start.text = "1"
         end.text = size.toString()
         seekBar.max = size - 1
         seekBar.progress = currentIndex
@@ -168,23 +188,19 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
     // --- SeekBar.OnSeekBarChangeListener ---
 
-    @SuppressLint("SetTextI18n")
     override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-        val start = if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT) {
-            mRightText
-        } else {
-            mLeftText
-        }
-        if (fromUser && start != null) {
-            start.text = (progress + 1).toString()
-        }
+        if (mTracking) showBubble(seekBar, progress)
     }
 
     override fun onStartTrackingTouch(seekBar: SeekBar) {
         mainHandler.removeCallbacks(mHideSliderRunnable)
+        mTracking = true
+        showBubble(seekBar, seekBar.progress)
     }
 
     override fun onStopTrackingTouch(seekBar: SeekBar) {
+        mTracking = false
+        mBubble?.visibility = View.INVISIBLE
         mainHandler.postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
         val progress = seekBar.progress
         if (progress != currentIndex && mGalleryView != null) {
@@ -192,86 +208,117 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         }
     }
 
-    // --- Show/hide slider panel ---
+    /** Puts the 1-indexed [progress] page in the bubble, centred over the thumb. */
+    private fun showBubble(seekBar: SeekBar, progress: Int) {
+        val bubble = mBubble ?: return
+        val row = bubble.parent as? View ?: return
+        val thumb = seekBar.thumb ?: return
+        bubble.text = (progress + 1).toString()
+        bubble.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        // ReversibleSeekBar mirrors its drawing, not its thumb bounds.
+        var thumbX = seekBar.paddingLeft - seekBar.thumbOffset + thumb.bounds.exactCenterX()
+        if (layoutMode == GalleryView.LAYOUT_RIGHT_TO_LEFT) thumbX = seekBar.width - thumbX
+        seekBar.getLocationInWindow(mLocation)
+        val seekBarX = mLocation[0]
+        row.getLocationInWindow(mLocation)
+        bubble.translationX = bubbleOffset(
+            thumbCenter = seekBarX - mLocation[0] + thumbX,
+            bubbleWidth = bubble.measuredWidth,
+            rowWidth = row.width,
+        )
+        bubble.visibility = View.VISIBLE
+    }
 
-    fun onTapSliderArea() {
-        val seekBarPanel = mSeekBarPanel ?: return
-        val autoTransferPanel = mAutoTransferPanel ?: return
+    // --- Show/hide the menu: top bar, slider panel and auto-turn button ---
+
+    fun toggleMenu() {
+        if (isMenuShown) hideMenu() else showMenu()
+    }
+
+    fun showMenu() {
+        if (mSeekBarPanel == null || mAutoTransferPanel == null) return
         if (size <= 0 || currentIndex < 0) return
-
         mainHandler.removeCallbacks(mHideSliderRunnable)
-
-        if (seekBarPanel.isVisible) {
-            hideSlider(seekBarPanel, mSeekBarPanelAnimator)
-            hideSlider(autoTransferPanel, mAutoTransferAnimator)
-        } else {
-            showSlider(seekBarPanel, mSeekBarPanelAnimator)
-            showSlider(autoTransferPanel, mAutoTransferAnimator)
-            mainHandler.postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
+        if (!isMenuShown) {
+            isMenuShown = true
+            menuPanels().forEach { animatePanel(it, show = true) }
+            mSystemUiHelper?.let {
+                it.show()
+                isShowSystemUi = true
+            }
+            onMenuVisibilityChanged?.invoke(true)
         }
+        mainHandler.postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
     }
 
-    private fun showSlider(sliderPanel: View, animator: ObjectAnimator?) {
-        if (animator != null) {
-            animator.cancel()
-        }
-        val newAnimator: ObjectAnimator
-        if (sliderPanel === mAutoTransferPanel) {
-            sliderPanel.translationX = sliderPanel.width.toFloat()
-            newAnimator = ObjectAnimator.ofFloat(sliderPanel, View.TRANSLATION_X, 0.0f)
-        } else {
-            sliderPanel.translationY = sliderPanel.height.toFloat()
-            newAnimator = ObjectAnimator.ofFloat(sliderPanel, View.TRANSLATION_Y, 0.0f)
-        }
-
-        sliderPanel.visibility = View.VISIBLE
-
-        newAnimator.duration = SLIDER_ANIMATION_DURING
-        newAnimator.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
-        newAnimator.addUpdateListener(mUpdateSliderListener)
-        newAnimator.addListener(mShowSliderListener)
-        newAnimator.start()
-
-        if (sliderPanel === mAutoTransferPanel) {
-            mAutoTransferAnimator = newAnimator
-        } else {
-            mSeekBarPanelAnimator = newAnimator
-        }
-
-        if (mSystemUiHelper != null) {
-            mSystemUiHelper!!.show()
-            isShowSystemUi = true
-        }
-    }
-
-    private fun hideSlider(sliderPanel: View?, @Suppress("UNUSED_PARAMETER") animator: ObjectAnimator?) {
-        if (sliderPanel == null) return
-        if (animator != null) {
-            animator.cancel()
-        }
-        val newAnimator: ObjectAnimator
-        if (sliderPanel === mAutoTransferPanel) {
-            newAnimator = ObjectAnimator.ofFloat(sliderPanel, View.TRANSLATION_X, sliderPanel.width.toFloat())
-        } else {
-            newAnimator = ObjectAnimator.ofFloat(sliderPanel, View.TRANSLATION_Y, sliderPanel.height.toFloat())
-        }
-
-        newAnimator.duration = SLIDER_ANIMATION_DURING
-        newAnimator.interpolator = AnimationUtils.SLOW_FAST_INTERPOLATOR
-        newAnimator.addUpdateListener(mUpdateSliderListener)
-        newAnimator.addListener(mHideSliderListener)
-        newAnimator.start()
-
-        if (sliderPanel === mAutoTransferPanel) {
-            mAutoTransferAnimator = newAnimator
-        } else {
-            mSeekBarPanelAnimator = newAnimator
-        }
-
-        if (mSystemUiHelper != null) {
-            mSystemUiHelper!!.hide()
+    fun hideMenu() {
+        mainHandler.removeCallbacks(mHideSliderRunnable)
+        if (!isMenuShown) return
+        isMenuShown = false
+        menuPanels().forEach { animatePanel(it, show = false) }
+        mSystemUiHelper?.let {
+            it.hide()
             isShowSystemUi = false
         }
+        onMenuVisibilityChanged?.invoke(false)
+    }
+
+    /** Keeps the menu up until [resumeAutoHide], e.g. while a popup from it is open. */
+    fun holdAutoHide() {
+        mainHandler.removeCallbacks(mHideSliderRunnable)
+    }
+
+    fun resumeAutoHide() {
+        mainHandler.removeCallbacks(mHideSliderRunnable)
+        if (isMenuShown) mainHandler.postDelayed(mHideSliderRunnable, HIDE_SLIDER_DELAY)
+    }
+
+    private fun menuPanels(): List<View> = listOfNotNull(mTopBar, mSeekBarPanel, mAutoTransferPanel)
+
+    /**
+     * Slides [panel] in from (or out to) its own edge while fading it. A
+     * reversal mid-animation starts from where the panel is now.
+     */
+    private fun animatePanel(panel: View, show: Boolean) {
+        mPanelAnimators.remove(panel)?.cancel()
+        val property = if (panel === mAutoTransferPanel) View.TRANSLATION_X else View.TRANSLATION_Y
+        val hiddenOffset = when {
+            panel === mAutoTransferPanel -> panel.width.toFloat()
+            panel === mTopBar -> -panel.height.toFloat()
+            else -> panel.height.toFloat()
+        }
+        if (show && !panel.isVisible) {
+            property.set(panel, hiddenOffset)
+            panel.alpha = 0f
+        }
+        panel.visibility = View.VISIBLE
+
+        val animator = ObjectAnimator.ofPropertyValuesHolder(
+            panel,
+            PropertyValuesHolder.ofFloat(property, if (show) 0f else hiddenOffset),
+            PropertyValuesHolder.ofFloat(View.ALPHA, if (show) 1f else 0f),
+        )
+        animator.duration = SLIDER_ANIMATION_DURING
+        animator.interpolator = if (show) {
+            AnimationUtils.FAST_SLOW_INTERPOLATOR
+        } else {
+            AnimationUtils.SLOW_FAST_INTERPOLATOR
+        }
+        if (panel !== mTopBar) animator.addUpdateListener(mUpdateSliderListener)
+        animator.addListener(object : SimpleAnimatorListener() {
+            private var canceled = false
+
+            override fun onAnimationCancel(animation: Animator) {
+                canceled = true
+            }
+
+            override fun onAnimationEnd(animation: Animator) {
+                if (mPanelAnimators[panel] === animation) mPanelAnimators.remove(panel)
+                if (!show && !canceled) panel.visibility = View.INVISIBLE
+            }
+        })
+        mPanelAnimators[panel] = animator
+        animator.start()
     }
 
     /** Remove pending hide-slider callbacks. Call from Activity.onDestroy(). */
@@ -282,6 +329,9 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     /** Release view references. Call from Activity.onDestroy(). */
     fun destroy() {
         removeCallbacks()
+        mPanelAnimators.values.toList().forEach { it.cancel() }
+        mTopBar = null
+        mBubble = null
         mSeekBarPanel = null
         mAutoTransferPanel = null
         mLeftText = null

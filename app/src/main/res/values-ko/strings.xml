@@ -598,7 +598,6 @@
     <string name="guide_gallery_left">페이지 넘기기</string>
     <string name="guide_gallery_right">페이지 넘기기</string>
     <string name="guide_gallery_menu">메뉴</string>
-    <string name="guide_gallery_progress">독서 진행도</string>
     <string name="guide_gallery_long_click">페이지 메뉴를 열려면 길게 누르세요.</string>
 
     <!-- Readable Time -->
@@ -933,6 +932,8 @@
     <string name="cd_start_download">다운로드 시작</string>
     <string name="cd_stop_download">다운로드 중지</string>
     <string name="cd_start_auto_read">자동 전환 시작</string>
+    <string name="cd_reader_settings">읽기 설정</string>
+    <string name="reader_top_bar_page">%1$d / %2$d 페이지</string>
     <string name="cd_stop_auto_read">자동 전환 중지</string>
     <string name="cd_downloaded">다운로드됨</string>
     <string name="cd_random">무작위</string>

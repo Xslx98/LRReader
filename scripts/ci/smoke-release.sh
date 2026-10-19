@@ -114,19 +114,21 @@ done
 check "reader $PAGE_TURNS page turns" 5
 
 # ---- Reader chrome and in-place rotation ---------------------------------
-# The centre column is split by GalleryView's MENU_AREA (upper half: the
-# settings dialog) and SLIDER_AREA (lower half: the slider menu).
+# Any tap in the centre column toggles the menu (top bar + slider); the
+# settings dialog opens from the top bar. The menu auto-hides after 3 s, so
+# tap the settings button as soon as it shows.
 CX=$((W / 2))
 adb shell input tap "$CX" $((H / 4))
+ui tap resource-id "$PKG:id/reader_top_bar_settings" 10
 ui wait resource-id "$PKG:id/reading_direction" 10
 check "reader settings dialog" 2
 adb shell input keyevent KEYCODE_BACK
 check "reader settings dialog closed" 2
 adb shell input tap "$CX" $((H * 3 / 4))
 ui wait resource-id "$PKG:id/seek_bar_panel" 10
-check "reader slider menu" 2
+check "reader menu" 2
 adb shell input tap "$CX" $((H * 3 / 4))
-check "reader slider menu closed" 3
+check "reader menu closed" 3
 # The reader handles rotation in place (configChanges, PERF-02): the GL view
 # re-lays out its pages instead of the activity being recreated.
 adb shell settings put system user_rotation 1

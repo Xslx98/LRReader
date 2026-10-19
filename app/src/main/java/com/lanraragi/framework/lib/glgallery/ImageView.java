@@ -19,6 +19,7 @@ package com.lanraragi.framework.lib.glgallery;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import com.lanraragi.framework.lib.glview.anim.AlphaAnimation;
+import com.lanraragi.framework.lib.glview.anim.AnimatorDurationScale;
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
 import com.lanraragi.framework.lib.glview.glrenderer.Texture;
 import com.lanraragi.framework.lib.glview.image.ImageTexture;
@@ -217,6 +218,8 @@ class ImageView extends GLView implements ImageTexture.Callback {
             // Start alpha animation, do not show animation for image has no valid rect
             getValidRect(mValidRect);
             if (!mValidRect.isEmpty()) {
+                // Follows the system animator scale (0 = no fade).
+                mAlphaAnimation.setDuration(AnimatorDurationScale.scale(ALPHA_ANIMATION_DURING));
                 startAnimation(mAlphaAnimation, true);
                 mImageTexture.start();
             }

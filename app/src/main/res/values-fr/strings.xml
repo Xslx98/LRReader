@@ -621,7 +621,6 @@
     <string name="guide_gallery_left">Tourner la page</string>
     <string name="guide_gallery_right">Tourner la page</string>
     <string name="guide_gallery_menu">Menu</string>
-    <string name="guide_gallery_progress">Progrès</string>
     <string name="guide_gallery_long_click">Maintenez pour ouvrir le menu de page</string>
 
     <!-- Readable Time -->
@@ -985,6 +984,8 @@ Cette action est irréversible.</string>
     <string name="cd_start_download">Démarrer le téléchargement</string>
     <string name="cd_stop_download">Arrêter le téléchargement</string>
     <string name="cd_start_auto_read">Démarrer le défilement automatique</string>
+    <string name="cd_reader_settings">Paramètres de lecture</string>
+    <string name="reader_top_bar_page">Page %1$d / %2$d</string>
     <string name="cd_stop_auto_read">Arrêter le défilement automatique</string>
     <string name="cd_downloaded">Téléchargé</string>
     <string name="cd_random">Aléatoire</string>
