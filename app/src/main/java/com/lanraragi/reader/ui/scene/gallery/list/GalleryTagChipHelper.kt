@@ -112,12 +112,13 @@ class GalleryTagChipHelper(private val callback: Callback) {
 
     fun buildChipGroup(gi: Archive?, tagFlowLayout: ChipGroup): ChipGroup {
         val colorTag = AttrResources.getAttrColor(callback.requireContext(), R.attr.tagBackgroundColor)
+        val colorTagText = AttrResources.getAttrColor(callback.requireContext(), R.attr.tagTextColor)
         if (gi == null) {
             val tagName = callback.requireContext().getString(R.string.lrr_no_preview_tags)
             @SuppressLint("InflateParams")
             val chip = callback.getLayoutInflater().inflate(R.layout.item_chip_tag, null) as Chip
             chip.chipBackgroundColor = ColorStateList.valueOf(colorTag)
-            chip.setTextColor(Color.WHITE)
+            chip.setTextColor(colorTagText)
             if (AppearanceSettings.getShowTagTranslations()) {
                 ensureEhTags()
                 chip.text = TagTranslationUtil.getTagCNBody(splitNamespace(tagName), ehTags)
@@ -138,7 +139,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
                 @SuppressLint("InflateParams")
                 val chip = callback.getLayoutInflater().inflate(R.layout.item_chip_tag, null) as Chip
                 chip.chipBackgroundColor = ColorStateList.valueOf(colorTag)
-                chip.setTextColor(Color.WHITE)
+                chip.setTextColor(colorTagText)
                 chip.text = if (translate) {
                     TagTranslationUtil.translateValue(namespace, tagName, ehTags)
                 } else {

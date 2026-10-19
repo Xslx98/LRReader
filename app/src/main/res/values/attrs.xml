@@ -62,6 +62,8 @@
         <!-- Label on a tagGroupBackgroundColor (namespace) chip. -->
         <attr name="tagGroupTextColor" format="color" />
         <attr name="tagBackgroundColor" format="color" />
+        <!-- Label on a tagBackgroundColor (value) chip. -->
+        <attr name="tagTextColor" format="color" />
 
         <!--
           Source-server badge palette. 8 slots indexed by

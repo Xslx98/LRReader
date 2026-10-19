@@ -91,7 +91,8 @@ internal class TankMemberStripAdapter(
             val density = view.resources.displayMetrics.density
             more.background = GradientDrawable().apply {
                 cornerRadius = CORNER_DP * density
-                setColor(AttrResources.getAttrColor(view.context, R.attr.tagGroupBackgroundColor))
+                // The light chip tone: its label is the accent colour.
+                setColor(AttrResources.getAttrColor(view.context, R.attr.tagBackgroundColor))
             }
         }
     }

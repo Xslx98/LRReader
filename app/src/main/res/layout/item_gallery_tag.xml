@@ -25,4 +25,4 @@
     android:paddingEnd="12dp"
     android:paddingTop="4dp"
     android:paddingBottom="4dp"
-    android:textColor="@android:color/white"/>
+    android:textColor="?attr/tagTextColor"/>
