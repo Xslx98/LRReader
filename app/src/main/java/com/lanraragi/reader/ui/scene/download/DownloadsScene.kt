@@ -26,12 +26,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
-import android.util.Log
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
@@ -42,7 +37,6 @@ import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.ToolbarScene
@@ -140,7 +134,7 @@ class DownloadsScene : ToolbarScene(),
         get() = viewModel.searchKey.value
         set(value) { viewModel.setSearchKey(value) }
 
-    private var mInitPosition = -1
+    private val deepLink by lazy { DownloadDeepLink(this, viewModel) }
 
     var searching: Boolean
         get() = viewModel.searching.value
@@ -158,47 +152,16 @@ class DownloadsScene : ToolbarScene(),
     override fun getNavCheckedItem(): Int = R.id.nav_downloads
 
     private fun handleArguments(args: Bundle?) {
-        if (args == null) return
+        deepLink.handle(args)
+    }
 
-        if (ACTION_CLEAR_DOWNLOAD_SERVICE == args.getString(KEY_ACTION)) {
-            DownloadService.Companion.clear()
-        }
+    /** True once onCreateView3 has created the list view. */
+    internal val isListViewCreated: Boolean get() = ::mRecyclerView.isInitialized
 
-        val arcid = args.getString(KEY_ARCID) ?: return
-        // The DownloadManager's in-memory list may still be loading on a cold
-        // start (it initializes asynchronously). Reading getDownloadInfo before
-        // that completes returns null and the deep link — e.g. tapping the
-        // "download complete" notification — silently no-ops. Await init first,
-        // then do the lookup on the main thread (where the manager's mutators
-        // are asserted to run). ::mRecyclerView.isInitialized already guards the
-        // case where the view isn't built yet (stashes mInitPosition).
-        lifecycleScope.launch {
-            try {
-                // awaitInitAsync asserts it is NOT on the main thread when init
-                // is still pending (the case this whole block exists for), so
-                // hop to IO for the wait; the lookup below resumes on Main.
-                withContext(Dispatchers.IO) {
-                    viewModel.downloadManager.awaitInitAsync()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "awaitInitAsync failed; deep-link lookup skipped", e)
-                return@launch
-            }
-            val info = viewModel.downloadManager.getDownloadInfo(arcid) ?: return@launch
-            viewModel.selectLabel(info.label)
-            updateForLabel()
-            updateView()
-
-            val list = mList
-            if (list != null) {
-                val position = list.indexOf(info)
-                if (position >= 0 && ::mRecyclerView.isInitialized) {
-                    mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
-                } else {
-                    mInitPosition = position
-                }
-            }
-        }
+    /** Turns the pagination to the page of list [position], and scrolls to it when [scroll]. */
+    internal fun showListPosition(position: Int, scroll: Boolean) {
+        mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
+        if (scroll) mRecyclerView.scrollToPosition(listIndexInPage(position))
     }
 
     override fun onNewArguments(args: Bundle) {
@@ -349,11 +312,7 @@ class DownloadsScene : ToolbarScene(),
             this, context, mRecyclerView, mSelectionHelper, mDragDropHelper
         )
 
-        if (mInitPosition >= 0 && viewModel.indexPage.value != 1) {
-            mPaginationHelper?.initPage(mInitPosition, mList, mRecyclerView, mPaginationIndicator)
-            mRecyclerView.scrollToPosition(listIndexInPage(mInitPosition))
-            mInitPosition = -1
-        }
+        deepLink.restorePendingPosition()
 
         DownloadListViews.configureFastScroller(context, fastScroller, mRecyclerView, this)
 
@@ -689,8 +648,6 @@ class DownloadsScene : ToolbarScene(),
     }
 
     companion object {
-        private val TAG = DownloadsScene::class.java.simpleName
-
         const val KEY_ARCID = "arcid"
         const val KEY_ACTION = "action"
         private const val KEY_LABEL = "label"
