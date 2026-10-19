@@ -10,6 +10,7 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.gallery.DirGalleryProvider
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.LRRGalleryProvider
+import com.lanraragi.reader.gallery.ReadingSessionTracker
 import com.lanraragi.reader.gallery.TankGalleryProvider
 import com.lanraragi.reader.gallery.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryActivity
@@ -48,6 +49,29 @@ object ReaderSessionSetup {
         }
         GalleryActivity.ACTION_TANK -> tankSeed?.let { TankGalleryProvider(context, it) }
         else -> null
+    }
+
+    /**
+     * Reading-session seam: consumed by the continue-reading shortcut and
+     * the daily reading aggregate. DIR-mode reading (no Archive) stays
+     * untracked — without start(), stop() in onStop is a no-op. A tank
+     * session tracks as ONE logical archive keyed by the tank id (global
+     * pages; completion = crossing the tank's end) — tank-only
+     * bookkeeping, and the shortcut/widget deep link resumes the
+     * composite session via MainActivity's isTankoubonId branch.
+     */
+    fun startReadingSession(
+        tracker: ReadingSessionTracker,
+        archive: Archive?,
+        tankSeed: TankSessionSeed?,
+        startPage: Int,
+        providerSize: () -> Int,
+    ) {
+        archive?.let {
+            tracker.start(it.arcid, it.serverProfileId, startPage, it.pagecount)
+        } ?: tankSeed?.let { seed ->
+            tracker.start(seed.tankId, seed.profileId, startPage, providerSize().coerceAtLeast(0))
+        }
     }
 
     /**

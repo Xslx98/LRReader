@@ -326,21 +326,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mSliderController.layoutMode = galleryView.layoutMode
         mInputHandler.layoutMode = galleryView.layoutMode
 
-        // Reading-session seam: consumed by the continue-reading shortcut and
-        // the daily reading aggregate. DIR-mode reading (no Archive) stays
-        // untracked — without start(), stop() in onStop is a no-op. A tank
-        // session tracks as ONE logical archive keyed by the tank id (global
-        // pages; completion = crossing the tank's end) — tank-only
-        // bookkeeping, and the shortcut/widget deep link resumes the
-        // composite session via MainActivity's isTankoubonId branch.
-        mLaunch.archive?.let {
-            mReadingSession.start(it.arcid, it.serverProfileId, startPage, it.pagecount)
-        } ?: mLaunch.tankSeed?.let { seed ->
-            mReadingSession.start(
-                seed.tankId, seed.profileId, startPage,
-                (mGalleryProvider?.size() ?: 0).coerceAtLeast(0),
-            )
-        }
+        ReaderSessionSetup.startReadingSession(
+            mReadingSession, mLaunch.archive, mLaunch.tankSeed, startPage
+        ) { mGalleryProvider?.size() ?: 0 }
 
         mChrome.applyInitialWindowSettings()
 
