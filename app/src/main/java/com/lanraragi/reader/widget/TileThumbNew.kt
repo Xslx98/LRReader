@@ -27,6 +27,10 @@ class TileThumbNew @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : LoadImageViewNew(context, attrs, defStyleAttr) {
 
+    init {
+        setPlaceholder(CoverPlaceholderDrawable(context))
+    }
+
     fun setThumbSize(thumbWidth: Int, thumbHeight: Int) {
         val aspect = if (thumbWidth > 0 && thumbHeight > 0) {
             MathUtils.clamp(thumbWidth / thumbHeight.toFloat(), MIN_ASPECT, MAX_ASPECT)

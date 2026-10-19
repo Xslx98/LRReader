@@ -56,6 +56,7 @@ import com.lanraragi.reader.ui.scene.ListMultiSelectHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
+import com.lanraragi.reader.widget.SkeletonView
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.hippo.refreshlayout.RefreshLayout
@@ -145,6 +146,8 @@ class GalleryListScene : BaseScene(),
         get() = ::recyclerView.isInitialized
 
     internal val tankMerge = GalleryTankMergeHelper(this)
+    internal val rowHighlighter = GalleryRowHighlighter(this)
+    private var loadingSkeleton: SkeletonView? = null
     private val events = GalleryListEvents(this)
     private val interactions = GalleryListInteractions(this)
     internal var uploadHelper: GalleryUploadHelper? = null
@@ -367,6 +370,12 @@ class GalleryListScene : BaseScene(),
 
         filterHelper?.updateFilterIcon(filterHelper?.filterTagList?.size ?: 0)
 
+        // First load shows a skeleton of the list instead of the spinner.
+        loadingSkeleton = SkeletonView(context).also {
+            it.setPadding(0, paddingTopSB, 0, 0)
+            contentLayout.setLoadingView(it)
+        }
+        shapeLoadingSkeleton()
         contentLayout.setHelper(mHelper)
         contentLayout.fastScroller.setOnDragHandlerListener(searchBarHelper)
 
@@ -463,6 +472,7 @@ class GalleryListScene : BaseScene(),
 
         cancelTankMerge()
         rootLayout = null
+        loadingSkeleton = null
         searchBarMover?.cancelAnimation()
         searchBarMover = null
         val helper = mHelper
@@ -534,9 +544,11 @@ class GalleryListScene : BaseScene(),
             it.setType(AppearanceSettings.getListMode())
             it.refreshColumnSize()
         }
+        shapeLoadingSkeleton()
         mDrawerHelper?.onResume()
 
         events.drainOnResume()
+        rowHighlighter.flushAfterReturn()
 
         // Auto-refresh when active server config changed (edit/switch/add)
         val currentVersion = LRRAuthManager.serverConfigVersion
@@ -551,6 +563,17 @@ class GalleryListScene : BaseScene(),
 
     override fun onBackPressed() {
         interactions.onBackPressed()
+    }
+
+    /** The first-load skeleton takes the shape of the current list mode. */
+    private fun shapeLoadingSkeleton() {
+        val skeleton = loadingSkeleton ?: return
+        if (AppearanceSettings.getListMode() == GalleryAdapterNew.TYPE_GRID) {
+            skeleton.shape = SkeletonView.Shape.GRID
+            skeleton.columnWidth = resources.getDimensionPixelOffset(AppearanceSettings.getThumbSizeResId())
+        } else {
+            skeleton.shape = SkeletonView.Shape.LIST
+        }
     }
 
     override fun hasInSceneBack(): Boolean = interactions.hasInSceneBack()

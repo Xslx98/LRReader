@@ -16,6 +16,7 @@
 
 package com.lanraragi.reader.ui.scene.history
 
+import com.lanraragi.reader.ui.Haptics
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.util.collectFlowWhileCreated
 import android.annotation.SuppressLint
@@ -572,7 +573,11 @@ class HistoryScene : ToolbarScene(),
 
         override fun onSwipeItem(holder: HistoryHolder, position: Int, result: Int): SwipeResultAction {
             return when (result) {
-                SwipeableItemConstants.RESULT_SWIPED_LEFT -> SwipeResultActionClear(position)
+                SwipeableItemConstants.RESULT_SWIPED_LEFT -> {
+                    // Released past the threshold: the row is going.
+                    Haptics.confirm(holder.itemView)
+                    SwipeResultActionClear(position)
+                }
                 else -> SwipeResultActionDefault()
             }
         }

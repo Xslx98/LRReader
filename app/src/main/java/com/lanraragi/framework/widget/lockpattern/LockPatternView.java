@@ -560,9 +560,9 @@ public class LockPatternView extends View {
             }
             addCellToPattern(cell);
             if (mEnableHapticFeedback) {
+                // Honours the system touch-feedback switch (no FLAG_IGNORE_GLOBAL_SETTING).
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY,
-                        HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
-                        | HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
             }
             return cell;
         }
@@ -722,6 +722,12 @@ public class LockPatternView extends View {
     }
 
     @Override
+    public boolean performClick() {
+        // A finished stroke counts as a click for accessibility services.
+        return super.performClick();
+    }
+
+    @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
         if (!mInputEnabled || !isEnabled()) {
             return false;
@@ -733,6 +739,7 @@ public class LockPatternView extends View {
                 return true;
             case MotionEvent.ACTION_UP:
                 handleActionUp(event);
+                performClick();
                 return true;
             case MotionEvent.ACTION_MOVE:
                 handleActionMove(event);

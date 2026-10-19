@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.ui.Haptics
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.animation.AnimatorListenerAdapter
@@ -259,6 +260,7 @@ internal class TankMergeAnimator(
     private fun land() {
         if (finished || cancelling || landed) return
         landed = true
+        Haptics.confirm(recyclerView)
         if (plan?.removals.isNullOrEmpty()) {
             // Ungrouped mode keeps the rows: bring them back.
             dimmedRows.forEach { row ->

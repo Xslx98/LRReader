@@ -566,6 +566,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         val gv = mGalleryView ?: return
         val atEnd = gv.isReachEnd
         mainHandler.post {
+            // A page turn past the last page: nowhere further to go here.
+            if (atEnd) Haptics.reject(window.decorView)
             mContinuation?.onEndOfBookEvent(atLastPage = atEnd)
         }
     }

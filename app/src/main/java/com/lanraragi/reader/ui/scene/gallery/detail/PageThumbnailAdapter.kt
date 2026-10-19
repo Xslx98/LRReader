@@ -21,6 +21,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.PageThumbnailCache
+import com.lanraragi.reader.widget.CoverPlaceholderDrawable
 import java.util.Locale
 
 /**
@@ -159,7 +160,7 @@ internal class PageThumbnailAdapter(
     private fun bindImage(holder: VH, position: Int) {
         val currentArcid = arcid
         if (currentArcid == null) {
-            holder.image.setImageDrawable(null)
+            holder.image.setImageDrawable(CoverPlaceholderDrawable(holder.image.context))
             holder.imageBindState = ImageBindState.EMPTY
             return
         }
@@ -176,7 +177,7 @@ internal class PageThumbnailAdapter(
                     // Empty → bitmap (first arrival after a cache miss
                     // resolved) or Failed → bitmap (recovery after the
                     // user tapped a broken tile and the retry landed).
-                    // 300 ms crossfade softens the transition so the
+                    // A short crossfade softens the transition so the
                     // grid feels like it is breathing rather than
                     // hard-cutting.
                     fadeInBitmap(holder.image, cachedBitmap)
@@ -188,14 +189,17 @@ internal class PageThumbnailAdapter(
                 holder.imageBindState = ImageBindState.FAILED
             }
             else -> {
-                holder.image.setImageDrawable(null)
+                if (holder.image.drawable !is CoverPlaceholderDrawable) {
+                    holder.image.setImageDrawable(CoverPlaceholderDrawable(holder.image.context))
+                }
                 holder.imageBindState = ImageBindState.EMPTY
             }
         }
     }
 
     private fun fadeInBitmap(imageView: ImageView, bitmap: Bitmap) {
-        val from = Color.TRANSPARENT.toDrawable()
+        // From the placeholder the cell was showing, if any.
+        val from = imageView.drawable as? CoverPlaceholderDrawable ?: Color.TRANSPARENT.toDrawable()
         val to = bitmap.toDrawable(imageView.resources)
         // LayerDrawable.getIntrinsicWidth/Height returns the max of
         // children — ColorDrawable reports -1, so the transition's
@@ -225,6 +229,6 @@ internal class PageThumbnailAdapter(
 
     private companion object {
         const val PAYLOAD_STATE: String = "page_state"
-        const val FADE_DURATION_MS: Int = 300
+        const val FADE_DURATION_MS: Int = 150
     }
 }

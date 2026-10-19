@@ -84,6 +84,7 @@ class GalleryListEvents(private val scene: GalleryListScene) {
             if (i >= 0) {
                 list[i] = list[i].copy(rating = event.rating)
                 scene.adapter?.notifyItemChanged(i)
+                scene.rowHighlighter.mark(event.arcid)
             }
         }
 
@@ -113,6 +114,7 @@ class GalleryListEvents(private val scene: GalleryListScene) {
             if (result.owner !== scene.batchOwnerToken) return@collectFlowWhileCreated
             batchResultBuffer.deliverOrBuffer(result, ready = scene.isResumed && scene.batchOpsHelper != null) {
                 scene.batchOpsHelper?.onBatchResult(it)
+                scene.rowHighlighter.onBatchResult(it)
             }
         }
     }
@@ -140,7 +142,10 @@ class GalleryListEvents(private val scene: GalleryListScene) {
         // once batchOpsHelper is live, else keep them buffered (never drain into
         // a null helper).
         if (scene.batchOpsHelper != null) {
-            batchResultBuffer.drain { scene.batchOpsHelper?.onBatchResult(it) }
+            batchResultBuffer.drain {
+                scene.batchOpsHelper?.onBatchResult(it)
+                scene.rowHighlighter.onBatchResult(it)
+            }
         }
     }
 

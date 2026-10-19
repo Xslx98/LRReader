@@ -26,7 +26,6 @@ import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -34,6 +33,7 @@ import android.view.View;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.lanraragi.framework.conaco.Conaco;
 import com.lanraragi.framework.conaco.ConacoTask;
@@ -55,6 +55,12 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
     public static final int RETRY_TYPE_CLICK = 1;
     public static final int RETRY_TYPE_LONG_CLICK = 2;
     private static final String TAG = LoadImageViewNew.class.getSimpleName();
+
+    /** Fade-in of a loaded image over the placeholder (decision 19: 150 ms). */
+    private static final int FADE_IN_MS = 150;
+
+    @Nullable
+    private Drawable mPlaceholder;
     private int mTaskId = Unikery.INVALID_ID;
     private Conaco<Image> mConaco;
     private String mKey;
@@ -147,15 +153,22 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         return drawable;
     }
 
-    private void clearDrawable() {
-//        // Recycle ImageDrawable
-//        ImageDrawable imageDrawable = getImageDrawable();
-//        if (imageDrawable != null) {
-//            imageDrawable.recycle();
-//        }
+    /**
+     * Shown instead of an empty view while there is no image (waiting,
+     * loading, or detached); the image fades in over it. Null keeps the view
+     * blank, as before.
+     */
+    public void setPlaceholder(@Nullable Drawable placeholder) {
+        Drawable current = getDrawable();
+        boolean showingPlaceholder = current == null || current == mPlaceholder;
+        mPlaceholder = placeholder;
+        if (showingPlaceholder) {
+            setImageDrawable(placeholder);
+        }
+    }
 
-        // Set drawable null
-        setImageDrawable(null);
+    private void clearDrawable() {
+        setImageDrawable(mPlaceholder);
     }
 
     private void clearRetry() {
@@ -331,11 +344,12 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         onPreSetImageDrawable(drawable, true);
         if ((source == Conaco.SOURCE_DISK || source == Conaco.SOURCE_NETWORK) && isShown()) {
             Drawable[] layers = new Drawable[2];
-            layers[0] = new ColorDrawable(Color.TRANSPARENT);
+            layers[0] = mPlaceholder != null ? mPlaceholder : new ColorDrawable(Color.TRANSPARENT);
             layers[1] = drawable;
             TransitionDrawable transitionDrawable = new TransitionDrawable(layers);
+            transitionDrawable.setCrossFadeEnabled(true);
             setImageDrawable(transitionDrawable);
-            transitionDrawable.startTransition(300);
+            transitionDrawable.startTransition(FADE_IN_MS);
         } else {
             setImageDrawable(drawable);
         }
@@ -370,20 +384,16 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
     @Override
     public void start() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                animatedImageDrawable.start();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            animatedImageDrawable.start();
         }
     }
 
     @Override
     public void stop() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                animatedImageDrawable.stop();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            animatedImageDrawable.stop();
         }
 
     }
@@ -391,10 +401,8 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
     @Override
     public boolean isRunning() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                return animatedImageDrawable.isRunning();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            return animatedImageDrawable.isRunning();
         }
         return false;
 
