@@ -126,7 +126,6 @@
     <ID>InjectDispatcher:TankoubonsViewModel.kt$TankoubonsViewModel$IO</ID>
     <ID>InstanceOfCheckForException:AppUpdater.kt$AppUpdater$t is CancellationException</ID>
     <ID>InstanceOfCheckForException:DetailActionHandler.kt$DetailActionHandler$e is CancellationException</ID>
-    <ID>InstanceOfCheckForException:DownloadsScene.kt$DownloadsScene$e is kotlinx.coroutines.CancellationException</ID>
     <ID>InstanceOfCheckForException:GalleryDetailViewModel.kt$GalleryDetailViewModel$catEx is kotlinx.coroutines.CancellationException</ID>
     <ID>InstanceOfCheckForException:GalleryDetailViewModel.kt$GalleryDetailViewModel$e is kotlinx.coroutines.CancellationException</ID>
     <ID>InstanceOfCheckForException:GalleryListDataHelper.kt$GalleryListDataHelper$e is CancellationException</ID>

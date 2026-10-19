@@ -68,7 +68,6 @@
     <ID>ImplicitDefaultLocale:ReaderPageCache.kt$ReaderPageCache$String.format( "Unknown image format: %02X %02X %02X %02X", header[0], header[1], header[2], header[3] )</ID>
     <ID>InstanceOfCheckForException:AppUpdater.kt$AppUpdater$t is CancellationException</ID>
     <ID>InstanceOfCheckForException:DetailActionHandler.kt$DetailActionHandler$e is CancellationException</ID>
-    <ID>InstanceOfCheckForException:DownloadsScene.kt$DownloadsScene$e is kotlinx.coroutines.CancellationException</ID>
     <ID>InstanceOfCheckForException:GalleryDetailViewModel.kt$GalleryDetailViewModel$catEx is kotlinx.coroutines.CancellationException</ID>
     <ID>InstanceOfCheckForException:GalleryDetailViewModel.kt$GalleryDetailViewModel$e is kotlinx.coroutines.CancellationException</ID>
     <ID>InstanceOfCheckForException:GalleryListDataHelper.kt$GalleryListDataHelper$e is CancellationException</ID>

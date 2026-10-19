@@ -30,10 +30,8 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,19 +48,10 @@ import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.gallery.TankMemberSeed
-import com.lanraragi.reader.gallery.TankSeedStore
-import com.lanraragi.reader.gallery.TankSessionSeed
-import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.DownloadService
-import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.download.ProgressSnapshot
-import com.lanraragi.reader.download.TankFillDispatcher
-import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter
@@ -176,6 +165,10 @@ class DownloadsScene : ToolbarScene(),
     private val galleryActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result -> mGalleryOpenHelper?.updateReadProcess(result) }
+
+    private val tankCards by lazy {
+        DownloadTankCards(this, viewModel, launchGallery = { galleryActivityLauncher.launch(it) })
+    }
 
 
     override fun getNavCheckedItem(): Int = R.id.nav_downloads
@@ -737,94 +730,11 @@ class DownloadsScene : ToolbarScene(),
 
     // ── Tank download cards (Track 2) ─────────────────────────
 
-    /**
-     * Open a tank card: rebuild the whole-tank composite session from the
-     * PERSISTED group snapshot (works fully offline for downloaded
-     * members; pagecounts ride the member rows' archive_json).
-     */
-    internal fun openTankCard(info: DownloadInfo) {
-        val activity = activity2 ?: return
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val members = withContext(Dispatchers.IO) {
-                    ServiceRegistry.dataModule.downloadDbRepository
-                        .getTankMemberArchives(info.arcid)
-                }
-                if (members.isEmpty()) return@launch
-                val seed = TankSessionSeed(
-                    tankId = info.arcid,
-                    tankName = info.title.orEmpty(),
-                    profileId = info.serverProfileId,
-                    members = members.map { TankMemberSeed(it.arcid, it.title, it.pagecount) },
-                )
-                TankSeedStore.publish(seed)
-                galleryActivityLauncher.launch(GalleryOpenHelper.buildTankReadIntent(activity, seed))
-            } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                Log.e(TAG, "Failed to open tank card ${info.arcid}", e)
-            }
-        }
-    }
+    internal fun openTankCard(info: DownloadInfo) = tankCards.open(info)
 
-    /**
-     * Card start control (spec 2026-09-21 §4): fill the tank through the
-     * shared [TankFillDispatcher] — members already on disk are skipped,
-     * partial / failed ones restart, and group ids WITHOUT a download row
-     * (the INCOMPLETE case) get their metadata from the source server
-     * before enqueueing. Unreachable metadata is reported, never silently
-     * dropped; the group row is re-tagged with the full membership.
-     */
-    internal fun onTankCardStart(card: DownloadInfo) {
-        val context = ehContext ?: return
-        val tankId = card.arcid
-        val profileId = card.serverProfileId
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val data = ServiceRegistry.dataModule
-                val (ids, resolved) = withContext(Dispatchers.IO) {
-                    val ids = data.downloadDbRepository.getTankGroupMemberIds(tankId)
-                    val present = data.downloadDbRepository.getTankMemberArchives(tankId)
-                    val url = suspendRunCatching {
-                        resolveSourceBaseUrl(profileId, data.profileLookupCache)
-                    }.getOrNull()
-                    val client = ServiceRegistry.networkModule.okHttpClient
-                    ids to TankFillDispatcher.resolveMembers(ids, present) { id ->
-                        if (url == null) {
-                            null
-                        } else {
-                            suspendRunCatching {
-                                LRRArchiveApi.getArchiveMetadata(client, url, id)
-                                    .toArchive(sourceProfileId = profileId, sourceBaseUrl = url)
-                            }.getOrNull()
-                        }
-                    }
-                }
-                val ctx = ehContext ?: return@launch
-                val dm = viewModel.downloadManager
-                val plan = TankFillDispatcher.plan(resolved.members) { dm.getDownloadState(it) }
-                TankFillDispatcher.dispatch(ctx, dm, plan, tankId, card.title.orEmpty(), profileId, ids)
-                Toast.makeText(ctx, TankFillDispatcher.feedback(resources, plan), Toast.LENGTH_SHORT).show()
-                if (resolved.unresolved.isNotEmpty()) {
-                    val n = resolved.unresolved.size
-                    Toast.makeText(
-                        ctx, resources.getQuantityString(R.plurals.tank_fill_unreachable, n, n), Toast.LENGTH_LONG
-                    ).show()
-                }
-            } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                Log.e(TAG, "Failed to start tank card", e)
-                Toast.makeText(context, R.string.error_unknown, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+    internal fun onTankCardStart(card: DownloadInfo) = tankCards.start(card)
 
-    /** Card stop control: halt every member still queued or downloading. */
-    internal fun onTankCardStop(card: DownloadInfo) {
-        val active = viewModel.tankMembersOf(card.arcid)
-            .filter { it.state == DownloadState.WAIT || it.state == DownloadState.DOWNLOAD }
-            .map { it.arcid }
-        if (active.isNotEmpty()) viewModel.stopRangeDownloads(active)
-    }
+    internal fun onTankCardStop(card: DownloadInfo) = tankCards.stop(card)
 
     override fun onClickTitle() {
         mSearchHelper?.enterSearchMode(true)
