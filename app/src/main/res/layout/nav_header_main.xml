@@ -80,7 +80,7 @@
         android:background="@drawable/nav_header_chip_bg"
         app:drawableStartCompat="@drawable/nav_header_server_dot"
         android:drawablePadding="7dp"
-        android:ellipsize="middle"
+        android:ellipsize="end"
         android:gravity="center_vertical"
         android:maxWidth="236dp"
         android:paddingStart="12dp"

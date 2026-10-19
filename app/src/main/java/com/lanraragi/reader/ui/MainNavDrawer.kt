@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -93,11 +94,27 @@ class MainNavDrawer(
                 ServiceRegistry.dataModule.profileRepository.observeAll()
                     .map { profiles -> profiles.firstOrNull { it.isActive } }
                     .distinctUntilChanged()
-                    .collect { active ->
-                        serverLine.text = active?.let(::formatServerLine)
-                            ?: activity.getString(R.string.lrr_no_servers)
-                    }
+                    .collect { active -> bindServerLine(serverLine, active) }
             }
+        }
+    }
+
+    /**
+     * "name · host:port", ellipsized at the end, with an open padlock after it
+     * when the server is plain HTTP — said where the active server is always
+     * visible (audit C27). The padlock's meaning is in the content description.
+     */
+    private fun bindServerLine(serverLine: TextView, active: ServerProfile?) {
+        val line = active?.let(::formatServerLine) ?: activity.getString(R.string.lrr_no_servers)
+        val unencrypted = active != null && LRRUrlHelper.isUnencrypted(active.url)
+        serverLine.text = line
+        val dot = serverLine.compoundDrawablesRelative[0]
+        val lock = if (unencrypted) ContextCompat.getDrawable(activity, R.drawable.v_lock_open_x14) else null
+        serverLine.setCompoundDrawablesRelativeWithIntrinsicBounds(dot, null, lock, null)
+        serverLine.contentDescription = if (unencrypted) {
+            "$line · ${activity.getString(R.string.lrr_unencrypted_connection)}"
+        } else {
+            null
         }
     }
 
@@ -106,16 +123,10 @@ class MainNavDrawer(
         val host = parsed?.host.orEmpty()
         val port = parsed?.port?.takeIf { it != 80 && it != 443 }
         val hostPort = if (port != null) "$host:$port" else host
-        val line = if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
+        return if (hostPort.isEmpty() || profile.name.contains(hostPort)) {
             profile.name
         } else {
             "${profile.name} · $hostPort"
-        }
-        // Plain HTTP: say so where the active server is always visible (audit C27).
-        return if (LRRUrlHelper.isUnencrypted(profile.url)) {
-            "$line · ${activity.getString(R.string.lrr_unencrypted_connection)}"
-        } else {
-            line
         }
     }
 
