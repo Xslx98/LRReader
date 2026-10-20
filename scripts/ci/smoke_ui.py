@@ -9,6 +9,8 @@ the widget smoke.
   smoke_ui.py connect PKG URL              fill the first-run server form and wait for the list
   smoke_ui.py widgets PKG [ONLY...]        drive every user path of the framework widgets
                                            (see WIDGET_JOURNEYS); ONLY limits it to named journeys
+  smoke_ui.py shots PKG DIR [THEME...]     screenshot every main screen per theme (light, dark,
+                                           black) into DIR/<theme>/; run after `widgets`
 
 ATTR is any node attribute of the dump (text, resource-id, content-desc,
 class). Re-dumps before every tap. Needs adb on PATH or ANDROID_HOME.
@@ -756,6 +758,148 @@ WIDGET_JOURNEYS = ["home", "drawer", "reader", "downloads", "history", "favourit
                    "tanks", "settings", "lock"]
 
 
+class Shots(Widgets):
+    """Visual baseline: every main screen in each app theme, as PNGs named
+    `<theme>/<NN>-<screen>.png`. Run after `widgets` (it needs downloads and
+    history rows). The status bar is frozen with System UI demo mode so
+    reruns differ only where the app does."""
+
+    THEMES = {"light": 0, "dark": 1, "black": 2}
+
+    def __init__(self, pkg, out):
+        super().__init__(pkg)
+        self.out = out
+        self.n = 0
+
+    def shot(self, name, settle=1.5):
+        time.sleep(settle)
+        self.n += 1
+        path = os.path.join(self.out, f"{self.n:02d}-{name}.png")
+        with open(path, "wb") as f:
+            f.write(subprocess.run([ADB, "exec-out", "screencap", "-p"], capture_output=True).stdout)
+        self.check(f"shot {os.path.relpath(path)}", 0)
+
+    def demo_mode(self, on):
+        bc = ["am", "broadcast", "-a", "com.android.systemui.demo", "-e", "command"]
+        if on:
+            shell("settings", "put", "global", "sysui_demo_allowed", "1")
+            time.sleep(1)
+            shell(*bc, "enter")
+            time.sleep(1)
+            shell(*bc, "clock", "-e", "hhmm", "1200")
+            shell(*bc, "battery", "-e", "level", "100", "-e", "plugged", "false")
+            shell(*bc, "network", "-e", "wifi", "show", "-e", "level", "4")
+            shell(*bc, "notifications", "-e", "visible", "false")
+        else:
+            shell(*bc, "exit")
+            shell("settings", "put", "global", "sysui_demo_allowed", "0")
+
+    def set_theme(self, index):
+        """Display settings -> Theme -> the index-th option (locale-free)."""
+        self.nav("nav_settings", "settings")
+        self.tap_into(self.settings_titles()[0], "recycler_view")
+        self.tap(*centre(self.need_text("Theme")))
+        options = [n for n in nodes(dump()) if n.get("resource-id") == "android:id/text1"]
+        if len(options) != 3:
+            raise SmokeFailure(f"theme dialog: expected 3 options, saw {len(options)}")
+        self.tap(*centre(options[index]))
+        time.sleep(3)
+        self.to_home()
+
+    def capture(self):
+        self.home_list()
+        self.shot("home")
+        self.long_press_into("Mock Archive 1", ("resource-id", self.rid("batch_action_bar")))
+        self.shot("home-multiselect")
+        self.back()
+        self.open_drawer()
+        self.shot("drawer")
+        self.back()
+        restore = self.three_button_nav()
+        try:
+            self.open_right_drawer()
+            self.shot("quick-search-drawer")
+            self.close_right_drawer()
+        finally:
+            restore()
+        self.demo_mode(True)                # a nav-bar overlay switch restarts System UI
+        self.to_home()
+        self.tap_into("Mock Archive 1", "read")
+        self.shot("detail")
+        self.tap_id("read")
+        self.need("progress", 20)
+        self.shot("reader", 3)
+        # The menu auto-hides after 3 s: open the settings dialog at once,
+        # then show the menu again for its own shot.
+        self.tap(self.w // 2, self.h * 3 // 4)
+        self.tap_id("reader_top_bar_settings", 5)
+        self.need("reading_direction", 10)
+        self.shot("reader-settings")
+        self.back()
+        self.tap(self.w // 2, self.h * 3 // 4)
+        self.need("seek_bar_panel", 5)
+        self.shot("reader-menu", 0.3)
+        self.to_home()
+        self.nav("nav_downloads", "action_start_all")
+        self.shot("downloads", 3)
+        self.nav("nav_history", "action_clear_all")
+        self.shot("history", 2)
+        self.nav("nav_favourite", "action_add_category")
+        self.shot("categories")
+        self.tap_into("Mock Favourites", "refresh_layout")
+        self.shot("category-list", 2)
+        self.nav("nav_tankoubons", "action_add_tankoubon")
+        self.shot("tanks")
+        self.tap(*centre(self.need_text("Mock Tank")))
+        self.need("progress", 20)
+        self.shot("tank-reader", 3)
+        self.nav("nav_tankoubons", "action_add_tankoubon")
+        self.long_press_into("Mock Tank", ("text", "Details"))
+        self.tap(*centre(self.need_text("Details")))
+        time.sleep(3)
+        self.shot("tank-detail")
+        self.nav("nav_settings", "settings")
+        headers = self.settings_titles()
+        self.shot("settings")
+        for i, header in enumerate(headers):
+            self.press(*centre(self.need_text(header)))
+            self.shot(f"settings-{i + 1}-{re.sub(r'[^a-z0-9]+', '-', header.lower()).strip('-')}")
+            self.back(1.5)
+        self.back(1.5)
+        self.open_pattern_settings()
+        self.shot("set-pattern")
+        self.tap_id("cancel")
+        self.to_home()
+
+    def run_themes(self, themes):
+        root = self.out
+        self.demo_mode(True)
+        try:
+            for theme in themes:
+                self.set_theme(self.THEMES[theme])
+                self.demo_mode(True)
+                self.out = os.path.join(root, theme)
+                os.makedirs(self.out, exist_ok=True)
+                self.n = 0
+                print(f"== {theme}", flush=True)
+                self.capture()
+        finally:
+            self.demo_mode(False)
+            self.out = root
+            self.set_theme(self.THEMES["light"])  # the default theme
+
+
+def shots(pkg, out, themes):
+    themes = themes or list(Shots.THEMES)
+    try:
+        Shots(pkg, out).run_themes(themes)
+    except SmokeFailure as e:
+        print(f"smoke_ui shots: FAILED: {e}", file=sys.stderr)
+        return 1
+    print(f"smoke_ui shots: {', '.join(themes)} captured under {out}")
+    return 0
+
+
 def widgets(pkg, only):
     try:
         Widgets(pkg).run(only)
@@ -777,6 +921,8 @@ def main(argv):
         return connect(argv[2], argv[3])
     if cmd == "widgets":
         return widgets(argv[2], argv[3:])
+    if cmd == "shots":
+        return shots(argv[2], argv[3], argv[4:])
     attr, value = argv[2], argv[3]
     if cmd == "has":
         return 0 if find(attr, value) else 1
