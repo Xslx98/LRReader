@@ -19,6 +19,8 @@
 
     <item name="tag" type="id"/>
     <item name="index" type="id"/>
+    <!-- Cover request tag on cover image views (widget/CoverLoading.kt). -->
+    <item name="cover_request" type="id"/>
 
     <item name="fragment_tag" type="id"/>
 

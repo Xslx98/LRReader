@@ -1,6 +1,11 @@
 package com.lanraragi.reader.module
 
 import android.content.Context
+import coil3.ImageLoader
+import coil3.disk.DiskCache
+import coil3.memory.MemoryCache
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.request.crossfade
 import com.lanraragi.framework.conaco.Conaco
 import com.lanraragi.reader.ImageBitmapHelper
 import com.lanraragi.reader.R
@@ -9,6 +14,7 @@ import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.PageThumbnailCache
 import com.lanraragi.framework.lib.image.Image
+import okio.Path.Companion.toOkioPath
 import java.io.File
 
 /**
@@ -61,12 +67,36 @@ class ClientModule(
         }.build()
     }
 
+    override val coverImageLoader: ImageLoader by lazy {
+        // Same memory and disk budgets as Conaco, so the pilot measures the
+        // loader, not a different cache size.
+        ImageLoader.Builder(context)
+            .components {
+                add(OkHttpNetworkFetcherFactory(callFactory = { networkModule.thumbFetchClient }))
+            }
+            .memoryCache {
+                MemoryCache.Builder().maxSizeBytes(memoryCacheMaxSize().toLong()).build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(File(context.cacheDir, "cover").toOkioPath())
+                    .maxSizeBytes(diskCacheMaxSize(context).toLong())
+                    .build()
+            }
+            .crossfade(COVER_FADE_IN_MS)
+            .build()
+    }
+
     override fun clearMemoryCache() {
         conaco.beerBelly?.clearMemory()
+        coverImageLoader.memoryCache?.clear()
     }
 
     companion object {
         private const val MB = 1024L * 1024
+
+        /** Fade-in of a loaded cover over the placeholder (decision 19: 150 ms). */
+        private const val COVER_FADE_IN_MS = 150
 
         // Disk tier thresholds on total RAM (/proc/meminfo MemTotal, which
         // reads a little below the nominal size: a "4 GB" phone is ~3.6 GB).

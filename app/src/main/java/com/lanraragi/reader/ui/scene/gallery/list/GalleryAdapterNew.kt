@@ -43,6 +43,7 @@ import com.lanraragi.reader.util.TraceSections
 import com.lanraragi.reader.util.traceSection
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.widget.TileThumbNew
+import com.lanraragi.reader.widget.loadCover
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.widget.LoadImageViewNew
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
@@ -219,12 +220,12 @@ abstract class GalleryAdapterNew(
         when (mType) {
             TYPE_GRID -> {
                 (holder.thumb as TileThumbNew).setThumbSize(0, 0)
-                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, arcid))
+                holder.thumb.loadCover(LRRCacheKeyFactory.getThumbKey(arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, arcid))
                 holder.category?.visibility = View.GONE
                 holder.simpleLanguage?.text = null
             }
             else -> {
-                holder.thumb.load(LRRCacheKeyFactory.getThumbKey(arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, arcid))
+                holder.thumb.loadCover(LRRCacheKeyFactory.getThumbKey(arcid), ArchiveCoverStamps.bust(archive.thumbnailUrl, arcid))
                 holder.title?.text = archive.title
                 holder.uploader?.text = null
                 if (!AppearanceSettings.getShowGalleryRating()) {

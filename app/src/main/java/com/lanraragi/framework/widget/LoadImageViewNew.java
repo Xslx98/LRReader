@@ -167,6 +167,11 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         }
     }
 
+    @Nullable
+    public Drawable getPlaceholder() {
+        return mPlaceholder;
+    }
+
     private void clearDrawable() {
         setImageDrawable(mPlaceholder);
     }
