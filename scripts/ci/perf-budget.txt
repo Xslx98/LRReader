@@ -10,7 +10,8 @@
 # max plus a margin. Spread (min / median / max) in the comment of each line.
 # Runner placement makes startup bimodal (~600 vs ~1000 ms) and the reader
 # p99s heavy-tailed on swiftshader, so those gate only gross regressions.
-mode record
+mode gate
+# Flipped record -> gate 2026-10-20 (2.4 P0).
 startup.cold.total_ms        900   tol 30%    # 595 / 865 / 1033
 startup.cold.fully_drawn_ms  900   tol 30%    # 639 / 841 / 1094
 pss.list_kb                38900   tol 5%     # 38205 / 38841 / 39347
