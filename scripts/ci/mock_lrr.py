@@ -1,7 +1,8 @@
 """Minimal mock LANraragi for AVD release smoke (AVD reaches host via 10.0.2.2:3939).
 
 Endpoints: /api/info, /api/search, /api/categories, /api/archives/{id}/categories, /api/tankoubons,
-/api/archives/:id/{metadata,thumbnail,files,page}, progress PUT.
+/api/archives/:id/{metadata,thumbnail,files,page}, progress PUT. MOCK_SEED=1 seeds
+categories and a tank (see below).
 Pages are generated PNGs (800x1200, distinct colors) — big enough for the
 reader's tiny-image rejection. Logs every request line to stdout.
 """
@@ -78,20 +79,28 @@ def form_body(handler):
     return {k: v[0] for k, v in parse_qs(body).items()}
 
 
-def png(width, height, rgb):
+def png(width, height, rgb, stripe=0):
+    """Solid `rgb`, or with `stripe` > 0 alternating `stripe`-row bands of it
+    and a darker shade (so a zoom changes what the screen shows)."""
     def chunk(tag, data):
         c = tag + data
         return struct.pack(">I", len(data)) + c + struct.pack(">I", zlib.crc32(c) & 0xFFFFFFFF)
 
     row = b"\x00" + bytes(rgb) * width
-    raw = row * height
+    if stripe:
+        dark = b"\x00" + bytes(v * 3 // 5 for v in rgb) * width
+        raw = b"".join(dark if (y // stripe) % 2 else row for y in range(height))
+    else:
+        raw = row * height
     ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
     return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
             + chunk(b"IDAT", zlib.compress(raw, 6)) + chunk(b"IEND", b""))
 
 
 COLORS = [(200, 80, 80), (80, 200, 80), (80, 80, 200), (200, 200, 80)]
-PAGES = {i: png(800, 1200, COLORS[i % len(COLORS)]) for i in range(4)}
+# MOCK_SEED also stripes the pages, for smoke_ui.py's reader zoom checks.
+PAGES = {i: png(800, 1200, COLORS[i % len(COLORS)], 40 if os.environ.get("MOCK_SEED") else 0)
+         for i in range(4)}
 THUMB = png(250, 350, (120, 120, 220))
 TANK_THUMB = png(250, 350, (220, 140, 60))
 NO_THUMB = png(250, 350, (90, 70, 60))  # stands in for the server's noThumb.png
@@ -102,6 +111,20 @@ NO_THUMB = png(250, 350, (90, 70, 60))  # stands in for the server's noThumb.png
 # Deliberately NOT set by archive-list updates (emulates a broken/lagging
 # Minion worker — the user-reported scenario); only PUT thumbnail sets it.
 TANKS = {}
+
+#   MOCK_SEED=1 -> start with a static category (archives 1 and 2), a pinned
+#                  dynamic one, and a tank of archives 2 and 3 with a cover, so
+#                  the categories and tanks screens have rows to drive
+#                  (smoke_ui.py widgets, visual baselines); also stripes the
+#                  pages (see PAGES).
+if os.environ.get("MOCK_SEED"):
+    CATEGORIES["SET_1700000000"] = {"name": "Mock Favourites", "search": "", "pinned": False,
+                                    "archives": [ARCHIVES[0]["arcid"], ARCHIVES[1]["arcid"]]}
+    CATEGORIES["SET_1700000001"] = {"name": "Mock English", "search": "language:english",
+                                    "pinned": True, "archives": []}
+    TANKS["TANK_1688000000"] = {"name": "Mock Tank", "archives": [ARCHIVES[1]["arcid"], ARCHIVES[2]["arcid"]],
+                                "summary": "", "tags": "artist:mocktank", "progress": 0,
+                                "has_cover": True}
 
 
 def tank_json(tid):
