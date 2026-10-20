@@ -347,11 +347,17 @@ tasks.register('jacocoTestReport', JacocoReport) {
         html.required = true
     }
     def mainSrc = "${project.projectDir}/src/main/java"
+    def classExcludes = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*',
+                         '**/*_MembersInjector.class', '**/Dagger*Component*.*',
+                         '**/*_Factory.class', '**/*_Impl*.class']
     def debugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/appReleaseDebug",
-        excludes: ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*',
-                   '**/*_MembersInjector.class', '**/Dagger*Component*.*',
-                   '**/*_Factory.class', '**/*_Impl*.class'])
+        excludes: classExcludes)
+    // javac output: the framework's Java files (com.lanraragi.framework.*),
+    // which the report used to leave out entirely (2.4 P0).
+    def javaTree = fileTree(
+        dir: "${buildDir}/intermediates/javac/appReleaseDebug/compileAppReleaseDebugJavaWithJavac/classes",
+        excludes: classExcludes)
     sourceDirectories.setFrom(files(mainSrc))
-    classDirectories.setFrom(files(debugTree))
+    classDirectories.setFrom(files(debugTree, javaTree))
     executionData.setFrom(fileTree(dir: buildDir, includes: ['jacoco/testAppReleaseDebugUnitTest.exec']))
 }

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Perf budget check (audit 2026-10-13 PERF-04): judges the perf.json written
 # by scripts/ci/smoke-perf.sh against scripts/ci/perf-budget.txt. Each line is
-# `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute); a metric
-# fails above budget + tolerance. The file's `mode` line decides what a breach
+# `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute), `#` starts
+# a comment; a metric fails above budget + tolerance. The file's `mode` line decides what a breach
 # does: `record` prints a warning and exits 0 (while the emulator's variance is
 # being established), `gate` exits 1. Flip it in its own dated commit.
 # Usage, from the repo root: bash scripts/ci/check-perf.sh [perf.json]
@@ -65,7 +65,7 @@ while read -r metric budget tolword tol; do
     echo "::$LEVEL::check-perf: $metric = $value exceeds budget $budget (+$tol = $limit)"
     FAIL=1
   fi
-done < <(tr -d '\r' < "$BUDGET")
+done < <(tr -d '\r' < "$BUDGET" | sed 's/[[:space:]]*#.*//')
 
 if [ "$FAIL" -ne 0 ]; then
   if [ "$GATE" = "gate" ]; then

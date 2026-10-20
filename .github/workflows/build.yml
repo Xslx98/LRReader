@@ -135,7 +135,7 @@ jobs:
           ./gradlew app:testAppReleaseDebugUnitTest
 
       - name: Coverage must not drop below the floor
-        # Line coverage of dao / download / gallery against
+        # Line coverage of dao / download / gallery and the framework against
         # scripts/ci/coverage-floor.txt (audit 2026-10-04 C47 / REL-23).
         run: |
           ./gradlew app:jacocoTestReport
