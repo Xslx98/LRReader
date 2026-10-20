@@ -1,20 +1,24 @@
 # Perf budgets for scripts/ci/check-perf.sh, measured by smoke-perf.sh on the
 # CI emulator (API 34 x86_64, swiftshader) — not comparable to device numbers.
-# `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute).
+# `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute); `#` starts
+# a comment anywhere on a line.
 # mode record: a breach only warns (variance still being established).
-# mode gate:   a breach fails the job. Flip in its own dated commit once ~10
-#              green runs show the spread; re-seed the budgets from them.
-# Seeded 2026-10-13 from a local API 34 AVD run (x1.5 headroom for the slower
-# CI emulator); placeholders until the first CI runs replace them.
+# mode gate:   a breach fails the job. Raise a budget only in the commit that
+#              explains the regression; never during 2.4 (anchored to v2.3.0).
+# Re-seeded 2026-10-20 (2.4 P0) from the 18 green release-smoke runs between
+# 2026-10-13 and v2.3.0 (17a07878): budget ~ median, tolerance = the observed
+# max plus a margin. Spread (min / median / max) in the comment of each line.
+# Runner placement makes startup bimodal (~600 vs ~1000 ms) and the reader
+# p99s heavy-tailed on swiftshader, so those gate only gross regressions.
 mode record
-startup.cold.total_ms        700   tol 25%
-startup.cold.fully_drawn_ms  750   tol 25%
-pss.list_kb                70000   tol 15%
-pss.reader_kb             260000   tol 15%
-pss.after_reader_kb       150000   tol 15%
-list.jank_pct                 10   tol +10
-list.p99_ms                   60   tol 30%
-reader.page_decode.p99_ms     15   tol 50%
-reader.gl_frame.p99_ms        25   tol 50%
-reader.upload.p99_ms           5   tol 50%
-reader.pages_served           20   tol +100
+startup.cold.total_ms        900   tol 30%    # 595 / 865 / 1033
+startup.cold.fully_drawn_ms  900   tol 30%    # 639 / 841 / 1094
+pss.list_kb                38900   tol 5%     # 38205 / 38841 / 39347
+pss.reader_kb             106500   tol 5%     # 104864 / 106371 / 108506
+pss.after_reader_kb        84000   tol 5%     # 82679 / 83933 / 84786
+list.jank_pct                0.5   tol +1.5   # 0.28 / 0.38 / 0.63
+list.p99_ms                   24   tol +30    # 19 / 23.5 / 48
+reader.page_decode.p99_ms     10   tol +390   # 4.9 / 9.4 / 338
+reader.gl_frame.p99_ms        70   tol +60    # 4.2 / 68.9 / 111.6
+reader.upload.p99_ms           2   tol +5     # 0.9 / 1.75 / 5.1
+reader.pages_served           25   tol +5     # 25 / 25 / 25
