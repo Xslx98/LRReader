@@ -6,6 +6,8 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import com.lanraragi.framework.conaco.Conaco
 import com.lanraragi.reader.ImageBitmapHelper
 import com.lanraragi.reader.R
@@ -24,7 +26,12 @@ import java.io.File
  */
 class ClientModule(
     private val context: Context,
-    private val networkModule: INetworkModule
+    private val networkModule: INetworkModule,
+    // One cover decode at a time, as Conaco did: Coil's default parallel
+    // decodes left a ~12-20 MB native-heap high-water mark on the first list
+    // screen (2.4 P1 measurement); covers are small, so serial decoding
+    // costs no visible latency.
+    private val coverDecodeDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1),
 ) : IClientModule {
 
     init {
@@ -84,6 +91,7 @@ class ClientModule(
                     .build()
             }
             .crossfade(COVER_FADE_IN_MS)
+            .decoderCoroutineContext(coverDecodeDispatcher)
             .build()
     }
 
