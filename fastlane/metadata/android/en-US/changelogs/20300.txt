@@ -1,0 +1,6 @@
+2.3: a clearer reader and smoother navigation.
+- Reader: tap the middle of the page for the menu, now with a top bar (title, page, direction, rotation, settings). Upper taps no longer open settings.
+- Swipe back to preview where you go. No more "press back again to exit".
+- Teal accent in the light theme; tag groups stand out.
+- Loading lists and covers show placeholders; light haptics.
+Fixed: clock under the status bar, FAB hiding the last row, Downloads pager clipped at large font.
