@@ -304,6 +304,12 @@ class LRReaderApplication : RecordingApplication() {
         trace("LRRApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
+        // Build the cover image loader (OkHttp client, caches) off the main
+        // thread so the first list bind does not pay for it (2.4 P1: the
+        // lazy build on first bind fattened the cold-start TTFD tail).
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            ServiceRegistry.clientModule.coverImageLoader
+        }
         // ANRs and native crashes of earlier processes never reach the JVM handler;
         // the system keeps their exit reasons (API 30+). Audit 2026-10-04 C06 / R5.
         ServiceRegistry.coroutineModule.ioScope.launch {
