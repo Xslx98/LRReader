@@ -216,7 +216,6 @@
     <ID>NestedBlockDepth:FileUtils.kt$FileUtils.Companion$@JvmStatic fun getFileName(context: Context, uri: Uri): String?</ID>
     <ID>NestedBlockDepth:GalleryInputHandler.kt$GalleryInputHandler$fun handleGenericMotion(view: View?, motionEvent: MotionEvent): Boolean</ID>
     <ID>NestedBlockDepth:Image.kt$Image$@Synchronized fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int)</ID>
-    <ID>NestedBlockDepth:ImageBitmapHelper.kt$ImageBitmapHelper$override fun decode( isPipe: InputStreamPipe, hardware: Boolean, targetWidth: Int, targetHeight: Int ): Image?</ID>
     <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
     <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
     <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
@@ -294,7 +293,6 @@
     <ID>SwallowedException:GalleryUploadHelper.kt$GalleryUploadHelper$e: Exception</ID>
     <ID>SwallowedException:HistoryTankRedirect.kt$HistoryTankRedirect$e: Exception</ID>
     <ID>SwallowedException:Image.kt$Image.Companion$e: UnsatisfiedLinkError</ID>
-    <ID>SwallowedException:ImageBitmapHelper.kt$ImageBitmapHelper$e: IOException</ID>
     <ID>SwallowedException:LRRCategoriesViewModel.kt$LRRCategoriesViewModel$e: Exception</ID>
     <ID>SwallowedException:LRRDownloadWorker.kt$LRRDownloadWorker$e: CancellationException</ID>
     <ID>SwallowedException:LRReaderApplication.kt$LRReaderApplication$e: Exception</ID>

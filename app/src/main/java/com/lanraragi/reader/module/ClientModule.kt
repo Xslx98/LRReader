@@ -7,27 +7,23 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import com.lanraragi.framework.conaco.Conaco
-import com.lanraragi.reader.ImageBitmapHelper
-import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.StoredCoverFetcher
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.PageThumbnailCache
-import com.lanraragi.framework.lib.image.Image
 import okio.Path.Companion.toOkioPath
 import java.io.File
 
 /**
- * Manages client-side singletons: Conaco (image loader) and
- * ImageBitmapHelper (bitmap decoder).
+ * Manages client-side singletons: the cover image loader (Coil) and the
+ * client caches it registers.
  * Extracted from LRReaderApplication to reduce its responsibility scope.
  */
 class ClientModule(
     private val context: Context,
     private val networkModule: INetworkModule,
-    // One cover decode at a time, as Conaco did: Coil's default parallel
+    // One cover decode at a time, as the old Conaco loader did: Coil's default parallel
     // decodes left a ~12-20 MB native-heap high-water mark on the first list
     // screen (2.4 P1 measurement); covers are small, so serial decoding
     // costs no visible latency.
@@ -47,35 +43,8 @@ class ClientModule(
         com.lanraragi.reader.util.MemoryTrim.register(PageThumbnailCache)
     }
 
-    override val imageBitmapHelper: ImageBitmapHelper by lazy {
-        // Density-aware admission cap: the decode floor (128x192dp) in px
-        // varies with density, and a fixed pixel cap sat BELOW the floor on
-        // high-density devices — floor-bounded decodes silently bypassed the
-        // memory cache and every rebind re-decoded from disk (audit #12).
-        val res = context.resources
-        ImageBitmapHelper(
-            ImageBitmapHelper.cacheCapForFloor(
-                res.getDimensionPixelSize(R.dimen.gallery_detail_thumb_width),
-                res.getDimensionPixelSize(R.dimen.gallery_detail_thumb_height),
-            )
-        )
-    }
-
-    override val conaco: Conaco<Image> by lazy {
-        Conaco.Builder<Image>().apply {
-            hasMemoryCache = true
-            memoryCacheMaxSize = memoryCacheMaxSize()
-            hasDiskCache = true
-            diskCacheDir = File(context.cacheDir, "thumb")
-            diskCacheMaxSize = diskCacheMaxSize(context)
-            okHttpClient = networkModule.thumbFetchClient
-            objectHelper = imageBitmapHelper
-            debug = false
-        }.build()
-    }
-
     override val coverImageLoader: ImageLoader by lazy {
-        // Memory and disk budgets: the tiers below (inherited from Conaco).
+        // Memory and disk budgets: the RAM tiers below.
         ImageLoader.Builder(context)
             .components {
                 add(OkHttpNetworkFetcherFactory(callFactory = { networkModule.thumbFetchClient }))
@@ -95,7 +64,6 @@ class ClientModule(
     }
 
     override fun clearMemoryCache() {
-        conaco.beerBelly?.clearMemory()
         coverImageLoader.memoryCache?.clear()
     }
 
