@@ -39,7 +39,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.lanraragi.framework.widget.FrameworkRefreshLayout
+        <com.lanraragi.reader.widget.ListRefreshLayout
             android:id="@+id/refresh_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -50,7 +50,7 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"/>
 
-        </com.lanraragi.framework.widget.FrameworkRefreshLayout>
+        </com.lanraragi.reader.widget.ListRefreshLayout>
 
         <com.lanraragi.framework.widget.FrameworkFastScroller
             android:id="@+id/fast_scroller"

@@ -59,7 +59,7 @@ import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.reader.widget.SkeletonView
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.hippo.refreshlayout.RefreshLayout
+import com.lanraragi.reader.widget.ListRefreshLayout
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.util.collectFlow
@@ -352,7 +352,7 @@ class GalleryListScene : BaseScene(),
         val contentLayout = ViewUtils.`$$`(mainLayout, R.id.content_layout) as ContentLayout
         recyclerView = contentLayout.recyclerView
         val fastScroller = contentLayout.fastScroller
-        val refreshLayout: RefreshLayout = contentLayout.refreshLayout
+        val refreshLayout: ListRefreshLayout = contentLayout.refreshLayout
         searchLayout = ViewUtils.`$$`(mainLayout, R.id.search_layout) as SearchLayout
         searchBar = ViewUtils.`$$`(mainLayout, R.id.search_bar) as SearchBar
         fabLayout = ViewUtils.`$$`(mainLayout, R.id.fab_layout) as FabLayout
@@ -398,7 +398,7 @@ class GalleryListScene : BaseScene(),
             fastScroller.paddingRight, fastScroller.paddingBottom
         )
 
-        refreshLayout.setHeaderTranslationY(paddingTopSB.toFloat())
+        refreshLayout.offsetHeader(paddingTopSB)
 
         GalleryListChrome.bind(this, context, mainLayout, paddingTopSB, paddingBottomFab)
 
