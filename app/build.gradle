@@ -292,7 +292,6 @@ dependencies {
     implementation libs.seven332.drawerlayout
     implementation libs.seven332.easyrecyclerview
     implementation libs.pagination.sxj
-    implementation libs.seven332.hotspot
     implementation libs.seven332.refreshlayout
 
     implementation libs.advrecyclerview
