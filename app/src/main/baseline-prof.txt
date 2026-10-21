@@ -7868,8 +7868,6 @@ Lcom/lanraragi/framework/util/AppHelper$Companion;
 HSPLcom/lanraragi/framework/util/AppHelper$Companion;-><init>()V
 HSPLcom/lanraragi/framework/util/AppHelper$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 HSPLcom/lanraragi/framework/util/AppHelper$Companion;->hideSoftInput(Landroid/app/Activity;)V
-Lcom/lanraragi/framework/util/BitmapUtils;
-HSPLcom/lanraragi/framework/util/BitmapUtils;->initialize(Landroid/content/Context;)V
 Lcom/lanraragi/framework/util/DrawableManager;
 HSPLcom/lanraragi/framework/util/DrawableManager;-><clinit>()V
 HSPLcom/lanraragi/framework/util/DrawableManager;-><init>()V
