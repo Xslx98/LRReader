@@ -10,8 +10,7 @@
 
 ## 备份内容
 
-### 直接依赖 (7 个)
-- android-resource-0.1.0.aar
+### 直接依赖 (6 个)
 - animator-0.1.0.aar
 - drawerlayout-ea2bb388f0.aar
 - easyrecyclerview-0.1.1.aar
