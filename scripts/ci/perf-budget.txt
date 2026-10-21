@@ -14,7 +14,7 @@ mode gate
 # Flipped record -> gate 2026-10-20 (2.4 P0).
 startup.cold.total_ms        900   tol 30%    # 595 / 865 / 1033
 startup.cold.fully_drawn_ms  900   tol 30%    # 639 / 841 / 1094
-pss.list_kb                38900   tol 5%     # 38205 / 38841 / 39347
+pss.list_kb                43300   tol 5%     # 38205 / 38841 / 39347 at v2.3.0; +4352 KB for Coil (2.4 P1)
 pss.reader_kb             106500   tol 5%     # 104864 / 106371 / 108506
 pss.after_reader_kb        84000   tol 5%     # 82679 / 83933 / 84786
 list.jank_pct                0.5   tol +1.5   # 0.28 / 0.38 / 0.63
