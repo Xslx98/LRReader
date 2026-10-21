@@ -110,7 +110,6 @@ joor = { module = "org.jooq:joor", version.ref = "joor" }
 # libs/seven332-backup/ in CI (scripts/ci/check-jitpack-aars.sh).
 seven332-drawerlayout = { module = "com.github.seven332:drawerlayout", version = "ea2bb388f0" }
 seven332-easyrecyclerview = { module = "com.github.seven332:easyrecyclerview", version = "0.1.1" }
-seven332-refreshlayout = { module = "com.github.seven332:refreshlayout", version = "0.1.0" }
 pagination-sxj = { module = "com.github.xiaojieonly:Pagination_Sxj", version = "8d2c34d8f53927aeaa1d405d8653969379cb37ec" }
 
 [plugins]
