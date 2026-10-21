@@ -20,7 +20,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.hippo.android.resource.AttrResources
-import com.hippo.ripple.Ripple
+import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.util.DrawableManager
@@ -172,15 +172,15 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         mSourceBadge = ViewUtils.`$$`(header, R.id.source_badge) as TextView
         val otherActions = ViewUtils.`$$`(header, R.id.other_actions) as ImageView
         mOtherActions = otherActions
-        Ripple.addRipple(otherActions, isDarkTheme)
+        Ripples.addRipple(otherActions, isDarkTheme)
         otherActions.setOnClickListener(this)
         val actionCard = ViewUtils.`$$`(header, R.id.action_card) as ViewGroup
         val download = ViewUtils.`$$`(actionCard, R.id.download) as TextView
         val read = ViewUtils.`$$`(actionCard, R.id.read)
         mDownload = download
         mRead = read
-        Ripple.addRipple(download, isDarkTheme)
-        Ripple.addRipple(read, isDarkTheme)
+        Ripples.addRipple(download, isDarkTheme)
+        Ripples.addRipple(read, isDarkTheme)
         download.setOnClickListener(this)
         read.setOnClickListener(this)
 
@@ -193,7 +193,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         mRating = ViewUtils.`$$`(actions, R.id.rating) as RatingBar
         val heartGroup = ViewUtils.`$$`(actions, R.id.heart_group)
         mHeartGroup = heartGroup
-        Ripple.addRipple(heartGroup, isDarkTheme)
+        Ripples.addRipple(heartGroup, isDarkTheme)
         heartGroup.setOnClickListener(this)
         mHeart = ViewUtils.`$$`(heartGroup, R.id.heart) as TextView
         mHeartOutline = ViewUtils.`$$`(heartGroup, R.id.heart_outline) as TextView
