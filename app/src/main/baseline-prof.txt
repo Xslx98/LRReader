@@ -6975,14 +6975,6 @@ PLcom/hippo/refreshlayout/SwipeProgressBar;->draw(Landroid/graphics/Canvas;)V
 PLcom/hippo/refreshlayout/SwipeProgressBar;->draw(Landroid/graphics/Canvas;Z)Z
 PLcom/hippo/refreshlayout/SwipeProgressBar;->setBounds(IIII)V
 HSPLcom/hippo/refreshlayout/SwipeProgressBar;->setColorScheme(IIII)V
-Lcom/hippo/ripple/Ripple;
-HSPLcom/hippo/ripple/Ripple;-><clinit>()V
-PLcom/hippo/ripple/Ripple;->addRipple(Landroid/view/View;Landroid/content/res/ColorStateList;)V
-PLcom/hippo/ripple/Ripple;->addRipple(Landroid/view/View;Landroid/content/res/ColorStateList;Landroid/graphics/drawable/Drawable;)V
-PLcom/hippo/ripple/Ripple;->addRipple(Landroid/view/View;Z)V
-HSPLcom/hippo/ripple/Ripple;->applyDensity(Landroid/content/Context;Landroid/graphics/drawable/RippleDrawable;)V
-HSPLcom/hippo/ripple/Ripple;->generateRippleDrawable(Landroid/content/Context;Landroid/content/res/ColorStateList;Landroid/graphics/drawable/Drawable;)Landroid/graphics/drawable/Drawable;
-HSPLcom/hippo/ripple/Ripple;->generateRippleDrawable(Landroid/content/Context;ZLandroid/graphics/drawable/Drawable;)Landroid/graphics/drawable/Drawable;
 Lcom/hippo/yorozuya/AnimationUtils;
 HSPLcom/hippo/yorozuya/AnimationUtils;-><clinit>()V
 Lcom/hippo/yorozuya/LayoutUtils;
@@ -12144,6 +12136,10 @@ PLcom/lanraragi/reader/ui/widget/AspectClampedImageView;-><init>(Landroid/conten
 PLcom/lanraragi/reader/ui/widget/AspectClampedImageView;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
 PLcom/lanraragi/reader/ui/widget/AspectClampedImageView;->chooseScaleType(Landroid/graphics/drawable/Drawable;)Landroid/widget/ImageView$ScaleType;
 PLcom/lanraragi/reader/ui/widget/AspectClampedImageView;->setImageDrawable(Landroid/graphics/drawable/Drawable;)V
+Lcom/lanraragi/reader/ui/widget/Ripples;
+HSPLcom/lanraragi/reader/ui/widget/Ripples;-><clinit>()V
+PLcom/lanraragi/reader/ui/widget/Ripples;->addRipple(Landroid/view/View;Z)V
+HSPLcom/lanraragi/reader/ui/widget/Ripples;->rippleDrawable(ZLandroid/graphics/drawable/Drawable;)Landroid/graphics/drawable/RippleDrawable;
 PLcom/lanraragi/reader/updater/Advisory$$serializer;-><clinit>()V
 PLcom/lanraragi/reader/updater/Advisory$$serializer;-><init>()V
 PLcom/lanraragi/reader/updater/Advisory$$serializer;->getDescriptor()Lkotlinx/serialization/descriptors/SerialDescriptor;
