@@ -26,7 +26,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.isLightTheme
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
@@ -282,7 +282,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val belowHeader: View = mainView.findViewById(R.id.below_header)
         mBelowHeader = belowHeader
         mSourceError.bind(belowHeader)
-        val isDarkTheme = !AttrResources.getAttrBoolean(nonNullContext, androidx.appcompat.R.attr.isLightTheme)
+        val isDarkTheme = !nonNullContext.isLightTheme()
         mHeader = ViewUtils.`$$`(belowHeader, R.id.header)
         val colorBg = ViewUtils.`$$`(mHeader, R.id.color_bg)
         val thumb = ViewUtils.`$$`(mHeader, R.id.thumb) as LoadImageView
@@ -517,10 +517,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             }
         }
         val context = getEHContext() ?: return
-        if ((oldState == STATE_INIT || oldState == STATE_FAILED || oldState == STATE_REFRESH) &&
-            (state == STATE_NORMAL || state == STATE_REFRESH_HEADER) &&
-            AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme)
-        ) {
+        val wasLoading = oldState == STATE_INIT || oldState == STATE_FAILED || oldState == STATE_REFRESH
+        val nowShown = state == STATE_NORMAL || state == STATE_REFRESH_HEADER
+        if (wasLoading && nowShown && context.isLightTheme()) {
             mHeaderBinder?.createCircularRevealOrPost()
         }
     }

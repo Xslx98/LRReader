@@ -37,7 +37,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListUpdateCallback;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.hippo.android.resource.AttrResources;
+import com.lanraragi.reader.util.ThemeAttrs;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.easyrecyclerview.FastScroller;
 import com.hippo.easyrecyclerview.HandlerDrawable;
@@ -100,7 +100,7 @@ public class ContentLayout extends FrameLayout {
 
         mFastScroller.attachToRecyclerView(mRecyclerView);
         HandlerDrawable drawable = new HandlerDrawable();
-        drawable.setColor(AttrResources.getAttrColor(context, R.attr.widgetColorThemeAccent));
+        drawable.setColor(ThemeAttrs.attrColor(context, R.attr.widgetColorThemeAccent));
         mFastScroller.setHandlerDrawable(drawable);
 
         mRefreshLayout.setHeaderColorSchemeResources(

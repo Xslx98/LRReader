@@ -10,14 +10,12 @@
 
 ## 备份内容
 
-### 直接依赖 (7 个)
-- android-resource-0.1.0.aar
+### 直接依赖 (5 个)
 - animator-0.1.0.aar
 - drawerlayout-ea2bb388f0.aar
 - easyrecyclerview-0.1.1.aar
 - hotspot-0.1.0.aar
 - refreshlayout-0.1.0.aar
-- streampipe-0.1.0.aar
 
 ### Force-resolved 传递依赖 (4 个, GL 渲染核心)
 - glgallery-25893283ca.aar

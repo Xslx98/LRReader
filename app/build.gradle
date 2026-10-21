@@ -289,13 +289,10 @@ dependencies {
     implementation libs.spinkit
 
     // seven332 UI components
-    implementation libs.seven332.android.resource
     implementation libs.seven332.drawerlayout
     implementation libs.seven332.easyrecyclerview
     implementation libs.pagination.sxj
-    implementation libs.seven332.hotspot
     implementation libs.seven332.refreshlayout
-    implementation libs.seven332.streampipe
 
     implementation libs.advrecyclerview
 

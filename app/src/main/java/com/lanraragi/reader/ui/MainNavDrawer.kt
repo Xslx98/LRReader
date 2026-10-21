@@ -12,7 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.navigation.NavigationView
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.LRReaderApplication
@@ -148,7 +148,7 @@ class MainNavDrawer(
             segment.isSelected = selected
             if (selected) {
                 segment.setBackgroundResource(R.drawable.nav_theme_segment_selected_bg)
-                segment.setTextColor(AttrResources.getAttrColor(activity, R.attr.serverActiveNameColor))
+                segment.setTextColor(activity.attrColor(R.attr.serverActiveNameColor))
                 segment.setTypeface(segment.typeface, Typeface.BOLD)
             }
             segment.setOnClickListener {

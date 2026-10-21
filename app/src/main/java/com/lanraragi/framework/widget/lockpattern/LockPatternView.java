@@ -38,7 +38,7 @@ import android.view.animation.Interpolator;
 import androidx.annotation.NonNull;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
-import com.hippo.android.resource.AttrResources;
+import com.lanraragi.reader.util.ThemeAttrs;
 import com.lanraragi.reader.R;
 import java.util.ArrayList;
 import java.util.List;
@@ -269,7 +269,7 @@ public class LockPatternView extends View {
         mPathPaint.setAntiAlias(true);
         mPathPaint.setDither(true);
 
-        mRegularColor = getResources().getColor(AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme) ?
+        mRegularColor = getResources().getColor(ThemeAttrs.isLightTheme(context) ?
             R.color.lock_pattern_view_regular_color_light : R.color.lock_pattern_view_regular_color_dark);
         mErrorColor = getResources().getColor(R.color.lock_pattern_view_error_color);
         mSuccessColor = getResources().getColor(R.color.lock_pattern_view_success_color);

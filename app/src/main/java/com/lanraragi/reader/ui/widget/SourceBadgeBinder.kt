@@ -6,7 +6,7 @@ import android.graphics.Color
 import android.util.SparseArray
 import android.view.View
 import android.widget.TextView
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRAuthManager
@@ -55,14 +55,14 @@ fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
     val resolvedName: String?
     if (profile == null) {
         badge.text = context.getString(R.string.lrr_download_source_deleted)
-        bgColor = AttrResources.getAttrColor(context, androidx.appcompat.R.attr.colorError)
+        bgColor = context.attrColor(androidx.appcompat.R.attr.colorError)
         fgColor = Color.WHITE
         resolvedName = null
     } else {
         badge.text = profile.name
         val (bgAttr, fgAttr) = attrPairForProfile(profile.id)
-        bgColor = AttrResources.getAttrColor(context, bgAttr)
-        fgColor = AttrResources.getAttrColor(context, fgAttr)
+        bgColor = context.attrColor(bgAttr)
+        fgColor = context.attrColor(fgAttr)
         resolvedName = profile.name
     }
 

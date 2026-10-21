@@ -24,7 +24,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
@@ -46,9 +46,9 @@ class GalleryGuideView @JvmOverloads constructor(
     private var mLongClickText: TextView? = null
 
     init {
-        mBgColor = AttrResources.getAttrColor(context, R.attr.guideBackgroundColor)
+        mBgColor = context.attrColor(R.attr.guideBackgroundColor)
         mPaint = Paint().apply {
-            color = AttrResources.getAttrColor(context, R.attr.guideTitleColor)
+            color = context.attrColor(R.attr.guideTitleColor)
             style = Paint.Style.STROKE
             strokeWidth = context.resources.getDimension(R.dimen.gallery_guide_divider_width)
         }

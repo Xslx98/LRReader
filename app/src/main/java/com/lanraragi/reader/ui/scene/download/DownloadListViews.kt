@@ -5,7 +5,8 @@ import android.graphics.Color
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
+import com.lanraragi.reader.util.isLightTheme
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.FastScroller
 import com.hippo.easyrecyclerview.HandlerDrawable
@@ -41,7 +42,7 @@ internal object DownloadListViews {
         recyclerView.setItemViewCacheSize(100)
         recyclerView.layoutManager = layoutManager
         recyclerView.selector = Ripples.rippleDrawable(
-            !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
+            !context.isLightTheme(),
             Color.TRANSPARENT.toDrawable()
         )
         recyclerView.setDrawSelectorOnTop(true)
@@ -71,7 +72,7 @@ internal object DownloadListViews {
     ) {
         fastScroller.attachToRecyclerView(recyclerView)
         val handlerDrawable = HandlerDrawable()
-        handlerDrawable.setColor(AttrResources.getAttrColor(context, R.attr.widgetColorThemeAccent))
+        handlerDrawable.setColor(context.attrColor(R.attr.widgetColorThemeAccent))
         fastScroller.setHandlerDrawable(handlerDrawable)
         fastScroller.setOnDragHandlerListener(listener)
     }

@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
@@ -295,15 +295,15 @@ class ServerListScene : BaseScene() {
             if (profile.isActive) {
                 holder.activeIcon.visibility = View.VISIBLE
                 holder.name.setTextColor(
-                    AttrResources.getAttrColor(ctx, R.attr.serverActiveNameColor)
+                    ctx.attrColor(R.attr.serverActiveNameColor)
                 )
                 holder.itemView.setBackgroundColor(
-                    AttrResources.getAttrColor(ctx, R.attr.serverActiveRowBg)
+                    ctx.attrColor(R.attr.serverActiveRowBg)
                 )
             } else {
                 holder.activeIcon.visibility = View.INVISIBLE
                 holder.name.setTextColor(
-                    AttrResources.getAttrColor(ctx, android.R.attr.textColorPrimary)
+                    ctx.attrColor(android.R.attr.textColorPrimary)
                 )
                 holder.itemView.setBackgroundColor(Color.TRANSPARENT)
             }

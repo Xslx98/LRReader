@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.widget.LoadImageViewNew
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.ArchiveCoverStamps
@@ -92,7 +92,7 @@ internal class TankMemberStripAdapter(
             more.background = GradientDrawable().apply {
                 cornerRadius = CORNER_DP * density
                 // The light chip tone: its label is the accent colour.
-                setColor(AttrResources.getAttrColor(view.context, R.attr.tagBackgroundColor))
+                setColor(view.context.attrColor(R.attr.tagBackgroundColor))
             }
         }
     }

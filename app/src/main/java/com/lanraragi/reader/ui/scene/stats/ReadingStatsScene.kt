@@ -10,7 +10,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.appbar.MaterialToolbar
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.stats.ReadingStatsCalculator
@@ -160,7 +160,7 @@ class ReadingStatsScene : BaseScene() {
         if (entries.isEmpty()) return
         val context = requireContext()
         val inflater = LayoutInflater.from(context)
-        val chipColor = AttrResources.getAttrColor(context, R.attr.tagBackgroundColor)
+        val chipColor = context.attrColor(R.attr.tagBackgroundColor)
 
         container.addView(TextView(context).apply {
             text = getString(titleRes)
@@ -221,5 +221,5 @@ class ReadingStatsScene : BaseScene() {
     }
 
     private fun themeTextColor(attr: Int): Int =
-        AttrResources.getAttrColor(requireContext(), attr)
+        requireContext().attrColor(attr)
 }

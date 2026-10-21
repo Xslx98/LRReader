@@ -23,7 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
-import com.hippo.android.resource.AttrResources;
+import com.lanraragi.reader.util.ThemeAttrs;
 import com.lanraragi.reader.R;
 import com.lanraragi.framework.lib.yorozuya.collect.IntList;
 import java.lang.annotation.Retention;
@@ -121,7 +121,7 @@ public class SceneFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         view.setTag(R.id.fragment_tag, getTag());
-        view.setBackgroundDrawable(AttrResources.getAttrDrawable(getContext(), android.R.attr.windowBackground));
+        view.setBackgroundDrawable(ThemeAttrs.attrDrawable(requireContext(), android.R.attr.windowBackground));
 
         // Notify
         FragmentActivity activity = getActivity();

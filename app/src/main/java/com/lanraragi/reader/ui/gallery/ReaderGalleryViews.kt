@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.gallery
 
 import android.content.Context
 import android.graphics.Typeface
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
 import com.lanraragi.reader.R
@@ -52,9 +52,9 @@ object ReaderGalleryViews {
             .setScaleMode(ReadingSettings.getPageScaling())
             .setStartPosition(ReadingSettings.getStartPosition())
             .setStartPage(startPage)
-            .setBackgroundColor(AttrResources.getAttrColor(context, android.R.attr.colorBackground))
+            .setBackgroundColor(context.attrColor(android.R.attr.colorBackground))
             .setEdgeColor(
-                AttrResources.getAttrColor(context, R.attr.colorEdgeEffect) and 0xffffff or 0x33000000
+                context.attrColor(R.attr.colorEdgeEffect) and 0xffffff or 0x33000000
             )
             .setPagerInterval(
                 if (ReadingSettings.getShowPageInterval())
@@ -75,7 +75,7 @@ object ReaderGalleryViews {
             )
             .setProgressSize(resources.getDimensionPixelOffset(R.dimen.gallery_progress_size))
             .setPageTextColor(
-                AttrResources.getAttrColor(context, android.R.attr.textColorSecondary)
+                context.attrColor(android.R.attr.textColorSecondary)
             )
             .setPageTextSize(resources.getDimensionPixelOffset(R.dimen.gallery_page_text_size))
             .setPageTextTypeface(Typeface.DEFAULT)

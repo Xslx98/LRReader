@@ -56,7 +56,6 @@ import android.os.Handler
 import android.os.Looper
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import com.lanraragi.framework.unifile.UniFile
-import com.lanraragi.framework.util.BitmapUtils
 import com.lanraragi.framework.util.ExceptionUtils
 import com.lanraragi.framework.util.ReadableTime
 import java.io.File
@@ -353,13 +352,8 @@ class LRReaderApplication : RecordingApplication() {
             }
         }
 
-        // Defer heavy JNI/native initialization to background thread.
-        // These are not needed until the user actually opens a gallery or downloads.
         // Image.initialize is cheap and must run before any decode (audit C11).
         Image.initialize(this)
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            BitmapUtils.initialize(this@LRReaderApplication)
-        }
 
         // One-time http_cache purge (audit #29): thumbnails used to be
         // disk-cached twice — Conaco's BeerBelly cache AND the shared OkHttp

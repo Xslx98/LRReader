@@ -4,7 +4,7 @@ import android.content.Context
 import android.view.View
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.framework.widget.SearchBarMover
@@ -32,8 +32,8 @@ object GalleryListChrome {
         val fabLayout = scene.fabLayout
         val searchBarHelper = scene.searchBarHelper
 
-        scene.leftDrawable = DrawerArrowDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
-        scene.rightDrawable = AddDeleteDrawable(context, AttrResources.getAttrColor(context, R.attr.drawableColorPrimary))
+        scene.leftDrawable = DrawerArrowDrawable(context, context.attrColor(R.attr.drawableColorPrimary))
+        scene.rightDrawable = AddDeleteDrawable(context, context.attrColor(R.attr.drawableColorPrimary))
         searchBar.setLeftDrawable(scene.leftDrawable)
         searchBar.setRightDrawable(scene.rightDrawable)
         searchBar.setHelper(searchBarHelper)

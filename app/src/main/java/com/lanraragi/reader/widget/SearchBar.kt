@@ -31,7 +31,7 @@ import android.content.res.ColorStateList
 import androidx.core.graphics.withSave
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -730,7 +730,7 @@ class SearchBar : CardView,
                 TextViewCompat.setCompoundDrawableTintList(
                     hintView,
                     ColorStateList.valueOf(
-                        AttrResources.getAttrColor(context, R.attr.drawableColorPrimary)
+                        context.attrColor(R.attr.drawableColorPrimary)
                     )
                 )
             } else {

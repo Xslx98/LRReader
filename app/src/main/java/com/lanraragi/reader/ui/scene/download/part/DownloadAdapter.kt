@@ -37,7 +37,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.isLightTheme
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
@@ -623,9 +623,7 @@ class DownloadAdapter(
             start.setOnClickListener(this)
             stop.setOnClickListener(this)
 
-            val isDarkTheme = !AttrResources.getAttrBoolean(
-                mScene.ehContext!!, androidx.appcompat.R.attr.isLightTheme
-            )
+            val isDarkTheme = !mScene.ehContext!!.isLightTheme()
             Ripples.addRipple(start, isDarkTheme)
             Ripples.addRipple(stop, isDarkTheme)
         }
