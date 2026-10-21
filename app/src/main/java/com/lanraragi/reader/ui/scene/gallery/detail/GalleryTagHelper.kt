@@ -21,7 +21,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.TagTranslationDatabase
@@ -69,9 +69,9 @@ object GalleryTagHelper {
             null
         }
 
-        val colorTag = AttrResources.getAttrColor(context, R.attr.tagBackgroundColor)
-        val colorName = AttrResources.getAttrColor(context, R.attr.tagGroupBackgroundColor)
-        val colorNameText = AttrResources.getAttrColor(context, R.attr.tagGroupTextColor)
+        val colorTag = context.attrColor(R.attr.tagBackgroundColor)
+        val colorName = context.attrColor(R.attr.tagGroupBackgroundColor)
+        val colorNameText = context.attrColor(R.attr.tagGroupTextColor)
 
         for (tg in tagGroups) {
             val ll = inflater.inflate(R.layout.gallery_tag_group, tagsLayout, false) as LinearLayout

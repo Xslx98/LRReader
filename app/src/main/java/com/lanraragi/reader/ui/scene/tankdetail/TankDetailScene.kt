@@ -19,7 +19,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.isLightTheme
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.scene.Announcer
@@ -162,7 +162,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         mOfflineRetry = belowHeader.findViewById(R.id.source_error_retry)
         mOfflineRetry?.setOnClickListener { reload() }
 
-        val isDarkTheme = !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme)
+        val isDarkTheme = !context.isLightTheme()
         val header = ViewUtils.`$$`(belowHeader, R.id.header)
         mColorBg = ViewUtils.`$$`(header, R.id.color_bg)
         mThumb = ViewUtils.`$$`(header, R.id.thumb) as LoadImageView
@@ -344,7 +344,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         mViewTransition?.showView(0, false)
         mViewTransition2?.showView(0, false)
         val ctx = ehContext ?: return
-        if (!mRevealed && AttrResources.getAttrBoolean(ctx, androidx.appcompat.R.attr.isLightTheme)) {
+        if (!mRevealed && ctx.isLightTheme()) {
             mRevealed = true
             mColorBg?.post { createCircularReveal() }
         }

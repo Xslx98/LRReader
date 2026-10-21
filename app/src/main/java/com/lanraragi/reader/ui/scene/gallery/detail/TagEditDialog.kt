@@ -19,7 +19,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.LRRArchiveApi
@@ -166,10 +166,10 @@ object TagEditDialog {
         val groups = parseTagGroups(tagGroups)
         val density = activity.resources.displayMetrics.density
 
-        val colorTag = AttrResources.getAttrColor(activity, R.attr.tagBackgroundColor)
-        val colorNamespace = AttrResources.getAttrColor(activity, R.attr.tagGroupBackgroundColor)
-        val colorNamespaceText = AttrResources.getAttrColor(activity, R.attr.tagGroupTextColor)
-        val colorTagText = AttrResources.getAttrColor(activity, R.attr.tagTextColor)
+        val colorTag = activity.attrColor(R.attr.tagBackgroundColor)
+        val colorNamespace = activity.attrColor(R.attr.tagGroupBackgroundColor)
+        val colorNamespaceText = activity.attrColor(R.attr.tagGroupTextColor)
+        val colorTagText = activity.attrColor(R.attr.tagTextColor)
 
         val rootLayout = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL

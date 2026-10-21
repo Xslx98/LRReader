@@ -45,7 +45,8 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultActionRemoveItem
 import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractSwipeableItemViewHolder
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
+import com.lanraragi.reader.util.isLightTheme
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.FastScroller
 import com.hippo.easyrecyclerview.HandlerDrawable
@@ -160,7 +161,7 @@ class HistoryScene : ToolbarScene(),
         mRecyclerView.layoutManager = mLayoutManager
         mRecyclerView.setSelector(
             Ripples.rippleDrawable(
-                !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
+                !context.isLightTheme(),
                 Color.TRANSPARENT.toDrawable()
             )
         )
@@ -216,7 +217,7 @@ class HistoryScene : ToolbarScene(),
 
         fastScroller.attachToRecyclerView(mRecyclerView)
         val handlerDrawable = HandlerDrawable()
-        handlerDrawable.setColor(AttrResources.getAttrColor(context, R.attr.widgetColorThemeAccent))
+        handlerDrawable.setColor(context.attrColor(R.attr.widgetColorThemeAccent))
         fastScroller.setHandlerDrawable(handlerDrawable)
 
         // Observe ViewModel list updates for DiffUtil dispatch. Scope to the *view*

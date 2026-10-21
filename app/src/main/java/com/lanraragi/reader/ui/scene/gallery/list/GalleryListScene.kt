@@ -38,7 +38,7 @@ import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.isLightTheme
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.hippo.easyrecyclerview.EasyRecyclerView
@@ -384,7 +384,7 @@ class GalleryListScene : BaseScene(),
             recyclerView, AppearanceSettings.getListMode()
         )
         recyclerView.selector = Ripples.rippleDrawable(
-            !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
+            !context.isLightTheme(),
             Color.TRANSPARENT.toDrawable()
         )
         recyclerView.setDrawSelectorOnTop(true)

@@ -3,7 +3,6 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>ComplexCondition:DownloadFragment.kt$DownloadFragment$lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".gif") || lower.endsWith(".webp")</ID>
-    <ID>ComplexCondition:GalleryDetailScene.kt$GalleryDetailScene$(oldState == STATE_INIT || oldState == STATE_FAILED || oldState == STATE_REFRESH) &amp;&amp; (state == STATE_NORMAL || state == STATE_REFRESH_HEADER) &amp;&amp; AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme)</ID>
     <ID>ComplexCondition:GalleryDetailScene.kt$GalleryDetailScene$di != null &amp;&amp; di.thumb != null &amp;&amp; di.thumb != result.archive.thumbnailUrl &amp;&amp; di.arcid == result.archive.arcid</ID>
     <ID>ComplexCondition:GalleryInputHandler.kt$GalleryInputHandler$keyCode == KeyEvent.KEYCODE_PAGE_UP || keyCode == KeyEvent.KEYCODE_PAGE_DOWN || keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT || keyCode == KeyEvent.KEYCODE_DPAD_DOWN || keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_MENU</ID>
     <ID>ComplexCondition:GalleryListScene.kt$GalleryListScene$ListUrlBuilder.MODE_NORMAL == builder.mode &amp;&amp; LRRUtils.NONE == category &amp;&amp; builder.categoryId == null &amp;&amp; TextUtils.isEmpty(keyword)</ID>

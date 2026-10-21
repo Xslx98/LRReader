@@ -9,7 +9,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.gallery.StampGeometry
 import com.lanraragi.framework.lib.glgallery.PageTransform
@@ -67,7 +67,7 @@ class StampOverlayView @JvmOverloads constructor(
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = AttrResources.getAttrColor(context, R.attr.widgetColorThemeAccent)
+        color = context.attrColor(R.attr.widgetColorThemeAccent)
     }
     private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL

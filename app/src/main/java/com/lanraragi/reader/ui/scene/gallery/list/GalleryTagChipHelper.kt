@@ -12,7 +12,7 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import com.hippo.android.resource.AttrResources
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.domain.Archive
@@ -111,8 +111,8 @@ class GalleryTagChipHelper(private val callback: Callback) {
     }
 
     fun buildChipGroup(gi: Archive?, tagFlowLayout: ChipGroup): ChipGroup {
-        val colorTag = AttrResources.getAttrColor(callback.requireContext(), R.attr.tagBackgroundColor)
-        val colorTagText = AttrResources.getAttrColor(callback.requireContext(), R.attr.tagTextColor)
+        val colorTag = callback.requireContext().attrColor(R.attr.tagBackgroundColor)
+        val colorTagText = callback.requireContext().attrColor(R.attr.tagTextColor)
         if (gi == null) {
             val tagName = callback.requireContext().getString(R.string.lrr_no_preview_tags)
             @SuppressLint("InflateParams")
