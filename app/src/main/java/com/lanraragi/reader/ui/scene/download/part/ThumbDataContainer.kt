@@ -15,12 +15,11 @@
  */
 package com.lanraragi.reader.ui.scene.download.part
 
-import com.lanraragi.framework.conaco.DataContainer
-import com.lanraragi.framework.conaco.ProgressNotifier
-import com.lanraragi.framework.io.UniFileInputStreamPipe
+import android.util.Log
 import com.lanraragi.framework.lib.yorozuya.IOUtils
-import com.hippo.streampipe.InputStreamPipe
 import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.BuildConfig
+import com.lanraragi.reader.cover.CoverStore
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -32,8 +31,8 @@ import java.util.concurrent.TimeoutException
 /**
  * 缩略图数据容器
  *
- * Implements the Java [DataContainer] interface whose methods cannot be
- * made `suspend`. The download directory resolution (which requires a
+ * Implements [CoverStore], whose methods are blocking (they run on a cover
+ * loader I/O thread). The download directory resolution (which requires a
  * suspend call to
  * [com.lanraragi.reader.spider.SpiderDen.findGalleryDownloadDir]) is shared
  * per archive through
@@ -41,12 +40,12 @@ import java.util.concurrent.TimeoutException
  * the same row never restarts it; the result is delivered via
  * [downloadDirFuture].
  *
- * The callbacks run on Conaco's **single app-wide serial disk thread**
- * (audit FW-2), so this class must never stall it:
+ * The callbacks run on the cover loader's I/O threads, so this class must
+ * never stall them for long:
  * - the future is awaited **once** per container instance with a short
  *   bound; an unresolved/failed/hung resolution just disables the
- *   container, and Conaco degrades gracefully to its own URL-keyed disk
- *   cache + network. The shared future keeps resolving in the background,
+ *   container, and the load degrades gracefully to the shared disk cache +
+ *   network. The shared future keeps resolving in the background,
  *   so the next bind (a fresh container over the same future) retries.
  * - pure read callbacks ([isEnabled]/[get]) never create files; only
  *   [save] creates `.thumb`. The old create-on-read behavior littered
@@ -55,7 +54,7 @@ import java.util.concurrent.TimeoutException
 class ThumbDataContainer(
     private val downloadDirFuture: CompletableFuture<UniFile?>,
     private val dirWaitMillis: Long = DIR_WAIT_MILLIS,
-) : DataContainer {
+) : CoverStore {
 
     private var dirResolved = false
     private var dir: UniFile? = null
@@ -86,21 +85,13 @@ class ThumbDataContainer(
         return resolveDir() != null
     }
 
-    override fun onUrlMoved(requestUrl: String?, responseUrl: String?) {
-    }
-
-    override fun save(
-        `is`: InputStream,
-        length: Long,
-        mediaType: String?,
-        notify: ProgressNotifier?
-    ): Boolean {
+    override fun save(input: InputStream): Boolean {
         val file = resolveDir()?.createFile(THUMB_FILE_NAME) ?: return false
 
         var os: OutputStream? = null
         try {
             os = file.openOutputStream()
-            IOUtils.copy(`is`, os)
+            IOUtils.copy(input, os)
             return true
         } catch (e: IOException) {
             e.printStackTrace()
@@ -110,8 +101,14 @@ class ThumbDataContainer(
         }
     }
 
-    override fun get(): InputStreamPipe? {
-        return existingFile()?.let { UniFileInputStreamPipe(it) }
+    override fun open(): InputStream? {
+        return try {
+            existingFile()?.openInputStream()
+        } catch (e: IOException) {
+            // Unreadable .thumb: the load falls back to cache and network.
+            if (BuildConfig.DEBUG) Log.w(TAG, "Cannot read $THUMB_FILE_NAME", e)
+            null
+        }
     }
 
     override fun remove() {
@@ -119,13 +116,14 @@ class ThumbDataContainer(
     }
 
     companion object {
+        private const val TAG = "ThumbDataContainer"
         private const val THUMB_FILE_NAME = ".thumb"
 
         /**
          * Typical resolution is a Room lookup plus a SAF directory probe
          * (tens of ms). 250 ms covers the slow tail while capping the
-         * worst-case stall a single bind can inflict on the shared serial
-         * disk thread; past the bound the container silently degrades.
+         * worst-case stall a single bind can inflict on a loader I/O
+         * thread; past the bound the container silently degrades.
          */
         private const val DIR_WAIT_MILLIS = 250L
     }

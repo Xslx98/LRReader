@@ -5,12 +5,12 @@ import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
-import coil3.request.crossfade
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import com.lanraragi.framework.conaco.Conaco
 import com.lanraragi.reader.ImageBitmapHelper
 import com.lanraragi.reader.R
+import com.lanraragi.reader.cover.StoredCoverFetcher
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
@@ -75,11 +75,11 @@ class ClientModule(
     }
 
     override val coverImageLoader: ImageLoader by lazy {
-        // Same memory and disk budgets as Conaco, so the pilot measures the
-        // loader, not a different cache size.
+        // Memory and disk budgets: the tiers below (inherited from Conaco).
         ImageLoader.Builder(context)
             .components {
                 add(OkHttpNetworkFetcherFactory(callFactory = { networkModule.thumbFetchClient }))
+                add(StoredCoverFetcher.Factory())
             }
             .memoryCache {
                 MemoryCache.Builder().maxSizeBytes(memoryCacheMaxSize().toLong()).build()
@@ -90,7 +90,6 @@ class ClientModule(
                     .maxSizeBytes(diskCacheMaxSize(context).toLong())
                     .build()
             }
-            .crossfade(COVER_FADE_IN_MS)
             .decoderCoroutineContext(coverDecodeDispatcher)
             .build()
     }
@@ -102,9 +101,6 @@ class ClientModule(
 
     companion object {
         private const val MB = 1024L * 1024
-
-        /** Fade-in of a loaded cover over the placeholder (decision 19: 150 ms). */
-        private const val COVER_FADE_IN_MS = 150
 
         // Disk tier thresholds on total RAM (/proc/meminfo MemTotal, which
         // reads a little below the nominal size: a "4 GB" phone is ~3.6 GB).

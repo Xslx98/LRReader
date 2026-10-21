@@ -27,7 +27,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.DrawableRes;
@@ -35,34 +34,30 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.lanraragi.framework.conaco.Conaco;
-import com.lanraragi.framework.conaco.ConacoTask;
-import com.lanraragi.framework.conaco.Unikery;
 import com.lanraragi.framework.drawable.PreciselyClipDrawable;
-import com.lanraragi.reader.LRReaderApplication;
-import com.lanraragi.reader.ServiceRegistry;
 import com.lanraragi.reader.R;
-import com.lanraragi.framework.lib.image.Image;
+import com.lanraragi.reader.cover.CoverLoader;
 import com.lanraragi.framework.util.DrawableManager;
+
+import coil3.request.Disposable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Image>,
+public class LoadImageViewNew extends FixedAspectImageView implements CoverLoader.Callback,
         View.OnClickListener, View.OnLongClickListener, Animatable {
 
     public static final int RETRY_TYPE_NONE = 0;
     public static final int RETRY_TYPE_CLICK = 1;
     public static final int RETRY_TYPE_LONG_CLICK = 2;
-    private static final String TAG = LoadImageViewNew.class.getSimpleName();
 
     /** Fade-in of a loaded image over the placeholder (decision 19: 150 ms). */
     private static final int FADE_IN_MS = 150;
 
     @Nullable
     private Drawable mPlaceholder;
-    private int mTaskId = Unikery.INVALID_ID;
-    private Conaco<Image> mConaco;
+    @Nullable
+    private Disposable mRequest;
     private String mKey;
     private String mUrl;
     private boolean mUseNetwork;
@@ -95,19 +90,17 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         setRetryType(a.getInt(R.styleable.LoadImageView_retryType, 0));
         a.recycle();
         setFocusable(false);
-        if (!isInEditMode()) {
-            mConaco = ServiceRegistry.INSTANCE.getClientModule().getConaco();
+    }
+
+    private boolean isLoading() {
+        return mRequest != null && !mRequest.isDisposed();
+    }
+
+    private void cancelRequest() {
+        if (mRequest != null) {
+            mRequest.dispose();
+            mRequest = null;
         }
-    }
-
-    @Override
-    public int getTaskId() {
-        return mTaskId;
-    }
-
-    @Override
-    public void setTaskId(int id) {
-        mTaskId = id;
     }
 
     @Override
@@ -117,7 +110,7 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         if (!mLoadFromDrawable) {
             if (mFailed) {
                 onFailure();
-            } else if (mTaskId == Unikery.INVALID_ID) /* if (!mConaco.isLoading(mTaskId)) TODO Update Conaco */ {
+            } else if (!isLoading()) {
                 load(mKey, mUrl, mUseNetwork);
             }
         }
@@ -128,12 +121,7 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         super.onDetachedFromWindow();
 
         if (!mLoadFromDrawable) {
-            try {
-                // Cancel
-                mConaco.cancel(this);
-            } catch (Exception e) {
-                // Ignore
-            }
+            cancelRequest();
             // Clear drawable
             clearDrawable();
         }
@@ -165,11 +153,6 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         if (showingPlaceholder) {
             setImageDrawable(placeholder);
         }
-    }
-
-    @Nullable
-    public Drawable getPlaceholder() {
-        return mPlaceholder;
     }
 
     private void clearDrawable() {
@@ -241,7 +224,7 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         // in flight must not cancel-and-restart the fetch (cancelled fetches
         // discard their partial bytes).
         if (LoadImageSameKeyPolicy.shouldSkipLoad(
-                mKey, key, mFailed, mUseNetwork == useNetwork, mConaco.isLoading(this))) {
+                mKey, key, mFailed, mUseNetwork == useNetwork, isLoading())) {
             return;
         }
 
@@ -253,29 +236,11 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         mUrl = url;
         mUseNetwork = useNetwork;
 
-        ConacoTask.Builder<Image> builder = new ConacoTask.Builder<Image>()
-                .setUnikery(this)
-                .setKey(key)
-                .setUrl(url)
-                .setUseNetwork(useNetwork)
-                .setTargetSize(decodeTargetWidth(), decodeTargetHeight());
-        mConaco.load(builder);
-    }
-
-    /**
-     * Decode target: the laid-out view size when available, floored at the
-     * detail-header thumb size — list cells, grid tiles and the detail
-     * header share one memory-cache key, so the cached decode must stay
-     * sharp for the largest fixed consumer.
-     */
-    private int decodeTargetWidth() {
-        return Math.max(getWidth(),
-                getResources().getDimensionPixelSize(R.dimen.gallery_detail_thumb_width));
-    }
-
-    private int decodeTargetHeight() {
-        return Math.max(getHeight(),
-                getResources().getDimensionPixelSize(R.dimen.gallery_detail_thumb_height));
+        cancelRequest();
+        // Callbacks for a memory hit arrive inside load(); show the
+        // placeholder first so a hit replaces it and a miss waits on it.
+        clearDrawable();
+        mRequest = CoverLoader.load(this, key, url, useNetwork, true, null, this);
     }
 
     public void load(Drawable drawable) {
@@ -293,53 +258,14 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
     }
 
     public void unload() {
-        mConaco.cancel(this);
+        cancelRequest();
         mKey = null;
         mUrl = null;
         clearDrawable();
     }
 
     @Override
-    public void onMiss(int source) {
-        if (source == Conaco.SOURCE_MEMORY) {
-            clearDrawable();
-        }
-    }
-
-    @Override
-    public void onRequest() {
-    }
-
-    @Override
-    public void onProgress(long singleReceivedSize, long receivedSize, long totalSize) {
-    }
-
-    @Override
-    public void onWait() {
-        clearDrawable();
-    }
-
-    @Override
-    public boolean onGetValue(@NonNull Image value, int source) {
-        Drawable drawable;
-        try {
-            // Clone via ConstantState: the memory cache hands the SAME cached
-            // Drawable instance to every consumer of this key (list cell, grid
-            // tile, tank member row, detail cover). Sharing one instance
-            // across attached views corrupts bounds/callback state. Ported
-            // from LoadImageView; fork had drifted.
-            Drawable.ConstantState state = value.getDrawable().getConstantState();
-            if (state != null) {
-                drawable = state.newDrawable();
-            } else {
-                drawable = value.getDrawable();
-            }
-        } catch (Exception e) {
-            // The image might be recycled because it is removed from memory cache.
-            Log.d(TAG, "The image is recycled", e);
-            return false;
-        }
-
+    public void onSuccess(@NonNull Drawable drawable, boolean fromMemory) {
         clearDrawable();
 
         if (Integer.MIN_VALUE != mOffsetX) {
@@ -347,7 +273,7 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         }
 
         onPreSetImageDrawable(drawable, true);
-        if ((source == Conaco.SOURCE_DISK || source == Conaco.SOURCE_NETWORK) && isShown()) {
+        if (!fromMemory && isShown()) {
             Drawable[] layers = new Drawable[2];
             layers[0] = mPlaceholder != null ? mPlaceholder : new ColorDrawable(Color.TRANSPARENT);
             layers[1] = drawable;
@@ -358,11 +284,14 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
         } else {
             setImageDrawable(drawable);
         }
-        return true;
     }
 
     @Override
-    public void onFailure() {
+    public void onError() {
+        onFailure();
+    }
+
+    private void onFailure() {
         mFailed = true;
         clearDrawable();
         Drawable drawable;
@@ -379,11 +308,6 @@ public class LoadImageViewNew extends FixedAspectImageView implements Unikery<Im
             mKey = null;
             mUrl = null;
         }
-    }
-
-    @Override
-    public void onCancel() {
-        mFailed = false;
     }
 
     @Override
