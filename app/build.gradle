@@ -294,7 +294,6 @@ dependencies {
     implementation libs.pagination.sxj
     implementation libs.seven332.hotspot
     implementation libs.seven332.refreshlayout
-    implementation libs.seven332.streampipe
 
     implementation libs.advrecyclerview
 
