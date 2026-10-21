@@ -361,19 +361,33 @@ class Widgets:
         """Drag the fast scroller's handle to the end, prove the list is at
         its end (a further fling changes nothing), then drag it back to the
         first row. The handle's position is not in the dump: press at a few
-        points along the track until a drag lands on it."""
+        points along the track until a drag lands on it.
+
+        The scroller hides 1 s after the list stops (then fades for 0.5 s)
+        and ignores touches once hidden, while a uiautomator dump takes ~2 s
+        on the AVD: read its bounds once from a dump taken during a slow
+        scroll, then reveal it (a short scroll away from the list end it
+        sits at and back, whose fling stops at that end and so leaves the
+        handle where it was) and drag in one shell call, with no dump
+        between."""
         first = self.titles()[:1]
+        mid, top, bottom = self.w // 2, self.h * 2 // 5, self.h * 3 // 5
+        forward = f"input swipe {mid} {bottom} {mid} {top}"
+        backward = f"input swipe {mid} {top} {mid} {bottom}"
+        slow = subprocess.Popen([ADB, "shell", f"{forward} 4000; {backward} 4000"])
+        time.sleep(1)
+        bar = [n for n in nodes(dump()) if n.get("resource-id") == self.rid("fast_scroller")]
+        slow.wait()
+        if not bar:
+            raise SmokeFailure(f"{label}: no fast scroller")
+        x1, y1, x2, y2 = map(int, re.findall(r"\d+", bar[0]["bounds"]))
+        x = (x1 + x2) // 2
 
         def drag(starts, end, done):
+            reveal = f"{forward} 200; {backward} 200" if end else f"{backward} 200; {forward} 200"
             for start in starts:
-                self.swipe(self.w // 2, self.h * 3 // 5, self.w // 2, self.h * 2 // 5, 200)
-                self.swipe(self.w // 2, self.h * 2 // 5, self.w // 2, self.h * 3 // 5, 200)
-                bar = self.all_id("fast_scroller")
-                if not bar:
-                    raise SmokeFailure(f"{label}: no fast scroller")
-                x1, y1, x2, y2 = map(int, re.findall(r"\d+", bar[0]["bounds"]))
-                x = (x1 + x2) // 2
-                self.swipe(x, y1 + (y2 - y1) * start // 100, x, y1 + (y2 - y1) * end // 100, 1200)
+                shell(f"{reveal}; input swipe {x} {y1 + (y2 - y1) * start // 100}"
+                      f" {x} {y1 + (y2 - y1) * end // 100} 1200", check=True)
                 time.sleep(1)
                 if done():
                     return
