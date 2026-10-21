@@ -111,7 +111,6 @@ seven332-drawerlayout = { module = "com.github.seven332:drawerlayout", version =
 seven332-easyrecyclerview = { module = "com.github.seven332:easyrecyclerview", version = "0.1.1" }
 seven332-hotspot = { module = "com.github.seven332:hotspot", version = "0.1.0" }
 seven332-refreshlayout = { module = "com.github.seven332:refreshlayout", version = "0.1.0" }
-seven332-ripple = { module = "com.github.seven332:ripple", version = "0.1.2" }
 seven332-streampipe = { module = "com.github.seven332:streampipe", version = "0.1.0" }
 pagination-sxj = { module = "com.github.xiaojieonly:Pagination_Sxj", version = "8d2c34d8f53927aeaa1d405d8653969379cb37ec" }
 

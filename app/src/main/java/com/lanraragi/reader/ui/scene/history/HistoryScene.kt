@@ -69,7 +69,7 @@ import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.widget.SimpleRatingView
-import com.hippo.ripple.Ripple
+import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.util.DrawableManager
 import com.lanraragi.framework.view.ViewTransition
@@ -159,8 +159,7 @@ class HistoryScene : ToolbarScene(),
         mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
         mRecyclerView.layoutManager = mLayoutManager
         mRecyclerView.setSelector(
-            Ripple.generateRippleDrawable(
-                context,
+            Ripples.rippleDrawable(
                 !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
                 Color.TRANSPARENT.toDrawable()
             )

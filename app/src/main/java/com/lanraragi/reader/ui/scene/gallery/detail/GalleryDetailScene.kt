@@ -40,7 +40,7 @@ import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.hippo.ripple.Ripple
+import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.util.DrawableManager
 import com.lanraragi.framework.util.ExceptionUtils
 import kotlinx.coroutines.launch
@@ -294,9 +294,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val archiverDownloadProgress = ViewUtils.`$$`(mHeader, R.id.archiver_download_progress) as ArchiverDownloadProgress
         val read = ViewUtils.`$$`(mActionGroup, R.id.read)
         mRead = read
-        Ripple.addRipple(otherActions, isDarkTheme)
-        Ripple.addRipple(download, isDarkTheme)
-        Ripple.addRipple(read, isDarkTheme)
+        Ripples.addRipple(otherActions, isDarkTheme)
+        Ripples.addRipple(download, isDarkTheme)
+        Ripples.addRipple(read, isDarkTheme)
         uploader.setOnClickListener(this)
         otherActions.setOnClickListener(this)
         download.setOnClickListener(this)
@@ -317,7 +317,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mHeartGroup = heartGroup
         val heart = ViewUtils.`$$`(heartGroup, R.id.heart) as TextView
         val heartOutline = ViewUtils.`$$`(heartGroup, R.id.heart_outline) as TextView
-        Ripple.addRipple(heartGroup, isDarkTheme)
+        Ripples.addRipple(heartGroup, isDarkTheme)
         heartGroup.setOnClickListener(this)
         heartGroup.setOnLongClickListener(this)
 

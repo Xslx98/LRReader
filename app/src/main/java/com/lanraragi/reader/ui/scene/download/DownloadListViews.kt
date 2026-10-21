@@ -10,7 +10,7 @@ import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.FastScroller
 import com.hippo.easyrecyclerview.HandlerDrawable
 import com.hippo.easyrecyclerview.MarginItemDecoration
-import com.hippo.ripple.Ripple
+import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
@@ -40,8 +40,7 @@ internal object DownloadListViews {
 
         recyclerView.setItemViewCacheSize(100)
         recyclerView.layoutManager = layoutManager
-        recyclerView.selector = Ripple.generateRippleDrawable(
-            context,
+        recyclerView.selector = Ripples.rippleDrawable(
             !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
             Color.TRANSPARENT.toDrawable()
         )

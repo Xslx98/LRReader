@@ -56,7 +56,7 @@ import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.hippo.ripple.Ripple
+import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.framework.util.NaturalComparator
@@ -626,8 +626,8 @@ class DownloadAdapter(
             val isDarkTheme = !AttrResources.getAttrBoolean(
                 mScene.ehContext!!, androidx.appcompat.R.attr.isLightTheme
             )
-            Ripple.addRipple(start, isDarkTheme)
-            Ripple.addRipple(stop, isDarkTheme)
+            Ripples.addRipple(start, isDarkTheme)
+            Ripples.addRipple(stop, isDarkTheme)
         }
 
         override fun onClick(v: View) {

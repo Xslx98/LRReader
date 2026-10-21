@@ -60,7 +60,7 @@ import com.lanraragi.reader.widget.SkeletonView
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.hippo.refreshlayout.RefreshLayout
-import com.hippo.ripple.Ripple
+import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.framework.view.ViewTransition
@@ -383,8 +383,8 @@ class GalleryListScene : BaseScene(),
             inflater, resources,
             recyclerView, AppearanceSettings.getListMode()
         )
-        recyclerView.selector = Ripple.generateRippleDrawable(
-            context, !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
+        recyclerView.selector = Ripples.rippleDrawable(
+            !AttrResources.getAttrBoolean(context, androidx.appcompat.R.attr.isLightTheme),
             Color.TRANSPARENT.toDrawable()
         )
         recyclerView.setDrawSelectorOnTop(true)
