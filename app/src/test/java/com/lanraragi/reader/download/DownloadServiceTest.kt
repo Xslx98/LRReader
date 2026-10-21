@@ -73,7 +73,6 @@ class DownloadServiceTest {
                 override val quickSearchRepository get() = unset()
                 override val favoritesRepository get() = unset()
                 override val archiveDetailCache get() = unset()
-                override val spiderInfoCache get() = unset()
                 override fun clearArchiveDetailCache() {}
             }
         )
@@ -106,7 +105,6 @@ class DownloadServiceTest {
         override val quickSearchRepository get() = unset()
         override val favoritesRepository get() = unset()
         override val archiveDetailCache get() = unset()
-        override val spiderInfoCache get() = unset()
         override fun clearArchiveDetailCache() {}
     }
 

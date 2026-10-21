@@ -5,12 +5,15 @@
 # (17a07878, CI run 39446450023), rounded up by < 1 %; anchored there for all
 # of 2.4 (only exception: an owner-approved Coil step in P1). lib covers the
 # locally built release too (its .so is 6296 B, CI's 6136 B).
+# 2026-10-21 (2.4 P1, owner-approved Coil step): apk.file, apk.download, dex
+# and dex.method_refs raised by the measured growth of the Coil replacement
+# (arm64 release vs deadeca5 = v2.3.0: +131303 B / +63782 B / +124748 B / +637).
 tolerance.percent 1.5
-apk.file        5090000
-apk.download    2430000
-dex             3630000
+apk.file        5221400
+apk.download    2493800
+dex             3754800
 lib                6400
 res             1350000
 assets            14000
 other              3600
-dex.method_refs   25000
+dex.method_refs   25640

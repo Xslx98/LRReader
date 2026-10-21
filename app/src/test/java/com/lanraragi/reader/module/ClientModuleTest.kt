@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Unit tests for Conaco's cache sizing in [ClientModule]: the thumbnail memory
+ * Unit tests for the cover cache sizing in [ClientModule]: the thumbnail memory
  * cache and the disk cache tiers, both from total RAM.
  */
 class ClientModuleTest {

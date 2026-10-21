@@ -301,6 +301,8 @@ dependencies {
     implementation libs.advrecyclerview
 
     implementation libs.okhttp
+    implementation libs.coil.core
+    implementation libs.coil.network.okhttp
 
     // Room database (replaces GreenDAO)
     implementation libs.room.runtime

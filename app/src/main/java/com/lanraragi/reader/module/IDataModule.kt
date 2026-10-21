@@ -1,7 +1,6 @@
 package com.lanraragi.reader.module
 
 import androidx.collection.LruCache
-import com.lanraragi.framework.beerbelly.SimpleDiskCache
 import com.lanraragi.reader.FavouriteStatusRouter
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -53,9 +52,6 @@ interface IDataModule {
 
     /** LRU cache for [ArchiveDetail] objects keyed by arcid. */
     val archiveDetailCache: LruCache<String, ArchiveDetail>
-
-    /** Small disk cache holding per-gallery spider state for preloading. */
-    val spiderInfoCache: SimpleDiskCache
 
     /** Evicts every entry from [archiveDetailCache]. */
     fun clearArchiveDetailCache()

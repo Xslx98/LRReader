@@ -304,6 +304,12 @@ class LRReaderApplication : RecordingApplication() {
         trace("LRRApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
+        // Build the cover image loader (OkHttp client, caches) off the main
+        // thread so the first list bind does not pay for it (2.4 P1: the
+        // lazy build on first bind fattened the cold-start TTFD tail).
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            ServiceRegistry.clientModule.coverImageLoader
+        }
         // ANRs and native crashes of earlier processes never reach the JVM handler;
         // the system keeps their exit reasons (API 30+). Audit 2026-10-04 C06 / R5.
         ServiceRegistry.coroutineModule.ioScope.launch {
@@ -373,6 +379,18 @@ class LRReaderApplication : RecordingApplication() {
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "http_cache one-time purge failed")
+            }
+        }
+
+        // One-time purge of the removed Conaco loader's cache directories
+        // (2.4 P1: covers moved to Coil's own cache dir); nothing trims them
+        // any more. Retried on the next boot when a delete fails.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            val prefs = getSharedPreferences("boot_cleanup", MODE_PRIVATE)
+            if (!prefs.getBoolean("legacy_cover_cache_purged", false) &&
+                com.lanraragi.reader.cover.LegacyCoverCache.purge(cacheDir)
+            ) {
+                prefs.edit { putBoolean("legacy_cover_cache_purged", true) }
             }
         }
 

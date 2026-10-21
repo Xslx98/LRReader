@@ -270,7 +270,7 @@ class DownloadsViewModel(
     /**
      * Per-arcid download-dir resolutions shared by every thumbnail bind.
      * Lives on the application ioScope (not viewModelScope) because
-     * ThumbDataContainer blocks on the future from Conaco's I/O threads —
+     * ThumbDataContainer blocks on the future from cover-loader I/O threads —
      * see [DownloadDirCache]. Invalidated from the [DownloadInfoListener]
      * callbacks below so a deleted-then-re-added archive re-resolves.
      */

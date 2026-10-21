@@ -40,7 +40,7 @@ class ThumbDataContainerTest {
         val dir = tmp.newFolder()
         val container = resolvedContainer(dir)
 
-        assertTrue(container.isEnabled)
+        assertTrue(container.isEnabled())
         assertFalse(
             "read path must not create .thumb",
             thumbFile(dir).exists()
@@ -48,55 +48,41 @@ class ThumbDataContainerTest {
     }
 
     @Test
-    fun get_returnsNull_whenThumbMissing_andDoesNotCreateIt() {
+    fun open_returnsNull_whenThumbMissing_andDoesNotCreateIt() {
         val dir = tmp.newFolder()
         val container = resolvedContainer(dir)
 
-        assertNull(container.get())
+        assertNull(container.open())
         assertFalse(thumbFile(dir).exists())
     }
 
     @Test
-    fun get_returnsExistingThumbContent() {
+    fun open_returnsExistingThumbContent() {
         val dir = tmp.newFolder()
         thumbFile(dir).writeBytes(byteArrayOf(1, 2, 3))
         val container = resolvedContainer(dir)
 
-        val pipe = requireNotNull(container.get())
-        pipe.obtain()
-        try {
-            val bytes = pipe.open().use { it.readBytes() }
-            assertEquals(listOf<Byte>(1, 2, 3), bytes.toList())
-        } finally {
-            pipe.close()
-            pipe.release()
-        }
+        val bytes = requireNotNull(container.open()).use { it.readBytes() }
+        assertEquals(listOf<Byte>(1, 2, 3), bytes.toList())
     }
 
     // ---- write path still creates the file ----
 
     @Test
-    fun save_createsThumb_andGetReadsItBack() {
+    fun save_createsThumb_andOpenReadsItBack() {
         val dir = tmp.newFolder()
         val container = resolvedContainer(dir)
 
         val saved = container.save(
-            ByteArrayInputStream(byteArrayOf(9, 8, 7)), 3, null, null
+            ByteArrayInputStream(byteArrayOf(9, 8, 7))
         )
 
         assertTrue(saved)
         assertEquals(listOf<Byte>(9, 8, 7), thumbFile(dir).readBytes().toList())
-        val pipe = requireNotNull(container.get())
-        pipe.obtain()
-        try {
-            assertEquals(
-                listOf<Byte>(9, 8, 7),
-                pipe.open().use { it.readBytes() }.toList()
-            )
-        } finally {
-            pipe.close()
-            pipe.release()
-        }
+        assertEquals(
+            listOf<Byte>(9, 8, 7),
+            requireNotNull(container.open()).use { it.readBytes() }.toList()
+        )
     }
 
     @Test
@@ -121,22 +107,22 @@ class ThumbDataContainerTest {
         val container = ThumbDataContainer(never, 10L)
 
         val startNanos = System.nanoTime()
-        assertFalse(container.isEnabled)
-        assertNull(container.get())
+        assertFalse(container.isEnabled())
+        assertNull(container.open())
         assertFalse(
-            container.save(ByteArrayInputStream(byteArrayOf(1)), 1, null, null)
+            container.save(ByteArrayInputStream(byteArrayOf(1)))
         )
         val elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000
         assertTrue(
-            "bounded wait must stay far below the old unbounded get(), took ${elapsedMillis}ms",
+            "bounded wait must stay far below the old unbounded wait, took ${elapsedMillis}ms",
             elapsedMillis < 5_000
         )
     }
 
     @Test
     fun boundedWait_happensOnlyOncePerContainer() {
-        // Each callback re-waiting would re-stall the serial disk thread on
-        // every isEnabled/get/save of a single load.
+        // Each callback re-waiting would re-stall a loader I/O thread on
+        // every isEnabled/open/save of a single load.
         var waits = 0
         val counting = object : CompletableFuture<UniFile?>() {
             override fun get(timeout: Long, unit: TimeUnit): UniFile? {
@@ -146,9 +132,9 @@ class ThumbDataContainerTest {
         }
         val container = ThumbDataContainer(counting, 10L)
 
-        container.isEnabled
-        container.get()
-        container.save(ByteArrayInputStream(byteArrayOf(1)), 1, null, null)
+        container.isEnabled()
+        container.open()
+        container.save(ByteArrayInputStream(byteArrayOf(1)))
 
         assertEquals(1, waits)
     }
@@ -160,8 +146,8 @@ class ThumbDataContainerTest {
         }
         val container = ThumbDataContainer(failed, 1000L)
 
-        assertFalse(container.isEnabled)
-        assertNull(container.get())
+        assertFalse(container.isEnabled())
+        assertNull(container.open())
     }
 
     @Test
@@ -169,7 +155,7 @@ class ThumbDataContainerTest {
         val container = ThumbDataContainer(
             CompletableFuture.completedFuture(null), 1000L
         )
-        assertFalse(container.isEnabled)
+        assertFalse(container.isEnabled())
     }
 
     @Test
@@ -178,6 +164,6 @@ class ThumbDataContainerTest {
         val container = ThumbDataContainer(
             CompletableFuture.completedFuture(UniFile.fromFile(file)), 1000L
         )
-        assertFalse(container.isEnabled)
+        assertFalse(container.isEnabled())
     }
 }

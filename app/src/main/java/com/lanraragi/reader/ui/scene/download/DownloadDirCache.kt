@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
  * where every bind re-resolved.
  *
  * [scope] must outlive pending resolutions (the application ioScope, not
- * viewModelScope): consumers block on the future from Conaco's I/O threads,
+ * viewModelScope): consumers block on the future from cover-loader I/O threads,
  * and a cancelled-before-completion future would block such a thread
  * forever. The finally below completes the future even on cancellation as
  * a second line of defence.

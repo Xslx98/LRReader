@@ -1,9 +1,7 @@
 package com.lanraragi.reader.module
 
 import android.content.Context
-import android.util.Log
 import androidx.collection.LruCache
-import com.lanraragi.framework.beerbelly.SimpleDiskCache
 import com.lanraragi.reader.FavouriteStatusRouter
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.ArchiveDetail
@@ -16,18 +14,13 @@ import com.lanraragi.reader.dao.QuickSearchRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.client.api.ProfileLookupCache
-import java.io.File
 
 /**
  * Manages data-layer singletons: DownloadManager, GalleryDetailCache,
- * SpiderInfoCache, and FavouriteStatusRouter.
+ * the repositories, and FavouriteStatusRouter.
  * Extracted from LRReaderApplication to reduce its responsibility scope.
  */
 class DataModule(private val context: Context) : IDataModule, Cacheable {
-
-    companion object {
-        private const val TAG = "DataModule"
-    }
 
     override val favouriteStatusRouter: FavouriteStatusRouter by lazy { FavouriteStatusRouter() }
 
@@ -76,16 +69,11 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
         LruCache<String, ArchiveDetail>(150)
     }
 
-    override val spiderInfoCache: SimpleDiskCache by lazy {
-        SimpleDiskCache(File(context.cacheDir, "spider_info"), 5 * 1024 * 1024) // 5MB
-    }
-
     override fun clearArchiveDetailCache() {
         archiveDetailCache.evictAll()
     }
 
     override fun clearCache() {
         archiveDetailCache.evictAll()
-        try { spiderInfoCache.clear() } catch (e: Exception) { Log.w(TAG, "Failed to clear spider info cache", e) }
     }
 }
