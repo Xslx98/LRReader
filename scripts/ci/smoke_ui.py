@@ -200,11 +200,17 @@ class Widgets:
             raise SmokeFailure(f"emulator console refused a touch event: {out.strip()}")
 
     def double_tap(self, x, y):
+        """Two taps 120 ms apart: GestureDetector only takes a second down
+        40..300 ms after the first up as a double tap, and back-to-back
+        console calls (~50 ms each) can land under the 40 ms minimum."""
         rx, ry = int(x * 32767 / (self.w - 1)), int(y * 32767 / (self.h - 1))
-        for tid in (200, 201):
+        for i, tid in enumerate((200, 201)):
+            if i:
+                time.sleep(0.12)
             self.console_touch("EV_ABS:ABS_MT_SLOT:0", f"EV_ABS:ABS_MT_TRACKING_ID:{tid}",
                                "EV_ABS:ABS_MT_PRESSURE:50", f"EV_ABS:ABS_MT_POSITION_X:{rx}",
                                f"EV_ABS:ABS_MT_POSITION_Y:{ry}")
+            time.sleep(0.05)
             self.console_touch("EV_ABS:ABS_MT_TRACKING_ID:-1")
 
     def pinch(self, cx, cy, start, end, steps=10):
