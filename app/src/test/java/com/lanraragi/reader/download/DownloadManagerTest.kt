@@ -122,7 +122,6 @@ class DownloadManagerTest {
                 override val quickSearchRepository get() = throw NotImplementedError("not needed")
                 override val favoritesRepository get() = throw NotImplementedError("not needed")
                 override val archiveDetailCache get() = throw NotImplementedError("not needed")
-                override val spiderInfoCache get() = throw NotImplementedError("not needed")
                 override fun clearArchiveDetailCache() {}
             }
         )

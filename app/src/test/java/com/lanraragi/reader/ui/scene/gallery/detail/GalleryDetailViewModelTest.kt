@@ -180,7 +180,6 @@ class GalleryDetailViewModelTest {
         override val favoritesRepository get() = throw UnsupportedOperationException()
         override val downloadDbRepository get() = throw UnsupportedOperationException()
         override val archiveDetailCache get() = cache
-        override val spiderInfoCache get() = throw UnsupportedOperationException()
         override fun clearArchiveDetailCache() = cache.evictAll()
     }
 

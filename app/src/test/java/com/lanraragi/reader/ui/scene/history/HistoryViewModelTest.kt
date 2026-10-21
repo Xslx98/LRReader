@@ -75,7 +75,6 @@ class HistoryViewModelTest {
                 override val downloadManager get() = throw NotImplementedError("not needed")
                 override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
                 override val archiveDetailCache get() = throw NotImplementedError("not needed")
-                override val spiderInfoCache get() = throw NotImplementedError("not needed")
                 override fun clearArchiveDetailCache() {}
             }
         )

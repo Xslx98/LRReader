@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.collection.LruCache
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.beerbelly.SimpleDiskCache
 import com.lanraragi.reader.FavouriteStatusRouter
 import java.io.File
 import com.lanraragi.reader.ServiceRegistry
@@ -118,11 +117,6 @@ class DownloadsViewModelTest {
                         Dispatchers.Unconfined
                     )
                 override val archiveDetailCache get() = LruCache<String, ArchiveDetail>(10)
-                override val spiderInfoCache: SimpleDiskCache get() =
-                    SimpleDiskCache(
-                        java.io.File(context.cacheDir, "test_spider_info"),
-                        1024 * 1024
-                    )
                 override fun clearArchiveDetailCache() {}
             }
         )

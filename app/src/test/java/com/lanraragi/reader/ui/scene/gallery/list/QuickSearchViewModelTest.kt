@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.collection.LruCache
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.beerbelly.SimpleDiskCache
 import com.lanraragi.reader.FavouriteStatusRouter
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
@@ -83,8 +82,6 @@ class QuickSearchViewModelTest {
                     get() = throw NotImplementedError("Not needed for QuickSearchViewModel tests")
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
                 override val archiveDetailCache get() = LruCache<String, ArchiveDetail>(10)
-                override val spiderInfoCache: SimpleDiskCache
-                    get() = throw NotImplementedError("Not needed for QuickSearchViewModel tests")
                 override fun clearArchiveDetailCache() {}
             }
         )
