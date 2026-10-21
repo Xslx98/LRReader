@@ -8,7 +8,10 @@ com/lanraragi/reader/gallery 43.3
 # tier A/C packages that survive 2.4. Tier B packages are deleted during 2.4,
 # so they get no line of their own. Pure GL/rendering code unit tests cannot
 # reach is covered by AVD smoke evidence instead (scripts/ci/smoke_ui.py).
-com/lanraragi/framework 19.2
+# Re-anchored 19.2 -> 18.4 when P1 deleted conaco + beerbelly (better tested
+# than the rest: 367/1274 lines); the remaining framework was already at
+# 2813/15282 = 18.4 % at v2.3.0. Re-anchor the same way per deleted package.
+com/lanraragi/framework 18.4
 com/lanraragi/framework/drawable 31.7
 com/lanraragi/framework/lib/glgallery 23.8
 com/lanraragi/framework/lib/glview 16.2
