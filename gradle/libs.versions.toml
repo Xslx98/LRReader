@@ -23,6 +23,7 @@ lifecycle = "2.11.0"
 paging = "3.5.0"
 preference = "1.2.1"
 recyclerview = "1.4.0"
+swiperefreshlayout = "1.1.0"
 room = "2.8.4"
 test-core = "1.7.0"
 # Perf tooling: :benchmark (Macrobenchmark + baseline profile generator) and
@@ -73,6 +74,7 @@ paging-testing = { module = "androidx.paging:paging-testing", version.ref = "pag
 material = { module = "com.google.android.material:material", version.ref = "material" }
 preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
 recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
+swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }

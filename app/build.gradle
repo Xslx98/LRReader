@@ -270,6 +270,7 @@ dependencies {
     implementation libs.fragment
     implementation libs.preference.ktx
     implementation libs.recyclerview
+    implementation libs.swiperefreshlayout
 
     implementation libs.core.ktx
     // Kotlin Coroutines (structured concurrency for LRREngine + Scene)
