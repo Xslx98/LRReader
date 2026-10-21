@@ -382,6 +382,18 @@ class LRReaderApplication : RecordingApplication() {
             }
         }
 
+        // One-time purge of the removed Conaco loader's cache directories
+        // (2.4 P1: covers moved to Coil's own cache dir); nothing trims them
+        // any more. Retried on the next boot when a delete fails.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            val prefs = getSharedPreferences("boot_cleanup", MODE_PRIVATE)
+            if (!prefs.getBoolean("legacy_cover_cache_purged", false) &&
+                com.lanraragi.reader.cover.LegacyCoverCache.purge(cacheDir)
+            ) {
+                prefs.edit { putBoolean("legacy_cover_cache_purged", true) }
+            }
+        }
+
         // One-time purge of legacy imported-archive rows (audit #69): the
         // import-local-archive feature was removed 2026-08-05; its rows
         // (content:// archiveUri) can neither be opened nor re-downloaded.
