@@ -108,7 +108,6 @@ joor = { module = "org.jooq:joor", version.ref = "joor" }
 # Pagination_Sxj is pinned by commit hash, the rest by tag.
 # The tagged com.github.seven332 AARs are checked byte for byte against
 # libs/seven332-backup/ in CI (scripts/ci/check-jitpack-aars.sh).
-seven332-easyrecyclerview = { module = "com.github.seven332:easyrecyclerview", version = "0.1.1" }
 pagination-sxj = { module = "com.github.xiaojieonly:Pagination_Sxj", version = "8d2c34d8f53927aeaa1d405d8653969379cb37ec" }
 
 [plugins]
