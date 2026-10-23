@@ -30,7 +30,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
-import com.hippo.drawerlayout.DrawerLayout
+import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.hippo.easyrecyclerview.EasyRecyclerView
 import com.hippo.easyrecyclerview.FastScroller
 import com.lanraragi.reader.Analytics

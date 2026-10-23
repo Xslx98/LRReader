@@ -290,7 +290,6 @@ dependencies {
     implementation libs.spinkit
 
     // seven332 UI components
-    implementation libs.seven332.drawerlayout
     implementation libs.seven332.easyrecyclerview
     implementation libs.pagination.sxj
 

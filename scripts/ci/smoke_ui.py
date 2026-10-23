@@ -501,6 +501,16 @@ class Widgets:
         self.tap(self.w - 40, self.h // 2)
         self.gone("nav_settings")
         self.check("drawer: scrim tap closes")
+        # A horizontal drag anywhere on the content opens a drawer (the edges
+        # belong to the system back gesture under gesture navigation).
+        self.swipe(self.w * 3 // 10, self.h // 2, self.w * 9 // 10, self.h // 2, 500)
+        self.need("nav_settings", 5)
+        self.back()
+        self.gone("nav_settings")
+        self.swipe(self.w * 7 // 10, self.h // 2, self.w // 10, self.h // 2, 500)
+        self.need("action_settings", 5)
+        self.close_right_drawer()
+        self.check("drawer: a drag on the content opens either drawer")
         restore = self.three_button_nav()
         try:
             self.swipe(2, self.h // 2, self.w * 4 // 5, self.h // 2, 500)

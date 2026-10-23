@@ -18,7 +18,7 @@ package com.lanraragi.reader.widget
 
 import android.content.Context
 import android.util.AttributeSet
-import com.hippo.drawerlayout.DrawerLayoutChild
+import com.lanraragi.reader.widget.drawer.DrawerLayoutChild
 import com.lanraragi.framework.scene.StageLayout
 
 class AppStageLayout @JvmOverloads constructor(

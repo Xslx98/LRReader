@@ -22,7 +22,7 @@ import android.graphics.Paint
 import android.os.Build
 import android.util.AttributeSet
 import android.widget.LinearLayout
-import com.hippo.drawerlayout.DrawerLayoutChild
+import com.lanraragi.reader.widget.drawer.DrawerLayoutChild
 
 class AppNavigationView @JvmOverloads constructor(
     context: Context,
