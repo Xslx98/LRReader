@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.annotation.SuppressLint
 import android.view.Gravity
 import androidx.recyclerview.widget.RecyclerView
-import com.hippo.drawerlayout.DrawerLayout
+import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.hippo.easyrecyclerview.FastScroller
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout

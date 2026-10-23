@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.detail
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewParent
-import com.hippo.drawerlayout.DrawerLayout
+import com.lanraragi.reader.widget.drawer.DrawerLayout
 
 /**
  * Keeps the drawer's edge swipe from stealing a horizontal drag that starts

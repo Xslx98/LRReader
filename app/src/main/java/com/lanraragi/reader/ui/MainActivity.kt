@@ -35,7 +35,7 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.hippo.drawerlayout.DrawerLayout
+import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings

@@ -30,7 +30,7 @@ import android.view.ViewGroup
 import androidx.annotation.IdRes
 import androidx.annotation.StringRes
 import androidx.annotation.StyleRes
-import com.hippo.drawerlayout.DrawerLayout
+import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.framework.scene.SceneFragment
 import com.lanraragi.framework.util.AppHelper

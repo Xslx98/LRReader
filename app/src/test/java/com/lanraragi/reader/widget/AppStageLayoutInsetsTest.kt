@@ -35,7 +35,7 @@ class AppStageLayoutInsetsTest {
         stage.onGetWindowPadding(0, 880)
 
         assertTrue(stage.isLayoutRequested)
-        assertEquals(880, stage.additionalBottomMargin)
+        assertEquals(880, stage.getAdditionalBottomMargin())
     }
 
     @Test
