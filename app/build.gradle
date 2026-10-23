@@ -319,12 +319,6 @@ dependencies {
     implementation libs.profileinstaller
 }
 
-configurations.configureEach {
-    resolutionStrategy {
-        exclude group: 'com.github.seven332', module: 'okhttp'
-    }
-}
-
 // Robolectric loads app classes through its own sandbox class loader, which
 // JaCoCo treats as "no location" and skips by default: without this, most
 // Robolectric-tested code (dao, download) reported near-zero coverage.
