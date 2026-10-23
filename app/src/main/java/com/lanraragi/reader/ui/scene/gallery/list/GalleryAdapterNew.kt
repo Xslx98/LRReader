@@ -28,7 +28,7 @@ import androidx.annotation.IntDef
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.hippo.easyrecyclerview.MarginItemDecoration
+import com.lanraragi.reader.widget.list.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.ArchiveCoverStamps

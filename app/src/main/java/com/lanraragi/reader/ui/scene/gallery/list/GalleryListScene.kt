@@ -41,7 +41,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.util.isLightTheme
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
-import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.LRRUtils
 

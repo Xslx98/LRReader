@@ -35,7 +35,7 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropM
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
 import androidx.lifecycle.ViewModelProvider
 import com.lanraragi.framework.app.EditTextDialogBuilder
-import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.ui.scene.ToolbarScene

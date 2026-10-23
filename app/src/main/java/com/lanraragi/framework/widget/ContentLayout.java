@@ -38,10 +38,10 @@ import androidx.recyclerview.widget.ListUpdateCallback;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.lanraragi.reader.util.ThemeAttrs;
-import com.hippo.easyrecyclerview.EasyRecyclerView;
-import com.hippo.easyrecyclerview.FastScroller;
-import com.hippo.easyrecyclerview.HandlerDrawable;
-import com.hippo.easyrecyclerview.LayoutManagerUtils;
+import com.lanraragi.reader.widget.list.EasyRecyclerView;
+import com.lanraragi.reader.widget.list.FastScroller;
+import com.lanraragi.reader.widget.list.HandlerDrawable;
+import com.lanraragi.reader.widget.list.LayoutManagerUtils;
 import com.lanraragi.reader.LRReaderApplication;
 import com.lanraragi.reader.R;
 import com.lanraragi.reader.widget.ListRefreshLayout;

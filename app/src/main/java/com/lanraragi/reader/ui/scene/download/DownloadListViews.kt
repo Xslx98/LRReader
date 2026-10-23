@@ -7,10 +7,10 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.util.isLightTheme
-import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.easyrecyclerview.FastScroller
-import com.hippo.easyrecyclerview.HandlerDrawable
-import com.hippo.easyrecyclerview.MarginItemDecoration
+import com.lanraragi.reader.widget.list.EasyRecyclerView
+import com.lanraragi.reader.widget.list.FastScroller
+import com.lanraragi.reader.widget.list.HandlerDrawable
+import com.lanraragi.reader.widget.list.MarginItemDecoration
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.widget.FabLayout

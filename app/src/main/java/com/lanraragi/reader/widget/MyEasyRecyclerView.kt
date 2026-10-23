@@ -5,7 +5,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
-import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 
 class MyEasyRecyclerView : EasyRecyclerView {
     constructor(context: Context) : super(context)
@@ -19,9 +19,9 @@ class MyEasyRecyclerView : EasyRecyclerView {
     )
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(ev: MotionEvent?): Boolean {
+    override fun onTouchEvent(e: MotionEvent): Boolean {
         try {
-            return super.onTouchEvent(ev)
+            return super.onTouchEvent(e)
         } catch (e: IllegalArgumentException) {
             Log.e("RecyclerView", "IllegalArgumentException", e)
         }

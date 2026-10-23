@@ -47,10 +47,10 @@ import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchAct
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractSwipeableItemViewHolder
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.util.isLightTheme
-import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.easyrecyclerview.FastScroller
-import com.hippo.easyrecyclerview.HandlerDrawable
-import com.hippo.easyrecyclerview.MarginItemDecoration
+import com.lanraragi.reader.widget.list.EasyRecyclerView
+import com.lanraragi.reader.widget.list.FastScroller
+import com.lanraragi.reader.widget.list.HandlerDrawable
+import com.lanraragi.reader.widget.list.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.ArchiveCoverStamps
@@ -159,11 +159,9 @@ class HistoryScene : ToolbarScene(),
         )
         mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
         mRecyclerView.layoutManager = mLayoutManager
-        mRecyclerView.setSelector(
-            Ripples.rippleDrawable(
-                !context.isLightTheme(),
-                Color.TRANSPARENT.toDrawable()
-            )
+        mRecyclerView.selector = Ripples.rippleDrawable(
+            !context.isLightTheme(),
+            Color.TRANSPARENT.toDrawable()
         )
         mRecyclerView.setDrawSelectorOnTop(true)
         mRecyclerView.clipToPadding = false
