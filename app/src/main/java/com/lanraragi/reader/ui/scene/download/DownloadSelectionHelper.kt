@@ -19,7 +19,7 @@ import android.view.Gravity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.reader.widget.drawer.DrawerLayout
-import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.ui.scene.DragSelectTouchListener
 import com.lanraragi.framework.widget.FabLayout
 

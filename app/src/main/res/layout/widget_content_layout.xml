@@ -44,7 +44,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <com.lanraragi.framework.widget.FrameworkRecyclerView
+            <com.lanraragi.reader.widget.list.EasyRecyclerView
                 android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -52,7 +52,7 @@
 
         </com.lanraragi.reader.widget.ListRefreshLayout>
 
-        <com.lanraragi.framework.widget.FrameworkFastScroller
+        <com.lanraragi.reader.widget.list.FastScroller
             android:id="@+id/fast_scroller"
             android:layout_width="30dp"
             android:layout_height="match_parent"

@@ -66,7 +66,7 @@
                     app:unselected_color="?attr/drawableColorSecondary" />
             </LinearLayout>
 
-            <com.lanraragi.framework.widget.FrameworkFastScroller
+            <com.lanraragi.reader.widget.list.FastScroller
                 android:id="@+id/fast_scroller"
                 android:layout_width="30dp"
                 android:layout_height="match_parent"

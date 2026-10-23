@@ -30,7 +30,7 @@ import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
-import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

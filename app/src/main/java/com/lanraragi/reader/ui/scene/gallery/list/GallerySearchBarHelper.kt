@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.view.Gravity
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.widget.drawer.DrawerLayout
-import com.hippo.easyrecyclerview.FastScroller
+import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.framework.widget.SearchBarMover

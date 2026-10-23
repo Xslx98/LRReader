@@ -31,8 +31,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.reader.widget.drawer.DrawerLayout
-import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.easyrecyclerview.FastScroller
+import com.lanraragi.reader.widget.list.EasyRecyclerView
+import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadInfo

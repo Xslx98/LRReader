@@ -6,7 +6,7 @@ import android.view.MotionEvent
 import android.view.ViewGroup
 import androidx.core.util.size
 import androidx.recyclerview.widget.RecyclerView
-import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlin.math.max
 import kotlin.math.min

@@ -56,9 +56,6 @@ jobs:
           chmod +x ./gradlew
           ./gradlew app:assembleAppReleaseDebug
 
-      - name: JitPack AARs must match the committed backups
-        run: bash scripts/ci/check-jitpack-aars.sh
-
       - name: No new plain runCatching (it swallows coroutine cancellation)
         run: bash scripts/ci/check-runcatching.sh
 

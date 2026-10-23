@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.app.Activity
 import android.view.View
-import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.LRRAuthManager

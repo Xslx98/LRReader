@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import androidx.core.util.size
-import com.hippo.easyrecyclerview.EasyRecyclerView
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 
 /**
  * Minimal driver for [EasyRecyclerView] custom-choice mode shared by list
