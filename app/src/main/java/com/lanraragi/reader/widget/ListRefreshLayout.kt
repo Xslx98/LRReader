@@ -48,6 +48,9 @@ class ListRefreshLayout @JvmOverloads constructor(
     private var footerPull = 0f
     private var lastTouchY = 0f
 
+    /** The current gesture started with the list at its end (it may pull the footer). */
+    private var footerArmed = false
+
     var isFooterRefreshing = false
         private set
 
@@ -99,8 +102,15 @@ class ListRefreshLayout @JvmOverloads constructor(
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean =
         !isFooterRefreshing && super.onInterceptTouchEvent(ev)
 
+    /**
+     * The header only takes a gesture that starts with the list at its top
+     * (the list starts its nested scroll on the down event), as the seven332
+     * RefreshLayout did; SwipeRefreshLayout would otherwise turn the rest of
+     * a drag that scrolls back to the top into a pull and reload the list.
+     */
     override fun onStartNestedScroll(child: View, target: View, nestedScrollAxes: Int): Boolean =
-        !isFooterRefreshing && super.onStartNestedScroll(child, target, nestedScrollAxes)
+        !isFooterRefreshing && !target.canScrollVertically(-1) &&
+            super.onStartNestedScroll(child, target, nestedScrollAxes)
 
     /**
      * Watches (never consumes) the touch stream for the footer pull: the
@@ -112,6 +122,7 @@ class ListRefreshLayout @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> {
                 footerPull = 0f
                 lastTouchY = ev.y
+                footerArmed = children.firstOrNull { it is RecyclerView }?.canScrollVertically(1) == false
             }
             MotionEvent.ACTION_MOVE -> {
                 val dy = lastTouchY - ev.y
@@ -124,9 +135,13 @@ class ListRefreshLayout @JvmOverloads constructor(
         return super.dispatchTouchEvent(ev)
     }
 
-    /** [dy] > 0 drags the content up. Counts only while the list is at its end. */
+    /**
+     * [dy] > 0 drags the content up. Counts only in a gesture that started
+     * at the end of the list (as the seven332 RefreshLayout), and only while
+     * the list is still there.
+     */
     private fun onFooterDrag(dy: Float) {
-        if (!isEnabled || isAnyRefreshing) return
+        if (!footerArmed || !isEnabled || isAnyRefreshing) return
         val list = children.firstOrNull { it is RecyclerView } ?: return
         if (list.canScrollVertically(1)) {
             releaseFooterPull()

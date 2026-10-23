@@ -117,6 +117,51 @@ class ListRefreshLayoutTest {
         assertEquals(0, footers)
     }
 
+    /** Gives the list [rows] rows of 100 px (scrollable past the 1000 px layout). */
+    private fun fillList(rows: Int) {
+        list.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            override fun getItemCount() = rows
+            override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int) =
+                object : RecyclerView.ViewHolder(View(parent.context).apply {
+                    layoutParams = RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, 100)
+                }) {}
+            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) = Unit
+        }
+        relayout()
+    }
+
+    private fun relayout() {
+        val exactly = View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY)
+        layout.parent.let { it as View }.run {
+            measure(exactly, exactly)
+            layout(0, 0, 1000, 1000)
+        }
+    }
+
+    @Test
+    fun theHeader_onlyTakesAGestureThatStartsAtTheTop() {
+        fillList(50)
+        list.scrollBy(0, 500)
+        assertTrue(list.canScrollVertically(-1))
+        assertFalse(layout.onStartNestedScroll(list, list, ViewCompat.SCROLL_AXIS_VERTICAL))
+        list.scrollBy(0, -500)
+        assertTrue(layout.onStartNestedScroll(list, list, ViewCompat.SCROLL_AXIS_VERTICAL))
+    }
+
+    @Test
+    fun theFooter_onlyCountsAGestureThatStartsAtTheEnd() {
+        fillList(50)
+        down() // mid-list
+        list.scrollBy(0, 10_000) // the same gesture scrolls to the end
+        assertFalse(list.canScrollVertically(1))
+        drag(trigger * 2)
+        up()
+        assertEquals(0, footers)
+        down() // at the end
+        drag(trigger * 2)
+        assertEquals(1, footers)
+    }
+
     @Test
     fun footerRefreshing_blocksANewNestedScroll() {
         layout.setFooterRefreshing(true)
