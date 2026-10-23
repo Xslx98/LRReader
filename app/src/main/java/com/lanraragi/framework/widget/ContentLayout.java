@@ -44,7 +44,7 @@ import com.hippo.easyrecyclerview.HandlerDrawable;
 import com.hippo.easyrecyclerview.LayoutManagerUtils;
 import com.lanraragi.reader.LRReaderApplication;
 import com.lanraragi.reader.R;
-import com.hippo.refreshlayout.RefreshLayout;
+import com.lanraragi.reader.widget.ListRefreshLayout;
 import com.lanraragi.framework.util.DrawableManager;
 import static com.lanraragi.reader.client.api.LRRApiUtilsKt.friendlyError;
 import com.lanraragi.framework.view.ViewTransition;
@@ -63,7 +63,7 @@ public class ContentLayout extends FrameLayout {
     private TextView mTipView;
     private ViewGroup mContentView;
 
-    private RefreshLayout mRefreshLayout;
+    private ListRefreshLayout mRefreshLayout;
     private EasyRecyclerView mRecyclerView;
     private FastScroller mFastScroller;
 
@@ -103,18 +103,13 @@ public class ContentLayout extends FrameLayout {
         drawable.setColor(ThemeAttrs.attrColor(context, R.attr.widgetColorThemeAccent));
         mFastScroller.setHandlerDrawable(drawable);
 
-        mRefreshLayout.setHeaderColorSchemeResources(
+        mRefreshLayout.setColorSchemeResources(
                 R.color.loading_indicator_red,
                 R.color.loading_indicator_purple,
                 R.color.loading_indicator_blue,
                 R.color.loading_indicator_cyan,
                 R.color.loading_indicator_green,
                 R.color.loading_indicator_yellow);
-        mRefreshLayout.setFooterColorSchemeResources(
-                R.color.loading_indicator_red,
-                R.color.loading_indicator_blue,
-                R.color.loading_indicator_green,
-                R.color.loading_indicator_orange);
 
         mRecyclerViewOriginTop = mRecyclerView.getPaddingTop();
         mRecyclerViewOriginBottom = mRecyclerView.getPaddingBottom();
@@ -129,7 +124,7 @@ public class ContentLayout extends FrameLayout {
         return mFastScroller;
     }
 
-    public RefreshLayout getRefreshLayout() {
+    public ListRefreshLayout getRefreshLayout() {
         return mRefreshLayout;
     }
 
@@ -230,7 +225,7 @@ public class ContentLayout extends FrameLayout {
         private TextView mTipView;
         private ViewGroup mContentView;
 
-        private RefreshLayout mRefreshLayout;
+        private ListRefreshLayout mRefreshLayout;
         private EasyRecyclerView mRecyclerView;
 
         private ViewTransition mViewTransition;
@@ -288,7 +283,7 @@ public class ContentLayout extends FrameLayout {
         private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                if (!mRefreshLayout.isRefreshing() && mRefreshLayout.isAlmostBottom() && (mEndPage < mPages || mNextPage == -1 || mPages == -1)) {
+                if (!mRefreshLayout.isAnyRefreshing() && mRefreshLayout.isAlmostBottom() && (mEndPage < mPages || mNextPage == -1 || mPages == -1)) {
                     // Get next page
                     mRefreshLayout.setFooterRefreshing(true);
                     mOnRefreshListener.onFooterRefresh();
@@ -296,7 +291,7 @@ public class ContentLayout extends FrameLayout {
             }
         };
 
-        private final RefreshLayout.OnRefreshListener mOnRefreshListener = new RefreshLayout.OnRefreshListener() {
+        private final ListRefreshLayout.OnRefreshListener mOnRefreshListener = new ListRefreshLayout.OnRefreshListener() {
             @Override
             public void onHeaderRefresh() {
                 if (mStartPage > 0) {

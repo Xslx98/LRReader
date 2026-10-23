@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.core.util.size
 import androidx.recyclerview.widget.RecyclerView
 import com.hippo.easyrecyclerview.EasyRecyclerView
-import com.hippo.refreshlayout.RefreshLayout
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -52,7 +52,7 @@ class DragSelectTouchListener(
     private var scrolling = false
 
     /** Pull-to-refresh layouts disabled for the drag; re-enabled on end. */
-    private val frozenRefreshLayouts = mutableListOf<RefreshLayout>()
+    private val frozenRefreshLayouts = mutableListOf<SwipeRefreshLayout>()
 
     private val density = recyclerView.resources.displayMetrics.density
     private val choreographer = Choreographer.getInstance()
@@ -75,17 +75,16 @@ class DragSelectTouchListener(
     }
 
     /**
-     * Keep every ancestor out of the gesture. `RefreshLayout` (seven332
-     * 0.1.0) implements requestDisallowInterceptTouchEvent as a no-op and
-     * would still intercept the first vertical move as a pull — and, being
-     * a no-op, it also never forwards the request to ITS parents — so it is
-     * disabled for the drag and every ancestor is asked individually.
+     * Keep every ancestor out of the gesture: every ancestor is asked
+     * individually, and a pull-to-refresh layout is also disabled for the
+     * drag so it can never take the first vertical move as a pull (the
+     * seven332 RefreshLayout this was written for ignored the request).
      */
     private fun holdOffAncestors() {
         var parent = recyclerView.parent
         while (parent is ViewGroup) {
             parent.requestDisallowInterceptTouchEvent(true)
-            if (parent is RefreshLayout && parent.isEnabled) {
+            if (parent is SwipeRefreshLayout && parent.isEnabled) {
                 parent.isEnabled = false
                 frozenRefreshLayouts += parent
             }

@@ -23,6 +23,7 @@ lifecycle = "2.11.0"
 paging = "3.5.0"
 preference = "1.2.1"
 recyclerview = "1.4.0"
+swiperefreshlayout = "1.1.0"
 room = "2.8.4"
 test-core = "1.7.0"
 # Perf tooling: :benchmark (Macrobenchmark + baseline profile generator) and
@@ -73,6 +74,7 @@ paging-testing = { module = "androidx.paging:paging-testing", version.ref = "pag
 material = { module = "com.google.android.material:material", version.ref = "material" }
 preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
 recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
+swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
@@ -108,7 +110,6 @@ joor = { module = "org.jooq:joor", version.ref = "joor" }
 # libs/seven332-backup/ in CI (scripts/ci/check-jitpack-aars.sh).
 seven332-drawerlayout = { module = "com.github.seven332:drawerlayout", version = "ea2bb388f0" }
 seven332-easyrecyclerview = { module = "com.github.seven332:easyrecyclerview", version = "0.1.1" }
-seven332-refreshlayout = { module = "com.github.seven332:refreshlayout", version = "0.1.0" }
 pagination-sxj = { module = "com.github.xiaojieonly:Pagination_Sxj", version = "8d2c34d8f53927aeaa1d405d8653969379cb37ec" }
 
 [plugins]

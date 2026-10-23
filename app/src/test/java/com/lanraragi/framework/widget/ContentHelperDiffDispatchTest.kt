@@ -2,8 +2,8 @@ package com.lanraragi.framework.widget
 
 import android.content.Context
 import android.os.Parcelable
+import android.view.MotionEvent
 import androidx.test.core.app.ApplicationProvider
-import com.hippo.refreshlayout.RefreshLayout
 import kotlinx.parcelize.Parcelize
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -68,13 +68,17 @@ class ContentHelperDiffDispatchTest {
 
     /**
      * The only way into a single-page refresh is the user pulling the footer
-     * on the last loaded page; RefreshLayout (pinned 0.1.0) has no public
-     * trigger, so invoke the listener it holds, as its gesture code does.
+     * on the last loaded page: drag the (unlaid-out, so always at its end)
+     * list up through the refresh layout, as the gesture does.
      */
     private fun pullFooter() {
-        val field = RefreshLayout::class.java.getDeclaredField("mListener")
-        field.isAccessible = true
-        (field.get(layout.refreshLayout) as RefreshLayout.OnRefreshListener).onFooterRefresh()
+        val refresh = layout.refreshLayout
+        listOf(MotionEvent.ACTION_DOWN to 2000f, MotionEvent.ACTION_MOVE to 0f, MotionEvent.ACTION_UP to 0f)
+            .forEach { (action, y) ->
+                val ev = MotionEvent.obtain(0L, 0L, action, 0f, y, 0)
+                refresh.dispatchTouchEvent(ev)
+                ev.recycle()
+            }
     }
 
     @Test

@@ -363,6 +363,31 @@ class Widgets:
             raise SmokeFailure(f"{label}: pull to refresh did not reload the list")
         self.check(f"{label}: pull to refresh")
 
+    def pull_up_at_end(self, label, marker):
+        """Fling to the end of the list, then drag up past it: the footer
+        reloads the last page, so with SMOKE_MOCK_LOG set the mock must see a
+        new /api/search (the mock serves the whole list as one page, so no
+        page load happens on the way down). Flings back to the top after."""
+        for _ in range(20):
+            self.swipe(self.w // 2, self.h * 4 // 5, self.w // 2, self.h // 5, 100)
+        time.sleep(3)
+        before = self.searches()
+        self.swipe(self.w // 2, self.h * 7 // 10, self.w // 2, self.h * 2 // 10, 900)
+        time.sleep(3)
+        self.need(marker, 20)
+        if before is not None and self.searches() <= before:
+            raise SmokeFailure(f"{label}: pulling up at the end did not reload the last page")
+        top = None
+        for i in range(20):
+            self.swipe(self.w // 2, self.h // 5, self.w // 2, self.h * 4 // 5, 100)
+            if i % 5 == 4:
+                time.sleep(1)
+                seen = self.titles()[:1]
+                if seen == top:
+                    break
+                top = seen
+        self.check(f"{label}: pull up at the end loads the footer")
+
     def fast_scroll(self, label):
         """Drag the fast scroller's handle to the end, prove the list is at
         its end (a further fling changes nothing), then drag it back to the
@@ -448,6 +473,7 @@ class Widgets:
         self.scroll_list("home")
         self.fast_scroll("home")
         self.pull_to_refresh("home", "thumb_new")
+        self.pull_up_at_end("home", "thumb_new")
         self.press(*centre(self.need_text("Mock Archive 1")))
         self.need("read", 20)
         self.check("home: card press opens detail")
