@@ -63,7 +63,7 @@ import com.lanraragi.reader.widget.ListRefreshLayout
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.ContentLayout
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover

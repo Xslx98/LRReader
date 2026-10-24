@@ -40,7 +40,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.framework.util.DrawableManager
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 

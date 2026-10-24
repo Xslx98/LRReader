@@ -47,7 +47,7 @@ import com.lanraragi.reader.R;
 import com.lanraragi.reader.widget.ListRefreshLayout;
 import com.lanraragi.framework.util.DrawableManager;
 import static com.lanraragi.reader.client.api.LRRApiUtilsKt.friendlyError;
-import com.lanraragi.framework.view.ViewTransition;
+import com.lanraragi.reader.widget.ViewTransition;
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator;
 import com.lanraragi.framework.lib.yorozuya.LayoutUtils;
 import com.lanraragi.framework.lib.yorozuya.collect.IntList;

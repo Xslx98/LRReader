@@ -44,7 +44,7 @@ import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.util.DrawableManager
 import com.lanraragi.framework.util.ExceptionUtils
 import kotlinx.coroutines.launch
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
 import java.text.SimpleDateFormat
 import java.util.Date
