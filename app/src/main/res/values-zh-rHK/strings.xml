@@ -50,33 +50,8 @@
 
     <!-- Message -->
 
-    <string name="error_status_code_400">錯誤請求 (400)</string>
-    <string name="error_status_code_401">認證失敗 (401)</string>
-    <string name="error_status_code_402">需要付費 (402)</string>
-    <string name="error_status_code_403">禁止存取 (403)</string>
-    <string name="error_status_code_404">未找到 (404)</string>
-    <string name="error_status_code_405">方法不允許 (405)</string>
-    <string name="error_status_code_406">不可接受 (406)</string>
-    <string name="error_status_code_407">需要代理認證 (407)</string>
-    <string name="error_status_code_408">請求逾時 (408)</string>
-    <string name="error_status_code_409">衝突 (409)</string>
-    <string name="error_status_code_410">已刪除 (410)</string>
-    <string name="error_status_code_411">需要內容長度 (411)</string>
-    <string name="error_status_code_412">前提條件失敗 (412)</string>
-    <string name="error_status_code_413">請求實體太大 (413)</string>
-    <string name="error_status_code_414">請求URI太長 (414)</string>
-    <string name="error_status_code_415">不支援的媒體類型 (415)</string>
-    <string name="error_status_code_416">請求範圍不符 (416)</string>
-    <string name="error_status_code_417">期望失敗 (417)</string>
 
-    <string name="error_status_code_500">伺服器錯誤 (500)</string>
-    <string name="error_status_code_501">未實作 (501)</string>
-    <string name="error_status_code_502">閘道器錯誤 (502)</string>
-    <string name="error_status_code_503">服務不可用 (503)</string>
-    <string name="error_status_code_504">閘道器逾時 (504)</string>
-    <string name="error_status_code_505">HTTP版本不支援 (505)</string>
 
-    <string name="error_bad_status_code">錯誤狀態碼：%d</string>
     <string name="error_timeout">逾時</string>
     <string name="error_unknown_host">不明主機</string>
     <string name="error_redirection">太多重新導向</string>

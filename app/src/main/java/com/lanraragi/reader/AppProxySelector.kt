@@ -18,7 +18,6 @@ package com.lanraragi.reader
 
 import android.text.TextUtils
 import com.lanraragi.reader.settings.NetworkSettings
-import com.lanraragi.framework.network.InetValidator
 import com.lanraragi.framework.util.ExceptionUtils
 import java.io.IOException
 import java.net.InetAddress
@@ -53,7 +52,7 @@ class AppProxySelector : ProxySelector() {
             try {
                 val ip = NetworkSettings.getProxyIp()
                 val port = NetworkSettings.getProxyPort()
-                if (!TextUtils.isEmpty(ip) && InetValidator.isValidInetPort(port)) {
+                if (!TextUtils.isEmpty(ip) && port in 0..MAX_PORT) {
                     val inetAddress = InetAddress.getByName(ip)
                     val socketAddress: SocketAddress = InetSocketAddress(inetAddress, port)
                     return listOf(
@@ -87,5 +86,6 @@ class AppProxySelector : ProxySelector() {
         const val TYPE_SYSTEM = 1
         const val TYPE_HTTP = 2
         const val TYPE_SOCKS = 3
+        private const val MAX_PORT = 65535
     }
 }

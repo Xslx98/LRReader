@@ -34,13 +34,13 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
 import androidx.lifecycle.ViewModelProvider
-import com.lanraragi.framework.app.EditTextDialogBuilder
+import com.lanraragi.reader.ui.dialog.EditTextDialogBuilder
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.framework.util.DrawableManager
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 

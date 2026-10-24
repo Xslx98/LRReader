@@ -46,7 +46,6 @@
 
     <!-- Message -->
 
-    <string name="error_bad_status_code">รหัสข้อผิดพลาด: %d</string>
     <string name="error_timeout">หมดเวลา</string>
     <string name="error_unknown_host">ไม่รู้จักโฮสต์</string>
     <string name="error_redirection">มีการเปลี่ยนทางเยอะเกินไป</string>
@@ -678,30 +677,6 @@
 
     <!-- Auto-generated missing translations -->
     <string name="cancel">ยกเลิก</string>
-    <string name="error_status_code_400">คำขอไม่ถูกต้อง (400)</string>
-    <string name="error_status_code_401">การยืนยันตัวตนล้มเหลว (401)</string>
-    <string name="error_status_code_402">ต้องชำระเงิน (402)</string>
-    <string name="error_status_code_403">ห้ามเข้าถึง (403)</string>
-    <string name="error_status_code_404">ไม่พบ (404)</string>
-    <string name="error_status_code_405">วิธีการไม่อนุญาต (405)</string>
-    <string name="error_status_code_406">ไม่ยอมรับ (406)</string>
-    <string name="error_status_code_407">ต้องยืนยันตัวตนพร็อกซี (407)</string>
-    <string name="error_status_code_408">หมดเวลาคำขอ (408)</string>
-    <string name="error_status_code_409">ขัดแย้ง (409)</string>
-    <string name="error_status_code_410">ถูกลบ (410)</string>
-    <string name="error_status_code_411">ต้องระบุความยาว (411)</string>
-    <string name="error_status_code_412">เงื่อนไขเบื้องต้นล้มเหลว (412)</string>
-    <string name="error_status_code_413">เนื้อหาคำขอใหญ่เกินไป (413)</string>
-    <string name="error_status_code_414">URI คำขอยาวเกินไป (414)</string>
-    <string name="error_status_code_415">ประเภทสื่อไม่รองรับ (415)</string>
-    <string name="error_status_code_416">ช่วงที่ร้องขอไม่ถูกต้อง (416)</string>
-    <string name="error_status_code_417">ความคาดหวังล้มเหลว (417)</string>
-    <string name="error_status_code_500">ข้อผิดพลาดเซิร์ฟเวอร์ (500)</string>
-    <string name="error_status_code_501">ยังไม่ได้ติดตั้ง (501)</string>
-    <string name="error_status_code_502">ข้อผิดพลาดเกตเวย์ (502)</string>
-    <string name="error_status_code_503">บริการไม่พร้อมใช้งาน (503)</string>
-    <string name="error_status_code_504">เกตเวย์หมดเวลา (504)</string>
-    <string name="error_status_code_505">ไม่รองรับเวอร์ชัน HTTP (505)</string>
     <string name="local_favorites">หมวดหมู่ในเครื่อง</string>
     <string name="lrr_add_server">เพิ่มเซิร์ฟเวอร์</string>
     <string name="lrr_api_key_helper">Enter the API Key from LANraragi settings (not the web login password)</string>

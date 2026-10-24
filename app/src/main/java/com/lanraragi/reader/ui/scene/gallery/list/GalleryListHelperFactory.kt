@@ -17,7 +17,7 @@ import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
 import androidx.recyclerview.widget.RecyclerView

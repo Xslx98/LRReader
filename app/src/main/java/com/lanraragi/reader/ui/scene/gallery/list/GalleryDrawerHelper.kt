@@ -15,8 +15,8 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.viewpager.widget.ViewPager
-import com.lanraragi.framework.app.CheckBoxDialogBuilder
-import com.lanraragi.framework.app.EditTextDialogBuilder
+import com.lanraragi.reader.ui.dialog.CheckBoxDialogBuilder
+import com.lanraragi.reader.ui.dialog.EditTextDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.client.data.ListUrlBuilder

@@ -48,7 +48,7 @@ import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.util.DrawableManager
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.ProgressView
 import com.lanraragi.framework.unifile.UniFile

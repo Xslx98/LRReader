@@ -18,7 +18,6 @@ package com.lanraragi.framework.util
 import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.exception.AppException
-import com.lanraragi.framework.network.StatusCodeException
 import org.apache.http.conn.ConnectTimeoutException
 import java.net.MalformedURLException
 import java.net.ProtocolException
@@ -41,13 +40,6 @@ object ExceptionUtils {
             return GetText.getString(R.string.error_timeout)
         } else if (e is UnknownHostException) {
             return GetText.getString(R.string.error_unknown_host)
-        } else if (e is StatusCodeException) {
-            val sb = StringBuilder()
-            sb.append(GetText.getString(R.string.error_bad_status_code, e.getResponseCode()))
-            if (e.isIdentifiedResponseCode) {
-                sb.append(", ").append(e.message)
-            }
-            return sb.toString()
         } else if (e is ProtocolException && e.message != null && e.message!!.startsWith("Too many follow-up requests:")) {
             return GetText.getString(R.string.error_redirection)
         } else if (e is ProtocolException || e is SocketException || e is SSLException) {

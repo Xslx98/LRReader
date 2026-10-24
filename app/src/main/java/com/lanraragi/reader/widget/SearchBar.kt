@@ -66,7 +66,6 @@ import com.lanraragi.framework.lib.yorozuya.AnimationUtils
 import com.lanraragi.framework.lib.yorozuya.MathUtils
 import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.lanraragi.framework.view.ViewTransition
 
 class SearchBar : CardView,
     View.OnClickListener,

@@ -8,7 +8,7 @@ import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
-import com.lanraragi.framework.app.EditTextDialogBuilder
+import com.lanraragi.reader.ui.dialog.EditTextDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.LRRMiscApi

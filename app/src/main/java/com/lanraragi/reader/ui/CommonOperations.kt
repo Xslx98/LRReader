@@ -18,7 +18,7 @@ package com.lanraragi.reader.ui
 
 import android.content.Intent
 import android.util.Log
-import com.lanraragi.framework.app.ListCheckBoxDialogBuilder
+import com.lanraragi.reader.ui.dialog.ListCheckBoxDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.DownloadEntryGate

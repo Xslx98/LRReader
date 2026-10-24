@@ -35,7 +35,6 @@
     <string name="waring">Achtung</string>
     <string name="invalid_download_location">Der Downloadpfad ist nicht verfügbar. Geh zu die Einstellungen und stelle einen neue Pfad fest.</string>
     <string name="cellular_network_warning">Zu den mobilen Daten verbunden.</string>
-    <string name="error_bad_status_code">Inkorrekter Statuscode: %d</string>
     <string name="error_timeout">Zeitüberschreitung</string>
     <string name="error_unknown_host">Unbekannter Hostcomputer</string>
     <string name="error_redirection">Zu viele Umleitungen</string>
@@ -635,30 +634,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="error_status_code_400">Ungültige Anfrage (400)</string>
-    <string name="error_status_code_401">Authentifizierung fehlgeschlagen (401)</string>
-    <string name="error_status_code_402">Zahlung erforderlich (402)</string>
-    <string name="error_status_code_403">Zugriff verboten (403)</string>
-    <string name="error_status_code_404">Nicht gefunden (404)</string>
-    <string name="error_status_code_405">Methode nicht erlaubt (405)</string>
-    <string name="error_status_code_406">Nicht akzeptabel (406)</string>
-    <string name="error_status_code_407">Proxy-Authentifizierung erforderlich (407)</string>
-    <string name="error_status_code_408">Zeitüberschreitung (408)</string>
-    <string name="error_status_code_409">Konflikt (409)</string>
-    <string name="error_status_code_410">Entfernt (410)</string>
-    <string name="error_status_code_411">Länge erforderlich (411)</string>
-    <string name="error_status_code_412">Vorbedingung fehlgeschlagen (412)</string>
-    <string name="error_status_code_413">Anfrage zu groß (413)</string>
-    <string name="error_status_code_414">URI zu lang (414)</string>
-    <string name="error_status_code_415">Nicht unterstützter Medientyp (415)</string>
-    <string name="error_status_code_416">Bereich nicht erfüllbar (416)</string>
-    <string name="error_status_code_417">Erwartung fehlgeschlagen (417)</string>
-    <string name="error_status_code_500">Serverfehler (500)</string>
-    <string name="error_status_code_501">Nicht implementiert (501)</string>
-    <string name="error_status_code_502">Gateway-Fehler (502)</string>
-    <string name="error_status_code_503">Dienst nicht verfügbar (503)</string>
-    <string name="error_status_code_504">Gateway-Zeitüberschreitung (504)</string>
-    <string name="error_status_code_505">HTTP-Version nicht unterstützt (505)</string>
     <string name="local_favorites">Lokale Kategorien</string>
     <string name="lrr_add_server">Server hinzufügen</string>
     <string name="lrr_api_key_helper">API-Schlüssel in LANraragi-Einstellungen finden</string>

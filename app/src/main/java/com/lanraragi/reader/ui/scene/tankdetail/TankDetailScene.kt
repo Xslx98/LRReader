@@ -24,7 +24,7 @@ import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.util.DrawableManager
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry

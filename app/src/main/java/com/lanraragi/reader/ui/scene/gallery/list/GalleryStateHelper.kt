@@ -9,7 +9,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.framework.lib.yorozuya.AnimationUtils
 import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener

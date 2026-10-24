@@ -40,7 +40,7 @@ import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.util.DrawableManager
-import com.lanraragi.framework.view.ViewTransition
+import com.lanraragi.reader.widget.ViewTransition
 
 class QuickSearchScene : ToolbarScene() {
 
