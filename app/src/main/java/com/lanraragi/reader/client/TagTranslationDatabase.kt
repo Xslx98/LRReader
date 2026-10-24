@@ -26,7 +26,6 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import com.lanraragi.framework.util.ExceptionUtils
 import android.util.Log
-import com.lanraragi.framework.util.TextUrl
 import com.lanraragi.reader.client.api.await
 import com.lanraragi.reader.settings.AppearanceSettings
 import kotlinx.coroutines.CancellationException
@@ -85,7 +84,7 @@ class TagTranslationDatabase(private val name: String, source: okio.BufferedSour
     }
 
     fun getTranslation(tag: String): String? {
-        return search(tags, tag.toByteArray(TextUrl.UTF_8!!))
+        return search(tags, tag.toByteArray(Charsets.UTF_8))
     }
 
     /**

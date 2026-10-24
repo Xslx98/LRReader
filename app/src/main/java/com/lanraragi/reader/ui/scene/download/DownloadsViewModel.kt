@@ -10,7 +10,6 @@ import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.client.api.toHexLower
 import com.lanraragi.reader.callBack.DownloadSearchCallback
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.framework.util.FileUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import com.lanraragi.reader.dao.DownloadLabel
