@@ -644,7 +644,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     }
 
     override fun onReadingFullscreenChanged() {
-        // The fullscreen window flags and SystemUiHelper are set up in
+        // The fullscreen window flags and ImmersiveSystemUi are set up in
         // onCreate only. An explicit recreate() is not suppressed by the
         // manifest configChanges, which cover system config changes alone.
         recreate()

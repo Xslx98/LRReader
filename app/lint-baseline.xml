@@ -439,50 +439,6 @@
 
     <issue
         id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of `@TargetApi` to propagate the requirement to users of `SystemUiHelperImplHC`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.HONEYCOMB)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplHC.kt"
-            line="27"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH) instead of `@TargetApi` to propagate the requirement to users of `SystemUiHelperImplICS`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplICS.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.JELLY_BEAN) instead of `@TargetApi` to propagate the requirement to users of `SystemUiHelperImplJB`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplJB.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.KITKAT) instead of `@TargetApi` to propagate the requirement to users of `SystemUiHelperImplKK`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplKK.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
         message="Use `@RequiresApi(Build.VERSION_CODES.LOLLIPOP) instead of `@TargetApi` to propagate the requirement to callers of `createCircularReveal`"
         errorLine1="    @TargetApi(Build.VERSION_CODES.LOLLIPOP)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -1315,50 +1271,6 @@
             file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
             line="53"
             column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 11"
-        errorLine1="@TargetApi(Build.VERSION_CODES.HONEYCOMB)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplHC.kt"
-            line="27"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 14"
-        errorLine1="@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplICS.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 16"
-        errorLine1="@TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplJB.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 19"
-        errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplKK.kt"
-            line="24"
-            column="1"/>
     </issue>
 
     <issue

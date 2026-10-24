@@ -27,7 +27,6 @@ import android.widget.SeekBar
 import android.widget.TextView
 import com.lanraragi.reader.widget.ReversibleSeekBar
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.framework.util.SystemUiHelper
 import android.os.Handler
 import android.os.Looper
 import com.lanraragi.framework.lib.yorozuya.AnimationUtils
@@ -64,7 +63,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     private var mRightText: TextView? = null
     private var mSeekBar: ReversibleSeekBar? = null
     private var mProgress: TextView? = null
-    private var mSystemUiHelper: SystemUiHelper? = null
+    private var mSystemUi: ImmersiveSystemUi? = null
     private var mGalleryView: GalleryView? = null
 
     private var mTopBar: View? = null
@@ -141,8 +140,8 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         mBubble = bubble
     }
 
-    fun setSystemUiHelper(helper: SystemUiHelper?) {
-        mSystemUiHelper = helper
+    fun setSystemUi(systemUi: ImmersiveSystemUi?) {
+        mSystemUi = systemUi
     }
 
     fun setGalleryView(galleryView: GalleryView?) {
@@ -242,7 +241,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         if (!isMenuShown) {
             isMenuShown = true
             menuPanels().forEach { animatePanel(it, show = true) }
-            mSystemUiHelper?.let {
+            mSystemUi?.let {
                 it.show()
                 isShowSystemUi = true
             }
@@ -256,7 +255,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
         if (!isMenuShown) return
         isMenuShown = false
         menuPanels().forEach { animatePanel(it, show = false) }
-        mSystemUiHelper?.let {
+        mSystemUi?.let {
             it.hide()
             isShowSystemUi = false
         }
