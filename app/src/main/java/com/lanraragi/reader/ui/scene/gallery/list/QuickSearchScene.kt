@@ -39,7 +39,7 @@ import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 
 class QuickSearchScene : ToolbarScene() {
@@ -81,7 +81,7 @@ class QuickSearchScene : ToolbarScene() {
 
         val context = ehContext ?: return view
 
-        val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_search)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.big_search)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         tip.setCompoundDrawables(null, drawable, null, null)
         tip.setText(R.string.no_quick_search)

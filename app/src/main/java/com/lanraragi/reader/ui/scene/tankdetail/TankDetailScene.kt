@@ -23,7 +23,7 @@ import com.lanraragi.reader.util.isLightTheme
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
 import com.lanraragi.reader.R
@@ -149,7 +149,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         val tip = ViewUtils.`$$`(main, R.id.tip) as TextView
         mTip = tip
         mViewTransition = ViewTransition(mainView, progressView, tip)
-        DrawableManager.getVectorDrawable(context, R.drawable.big_sad_pandroid)?.let { drawable ->
+        ContextCompat.getDrawable(context, R.drawable.big_sad_pandroid)?.let { drawable ->
             drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
             tip.setCompoundDrawables(null, drawable, null, null)
         }
@@ -480,8 +480,8 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
 
     private fun ensureHeartDrawables() {
         val ctx = ehContext ?: return
-        DrawableManager.getVectorDrawable(ctx, R.drawable.v_category_primary_x48)?.let { setActionDrawable(mHeart, it) }
-        DrawableManager.getVectorDrawable(ctx, R.drawable.v_category_outline_primary_x48)?.let {
+        ContextCompat.getDrawable(ctx, R.drawable.v_category_primary_x48)?.let { setActionDrawable(mHeart, it) }
+        ContextCompat.getDrawable(ctx, R.drawable.v_category_outline_primary_x48)?.let {
             setActionDrawable(mHeartOutline, it)
         }
     }

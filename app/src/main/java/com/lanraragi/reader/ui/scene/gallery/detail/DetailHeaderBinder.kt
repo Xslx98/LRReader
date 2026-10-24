@@ -21,7 +21,7 @@ import com.lanraragi.reader.ui.scene.TransitionNameFactory
 import com.lanraragi.reader.ui.widget.bindSourceServerBadge
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import com.lanraragi.framework.reveal.ViewAnimationUtils
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
 
@@ -58,11 +58,11 @@ internal class DetailHeaderBinder(
     }
 
     fun ensureActionDrawable(context: Context) {
-        val heartDrawable = DrawableManager.getVectorDrawable(context, R.drawable.v_category_primary_x48)
+        val heartDrawable = ContextCompat.getDrawable(context, R.drawable.v_category_primary_x48)
         if (heartDrawable != null) {
             setActionDrawable(heart, heartDrawable)
         }
-        val heartOutlineDrawable = DrawableManager.getVectorDrawable(context, R.drawable.v_category_outline_primary_x48)
+        val heartOutlineDrawable = ContextCompat.getDrawable(context, R.drawable.v_category_outline_primary_x48)
         if (heartOutlineDrawable != null) {
             setActionDrawable(heartOutline, heartOutlineDrawable)
         }

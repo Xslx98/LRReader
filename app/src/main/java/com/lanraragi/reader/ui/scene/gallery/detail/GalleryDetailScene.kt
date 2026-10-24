@@ -41,7 +41,7 @@ import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.reader.ui.widget.Ripples
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import com.lanraragi.framework.util.ExceptionUtils
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.widget.ViewTransition
@@ -273,7 +273,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         setDrawerGestureBlocker(ScrollAreaGestureBlocker(actionsScrollView) { isDrawersVisible() })
 
         val nonNullContext = requireContext()
-        val drawable = DrawableManager.getVectorDrawable(nonNullContext, R.drawable.big_sad_pandroid)
+        val drawable = ContextCompat.getDrawable(nonNullContext, R.drawable.big_sad_pandroid)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         val tip = mTip ?: return null
         tip.setCompoundDrawables(null, drawable, null, null)

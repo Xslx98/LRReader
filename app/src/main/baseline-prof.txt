@@ -7556,10 +7556,6 @@ HSPLcom/lanraragi/framework/unifile/UniFile;->isFileUri(Landroid/net/Uri;)Z
 Lcom/lanraragi/framework/unifile/Utils;
 HSPLcom/lanraragi/framework/unifile/Utils;->closeQuietly(Landroid/database/Cursor;)V
 HSPLcom/lanraragi/framework/unifile/Utils;->closeQuietly(Ljava/io/Closeable;)V
-Lcom/lanraragi/framework/util/DrawableManager;
-HSPLcom/lanraragi/framework/util/DrawableManager;-><clinit>()V
-HSPLcom/lanraragi/framework/util/DrawableManager;-><init>()V
-HSPLcom/lanraragi/framework/util/DrawableManager;->getVectorDrawable(Landroid/content/Context;I)Landroid/graphics/drawable/Drawable;
 Lcom/lanraragi/framework/util/ReadableTime;
 HSPLcom/lanraragi/framework/util/ReadableTime;-><clinit>()V
 HSPLcom/lanraragi/framework/util/ReadableTime;->initialize(Landroid/content/Context;)V

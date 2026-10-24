@@ -22,7 +22,7 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.R
 import com.lanraragi.reader.widget.SearchBar
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import com.lanraragi.framework.widget.SearchBarMover
 
 /**
@@ -61,7 +61,7 @@ internal class DownloadSearchHelper(private val callback: Callback) {
         searchDialog?.let { it.show(); return }
         val layoutInflater = LayoutInflater.from(context)
 
-        val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_download)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.big_download)
 
         val linearLayout = layoutInflater.inflate(R.layout.download_search_dialog, null) as LinearLayout
         val bar = linearLayout.findViewById<SearchBar>(R.id.download_search_bar)
@@ -79,7 +79,7 @@ internal class DownloadSearchHelper(private val callback: Callback) {
             bar.setTitle(R.string.download_search_hint)
         }
 
-        bar.setRightDrawable(DrawableManager.getVectorDrawable(context, R.drawable.v_magnify_x24))
+        bar.setRightDrawable(ContextCompat.getDrawable(context, R.drawable.v_magnify_x24))
         searchBarMover = SearchBarMover(callback.searchBarMoverHelper, bar)
         searchDialog = AlertDialog.Builder(context)
             .setMessage(R.string.download_search_gallery)

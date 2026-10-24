@@ -47,7 +47,7 @@ import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.ProgressView
@@ -280,7 +280,7 @@ class DownloadsScene : ToolbarScene(),
 
         val resources = context.resources
 
-        val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_download)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.big_download)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         tip.setCompoundDrawables(null, drawable, null, null)
         // Initialize drag-drop via helper
