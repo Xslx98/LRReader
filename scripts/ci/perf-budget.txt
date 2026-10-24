@@ -10,6 +10,10 @@
 # max plus a margin. Spread (min / median / max) in the comment of each line.
 # Runner placement makes startup bimodal (~600 vs ~1000 ms) and the reader
 # p99s heavy-tailed on swiftshader, so those gate only gross regressions.
+# Since 2026-10-24 (2.4 P3 step 0) each measured value is the median of
+# PERF_ITERATIONS (3) fresh-install passes, and startup.cold.fully_drawn_ms the
+# median of each pass's 5 launches (was: the last launch only); budgets were
+# seeded from single passes and are deliberately left unchanged.
 mode gate
 # Flipped record -> gate 2026-10-20 (2.4 P0).
 startup.cold.total_ms        900   tol 30%    # 595 / 865 / 1033

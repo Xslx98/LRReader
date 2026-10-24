@@ -2,15 +2,23 @@
 
   perf_extract.py --trace TRACE --out perf.json --summary summary.md \
       --set startup.cold.total_ms=512 --set pss.list_kb=93986 ...
+  perf_extract.py --median run-1/perf.json --median run-2/perf.json ... \
+      --out perf.json --summary summary.md
 
 Trace-section metrics (count, p50, p99 in ms) come from the Perfetto trace
 via the trace processor (pip package `perfetto`, run with
 `uv run --with perfetto` / `pip install perfetto`); the shell passes every
 metric it measured itself with --set. Section names: see
 com.lanraragi.reader.util.TraceSections.
+
+--median combines the perf.json of several measurement passes: every numeric
+metric becomes the median over the passes (what check-perf.sh gates on, so a
+single outlier pass cannot fail the job), and `<metric>.runs` keeps the
+per-pass values ("a/b/c") for the record.
 """
 import argparse
 import json
+import statistics
 import sys
 
 SECTIONS = {
@@ -44,15 +52,47 @@ def section_metrics(trace_path):
     return out
 
 
+def is_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def median_of_runs(runs):
+    """Median per numeric metric over the passes; a metric missing from a
+    pass is judged on the passes that measured it."""
+    keys = sorted({k for run in runs for k in run})
+    out = {}
+    for key in keys:
+        values = [run[key] for run in runs if key in run]
+        if all(is_number(v) for v in values):
+            med = statistics.median(values)
+            if all(isinstance(v, int) for v in values) and float(med).is_integer():
+                med = int(med)
+            elif isinstance(med, float):
+                med = round(med, 2)
+            out[key] = med
+            out[f"{key}.runs"] = "/".join(str(v) for v in values)
+        else:
+            out[f"{key}.runs"] = " ; ".join(str(v) for v in values)
+    return out
+
+
 def main(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("--trace")
     ap.add_argument("--out", required=True)
     ap.add_argument("--summary")
+    ap.add_argument("--title", default="Release smoke perf (emulator)")
     ap.add_argument("--set", action="append", default=[], metavar="KEY=VALUE")
+    ap.add_argument("--median", action="append", default=[], metavar="PERF_JSON")
     args = ap.parse_args(argv)
 
     metrics = {}
+    if args.median:
+        runs = []
+        for path in args.median:
+            with open(path, encoding="utf-8") as f:
+                runs.append(json.load(f))
+        metrics.update(median_of_runs(runs))
     for item in args.set:
         key, _, value = item.partition("=")
         try:
@@ -66,12 +106,17 @@ def main(argv):
         json.dump(metrics, f, indent=2, sort_keys=True)
         f.write("\n")
 
-    lines = ["| metric | value |", "|---|---:|"]
-    lines += [f"| {k} | {metrics[k]} |" for k in sorted(metrics)]
+    if args.median:
+        lines = ["| metric | median | per pass |", "|---|---:|---:|"]
+        lines += [f"| {k} | {metrics.get(k, '')} | {metrics[k + '.runs']} |"
+                  for k in sorted(metrics) if not k.endswith(".runs")]
+    else:
+        lines = ["| metric | value |", "|---|---:|"]
+        lines += [f"| {k} | {metrics[k]} |" for k in sorted(metrics)]
     table = "\n".join(lines) + "\n"
     if args.summary:
         with open(args.summary, "a", encoding="utf-8") as f:
-            f.write("### Release smoke perf (emulator)\n\n" + table + "\n")
+            f.write(f"### {args.title}\n\n" + table + "\n")
     sys.stdout.write(table)
     return 0
 
