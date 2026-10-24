@@ -16,18 +16,21 @@
 
 package com.lanraragi.reader.ui.fragment
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
 import com.lanraragi.reader.R
+import com.lanraragi.reader.module.AppModule
 import com.lanraragi.reader.settings.UpdateSettings
 import com.lanraragi.reader.ui.LicenseActivity
 import com.lanraragi.reader.ui.dialog.UpdateDialog
 import com.lanraragi.reader.updater.AppUpdater
-import com.lanraragi.framework.util.AppHelper
 import kotlinx.coroutines.launch
 
 class AboutFragment : BasePreferenceFragmentCompat(),
@@ -67,14 +70,7 @@ class AboutFragment : BasePreferenceFragmentCompat(),
         val activity = activity ?: return true
 
         when (key) {
-            KEY_AUTHOR -> {
-                AppHelper.sendEmail(
-                    activity,
-                    com.lanraragi.reader.module.AppModule.getDeveloperEmail(),
-                    "About LR Reader",
-                    null,
-                )
-            }
+            KEY_AUTHOR -> emailDeveloper(activity)
             KEY_LICENSE -> {
                 activity.startActivity(Intent(activity, LicenseActivity::class.java))
             }
@@ -97,6 +93,16 @@ class AboutFragment : BasePreferenceFragmentCompat(),
             else -> return false
         }
         return true
+    }
+
+    private fun emailDeveloper(activity: Activity) {
+        val intent = Intent(Intent.ACTION_SENDTO, "mailto:${AppModule.getDeveloperEmail()}".toUri())
+            .putExtra(Intent.EXTRA_SUBJECT, "About LR Reader")
+        try {
+            activity.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(activity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setCheckingState(checking: Boolean) {

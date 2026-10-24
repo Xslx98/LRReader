@@ -7556,12 +7556,6 @@ HSPLcom/lanraragi/framework/unifile/UniFile;->isFileUri(Landroid/net/Uri;)Z
 Lcom/lanraragi/framework/unifile/Utils;
 HSPLcom/lanraragi/framework/unifile/Utils;->closeQuietly(Landroid/database/Cursor;)V
 HSPLcom/lanraragi/framework/unifile/Utils;->closeQuietly(Ljava/io/Closeable;)V
-Lcom/lanraragi/framework/util/AppHelper;
-HSPLcom/lanraragi/framework/util/AppHelper;-><clinit>()V
-Lcom/lanraragi/framework/util/AppHelper$Companion;
-HSPLcom/lanraragi/framework/util/AppHelper$Companion;-><init>()V
-HSPLcom/lanraragi/framework/util/AppHelper$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-HSPLcom/lanraragi/framework/util/AppHelper$Companion;->hideSoftInput(Landroid/app/Activity;)V
 Lcom/lanraragi/framework/util/DrawableManager;
 HSPLcom/lanraragi/framework/util/DrawableManager;-><clinit>()V
 HSPLcom/lanraragi/framework/util/DrawableManager;-><init>()V
@@ -10582,6 +10576,8 @@ HSPLcom/lanraragi/reader/ui/MainScenes$$ExternalSyntheticLambda8;-><init>()V
 Lcom/lanraragi/reader/ui/MainScenes$$ExternalSyntheticLambda9;
 HSPLcom/lanraragi/reader/ui/MainScenes$$ExternalSyntheticLambda9;-><init>()V
 HSPLcom/lanraragi/reader/ui/MainScenes$$ExternalSyntheticLambda9;->invoke()Ljava/lang/Object;
+Lcom/lanraragi/reader/ui/SoftInput;
+HSPLcom/lanraragi/reader/ui/SoftInput;->**(**)**
 Lcom/lanraragi/reader/ui/PerfSeam;
 HSPLcom/lanraragi/reader/ui/PerfSeam;-><clinit>()V
 HSPLcom/lanraragi/reader/ui/PerfSeam;-><init>()V
