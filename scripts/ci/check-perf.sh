@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Perf budget check (audit 2026-10-13 PERF-04): judges the perf.json written
-# by scripts/ci/smoke-perf.sh against scripts/ci/perf-budget.txt. Each line is
+# by scripts/ci/smoke-perf.sh (the median of its passes per metric) against
+# scripts/ci/perf-budget.txt. Each line is
 # `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute), `#` starts
 # a comment; a metric fails above budget + tolerance. The file's `mode` line decides what a breach
 # does: `record` prints a warning and exits 0 (while the emulator's variance is

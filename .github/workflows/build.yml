@@ -279,8 +279,9 @@ jobs:
       - name: Run release smoke and perf measurement on an emulator
         # smoke-release.sh: crash gate through connect → list → detail →
         # reader (mock LANraragi from scripts/ci/mock_lrr.py via adb reverse).
-        # smoke-perf.sh: cold start, PSS, list jank, reader trace sections
-        # into build/perf/perf.json; check-perf.sh judges it against
+        # smoke-perf.sh: cold start, PSS, list jank, reader trace sections,
+        # three fresh-install passes, the median per metric into
+        # build/perf/perf.json; check-perf.sh judges it against
         # scripts/ci/perf-budget.txt (record mode warns, gate mode fails).
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
