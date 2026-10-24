@@ -31,6 +31,18 @@ mkdir -p "$OUT_DIR"
 SETS=()
 metric() { SETS+=(--set "$1=$2"); echo "perf: $1 = $2"; }
 pss_kb() { adb shell dumpsys meminfo -s "$PKG" | tr -d '\r' | awk '/TOTAL PSS:/ { print $3; exit }'; }
+median() { sort -n | awk '{ a[NR] = $1 } END { if (NR) print a[int((NR + 1) / 2)] }'; }
+# Time-to-fully-drawn of the launch since the last `logcat -c` ("+1s234ms" or
+# "+345ms"), reported when the first list page lands; empty when it did not.
+fully_drawn_ms() {
+  adb logcat -d | tr -d '\r' | awk -v pkg="$PKG" '
+    $0 ~ "Fully drawn " pkg "/" {
+      t = $NF; sub(/^\+/, "", t); s = 0
+      if (t ~ /^[0-9]+s[0-9]+ms$/) { split(t, p, "s"); s = p[1]; t = p[2] }
+      sub(/ms$/, "", t); last = s * 1000 + t
+    }
+    END { if (last != "") print last }'
+}
 
 if (exec 3<>"/dev/tcp/127.0.0.1/$MOCK_PORT") 2>/dev/null; then
   echo "::error::smoke-perf: port $MOCK_PORT is already in use on the host"
@@ -61,6 +73,7 @@ adb shell am force-stop "$PKG"
 adb shell am start -W -n "$LAUNCHER" > /dev/null
 sleep 5
 TIMES=()
+FULLY=()
 for _ in $(seq 1 $COLD_STARTS); do
   adb shell am force-stop "$PKG"
   sleep 2
@@ -68,21 +81,16 @@ for _ in $(seq 1 $COLD_STARTS); do
   T=$(adb shell am start -W -n "$LAUNCHER" | tr -d '\r' | awk '/^TotalTime:/ { print $2 }')
   TIMES+=("$T")
   sleep 6
+  F=$(fully_drawn_ms)
+  [ -n "$F" ] && FULLY+=("$F")
 done
-# The last launch's time-to-fully-drawn ("+1s234ms" or "+345ms"), reported
-# when the first list page lands; absent when the list did not load.
-FULLY=$(adb logcat -d | tr -d '\r' | awk -v pkg="$PKG" '
-  $0 ~ "Fully drawn " pkg "/" {
-    t = $NF; sub(/^\+/, "", t); s = 0
-    if (t ~ /^[0-9]+s[0-9]+ms$/) { split(t, p, "s"); s = p[1]; t = p[2] }
-    sub(/ms$/, "", t); last = s * 1000 + t
-  }
-  END { if (last != "") print last }')
-SORTED=$(printf '%s\n' "${TIMES[@]}" | sort -n)
-MEDIAN=$(echo "$SORTED" | awk '{ a[NR] = $1 } END { print a[int((NR + 1) / 2)] }')
-metric startup.cold.total_ms "$MEDIAN"
-metric startup.cold.samples "$(echo "$SORTED" | tr '\n' '/' | sed 's#/$##')"
-[ -n "$FULLY" ] && metric startup.cold.fully_drawn_ms "$FULLY"
+metric startup.cold.total_ms "$(printf '%s\n' "${TIMES[@]}" | median)"
+metric startup.cold.samples "$(printf '%s\n' "${TIMES[@]}" | sort -n | paste -sd/)"
+# Like total_ms, the median of the launches (it used to be the last launch only).
+if [ "${#FULLY[@]}" -gt 0 ]; then
+  metric startup.cold.fully_drawn_ms "$(printf '%s\n' "${FULLY[@]}" | median)"
+  metric startup.cold.fully_drawn_samples "$(printf '%s\n' "${FULLY[@]}" | sort -n | paste -sd/)"
+fi
 
 # ---- Trace list flings + reader -----------------------------------------
 ui wait resource-id "$PKG:id/thumb_new" 60
