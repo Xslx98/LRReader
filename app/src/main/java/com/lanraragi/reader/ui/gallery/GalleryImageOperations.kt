@@ -32,10 +32,10 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import com.lanraragi.framework.content.FileProvider
 import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
