@@ -7,7 +7,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
-import com.lanraragi.framework.content.FileProvider
+import androidx.core.content.FileProvider
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.Crash
 import com.lanraragi.reader.ServiceRegistry

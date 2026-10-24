@@ -26,12 +26,13 @@ import androidx.core.content.edit
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.res.Resources
+import android.os.Bundle
 import android.os.Debug
 import android.os.StrictMode
 import android.os.Trace
 import android.util.Log
-import com.lanraragi.framework.content.ContextLocalWrapper
-import com.lanraragi.framework.content.RecordingApplication
+import com.lanraragi.reader.util.LocaleContext
+import com.lanraragi.framework.scene.SceneApplication
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.module.AppModule
 import kotlinx.coroutines.Dispatchers
@@ -59,9 +60,10 @@ import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.framework.util.ExceptionUtils
 import com.lanraragi.framework.util.ReadableTime
 import java.io.File
+import java.lang.ref.WeakReference
 import java.util.Locale
 
-class LRReaderApplication : RecordingApplication() {
+class LRReaderApplication : SceneApplication() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -89,11 +91,12 @@ class LRReaderApplication : RecordingApplication() {
         // ActivityThread.handleReceiver casts getBaseContext() to ContextImpl,
         // so a wrapped Application base crashes every manifest receiver —
         // caught live by the continue-reading AppWidgetProvider smoke test.
-        super.attachBaseContext(ContextLocalWrapper.localeApplicationBase(base, locale))
+        super.attachBaseContext(LocaleContext.applicationBase(base, locale))
     }
 
     @SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped
     override fun onCreate() {
+        registerActivityLifecycleCallbacks(activityRecorder)
         // The :phoenix process only hosts PhoenixActivity for a restart; none of
         // the boot work below belongs there (STAB-10).
         if (ProcessRebirth.isPhoenixProcess(Application.getProcessName())) {
@@ -613,11 +616,39 @@ class LRReaderApplication : RecordingApplication() {
 
     // ======== Activity registry ========
 
-    // Backed by RecordingApplication's lifecycle-callback list — one registry
-    // for recreate() and crash metadata instead of a parallel strong-ref list
-    // every BaseActivity subclass had to maintain manually.
+    // Every created, not-yet-destroyed activity in creation order, kept by
+    // lifecycle callbacks — one registry for recreate() and crash metadata
+    // instead of a parallel strong-ref list every BaseActivity subclass had to
+    // maintain manually. Weak references, main thread only.
+    private val createdActivities = ArrayList<WeakReference<Activity>>()
+
+    private val activityRecorder = object : ActivityLifecycleCallbacks {
+        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+            createdActivities.add(WeakReference(activity))
+        }
+
+        override fun onActivityDestroyed(activity: Activity) {
+            createdActivities.removeAll { it.get().let { a -> a == null || a === activity } }
+        }
+
+        override fun onActivityStarted(activity: Activity) = Unit
+        override fun onActivityResumed(activity: Activity) = Unit
+        override fun onActivityPaused(activity: Activity) = Unit
+        override fun onActivityStopped(activity: Activity) = Unit
+        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+    }
+
+    /**
+     * The most recently created, not-yet-destroyed activity, or null. Activities
+     * that do not extend BaseActivity are included.
+     */
     val topActivity: Activity?
-        get() = lastCreatedActivity
+        get() = createdActivities.asReversed().firstNotNullOfOrNull { it.get() }
+
+    /** Re-creates every live activity, newest first (theme and language changes). */
+    fun recreate() {
+        createdActivities.mapNotNull { it.get() }.asReversed().forEach { it.recreate() }
+    }
 
     // ======== Service override for device compatibility ========
 

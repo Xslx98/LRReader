@@ -187,13 +187,13 @@
             android:foregroundServiceType="dataSync" />
 
         <provider
-            android:name="com.lanraragi.framework.content.FileProvider"
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
 
             <meta-data
-                android:name="com.lanraragi.framework.content.FILE_PROVIDER_PATHS"
+                android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
 
         </provider>
