@@ -17,17 +17,18 @@
 package com.lanraragi.reader
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Debug
 import android.util.Log
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import com.lanraragi.framework.lib.yorozuya.OSUtils
 import com.lanraragi.framework.scene.StageActivity
-import com.lanraragi.framework.util.PackageUtils
 import com.lanraragi.reader.diagnostics.CrashLogStore
 import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.settings.PrivacySettings
+import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -148,6 +149,20 @@ object Crash {
         breadcrumbs.forEach { append(Redactor.redact(it)).append('\n') }
     }
 
+    /** SHA-1 of the first signing certificate as "A1:43:6B:…", or null. */
+    private fun signatureSha1(context: Context): String? = try {
+        val info = context.packageManager.getPackageInfo(
+            context.packageName, PackageManager.GET_SIGNING_CERTIFICATES,
+        )
+        info.signingInfo?.apkContentsSigners?.firstOrNull()?.let { signature ->
+            MessageDigest.getInstance("SHA-1").digest(signature.toByteArray())
+                .joinToString(":") { "%02X".format(it) }
+        }
+    } catch (e: PackageManager.NameNotFoundException) {
+        Log.e(TAG, "Can't find package ${context.packageName}", e)
+        null
+    }
+
     private fun collectInfo(context: Context): String = buildString {
         append("TIME=").append(System.currentTimeMillis()).append('\n').append('\n')
         append("======== PackageInfo ========\n")
@@ -155,7 +170,7 @@ object Crash {
         append("VersionName=").append(BuildConfig.VERSION_NAME).append('\n')
         append("VersionCode=").append(BuildConfig.VERSION_CODE).append('\n')
         append("BuildType=").append(BuildConfig.BUILD_TYPE).append('\n')
-        append("Signature=").append(PackageUtils.getSignature(context, context.packageName)).append('\n')
+        append("Signature=").append(signatureSha1(context)).append('\n')
         append('\n')
 
         var topActivity = "null"
