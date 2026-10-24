@@ -6727,10 +6727,6 @@ Landroidx/swiperefreshlayout/widget/**;
 HSPLandroidx/swiperefreshlayout/widget/**;->**(**)**
 Lcom/lanraragi/reader/widget/ListRefreshLayout**;
 HSPLcom/lanraragi/reader/widget/ListRefreshLayout**;->**(**)**
-Lcom/lanraragi/framework/content/ContextLocalWrapper;
-HSPLcom/lanraragi/framework/content/ContextLocalWrapper;-><init>(Landroid/content/Context;)V
-HSPLcom/lanraragi/framework/content/ContextLocalWrapper;->localeApplicationBase(Landroid/content/Context;Ljava/util/Locale;)Landroid/content/Context;
-HSPLcom/lanraragi/framework/content/ContextLocalWrapper;->wrap(Landroid/content/Context;Ljava/util/Locale;)Lcom/lanraragi/framework/content/ContextLocalWrapper;
 Landroidx/core/content/FileProvider**;
 HSPLandroidx/core/content/FileProvider**;->**(**)**
 Lcom/lanraragi/framework/content/RecordingApplication;
@@ -11943,6 +11939,8 @@ HSPLcom/lanraragi/reader/util/FlowBridge$collectFlowWhileCreated$1;->invokeSuspe
 Lcom/lanraragi/reader/util/FlowBridge$collectFlowWhileCreated$1$1;
 HSPLcom/lanraragi/reader/util/FlowBridge$collectFlowWhileCreated$1$1;-><init>(Ljava/util/function/Consumer;)V
 HSPLcom/lanraragi/reader/util/FlowBridge$collectFlowWhileCreated$1$1;->emit(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+Lcom/lanraragi/reader/util/LocaleContext;
+HSPLcom/lanraragi/reader/util/LocaleContext;->**(**)**
 Lcom/lanraragi/reader/util/MemoryTrim;
 HSPLcom/lanraragi/reader/util/MemoryTrim;-><clinit>()V
 HSPLcom/lanraragi/reader/util/MemoryTrim;-><init>()V

@@ -24,12 +24,12 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
-import com.lanraragi.framework.content.ContextLocalWrapper
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.SecureWindowPolicy
 import com.lanraragi.reader.settings.SecuritySettings
+import com.lanraragi.reader.util.LocaleContext
 
 abstract class BaseActivity : AppCompatActivity() {
 
@@ -147,7 +147,7 @@ abstract class BaseActivity : AppCompatActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         val locale = AppearanceSettings.resolveAppLocale(AppearanceSettings.getAppLanguage())
-        super.attachBaseContext(ContextLocalWrapper.wrap(newBase, locale))
+        super.attachBaseContext(LocaleContext.wrap(newBase, locale))
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

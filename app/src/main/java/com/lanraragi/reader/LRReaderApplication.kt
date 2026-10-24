@@ -30,7 +30,7 @@ import android.os.Debug
 import android.os.StrictMode
 import android.os.Trace
 import android.util.Log
-import com.lanraragi.framework.content.ContextLocalWrapper
+import com.lanraragi.reader.util.LocaleContext
 import com.lanraragi.framework.content.RecordingApplication
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.module.AppModule
@@ -89,7 +89,7 @@ class LRReaderApplication : RecordingApplication() {
         // ActivityThread.handleReceiver casts getBaseContext() to ContextImpl,
         // so a wrapped Application base crashes every manifest receiver —
         // caught live by the continue-reading AppWidgetProvider smoke test.
-        super.attachBaseContext(ContextLocalWrapper.localeApplicationBase(base, locale))
+        super.attachBaseContext(LocaleContext.applicationBase(base, locale))
     }
 
     @SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped
