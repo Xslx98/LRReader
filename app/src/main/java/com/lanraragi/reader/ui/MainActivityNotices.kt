@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AlertDialog
@@ -12,7 +13,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.snackbar.Snackbar
-import com.lanraragi.framework.network.Network
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
@@ -188,9 +188,10 @@ class MainActivityNotices(
         }
     }
 
-    @Suppress("DEPRECATION")
     fun checkCellularNetwork() {
-        if (Network.getActiveNetworkType(activity) == ConnectivityManager.TYPE_MOBILE) {
+        val cm = activity.getSystemService(ConnectivityManager::class.java) ?: return
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return
+        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
             activity.showTip(R.string.cellular_network_warning, BaseScene.LENGTH_SHORT)
         }
     }
