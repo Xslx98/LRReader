@@ -14,7 +14,7 @@ import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.framework.lib.yorozuya.StringUtils
 import com.lanraragi.framework.unifile.UniFile
-import com.lanraragi.framework.util.NaturalComparator
+import com.lanraragi.reader.util.NaturalComparator
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream

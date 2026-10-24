@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lanraragi.framework.util
+package com.lanraragi.reader.util
 
 import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R

@@ -24,7 +24,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.Toast;
 import com.lanraragi.reader.R;
-import com.lanraragi.framework.util.ExceptionUtils;
+import com.lanraragi.reader.util.ExceptionUtils;
 
 public class ActivityPreference extends Preference {
 

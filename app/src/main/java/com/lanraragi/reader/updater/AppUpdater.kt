@@ -5,7 +5,7 @@ import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.UpdateSettings
-import com.lanraragi.framework.util.ExceptionUtils
+import com.lanraragi.reader.util.ExceptionUtils
 import com.lanraragi.reader.client.api.await
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

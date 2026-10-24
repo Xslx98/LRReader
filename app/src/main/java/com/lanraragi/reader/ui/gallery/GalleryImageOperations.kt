@@ -54,7 +54,7 @@ import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.framework.unifile.UniFile
-import com.lanraragi.framework.util.ExceptionUtils
+import com.lanraragi.reader.util.ExceptionUtils
 import com.lanraragi.framework.lib.yorozuya.IOUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

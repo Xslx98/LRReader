@@ -20,7 +20,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import com.lanraragi.framework.util.ExceptionUtils;
+import com.lanraragi.reader.util.ExceptionUtils;
 
 public class SafeCoordinatorLayout extends CoordinatorLayout {
 

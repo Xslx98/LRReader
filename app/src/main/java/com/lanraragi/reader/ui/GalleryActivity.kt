@@ -63,7 +63,6 @@ import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.framework.util.BackDispatch
 import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import kotlin.coroutines.cancellation.CancellationException

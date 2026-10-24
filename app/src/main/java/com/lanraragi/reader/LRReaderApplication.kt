@@ -57,7 +57,7 @@ import android.os.Handler
 import android.os.Looper
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import com.lanraragi.framework.unifile.UniFile
-import com.lanraragi.framework.util.ExceptionUtils
+import com.lanraragi.reader.util.ExceptionUtils
 import com.lanraragi.framework.util.ReadableTime
 import java.io.File
 import java.lang.ref.WeakReference

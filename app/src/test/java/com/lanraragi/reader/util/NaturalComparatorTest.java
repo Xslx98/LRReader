@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.util;
+package com.lanraragi.reader.util;
 
 import static org.junit.Assert.assertTrue;
 

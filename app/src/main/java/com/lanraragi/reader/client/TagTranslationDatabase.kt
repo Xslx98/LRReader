@@ -24,7 +24,7 @@ import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.util.ExceptionUtils
+import com.lanraragi.reader.util.ExceptionUtils
 import android.util.Log
 import com.lanraragi.reader.client.api.await
 import com.lanraragi.reader.settings.AppearanceSettings

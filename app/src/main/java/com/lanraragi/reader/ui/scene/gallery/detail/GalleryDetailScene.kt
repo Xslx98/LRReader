@@ -42,7 +42,7 @@ import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.reader.ui.widget.Ripples
 import androidx.core.content.ContextCompat
-import com.lanraragi.framework.util.ExceptionUtils
+import com.lanraragi.reader.util.ExceptionUtils
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
