@@ -2,7 +2,8 @@
 # Perf budget check (audit 2026-10-13 PERF-04): judges the perf.json written
 # by scripts/ci/smoke-perf.sh (the median of its passes per metric) against
 # scripts/ci/perf-budget.txt. Each line is
-# `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute), `#` starts
+# `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute), optionally
+# followed by `record` (that metric only warns, even in gate mode); `#` starts
 # a comment; a metric fails above budget + tolerance. The file's `mode` line decides what a breach
 # does: `record` prints a warning and exits 0 (while the emulator's variance is
 # being established), `gate` exits 1. Flip it in its own dated commit.
@@ -42,10 +43,11 @@ esac
 LEVEL=warning
 [ "$GATE" = "gate" ] && LEVEL=error
 FAIL=0
+WARNED=0
 printf '%-32s %10s %10s %8s\n' metric measured budget delta
-while read -r metric budget tolword tol; do
+while read -r metric budget tolword tol flag; do
   case "$metric" in ''|'#'*|mode) continue ;; esac
-  if [ "$tolword" != "tol" ]; then
+  if [ "$tolword" != "tol" ] || { [ -n "$flag" ] && [ "$flag" != "record" ]; }; then
     echo "::error::check-perf: malformed budget line for $metric"
     exit 1
   fi
@@ -63,8 +65,13 @@ while read -r metric budget tolword tol; do
   delta=$(awk -v v="$value" -v b="$budget" 'BEGIN { printf "%+.1f%%", (v - b) * 100 / b }')
   printf '%-32s %10s %10s %8s\n' "$metric" "$value" "$budget" "$delta"
   if awk -v v="$value" -v l="$limit" 'BEGIN { exit !(v > l) }'; then
-    echo "::$LEVEL::check-perf: $metric = $value exceeds budget $budget (+$tol = $limit)"
-    FAIL=1
+    if [ "$flag" = "record" ]; then
+      echo "::warning::check-perf: $metric = $value exceeds budget $budget ($tol = $limit; record only)"
+      WARNED=1
+    else
+      echo "::$LEVEL::check-perf: $metric = $value exceeds budget $budget ($tol = $limit)"
+      FAIL=1
+    fi
   fi
 done < <(tr -d '\r' < "$BUDGET" | sed 's/[[:space:]]*#.*//')
 
@@ -74,6 +81,10 @@ if [ "$FAIL" -ne 0 ]; then
     exit 1
   fi
   echo "check-perf: budget breached in record mode (not failing the job)."
+  exit 0
+fi
+if [ "$WARNED" -ne 0 ]; then
+  echo "OK: gated perf metrics within budget (mode $GATE); record-only breaches warned above."
   exit 0
 fi
 echo "OK: perf metrics within budget (mode $GATE)."
