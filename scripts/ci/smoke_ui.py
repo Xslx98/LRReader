@@ -44,6 +44,8 @@ ADB = adb_path()
 # The mock's request log (scripts/ci/mock_lrr.py stdout), optional: lets
 # `widgets` prove that a pull-to-refresh reloaded the list.
 MOCK_LOG = os.environ.get("SMOKE_MOCK_LOG")
+# connect(): how often the server URL is cleared and retyped before giving up.
+CONNECT_TYPE_ATTEMPTS = 3
 
 
 def dump():
@@ -85,25 +87,39 @@ def connect(pkg, url):
     """Fill the first-run server form: URL, cleartext opt-in, Connect; wait
     for the gallery list. `input text` goes through the active keyboard and a
     composing one (Gboard on a zh-CN emulator turns "://" into full-width
-    punctuation) mangles the URL, so keyboards are disabled while typing."""
-    field = wait("resource-id", f"{pkg}:id/server_url", 30)
+    punctuation) mangles the URL, so keyboards are disabled while typing.
+    Right after a fresh install `input text` sometimes drops the tail of the
+    URL ("http://127.0.0.1:" without the port), so the field is cleared and
+    retyped until it reads the URL, up to CONNECT_TYPE_ATTEMPTS times."""
+    field_id = f"{pkg}:id/server_url"
+    field = wait("resource-id", field_id, 30)
     if not field:
         print("smoke_ui: server form not shown", file=sys.stderr)
         return 1
-    tap_node(field, "server_url")
     imes = shell("ime", "list", "-s").stdout.split()
     for ime in imes:
         shell("ime", "disable", ime)
     try:
-        shell("input", "text", url, check=True)
+        for attempt in range(1, CONNECT_TYPE_ATTEMPTS + 1):
+            tap_node(field, "server_url")
+            typed = field.get("text", "")
+            if attempt > 1 or typed:
+                # Move to the end and delete everything typed so far.
+                shell("input", "keyevent", "KEYCODE_MOVE_END", check=True)
+                shell("input", "keyevent", *["KEYCODE_DEL"] * (len(typed) + 8), check=True)
+            shell("input", "text", url, check=True)
+            time.sleep(1)
+            field = find("resource-id", field_id) or field
+            if field.get("text") == url:
+                break
+            print(f"smoke_ui: URL field reads {field.get('text', '')!r}, not {url!r} "
+                  f"(attempt {attempt} of {CONNECT_TYPE_ATTEMPTS})", file=sys.stderr)
+        else:
+            print(f"smoke_ui: URL field does not read {url}; visible: " + visible(), file=sys.stderr)
+            return 1
     finally:
         for ime in imes:
             shell("ime", "enable", ime)
-    time.sleep(1)
-    if not find("text", url):
-        print(f"smoke_ui: URL field does not read {url}; visible: "
-              + " | ".join(n["text"] for n in nodes(dump()) if n.get("text")), file=sys.stderr)
-        return 1
     # The cleartext row only appears for an http:// URL.
     box = wait("resource-id", f"{pkg}:id/checkbox_allow_cleartext", 10)
     if box and box.get("checked") != "true":
