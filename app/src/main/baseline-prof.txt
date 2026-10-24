@@ -7486,9 +7486,6 @@ Lcom/lanraragi/framework/lib/yorozuya/thread/PriorityThreadFactory;
 HSPLcom/lanraragi/framework/lib/yorozuya/thread/PriorityThreadFactory;-><init>(Ljava/lang/String;I)V
 PLcom/lanraragi/framework/lib/yorozuya/thread/PriorityThreadFactory;-><init>(Ljava/lang/String;I)V
 PLcom/lanraragi/framework/lib/yorozuya/thread/PriorityThreadFactory;->newThread(Ljava/lang/Runnable;)Ljava/lang/Thread;
-Lcom/lanraragi/framework/network/StatusCodeException;
-HSPLcom/lanraragi/framework/network/StatusCodeException;-><clinit>()V
-HSPLcom/lanraragi/framework/network/StatusCodeException;->initialize(Landroid/content/Context;)V
 Lcom/lanraragi/framework/scene/Announcer;
 HSPLcom/lanraragi/framework/scene/Announcer;-><init>(Ljava/lang/Class;)V
 HSPLcom/lanraragi/framework/scene/Announcer;->setArgs(Landroid/os/Bundle;)Lcom/lanraragi/framework/scene/Announcer;

@@ -34,7 +34,6 @@
     <string name="invalid_download_location">ダウンロードパスは現在利用できません。ダウンロードパスを設定してください。</string>
     <string name="cellular_network_warning">モバイルネットワークに接続中です</string>
     <!-- Message -->
-    <string name="error_bad_status_code">無効なステータスコード: %d</string>
     <string name="error_timeout">タイムアウト</string>
     <string name="error_unknown_host">不明なホスト</string>
     <string name="error_redirection">リダイレクトが多すぎます</string>
@@ -614,30 +613,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="error_status_code_400">不正なリクエスト (400)</string>
-    <string name="error_status_code_401">認証失敗 (401)</string>
-    <string name="error_status_code_402">支払いが必要 (402)</string>
-    <string name="error_status_code_403">アクセス禁止 (403)</string>
-    <string name="error_status_code_404">見つかりません (404)</string>
-    <string name="error_status_code_405">メソッド不許可 (405)</string>
-    <string name="error_status_code_406">受理不可 (406)</string>
-    <string name="error_status_code_407">プロキシ認証が必要 (407)</string>
-    <string name="error_status_code_408">リクエストタイムアウト (408)</string>
-    <string name="error_status_code_409">競合 (409)</string>
-    <string name="error_status_code_410">消滅 (410)</string>
-    <string name="error_status_code_411">長さが必要 (411)</string>
-    <string name="error_status_code_412">前提条件の失敗 (412)</string>
-    <string name="error_status_code_413">リクエストエンティティが大きすぎる (413)</string>
-    <string name="error_status_code_414">リクエストURIが長すぎる (414)</string>
-    <string name="error_status_code_415">サポートされていないメディアタイプ (415)</string>
-    <string name="error_status_code_416">要求範囲が不正 (416)</string>
-    <string name="error_status_code_417">期待に沿えない (417)</string>
-    <string name="error_status_code_500">サーバーエラー (500)</string>
-    <string name="error_status_code_501">未実装 (501)</string>
-    <string name="error_status_code_502">ゲートウェイエラー (502)</string>
-    <string name="error_status_code_503">サービス利用不可 (503)</string>
-    <string name="error_status_code_504">ゲートウェイタイムアウト (504)</string>
-    <string name="error_status_code_505">HTTPバージョン非対応 (505)</string>
     <string name="local_favorites">ローカルカテゴリ</string>
     <string name="lrr_add_server">サーバーを追加</string>
     <string name="lrr_api_key_helper">LANraragi設定でAPIキーを確認</string>

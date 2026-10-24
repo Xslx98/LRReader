@@ -165,9 +165,6 @@ class LRReaderApplication : RecordingApplication() {
         // and is essentially free at runtime — kept enabled for release too
         // so production cold-start traces are not a black box.
         trace("LRRApp.GetText.init") { GetText.initialize(this) }
-        trace("LRRApp.StatusCodeException.init") {
-            com.lanraragi.framework.network.StatusCodeException.initialize(this)
-        }
         trace("LRRApp.Settings.init") { Settings.initialize(this) }
         // Single-archive progress PUTs that failed are kept here until the
         // network returns (audit 2026-10-04 C20); flushed below.

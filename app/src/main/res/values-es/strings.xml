@@ -45,7 +45,6 @@
 
     <!-- Message -->
 
-    <string name="error_bad_status_code">Código de estado incorrecto: %d</string>
     <string name="error_timeout">Tiempo de espera agotado</string>
     <string name="error_unknown_host">Host desconocido</string>
     <string name="error_redirection">Demasiadas redirecciones</string>
@@ -731,30 +730,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="error_status_code_400">Solicitud incorrecta (400)</string>
-    <string name="error_status_code_401">Autenticación fallida (401)</string>
-    <string name="error_status_code_402">Pago requerido (402)</string>
-    <string name="error_status_code_403">Acceso prohibido (403)</string>
-    <string name="error_status_code_404">No encontrado (404)</string>
-    <string name="error_status_code_405">Método no permitido (405)</string>
-    <string name="error_status_code_406">No aceptable (406)</string>
-    <string name="error_status_code_407">Autenticación de proxy requerida (407)</string>
-    <string name="error_status_code_408">Tiempo de espera agotado (408)</string>
-    <string name="error_status_code_409">Conflicto (409)</string>
-    <string name="error_status_code_410">Eliminado (410)</string>
-    <string name="error_status_code_411">Longitud requerida (411)</string>
-    <string name="error_status_code_412">Precondición fallida (412)</string>
-    <string name="error_status_code_413">Entidad de solicitud demasiado grande (413)</string>
-    <string name="error_status_code_414">URI de solicitud demasiado larga (414)</string>
-    <string name="error_status_code_415">Tipo de medio no soportado (415)</string>
-    <string name="error_status_code_416">Rango no satisfactorio (416)</string>
-    <string name="error_status_code_417">Expectativa fallida (417)</string>
-    <string name="error_status_code_500">Error del servidor (500)</string>
-    <string name="error_status_code_501">No implementado (501)</string>
-    <string name="error_status_code_502">Error de puerta de enlace (502)</string>
-    <string name="error_status_code_503">Servicio no disponible (503)</string>
-    <string name="error_status_code_504">Tiempo de espera del gateway (504)</string>
-    <string name="error_status_code_505">Versión HTTP no soportada (505)</string>
     <string name="local_favorites">Categorías locales</string>
     <string name="lrr_add_server">Agregar servidor</string>
     <string name="lrr_api_key_helper">Encuentra la clave API en la configuración de LANraragi</string>

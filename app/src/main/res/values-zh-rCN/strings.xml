@@ -41,7 +41,6 @@
 
     <!-- Message -->
 
-    <string name="error_bad_status_code">错误状态码：%d</string>
     <string name="error_timeout">超时</string>
     <string name="error_unknown_host">未知主机</string>
     <string name="error_redirection">太多重定向</string>
@@ -770,30 +769,6 @@
 
 
     <!-- Auto-generated missing translations -->
-    <string name="error_status_code_400">错误请求 (400)</string>
-    <string name="error_status_code_401">认证失败 (401)</string>
-    <string name="error_status_code_402">需要付费 (402)</string>
-    <string name="error_status_code_403">禁止访问 (403)</string>
-    <string name="error_status_code_404">未找到 (404)</string>
-    <string name="error_status_code_405">方法不允许 (405)</string>
-    <string name="error_status_code_406">不可接受 (406)</string>
-    <string name="error_status_code_407">需要代理认证 (407)</string>
-    <string name="error_status_code_408">请求超时 (408)</string>
-    <string name="error_status_code_409">冲突 (409)</string>
-    <string name="error_status_code_410">已删除 (410)</string>
-    <string name="error_status_code_411">需要内容长度 (411)</string>
-    <string name="error_status_code_412">前提条件失败 (412)</string>
-    <string name="error_status_code_413">请求实体太大 (413)</string>
-    <string name="error_status_code_414">请求URI太长 (414)</string>
-    <string name="error_status_code_415">不支持的媒体类型 (415)</string>
-    <string name="error_status_code_416">请求范围不符 (416)</string>
-    <string name="error_status_code_417">期望失败 (417)</string>
-    <string name="error_status_code_500">服务器错误 (500)</string>
-    <string name="error_status_code_501">未实现 (501)</string>
-    <string name="error_status_code_502">网关错误 (502)</string>
-    <string name="error_status_code_503">服务不可用 (503)</string>
-    <string name="error_status_code_504">网关超时 (504)</string>
-    <string name="error_status_code_505">HTTP版本不支持 (505)</string>
     <string name="lrr_category_action_delete">删除</string>
     <string name="lrr_category_action_edit">编辑</string>
     <string name="lrr_category_action_pin">置顶</string>

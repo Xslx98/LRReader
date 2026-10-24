@@ -43,7 +43,6 @@
 
     <string name="cellular_network_warning">Vous utilisez les données mobiles</string>
 
-    <string name="error_bad_status_code">Code d\'état inconnu : %d</string>
     <string name="error_timeout">Time-out</string>
     <string name="error_unknown_host">Hôte inconnu</string>
     <string name="error_redirection">Trop de redirections</string>
@@ -726,30 +725,6 @@
     <string name="cancel">Annuler</string>
     <string name="copy_tag">Copier le tag</string>
     <string name="download_service">Download Service</string>
-    <string name="error_status_code_400">Requête incorrecte (400)</string>
-    <string name="error_status_code_401">Authentification échouée (401)</string>
-    <string name="error_status_code_402">Paiement requis (402)</string>
-    <string name="error_status_code_403">Accès interdit (403)</string>
-    <string name="error_status_code_404">Non trouvé (404)</string>
-    <string name="error_status_code_405">Méthode non autorisée (405)</string>
-    <string name="error_status_code_406">Non acceptable (406)</string>
-    <string name="error_status_code_407">Authentification proxy requise (407)</string>
-    <string name="error_status_code_408">Délai d\'attente dépassé (408)</string>
-    <string name="error_status_code_409">Conflit (409)</string>
-    <string name="error_status_code_410">Supprimé (410)</string>
-    <string name="error_status_code_411">Longueur requise (411)</string>
-    <string name="error_status_code_412">Précondition échouée (412)</string>
-    <string name="error_status_code_413">Entité de requête trop grande (413)</string>
-    <string name="error_status_code_414">URI de requête trop longue (414)</string>
-    <string name="error_status_code_415">Type de média non supporté (415)</string>
-    <string name="error_status_code_416">Plage non satisfaisable (416)</string>
-    <string name="error_status_code_417">Attente échouée (417)</string>
-    <string name="error_status_code_500">Erreur serveur (500)</string>
-    <string name="error_status_code_501">Non implémenté (501)</string>
-    <string name="error_status_code_502">Erreur de passerelle (502)</string>
-    <string name="error_status_code_503">Service indisponible (503)</string>
-    <string name="error_status_code_504">Délai de passerelle dépassé (504)</string>
-    <string name="error_status_code_505">Version HTTP non supportée (505)</string>
     <string name="local_favorites">Catégories locales</string>
     <string name="lrr_add_server">Ajouter un serveur</string>
     <string name="lrr_api_key_helper">Trouver la clé API dans les paramètres LANraragi</string>
