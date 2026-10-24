@@ -58,7 +58,6 @@ import android.os.Looper
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import com.lanraragi.framework.unifile.UniFile
 import com.lanraragi.reader.util.ExceptionUtils
-import com.lanraragi.framework.util.ReadableTime
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.Locale
@@ -184,7 +183,6 @@ class LRReaderApplication : SceneApplication() {
         com.lanraragi.reader.client.api.ServerCapabilityCache.attachStore(
             com.lanraragi.reader.client.api.PrefsServerCapabilityStore(Settings.getPreferences())
         )
-        trace("LRRApp.ReadableTime.init") { ReadableTime.initialize(this) }
         // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
         // SpiderDen.initialize(this);
         trace("LRRApp.LegacyDb.init") { LegacyDb.initialize(this) }

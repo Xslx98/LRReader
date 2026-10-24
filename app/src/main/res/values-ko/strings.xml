@@ -599,18 +599,6 @@
     <string name="guide_gallery_long_click">페이지 메뉴를 열려면 길게 누르세요.</string>
 
     <!-- Readable Time -->
-    <string name="from_the_future">미래에</string>
-    <string name="just_now">방금</string>
-    <plurals name="some_minutes_ago">
-        <item quantity="other">%d분 전</item>
-    </plurals>
-    <plurals name="some_hours_ago">
-        <item quantity="other">%d시간 전</item>
-    </plurals>
-    <string name="yesterday">어제</string>
-    <plurals name="some_days_ago">
-        <item quantity="other">%d일 전</item>
-    </plurals>
 
     <plurals name="second">
         <item quantity="other">초</item>
