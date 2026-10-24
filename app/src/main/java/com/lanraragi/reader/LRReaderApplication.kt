@@ -94,6 +94,7 @@ class LRReaderApplication : RecordingApplication() {
 
     @SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped
     override fun onCreate() {
+        Thread.sleep(800) // MUTATION: throwaway perf-gate proof
         // The :phoenix process only hosts PhoenixActivity for a restart; none of
         // the boot work below belongs there (STAB-10).
         if (ProcessRebirth.isPhoenixProcess(Application.getProcessName())) {
