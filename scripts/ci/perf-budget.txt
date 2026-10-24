@@ -1,7 +1,8 @@
 # Perf budgets for scripts/ci/check-perf.sh, measured by smoke-perf.sh on the
 # CI emulator (API 34 x86_64, swiftshader) — not comparable to device numbers.
 # `<metric> <budget> tol <N>%` (relative) or `tol +<N>` (absolute); `#` starts
-# a comment anywhere on a line.
+# a comment anywhere on a line. A trailing `record` makes that one metric warn
+# only, even under mode gate.
 # mode record: a breach only warns (variance still being established).
 # mode gate:   a breach fails the job. Raise a budget only in the commit that
 #              explains the regression; never during 2.4 (anchored to v2.3.0).
@@ -22,7 +23,14 @@ pss.list_kb                43300   tol 5%     # 38205 / 38841 / 39347 at v2.3.0;
 pss.reader_kb             106500   tol 5%     # 104864 / 106371 / 108506
 pss.after_reader_kb        84000   tol 5%     # 82679 / 83933 / 84786
 list.jank_pct                0.5   tol +1.5   # 0.28 / 0.38 / 0.63
-list.p99_ms                   24   tol +30    # 19 / 23.5 / 48
+# Gated since 2026-10-24 (owner), seeded from the 4 median runs since PR #34:
+# run medians 8 / 14 / 17 (8, 11, 17, 17), per pass 7 / 14 / 21 (12 passes);
+# 36 earlier single passes 6 / 9 / 21. Bimodal at one vs two vsync frames.
+list.p90_ms                   14   tol +10    # 8 / 14 / 17
+# Record only since 2026-10-24 (owner): p99 of ~320 frames is the ~3 worst
+# frames, which swiftshader hitches push to 53-61 on unchanged code
+# (per pass since PR #34: 19 / 28.5 / 57).
+list.p99_ms                   24   tol +30   record   # 19 / 23.5 / 48
 reader.page_decode.p99_ms     10   tol +390   # 4.9 / 9.4 / 338
 reader.gl_frame.p99_ms        70   tol +60    # 4.2 / 68.9 / 111.6
 reader.upload.p99_ms           2   tol +5     # 0.9 / 1.75 / 5.1
