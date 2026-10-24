@@ -145,28 +145,6 @@
     </issue>
 
     <issue
-        id="SimpleDateFormat"
-        message="To get local formatting use `getDateInstance()`, `getDateTimeInstance()`, or `getTimeInstance()`, or use `new SimpleDateFormat(String template, Locale locale)` with for example `Locale.US` for ASCII dates."
-        errorLine1="            val sdf = SimpleDateFormat() // 格式化时间"
-        errorLine2="                      ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/TimeUtils.kt"
-            line="10"
-            column="23"/>
-    </issue>
-
-    <issue
-        id="AppBundleLocaleChanges"
-        message="Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the `bundle` configuration"
-        errorLine1="    configuration.setLocale(newLocale);"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
-            line="55"
-            column="5"/>
-    </issue>
-
-    <issue
         id="AndroidGradlePluginVersion"
         message="A newer version of com.android.application than 8.13.2 is available: 9.4.0"
         errorLine1="agp = &quot;8.13.2&quot;"
@@ -567,17 +545,6 @@
             file="src/main/java/com/lanraragi/framework/drawable/AddDeleteDrawable.java"
             line="155"
             column="21"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/AndroidUtil.kt"
-            line="27"
-            column="31"/>
     </issue>
 
     <issue
@@ -1007,28 +974,6 @@
             file="src/main/java/com/lanraragi/reader/ui/BaseActivity.kt"
             line="49"
             column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
-            line="66"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1` is never true here"
-        errorLine1="    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
-            line="75"
-            column="16"/>
     </issue>
 
     <issue
