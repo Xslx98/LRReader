@@ -6729,18 +6729,6 @@ Lcom/lanraragi/reader/widget/ListRefreshLayout**;
 HSPLcom/lanraragi/reader/widget/ListRefreshLayout**;->**(**)**
 Landroidx/core/content/FileProvider**;
 HSPLandroidx/core/content/FileProvider**;->**(**)**
-Lcom/lanraragi/framework/content/RecordingApplication;
-HSPLcom/lanraragi/framework/content/RecordingApplication;->-$$Nest$fgetlist(Lcom/lanraragi/framework/content/RecordingApplication;)Ljava/util/List;
-HSPLcom/lanraragi/framework/content/RecordingApplication;-><init>()V
-HSPLcom/lanraragi/framework/content/RecordingApplication;->onCreate()V
-Lcom/lanraragi/framework/content/RecordingApplication$1;
-HSPLcom/lanraragi/framework/content/RecordingApplication$1;-><init>(Lcom/lanraragi/framework/content/RecordingApplication;)V
-HSPLcom/lanraragi/framework/content/RecordingApplication$1;->onActivityCreated(Landroid/app/Activity;Landroid/os/Bundle;)V
-PLcom/lanraragi/framework/content/RecordingApplication$1;->onActivityPaused(Landroid/app/Activity;)V
-HSPLcom/lanraragi/framework/content/RecordingApplication$1;->onActivityResumed(Landroid/app/Activity;)V
-PLcom/lanraragi/framework/content/RecordingApplication$1;->onActivitySaveInstanceState(Landroid/app/Activity;Landroid/os/Bundle;)V
-HSPLcom/lanraragi/framework/content/RecordingApplication$1;->onActivityStarted(Landroid/app/Activity;)V
-PLcom/lanraragi/framework/content/RecordingApplication$1;->onActivityStopped(Landroid/app/Activity;)V
 Lcom/lanraragi/framework/drawable/AddDeleteDrawable;
 HSPLcom/lanraragi/framework/drawable/AddDeleteDrawable;-><clinit>()V
 HSPLcom/lanraragi/framework/drawable/AddDeleteDrawable;-><init>(Landroid/content/Context;I)V
@@ -7993,6 +7981,8 @@ Lcom/lanraragi/reader/LRReaderApplication$onCreate$9;
 HSPLcom/lanraragi/reader/LRReaderApplication$onCreate$9;-><init>(Lcom/lanraragi/reader/LRReaderApplication;Lkotlin/coroutines/Continuation;)V
 HSPLcom/lanraragi/reader/LRReaderApplication$onCreate$9;->create(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Lkotlin/coroutines/Continuation;
 HSPLcom/lanraragi/reader/LRReaderApplication$onCreate$9;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
+Lcom/lanraragi/reader/LRReaderApplication$activityRecorder$1;
+HSPLcom/lanraragi/reader/LRReaderApplication$activityRecorder$1;->**(**)**
 Lcom/lanraragi/reader/LegacyDb;
 HSPLcom/lanraragi/reader/LegacyDb;-><clinit>()V
 HSPLcom/lanraragi/reader/LegacyDb;-><init>()V
