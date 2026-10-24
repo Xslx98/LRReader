@@ -19,7 +19,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
-import com.lanraragi.framework.app.CheckBoxDialogBuilder
+import com.lanraragi.reader.ui.dialog.CheckBoxDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
