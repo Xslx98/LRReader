@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
@@ -20,7 +21,6 @@ import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
 import com.lanraragi.reader.ui.widget.bindSourceServerBadge
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
-import com.lanraragi.framework.reveal.ViewAnimationUtils
 import androidx.core.content.ContextCompat
 import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch

@@ -503,7 +503,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         val radiusX = maxOf(x, w - x)
         val radiusY = maxOf(y, h - y)
         val radius = Math.hypot(radiusX.toDouble(), radiusY.toDouble()).toFloat()
-        com.lanraragi.framework.reveal.ViewAnimationUtils.createCircularReveal(bg, x, y, 0f, radius)
+        android.view.ViewAnimationUtils.createCircularReveal(bg, x, y, 0f, radius)
             .setDuration(REVEAL_DURATION_MS).start()
     }
 
