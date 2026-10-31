@@ -87,7 +87,7 @@ internal object DownloadListViews {
         fabLayout.setOnExpandListener(scene)
         val actionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
         fabLayout.primaryFab.setImageDrawable(actionFabDrawable)
-        val fab = fabLayout.getSecondaryFabAt(6)
+        val fab = checkNotNull(fabLayout.getSecondaryFabAt(6))
         if (DRAG_ENABLE) {
             fab.setImageDrawable(ResourcesCompat.getDrawable(scene.resources, R.drawable.v_mobile_hand_left_x24, context.theme))
         } else {
