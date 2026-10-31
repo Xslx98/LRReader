@@ -3,7 +3,7 @@ package com.lanraragi.reader.gallery
 import android.content.Context
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.DownloadPageRepair
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.suspendRunCatching
 import okhttp3.OkHttpClient
 import java.io.File
@@ -59,9 +59,8 @@ internal object TankMemberRouting {
     ): TankMemberSource? {
         val complete = resolver.isLocalCopyComplete(localDir, member.pagecount)
         if (!complete && networkAvailable()) return null
-        val uniFile = UniFile.fromFile(localDir) ?: return null
         val expected = if (complete) 0 else member.pagecount
-        return DirTankMemberSource(context, member.arcid, uniFile, expected)
+        return DirTankMemberSource(context, member.arcid, StorageFile(localDir), expected)
     }
 }
 

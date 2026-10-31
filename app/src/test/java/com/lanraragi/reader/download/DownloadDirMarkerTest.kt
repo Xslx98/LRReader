@@ -3,7 +3,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -59,7 +59,7 @@ class DownloadDirMarkerTest {
         db.close()
     }
 
-    private fun dir(name: String) = UniFile.fromFile(File(root, name).apply { mkdirs() })!!
+    private fun dir(name: String) = StorageFile(File(root, name).apply { mkdirs() })
 
     @Suppress("DEPRECATION")
     private suspend fun download(arcid: String, dirname: String?, title: String = "T") {
@@ -114,7 +114,7 @@ class DownloadDirMarkerTest {
         download("a2", null) // not started yet: no directory, nothing to do
 
         val complete = DownloadDirMarkerBackfill(repo) { arcid, _ ->
-            repo.getDownloadDirname(arcid)?.let { UniFile.fromFile(File(root, it)) }
+            repo.getDownloadDirname(arcid)?.let { StorageFile(File(root, it)) }
         }.run()
 
         assertTrue(complete)
@@ -134,7 +134,7 @@ class DownloadDirMarkerTest {
         DownloadDirMarker.write(dir("Vol 1 copy"), DownloadDirMarker(arcid = "a1", serverProfileId = 7L))
         DownloadDirMarker.write(dir("Gone"), DownloadDirMarker(arcid = "deleted", serverProfileId = 7L))
 
-        val names = RedundantDownloadScanner(repo).scan(UniFile.fromFile(root)!!).map { it.name }
+        val names = RedundantDownloadScanner(repo).scan(StorageFile(root)).map { it.name }
 
         assertEquals(listOf("Gone"), names)
     }

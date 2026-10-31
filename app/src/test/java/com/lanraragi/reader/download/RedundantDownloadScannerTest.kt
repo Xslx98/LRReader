@@ -3,7 +3,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -60,7 +60,7 @@ class RedundantDownloadScannerTest {
         File(root, dirname).mkdirs()
     }
 
-    private suspend fun scanNames() = RedundantDownloadScanner(repo).scan(UniFile.fromFile(root)!!).map { it.name }
+    private suspend fun scanNames() = RedundantDownloadScanner(repo).scan(StorageFile(root)).map { it.name }
 
     @Test
     fun titleNamedDownloadsAreNeverRedundant() = runTest {

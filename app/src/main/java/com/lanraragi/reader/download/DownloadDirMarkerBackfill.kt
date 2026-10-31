@@ -1,7 +1,7 @@
 package com.lanraragi.reader.download
 
 import android.util.Log
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.util.suspendRunCatching
 
@@ -15,7 +15,7 @@ import com.lanraragi.reader.util.suspendRunCatching
  */
 class DownloadDirMarkerBackfill(
     private val repo: DownloadDbRepository,
-    private val findDir: suspend (arcid: String, rootUri: String?) -> UniFile?,
+    private val findDir: suspend (arcid: String, rootUri: String?) -> StorageFile?,
 ) {
 
     /** @return true when every existing download directory holds a marker. */

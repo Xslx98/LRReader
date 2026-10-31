@@ -154,7 +154,7 @@ class BackupController(private val fragment: Fragment) {
 
     private fun importer(app: Context) = BackupImporter(
         AppDatabase.getInstance(app), Settings.getPreferences(), readingProgress(app),
-        DownloadRelinker.onDisk(app), DownloadSettings::getCurrentDownloadRootUri,
+        DownloadRelinker.onDisk(), DownloadSettings::getCurrentDownloadRootUri,
     )
 
     private fun readingProgress(app: Context) =

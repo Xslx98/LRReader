@@ -13,7 +13,7 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.download.DownloadPageRepair
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CompletableDeferred
@@ -539,7 +539,7 @@ class LRRGalleryProvider(
         )
     }
 
-    override fun save(index: Int, file: UniFile): Boolean {
+    override fun save(index: Int, file: StorageFile): Boolean {
         val cached = getCacheFile(index)
         if (!cached.exists()) return false
         return try {
@@ -559,7 +559,7 @@ class LRRGalleryProvider(
         }
     }
 
-    override fun save(index: Int, dir: UniFile, filename: String): UniFile? {
+    override fun save(index: Int, dir: StorageFile, filename: String): StorageFile? {
         val cached = getCacheFile(index)
         if (!cached.exists()) return null
         val dst = dir.createFile(filename) ?: return null

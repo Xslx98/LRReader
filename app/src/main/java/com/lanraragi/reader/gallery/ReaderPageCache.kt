@@ -6,7 +6,7 @@ import androidx.core.content.edit
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.module.Cacheable
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
@@ -625,7 +625,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     fun warmDir(
         context: Context,
         arcId: String,
-        dir: UniFile,
+        dir: StorageFile,
         startPageOverride: Int = -1,
     ): Job {
         val previous = activeWarmups[arcId]?.takeIf { it.isActive }
@@ -659,7 +659,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
                 // decoding files[page] positionally would hand the NEXT page's
                 // image to the slot under this page's index, and the provider
                 // cache would pin the wrong picture (RD-2).
-                val target = DirImageFiles.warmTarget(files.map { it.name ?: "" }, requestedPage)
+                val target = DirImageFiles.warmTarget(files.map { it.name }, requestedPage)
                 if (target == null) {
                     Log.i(TAG, "[WARM] warmDir skip missing page arcid=$arcId page=$requestedPage")
                     return@launch

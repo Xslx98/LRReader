@@ -5,7 +5,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import com.lanraragi.framework.lib.yorozuya.IOUtils
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -25,7 +25,7 @@ import kotlinx.coroutines.withContext
 internal class DirTankMemberSource(
     context: Context,
     override val arcid: String,
-    private val dir: UniFile,
+    private val dir: StorageFile,
     /** Server pagecount for a known-partial dir (missing tail = error pages); 0 = trust the dir. */
     val expectedPageCount: Int = 0,
 ) : TankMemberSource {
@@ -33,7 +33,7 @@ internal class DirTankMemberSource(
     private val appContext = context.applicationContext
 
     @Volatile
-    private var files: Array<UniFile>? = null
+    private var files: Array<StorageFile>? = null
 
     @Volatile
     private var pageIndexMap: Map<Int, Int>? = null
@@ -52,7 +52,7 @@ internal class DirTankMemberSource(
             pageSpace?.let { return it }
             val listed = withContext(Dispatchers.IO) { DirImageFiles.listSorted(dir) }
                 ?: throw IOException("Cannot enumerate download dir for $arcid")
-            val map = DirImageFiles.numericPageIndices(listed.map { it.name ?: "" })
+            val map = DirImageFiles.numericPageIndices(listed.map { it.name })
             files = listed
             pageIndexMap = map
             return DirImageFiles.pageSpaceSize(map, listed.size, expectedPageCount)
@@ -71,7 +71,7 @@ internal class DirTankMemberSource(
         // Local files need no warm-up.
     }
 
-    override fun savePage(page0: Int, dest: UniFile): Boolean {
+    override fun savePage(page0: Int, dest: StorageFile): Boolean {
         val src = fileAt(page0) ?: return false
         return try {
             src.openInputStream().use { input ->
@@ -101,7 +101,7 @@ internal class DirTankMemberSource(
      * positional. Sorted position i for a complete numeric dir maps to
      * page i anyway; the map guards odd numeric namings.
      */
-    private fun fileAt(page0: Int): UniFile? {
+    private fun fileAt(page0: Int): StorageFile? {
         val listed = files ?: return null
         val map = pageIndexMap ?: return listed.getOrNull(page0)
         val pos = map[page0] ?: return null

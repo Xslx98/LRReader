@@ -56,7 +56,7 @@ import com.lanraragi.framework.lib.image.Image
 import android.os.Handler
 import android.os.Looper
 import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.ExceptionUtils
 import java.io.File
 import java.lang.ref.WeakReference
@@ -493,10 +493,8 @@ class LRReaderApplication : SceneApplication() {
                 try {
                     val oldBase = File(getExternalFilesDir(null), "download")
                     if (oldBase.exists() && oldBase.isDirectory) {
-                        val newBase = DownloadSettings.getDownloadLocation()
-                        val path = newBase?.uri?.path
-                        if (newBase != null && "file" == newBase.uri.scheme && path != null) {
-                            val newBaseFile = File(path)
+                        val newBaseFile = DownloadSettings.getDownloadLocation()?.file
+                        if (newBaseFile != null) {
                             val children = oldBase.listFiles()
                             if (children != null) {
                                 for (child in children) {
@@ -579,7 +577,7 @@ class LRReaderApplication : SceneApplication() {
             FileUtils.deleteContent(dir)
         }
         // Add .nomedia to external temp dir
-        CommonOperations.ensureNoMediaFile(UniFile.fromFile(AppConfig.getExternalTempDir()))
+        CommonOperations.ensureNoMediaFile(AppConfig.getExternalTempDir()?.let(::StorageFile))
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {

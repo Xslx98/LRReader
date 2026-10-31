@@ -1,6 +1,6 @@
 package com.lanraragi.reader.download
 
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.DownloadDbRepository
 
 /**
@@ -17,7 +17,7 @@ import com.lanraragi.reader.dao.DownloadDbRepository
  */
 class RedundantDownloadScanner(private val repo: DownloadDbRepository) {
 
-    suspend fun scan(root: UniFile): List<UniFile> {
+    suspend fun scan(root: StorageFile): List<StorageFile> {
         val tracked = repo.getAllDownloadInfo().mapTo(HashSet()) { it.arcid }
         val claimed = repo.getAllDownloadDirnamePointers()
             .filterKeys { it in tracked }
@@ -26,7 +26,7 @@ class RedundantDownloadScanner(private val repo: DownloadDbRepository) {
         val children = root.listFiles() ?: return emptyList()
         return children.filter { child ->
             val name = child.name
-            child.isDirectory && name != null && !name.startsWith(".") && name.lowercase() !in claimed &&
+            child.isDirectory && !name.startsWith(".") && name.lowercase() !in claimed &&
                 DownloadDirMarker.read(child)?.arcid.let { it == null || it !in tracked }
         }.sortedBy { it.name }
     }

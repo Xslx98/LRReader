@@ -53,7 +53,7 @@ import com.lanraragi.reader.gallery.TankGalleryProvider
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.ui.GalleryActivity
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.ExceptionUtils
 import com.lanraragi.framework.lib.yorozuya.IOUtils
 import kotlinx.coroutines.CancellationException
@@ -109,7 +109,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
         (mActivity as ComponentActivity).lifecycleScope.launch {
             // Extracting/copying the page is file I/O — keep it off the main thread.
             val file = withContext(Dispatchers.IO) {
-                provider.save(page, UniFile.fromFile(dir)!!, provider.getImageFilename(page))
+                provider.save(page, StorageFile(dir), provider.getImageFilename(page))
             }
             val filename = file?.name
             if (filename == null) {
@@ -173,7 +173,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
         (mActivity as ComponentActivity).lifecycleScope.launch {
             val filename = provider.getImageFilename(page)
             val tempFile = withContext(Dispatchers.IO) {
-                provider.save(page, UniFile.fromFile(cacheDir)!!, filename)
+                provider.save(page, StorageFile(cacheDir), filename)
             }
             if (tempFile == null) {
                 Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
@@ -229,7 +229,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
         filename: String?,
         displayName: String,
         mimeType: String?,
-        tempFile: UniFile,
+        tempFile: StorageFile,
     ): Boolean {
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
@@ -272,7 +272,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
         val dir = mActivity.cacheDir
         (mActivity as ComponentActivity).lifecycleScope.launch {
             val file = withContext(Dispatchers.IO) {
-                provider.save(page, UniFile.fromFile(dir)!!, provider.getImageFilename(page))
+                provider.save(page, StorageFile(dir), provider.getImageFilename(page))
             }
             val filename = file?.name
             if (filename == null) {

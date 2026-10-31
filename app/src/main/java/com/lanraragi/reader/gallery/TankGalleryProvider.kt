@@ -7,7 +7,7 @@ import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.probeSourceHealthy
@@ -498,12 +498,12 @@ class TankGalleryProvider(
         }
     }
 
-    override fun save(index: Int, file: UniFile): Boolean {
+    override fun save(index: Int, file: StorageFile): Boolean {
         val (member, local) = pageMap.locate(index) ?: return false
         return slotAt(member)?.source?.savePage(local, file) ?: false
     }
 
-    override fun save(index: Int, dir: UniFile, filename: String): UniFile? {
+    override fun save(index: Int, dir: StorageFile, filename: String): StorageFile? {
         val dst = dir.createFile(filename) ?: return null
         return if (save(index, dst)) dst else null
     }

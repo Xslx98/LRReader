@@ -7,7 +7,7 @@ import com.lanraragi.reader.callBack.DownloadSearchCallback
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -124,41 +124,12 @@ class DownloadListInfosExecutor {
             if (downloadDir == null || !downloadDir.isDirectory) {
                 return 0
             }
-            // file:// roots (the default): one plain walk. UniFile would
-            // run a provider query per file on a SAF tree.
-            val uri = downloadDir.uri
-            val path = uri.path
-            if ("file" == uri.scheme && path != null) {
-                java.io.File(path).walkTopDown().filter { it.isFile }.sumOf { it.length() }
-            } else {
-                calculateFolderSize(downloadDir)
-            }
+            downloadDir.file.walkTopDown().filter { it.isFile }.sumOf { it.length() }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
             0
         }
-    }
-
-    /**
-     * Recursively calculate folder size
-     */
-    private fun calculateFolderSize(folder: UniFile): Long {
-        var totalSize: Long = 0
-        val files = folder.listFiles() ?: return 0
-
-        for (file in files) {
-            if (file.isFile) {
-                val fileSize = file.length()
-                if (fileSize > 0) {
-                    totalSize += fileSize
-                }
-            } else if (file.isDirectory) {
-                totalSize += calculateFolderSize(file) // Recursively calculate sub-folders
-            }
-        }
-
-        return totalSize
     }
 
     companion object {

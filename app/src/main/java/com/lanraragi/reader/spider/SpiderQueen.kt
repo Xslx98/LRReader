@@ -8,7 +8,7 @@ package com.lanraragi.reader.spider
 import androidx.annotation.IntDef
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 
 /**
  * SpiderQueen -- STUB.
@@ -35,9 +35,6 @@ class SpiderQueen private constructor() : Runnable {
     fun cancelRequest(index: Int) {}
     fun getStartPage(): Int = 0
     fun putStartPage(page: Int) {}
-
-    fun save(index: Int, file: UniFile): Boolean = false
-    fun save(index: Int, dir: UniFile, filename: String): UniFile? = null
 
     override fun run() {}
 

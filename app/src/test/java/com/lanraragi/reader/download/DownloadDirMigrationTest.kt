@@ -3,7 +3,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.ArchiveLocalStateDao
@@ -51,7 +51,7 @@ class DownloadDirMigrationTest {
         dao = db.archiveLocalStateDao()
         repo = DownloadDbRepository(dao, db.downloadDao(), db, Dispatchers.Unconfined)
         root = tmp.newFolder("download")
-        migration = DownloadDirMigration(repo) { UniFile.fromFile(root) }
+        migration = DownloadDirMigration(repo) { StorageFile(root) }
     }
 
     @After

@@ -1,7 +1,7 @@
 package com.lanraragi.reader.download
 
 import android.util.Log
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.DownloadInfo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -44,7 +44,7 @@ data class DownloadDirMarker(
             )
 
         /** The marker in [dir], or null when it is absent or unreadable. */
-        fun read(dir: UniFile): DownloadDirMarker? {
+        fun read(dir: StorageFile): DownloadDirMarker? {
             val file = dir.findFile(FILE_NAME) ?: return null
             return try {
                 file.openInputStream().use { json.decodeFromString(serializer(), it.readBytes().decodeToString()) }
@@ -68,7 +68,7 @@ data class DownloadDirMarker(
          *
          * @return true when [dir] holds [marker] afterwards.
          */
-        fun write(dir: UniFile, marker: DownloadDirMarker): Boolean {
+        fun write(dir: StorageFile, marker: DownloadDirMarker): Boolean {
             if (read(dir) == marker) return true
             dir.findFile(TMP_NAME)?.delete()
             val tmp = dir.createFile(TMP_NAME) ?: return false
@@ -83,9 +83,7 @@ data class DownloadDirMarker(
                 tmp.delete()
                 return false
             }
-            // A file:// rename replaces the old marker atomically; a document
-            // provider would pick a new name instead, so drop the old one first.
-            if (!UniFile.isFileUri(dir.uri)) dir.findFile(FILE_NAME)?.delete()
+            // The rename replaces the old marker atomically.
             if (tmp.renameTo(FILE_NAME)) return true
             tmp.delete()
             return false

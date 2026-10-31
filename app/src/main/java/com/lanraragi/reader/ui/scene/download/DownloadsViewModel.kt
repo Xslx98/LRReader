@@ -21,7 +21,7 @@ import com.lanraragi.reader.download.TankProgressAggregate
 import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.sync.DownloadListInfosExecutor
 import com.lanraragi.reader.sync.DownloadSearchMatcher
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
@@ -276,7 +276,7 @@ class DownloadsViewModel(
     private val downloadDirCache = DownloadDirCache(ServiceRegistry.coroutineModule.ioScope)
 
     /** The shared (possibly in-flight) download-dir resolution for [info]. */
-    fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?> =
+    fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<StorageFile?> =
         downloadDirCache.futureFor(info)
 
     // -------------------------------------------------------------------------
@@ -575,13 +575,5 @@ class DownloadsViewModel(
 
         /** Available per-page count choices for the pagination indicator. */
         private val PER_PAGE_COUNT_CHOICES = intArrayOf(50, 100, 200, 300, 500)
-
-        private fun deleteFileAsync(vararg files: UniFile?) {
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                for (file in files) {
-                    file?.delete()
-                }
-            }
-        }
     }
 }

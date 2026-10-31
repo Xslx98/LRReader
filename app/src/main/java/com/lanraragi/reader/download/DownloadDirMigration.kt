@@ -1,7 +1,7 @@
 package com.lanraragi.reader.download
 
 import android.util.Log
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.util.suspendRunCatching
@@ -20,7 +20,7 @@ import com.lanraragi.reader.util.suspendRunCatching
  */
 class DownloadDirMigration(
     private val repo: DownloadDbRepository,
-    private val resolveRoot: (storedUri: String?) -> UniFile?,
+    private val resolveRoot: (storedUri: String?) -> StorageFile?,
 ) {
 
     enum class RowResult { RENAMED, ALREADY_NEW, NO_POINTER, POINTER_CLEARED, SKIPPED_ACTIVE, FAILED }
@@ -84,7 +84,7 @@ class DownloadDirMigration(
         val root = resolveRoot(info.downloadRootUri) ?: return RowResult.ALREADY_NEW
         if (root.findFile(dirname) != null) return RowResult.ALREADY_NEW
         val legacy = root.listFiles()?.firstOrNull { f ->
-            f.isDirectory && f.name?.let { DownloadDirNaming.isLegacyName(info.arcid, it) } == true
+            f.isDirectory && DownloadDirNaming.isLegacyName(info.arcid, f.name)
         } ?: return RowResult.ALREADY_NEW
         return if (legacy.renameTo(dirname)) RowResult.RENAMED else RowResult.FAILED
     }

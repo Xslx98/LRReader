@@ -21,7 +21,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 
 abstract class GalleryProvider2 : GalleryProvider() {
 
@@ -72,12 +72,12 @@ abstract class GalleryProvider2 : GalleryProvider() {
      */
     abstract fun getImageFilename(index: Int): String
 
-    abstract fun save(index: Int, file: UniFile): Boolean
+    abstract fun save(index: Int, file: StorageFile): Boolean
 
     /**
      * @param filename without extension
      */
-    abstract fun save(index: Int, dir: UniFile, filename: String): UniFile?
+    abstract fun save(index: Int, dir: StorageFile, filename: String): StorageFile?
 
     companion object {
         // Single source of truth for "is this a local page file", shared by

@@ -3,13 +3,12 @@ package com.lanraragi.reader.settings
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
-import androidx.annotation.Nullable
 import androidx.core.content.edit
 import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.ui.CommonOperations
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.ExceptionUtils
 
 /**
@@ -35,9 +34,8 @@ object DownloadSettings {
     const val KEY_DOWNLOAD_SAVE_FRAGMENT = "image_fragment"
 
     @JvmStatic
-    @Nullable
-    fun getDownloadLocation(): UniFile? {
-        var dir: UniFile? = null
+    fun getDownloadLocation(): StorageFile? {
+        var dir: StorageFile? = null
         try {
             val builder = Uri.Builder()
             builder.scheme(Settings.getString(KEY_DOWNLOAD_SAVE_SCHEME, null))
@@ -45,20 +43,15 @@ object DownloadSettings {
             builder.encodedPath(Settings.getString(KEY_DOWNLOAD_SAVE_PATH, null))
             builder.encodedQuery(Settings.getString(KEY_DOWNLOAD_SAVE_QUERY, null))
             builder.encodedFragment(Settings.getString(KEY_DOWNLOAD_SAVE_FRAGMENT, null))
-            dir = UniFile.fromUri(Settings.getContext(), builder.build())
+            dir = StorageFile.fromUri(builder.build())
         } catch (e: Throwable) {
             ExceptionUtils.throwIfFatal(e)
         }
-        // Only file:// locations are honored. The download worker writes pages with
-        // java.io.File and cannot write into a SAF tree (content://); a stored content://
-        // location used to silently degrade to app-private storage — invisible files that
-        // "delete with files" could never reclaim. Fall back to the default app file://
-        // directory for any non-file (or unresolved) location.
-        val location = if (dir == null || dir.uri.scheme != "file") {
-            UniFile.fromFile(AppConfig.getDefaultDownloadDir())
-        } else {
-            dir
-        }
+        // Only file:// locations resolve (the download worker writes pages with
+        // java.io.File). A stored content:// location used to silently degrade to
+        // app-private storage — invisible files that "delete with files" could never
+        // reclaim — so any unresolved location falls back to the default app directory.
+        val location = dir ?: AppConfig.getDefaultDownloadDir()?.let(::StorageFile)
         // Its child directories are archive titles: keep them out of crash
         // reports and diagnostics (audit 2026-10-06 C06).
         Redactor.registerDownloadRoot(location?.uri?.toString())
@@ -77,7 +70,7 @@ object DownloadSettings {
         getDownloadLocation()?.uri?.toString()
 
     @JvmStatic
-    fun putDownloadLocation(location: UniFile) {
+    fun putDownloadLocation(location: StorageFile) {
         val uri = location.uri
         Settings.putString(KEY_DOWNLOAD_SAVE_SCHEME, uri.scheme)
         Settings.putString(KEY_DOWNLOAD_SAVE_AUTHORITY, uri.encodedAuthority)
