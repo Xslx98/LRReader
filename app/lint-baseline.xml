@@ -372,17 +372,6 @@
     </issue>
 
     <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.LOLLIPOP) instead of `@TargetApi` to propagate the requirement to callers of `createCircularReveal`"
-        errorLine1="    @TargetApi(Build.VERSION_CODES.LOLLIPOP)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
-            line="36"
-            column="5"/>
-    </issue>
-
-    <issue
         id="UseCompatLoadingForDrawables"
         message="Use `ResourcesCompat.getDrawable()`"
         errorLine1="                context.resources.getDrawable(R.drawable.shadow_8dp) as NinePatchDrawable"
@@ -1128,39 +1117,6 @@
             file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
             line="53"
             column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
-            line="31"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="            Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2;"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
-            line="34"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
-        errorLine1="    @TargetApi(Build.VERSION_CODES.LOLLIPOP)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
-            line="36"
-            column="5"/>
     </issue>
 
     <issue
