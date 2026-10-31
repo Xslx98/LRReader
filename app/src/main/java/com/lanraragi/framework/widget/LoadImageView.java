@@ -24,7 +24,6 @@ import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -262,12 +261,7 @@ public class LoadImageView extends FixedAspectImageView implements CoverLoader.C
     private void onFailure() {
         mFailed = true;
         clearDrawable();
-        Drawable drawable;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            drawable = ContextCompat.getDrawable(getContext(), R.drawable.image_failed_new);
-        } else {
-            drawable = ContextCompat.getDrawable(getContext(), R.drawable.image_failed);
-        }
+        Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.image_failed_new);
 
         onPreSetImageDrawable(drawable, true);
         setImageDrawable(drawable);
@@ -286,30 +280,24 @@ public class LoadImageView extends FixedAspectImageView implements CoverLoader.C
     @Override
     public void start() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                animatedImageDrawable.start();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            animatedImageDrawable.start();
         }
     }
 
     @Override
     public void stop() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                animatedImageDrawable.stop();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            animatedImageDrawable.stop();
         }
     }
 
     @Override
     public boolean isRunning() {
         Drawable drawable = getImageDrawable();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
-                return animatedImageDrawable.isRunning();
-            }
+        if (drawable instanceof AnimatedImageDrawable animatedImageDrawable) {
+            return animatedImageDrawable.isRunning();
         }
         return false;
     }
