@@ -367,7 +367,6 @@ class Slider : View {
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility") // TODO(2.4-idiom)
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val action = event.action
         when (action) {
@@ -418,6 +417,7 @@ class Slider : View {
                 }
 
                 if (action == MotionEvent.ACTION_UP) {
+                    performClick()
                     val oldProgress = progressValue
                     if (progressValue != touchProgress) {
                         progressValue = touchProgress
@@ -430,6 +430,8 @@ class Slider : View {
 
         return true
     }
+
+    override fun performClick(): Boolean = super.performClick()
 
     @SuppressLint("ViewConstructor")
     private class BubbleView(context: Context, private val textPaint: Paint) : AppCompatImageView(context) {
