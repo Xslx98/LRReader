@@ -32,12 +32,6 @@ import kotlin.math.min
 
 open class FixedAspectImageView : ShapeableImageView {
 
-    private var mMinWidth = 0
-    private var mMinHeight = 0
-    private var mMaxWidth = Int.MAX_VALUE
-    private var mMaxHeight = Int.MAX_VALUE
-    private var mAdjustViewBounds = false
-
     /**
      * width / height.
      *
@@ -88,31 +82,6 @@ open class FixedAspectImageView : ShapeableImageView {
         a = context.obtainStyledAttributes(attrs, R.styleable.FixedAspectImageView, defStyle, 0)
         aspect = a.getFloat(R.styleable.FixedAspectImageView_aspect, -1f)
         a.recycle()
-    }
-
-    override fun setMinimumWidth(minWidth: Int) {
-        super.setMinimumWidth(minWidth)
-        mMinWidth = minWidth
-    }
-
-    override fun setMinimumHeight(minHeight: Int) {
-        super.setMinimumHeight(minHeight)
-        mMinHeight = minHeight
-    }
-
-    override fun setMaxWidth(maxWidth: Int) {
-        super.setMaxWidth(maxWidth)
-        mMaxWidth = maxWidth
-    }
-
-    override fun setMaxHeight(maxHeight: Int) {
-        super.setMaxHeight(maxHeight)
-        mMaxHeight = maxHeight
-    }
-
-    override fun setAdjustViewBounds(adjustViewBounds: Boolean) {
-        super.setAdjustViewBounds(adjustViewBounds)
-        mAdjustViewBounds = adjustViewBounds
     }
 
     private fun resolveAdjustedSize(desiredSize: Int, minSize: Int, maxSize: Int, measureSpec: Int): Int {
@@ -185,7 +154,7 @@ open class FixedAspectImageView : ShapeableImageView {
             if (w <= 0) w = 1
             if (h <= 0) h = 1
 
-            if (mAdjustViewBounds) {
+            if (adjustViewBounds) {
                 // We are supposed to adjust view bounds to match the aspect
                 // ratio of our drawable. See if that is possible.
                 resizeWidth = widthSpecMode != MeasureSpec.EXACTLY
@@ -213,10 +182,10 @@ open class FixedAspectImageView : ShapeableImageView {
             // least one dimension.
 
             // Get the max possible width given our constraints
-            widthSize = resolveAdjustedSize(w + pLeft + pRight, mMinWidth, mMaxWidth, widthMeasureSpec)
+            widthSize = resolveAdjustedSize(w + pLeft + pRight, minimumWidth, maxWidth, widthMeasureSpec)
 
             // Get the max possible height given our constraints
-            heightSize = resolveAdjustedSize(h + pTop + pBottom, mMinHeight, mMaxHeight, heightMeasureSpec)
+            heightSize = resolveAdjustedSize(h + pTop + pBottom, minimumHeight, maxHeight, heightMeasureSpec)
 
             if (desiredAspect != 0.0f) {
                 // See what our actual aspect ratio is
@@ -231,10 +200,10 @@ open class FixedAspectImageView : ShapeableImageView {
 
                         // Allow the width to outgrow its original estimate if height is fixed.
                         // if (!resizeHeight) {
-                        //     widthSize = resolveAdjustedSize(newWidth, mMinWidth, mMaxWidth, widthMeasureSpec)
+                        //     widthSize = resolveAdjustedSize(newWidth, minimumWidth, maxWidth, widthMeasureSpec)
                         // }
 
-                        if (isSizeAcceptable(newWidth, mMinWidth, mMaxWidth, widthMeasureSpec)) {
+                        if (isSizeAcceptable(newWidth, minimumWidth, maxWidth, widthMeasureSpec)) {
                             widthSize = newWidth
                             done = true
                         }
@@ -246,10 +215,10 @@ open class FixedAspectImageView : ShapeableImageView {
 
                         // Allow the height to outgrow its original estimate if width is fixed.
                         if (!resizeWidth) {
-                            heightSize = resolveAdjustedSize(newHeight, mMinHeight, mMaxHeight, heightMeasureSpec)
+                            heightSize = resolveAdjustedSize(newHeight, minimumHeight, maxHeight, heightMeasureSpec)
                         }
 
-                        if (isSizeAcceptable(newHeight, mMinHeight, mMaxHeight, heightMeasureSpec)) {
+                        if (isSizeAcceptable(newHeight, minimumHeight, maxHeight, heightMeasureSpec)) {
                             heightSize = newHeight
                         }
                     }
