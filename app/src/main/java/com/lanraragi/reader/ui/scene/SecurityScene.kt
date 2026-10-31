@@ -174,7 +174,7 @@ class SecurityScene : SolidScene(),
 
         val patternView = ViewUtils.requireView(view, R.id.pattern_view) as LockPatternView
         mPatternView = patternView
-        patternView.setOnPatternListener(this)
+        patternView.onPatternListener = this
 
         mFingerprintIcon = ViewUtils.requireView(view, R.id.fingerprint_icon) as ImageView
         if (SecuritySettings.getEnableFingerprint() && isFingerprintAuthAvailable()) {
@@ -333,7 +333,7 @@ class SecurityScene : SolidScene(),
 
         // Check lockout before attempting verification
         if (viewModel.lockoutState.value.isLockedOut) {
-            patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
+            patternView.displayMode = LockPatternView.DisplayMode.Wrong
             viewModel.refreshLockout()
             updateLockoutUi()
             return
@@ -355,7 +355,7 @@ class SecurityScene : SolidScene(),
 
             is SecurityUiEvent.PatternFailed -> {
                 val patternView = mPatternView ?: return
-                patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
+                patternView.displayMode = LockPatternView.DisplayMode.Wrong
                 updateLockoutUi()
                 if (viewModel.lockoutState.value.isLockedOut) {
                     mHandler.postDelayed(mLockoutUpdateRunnable, LOCKOUT_UPDATE_INTERVAL_MS)

@@ -158,7 +158,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
     }
 
     private fun rejectDraw(patternView: LockPatternView, message: Int) {
-        patternView.setDisplayMode(LockPatternView.DisplayMode.Wrong)
+        patternView.displayMode = LockPatternView.DisplayMode.Wrong
         Toast.makeText(this, getString(message), Toast.LENGTH_SHORT).show()
     }
 
