@@ -338,7 +338,7 @@ class DownloadsScene : ToolbarScene(),
         // Refresh column size to pick up detail_size changes from settings
         if (::mLayoutManager.isInitialized) {
             val columnWidth = resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
-            mLayoutManager.setColumnSize(columnWidth)
+            mLayoutManager.columnSize = columnWidth
             mRecyclerView.requestLayout()
         }
     }
