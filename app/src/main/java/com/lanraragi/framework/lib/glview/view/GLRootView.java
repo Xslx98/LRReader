@@ -43,7 +43,7 @@ import com.lanraragi.framework.lib.glview.glrenderer.UploadedTexture;
 import com.lanraragi.framework.lib.glview.util.ApiHelper;
 import com.lanraragi.framework.lib.glview.util.GalleryUtils;
 import com.lanraragi.framework.lib.glview.util.MotionEventHelper;
-import com.lanraragi.framework.lib.yorozuya.AssertUtils;
+import com.lanraragi.reader.util.AssertUtils;
 import com.lanraragi.reader.util.TraceSections;
 
 import java.util.ArrayDeque;

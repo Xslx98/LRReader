@@ -11,8 +11,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.framework.lib.yorozuya.MathUtils
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.widget.ColorView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.ReadingSettings
@@ -75,12 +75,12 @@ class ReaderChromeController(private val activity: Activity) {
 
     /** Binds the header views and the brightness mask; returns the progress text. */
     fun bindHeader(): TextView {
-        maskView = ViewUtils.`$$`(activity, R.id.mask) as ColorView
-        val clock = ViewUtils.`$$`(activity, R.id.clock)
+        maskView = ViewUtils.requireView(activity, R.id.mask) as ColorView
+        val clock = ViewUtils.requireView(activity, R.id.clock)
         this.clock = clock
-        val progress = ViewUtils.`$$`(activity, R.id.progress) as TextView
+        val progress = ViewUtils.requireView(activity, R.id.progress) as TextView
         this.progress = progress
-        val battery = ViewUtils.`$$`(activity, R.id.battery)
+        val battery = ViewUtils.requireView(activity, R.id.battery)
         this.battery = battery
         clock.visibility = if (ReadingSettings.getShowClock()) View.VISIBLE else View.GONE
         progress.visibility = if (ReadingSettings.getShowProgress()) View.VISIBLE else View.GONE
@@ -98,16 +98,16 @@ class ReaderChromeController(private val activity: Activity) {
         galleryView: GalleryView,
         progress: TextView,
     ) {
-        val seekBarPanel = ViewUtils.`$$`(activity, R.id.seek_bar_panel)
-        val autoTransferPanel = ViewUtils.`$$`(activity, R.id.auto_transfer) as ImageView
-        val leftText = ViewUtils.`$$`(seekBarPanel, R.id.left) as TextView
-        val rightText = ViewUtils.`$$`(seekBarPanel, R.id.right) as TextView
-        val seekBar = ViewUtils.`$$`(seekBarPanel, R.id.seek_bar) as ReversibleSeekBar
+        val seekBarPanel = ViewUtils.requireView(activity, R.id.seek_bar_panel)
+        val autoTransferPanel = ViewUtils.requireView(activity, R.id.auto_transfer) as ImageView
+        val leftText = ViewUtils.requireView(seekBarPanel, R.id.left) as TextView
+        val rightText = ViewUtils.requireView(seekBarPanel, R.id.right) as TextView
+        val seekBar = ViewUtils.requireView(seekBarPanel, R.id.seek_bar) as ReversibleSeekBar
 
         slider.setViews(
             seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, progress
         )
-        slider.setBubble(ViewUtils.`$$`(activity, R.id.seek_bar_bubble) as TextView)
+        slider.setBubble(ViewUtils.requireView(activity, R.id.seek_bar_bubble) as TextView)
         slider.setSystemUi(systemUi)
         slider.setGalleryView(galleryView)
 
@@ -125,7 +125,7 @@ class ReaderChromeController(private val activity: Activity) {
         title: CharSequence?,
         memberTitleAt: (Int) -> String?,
     ) {
-        val root = ViewUtils.`$$`(activity, R.id.reader_top_bar)
+        val root = ViewUtils.requireView(activity, R.id.reader_top_bar)
         val topBar = ReaderTopBar(root, callback, memberTitleAt)
         topBar.setTitle(title)
         topBar.setPage(slider.currentIndex, slider.size)
@@ -133,7 +133,7 @@ class ReaderChromeController(private val activity: Activity) {
         slider.onPageChanged = topBar::setPage
         // The menu brings back the system status bar, which would sit on top
         // of the reader's own clock and battery; the top bar shows the page.
-        val header = ViewUtils.`$$`(activity, R.id.gallery_header)
+        val header = ViewUtils.requireView(activity, R.id.gallery_header)
         slider.onMenuVisibilityChanged = { shown ->
             header.animate().cancel()
             header.animate()

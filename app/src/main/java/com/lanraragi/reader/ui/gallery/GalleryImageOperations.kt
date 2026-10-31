@@ -55,7 +55,6 @@ import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.ExceptionUtils
-import com.lanraragi.framework.lib.yorozuya.IOUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -248,9 +247,9 @@ class GalleryImageOperations(private val mActivity: Activity) {
         }
         var copied = false
         try {
-            tempFile.openInputStream()?.use { input ->
+            tempFile.openInputStream().use { input ->
                 resolver.openOutputStream(mediaUri)?.use { output ->
-                    IOUtils.copy(input, output)
+                    input.copyTo(output)
                     copied = true
                 }
             }
@@ -314,7 +313,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
                     if (cacheFile == null) throw java.io.FileNotFoundException("No pending save")
                     FileInputStream(cacheFile).use { input ->
                         mActivity.contentResolver.openOutputStream(uri)?.use { output ->
-                            IOUtils.copy(input, output)
+                            input.copyTo(output)
                             ok = true
                         }
                     }

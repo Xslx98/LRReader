@@ -19,7 +19,7 @@ package com.lanraragi.framework.lib.glview.anim;
 import android.os.SystemClock;
 import android.view.animation.Interpolator;
 
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
+import com.lanraragi.reader.util.MathUtils;
 
 // Animation calculates a value according to the current input time.
 //

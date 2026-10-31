@@ -29,7 +29,7 @@ import androidx.annotation.IntDef;
 import com.lanraragi.framework.lib.glview.anim.CanvasAnimation;
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
 import com.lanraragi.framework.lib.glview.glrenderer.GLPaint;
-import com.lanraragi.framework.lib.yorozuya.AssertUtils;
+import com.lanraragi.reader.util.AssertUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

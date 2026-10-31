@@ -29,8 +29,8 @@ import com.lanraragi.reader.widget.ReversibleSeekBar
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import android.os.Handler
 import android.os.Looper
-import com.lanraragi.framework.lib.yorozuya.AnimationUtils
-import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener
+import com.lanraragi.reader.util.AnimationUtils
+import android.animation.AnimatorListenerAdapter
 
 /**
  * Controls the reader menu — the top bar, the page seek bar panel and the
@@ -304,7 +304,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
             AnimationUtils.SLOW_FAST_INTERPOLATOR
         }
         if (panel !== mTopBar) animator.addUpdateListener(mUpdateSliderListener)
-        animator.addListener(object : SimpleAnimatorListener() {
+        animator.addListener(object : AnimatorListenerAdapter() {
             private var canceled = false
 
             override fun onAnimationCancel(animation: Animator) {

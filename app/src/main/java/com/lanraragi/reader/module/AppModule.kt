@@ -6,7 +6,7 @@ import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.Crash
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.Settings
-import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
+import com.lanraragi.reader.util.IntIdGenerator
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

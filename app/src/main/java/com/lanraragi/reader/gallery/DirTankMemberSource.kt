@@ -3,8 +3,7 @@ package com.lanraragi.reader.gallery
 import android.content.Context
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.lib.yorozuya.IOUtils
+import com.lanraragi.reader.util.FileUtils
 import com.lanraragi.reader.storage.StorageFile
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -75,7 +74,7 @@ internal class DirTankMemberSource(
         val src = fileAt(page0) ?: return false
         return try {
             src.openInputStream().use { input ->
-                dest.openOutputStream().use { output -> IOUtils.copy(input, output) }
+                dest.openOutputStream().use { output -> input.copyTo(output) }
             }
             true
         } catch (e: IOException) {

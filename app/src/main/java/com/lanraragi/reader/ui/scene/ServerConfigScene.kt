@@ -24,7 +24,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -66,20 +66,20 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
 
         val view = inflater.inflate(R.layout.scene_server_config, container, false)
 
-        val configForm = ViewUtils.`$$`(view, R.id.config_form)
-        mProgress = ViewUtils.`$$`(view, R.id.progress)
-        mServerUrlLayout = ViewUtils.`$$`(configForm, R.id.server_url_layout) as? TextInputLayout
-        mServerUrl = ViewUtils.`$$`(configForm, R.id.server_url) as? EditText
-        mApiKeyLayout = ViewUtils.`$$`(configForm, R.id.api_key_layout) as? TextInputLayout
-        mApiKey = ViewUtils.`$$`(configForm, R.id.api_key) as? EditText
-        mServerInfoPanel = ViewUtils.`$$`(configForm, R.id.server_info_panel) as? LinearLayout
-        mServerInfoText = ViewUtils.`$$`(configForm, R.id.server_info_text) as? TextView
-        mCleartextRow = ViewUtils.`$$`(configForm, R.id.cleartext_row)
+        val configForm = ViewUtils.requireView(view, R.id.config_form)
+        mProgress = ViewUtils.requireView(view, R.id.progress)
+        mServerUrlLayout = ViewUtils.requireView(configForm, R.id.server_url_layout) as? TextInputLayout
+        mServerUrl = ViewUtils.requireView(configForm, R.id.server_url) as? EditText
+        mApiKeyLayout = ViewUtils.requireView(configForm, R.id.api_key_layout) as? TextInputLayout
+        mApiKey = ViewUtils.requireView(configForm, R.id.api_key) as? EditText
+        mServerInfoPanel = ViewUtils.requireView(configForm, R.id.server_info_panel) as? LinearLayout
+        mServerInfoText = ViewUtils.requireView(configForm, R.id.server_info_text) as? TextView
+        mCleartextRow = ViewUtils.requireView(configForm, R.id.cleartext_row)
         mCleartextCheckbox =
-            ViewUtils.`$$`(configForm, R.id.checkbox_allow_cleartext) as? MaterialCheckBox
+            ViewUtils.requireView(configForm, R.id.checkbox_allow_cleartext) as? MaterialCheckBox
 
-        val testButton = ViewUtils.`$$`(configForm, R.id.test_connection)
-        val connectButton = ViewUtils.`$$`(configForm, R.id.connect)
+        val testButton = ViewUtils.requireView(configForm, R.id.test_connection)
+        val connectButton = ViewUtils.requireView(configForm, R.id.connect)
 
         testButton.setOnClickListener(this)
         connectButton.setOnClickListener(this)

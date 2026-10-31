@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.app.Activity
 import android.view.View
 import com.lanraragi.reader.widget.list.EasyRecyclerView
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.isTankoubonId
@@ -37,7 +37,7 @@ object GalleryListSelection {
             }
         })
         val recyclerView = scene.recyclerView
-        val batchBar = ViewUtils.`$$`(mainLayout, R.id.batch_action_bar)
+        val batchBar = ViewUtils.requireView(mainLayout, R.id.batch_action_bar)
         scene.batchOpsHelper = GalleryBatchOpsHelper(batchBar, object : GalleryBatchOpsHelper.Callback {
             override val activity: Activity? get() = scene.activity2
             override val viewModel: GalleryListViewModel get() = scene.viewModel

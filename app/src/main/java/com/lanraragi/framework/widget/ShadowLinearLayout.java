@@ -26,7 +26,7 @@ import android.view.ViewOutlineProvider;
 import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import com.lanraragi.reader.R;
-import com.lanraragi.framework.lib.yorozuya.LayoutUtils;
+import com.lanraragi.reader.util.ViewUtils;
 
 public class ShadowLinearLayout extends LinearLayout {
 
@@ -52,7 +52,7 @@ public class ShadowLinearLayout extends LinearLayout {
         // LEGACY (upstream): only 2dp shadow supported
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             setOutlineProvider(ViewOutlineProvider.BOUNDS);
-            setElevation(LayoutUtils.dp2pix(context, 2));
+            setElevation(ViewUtils.dp2pix(context, 2));
         } else {
             setShadow((NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_2dp)); // LEGACY (upstream): dark theme shadow not implemented
         }

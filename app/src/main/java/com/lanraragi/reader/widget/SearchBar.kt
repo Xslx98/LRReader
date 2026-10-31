@@ -62,10 +62,10 @@ import com.lanraragi.reader.client.TagTranslationDatabase.Companion.NAMESPACE_TO
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.settings.AppearanceSettings
 import kotlinx.coroutines.launch
-import com.lanraragi.framework.lib.yorozuya.AnimationUtils
-import com.lanraragi.framework.lib.yorozuya.MathUtils
-import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.AnimationUtils
+import com.lanraragi.reader.util.MathUtils
+import android.animation.AnimatorListenerAdapter
+import com.lanraragi.reader.util.ViewUtils
 
 class SearchBar : CardView,
     View.OnClickListener,
@@ -142,13 +142,13 @@ class SearchBar : CardView,
 
         val inflater = LayoutInflater.from(context)
         inflater.inflate(R.layout.widget_search_bar, this)
-        mMenuButton = ViewUtils.`$$`(this, R.id.search_menu) as ImageView
-        mTitleTextView = ViewUtils.`$$`(this, R.id.search_title) as TextView
-        mActionButton = ViewUtils.`$$`(this, R.id.search_action) as ImageView
-        mEditText = ViewUtils.`$$`(this, R.id.search_edit_text) as SearchEditText
-        mListContainer = ViewUtils.`$$`(this, R.id.list_container)
-        mListView = ViewUtils.`$$`(mListContainer, R.id.search_bar_list) as ListView
-        mListHeader = ViewUtils.`$$`(mListContainer, R.id.list_header)
+        mMenuButton = ViewUtils.requireView(this, R.id.search_menu) as ImageView
+        mTitleTextView = ViewUtils.requireView(this, R.id.search_title) as TextView
+        mActionButton = ViewUtils.requireView(this, R.id.search_action) as ImageView
+        mEditText = ViewUtils.requireView(this, R.id.search_edit_text) as SearchEditText
+        mListContainer = ViewUtils.requireView(this, R.id.list_container)
+        mListView = ViewUtils.requireView(mListContainer, R.id.search_bar_list) as ListView
+        mListHeader = ViewUtils.requireView(mListContainer, R.id.list_header)
 
         mViewTransition = ViewTransition(mTitleTextView, mEditText)
 
@@ -542,7 +542,7 @@ class SearchBar : CardView,
             val oa = ObjectAnimator.ofFloat(this, PROGRESS, 1f)
             oa.duration = ANIMATE_TIME
             oa.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
-            oa.addListener(object : SimpleAnimatorListener() {
+            oa.addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationStart(animation: Animator) {
                     mListContainer.visibility = VISIBLE
                     mInAnimation = true
@@ -569,7 +569,7 @@ class SearchBar : CardView,
             val oa = ObjectAnimator.ofFloat(this, PROGRESS, 0f)
             oa.duration = ANIMATE_TIME
             oa.interpolator = AnimationUtils.SLOW_FAST_INTERPOLATOR
-            oa.addListener(object : SimpleAnimatorListener() {
+            oa.addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationStart(animation: Animator) {
                     mInAnimation = true
                 }

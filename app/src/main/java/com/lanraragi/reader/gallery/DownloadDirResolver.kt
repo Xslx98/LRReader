@@ -1,7 +1,6 @@
 package com.lanraragi.reader.gallery
 
 import android.content.Context
-import com.lanraragi.framework.lib.yorozuya.StringUtils
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
@@ -108,7 +107,7 @@ interface DownloadDirResolver {
         }
 
         private fun isImageFile(f: File): Boolean =
-            f.isFile && StringUtils.endsWith(f.name.lowercase(), GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS)
+            f.isFile && GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS.any { f.name.lowercase().endsWith(it) }
 
         /** The directory [storage] names, or null when it does not exist. */
         private fun existingDir(storage: StorageFile?): File? = storage?.file?.takeIf { it.isDirectory }

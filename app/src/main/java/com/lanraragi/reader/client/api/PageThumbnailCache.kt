@@ -106,7 +106,7 @@ object PageThumbnailCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable
 
     private val lru = object : LruCache<String, Bitmap>(
         budgetBytesFor(
-            com.lanraragi.framework.lib.yorozuya.OSUtils.getTotalMemory(),
+            com.lanraragi.reader.util.OSUtils.getTotalMemory(),
             com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
         )
     ) {

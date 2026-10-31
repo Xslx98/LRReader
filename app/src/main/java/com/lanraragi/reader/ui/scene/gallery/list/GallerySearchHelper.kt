@@ -13,7 +13,6 @@ import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRSearchResult
 import com.lanraragi.reader.widget.SearchBar
-import com.lanraragi.framework.lib.yorozuya.MathUtils
 import com.lanraragi.framework.scene.Announcer
 import androidx.core.content.ContextCompat
 import kotlin.math.ceil
@@ -108,7 +107,7 @@ class GallerySearchHelper(private val mCallback: Callback) {
 
                 !TextUtils.isEmpty(keyword) -> keyword
 
-                MathUtils.hammingWeight(category) == 1 -> LRRUtils.getCategory(category)
+                category.countOneBits() == 1 -> LRRUtils.getCategory(category)
 
                 else -> null
             }

@@ -25,7 +25,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import com.lanraragi.reader.R
-import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 
 class GalleryHeader(context: Context, attrs: AttributeSet) : ViewGroup(context, attrs) {
 
@@ -46,7 +45,7 @@ class GalleryHeader(context: Context, attrs: AttributeSet) : ViewGroup(context, 
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     fun setDisplayCutout(displayCutout: DisplayCutout?) {
-        if (!ObjectUtils.equal(this.displayCutout, displayCutout)) {
+        if (this.displayCutout != displayCutout) {
             this.displayCutout = displayCutout
             requestLayout()
         }

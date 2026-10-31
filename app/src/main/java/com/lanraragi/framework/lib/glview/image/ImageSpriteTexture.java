@@ -21,7 +21,7 @@ import android.graphics.RectF;
 import androidx.annotation.NonNull;
 
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
-import com.lanraragi.framework.lib.yorozuya.AssertUtils;
+import com.lanraragi.reader.util.AssertUtils;
 
 public class ImageSpriteTexture extends ImageTexture {
 

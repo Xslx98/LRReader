@@ -38,7 +38,7 @@ import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.PatternConfirmFlow
 import com.lanraragi.reader.settings.SecuritySettings
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
 
 class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
@@ -76,11 +76,11 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         setContentView(R.layout.activity_set_security)
         setNavigationIcon(R.drawable.v_arrow_left_dark_x24)
 
-        mPatternView = ViewUtils.`$$`(this, R.id.pattern_view) as LockPatternView
-        mCancel = ViewUtils.`$$`(this, R.id.cancel)
-        mSet = ViewUtils.`$$`(this, R.id.set)
-        mFingerprint = ViewUtils.`$$`(this, R.id.fingerprint_checkbox) as CheckBox
-        mTip = ViewUtils.`$$`(this, R.id.tip) as TextView
+        mPatternView = ViewUtils.requireView(this, R.id.pattern_view) as LockPatternView
+        mCancel = ViewUtils.requireView(this, R.id.cancel)
+        mSet = ViewUtils.requireView(this, R.id.set)
+        mFingerprint = ViewUtils.requireView(this, R.id.fingerprint_checkbox) as CheckBox
+        mTip = ViewUtils.requireView(this, R.id.tip) as TextView
 
         // Pattern is stored as a hash and cannot be recovered for display.
         // The view starts empty regardless of whether a pattern was previously set.

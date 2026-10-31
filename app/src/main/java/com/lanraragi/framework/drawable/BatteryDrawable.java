@@ -24,7 +24,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
+import com.lanraragi.reader.util.MathUtils;
 
 public class BatteryDrawable extends Drawable {
 

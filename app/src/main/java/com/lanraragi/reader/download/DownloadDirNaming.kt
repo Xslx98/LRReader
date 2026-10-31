@@ -1,6 +1,6 @@
 package com.lanraragi.reader.download
 
-import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.reader.util.FileUtils
 
 /**
  * Naming rule for an archive's download directory: **the sanitised title,

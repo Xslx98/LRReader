@@ -88,7 +88,7 @@ class ClientModule(
         private const val DISK_HIGH = 320 * MB
 
         internal fun memoryCacheMaxSize(): Int = thumbMemoryCacheSize(
-            com.lanraragi.framework.lib.yorozuya.OSUtils.getTotalMemory(),
+            com.lanraragi.reader.util.OSUtils.getTotalMemory(),
             com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
         ).toInt()
 
@@ -108,7 +108,7 @@ class ClientModule(
             .thumbs(
                 context,
                 tieredDiskCacheSize(
-                    com.lanraragi.framework.lib.yorozuya.OSUtils.getTotalMemory(),
+                    com.lanraragi.reader.util.OSUtils.getTotalMemory(),
                     com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
                 ),
             ).toInt()

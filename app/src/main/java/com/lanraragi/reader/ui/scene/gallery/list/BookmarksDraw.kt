@@ -20,8 +20,8 @@ import com.lanraragi.reader.client.TagTranslationDatabase
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.util.TagTranslationUtil
-import com.lanraragi.framework.lib.yorozuya.AssertUtils
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import kotlinx.coroutines.launch
 
@@ -40,9 +40,9 @@ class BookmarksDraw(
     fun onCreate(scene: GalleryListScene, parent: ViewGroup): View {
         val bookmarksView = inflater.inflate(R.layout.bookmarks_draw, parent, false)
 
-        val toolbar = ViewUtils.`$$`(bookmarksView, R.id.toolbar) as Toolbar
-        val tip = ViewUtils.`$$`(bookmarksView, R.id.tip) as TextView
-        listView = ViewUtils.`$$`(bookmarksView, R.id.list_view) as ListView
+        val toolbar = ViewUtils.requireView(bookmarksView, R.id.toolbar) as Toolbar
+        val tip = ViewUtils.requireView(bookmarksView, R.id.tip) as TextView
+        listView = ViewUtils.requireView(bookmarksView, R.id.list_view) as ListView
 
         AssertUtils.assertNotNull(context)
 

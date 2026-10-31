@@ -19,7 +19,7 @@ package com.lanraragi.framework.scene;
 import android.app.Application;
 import android.util.SparseArray;
 
-import com.lanraragi.framework.lib.yorozuya.IntIdGenerator;
+import com.lanraragi.reader.util.IntIdGenerator;
 
 public abstract class SceneApplication extends Application {
 

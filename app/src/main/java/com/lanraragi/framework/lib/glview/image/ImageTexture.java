@@ -30,19 +30,19 @@ import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
 import com.lanraragi.framework.lib.glview.glrenderer.NativeTexture;
 import com.lanraragi.framework.lib.glview.glrenderer.Texture;
 import com.lanraragi.framework.lib.glview.view.GLRoot;
-import com.lanraragi.framework.lib.yorozuya.thread.InfiniteThreadExecutor;
 import com.lanraragi.reader.util.TraceSections;
-import com.lanraragi.framework.lib.yorozuya.thread.PVLock;
-import com.lanraragi.framework.lib.yorozuya.thread.PriorityThreadFactory;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ImageTexture implements Texture, Animatable {
 
@@ -59,7 +59,6 @@ public class ImageTexture implements Texture, Animatable {
     // In this 16ms, we use about 4~8 ms to upload tiles.
     private static final long UPLOAD_TILE_LIMIT = 4; // ms
     private static final Executor sThreadExecutor;
-    private static final PVLock sPVLock;
     // Freed tiles keep their GL texture for reuse. The pools are capped (about
     // 8 MB small + 16 MB large of RGBA texture) so the tiles of one tall page do
     // not stay in VRAM for the rest of the session, and trimFreeTiles() empties
@@ -70,9 +69,15 @@ public class ImageTexture implements Texture, Animatable {
     private static final BoundedFreeList<Tile> sLargeFreeTiles = new BoundedFreeList<>(MAX_FREE_LARGE_TILES);
 
     static {
-        sThreadExecutor = new InfiniteThreadExecutor(10 * 1000, new LinkedList<Runnable>(),
-                new PriorityThreadFactory("ImageTexture$AnimateTask", Process.THREAD_PRIORITY_BACKGROUND));
-        sPVLock = new PVLock(3);
+        // Up to 32 background-priority animation threads; idle ones exit after 10 s.
+        AtomicInteger threadId = new AtomicInteger();
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(32, 32, 10, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(), r -> new Thread(() -> {
+                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                    r.run();
+                }, "ImageTexture$AnimateTask-" + threadId.getAndIncrement()));
+        executor.allowCoreThreadTimeOut(true);
+        sThreadExecutor = executor;
     }
 
     private final ImageWrapper mImage;

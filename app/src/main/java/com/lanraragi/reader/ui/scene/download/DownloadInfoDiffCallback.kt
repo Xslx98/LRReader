@@ -1,7 +1,6 @@
 package com.lanraragi.reader.ui.scene.download
 
 import androidx.recyclerview.widget.DiffUtil
-import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 import com.lanraragi.reader.dao.DownloadInfo
 
 /**
@@ -33,9 +32,9 @@ internal class DownloadInfoDiffCallback(
         val newItem = newList[newItemPosition]
         return oldItem.state == newItem.state &&
             oldItem.legacy == newItem.legacy &&
-            ObjectUtils.equal(oldItem.label, newItem.label) &&
-            ObjectUtils.equal(oldItem.title, newItem.title) &&
-            ObjectUtils.equal(oldItem.thumb, newItem.thumb) &&
+            oldItem.label == newItem.label &&
+            oldItem.title == newItem.title &&
+            oldItem.thumb == newItem.thumb &&
             // Tank cards: a membership reconcile can change ONLY the missing
             // count (Done → Incomplete) — that must re-bind the status line.
             oldItem.tankMissingCount == newItem.tankMissingCount

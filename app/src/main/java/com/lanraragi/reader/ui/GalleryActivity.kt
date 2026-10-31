@@ -63,8 +63,8 @@ import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.framework.lib.yorozuya.ConcurrentPool
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import androidx.core.util.Pools
+import com.lanraragi.reader.util.ViewUtils
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 
@@ -135,7 +135,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     private val mSliderController = GallerySliderController()
     private val mImageOps = GalleryImageOperations(this)
 
-    private val mNotifyTaskPool = ConcurrentPool<NotifyTask>(3)
+    private val mNotifyTaskPool = Pools.SynchronizedPool<NotifyTask>(3)
 
     override fun getThemeResId(theme: Int): Int = when (theme) {
         AppearanceSettings.THEME_DARK -> R.style.AppTheme_Gallery_Dark
@@ -347,14 +347,14 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mChrome.applyInitialWindowSettings()
 
         if (GuideSettings.getGuideGallery()) {
-            val mainLayout = ViewUtils.`$$`(this, R.id.main) as FrameLayout
+            val mainLayout = ViewUtils.requireView(this, R.id.main) as FrameLayout
             mainLayout.addView(GalleryGuideView(this))
         }
     }
 
     private fun showGlFallbackView() {
         setContentView(R.layout.activity_gallery_fallback)
-        val close = ViewUtils.`$$`(this, R.id.gl_fallback_close)
+        val close = ViewUtils.requireView(this, R.id.gl_fallback_close)
         close.setOnClickListener { finish() }
         Log.w("GalleryActivity", "EGL init failed, switch to non-GL fallback page")
         Toast.makeText(this, R.string.gallery_gl_fallback_toast, Toast.LENGTH_LONG).show()
@@ -673,7 +673,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
     /** Runs [key] with [value] on the UI thread through a pooled [NotifyTask]. */
     private fun postNotify(key: Int, value: Int) {
-        val task = mNotifyTaskPool.pop() ?: NotifyTask()
+        val task = mNotifyTaskPool.acquire() ?: NotifyTask()
         task.setData(key, value)
         mainHandler.post(task)
     }
@@ -718,7 +718,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                 NOTIFY_KEY_LONG_PRESS_PAGE -> mImageOps.showPageDialog(mValue)
                 NOTIFY_KEY_PAGE_TRANSFORMS -> mStampsCoordinator.onPageTransformsChanged()
             }
-            mNotifyTaskPool.push(this)
+            mNotifyTaskPool.release(this)
         }
     }
 }

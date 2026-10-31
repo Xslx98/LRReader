@@ -21,9 +21,9 @@ import android.animation.ValueAnimator;
 import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
-import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener;
-import com.lanraragi.framework.lib.yorozuya.ViewUtils;
+import com.lanraragi.reader.util.MathUtils;
+import android.animation.AnimatorListenerAdapter;
+import com.lanraragi.reader.util.ViewUtils;
 
 public class SearchBarMover extends RecyclerView.OnScrollListener {
 
@@ -124,7 +124,7 @@ public class SearchBarMover extends RecyclerView.OnScrollListener {
             mShow = show;
             final ValueAnimator va = ValueAnimator.ofInt(0, offset);
             va.setDuration(ANIMATE_TIME);
-            va.addListener(new SimpleAnimatorListener() {
+            va.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     mSearchBarMoveAnimator = null;
@@ -182,7 +182,7 @@ public class SearchBarMover extends RecyclerView.OnScrollListener {
             mShow = true;
             final ValueAnimator va = ValueAnimator.ofInt(0, offset);
             va.setDuration(ANIMATE_TIME);
-            va.addListener(new SimpleAnimatorListener() {
+            va.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     mSearchBarMoveAnimator = null;

@@ -27,9 +27,9 @@ import android.view.animation.Interpolator;
 import androidx.annotation.NonNull;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.lanraragi.reader.R;
-import com.lanraragi.framework.lib.yorozuya.AnimationUtils;
-import com.lanraragi.framework.lib.yorozuya.AssertUtils;
-import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener;
+import com.lanraragi.reader.util.AnimationUtils;
+import com.lanraragi.reader.util.AssertUtils;
+import android.animation.AnimatorListenerAdapter;
 
 public class FabLayout extends ViewGroup implements View.OnClickListener {
 
@@ -303,7 +303,7 @@ public class FabLayout extends ViewGroup implements View.OnClickListener {
                 .setStartDelay(delay ? ANIMATE_TIME : 0L)
                 .setDuration(ANIMATE_TIME)
                 .setInterpolator(interpolator)
-                .setListener(new SimpleAnimatorListener() {
+                .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationStart(Animator animation) {
                         if (expanded) {
@@ -350,7 +350,7 @@ public class FabLayout extends ViewGroup implements View.OnClickListener {
                 .setStartDelay(delay ? ANIMATE_TIME : 0L)
                 .setDuration(ANIMATE_TIME)
                 .setInterpolator(interpolator)
-                .setListener(new SimpleAnimatorListener() {
+                .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationStart(Animator animation) {
                         if (expanded) {

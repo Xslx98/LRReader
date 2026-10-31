@@ -24,7 +24,7 @@ import android.widget.CheckBox
 import android.widget.ListView
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.R
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 
 class ListCheckBoxDialogBuilder @SuppressLint("InflateParams") constructor(
     context: Context?, items: Array<CharSequence>?,
@@ -40,8 +40,8 @@ class ListCheckBoxDialogBuilder @SuppressLint("InflateParams") constructor(
         val view =
             LayoutInflater.from(getContext()).inflate(R.layout.dialog_list_checkbox_builder, null)
         setView(view)
-        val listView = ViewUtils.`$$`(view, R.id.list_view) as ListView
-        mCheckBox = ViewUtils.`$$`(view, R.id.checkbox) as CheckBox
+        val listView = ViewUtils.requireView(view, R.id.list_view) as ListView
+        mCheckBox = ViewUtils.requireView(view, R.id.checkbox) as CheckBox
         listView.adapter = ArrayAdapter(getContext(), R.layout.item_select_dialog, items!!)
         listView.onItemClickListener =
             AdapterView.OnItemClickListener { parent, view, position, id ->

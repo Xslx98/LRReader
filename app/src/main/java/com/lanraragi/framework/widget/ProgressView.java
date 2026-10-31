@@ -35,7 +35,7 @@ import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.animation.PathInterpolatorCompat;
 import com.lanraragi.reader.R;
-import com.lanraragi.framework.lib.yorozuya.ViewUtils;
+import com.lanraragi.reader.util.ViewUtils;
 import java.util.ArrayList;
 
 // Base on android.graphics.drawable.MaterialProgressDrawable in L preview

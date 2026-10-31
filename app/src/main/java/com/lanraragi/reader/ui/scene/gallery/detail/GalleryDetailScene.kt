@@ -37,9 +37,9 @@ import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
-import com.lanraragi.framework.lib.yorozuya.AssertUtils
-import com.lanraragi.framework.lib.yorozuya.IntIdGenerator
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.reader.util.IntIdGenerator
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.ui.widget.Ripples
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.util.ExceptionUtils
@@ -260,16 +260,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val view = inflater.inflate(R.layout.scene_gallery_detail, container, false)
 
-        val main = ViewUtils.`$$`(view, R.id.main) as ViewGroup
-        val mainView = ViewUtils.`$$`(main, R.id.scroll_view)
-        val progressView = ViewUtils.`$$`(main, R.id.progress_view)
-        mTip = ViewUtils.`$$`(main, R.id.tip) as TextView
+        val main = ViewUtils.requireView(view, R.id.main) as ViewGroup
+        val mainView = ViewUtils.requireView(main, R.id.scroll_view)
+        val progressView = ViewUtils.requireView(main, R.id.progress_view)
+        mTip = ViewUtils.requireView(main, R.id.tip) as TextView
         mViewTransition = ViewTransition(mainView, progressView, mTip)
 
         assert(context != null)
         AssertUtils.assertNotNull(context)
 
-        val actionsScrollView = ViewUtils.`$$`(view, R.id.actions_scroll_view)
+        val actionsScrollView = ViewUtils.requireView(view, R.id.actions_scroll_view)
         setDrawerGestureBlocker(ScrollAreaGestureBlocker(actionsScrollView) { isDrawersVisible() })
 
         val nonNullContext = requireContext()
@@ -283,16 +283,16 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mBelowHeader = belowHeader
         mSourceError.bind(belowHeader)
         val isDarkTheme = !nonNullContext.isLightTheme()
-        mHeader = ViewUtils.`$$`(belowHeader, R.id.header)
-        val colorBg = ViewUtils.`$$`(mHeader, R.id.color_bg)
-        val thumb = ViewUtils.`$$`(mHeader, R.id.thumb) as LoadImageView
-        val title = ViewUtils.`$$`(mHeader, R.id.title) as TextView
-        val uploader = ViewUtils.`$$`(mHeader, R.id.uploader) as TextView
-        val otherActions = ViewUtils.`$$`(mHeader, R.id.other_actions) as ImageView
-        mActionGroup = ViewUtils.`$$`(mHeader, R.id.action_card) as ViewGroup
-        val download = ViewUtils.`$$`(mActionGroup, R.id.download) as TextView
-        val archiverDownloadProgress = ViewUtils.`$$`(mHeader, R.id.archiver_download_progress) as ArchiverDownloadProgress
-        val read = ViewUtils.`$$`(mActionGroup, R.id.read)
+        mHeader = ViewUtils.requireView(belowHeader, R.id.header)
+        val colorBg = ViewUtils.requireView(mHeader, R.id.color_bg)
+        val thumb = ViewUtils.requireView(mHeader, R.id.thumb) as LoadImageView
+        val title = ViewUtils.requireView(mHeader, R.id.title) as TextView
+        val uploader = ViewUtils.requireView(mHeader, R.id.uploader) as TextView
+        val otherActions = ViewUtils.requireView(mHeader, R.id.other_actions) as ImageView
+        mActionGroup = ViewUtils.requireView(mHeader, R.id.action_card) as ViewGroup
+        val download = ViewUtils.requireView(mActionGroup, R.id.download) as TextView
+        val archiverDownloadProgress = ViewUtils.requireView(mHeader, R.id.archiver_download_progress) as ArchiverDownloadProgress
+        val read = ViewUtils.requireView(mActionGroup, R.id.read)
         mRead = read
         Ripples.addRipple(otherActions, isDarkTheme)
         Ripples.addRipple(download, isDarkTheme)
@@ -306,24 +306,24 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         uploader.setOnLongClickListener(this)
 
-        val infoView = ViewUtils.`$$`(belowHeader, R.id.info)
-        val pages = ViewUtils.`$$`(infoView, R.id.pages) as TextView
-        val size = ViewUtils.`$$`(infoView, R.id.size) as TextView
+        val infoView = ViewUtils.requireView(belowHeader, R.id.info)
+        val pages = ViewUtils.requireView(infoView, R.id.pages) as TextView
+        val size = ViewUtils.requireView(infoView, R.id.size) as TextView
 
-        mActions = ViewUtils.`$$`(belowHeader, R.id.actions)
-        val ratingText = ViewUtils.`$$`(mActions, R.id.rating_text) as TextView
-        val rating = ViewUtils.`$$`(mActions, R.id.rating) as RatingBar
-        val heartGroup = ViewUtils.`$$`(mActions, R.id.heart_group)
+        mActions = ViewUtils.requireView(belowHeader, R.id.actions)
+        val ratingText = ViewUtils.requireView(mActions, R.id.rating_text) as TextView
+        val rating = ViewUtils.requireView(mActions, R.id.rating) as RatingBar
+        val heartGroup = ViewUtils.requireView(mActions, R.id.heart_group)
         mHeartGroup = heartGroup
-        val heart = ViewUtils.`$$`(heartGroup, R.id.heart) as TextView
-        val heartOutline = ViewUtils.`$$`(heartGroup, R.id.heart_outline) as TextView
+        val heart = ViewUtils.requireView(heartGroup, R.id.heart) as TextView
+        val heartOutline = ViewUtils.requireView(heartGroup, R.id.heart_outline) as TextView
         Ripples.addRipple(heartGroup, isDarkTheme)
         heartGroup.setOnClickListener(this)
         heartGroup.setOnLongClickListener(this)
 
-        val tags = ViewUtils.`$$`(belowHeader, R.id.tags) as LinearLayout
-        val noTags = ViewUtils.`$$`(tags, R.id.no_tags) as TextView
-        val sourceBadge = ViewUtils.`$$`(mHeader, R.id.source_badge) as TextView
+        val tags = ViewUtils.requireView(belowHeader, R.id.tags) as LinearLayout
+        val noTags = ViewUtils.requireView(tags, R.id.no_tags) as TextView
+        val sourceBadge = ViewUtils.requireView(mHeader, R.id.source_badge) as TextView
 
         // Initialize helpers
         val headerBinder = DetailHeaderBinder(
@@ -336,11 +336,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mHeaderBinder = headerBinder
         headerBinder.ensureActionDrawable(nonNullContext)
 
-        val tankSection = ViewUtils.`$$`(belowHeader, R.id.detail_tankoubons_section)
+        val tankSection = ViewUtils.requireView(belowHeader, R.id.detail_tankoubons_section)
         mTankBinder = DetailTankoubonBinder(
             section = tankSection,
-            container = ViewUtils.`$$`(tankSection, R.id.detail_tankoubons_container) as LinearLayout,
-            edit = ViewUtils.`$$`(tankSection, R.id.detail_tankoubons_edit) as TextView,
+            container = ViewUtils.requireView(tankSection, R.id.detail_tankoubons_container) as LinearLayout,
+            edit = ViewUtils.requireView(tankSection, R.id.detail_tankoubons_edit) as TextView,
             onTankClick = { tank -> mEditActions.openTankoubonDetail(tank) },
             onEditClick = { mEditActions.showTankMembershipDialog() },
         )
@@ -355,10 +355,10 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         mRating.bind(rating, ratingText)
 
-        mEditTagsBtn = ViewUtils.`$$`(tags, R.id.edit_tags_btn) as? android.widget.ImageButton
+        mEditTagsBtn = ViewUtils.requireView(tags, R.id.edit_tags_btn) as? android.widget.ImageButton
         mEditActions.bindEditTagsButton(mEditTagsBtn)
 
-        mProgress = ViewUtils.`$$`(mainView, R.id.progress)
+        mProgress = ViewUtils.requireView(mainView, R.id.progress)
 
         mViewTransition2 = ViewTransition(mBelowHeader, mProgress)
 

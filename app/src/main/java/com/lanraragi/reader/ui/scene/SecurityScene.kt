@@ -40,7 +40,7 @@ import com.lanraragi.reader.ui.scene.SecurityViewModel.StorageState
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.framework.widget.lockpattern.LockPatternUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.client.api.LRRAuthManager
 
@@ -172,11 +172,11 @@ class SecurityScene : SolidScene(),
     ): View {
         val view = inflater.inflate(R.layout.scene_security, container, false)
 
-        val patternView = ViewUtils.`$$`(view, R.id.pattern_view) as LockPatternView
+        val patternView = ViewUtils.requireView(view, R.id.pattern_view) as LockPatternView
         mPatternView = patternView
         patternView.setOnPatternListener(this)
 
-        mFingerprintIcon = ViewUtils.`$$`(view, R.id.fingerprint_icon) as ImageView
+        mFingerprintIcon = ViewUtils.requireView(view, R.id.fingerprint_icon) as ImageView
         if (SecuritySettings.getEnableFingerprint() && isFingerprintAuthAvailable()) {
             mFingerprintIcon.visibility = View.VISIBLE
             mFingerprintIcon.setImageResource(R.drawable.ic_fp_40px)

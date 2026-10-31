@@ -41,9 +41,8 @@ import com.lanraragi.framework.lib.glview.view.GLView;
 import com.lanraragi.framework.lib.glview.widget.GLEdgeView;
 import com.lanraragi.framework.lib.glview.widget.GLProgressView;
 import com.lanraragi.framework.lib.glview.widget.GLTextureView;
-import com.lanraragi.framework.lib.yorozuya.AssertError;
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
-import com.lanraragi.framework.lib.yorozuya.Pool;
+import com.lanraragi.reader.util.MathUtils;
+import androidx.core.util.Pools;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -132,7 +131,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     private volatile boolean mPageTransformCollectionEnabled = false;
 
     private final GLEdgeView mEdgeView;
-    private final Pool<GalleryPageView> mGalleryPageViewPool = new Pool<>(5);
+    private final Pools.SimplePool<GalleryPageView> mGalleryPageViewPool = new Pools.SimplePool<>(5);
     private GLProgressView mProgressCache;
     private GLTextureView mErrorViewCache;
 
@@ -729,7 +728,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
             if (mLayoutManager != null){
                 mLayoutManager.onDataChanged();
             }
-        } catch (AssertError e) {
+        } catch (AssertionError e) {
             Log.e(this.getClass().getName(),e.getMessage(),e);
         }
     }
@@ -1181,7 +1180,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     }
 
     GalleryPageView obtainPage() {
-        GalleryPageView page = mGalleryPageViewPool.pop();
+        GalleryPageView page = mGalleryPageViewPool.acquire();
         if (page == null) {
             page = new GalleryPageView(mPageTextTexture,
                     mProgressColor, mBackgroundColor, mProgressSize,
@@ -1191,7 +1190,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     }
 
     void releasePage(GalleryPageView page) {
-        mGalleryPageViewPool.push(page);
+        mGalleryPageViewPool.release(page);
     }
 
     /**

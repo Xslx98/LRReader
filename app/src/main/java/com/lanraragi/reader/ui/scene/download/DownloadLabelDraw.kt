@@ -13,7 +13,6 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 import com.lanraragi.framework.scene.Announcer
 
 /**
@@ -161,7 +160,7 @@ class DownloadLabelDraw(
             return
         }
         val label = if (position == 0) null else labels[position]
-        if (!ObjectUtils.equal(label, callback.currentLabel)) {
+        if (label != callback.currentLabel) {
             callback.selectLabel(label)
             callback.updateForLabel()
             if (!callback.searchKey.isNullOrEmpty()) {

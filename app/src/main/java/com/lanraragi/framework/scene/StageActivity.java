@@ -38,8 +38,8 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.lanraragi.reader.R;
 import com.lanraragi.reader.ui.BaseActivity;
-import com.lanraragi.framework.lib.yorozuya.AssertUtils;
-import com.lanraragi.framework.lib.yorozuya.IntIdGenerator;
+import com.lanraragi.reader.util.AssertUtils;
+import com.lanraragi.reader.util.IntIdGenerator;
 import com.lanraragi.reader.ui.BackDispatch;
 
 import java.util.ArrayList;

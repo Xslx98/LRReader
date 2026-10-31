@@ -18,15 +18,12 @@ package com.lanraragi.reader.client.data
 
 import android.os.Parcel
 import android.os.Parcelable
-import android.text.TextUtils
 import android.util.Log
 import androidx.annotation.IntDef
 import com.lanraragi.reader.client.LegacyCategoryConfig
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.widget.AdvanceSearchTable
-import com.lanraragi.framework.lib.yorozuya.NumberUtils
-import com.lanraragi.framework.lib.yorozuya.StringUtils
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
 
@@ -229,8 +226,8 @@ class ListUrlBuilder : Cloneable, Parcelable {
         // categoryName is display-only (may lag a server rename) and deliberately not compared.
         return q.mode == mode &&
             q.category == category &&
-            StringUtils.equals(q.keyword, keyword) &&
-            StringUtils.equals(q.categoryId, categoryId) &&
+            q.keyword.orEmpty() == keyword.orEmpty() &&
+            q.categoryId.orEmpty() == categoryId.orEmpty() &&
             q.advanceSearch == advanceSearch &&
             q.minRating == minRating &&
             q.pageFrom == pageFrom &&
@@ -248,9 +245,9 @@ class ListUrlBuilder : Cloneable, Parcelable {
     fun setQuery(query: String?) {
         reset()
 
-        if (TextUtils.isEmpty(query)) return
+        if (query.isNullOrEmpty()) return
 
-        val querys = StringUtils.split(query, '&')
+        val querys = query.split('&').filter { it.isNotEmpty() }
         var parsedCategory = 0
         var parsedKeyword: String? = null
         var enableAdvanceSearch = false
@@ -269,7 +266,7 @@ class ListUrlBuilder : Cloneable, Parcelable {
 
             when (key) {
                 "f_cats" -> {
-                    val cats = NumberUtils.parseIntSafely(value, LegacyCategoryConfig.ALL_CATEGORY)
+                    val cats = (value.toIntOrNull() ?: LegacyCategoryConfig.ALL_CATEGORY)
                     parsedCategory = parsedCategory or (cats.inv() and LegacyCategoryConfig.ALL_CATEGORY)
                 }
                 "f_doujinshi" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.DOUJINSHI
@@ -304,10 +301,10 @@ class ListUrlBuilder : Cloneable, Parcelable {
                 "f_sfu" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SFU
                 "f_sft" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SFT
                 "f_sr" -> if ("on" == value) enableMinRating = true
-                "f_srdd" -> parsedMinRating = NumberUtils.parseIntSafely(value, -1)
+                "f_srdd" -> parsedMinRating = (value.toIntOrNull() ?: -1)
                 "f_sp" -> if ("on" == value) enablePage = true
-                "f_spf" -> parsedPageFrom = NumberUtils.parseIntSafely(value, -1)
-                "f_spt" -> parsedPageTo = NumberUtils.parseIntSafely(value, -1)
+                "f_spf" -> parsedPageFrom = (value.toIntOrNull() ?: -1)
+                "f_spt" -> parsedPageTo = (value.toIntOrNull() ?: -1)
             }
         }
 

@@ -9,7 +9,7 @@ import com.lanraragi.framework.lib.glview.anim.AnimatorDurationScale
 import com.lanraragi.framework.lib.glview.image.ImageWrapper
 import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.lib.image.PageFit
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.R
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.settings.ReadingSettings
@@ -43,7 +43,7 @@ class ReaderPageHost(private val activity: Activity) {
         onGenericMotion: View.OnGenericMotionListener,
         onDataChanged: () -> Unit,
     ): GalleryView {
-        val glRootView = ViewUtils.`$$`(activity, R.id.gl_root_view) as GLRootView
+        val glRootView = ViewUtils.requireView(activity, R.id.gl_root_view) as GLRootView
         this.glRootView = glRootView
         val adapter = PageAdapter(glRootView, provider, onDataChanged)
         this.adapter = adapter

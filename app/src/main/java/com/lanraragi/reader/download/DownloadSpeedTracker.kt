@@ -19,7 +19,7 @@ package com.lanraragi.reader.download
 import android.os.Handler
 import android.os.Looper
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.framework.lib.yorozuya.MathUtils
+import com.lanraragi.reader.util.MathUtils
 import java.lang.ref.WeakReference
 
 /**

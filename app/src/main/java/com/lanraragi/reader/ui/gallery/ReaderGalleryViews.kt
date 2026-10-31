@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Typeface
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
+import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.ReadingSettings
 import javax.microedition.khronos.egl.EGL10
@@ -71,7 +71,7 @@ object ReaderGalleryViews {
             .setPageMinHeight(resources.getDimensionPixelOffset(R.dimen.gallery_page_min_height))
             .setPageInfoInterval(resources.getDimensionPixelOffset(R.dimen.gallery_page_info_interval))
             .setProgressColor(
-                ResourcesUtils.getAttrColor(context, androidx.appcompat.R.attr.colorPrimary)
+                context.attrColor(androidx.appcompat.R.attr.colorPrimary)
             )
             .setProgressSize(resources.getDimensionPixelOffset(R.dimen.gallery_progress_size))
             .setPageTextColor(

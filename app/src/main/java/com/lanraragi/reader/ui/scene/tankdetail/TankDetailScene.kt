@@ -21,7 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.util.isLightTheme
 import com.lanraragi.reader.ui.widget.Ripples
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
@@ -143,10 +143,10 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
             profileId = arguments?.getLong(KEY_PROFILE_ID) ?: 0L,
         )
 
-        val main = ViewUtils.`$$`(view, R.id.main) as ViewGroup
-        val mainView = ViewUtils.`$$`(main, R.id.scroll_view)
-        val progressView = ViewUtils.`$$`(main, R.id.progress_view)
-        val tip = ViewUtils.`$$`(main, R.id.tip) as TextView
+        val main = ViewUtils.requireView(view, R.id.main) as ViewGroup
+        val mainView = ViewUtils.requireView(main, R.id.scroll_view)
+        val progressView = ViewUtils.requireView(main, R.id.progress_view)
+        val tip = ViewUtils.requireView(main, R.id.tip) as TextView
         mTip = tip
         mViewTransition = ViewTransition(mainView, progressView, tip)
         ContextCompat.getDrawable(context, R.drawable.big_sad_pandroid)?.let { drawable ->
@@ -163,20 +163,20 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         mOfflineRetry?.setOnClickListener { reload() }
 
         val isDarkTheme = !context.isLightTheme()
-        val header = ViewUtils.`$$`(belowHeader, R.id.header)
-        mColorBg = ViewUtils.`$$`(header, R.id.color_bg)
-        mThumb = ViewUtils.`$$`(header, R.id.thumb) as LoadImageView
-        mTitle = ViewUtils.`$$`(header, R.id.title) as TextView
+        val header = ViewUtils.requireView(belowHeader, R.id.header)
+        mColorBg = ViewUtils.requireView(header, R.id.color_bg)
+        mThumb = ViewUtils.requireView(header, R.id.thumb) as LoadImageView
+        mTitle = ViewUtils.requireView(header, R.id.title) as TextView
         // Tanks have no uploader; keep the slot collapsed.
-        (ViewUtils.`$$`(header, R.id.uploader) as TextView).visibility = View.GONE
-        mSourceBadge = ViewUtils.`$$`(header, R.id.source_badge) as TextView
-        val otherActions = ViewUtils.`$$`(header, R.id.other_actions) as ImageView
+        (ViewUtils.requireView(header, R.id.uploader) as TextView).visibility = View.GONE
+        mSourceBadge = ViewUtils.requireView(header, R.id.source_badge) as TextView
+        val otherActions = ViewUtils.requireView(header, R.id.other_actions) as ImageView
         mOtherActions = otherActions
         Ripples.addRipple(otherActions, isDarkTheme)
         otherActions.setOnClickListener(this)
-        val actionCard = ViewUtils.`$$`(header, R.id.action_card) as ViewGroup
-        val download = ViewUtils.`$$`(actionCard, R.id.download) as TextView
-        val read = ViewUtils.`$$`(actionCard, R.id.read)
+        val actionCard = ViewUtils.requireView(header, R.id.action_card) as ViewGroup
+        val download = ViewUtils.requireView(actionCard, R.id.download) as TextView
+        val read = ViewUtils.requireView(actionCard, R.id.read)
         mDownload = download
         mRead = read
         Ripples.addRipple(download, isDarkTheme)
@@ -184,44 +184,44 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         download.setOnClickListener(this)
         read.setOnClickListener(this)
 
-        val infoView = ViewUtils.`$$`(belowHeader, R.id.info)
-        mPages = ViewUtils.`$$`(infoView, R.id.pages) as TextView
-        mSize = ViewUtils.`$$`(infoView, R.id.size) as TextView
+        val infoView = ViewUtils.requireView(belowHeader, R.id.info)
+        mPages = ViewUtils.requireView(infoView, R.id.pages) as TextView
+        mSize = ViewUtils.requireView(infoView, R.id.size) as TextView
 
-        val actions = ViewUtils.`$$`(belowHeader, R.id.actions)
-        mRatingText = ViewUtils.`$$`(actions, R.id.rating_text) as TextView
-        mRating = ViewUtils.`$$`(actions, R.id.rating) as RatingBar
-        val heartGroup = ViewUtils.`$$`(actions, R.id.heart_group)
+        val actions = ViewUtils.requireView(belowHeader, R.id.actions)
+        mRatingText = ViewUtils.requireView(actions, R.id.rating_text) as TextView
+        mRating = ViewUtils.requireView(actions, R.id.rating) as RatingBar
+        val heartGroup = ViewUtils.requireView(actions, R.id.heart_group)
         mHeartGroup = heartGroup
         Ripples.addRipple(heartGroup, isDarkTheme)
         heartGroup.setOnClickListener(this)
-        mHeart = ViewUtils.`$$`(heartGroup, R.id.heart) as TextView
-        mHeartOutline = ViewUtils.`$$`(heartGroup, R.id.heart_outline) as TextView
+        mHeart = ViewUtils.requireView(heartGroup, R.id.heart) as TextView
+        mHeartOutline = ViewUtils.requireView(heartGroup, R.id.heart_outline) as TextView
         ensureHeartDrawables()
         setupRatingBar()
 
-        val tagsLayout = ViewUtils.`$$`(belowHeader, R.id.tags) as LinearLayout
+        val tagsLayout = ViewUtils.requireView(belowHeader, R.id.tags) as LinearLayout
         mTagsLayout = tagsLayout
-        mNoTags = ViewUtils.`$$`(tagsLayout, R.id.no_tags) as TextView
-        mEditTagsBtn = ViewUtils.`$$`(tagsLayout, R.id.edit_tags_btn).also { it.setOnClickListener(this) }
+        mNoTags = ViewUtils.requireView(tagsLayout, R.id.no_tags) as TextView
+        mEditTagsBtn = ViewUtils.requireView(tagsLayout, R.id.edit_tags_btn).also { it.setOnClickListener(this) }
 
-        val membersSection = ViewUtils.`$$`(belowHeader, R.id.tank_members)
-        mMembersManage = ViewUtils.`$$`(membersSection, R.id.tank_members_manage).also { it.setOnClickListener(this) }
+        val membersSection = ViewUtils.requireView(belowHeader, R.id.tank_members)
+        mMembersManage = ViewUtils.requireView(membersSection, R.id.tank_members_manage).also { it.setOnClickListener(this) }
         val membersAdapter = TankMemberStripAdapter(
             onMemberClick = { openMemberSession(it) },
             onMemberLongClick = { member, anchor -> showMemberMenu(member, anchor) },
             onMoreClick = { openMemberManagement() },
         )
         mMembersAdapter = membersAdapter
-        mMembersRecycler = (ViewUtils.`$$`(membersSection, R.id.tank_members_recycler) as RecyclerView).apply {
+        mMembersRecycler = (ViewUtils.requireView(membersSection, R.id.tank_members_recycler) as RecyclerView).apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = membersAdapter
         }
 
         pageThumbsViewModel = ViewModelProvider(this)[TankPageThumbnailsViewModel::class.java]
-        setupPageGrid(ViewUtils.`$$`(belowHeader, R.id.previews))
+        setupPageGrid(ViewUtils.requireView(belowHeader, R.id.previews))
 
-        val progress = ViewUtils.`$$`(mainView, R.id.progress)
+        val progress = ViewUtils.requireView(mainView, R.id.progress)
         mViewTransition2 = ViewTransition(belowHeader, progress)
 
         // Instant header from the nav arg while the fetch runs.
