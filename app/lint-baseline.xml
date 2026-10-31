@@ -101,17 +101,6 @@
     </issue>
 
     <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `toLowerCase(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
-        errorLine1="            final String extension = name.substring(lastDot + 1).toLowerCase();"
-        errorLine2="                                                                 ~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/unifile/RawFile.java"
-            line="49"
-            column="66"/>
-    </issue>
-
-    <issue
         id="DiscouragedPrivateApi"
         message="Reflective access to mDisappearingChildren, which is not part of the public SDK and therefore likely to change in future Android releases"
         errorLine1="            mDisappearingChildrenField = ViewGroup.class.getDeclaredField(&quot;mDisappearingChildren&quot;);"
@@ -358,28 +347,6 @@
             file="src/main/java/com/lanraragi/framework/widget/MaxSizeContainer.java"
             line="57"
             column="9"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.KITKAT) instead of `@TargetApi` to propagate the requirement to users of `DocumentsContractApi19`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/unifile/DocumentsContractApi19.java"
-            line="31"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.LOLLIPOP) instead of `@TargetApi` to propagate the requirement to users of `DocumentsContractApi21`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.LOLLIPOP)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/unifile/DocumentsContractApi21.java"
-            line="31"
-            column="1"/>
     </issue>
 
     <issue
@@ -963,28 +930,6 @@
             file="src/main/java/com/lanraragi/reader/ui/BaseActivity.kt"
             line="49"
             column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 19"
-        errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/unifile/DocumentsContractApi19.java"
-            line="31"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 21"
-        errorLine1="@TargetApi(Build.VERSION_CODES.LOLLIPOP)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/unifile/DocumentsContractApi21.java"
-            line="31"
-            column="1"/>
     </issue>
 
     <issue
