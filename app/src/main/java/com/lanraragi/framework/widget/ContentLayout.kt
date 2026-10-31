@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("ComplexCondition", "EmptyFunctionBlock", "UnusedPrivateMember", "UnsafeCallOnNullableType") // TODO(2.4-idiom)
+@file:Suppress("ComplexCondition", "EmptyFunctionBlock", "UnusedPrivateMember") // TODO(2.4-idiom)
 
 package com.lanraragi.framework.widget
 
@@ -60,7 +60,7 @@ class ContentLayout : FrameLayout {
     private lateinit var mRecyclerView: EasyRecyclerView
     private lateinit var mFastScroller: FastScroller
 
-    private var mContentHelper: ContentHelper<*>? = null
+    private lateinit var mContentHelper: ContentHelper<*>
 
     private var mRecyclerViewOriginTop = 0
     private var mRecyclerViewOriginBottom = 0
@@ -130,8 +130,8 @@ class ContentLayout : FrameLayout {
     }
 
     fun setHelper(helper: ContentHelper<*>?) {
-        mContentHelper = helper
-        helper!!.init(this)
+        mContentHelper = requireNotNull(helper) { "ContentLayout needs a ContentHelper" }
+        helper.init(this)
     }
 
     fun showFastScroll() {
@@ -163,11 +163,11 @@ class ContentLayout : FrameLayout {
     }
 
     override fun onSaveInstanceState(): Parcelable {
-        return mContentHelper!!.saveInstanceState(super.onSaveInstanceState()!!)
+        return mContentHelper.saveInstanceState(super.onSaveInstanceState())
     }
 
     override fun onRestoreInstanceState(state: Parcelable) {
-        super.onRestoreInstanceState(mContentHelper!!.restoreInstanceState(state))
+        super.onRestoreInstanceState(mContentHelper.restoreInstanceState(state))
     }
 
     abstract class ContentHelper<E : Parcelable> : ViewTransition.OnShowViewListener {
@@ -305,7 +305,7 @@ class ContentLayout : FrameLayout {
             mRefreshLayout = contentLayout.mRefreshLayout
             mRecyclerView = contentLayout.mRecyclerView
 
-            val drawable = ContextCompat.getDrawable(getContext()!!, R.drawable.big_sad_pandroid)!!
+            val drawable = checkNotNull(ContextCompat.getDrawable(requireContext(), R.drawable.big_sad_pandroid))
             drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
             mTipView.setCompoundDrawables(null, drawable, null, null)
 
@@ -332,6 +332,9 @@ class ContentLayout : FrameLayout {
         protected abstract fun getExPageData(pageAction: Int, taskId: Int, page: Int)
 
         protected abstract fun getContext(): Context?
+
+        /** [getContext] of an attached helper, whose host is alive. */
+        private fun requireContext(): Context = checkNotNull(getContext()) { "ContentHelper has no host context" }
 
         protected abstract fun notifyDataSetChanged()
 
@@ -753,7 +756,7 @@ class ContentLayout : FrameLayout {
                     if (mCurrentTaskType == TYPE_PRE_PAGE_KEEP_POS) {
                         mRecyclerView.stopScroll()
                         LayoutManagerUtils.scrollToPositionProperly(
-                            mRecyclerView.layoutManager, getContext()!!,
+                            mRecyclerView.layoutManager, requireContext(),
                             dataSize - 1, mOnScrollToPositionListener
                         )
                     } else {
@@ -817,9 +820,9 @@ class ContentLayout : FrameLayout {
                     // Route through the LRR-aware mapper so list/search failures
                     // show a localized message (auth, 404, timeout, cleartext
                     // refused, …) instead of a raw English socket/HTTP string.
-                    readableError = friendlyError(getContext()!!, e)
+                    readableError = friendlyError(requireContext(), e)
                 } else {
-                    readableError = getContext()!!.getString(R.string.error_unknown)
+                    readableError = requireContext().getString(R.string.error_unknown)
                 }
 
                 if (mViewTransition.shownViewIndex == 0) {
@@ -1013,7 +1016,7 @@ class ContentLayout : FrameLayout {
 
         private var mSavedDataId = IntIdGenerator.INVALID_ID
 
-        open fun saveInstanceState(superState: Parcelable): Parcelable {
+        open fun saveInstanceState(superState: Parcelable?): Parcelable {
             val bundle = Bundle()
             bundle.putParcelable(KEY_SUPER, superState)
             val shownView = mViewTransition.shownViewIndex
@@ -1021,7 +1024,7 @@ class ContentLayout : FrameLayout {
             bundle.putString(KEY_TIP, mTipView.text.toString())
 
             // KNOWN-ISSUE (P2): uses LRReaderApplication global state to persist data across config changes
-            val app = getContext()!!.applicationContext as LRReaderApplication
+            val app = requireContext().applicationContext as LRReaderApplication
             if (mSavedDataId != IntIdGenerator.INVALID_ID) {
                 app.removeGlobalStuff(mSavedDataId)
                 mSavedDataId = IntIdGenerator.INVALID_ID
@@ -1042,14 +1045,14 @@ class ContentLayout : FrameLayout {
             return bundle
         }
 
-        open fun restoreInstanceState(state: Parcelable): Parcelable {
+        open fun restoreInstanceState(state: Parcelable): Parcelable? {
             if (state is Bundle) {
                 mViewTransition.showView(state.getInt(KEY_SHOWN_VIEW), false)
                 mTipView.text = state.getString(KEY_TIP)
 
                 mSavedDataId = state.getInt(KEY_DATA)
                 var newData: ArrayList<E>? = null
-                val app = getContext()!!.applicationContext as LRReaderApplication
+                val app = requireContext().applicationContext as LRReaderApplication
                 if (mSavedDataId != IntIdGenerator.INVALID_ID) {
                     @Suppress("UNCHECKED_CAST")
                     newData = app.removeGlobalStuff(mSavedDataId) as ArrayList<E>?
@@ -1080,7 +1083,7 @@ class ContentLayout : FrameLayout {
                     firstRefresh()
                 }
 
-                return BundleCompat.getParcelable(state, KEY_SUPER, Parcelable::class.java)!!
+                return BundleCompat.getParcelable(state, KEY_SUPER, Parcelable::class.java)
             } else {
                 return state
             }
