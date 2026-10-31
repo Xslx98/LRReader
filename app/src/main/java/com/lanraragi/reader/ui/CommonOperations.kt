@@ -26,7 +26,7 @@ import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.framework.lib.yorozuya.IOUtils
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.domain.Archive
 import java.io.IOException
 
@@ -141,7 +141,7 @@ object CommonOperations {
     }
 
     @JvmStatic
-    fun ensureNoMediaFile(file: UniFile?) {
+    fun ensureNoMediaFile(file: StorageFile?) {
         if (file == null) return
 
         val noMedia = file.createFile(".nomedia") ?: return
@@ -157,7 +157,7 @@ object CommonOperations {
     }
 
     @JvmStatic
-    fun removeNoMediaFile(file: UniFile?) {
+    fun removeNoMediaFile(file: StorageFile?) {
         if (file == null) return
 
         val noMedia = file.subFile(".nomedia")

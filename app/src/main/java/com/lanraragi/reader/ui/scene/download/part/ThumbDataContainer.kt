@@ -17,7 +17,7 @@ package com.lanraragi.reader.ui.scene.download.part
 
 import android.util.Log
 import com.lanraragi.framework.lib.yorozuya.IOUtils
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.cover.CoverStore
 import java.io.IOException
@@ -52,15 +52,15 @@ import java.util.concurrent.TimeoutException
  *   zero-byte `.thumb` files into archive directories.
  */
 class ThumbDataContainer(
-    private val downloadDirFuture: CompletableFuture<UniFile?>,
+    private val downloadDirFuture: CompletableFuture<StorageFile?>,
     private val dirWaitMillis: Long = DIR_WAIT_MILLIS,
 ) : CoverStore {
 
     private var dirResolved = false
-    private var dir: UniFile? = null
+    private var dir: StorageFile? = null
 
     /** Bounded, once-per-instance resolution of the download directory. */
-    private fun resolveDir(): UniFile? {
+    private fun resolveDir(): StorageFile? {
         if (!dirResolved) {
             dirResolved = true
             dir = try {
@@ -78,7 +78,7 @@ class ThumbDataContainer(
     }
 
     /** Existing `.thumb` file or null — read paths must not create files. */
-    private fun existingFile(): UniFile? =
+    private fun existingFile(): StorageFile? =
         resolveDir()?.subFile(THUMB_FILE_NAME)?.takeIf { it.isFile }
 
     override fun isEnabled(): Boolean {

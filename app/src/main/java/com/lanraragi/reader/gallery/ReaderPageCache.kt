@@ -6,7 +6,7 @@ import androidx.core.content.edit
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.module.Cacheable
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
@@ -625,7 +625,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     fun warmDir(
         context: Context,
         arcId: String,
-        dir: UniFile,
+        dir: StorageFile,
         startPageOverride: Int = -1,
     ): Job {
         val previous = activeWarmups[arcId]?.takeIf { it.isActive }

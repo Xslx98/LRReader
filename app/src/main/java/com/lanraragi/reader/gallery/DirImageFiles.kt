@@ -13,7 +13,7 @@ import android.content.Context
 import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.framework.lib.yorozuya.StringUtils
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.NaturalComparator
 import java.io.File
 import java.io.FileInputStream
@@ -31,12 +31,12 @@ import java.io.FileOutputStream
 internal object DirImageFiles {
 
     /** Filter for files whose extensions match any supported image format. */
-    val imageFilter = com.lanraragi.framework.unifile.FilenameFilter { _, name ->
+    val imageFilter: (String) -> Boolean = { name ->
         StringUtils.endsWith(name.lowercase(), GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS)
     }
 
     /** Natural-order comparator (1.png < 2.png < 10.png) by filename. */
-    val naturalComparator = Comparator<UniFile> { o1, o2 ->
+    val naturalComparator = Comparator<StorageFile> { o1, o2 ->
         NaturalComparator().compare(o1.name, o2.name)
     }
 
@@ -45,7 +45,7 @@ internal object DirImageFiles {
      * if the directory cannot be enumerated (e.g. the URI no longer
      * resolves) — callers distinguish that from "empty directory".
      */
-    fun listSorted(dir: UniFile): Array<UniFile>? {
+    fun listSorted(dir: StorageFile): Array<StorageFile>? {
         val files = dir.listFiles(imageFilter) ?: return null
         files.sortWith(naturalComparator)
         return files
@@ -130,7 +130,7 @@ internal object DirImageFiles {
      * so the native decoder can mmap it. Caller should run on the
      * decoder dispatcher.
      */
-    fun decode(context: Context, file: UniFile): Image? {
+    fun decode(context: Context, file: StorageFile): Image? {
         val inputStream = file.openInputStream()
         return if (inputStream is FileInputStream) {
             inputStream.use { Image.decode(it, false) }

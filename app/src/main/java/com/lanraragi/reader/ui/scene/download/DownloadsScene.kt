@@ -51,7 +51,7 @@ import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.ProgressView
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.sxj.paginationlib.PaginationIndicator
@@ -512,7 +512,7 @@ class DownloadsScene : ToolbarScene(),
     override val recyclerView: EasyRecyclerView?
         get() = if (::mRecyclerView.isInitialized) mRecyclerView else null
 
-    override fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?> =
+    override fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<StorageFile?> =
         viewModel.downloadDirFutureFor(info)
 
     override fun tankProgressSnapshotFor(tankId: String): ProgressSnapshot? =

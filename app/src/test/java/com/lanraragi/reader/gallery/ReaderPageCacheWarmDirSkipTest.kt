@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.module.CoroutineModule
 import java.io.File
@@ -46,7 +46,7 @@ class ReaderPageCacheWarmDirSkipTest {
 
     private val arcid = "c".repeat(40)
     private lateinit var context: Context
-    private lateinit var dir: UniFile
+    private lateinit var dir: StorageFile
 
     @Before
     fun setUp() {
@@ -58,7 +58,7 @@ class ReaderPageCacheWarmDirSkipTest {
         val bitmap = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888)
         FileOutputStream(File(folder, "0001.png")).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
-        dir = UniFile.fromFile(folder)!!
+        dir = StorageFile(folder)!!
     }
 
     @After

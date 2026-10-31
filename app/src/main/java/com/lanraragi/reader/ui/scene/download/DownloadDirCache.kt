@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.download
 
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
@@ -31,20 +31,20 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class DownloadDirCache(
     private val scope: CoroutineScope,
-    private val resolver: suspend (DownloadInfo) -> UniFile? = { info ->
+    private val resolver: suspend (DownloadInfo) -> StorageFile? = { info ->
         SpiderDen.findGalleryDownloadDir(info.arcid, rootUriOverride = info.downloadRootUri)
     },
 ) {
-    private val cache = ConcurrentHashMap<String, CompletableFuture<UniFile?>>()
+    private val cache = ConcurrentHashMap<String, CompletableFuture<StorageFile?>>()
 
     /** The (possibly in-flight) directory resolution for [info]'s arcid. */
-    fun futureFor(info: DownloadInfo): CompletableFuture<UniFile?> {
+    fun futureFor(info: DownloadInfo): CompletableFuture<StorageFile?> {
         cache[info.arcid]?.let { return it }
-        val future = CompletableFuture<UniFile?>()
+        val future = CompletableFuture<StorageFile?>()
         val existing = cache.putIfAbsent(info.arcid, future)
         if (existing != null) return existing
         scope.launch {
-            var dir: UniFile? = null
+            var dir: StorageFile? = null
             try {
                 dir = resolver(info)
             } catch (e: Exception) {

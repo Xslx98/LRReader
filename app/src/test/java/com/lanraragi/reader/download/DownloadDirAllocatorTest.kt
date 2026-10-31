@@ -3,7 +3,7 @@ package com.lanraragi.reader.download
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +47,7 @@ class DownloadDirAllocatorTest {
             .build()
         repo = DownloadDbRepository(db.archiveLocalStateDao(), db.downloadDao(), db, Dispatchers.Unconfined)
         root = tmp.newFolder("download")
-        allocator = DownloadDirAllocator(repo) { UniFile.fromFile(root) }
+        allocator = DownloadDirAllocator(repo) { StorageFile(root) }
     }
 
     @After
@@ -115,7 +115,7 @@ class DownloadDirAllocatorTest {
     @Test
     fun delete_usesTheCapturedRootNotTheCurrentLocation() = runTest {
         val oldRoot = tmp.newFolder("old-root")
-        val a = DownloadDirAllocator(repo) { uri -> UniFile.fromFile(if (uri == "old") oldRoot else root) }
+        val a = DownloadDirAllocator(repo) { uri -> StorageFile(if (uri == "old") oldRoot else root) }
         a.allocate("x", "Vol 1", rootUriOverride = "old")
         File(oldRoot, "Vol 1/0001.jpg").writeBytes(ByteArray(10))
         // Another archive lives under the same name in the current root.

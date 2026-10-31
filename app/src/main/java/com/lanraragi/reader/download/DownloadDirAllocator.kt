@@ -1,7 +1,7 @@
 package com.lanraragi.reader.download
 
 import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.DownloadDbRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -27,7 +27,7 @@ import java.io.File
  */
 class DownloadDirAllocator(
     private val repo: DownloadDbRepository,
-    private val resolveRoot: (storedUri: String?) -> UniFile?,
+    private val resolveRoot: (storedUri: String?) -> StorageFile?,
 ) {
 
     private val mutex = Mutex()
@@ -41,7 +41,7 @@ class DownloadDirAllocator(
      *   already holds it — required on delete paths, where the row (and
      *   with it the stored root) may already be gone.
      */
-    suspend fun find(arcid: String, rootUriOverride: String? = null): UniFile? {
+    suspend fun find(arcid: String, rootUriOverride: String? = null): StorageFile? {
         val dirname = storedPointer(arcid) ?: return null
         val root = resolveRoot(rootUriOverride ?: repo.getDownloadRootUri(arcid)) ?: return null
         return root.subFile(dirname)
@@ -52,7 +52,7 @@ class DownloadDirAllocator(
      * when there is none yet. Returns null when the root is unavailable or
      * the directory cannot be created.
      */
-    suspend fun allocate(arcid: String, title: String?, rootUriOverride: String? = null): UniFile? =
+    suspend fun allocate(arcid: String, title: String?, rootUriOverride: String? = null): StorageFile? =
         mutex.withLock {
             val root = resolveRoot(rootUriOverride ?: repo.getDownloadRootUri(arcid)) ?: return@withLock null
             storedPointer(arcid)?.let { name ->
@@ -92,7 +92,7 @@ class DownloadDirAllocator(
         true
     }
 
-    private fun isStrictChild(root: UniFile, dir: UniFile): Boolean {
+    private fun isStrictChild(root: StorageFile, dir: StorageFile): Boolean {
         val rootUri = root.uri
         val dirUri = dir.uri
         if (rootUri == dirUri) return false

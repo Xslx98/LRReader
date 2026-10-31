@@ -25,7 +25,7 @@ import com.lanraragi.reader.download.DownloadDirAllocator
 import com.lanraragi.reader.download.DownloadDirNaming
 import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import java.util.Locale
 
 /**
@@ -58,7 +58,7 @@ object SpiderDen {
      * paths must pass [rootUriOverride]: the row may already be gone.
      */
     @JvmStatic
-    suspend fun findGalleryDownloadDir(arcid: String, rootUriOverride: String? = null): UniFile? =
+    suspend fun findGalleryDownloadDir(arcid: String, rootUriOverride: String? = null): StorageFile? =
         allocator.find(arcid, rootUriOverride)
 
     /**
@@ -73,7 +73,7 @@ object SpiderDen {
         arcid: String,
         title: String?,
         rootUriOverride: String? = null,
-    ): UniFile? = allocator.allocate(arcid, title, rootUriOverride)
+    ): StorageFile? = allocator.allocate(arcid, title, rootUriOverride)
 
     /**
      * Deletes [arcid]'s download directory (recursively) and its pointer;
@@ -92,7 +92,7 @@ object SpiderDen {
         String.format(Locale.US, "%08d%s", index + 1, extension)
 
     @JvmStatic
-    fun findImageFile(dir: UniFile, index: Int): UniFile? {
+    fun findImageFile(dir: StorageFile, index: Int): StorageFile? {
         for (extension in GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS) {
             val filename = generateImageFilename(index, extension)
             val file = dir.findFile(filename)
@@ -102,7 +102,7 @@ object SpiderDen {
     }
 
     /**
-     * Build a [UniFile] for the supplied tree URI, falling back to
+     * Build a [StorageFile] for the supplied tree URI, falling back to
      * [DownloadSettings.getDownloadLocation] when [storedUri] is null,
      * malformed, or no longer accessible (SAF permission revoked,
      * directory deleted). This is the per-archive root resolver used
@@ -111,13 +111,13 @@ object SpiderDen {
      * revoke surfaces as a `null` from the entire helper rather than
      * a crash.
      */
-    internal fun resolveRootDir(storedUri: String?): UniFile? {
+    internal fun resolveRootDir(storedUri: String?): StorageFile? {
         if (!storedUri.isNullOrEmpty()) {
             // A root from an earlier setting: its title dirs stay out of reports too (audit 2026-10-06 C06).
             Redactor.registerDownloadRoot(storedUri)
             try {
                 val parsed = storedUri.toUri()
-                val file = UniFile.fromUri(Settings.getContext(), parsed)
+                val file = StorageFile.fromUri(parsed)
                 if (file != null) return file
                 Log.w(TAG, "Stored DOWNLOAD_ROOT_URI no longer resolvable, falling back to current setting")
             } catch (e: Exception) {

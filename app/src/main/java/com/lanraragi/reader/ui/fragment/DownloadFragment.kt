@@ -41,7 +41,7 @@ import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.reader.util.readDownloadCsv
 import com.lanraragi.reader.util.toCSV
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.ExceptionUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -396,7 +396,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
         super.onDestroyView()
     }
 
-    private fun saveCleanLog(downloadDir: UniFile, logs: List<String>) {
+    private fun saveCleanLog(downloadDir: StorageFile, logs: List<String>) {
         val sdf = SimpleDateFormat("yyyyMMddHHmm", Locale.US)
         val fileName = "delfile-${sdf.format(Date())}.log"
         val logFile = downloadDir.createFile(fileName)
@@ -416,7 +416,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
     /**
      * Trigger MediaStore re-scan for all image files in the download directory.
      */
-    private fun triggerMediaScan(downloadLocation: UniFile?) {
+    private fun triggerMediaScan(downloadLocation: StorageFile?) {
         if (downloadLocation == null) {
             return
         }
@@ -435,7 +435,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
         }
     }
 
-    private fun collectImagePaths(dir: UniFile?, paths: MutableList<String>) {
+    private fun collectImagePaths(dir: StorageFile?, paths: MutableList<String>) {
         if (dir == null || !dir.isDirectory) {
             return
         }

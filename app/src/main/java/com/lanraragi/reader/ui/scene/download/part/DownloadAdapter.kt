@@ -58,7 +58,7 @@ import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.NaturalComparator
 import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
@@ -102,7 +102,7 @@ class DownloadAdapter(
          * across rebinds of the same archive (DL-12). See
          * [com.lanraragi.reader.ui.scene.download.DownloadsViewModel.downloadDirFutureFor].
          */
-        fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<UniFile?>
+        fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<StorageFile?>
 
         /** Aggregate member progress behind a tank card, null when no member has a live snapshot. */
         fun tankProgressSnapshotFor(tankId: String): ProgressSnapshot?

@@ -2,7 +2,7 @@ package com.lanraragi.reader.download
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.gallery.DirGalleryProvider
 import com.lanraragi.reader.gallery.LocalReadingProgress
@@ -57,7 +57,7 @@ class ProgressResetLocalTest {
 
     /** Opens [arcid] from the Downloads list the way GalleryActivity does (no server snapshot). */
     private fun openDownload(arcid: String, sourceProfileId: Long): DirGalleryProvider =
-        DirGalleryProvider(UniFile.fromFile(tmp.root)!!, ctx, arcid, sourceProfileId)
+        DirGalleryProvider(StorageFile(tmp.root)!!, ctx, arcid, sourceProfileId)
 
     private fun keys(): Set<String> = LocalReadingProgress.prefs(ctx).all.keys
 

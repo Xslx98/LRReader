@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.gallery
 
 import android.content.Context
 import android.util.Log
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
@@ -31,7 +31,7 @@ object ReaderSessionSetup {
         tankSeed: TankSessionSeed?,
     ): GalleryProvider2? = when (action) {
         GalleryActivity.ACTION_DIR -> {
-            filename?.let { UniFile.fromFile(File(it)) }?.let { uniFile ->
+            filename?.let { StorageFile(File(it)) }?.let { uniFile ->
                 if (archive != null) {
                     DirGalleryProvider(
                         uniFile, context, archive.arcid, archive.serverProfileId,

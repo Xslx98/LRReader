@@ -22,7 +22,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.RedundantDownloadScanner
@@ -73,7 +73,7 @@ class CleanRedundancyPreference : Preference {
         }
     }
 
-    private fun confirmDelete(candidates: List<UniFile>) {
+    private fun confirmDelete(candidates: List<StorageFile>) {
         val names = candidates.take(PREVIEW_COUNT).joinToString("\n") { "• ${it.name}" } +
             if (candidates.size > PREVIEW_COUNT) "\n…" else ""
         AlertDialog.Builder(context)
@@ -88,7 +88,7 @@ class CleanRedundancyPreference : Preference {
             .show()
     }
 
-    private fun delete(candidates: List<UniFile>) {
+    private fun delete(candidates: List<StorageFile>) {
         val appContext = context.applicationContext
         ServiceRegistry.coroutineModule.ioScope.launch {
             val count = candidates.count { dir ->

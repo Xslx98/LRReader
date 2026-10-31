@@ -2,7 +2,7 @@ package com.lanraragi.reader.gallery
 
 import android.content.Context
 import com.lanraragi.framework.lib.yorozuya.StringUtils
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.DownloadPageRepair
@@ -115,12 +115,12 @@ interface DownloadDirResolver {
             f.isFile && StringUtils.endsWith(f.name.lowercase(), GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS)
 
         /**
-         * Map a [UniFile] to a [File] only when it is a `file://` directory.
+         * Map a [StorageFile] to a [File] only when it is a `file://` directory.
          * Returns null for content:// (SAF) trees — those can't be handed to
          * `ACTION_DIR`, which expects a filesystem path — and for
          * non-existent paths.
          */
-        private fun fileDirFromUni(uni: UniFile?): File? {
+        private fun fileDirFromUni(uni: StorageFile?): File? {
             val uri = uni?.uri ?: return null
             if ("file" != uri.scheme) return null
             val dir = File(uri.path ?: return null)

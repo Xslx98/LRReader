@@ -9,7 +9,7 @@ import com.lanraragi.reader.gallery.DownloadDirResolver
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.gallery.ReadingProgressReconciler
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.util.suspendRunCatching
@@ -130,7 +130,7 @@ object GalleryOpenHelper {
             // Fire-and-forget Dir warmup so DirGalleryProvider.start()'s
             // consumeDecodedPage call has a chance of hitting before the
             // user sees the loading placeholder.
-            UniFile.fromFile(downloadDir)?.let { uniFile ->
+            StorageFile(downloadDir)?.let { uniFile ->
                 if (BuildConfig.DEBUG) Log.i(TAG, "[WARM] openHelper DIR trigger arcid=${archive.arcid}")
                 // Explicit start page (thumbnail tap) wins; otherwise the
                 // offline reconcile — the SAME math and inputs that seed

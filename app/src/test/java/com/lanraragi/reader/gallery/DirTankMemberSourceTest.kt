@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -65,7 +65,7 @@ class DirTankMemberSourceTest {
     }
 
     private fun sourceFor(dir: File) = DirTankMemberSource(
-        ctx, "f".repeat(40), UniFile.fromFile(dir)!!
+        ctx, "f".repeat(40), StorageFile(dir)!!
     )
 
     @Test
@@ -97,7 +97,7 @@ class DirTankMemberSourceTest {
 
     @Test
     fun `partial dir with expected count exposes the missing tail as error pages`(): Unit = runBlocking {
-        val source = DirTankMemberSource(ctx, "f".repeat(40), UniFile.fromFile(workerNamedDir(2))!!, 5)
+        val source = DirTankMemberSource(ctx, "f".repeat(40), StorageFile(workerNamedDir(2))!!, 5)
         assertEquals(5, source.ensurePageCount())
         assertEquals(5, source.knownPageCount())
         source.obtainImage(1)!!.recycle()
@@ -108,7 +108,7 @@ class DirTankMemberSourceTest {
 
     @Test
     fun `expected count below the dir never shrinks the page space`() = runBlocking {
-        val source = DirTankMemberSource(ctx, "f".repeat(40), UniFile.fromFile(workerNamedDir(3))!!, 2)
+        val source = DirTankMemberSource(ctx, "f".repeat(40), StorageFile(workerNamedDir(3))!!, 2)
         assertEquals(3, source.ensurePageCount())
     }
 

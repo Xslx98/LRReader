@@ -1,6 +1,6 @@
 package com.lanraragi.reader.ui.scene.download.part
 
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.concurrent.CompletableFuture
@@ -27,7 +27,7 @@ class ThumbDataContainerTest {
 
     private fun resolvedContainer(dir: File, waitMillis: Long = 1000L) =
         ThumbDataContainer(
-            CompletableFuture.completedFuture(UniFile.fromFile(dir)),
+            CompletableFuture.completedFuture(StorageFile(dir)),
             waitMillis
         )
 
@@ -103,7 +103,7 @@ class ThumbDataContainerTest {
 
     @Test
     fun unresolvedFuture_disablesContainer_insteadOfBlocking() {
-        val never = CompletableFuture<UniFile?>()
+        val never = CompletableFuture<StorageFile?>()
         val container = ThumbDataContainer(never, 10L)
 
         val startNanos = System.nanoTime()
@@ -124,8 +124,8 @@ class ThumbDataContainerTest {
         // Each callback re-waiting would re-stall a loader I/O thread on
         // every isEnabled/open/save of a single load.
         var waits = 0
-        val counting = object : CompletableFuture<UniFile?>() {
-            override fun get(timeout: Long, unit: TimeUnit): UniFile? {
+        val counting = object : CompletableFuture<StorageFile?>() {
+            override fun get(timeout: Long, unit: TimeUnit): StorageFile? {
                 waits++
                 throw TimeoutException()
             }
@@ -141,7 +141,7 @@ class ThumbDataContainerTest {
 
     @Test
     fun failedResolution_disablesContainer() {
-        val failed = CompletableFuture<UniFile?>().apply {
+        val failed = CompletableFuture<StorageFile?>().apply {
             completeExceptionally(RuntimeException("resolver died"))
         }
         val container = ThumbDataContainer(failed, 1000L)
@@ -162,7 +162,7 @@ class ThumbDataContainerTest {
     fun nonDirectoryResolution_disablesContainer() {
         val file = tmp.newFile()
         val container = ThumbDataContainer(
-            CompletableFuture.completedFuture(UniFile.fromFile(file)), 1000L
+            CompletableFuture.completedFuture(StorageFile(file)), 1000L
         )
         assertFalse(container.isEnabled())
     }

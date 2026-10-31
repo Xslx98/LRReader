@@ -512,7 +512,7 @@ class GalleryDetailViewModel : ViewModel() {
                     .getLocalDownloadDir(context, archive)
             }
             if (dir != null) {
-                val uniFile = com.lanraragi.framework.unifile.UniFile.fromFile(dir)
+                val uniFile = com.lanraragi.reader.storage.StorageFile(dir)
                 if (uniFile != null) {
                     if (BuildConfig.DEBUG) {
                         android.util.Log.i(

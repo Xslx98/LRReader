@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.scene.download
 
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
@@ -21,8 +21,8 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class DownloadDirCacheTest {
 
-    private val dirA: UniFile = requireNotNull(UniFile.fromFile(File("build/tmp/dl-dir-cache/a")))
-    private val dirB: UniFile = requireNotNull(UniFile.fromFile(File("build/tmp/dl-dir-cache/b")))
+    private val dirA: StorageFile = requireNotNull(StorageFile(File("build/tmp/dl-dir-cache/a")))
+    private val dirB: StorageFile = requireNotNull(StorageFile(File("build/tmp/dl-dir-cache/b")))
 
     private fun info(id: String) = DownloadInfo().apply {
         arcid = id

@@ -25,7 +25,7 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.framework.lib.glgallery.GalleryPageView
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import com.lanraragi.framework.lib.yorozuya.IOUtils
 import kotlinx.coroutines.CancellationException
@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 class DirGalleryProvider : GalleryProvider2 {
 
-    private val dir: UniFile
+    private val dir: StorageFile
     private val context: Context?
     private val arcId: String?
     private var serverProfileId: Long = 0L
@@ -100,7 +100,7 @@ class DirGalleryProvider : GalleryProvider2 {
     @Volatile
     private var readAnchor = 0
 
-    private val fileList = AtomicReference<Array<UniFile>?>()
+    private val fileList = AtomicReference<Array<StorageFile>?>()
 
     /**
      * Non-null when the dir uses the worker's numeric page naming:
@@ -213,7 +213,7 @@ class DirGalleryProvider : GalleryProvider2 {
     private var notifyDataChangedEnqueued: CompletableDeferred<Unit> = CompletableDeferred()
 
     /** Legacy constructor (no progress tracking). */
-    constructor(dir: UniFile) {
+    constructor(dir: StorageFile) {
         this.dir = dir
         this.context = null
         this.arcId = null
@@ -233,7 +233,7 @@ class DirGalleryProvider : GalleryProvider2 {
      *   warm target chosen by GalleryOpenHelper (same math, same inputs).
      */
     constructor(
-        dir: UniFile,
+        dir: StorageFile,
         context: Context,
         arcid: String,
         serverProfileId: Long = 0L,
@@ -697,7 +697,7 @@ class DirGalleryProvider : GalleryProvider2 {
         return index.toString()
     }
 
-    override fun save(index: Int, file: UniFile): Boolean {
+    override fun save(index: Int, file: StorageFile): Boolean {
         val src = fileAt(index) ?: return false
         var inputStream: java.io.InputStream? = null
         var outputStream: java.io.OutputStream? = null
@@ -714,7 +714,7 @@ class DirGalleryProvider : GalleryProvider2 {
         }
     }
 
-    override fun save(index: Int, dir: UniFile, filename: String): UniFile? {
+    override fun save(index: Int, dir: StorageFile, filename: String): StorageFile? {
         val src = fileAt(index) ?: return null
         val extension = FileUtils.getExtensionFromFilename(src.name)
         val dst = dir.subFile(if (extension != null) "$filename.$extension" else filename)
@@ -742,7 +742,7 @@ class DirGalleryProvider : GalleryProvider2 {
      * instead of a positionally-shifted neighbour); without it, the page
      * index is the file-list position.
      */
-    private fun fileAt(index: Int): UniFile? {
+    private fun fileAt(index: Int): StorageFile? {
         val files = fileList.get() ?: return null
         val map = pageIndexMap.get() ?: return files.getOrNull(index)
         val pos = map[index] ?: return null
@@ -839,7 +839,7 @@ class DirGalleryProvider : GalleryProvider2 {
      * itself lives in [DirImageFiles.decode] and is shared with the
      * detail-page warmup path in [ReaderPageCache].
      */
-    private suspend fun decodePage(file: UniFile): Image? {
+    private suspend fun decodePage(file: StorageFile): Image? {
         val ctx = context ?: return null
         return withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
             DirImageFiles.decode(ctx, file)

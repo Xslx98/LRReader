@@ -123,17 +123,6 @@
     </issue>
 
     <issue
-        id="KotlinNullnessAnnotation"
-        message="Do not use `@Nullable` in Kotlin; the nullability is already implied by the Kotlin type `UniFile?` ending with `?`"
-        errorLine1="    @Nullable"
-        errorLine2="    ~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/reader/settings/DownloadSettings.kt"
-            line="37"
-            column="5"/>
-    </issue>
-
-    <issue
         id="PrivateApi"
         message="Accessing internal APIs via reflection is not supported and may not work on all devices or in the future"
         errorLine1="      Class&lt;?> clazz = ClassLoader.getSystemClassLoader().loadClass(&quot;android.widget.Editor&quot;);"

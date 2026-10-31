@@ -6,7 +6,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityOptionsCompat
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.gallery.GalleryProvider2
 import org.junit.After
@@ -93,8 +93,8 @@ class GallerySaveImageApiLevelTest {
         override fun onCancelRequest(index: Int) = Unit
         override fun getError(): String = ""
         override fun getImageFilename(index: Int): String = "page_$index"
-        override fun save(index: Int, file: UniFile): Boolean = false
-        override fun save(index: Int, dir: UniFile, filename: String): UniFile? {
+        override fun save(index: Int, file: StorageFile): Boolean = false
+        override fun save(index: Int, dir: StorageFile, filename: String): StorageFile? {
             val file = dir.createFile("$filename.jpg") ?: return null
             file.openOutputStream().use { it.write(byteArrayOf(1, 2, 3)) }
             return file

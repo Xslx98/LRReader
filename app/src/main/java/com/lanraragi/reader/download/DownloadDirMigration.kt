@@ -1,7 +1,7 @@
 package com.lanraragi.reader.download
 
 import android.util.Log
-import com.lanraragi.framework.unifile.UniFile
+import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.util.suspendRunCatching
@@ -20,7 +20,7 @@ import com.lanraragi.reader.util.suspendRunCatching
  */
 class DownloadDirMigration(
     private val repo: DownloadDbRepository,
-    private val resolveRoot: (storedUri: String?) -> UniFile?,
+    private val resolveRoot: (storedUri: String?) -> StorageFile?,
 ) {
 
     enum class RowResult { RENAMED, ALREADY_NEW, NO_POINTER, POINTER_CLEARED, SKIPPED_ACTIVE, FAILED }
