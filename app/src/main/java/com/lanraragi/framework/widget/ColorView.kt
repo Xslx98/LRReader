@@ -23,7 +23,13 @@ import android.view.View
 
 class ColorView : View {
 
-    private var mColor = 0
+    var color = 0
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
+        }
 
     constructor(context: Context) : super(context)
 
@@ -31,14 +37,7 @@ class ColorView : View {
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
-    fun setColor(color: Int) {
-        if (mColor != color) {
-            mColor = color
-            invalidate()
-        }
-    }
-
     override fun onDraw(canvas: Canvas) {
-        canvas.drawColor(mColor)
+        canvas.drawColor(color)
     }
 }

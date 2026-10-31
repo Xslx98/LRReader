@@ -30,57 +30,57 @@ import com.lanraragi.reader.R
 
 class BatteryView : AppCompatTextView {
 
-    private var mColor = 0
-    private var mWarningColor = 0
-    private var mCurrentColor = 0
+    private var color = 0
+    private var warningColor = 0
+    private var currentColor = 0
 
-    private var mLevel = 0
-    private var mCharging = false
+    private var level = 0
+    private var charging = false
 
-    private lateinit var mDrawable: BatteryDrawable
+    private lateinit var drawable: BatteryDrawable
 
-    private var mAttached = false
-    private var mIsChargerWorking = false
+    private var attached = false
+    private var isChargerWorking = false
 
-    private val mIntentReceiver = object : BroadcastReceiver() {
+    private val intentReceiver = object : BroadcastReceiver() {
 
         @SuppressLint("SetTextI18n")
         override fun onReceive(context: Context, intent: Intent) {
-            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0) *
+            val newLevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0) *
                 100 / intent.getIntExtra(BatteryManager.EXTRA_SCALE, 0)
-            val charging = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ==
+            val newCharging = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ==
                 BatteryManager.BATTERY_STATUS_CHARGING
 
-            if (mLevel != level || mCharging != charging) {
-                mLevel = level
-                mCharging = charging
-                if (mCharging && mLevel != 100) {
+            if (level != newLevel || charging != newCharging) {
+                level = newLevel
+                charging = newCharging
+                if (charging && level != 100) {
                     startCharger()
                 } else {
                     stopCharger()
-                    mDrawable.setElect(mLevel)
+                    drawable.setElect(level)
                 }
 
-                if (level <= BatteryDrawable.WARN_LIMIT && !charging) {
-                    setTextColor(mWarningColor)
+                if (newLevel <= BatteryDrawable.WARN_LIMIT && !newCharging) {
+                    setTextColor(warningColor)
                 } else {
-                    setTextColor(mColor)
+                    setTextColor(color)
                 }
-                text = "$mLevel%"
+                text = "$level%"
             }
         }
     }
 
-    private val mCharger: Runnable = object : Runnable {
+    private val charger: Runnable = object : Runnable {
 
-        private var level = 0
+        private var shownLevel = 0
 
         override fun run() {
-            level += 2
-            if (level > 100) {
-                level = 0
+            shownLevel += 2
+            if (shownLevel > 100) {
+                shownLevel = 0
             }
-            mDrawable.setElect(level, false)
+            drawable.setElect(shownLevel, false)
             handler.postDelayed(this, 200)
         }
     }
@@ -95,48 +95,48 @@ class BatteryView : AppCompatTextView {
         init()
 
         val typedArray = context.obtainStyledAttributes(attrs, R.styleable.BatteryView, defStyleAttr, 0)
-        mColor = typedArray.getColor(R.styleable.BatteryView_color, Color.WHITE)
-        mWarningColor = typedArray.getColor(R.styleable.BatteryView_warningColor, Color.RED)
+        color = typedArray.getColor(R.styleable.BatteryView_color, Color.WHITE)
+        warningColor = typedArray.getColor(R.styleable.BatteryView_warningColor, Color.RED)
         typedArray.recycle()
 
-        mDrawable.setColor(mColor)
-        mDrawable.setWarningColor(mWarningColor)
+        drawable.setColor(color)
+        drawable.setWarningColor(warningColor)
     }
 
     private fun init() {
-        mDrawable = BatteryDrawable()
+        drawable = BatteryDrawable()
         val height = textSize.toInt()
-        mDrawable.setBounds(0, 0, (height / 0.618f).toInt(), height)
-        setCompoundDrawables(mDrawable, null, null, null)
+        drawable.setBounds(0, 0, (height / 0.618f).toInt(), height)
+        setCompoundDrawables(drawable, null, null, null)
     }
 
     override fun setTextColor(color: Int) {
-        if (mCurrentColor == color) {
+        if (currentColor == color) {
             return
         }
-        mCurrentColor = color
+        currentColor = color
         super.setTextColor(color)
     }
 
     private fun startCharger() {
-        if (!mIsChargerWorking) {
-            handler.post(mCharger)
-            mIsChargerWorking = true
+        if (!isChargerWorking) {
+            handler.post(charger)
+            isChargerWorking = true
         }
     }
 
     private fun stopCharger() {
-        if (mIsChargerWorking) {
-            handler.removeCallbacks(mCharger)
-            mIsChargerWorking = false
+        if (isChargerWorking) {
+            handler.removeCallbacks(charger)
+            isChargerWorking = false
         }
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        if (!mAttached) {
-            mAttached = true
+        if (!attached) {
+            attached = true
 
             registerReceiver()
         }
@@ -145,20 +145,20 @@ class BatteryView : AppCompatTextView {
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
-        if (mAttached) {
+        if (attached) {
             unregisterReceiver()
             stopCharger()
-            mAttached = false
+            attached = false
         }
     }
 
     private fun registerReceiver() {
         val filter = IntentFilter()
         filter.addAction(Intent.ACTION_BATTERY_CHANGED)
-        context.registerReceiver(mIntentReceiver, filter, null, handler)
+        context.registerReceiver(intentReceiver, filter, null, handler)
     }
 
     private fun unregisterReceiver() {
-        context.unregisterReceiver(mIntentReceiver)
+        context.unregisterReceiver(intentReceiver)
     }
 }

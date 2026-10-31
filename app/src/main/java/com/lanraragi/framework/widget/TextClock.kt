@@ -35,21 +35,42 @@ import java.util.TimeZone
 
 class TextClock : AppCompatTextView {
 
-    private var mFormat12: CharSequence? = DEFAULT_FORMAT_12_HOUR
-    private var mFormat24: CharSequence? = DEFAULT_FORMAT_24_HOUR
+    var format12Hour: CharSequence? = DEFAULT_FORMAT_12_HOUR
+        set(value) {
+            field = value
+
+            chooseFormat()
+            onTimeChanged()
+        }
+
+    var format24Hour: CharSequence? = DEFAULT_FORMAT_24_HOUR
+        set(value) {
+            field = value
+
+            chooseFormat()
+            onTimeChanged()
+        }
 
     @field:ExportedProperty
-    private var mFormat: CharSequence? = null
+    var format: CharSequence? = null
+        private set
 
     @field:ExportedProperty
-    private var mHasSeconds = false
+    private var hasSeconds = false
 
-    private var mAttached = false
+    private var attached = false
 
-    private lateinit var mTime: Calendar
-    private var mTimeZone: String? = TimeZone.getDefault().id
+    private lateinit var time: Calendar
 
-    private val mFormatChangeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+    var timeZone: String? = TimeZone.getDefault().id
+        set(value) {
+            field = value
+
+            createTime(value)
+            onTimeChanged()
+        }
+
+    private val formatChangeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean) {
             chooseFormat()
             onTimeChanged()
@@ -61,17 +82,17 @@ class TextClock : AppCompatTextView {
         }
     }
 
-    private val mIntentReceiver = object : BroadcastReceiver() {
+    private val intentReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (mTimeZone == null && Intent.ACTION_TIMEZONE_CHANGED == intent.action) {
-                val timeZone = intent.getStringExtra("time-zone")
-                createTime(timeZone)
+            if (timeZone == null && Intent.ACTION_TIMEZONE_CHANGED == intent.action) {
+                val newTimeZone = intent.getStringExtra("time-zone")
+                createTime(newTimeZone)
             }
             onTimeChanged()
         }
     }
 
-    private val mTicker: Runnable = object : Runnable {
+    private val ticker: Runnable = object : Runnable {
         override fun run() {
             onTimeChanged()
 
@@ -91,50 +112,23 @@ class TextClock : AppCompatTextView {
     }
 
     private fun init() {
-        createTime(mTimeZone)
+        createTime(timeZone)
         // Wait until onAttachedToWindow() to handle the ticker
         chooseFormat(false)
     }
 
     private fun createTime(timeZone: String?) {
-        mTime = if (timeZone != null) {
+        time = if (timeZone != null) {
             Calendar.getInstance(TimeZone.getTimeZone(timeZone))
         } else {
             Calendar.getInstance()
         }
     }
 
-    fun getFormat12Hour(): CharSequence? = mFormat12
-
-    fun setFormat12Hour(format: CharSequence?) {
-        mFormat12 = format
-
-        chooseFormat()
-        onTimeChanged()
-    }
-
-    fun getFormat24Hour(): CharSequence? = mFormat24
-
-    fun setFormat24Hour(format: CharSequence?) {
-        mFormat24 = format
-
-        chooseFormat()
-        onTimeChanged()
-    }
-
     fun is24HourModeEnabled(): Boolean = DateFormat.is24HourFormat(context)
 
-    fun getTimeZone(): String? = mTimeZone
-
-    fun setTimeZone(timeZone: String?) {
-        mTimeZone = timeZone
-
-        createTime(timeZone)
-        onTimeChanged()
-    }
-
     /**
-     * Selects either one of [getFormat12Hour] or [getFormat24Hour]
+     * Selects either one of [format12Hour] or [format24Hour]
      * depending on whether the user has selected 24-hour format.
      *
      * Calling this method does not schedule or unschedule the time ticker.
@@ -143,10 +137,8 @@ class TextClock : AppCompatTextView {
         chooseFormat(true)
     }
 
-    fun getFormat(): CharSequence? = mFormat
-
     /**
-     * Selects either one of [getFormat12Hour] or [getFormat24Hour]
+     * Selects either one of [format12Hour] or [format24Hour]
      * depending on whether the user has selected 24-hour format.
      *
      * @param handleTicker true if calling this method should schedule/unschedule the
@@ -155,33 +147,33 @@ class TextClock : AppCompatTextView {
     private fun chooseFormat(handleTicker: Boolean) {
         val format24Requested = is24HourModeEnabled()
 
-        mFormat = if (format24Requested) {
-            mFormat24
+        format = if (format24Requested) {
+            format24Hour
         } else {
-            mFormat12
+            format12Hour
         }
 
-        val hadSeconds = mHasSeconds
-        mHasSeconds = hasSeconds(mFormat)
+        val hadSeconds = hasSeconds
+        hasSeconds = formatHasSeconds(format)
 
-        if (handleTicker && mAttached && hadSeconds != mHasSeconds) {
-            if (hadSeconds) handler.removeCallbacks(mTicker) else mTicker.run()
+        if (handleTicker && attached && hadSeconds != hasSeconds) {
+            if (hadSeconds) handler.removeCallbacks(ticker) else ticker.run()
         }
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        if (!mAttached) {
-            mAttached = true
+        if (!attached) {
+            attached = true
 
             registerReceiver()
             registerObserver()
 
-            createTime(mTimeZone)
+            createTime(timeZone)
 
-            if (mHasSeconds) {
-                mTicker.run()
+            if (hasSeconds) {
+                ticker.run()
             } else {
                 onTimeChanged()
             }
@@ -191,13 +183,13 @@ class TextClock : AppCompatTextView {
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
-        if (mAttached) {
+        if (attached) {
             unregisterReceiver()
             unregisterObserver()
 
-            handler.removeCallbacks(mTicker)
+            handler.removeCallbacks(ticker)
 
-            mAttached = false
+            attached = false
         }
     }
 
@@ -208,26 +200,26 @@ class TextClock : AppCompatTextView {
         filter.addAction(Intent.ACTION_TIME_CHANGED)
         filter.addAction(Intent.ACTION_TIMEZONE_CHANGED)
 
-        context.registerReceiver(mIntentReceiver, filter, null, handler)
+        context.registerReceiver(intentReceiver, filter, null, handler)
     }
 
     private fun registerObserver() {
         val resolver = context.contentResolver
-        resolver.registerContentObserver(Settings.System.CONTENT_URI, true, mFormatChangeObserver)
+        resolver.registerContentObserver(Settings.System.CONTENT_URI, true, formatChangeObserver)
     }
 
     private fun unregisterReceiver() {
-        context.unregisterReceiver(mIntentReceiver)
+        context.unregisterReceiver(intentReceiver)
     }
 
     private fun unregisterObserver() {
         val resolver = context.contentResolver
-        resolver.unregisterContentObserver(mFormatChangeObserver)
+        resolver.unregisterContentObserver(formatChangeObserver)
     }
 
     private fun onTimeChanged() {
-        mTime.timeInMillis = System.currentTimeMillis()
-        text = DateFormat.format(mFormat, mTime)
+        time.timeInMillis = System.currentTimeMillis()
+        text = DateFormat.format(format, time)
     }
 
     companion object {
@@ -241,7 +233,7 @@ private const val QUOTE = '\''
 private const val SECONDS = 's'
 
 // Folded in from the package-private DateUtils, whose only user this was.
-private fun hasSeconds(inFormat: CharSequence?): Boolean = hasDesignator(inFormat, SECONDS)
+private fun formatHasSeconds(inFormat: CharSequence?): Boolean = hasDesignator(inFormat, SECONDS)
 
 private fun hasDesignator(inFormat: CharSequence?, designator: Char): Boolean {
     if (inFormat == null) return false

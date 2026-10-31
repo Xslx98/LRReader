@@ -28,10 +28,10 @@ import com.lanraragi.reader.R
 
 class IndicatingListView : ListView {
 
-    private var mIndicatorHeight = 0
+    private var indicatorHeight = 0
 
-    private val mPaint = Paint()
-    private val mTemp = Rect()
+    private val paint = Paint()
+    private val tempRect = Rect()
 
     constructor(context: Context) : super(context) {
         init(context, null)
@@ -48,18 +48,18 @@ class IndicatingListView : ListView {
     @SuppressLint("CustomViewStyleable") // Indicating is shared with IndicatingScrollView
     private fun init(context: Context, attrs: AttributeSet?) {
         val a = context.obtainStyledAttributes(attrs, R.styleable.Indicating)
-        mIndicatorHeight = a.getDimensionPixelOffset(R.styleable.Indicating_indicatorHeight, 1)
-        mPaint.color = a.getColor(R.styleable.Indicating_indicatorColor, Color.BLACK)
-        mPaint.style = Paint.Style.FILL
+        indicatorHeight = a.getDimensionPixelOffset(R.styleable.Indicating_indicatorHeight, 1)
+        paint.color = a.getColor(R.styleable.Indicating_indicatorColor, Color.BLACK)
+        paint.style = Paint.Style.FILL
         a.recycle()
     }
 
     private fun fillTopIndicatorDrawRect() {
-        mTemp.set(0, 0, width, mIndicatorHeight)
+        tempRect.set(0, 0, width, indicatorHeight)
     }
 
     private fun fillBottomIndicatorDrawRect() {
-        mTemp.set(0, height - mIndicatorHeight, width, height)
+        tempRect.set(0, height - indicatorHeight, width, height)
     }
 
     private fun needShowTopIndicator(): Boolean = canScrollVertically(-1)
@@ -75,12 +75,12 @@ class IndicatingListView : ListView {
         // Draw top indicator
         if (needShowTopIndicator()) {
             fillTopIndicatorDrawRect()
-            canvas.drawRect(mTemp, mPaint)
+            canvas.drawRect(tempRect, paint)
         }
         // Draw bottom indicator
         if (needShowBottomIndicator()) {
             fillBottomIndicatorDrawRect()
-            canvas.drawRect(mTemp, mPaint)
+            canvas.drawRect(tempRect, paint)
         }
 
         canvas.restoreToCount(restoreCount)

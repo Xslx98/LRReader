@@ -25,8 +25,8 @@ import kotlin.math.min
 
 class MaxSizeContainer : ViewGroup {
 
-    private var mMaxWidth = 0
-    private var mMaxHeight = 0
+    private var maxWidth = 0
+    private var maxHeight = 0
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         init(context, attrs)
@@ -38,8 +38,8 @@ class MaxSizeContainer : ViewGroup {
 
     private fun init(context: Context, attrs: AttributeSet?) {
         val a = context.obtainStyledAttributes(attrs, R.styleable.MaxSizeContainer)
-        mMaxWidth = a.getDimensionPixelOffset(R.styleable.MaxSizeContainer_maxWidth, -1)
-        mMaxHeight = a.getDimensionPixelOffset(R.styleable.MaxSizeContainer_maxHeight, -1)
+        maxWidth = a.getDimensionPixelOffset(R.styleable.MaxSizeContainer_maxWidth, -1)
+        maxHeight = a.getDimensionPixelOffset(R.styleable.MaxSizeContainer_maxHeight, -1)
         a.recycle()
     }
 
@@ -67,7 +67,7 @@ class MaxSizeContainer : ViewGroup {
 
         val child = getChildAt(0)
         if (child.visibility != GONE) {
-            child.measure(getMeasureSpec(widthMeasureSpec, mMaxWidth), getMeasureSpec(heightMeasureSpec, mMaxHeight))
+            child.measure(getMeasureSpec(widthMeasureSpec, maxWidth), getMeasureSpec(heightMeasureSpec, maxHeight))
             setMeasuredDimension(child.measuredWidth, child.measuredHeight)
         } else {
             setMeasuredDimension(0, 0)

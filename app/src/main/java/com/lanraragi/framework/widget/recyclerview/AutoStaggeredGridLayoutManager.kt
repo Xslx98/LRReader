@@ -24,34 +24,34 @@ import kotlin.math.max
 
 class AutoStaggeredGridLayoutManager(columnSize: Int, orientation: Int) : StaggeredGridLayoutManager(1, orientation) {
 
-    private var mColumnSize = -1
-    private var mColumnSizeChanged = true
-    private var mStrategy = 0
+    var columnSize = -1
+        set(value) {
+            if (value == field) {
+                return
+            }
+            field = value
+            columnSizeChanged = true
+        }
 
-    private val mListeners: MutableList<OnUpdateSpanCountListener> = ArrayList()
+    private var columnSizeChanged = true
+
+    var strategy = 0
+        set(value) {
+            if (value == field) {
+                return
+            }
+            field = value
+            columnSizeChanged = true
+        }
+
+    private val listeners: MutableList<OnUpdateSpanCountListener> = ArrayList()
 
     init {
-        setColumnSize(columnSize)
-    }
-
-    fun setColumnSize(columnSize: Int) {
-        if (columnSize == mColumnSize) {
-            return
-        }
-        mColumnSize = columnSize
-        mColumnSizeChanged = true
-    }
-
-    fun setStrategy(strategy: Int) {
-        if (strategy == mStrategy) {
-            return
-        }
-        mStrategy = strategy
-        mColumnSizeChanged = true
+        this.columnSize = columnSize
     }
 
     override fun onMeasure(recycler: RecyclerView.Recycler, state: RecyclerView.State, widthSpec: Int, heightSpec: Int) {
-        if (mColumnSizeChanged && mColumnSize > 0) {
+        if (columnSizeChanged && columnSize > 0) {
             val totalSpace: Int
             if (orientation == VERTICAL) {
                 check(View.MeasureSpec.EXACTLY == View.MeasureSpec.getMode(widthSpec)) {
@@ -65,26 +65,26 @@ class AutoStaggeredGridLayoutManager(columnSize: Int, orientation: Int) : Stagge
                 totalSpace = View.MeasureSpec.getSize(heightSpec) - paddingTop - paddingBottom
             }
 
-            val spanCount = when (mStrategy) {
-                STRATEGY_SUITABLE_SIZE -> getSpanCountForSuitableSize(totalSpace, mColumnSize)
-                else -> getSpanCountForMinSize(totalSpace, mColumnSize)
+            val spanCount = when (strategy) {
+                STRATEGY_SUITABLE_SIZE -> getSpanCountForSuitableSize(totalSpace, columnSize)
+                else -> getSpanCountForMinSize(totalSpace, columnSize)
             }
             setSpanCount(spanCount)
-            mColumnSizeChanged = false
+            columnSizeChanged = false
 
-            for (i in 0 until mListeners.size) {
-                mListeners[i].onUpdateSpanCount(spanCount)
+            for (i in 0 until listeners.size) {
+                listeners[i].onUpdateSpanCount(spanCount)
             }
         }
         super.onMeasure(recycler, state, widthSpec, heightSpec)
     }
 
     fun addOnUpdateSpanCountListener(listener: OnUpdateSpanCountListener) {
-        mListeners.add(listener)
+        listeners.add(listener)
     }
 
     fun removeOnUpdateSpanCountListener(listener: OnUpdateSpanCountListener) {
-        mListeners.remove(listener)
+        listeners.remove(listener)
     }
 
     interface OnUpdateSpanCountListener {

@@ -190,16 +190,14 @@ class ReaderChromeController(private val activity: Activity) {
         if (enable) {
             val clampedLightness = MathUtils.clamp(lightness, 0, 200)
             if (clampedLightness > 100) {
-                maskView.setColor(0)
+                maskView.color = 0
                 lp.screenBrightness = Math.max((clampedLightness - 100) / 100.0f, 0.01f)
             } else {
-                maskView.setColor(
-                    MathUtils.lerp(0xde, 0x00, clampedLightness / 100.0f) shl 24
-                )
+                maskView.color = MathUtils.lerp(0xde, 0x00, clampedLightness / 100.0f) shl 24
                 lp.screenBrightness = 0.01f
             }
         } else {
-            maskView.setColor(0)
+            maskView.color = 0
             lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         }
         w.attributes = lp

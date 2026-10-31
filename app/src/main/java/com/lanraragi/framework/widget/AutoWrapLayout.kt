@@ -34,9 +34,21 @@ import kotlin.math.min
 class AutoWrapLayout : ViewGroup {
 
     private val rectList: MutableList<Rect> = ArrayList()
-    private val mRectPool: MutableList<Rect> = ArrayList()
+    private val rectPool: MutableList<Rect> = ArrayList()
 
-    private var mAlignment: Alignment? = null
+    var alignment: Alignment? = null
+        set(value) {
+            if (value == null) {
+                return
+            }
+
+            if (field != value) {
+                field = value
+
+                requestLayout()
+                invalidate()
+            }
+        }
 
     // Running state of one onMeasure pass, kept in fields so that placeChild() allocates nothing
     private var rightBound = 0
@@ -60,36 +72,21 @@ class AutoWrapLayout : ViewGroup {
 
         val index = a.getInt(R.styleable.AutoWrapLayout_alignment, -1)
         if (index >= 0) {
-            setAlignment(sBaseLineArray[index])
+            alignment = ALIGNMENTS_BY_ATTR_INDEX[index]
         }
 
         a.recycle()
     }
 
-    fun setAlignment(baseLine: Alignment?) {
-        if (baseLine == null) {
-            return
-        }
-
-        if (mAlignment != baseLine) {
-            mAlignment = baseLine
-
-            requestLayout()
-            invalidate()
-        }
-    }
-
-    fun getAlignment(): Alignment? = mAlignment
-
     private fun obtainRect(): Rect {
-        if (mRectPool.isNotEmpty()) {
-            return mRectPool.removeAt(mRectPool.size - 1)
+        if (rectPool.isNotEmpty()) {
+            return rectPool.removeAt(rectPool.size - 1)
         }
         return Rect()
     }
 
     private fun adjustBaseLine(lineHeight: Int, startIndex: Int, endIndex: Int) {
-        if (mAlignment == Alignment.TOP) {
+        if (alignment == Alignment.TOP) {
             return
         }
 
@@ -98,9 +95,9 @@ class AutoWrapLayout : ViewGroup {
             val lp = child.layoutParams as MarginLayoutParams
             val rect = rectList[index]
             val offsetRaw = lineHeight - rect.height() - lp.topMargin - lp.bottomMargin
-            if (mAlignment == Alignment.CENTER) {
+            if (alignment == Alignment.CENTER) {
                 rect.offset(0, offsetRaw / 2)
-            } else if (mAlignment == Alignment.BOTTOM) {
+            } else if (alignment == Alignment.BOTTOM) {
                 rect.offset(0, offsetRaw)
             }
         }
@@ -127,7 +124,7 @@ class AutoWrapLayout : ViewGroup {
         lineStartIndex = 0
 
         // Return previous Rects to pool
-        mRectPool.addAll(rectList)
+        rectPool.addAll(rectList)
         rectList.clear()
 
         for (index in 0 until childCount) {
@@ -220,6 +217,6 @@ class AutoWrapLayout : ViewGroup {
     override fun generateLayoutParams(p: LayoutParams?): MarginLayoutParams = MarginLayoutParams(p)
 
     private companion object {
-        private val sBaseLineArray = arrayOf(Alignment.TOP, Alignment.CENTER, Alignment.BOTTOM)
+        private val ALIGNMENTS_BY_ATTR_INDEX = arrayOf(Alignment.TOP, Alignment.CENTER, Alignment.BOTTOM)
     }
 }
