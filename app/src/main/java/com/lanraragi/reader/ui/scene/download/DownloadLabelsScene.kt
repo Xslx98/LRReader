@@ -39,7 +39,7 @@ import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.ui.scene.ToolbarScene
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
@@ -85,7 +85,7 @@ class DownloadLabelsScene : ToolbarScene() {
         mViewTransition = ViewTransition(recyclerView, tip)
 
         val context = ehContext ?: return view
-        val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_label)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.big_label)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         tip.setCompoundDrawables(null, drawable, null, null)
         tip.setText(R.string.no_download_label)

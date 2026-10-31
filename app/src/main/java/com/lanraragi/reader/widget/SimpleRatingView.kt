@@ -24,7 +24,7 @@ import android.util.AttributeSet
 import android.view.View
 import com.lanraragi.reader.R
 import com.lanraragi.framework.lib.yorozuya.MathUtils
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 
 /**
  * 5 stars, from 0 to 10
@@ -46,9 +46,9 @@ class SimpleRatingView @JvmOverloads constructor(
 
     init {
         val resources = context.resources
-        mStarDrawable = DrawableManager.getVectorDrawable(context, R.drawable.v_star_x16)!!
-        mStarHalfDrawable = DrawableManager.getVectorDrawable(context, R.drawable.v_star_half_x16)!!
-        mStarOutlineDrawable = DrawableManager.getVectorDrawable(context, R.drawable.v_star_outline_x16)!!
+        mStarDrawable = ContextCompat.getDrawable(context, R.drawable.v_star_x16)!!
+        mStarHalfDrawable = ContextCompat.getDrawable(context, R.drawable.v_star_half_x16)!!
+        mStarOutlineDrawable = ContextCompat.getDrawable(context, R.drawable.v_star_outline_x16)!!
         mRatingSize = resources.getDimensionPixelOffset(R.dimen.rating_size)
         mRatingInterval = resources.getDimensionPixelOffset(R.dimen.rating_interval)
 

@@ -625,24 +625,6 @@
     <string name="guide_gallery_long_click">Pulsación larga para abrir el menú de página</string>
 
     <!-- Readable Time -->
-    <string name="from_the_future">Desde el futuro</string>
-    <string name="just_now">Ahora</string>
-    <plurals name="some_minutes_ago">
-        <item quantity="one">Hace un minuto</item>
-        <item quantity="other">Hace %d minutos</item>
-        <item quantity="many">Hace %d minutos</item>
-    </plurals>
-    <plurals name="some_hours_ago">
-        <item quantity="one">Hace una hora</item>
-        <item quantity="other">Hace %d horas</item>
-        <item quantity="many">Hace %d horas</item>
-    </plurals>
-    <string name="yesterday">Ayer</string>
-    <plurals name="some_days_ago">
-        <item quantity="one">Hace un día</item>
-        <item quantity="other">Hace %d días atrás</item>
-        <item quantity="many">Hace %d días atrás</item>
-    </plurals>
     <plurals name="second">
         <item quantity="one">seg</item>
         <item quantity="other">segs</item>

@@ -38,7 +38,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.util.LauncherIcon
-import com.lanraragi.framework.util.ReadableTime
+import com.lanraragi.reader.util.ReadableTime
 import com.lanraragi.framework.lib.yorozuya.FileUtils
 import com.lanraragi.framework.lib.yorozuya.collect.SparseJBArray
 import com.lanraragi.framework.lib.yorozuya.collect.SparseJLArray
@@ -572,7 +572,7 @@ class DownloadService : Service(), DownloadListener {
             getString(
                 R.string.download_speed_text_2,
                 text,
-                ReadableTime.getShortTimeInterval(remaining)
+                ReadableTime.shortInterval(resources, remaining)
             )
         } else {
             getString(R.string.download_speed_text, text)

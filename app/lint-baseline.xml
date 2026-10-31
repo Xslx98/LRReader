@@ -145,28 +145,6 @@
     </issue>
 
     <issue
-        id="SimpleDateFormat"
-        message="To get local formatting use `getDateInstance()`, `getDateTimeInstance()`, or `getTimeInstance()`, or use `new SimpleDateFormat(String template, Locale locale)` with for example `Locale.US` for ASCII dates."
-        errorLine1="            val sdf = SimpleDateFormat() // 格式化时间"
-        errorLine2="                      ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/TimeUtils.kt"
-            line="10"
-            column="23"/>
-    </issue>
-
-    <issue
-        id="AppBundleLocaleChanges"
-        message="Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the `bundle` configuration"
-        errorLine1="    configuration.setLocale(newLocale);"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
-            line="55"
-            column="5"/>
-    </issue>
-
-    <issue
         id="AndroidGradlePluginVersion"
         message="A newer version of com.android.application than 8.13.2 is available: 9.4.0"
         errorLine1="agp = &quot;8.13.2&quot;"
@@ -439,50 +417,6 @@
 
     <issue
         id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of `@TargetApi` to propagate the requirement to users of `SystemUiHelperImplHC`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.HONEYCOMB)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplHC.kt"
-            line="27"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH) instead of `@TargetApi` to propagate the requirement to users of `SystemUiHelperImplICS`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplICS.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.JELLY_BEAN) instead of `@TargetApi` to propagate the requirement to users of `SystemUiHelperImplJB`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplJB.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.KITKAT) instead of `@TargetApi` to propagate the requirement to users of `SystemUiHelperImplKK`"
-        errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplKK.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
         message="Use `@RequiresApi(Build.VERSION_CODES.LOLLIPOP) instead of `@TargetApi` to propagate the requirement to callers of `createCircularReveal`"
         errorLine1="    @TargetApi(Build.VERSION_CODES.LOLLIPOP)"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -611,17 +545,6 @@
             file="src/main/java/com/lanraragi/framework/drawable/AddDeleteDrawable.java"
             line="155"
             column="21"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/AndroidUtil.kt"
-            line="27"
-            column="31"/>
     </issue>
 
     <issue
@@ -1034,28 +957,6 @@
     <issue
         id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="                val isVpn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/AppHelper.kt"
-            line="155"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="                val isVpn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/AppHelper.kt"
-            line="155"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
         errorLine1="        private val DRAW_SCRIM = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP"
         errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -1073,28 +974,6 @@
             file="src/main/java/com/lanraragi/reader/ui/BaseActivity.kt"
             line="49"
             column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
-            line="66"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1` is never true here"
-        errorLine1="    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/content/ContextLocalWrapper.java"
-            line="75"
-            column="16"/>
     </issue>
 
     <issue
@@ -1139,28 +1018,6 @@
             file="src/main/java/com/lanraragi/framework/drawable/DrawerArrowDrawable.java"
             line="209"
             column="21"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/FileUtils.kt"
-            line="131"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/FileUtils.kt"
-            line="131"
-            column="17"/>
     </issue>
 
     <issue
@@ -1359,50 +1216,6 @@
             file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
             line="53"
             column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 11"
-        errorLine1="@TargetApi(Build.VERSION_CODES.HONEYCOMB)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplHC.kt"
-            line="27"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 14"
-        errorLine1="@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplICS.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 16"
-        errorLine1="@TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplJB.kt"
-            line="24"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 19"
-        errorLine1="@TargetApi(Build.VERSION_CODES.KITKAT)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/util/SystemUiHelperImplKK.kt"
-            line="24"
-            column="1"/>
     </issue>
 
     <issue

@@ -37,7 +37,7 @@ import com.lanraragi.framework.drawable.PreciselyClipDrawable;
 import com.lanraragi.reader.R;
 import com.lanraragi.reader.cover.CoverLoader;
 import com.lanraragi.reader.cover.CoverStore;
-import com.lanraragi.framework.util.DrawableManager;
+import androidx.core.content.ContextCompat;
 
 import coil3.request.Disposable;
 
@@ -264,9 +264,9 @@ public class LoadImageView extends FixedAspectImageView implements CoverLoader.C
         clearDrawable();
         Drawable drawable;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            drawable = DrawableManager.getVectorDrawable(getContext(), R.drawable.image_failed_new);
+            drawable = ContextCompat.getDrawable(getContext(), R.drawable.image_failed_new);
         } else {
-            drawable = DrawableManager.getVectorDrawable(getContext(), R.drawable.image_failed);
+            drawable = ContextCompat.getDrawable(getContext(), R.drawable.image_failed);
         }
 
         onPreSetImageDrawable(drawable, true);

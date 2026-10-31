@@ -32,8 +32,8 @@ import androidx.annotation.StringRes
 import androidx.annotation.StyleRes
 import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.lanraragi.reader.ui.MainActivity
+import com.lanraragi.reader.ui.SoftInput
 import com.lanraragi.framework.scene.SceneFragment
-import com.lanraragi.framework.util.AppHelper
 
 /**
  * Base class for all in-app scenes.
@@ -221,7 +221,7 @@ abstract class BaseScene : SceneFragment() {
         applySceneChrome()
 
         // Hide soft ime
-        AppHelper.hideSoftInput(requireActivity())
+        SoftInput.hide(requireActivity())
     }
 
     /**
@@ -274,14 +274,14 @@ abstract class BaseScene : SceneFragment() {
     open fun hideSoftInput() {
         val activity = activity
         if (activity != null) {
-            AppHelper.hideSoftInput(activity)
+            SoftInput.hide(activity)
         }
     }
 
     open fun showSoftInput(view: View?) {
         val activity = activity
         if (activity != null && view != null) {
-            AppHelper.showSoftInput(activity, view, true)
+            SoftInput.show(view)
         }
     }
 

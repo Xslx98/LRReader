@@ -15,7 +15,7 @@ import com.lanraragi.reader.client.api.data.LRRSearchResult
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.framework.lib.yorozuya.MathUtils
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import kotlin.math.ceil
 
 /**
@@ -146,7 +146,7 @@ class GallerySearchHelper(private val mCallback: Callback) {
         @JvmStatic
         fun setSearchBarHint(context: Context, searchBar: SearchBar) {
             val resources = context.resources
-            val searchImage = DrawableManager.getVectorDrawable(context, R.drawable.v_magnify_x24)
+            val searchImage = ContextCompat.getDrawable(context, R.drawable.v_magnify_x24)
             val ssb = SpannableStringBuilder("   ")
             ssb.append(resources.getString(R.string.gallery_list_search_bar_hint))
             val textSize = (searchBar.editTextTextSize * 1.25).toInt()

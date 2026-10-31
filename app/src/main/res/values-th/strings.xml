@@ -592,18 +592,6 @@
     <string name="guide_gallery_long_click">แตะค้างไว้เพื่อเปิดหน้าเมนู</string>
 
     <!-- Readable Time -->
-    <string name="from_the_future">จากอนาคต</string>
-    <string name="just_now">เดี๋ยวนี้</string>
-    <plurals name="some_minutes_ago">
-        <item quantity="other">%d นาทีที่ผ่านมา</item>
-    </plurals>
-    <plurals name="some_hours_ago">
-        <item quantity="other">%d ชั่วโมงที่ผ่านมา</item>
-    </plurals>
-    <string name="yesterday">เมื่อวาน</string>
-    <plurals name="some_days_ago">
-        <item quantity="other">%d วันที่ผ่านมา</item>
-    </plurals>
     <plurals name="second">
         <item quantity="other">วิ</item>
     </plurals>

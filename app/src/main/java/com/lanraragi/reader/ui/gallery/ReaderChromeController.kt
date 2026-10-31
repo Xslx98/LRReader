@@ -13,7 +13,6 @@ import androidx.core.view.WindowInsetsCompat
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.framework.lib.yorozuya.MathUtils
 import com.lanraragi.framework.lib.yorozuya.ViewUtils
-import com.lanraragi.framework.util.SystemUiHelper
 import com.lanraragi.framework.widget.ColorView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.ReadingSettings
@@ -27,7 +26,7 @@ import com.lanraragi.reader.widget.ReversibleSeekBar
  */
 class ReaderChromeController(private val activity: Activity) {
 
-    var systemUiHelper: SystemUiHelper? = null
+    var systemUi: ImmersiveSystemUi? = null
         private set
 
     private var maskView: ColorView? = null
@@ -50,7 +49,7 @@ class ReaderChromeController(private val activity: Activity) {
 
     /**
      * recreate() keeps the window's decor view, so turning fullscreen off from
-     * the reader menu inherits the immersive SystemUiHelper flags and hidden
+     * the reader menu inherits the immersive system UI flags and hidden
      * system bars of the instance being replaced. A fresh launch has none.
      */
     fun showSystemBarsLeftByFullscreen() {
@@ -59,7 +58,7 @@ class ReaderChromeController(private val activity: Activity) {
             WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION or
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
         )
-        @Suppress("DEPRECATION") // SystemUiHelper sets these legacy flags.
+        @Suppress("DEPRECATION") // ImmersiveSystemUi sets these legacy flags.
         w.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         WindowCompat.getInsetsController(w, w.decorView).show(WindowInsetsCompat.Type.systemBars())
     }
@@ -68,11 +67,8 @@ class ReaderChromeController(private val activity: Activity) {
     fun setUpSystemUi() {
         if (ReadingSettings.getReadingFullscreen()) {
             applyFullscreenWindowFlags()
-            val helper = SystemUiHelper(
-                activity, SystemUiHelper.LEVEL_IMMERSIVE,
-                SystemUiHelper.FLAG_LAYOUT_IN_SCREEN_OLDER_DEVICES or SystemUiHelper.FLAG_IMMERSIVE_STICKY
-            )
-            systemUiHelper = helper
+            val helper = ImmersiveSystemUi(activity)
+            systemUi = helper
             helper.hide()
         }
     }
@@ -112,7 +108,7 @@ class ReaderChromeController(private val activity: Activity) {
             seekBarPanel, autoTransferPanel, leftText, rightText, seekBar, progress
         )
         slider.setBubble(ViewUtils.`$$`(activity, R.id.seek_bar_bubble) as TextView)
-        slider.setSystemUiHelper(systemUiHelper)
+        slider.setSystemUi(systemUi)
         slider.setGalleryView(galleryView)
 
         input.autoTransferPanel = autoTransferPanel
@@ -166,7 +162,7 @@ class ReaderChromeController(private val activity: Activity) {
     }
 
     fun applySystemUiState(showSystemUi: Boolean) {
-        val uiHelper = systemUiHelper ?: return
+        val uiHelper = systemUi ?: return
         if (showSystemUi) {
             uiHelper.show()
         } else {
@@ -235,7 +231,7 @@ class ReaderChromeController(private val activity: Activity) {
     }
 
     fun clear() {
-        systemUiHelper = null
+        systemUi = null
         maskView = null
         clock = null
         progress = null

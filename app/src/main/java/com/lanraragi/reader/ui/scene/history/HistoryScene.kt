@@ -72,7 +72,7 @@ import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
@@ -135,7 +135,7 @@ class HistoryScene : ToolbarScene(),
         AssertUtils.assertNotNull(context)
         val resources = context!!.resources
 
-        val drawable = DrawableManager.getVectorDrawable(context, R.drawable.big_history)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.big_history)
         drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
         tip.setCompoundDrawables(null, drawable, null, null)
 

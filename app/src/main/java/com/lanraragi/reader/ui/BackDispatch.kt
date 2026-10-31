@@ -1,4 +1,4 @@
-package com.lanraragi.framework.util
+package com.lanraragi.reader.ui
 
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher

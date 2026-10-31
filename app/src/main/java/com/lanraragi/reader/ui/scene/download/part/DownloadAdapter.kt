@@ -59,7 +59,7 @@ import com.lanraragi.framework.lib.yorozuya.ViewUtils
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.unifile.UniFile
-import com.lanraragi.framework.util.NaturalComparator
+import com.lanraragi.reader.util.NaturalComparator
 import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.download.DownloadState

@@ -45,7 +45,7 @@ import com.lanraragi.reader.widget.list.LayoutManagerUtils;
 import com.lanraragi.reader.LRReaderApplication;
 import com.lanraragi.reader.R;
 import com.lanraragi.reader.widget.ListRefreshLayout;
-import com.lanraragi.framework.util.DrawableManager;
+import androidx.core.content.ContextCompat;
 import static com.lanraragi.reader.client.api.LRRApiUtilsKt.friendlyError;
 import com.lanraragi.reader.widget.ViewTransition;
 import com.lanraragi.framework.lib.yorozuya.IntIdGenerator;
@@ -363,7 +363,7 @@ public class ContentLayout extends FrameLayout {
             mRefreshLayout = contentLayout.mRefreshLayout;
             mRecyclerView = contentLayout.mRecyclerView;
 
-            Drawable drawable = DrawableManager.getVectorDrawable(getContext(), R.drawable.big_sad_pandroid);
+            Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.big_sad_pandroid);
             drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
             mTipView.setCompoundDrawables(null, drawable, null, null);
 

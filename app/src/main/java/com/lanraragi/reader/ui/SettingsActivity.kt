@@ -21,7 +21,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.fragment.AdvancedFragment
 import com.lanraragi.reader.ui.fragment.SettingsHeaders
-import com.lanraragi.framework.util.DrawableManager
+import androidx.core.content.ContextCompat
 
 class SettingsActivity : BaseActivity() {
 
@@ -40,7 +40,7 @@ class SettingsActivity : BaseActivity() {
     private fun setActionBarUpIndicator() {
         val delegate = drawerToggleDelegate
         delegate?.setActionBarUpIndicator(
-            DrawableManager.getVectorDrawable(this, R.drawable.v_arrow_left_dark_x24), 0
+            ContextCompat.getDrawable(this, R.drawable.v_arrow_left_dark_x24), 0
         )
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)

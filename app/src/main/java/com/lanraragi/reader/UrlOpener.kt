@@ -27,7 +27,7 @@ import android.widget.Toast
 import com.lanraragi.reader.client.LRRUrlOpener
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.framework.scene.StageActivity
-import com.lanraragi.framework.util.ExceptionUtils
+import com.lanraragi.reader.util.ExceptionUtils
 
 object UrlOpener {
 
