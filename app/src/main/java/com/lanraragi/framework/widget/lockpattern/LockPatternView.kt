@@ -18,8 +18,6 @@
     "LargeClass",
     "LongMethod",
     "NestedBlockDepth",
-    "ReturnCount",
-    "UnusedParameter",
 ) // TODO(2.4-idiom)
 
 package com.lanraragi.framework.widget.lockpattern
@@ -405,45 +403,39 @@ class LockPatternView : View {
      * @param y The y coordinate.
      */
     private fun detectAndAddHit(x: Float, y: Float): Cell? {
-        val cell = checkForNewHit(x, y)
-        if (cell != null) {
-            // check for gaps in existing pattern
-            var fillInGapCell: Cell? = null
-            if (!pattern.isEmpty()) {
-                val lastCell = pattern[pattern.size - 1]
-                val dRow = cell.row - lastCell.row
-                val dColumn = cell.column - lastCell.column
+        val cell = checkForNewHit(x, y) ?: return null
 
-                var fillInRow = lastCell.row
-                var fillInColumn = lastCell.column
+        // check for gaps in existing pattern
+        if (pattern.isNotEmpty()) {
+            val lastCell = pattern[pattern.size - 1]
+            val dRow = cell.row - lastCell.row
+            val dColumn = cell.column - lastCell.column
 
-                if (Math.abs(dRow) == 2 && Math.abs(dColumn) != 1) {
-                    fillInRow = lastCell.row + if (dRow > 0) 1 else -1
-                }
+            var fillInRow = lastCell.row
+            var fillInColumn = lastCell.column
 
-                if (Math.abs(dColumn) == 2 && Math.abs(dRow) != 1) {
-                    fillInColumn = lastCell.column + if (dColumn > 0) 1 else -1
-                }
-
-                fillInGapCell = Cell.of(fillInRow, fillInColumn)
+            if (Math.abs(dRow) == 2 && Math.abs(dColumn) != 1) {
+                fillInRow = lastCell.row + if (dRow > 0) 1 else -1
             }
 
-            if (fillInGapCell != null &&
-                !patternDrawLookup[fillInGapCell.row][fillInGapCell.column]
-            ) {
+            if (Math.abs(dColumn) == 2 && Math.abs(dRow) != 1) {
+                fillInColumn = lastCell.column + if (dColumn > 0) 1 else -1
+            }
+
+            val fillInGapCell = Cell.of(fillInRow, fillInColumn)
+            if (!patternDrawLookup[fillInGapCell.row][fillInGapCell.column]) {
                 addCellToPattern(fillInGapCell)
             }
-            addCellToPattern(cell)
-            if (isTactileFeedbackEnabled) {
-                // Honours the system touch-feedback switch (no FLAG_IGNORE_GLOBAL_SETTING).
-                performHapticFeedback(
-                    HapticFeedbackConstants.VIRTUAL_KEY,
-                    HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING,
-                )
-            }
-            return cell
         }
-        return null
+        addCellToPattern(cell)
+        if (isTactileFeedbackEnabled) {
+            // Honours the system touch-feedback switch (no FLAG_IGNORE_GLOBAL_SETTING).
+            performHapticFeedback(
+                HapticFeedbackConstants.VIRTUAL_KEY,
+                HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING,
+            )
+        }
+        return cell
     }
 
     private fun addCellToPattern(newCell: Cell) {
@@ -601,19 +593,19 @@ class LockPatternView : View {
             return false
         }
 
-        when (event.action) {
+        return when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 handleActionDown(event)
-                return true
+                true
             }
             MotionEvent.ACTION_UP -> {
-                handleActionUp(event)
+                handleActionUp()
                 performClick()
-                return true
+                true
             }
             MotionEvent.ACTION_MOVE -> {
                 handleActionMove(event)
-                return true
+                true
             }
             MotionEvent.ACTION_CANCEL -> {
                 if (patternInProgress) {
@@ -621,10 +613,10 @@ class LockPatternView : View {
                     resetPattern()
                     notifyPatternCleared()
                 }
-                return true
+                true
             }
+            else -> false
         }
-        return false
     }
 
     private fun handleActionMove(event: MotionEvent) {
@@ -693,7 +685,7 @@ class LockPatternView : View {
         }
     }
 
-    private fun handleActionUp(event: MotionEvent) {
+    private fun handleActionUp() {
         // report pattern detected
         if (!pattern.isEmpty()) {
             patternInProgress = false
