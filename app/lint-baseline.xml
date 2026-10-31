@@ -473,17 +473,6 @@
     <issue
         id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/drawable/AddDeleteDrawable.java"
-            line="155"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
         errorLine1="    public static final boolean AT_LEAST_16 = Build.VERSION.SDK_INT >= 16;"
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -919,17 +908,6 @@
             file="src/main/java/com/lanraragi/reader/download/DownloadService.kt"
             line="123"
             column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/drawable/DrawerArrowDrawable.java"
-            line="209"
-            column="21"/>
     </issue>
 
     <issue
