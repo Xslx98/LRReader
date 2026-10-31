@@ -35,7 +35,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
-import android.os.Debug
 import android.os.Parcel
 import android.os.Parcelable
 import android.os.SystemClock
@@ -64,8 +63,6 @@ class LockPatternView : View {
     private val mDotSize: Int
     private val mDotSizeActivated: Int
     private val mPathWidth: Int
-
-    private var mDrawingProfilingStarted = false
 
     private val mPaint = Paint()
     private val mPathPaint = Paint()
@@ -106,7 +103,6 @@ class LockPatternView : View {
     private val mInvalidate = Rect()
     private val mTmpInvalidateRect = Rect()
 
-    private val mAspect: Int
     private val mRegularColor: Int
     private val mErrorColor: Int
     private val mSuccessColor: Int
@@ -218,9 +214,6 @@ class LockPatternView : View {
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
     init {
-        // There is no aspect attribute: the view is always square.
-        mAspect = ASPECT_SQUARE
-
         isClickable = true
 
         mPathPaint.isAntiAlias = true
@@ -426,18 +419,12 @@ class LockPatternView : View {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val minimumWidth = suggestedMinimumWidth
         val minimumHeight = suggestedMinimumHeight
-        var viewWidth = resolveMeasured(widthMeasureSpec, minimumWidth)
-        var viewHeight = resolveMeasured(heightMeasureSpec, minimumHeight)
+        val viewWidth = resolveMeasured(widthMeasureSpec, minimumWidth)
+        val viewHeight = resolveMeasured(heightMeasureSpec, minimumHeight)
 
-        when (mAspect) {
-            ASPECT_SQUARE -> {
-                viewHeight = Math.min(viewWidth, viewHeight)
-                viewWidth = viewHeight
-            }
-            ASPECT_LOCK_WIDTH -> viewHeight = Math.min(viewWidth, viewHeight)
-            ASPECT_LOCK_HEIGHT -> viewWidth = Math.min(viewWidth, viewHeight)
-        }
-        setMeasuredDimension(viewWidth, viewHeight)
+        // Always square: the minimum of width and height.
+        val side = Math.min(viewWidth, viewHeight)
+        setMeasuredDimension(side, side)
     }
 
     /**
@@ -667,12 +654,6 @@ class LockPatternView : View {
                     resetPattern()
                     notifyPatternCleared()
                 }
-                if (PROFILE_DRAWING) {
-                    if (mDrawingProfilingStarted) {
-                        Debug.stopMethodTracing()
-                        mDrawingProfilingStarted = false
-                    }
-                }
                 return true
             }
         }
@@ -754,12 +735,6 @@ class LockPatternView : View {
             notifyPatternDetected()
             invalidate()
         }
-        if (PROFILE_DRAWING) {
-            if (mDrawingProfilingStarted) {
-                Debug.stopMethodTracing()
-                mDrawingProfilingStarted = false
-            }
-        }
     }
 
     private fun cancelLineAnimations() {
@@ -804,12 +779,6 @@ class LockPatternView : View {
         }
         mInProgressX = x
         mInProgressY = y
-        if (PROFILE_DRAWING) {
-            if (!mDrawingProfilingStarted) {
-                Debug.startMethodTracing("LockPatternDrawing")
-                mDrawingProfilingStarted = true
-            }
-        }
     }
 
     private fun getCenterXForColumn(column: Int): Float {
@@ -1055,13 +1024,6 @@ class LockPatternView : View {
     }
 
     companion object {
-        // Aspect to use when rendering this view
-        private const val ASPECT_SQUARE = 0 // View will be the minimum of width/height
-        private const val ASPECT_LOCK_WIDTH = 1 // Fixed width; height will be minimum of (w,h)
-        private const val ASPECT_LOCK_HEIGHT = 2 // Fixed height; width will be minimum of (w,h)
-
-        private const val PROFILE_DRAWING = false
-
         /**
          * How many milliseconds we spend animating each circle of a lock pattern
          * if the animating mode is set.  The entire animation should take this
