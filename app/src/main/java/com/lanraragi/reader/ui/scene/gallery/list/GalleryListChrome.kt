@@ -75,6 +75,8 @@ object GalleryListChrome {
             if (fabUrlDownload != null) fabLayout.removeView(fabUrlDownload)
         }
 
-        scene.searchBarMover = SearchBarMover(searchBarHelper, searchBar, scene.recyclerView, searchLayout)
+        scene.searchBarMover = SearchBarMover(
+            checkNotNull(searchBarHelper), searchBar, scene.recyclerView, searchLayout
+        )
     }
 }
