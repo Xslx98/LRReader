@@ -21,7 +21,6 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.AnimatedImageDrawable
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.TransitionDrawable
 import android.util.AttributeSet
@@ -29,6 +28,8 @@ import android.view.View
 import androidx.annotation.DrawableRes
 import androidx.annotation.IntDef
 import androidx.core.content.ContextCompat
+import androidx.core.content.withStyledAttributes
+import androidx.core.graphics.drawable.toDrawable
 import coil3.request.Disposable
 import com.lanraragi.framework.drawable.PreciselyClipDrawable
 import com.lanraragi.reader.R
@@ -64,11 +65,11 @@ open class LoadImageViewNew : FixedAspectImageView, CoverLoader.Callback,
         init(context, attrs, defStyle)
     }
 
+    @SuppressLint("CustomViewStyleable") // shares LoadImageView's retryType attribute on purpose
     private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
-        @SuppressLint("CustomViewStyleable")
-        val a = context.obtainStyledAttributes(attrs, R.styleable.LoadImageView, defStyleAttr, 0)
-        setRetryType(a.getInt(R.styleable.LoadImageView_retryType, 0))
-        a.recycle()
+        context.withStyledAttributes(attrs, R.styleable.LoadImageView, defStyleAttr, 0) {
+            setRetryType(getInt(R.styleable.LoadImageView_retryType, 0))
+        }
         isFocusable = false
     }
 
@@ -253,7 +254,7 @@ open class LoadImageViewNew : FixedAspectImageView, CoverLoader.Callback,
         onPreSetImageDrawable(target, true)
         if (!fromMemory && isShown) {
             val layers = arrayOfNulls<Drawable>(2)
-            layers[0] = placeholder ?: ColorDrawable(Color.TRANSPARENT)
+            layers[0] = placeholder ?: Color.TRANSPARENT.toDrawable()
             layers[1] = target
             val transitionDrawable = TransitionDrawable(layers)
             transitionDrawable.isCrossFadeEnabled = true

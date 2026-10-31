@@ -35,7 +35,9 @@ import android.view.ViewConfiguration
 import android.widget.AbsoluteLayout
 import android.widget.PopupWindow
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.withStyledAttributes
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.graphics.withTranslation
 import com.lanraragi.reader.R
 import com.lanraragi.reader.util.AnimationUtils
 import com.lanraragi.reader.util.MathUtils
@@ -118,22 +120,21 @@ class Slider : View {
         popup.isTouchable = false
         popup.isFocusable = false
 
-        val a = context.obtainStyledAttributes(attrs, R.styleable.Slider)
-        textPaint.color = a.getColor(R.styleable.Slider_textColor, Color.WHITE)
-        textPaint.textSize = a.getDimensionPixelSize(R.styleable.Slider_textSize, 12).toFloat()
+        context.withStyledAttributes(attrs, R.styleable.Slider) {
+            textPaint.color = getColor(R.styleable.Slider_textColor, Color.WHITE)
+            textPaint.textSize = getDimensionPixelSize(R.styleable.Slider_textSize, 12).toFloat()
 
-        updateTextSize()
+            updateTextSize()
 
-        setRange(a.getInteger(R.styleable.Slider_start, 0), a.getInteger(R.styleable.Slider_end, 0))
-        progress = a.getInteger(R.styleable.Slider_slider_progress, 0)
-        thickness = a.getDimension(R.styleable.Slider_thickness, 2f)
-        radius = a.getDimension(R.styleable.Slider_radius, 6f)
-        setColor(a.getColor(R.styleable.Slider_color, Color.BLACK))
+            setRange(getInteger(R.styleable.Slider_start, 0), getInteger(R.styleable.Slider_end, 0))
+            progress = getInteger(R.styleable.Slider_slider_progress, 0)
+            thickness = getDimension(R.styleable.Slider_thickness, 2f)
+            radius = getDimension(R.styleable.Slider_radius, 6f)
+            setColor(getColor(R.styleable.Slider_color, Color.BLACK))
 
-        bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        bgPaint.color = if (a.getBoolean(R.styleable.Slider_dark, false)) 0x4dffffff else 0x42000000
-
-        a.recycle()
+            bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+            bgPaint.color = if (getBoolean(R.styleable.Slider_dark, false)) 0x4dffffff else 0x42000000
+        }
 
         val progressAnimation = ValueAnimator()
         progressAnimation.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
@@ -326,33 +327,29 @@ class Slider : View {
             val paddingBottom = paddingBottom
             val halfThickness = thickness / 2
 
-            val saved = canvas.save()
+            canvas.withTranslation(0f, (paddingTop + (height - paddingTop - paddingBottom) / 2).toFloat()) {
+                val currentX = paddingLeft + radius + (width - radius - radius - paddingLeft - paddingRight) *
+                    if (reverse) 1.0f - drawPercent else drawPercent
 
-            canvas.translate(0f, (paddingTop + (height - paddingTop - paddingBottom) / 2).toFloat())
+                leftRect.set(paddingLeft + radius, -halfThickness, currentX, halfThickness)
+                rightRect.set(currentX, -halfThickness, width - paddingRight - radius, halfThickness)
 
-            val currentX = paddingLeft + radius + (width - radius - radius - paddingLeft - paddingRight) *
-                if (reverse) 1.0f - drawPercent else drawPercent
+                // Draw bar
+                if (reverse) {
+                    canvas.drawRect(rightRect, paint)
+                    canvas.drawRect(leftRect, bgPaint)
+                } else {
+                    canvas.drawRect(leftRect, paint)
+                    canvas.drawRect(rightRect, bgPaint)
+                }
 
-            leftRect.set(paddingLeft + radius, -halfThickness, currentX, halfThickness)
-            rightRect.set(currentX, -halfThickness, width - paddingRight - radius, halfThickness)
-
-            // Draw bar
-            if (reverse) {
-                canvas.drawRect(rightRect, paint)
-                canvas.drawRect(leftRect, bgPaint)
-            } else {
-                canvas.drawRect(leftRect, paint)
-                canvas.drawRect(rightRect, bgPaint)
+                // Draw controller
+                val scale = 1.0f - drawBubbleScale
+                if (scale != 0.0f) {
+                    canvas.scale(scale, scale, currentX, 0f)
+                    canvas.drawCircle(currentX, 0f, radius, paint)
+                }
             }
-
-            // Draw controller
-            val scale = 1.0f - drawBubbleScale
-            if (scale != 0.0f) {
-                canvas.scale(scale, scale, currentX, 0f)
-                canvas.drawCircle(currentX, 0f, radius, paint)
-            }
-
-            canvas.restoreToCount(saved)
         }
     }
 

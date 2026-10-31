@@ -18,9 +18,9 @@ package com.lanraragi.framework.widget
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.TypedArray
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.withStyledAttributes
 import com.google.android.material.imageview.ShapeableImageView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.util.MathUtils
@@ -63,23 +63,21 @@ open class FixedAspectImageView : ShapeableImageView {
 
     @SuppressLint("ResourceType") // indices into the sorted local attr arrays, not R.styleable ids
     private fun init(context: Context, attrs: AttributeSet?, defStyle: Int) {
-        var a: TypedArray
-
         // Make sure we get value from xml
-        a = context.obtainStyledAttributes(attrs, MIN_ATTRS, defStyle, 0)
-        minimumWidth = a.getDimensionPixelSize(0, 0)
-        minimumHeight = a.getDimensionPixelSize(1, 0)
-        a.recycle()
+        context.withStyledAttributes(attrs, MIN_ATTRS, defStyle, 0) {
+            minimumWidth = getDimensionPixelSize(0, 0)
+            minimumHeight = getDimensionPixelSize(1, 0)
+        }
 
-        a = context.obtainStyledAttributes(attrs, ATTRS, defStyle, 0)
-        adjustViewBounds = a.getBoolean(0, false)
-        maxWidth = a.getDimensionPixelSize(1, Int.MAX_VALUE)
-        maxHeight = a.getDimensionPixelSize(2, Int.MAX_VALUE)
-        a.recycle()
+        context.withStyledAttributes(attrs, ATTRS, defStyle, 0) {
+            adjustViewBounds = getBoolean(0, false)
+            maxWidth = getDimensionPixelSize(1, Int.MAX_VALUE)
+            maxHeight = getDimensionPixelSize(2, Int.MAX_VALUE)
+        }
 
-        a = context.obtainStyledAttributes(attrs, R.styleable.FixedAspectImageView, defStyle, 0)
-        aspect = a.getFloat(R.styleable.FixedAspectImageView_aspect, -1f)
-        a.recycle()
+        context.withStyledAttributes(attrs, R.styleable.FixedAspectImageView, defStyle, 0) {
+            aspect = getFloat(R.styleable.FixedAspectImageView_aspect, -1f)
+        }
     }
 
     private fun resolveAdjustedSize(desiredSize: Int, minSize: Int, maxSize: Int, measureSpec: Int): Int {

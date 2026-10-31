@@ -20,13 +20,14 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.AnimatedImageDrawable
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.TransitionDrawable
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.IntDef
 import androidx.core.content.ContextCompat
+import androidx.core.content.withStyledAttributes
+import androidx.core.graphics.drawable.toDrawable
 import coil3.request.Disposable
 import com.lanraragi.framework.drawable.PreciselyClipDrawable
 import com.lanraragi.reader.R
@@ -64,9 +65,9 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     }
 
     private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.LoadImageView, defStyleAttr, 0)
-        setRetryType(a.getInt(R.styleable.LoadImageView_retryType, 0))
-        a.recycle()
+        context.withStyledAttributes(attrs, R.styleable.LoadImageView, defStyleAttr, 0) {
+            setRetryType(getInt(R.styleable.LoadImageView_retryType, 0))
+        }
         isFocusable = false
     }
 
@@ -226,7 +227,7 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
         onPreSetImageDrawable(target, true)
         if (!fromMemory && isShown) {
             val layers = arrayOfNulls<Drawable>(2)
-            layers[0] = ColorDrawable(Color.TRANSPARENT)
+            layers[0] = Color.TRANSPARENT.toDrawable()
             layers[1] = target
             val transitionDrawable = TransitionDrawable(layers)
             setImageDrawable(transitionDrawable)

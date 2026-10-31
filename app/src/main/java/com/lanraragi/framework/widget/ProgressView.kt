@@ -30,7 +30,10 @@ import android.view.View
 import android.view.animation.Animation
 import android.view.animation.Interpolator
 import android.view.animation.LinearInterpolator
+import androidx.core.content.withStyledAttributes
+import androidx.core.graphics.withRotation
 import androidx.core.view.animation.PathInterpolatorCompat
+import androidx.core.view.isVisible
 import com.lanraragi.reader.R
 import com.lanraragi.reader.util.ViewUtils
 import kotlin.math.min
@@ -56,15 +59,15 @@ class ProgressView : View {
     }
 
     private fun init(context: Context, attrs: AttributeSet?) {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.ProgressView)
-        val color = a.getColor(R.styleable.ProgressView_color, Color.BLACK)
-        paint.color = color
-        paint.strokeCap = Paint.Cap.SQUARE
-        paint.strokeJoin = Paint.Join.MITER
-        paint.style = Paint.Style.STROKE
-        indeterminate = a.getBoolean(R.styleable.ProgressView_indeterminate, true)
-        setProgress(a.getFloat(R.styleable.ProgressView_progress, 0f))
-        a.recycle()
+        context.withStyledAttributes(attrs, R.styleable.ProgressView) {
+            val color = getColor(R.styleable.ProgressView_color, Color.BLACK)
+            paint.color = color
+            paint.strokeCap = Paint.Cap.SQUARE
+            paint.strokeJoin = Paint.Join.MITER
+            paint.style = Paint.Style.STROKE
+            indeterminate = getBoolean(R.styleable.ProgressView_indeterminate, true)
+            setProgress(getFloat(R.styleable.ProgressView_progress, 0f))
+        }
 
         setupAnimators()
     }
@@ -153,7 +156,7 @@ class ProgressView : View {
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (indeterminate && visibility == VISIBLE) {
+        if (indeterminate && isVisible) {
             startAnimation()
         }
     }
@@ -236,14 +239,11 @@ class ProgressView : View {
     }
 
     override fun onDraw(canvas: Canvas) {
-        val saved = canvas.save()
-        canvas.rotate(trimRotation, rect.centerX(), rect.centerY())
-
-        val startAngle = (trimStart + trimOffset) * 360.0f - 90
-        val sweepAngle = (trimEnd - trimStart) * 360.0f
-        canvas.drawArc(rect, startAngle, sweepAngle, false, paint)
-
-        canvas.restoreToCount(saved)
+        canvas.withRotation(trimRotation, rect.centerX(), rect.centerY()) {
+            val startAngle = (trimStart + trimOffset) * 360.0f - 90
+            val sweepAngle = (trimEnd - trimStart) * 360.0f
+            drawArc(rect, startAngle, sweepAngle, false, paint)
+        }
 
         if (shouldStartAnimation) {
             shouldStartAnimation = false

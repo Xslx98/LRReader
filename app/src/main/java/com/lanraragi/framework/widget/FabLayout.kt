@@ -26,6 +26,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Interpolator
 import androidx.core.os.BundleCompat
+import androidx.core.view.isGone
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.R
 import com.lanraragi.reader.util.AnimationUtils
@@ -129,10 +130,10 @@ class FabLayout : ViewGroup, View.OnClickListener {
     fun setSecondaryFabVisibilityAt(index: Int, visible: Boolean) {
         val fab: View? = getSecondaryFabAt(index)
         if (fab != null) {
-            if (visible && fab.visibility == View.GONE) {
+            if (visible && fab.isGone) {
                 fab.animate().cancel()
                 fab.visibility = if (expandedState) View.VISIBLE else View.INVISIBLE
-            } else if (!visible && fab.visibility != View.GONE) {
+            } else if (!visible && !fab.isGone) {
                 fab.animate().cancel()
                 fab.visibility = View.GONE
             }
@@ -172,7 +173,7 @@ class FabLayout : ViewGroup, View.OnClickListener {
         var i = count
         while (--i >= 0) {
             val child = getChildAt(i)
-            if (child.visibility == View.GONE) {
+            if (child.isGone) {
                 continue
             }
 
@@ -236,7 +237,7 @@ class FabLayout : ViewGroup, View.OnClickListener {
         val checkCount = if (hidePrimaryFab) count else count - 1
         for (i in 0 until checkCount) {
             val child = getChildAt(i)
-            if (child.visibility == GONE) {
+            if (child.isGone) {
                 continue
             }
             child.visibility = if (expanded) View.VISIBLE else View.INVISIBLE
@@ -253,7 +254,7 @@ class FabLayout : ViewGroup, View.OnClickListener {
 
         for (i in 0 until count - 1) {
             val child = getChildAt(i)
-            if (child.visibility == GONE) {
+            if (child.isGone) {
                 continue
             }
             setSecondaryFabAnimation(child, expanded, expanded)
