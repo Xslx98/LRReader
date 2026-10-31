@@ -50,18 +50,21 @@ import kotlin.math.min
 
 class ContentLayout : FrameLayout {
 
-    private lateinit var mProgressView: View
-    private lateinit var mTipView: TextView
-    private lateinit var mContentView: ViewGroup
+    private lateinit var progressView: View
+    private lateinit var tipView: TextView
+    private lateinit var contentView: ViewGroup
 
-    private lateinit var mRefreshLayout: ListRefreshLayout
-    private lateinit var mRecyclerView: EasyRecyclerView
-    private lateinit var mFastScroller: FastScroller
+    lateinit var refreshLayout: ListRefreshLayout
+        private set
+    lateinit var recyclerView: EasyRecyclerView
+        private set
+    lateinit var fastScroller: FastScroller
+        private set
 
-    private lateinit var mContentHelper: ContentHelper<*>
+    private lateinit var contentHelper: ContentHelper<*>
 
-    private var mRecyclerViewOriginTop = 0
-    private var mRecyclerViewOriginBottom = 0
+    private var recyclerViewOriginTop = 0
+    private var recyclerViewOriginBottom = 0
 
     constructor(context: Context) : super(context) {
         init(context)
@@ -78,20 +81,20 @@ class ContentLayout : FrameLayout {
     private fun init(context: Context) {
         LayoutInflater.from(context).inflate(R.layout.widget_content_layout, this)
 
-        mProgressView = findViewById(R.id.progress)
-        mTipView = findViewById(R.id.tip)
-        mContentView = findViewById(R.id.content_view)
+        progressView = findViewById(R.id.progress)
+        tipView = findViewById(R.id.tip)
+        contentView = findViewById(R.id.content_view)
 
-        mRefreshLayout = mContentView.findViewById(R.id.refresh_layout)
-        mFastScroller = mContentView.findViewById(R.id.fast_scroller)
-        mRecyclerView = mRefreshLayout.findViewById(R.id.recycler_view)
+        refreshLayout = contentView.findViewById(R.id.refresh_layout)
+        fastScroller = contentView.findViewById(R.id.fast_scroller)
+        recyclerView = refreshLayout.findViewById(R.id.recycler_view)
 
-        mFastScroller.attachToRecyclerView(mRecyclerView)
+        fastScroller.attachToRecyclerView(recyclerView)
         val drawable = HandlerDrawable()
         drawable.setColor(context.attrColor(R.attr.widgetColorThemeAccent))
-        mFastScroller.setHandlerDrawable(drawable)
+        fastScroller.setHandlerDrawable(drawable)
 
-        mRefreshLayout.setColorSchemeResources(
+        refreshLayout.setColorSchemeResources(
             R.color.loading_indicator_red,
             R.color.loading_indicator_purple,
             R.color.loading_indicator_blue,
@@ -100,18 +103,9 @@ class ContentLayout : FrameLayout {
             R.color.loading_indicator_yellow
         )
 
-        mRecyclerViewOriginTop = mRecyclerView.paddingTop
-        mRecyclerViewOriginBottom = mRecyclerView.paddingBottom
+        recyclerViewOriginTop = recyclerView.paddingTop
+        recyclerViewOriginBottom = recyclerView.paddingBottom
     }
-
-    val recyclerView: EasyRecyclerView
-        get() = mRecyclerView
-
-    val fastScroller: FastScroller
-        get() = mFastScroller
-
-    val refreshLayout: ListRefreshLayout
-        get() = mRefreshLayout
 
     /**
      * Shows [loadingView] instead of the centred spinner while the
@@ -119,101 +113,105 @@ class ContentLayout : FrameLayout {
      * [setHelper].
      */
     fun setLoadingView(loadingView: View) {
-        val index = indexOfChild(mProgressView)
-        removeView(mProgressView)
+        val index = indexOfChild(progressView)
+        removeView(progressView)
         loadingView.id = R.id.progress
-        loadingView.visibility = mProgressView.visibility
+        loadingView.visibility = progressView.visibility
         addView(loadingView, index, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
-        mProgressView = loadingView
+        progressView = loadingView
     }
 
     fun setHelper(helper: ContentHelper<*>?) {
-        mContentHelper = requireNotNull(helper) { "ContentLayout needs a ContentHelper" }
+        contentHelper = requireNotNull(helper) { "ContentLayout needs a ContentHelper" }
         helper.init(this)
     }
 
     fun showFastScroll() {
-        if (!mFastScroller.isAttached) {
-            mFastScroller.attachToRecyclerView(mRecyclerView)
+        if (!fastScroller.isAttached) {
+            fastScroller.attachToRecyclerView(recyclerView)
         }
     }
 
     fun hideFastScroll() {
-        mFastScroller.detachedFromRecyclerView()
+        fastScroller.detachedFromRecyclerView()
     }
 
     fun setFitPaddingTop(fitPaddingTop: Int) {
         // RecyclerView
-        mRecyclerView.setPadding(
-            mRecyclerView.paddingLeft, mRecyclerViewOriginTop + fitPaddingTop, mRecyclerView.paddingRight, mRecyclerView.paddingBottom
+        recyclerView.setPadding(
+            recyclerView.paddingLeft, recyclerViewOriginTop + fitPaddingTop, recyclerView.paddingRight, recyclerView.paddingBottom
         )
         // RefreshLayout
-        mRefreshLayout.setProgressViewOffset(false, fitPaddingTop, fitPaddingTop + ViewUtils.dp2pix(context, 32f))
+        refreshLayout.setProgressViewOffset(false, fitPaddingTop, fitPaddingTop + ViewUtils.dp2pix(context, 32f))
     }
 
     fun setFitPaddingBottom(fitPaddingBottom: Int) {
         // RecyclerView
-        mRecyclerView.setPadding(
-            mRecyclerView.paddingLeft,
-            mRecyclerView.paddingTop, mRecyclerView.paddingRight,
-            mRecyclerViewOriginBottom + fitPaddingBottom
+        recyclerView.setPadding(
+            recyclerView.paddingLeft,
+            recyclerView.paddingTop, recyclerView.paddingRight,
+            recyclerViewOriginBottom + fitPaddingBottom
         )
     }
 
     override fun onSaveInstanceState(): Parcelable {
-        return mContentHelper.saveInstanceState(super.onSaveInstanceState())
+        return contentHelper.saveInstanceState(super.onSaveInstanceState())
     }
 
     override fun onRestoreInstanceState(state: Parcelable) {
-        super.onRestoreInstanceState(mContentHelper.restoreInstanceState(state))
+        super.onRestoreInstanceState(contentHelper.restoreInstanceState(state))
     }
 
     abstract class ContentHelper<E : Parcelable> : ViewTransition.OnShowViewListener {
 
-        private lateinit var mProgressView: View
-        private lateinit var mTipView: TextView
-        private lateinit var mContentView: ViewGroup
+        private lateinit var progressView: View
+        private lateinit var tipView: TextView
+        private lateinit var contentView: ViewGroup
 
-        private lateinit var mRefreshLayout: ListRefreshLayout
-        private lateinit var mRecyclerView: EasyRecyclerView
+        private lateinit var refreshLayout: ListRefreshLayout
+        private lateinit var recyclerView: EasyRecyclerView
 
-        private lateinit var mViewTransition: ViewTransition
+        private lateinit var viewTransition: ViewTransition
+
+        /** The loaded rows. */
+        private var rows = ArrayList<E>()
+
+        /** The loaded rows, live: callers may replace a row in place. */
+        val data: MutableList<E>
+            get() = rows
 
         /**
-         * Store data
+         * Generates task ids
          */
-        private var mData = ArrayList<E>()
+        private val idGenerator = IntIdGenerator()
 
         /**
-         * Generate task id
-         */
-        private val mIdGenerator = IntIdGenerator()
-
-        /**
-         * Store the page divider index
+         * The page divider indexes
          *
          * For example, the data contain page 3, page 4, page 5,
          * page 3 size is 7, page 4 size is 8, page 5 size is 9,
-         * so `mPageDivider` contain 7, 15, 24.
+         * so `pageDivider` contain 7, 15, 24.
          */
-        private var mPageDivider = IntList()
+        private var pageDivider = IntList()
 
         /**
-         * The first page in `mData`
+         * The first page in [rows]
          */
-        private var mStartPage = 0
+        private var startPage = 0
 
         /**
-         * The last page + 1 in `mData`
+         * The last page + 1 in [rows]
          */
-        private var mEndPage = 0
+        private var endPage = 0
 
         /**
          * The available page count.
          */
-        var mPages = 0
+        var pages = 0
+            private set
 
-        private var mNextPage = 0
+        /** The next page the last loaded page reported (-1: unknown). */
+        private var reportedNextPage = 0
 
         var resultCount: String? = null
         var firstHref: String? = null
@@ -221,101 +219,102 @@ class ContentLayout : FrameLayout {
         var nextHref: String? = null
         var lastHref: String? = null
 
-        private var mCurrentTaskId = 0
-        private var mCurrentTaskType = 0
-        private var mCurrentTaskPage = 0
+        private var currentTaskId = 0
+        private var currentTaskType = 0
+        private var currentTaskPage = 0
 
-        private var mNextPageScrollSize = 0
+        private var nextPageScrollSize = 0
 
-        private var mEmptyString: String? = "No hint"
+        /** The tip shown for an empty result. */
+        var emptyString: String? = "No hint"
 
-        private val mOnScrollListener = object : RecyclerView.OnScrollListener() {
+        private val onScrollListener = object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                if (!mRefreshLayout.isAnyRefreshing && mRefreshLayout.isAlmostBottom() && hasMorePages()) {
+                if (!refreshLayout.isAnyRefreshing && refreshLayout.isAlmostBottom() && hasMorePages()) {
                     // Get next page
-                    mRefreshLayout.setFooterRefreshing(true)
-                    mOnRefreshListener.onFooterRefresh()
+                    refreshLayout.setFooterRefreshing(true)
+                    onRefreshListener.onFooterRefresh()
                 }
             }
         }
 
         /** Another page may follow the loaded ones (or the page count is unknown). */
-        private fun hasMorePages(): Boolean = mEndPage < mPages || mNextPage == -1 || mPages == -1
+        private fun hasMorePages(): Boolean = endPage < pages || reportedNextPage == -1 || pages == -1
 
-        private val mOnRefreshListener = object : ListRefreshLayout.OnRefreshListener {
+        private val onRefreshListener = object : ListRefreshLayout.OnRefreshListener {
             override fun onHeaderRefresh() {
-                if (mStartPage > 0) {
-                    mCurrentTaskId = mIdGenerator.nextId()
-                    mCurrentTaskType = TYPE_PRE_PAGE_KEEP_POS
-                    mCurrentTaskPage = mStartPage - 1
-                    getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage)
+                if (startPage > 0) {
+                    currentTaskId = idGenerator.nextId()
+                    currentTaskType = TYPE_PRE_PAGE_KEEP_POS
+                    currentTaskPage = startPage - 1
+                    getPageData(currentTaskId, currentTaskType, currentTaskPage)
                 } else if (!prevHref.isNullOrEmpty()) {
-                    mCurrentTaskId = mIdGenerator.nextId()
-                    mCurrentTaskType = TYPE_PRE_PAGE_KEEP_POS
-                    getExPageData(GOTO_PREV_PAGE, mCurrentTaskId, mCurrentTaskPage)
+                    currentTaskId = idGenerator.nextId()
+                    currentTaskType = TYPE_PRE_PAGE_KEEP_POS
+                    getExPageData(GOTO_PREV_PAGE, currentTaskId, currentTaskPage)
                 } else {
                     doRefresh()
                 }
             }
 
             override fun onFooterRefresh() {
-                if (mEndPage == -1 || mPages == -1) {
-                    mCurrentTaskId = mIdGenerator.nextId()
-                    mCurrentTaskType = TYPE_NEXT_PAGE_KEEP_POS
-                    getExPageData(GOTO_NEXT_PAGE, mCurrentTaskId, mPages)
-                } else if (mEndPage < mPages) {
+                if (endPage == -1 || pages == -1) {
+                    currentTaskId = idGenerator.nextId()
+                    currentTaskType = TYPE_NEXT_PAGE_KEEP_POS
+                    getExPageData(GOTO_NEXT_PAGE, currentTaskId, pages)
+                } else if (endPage < pages) {
                     // Get next page
                     // Fill pages before NextPage with empty list
-                    while (mNextPage > mEndPage && mEndPage < mPages) {
-                        mCurrentTaskId = mIdGenerator.nextId()
-                        mCurrentTaskType = TYPE_NEXT_PAGE_KEEP_POS
-                        mCurrentTaskPage = mEndPage
-                        onGetPageData(mCurrentTaskId, mPages, mNextPage, emptyList())
+                    while (reportedNextPage > endPage && endPage < pages) {
+                        currentTaskId = idGenerator.nextId()
+                        currentTaskType = TYPE_NEXT_PAGE_KEEP_POS
+                        currentTaskPage = endPage
+                        onGetPageData(currentTaskId, pages, reportedNextPage, emptyList())
                     }
-                    mCurrentTaskId = mIdGenerator.nextId()
-                    mCurrentTaskType = TYPE_NEXT_PAGE_KEEP_POS
-                    mCurrentTaskPage = mEndPage
-                    getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage)
-                } else if (mEndPage == mPages) {
+                    currentTaskId = idGenerator.nextId()
+                    currentTaskType = TYPE_NEXT_PAGE_KEEP_POS
+                    currentTaskPage = endPage
+                    getPageData(currentTaskId, currentTaskType, currentTaskPage)
+                } else if (endPage == pages) {
                     // Refresh last page
-                    mCurrentTaskId = mIdGenerator.nextId()
-                    mCurrentTaskType = TYPE_REFRESH_PAGE
-                    mCurrentTaskPage = mEndPage - 1
-                    getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage)
+                    currentTaskId = idGenerator.nextId()
+                    currentTaskType = TYPE_REFRESH_PAGE
+                    currentTaskPage = endPage - 1
+                    getPageData(currentTaskId, currentTaskType, currentTaskPage)
                 } else {
-                    Log.e(TAG, "Try to footer refresh, but mEndPage = $mEndPage, mPages = $mPages")
-                    mRefreshLayout.setFooterRefreshing(false)
+                    Log.e(TAG, "Try to footer refresh, but endPage = $endPage, pages = $pages")
+                    refreshLayout.setFooterRefreshing(false)
                 }
             }
         }
 
-        private val mOnScrollToPositionListener =
+        private val onScrollToPositionListener =
             LayoutManagerUtils.OnScrollToPositionListener { position -> onScrollToPosition(position) }
 
         // Called by ContentLayout.setHelper; the stable JVM name keeps the baseline-profile rule valid.
         @JvmName("init")
         internal fun init(contentLayout: ContentLayout) {
-            mNextPageScrollSize = ViewUtils.dp2pix(contentLayout.context, 48f)
+            nextPageScrollSize = ViewUtils.dp2pix(contentLayout.context, 48f)
 
-            mProgressView = contentLayout.mProgressView
-            mTipView = contentLayout.mTipView
-            mContentView = contentLayout.mContentView
+            progressView = contentLayout.progressView
+            tipView = contentLayout.tipView
+            contentView = contentLayout.contentView
 
-            mRefreshLayout = contentLayout.mRefreshLayout
-            mRecyclerView = contentLayout.mRecyclerView
+            refreshLayout = contentLayout.refreshLayout
+            recyclerView = contentLayout.recyclerView
 
             val drawable = checkNotNull(ContextCompat.getDrawable(requireContext(), R.drawable.big_sad_pandroid))
             drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
-            mTipView.setCompoundDrawables(null, drawable, null, null)
+            tipView.setCompoundDrawables(null, drawable, null, null)
 
-            mViewTransition = ViewTransition(mContentView, mProgressView, mTipView)
-            mViewTransition.onShowViewListener = this
+            viewTransition = ViewTransition(contentView, progressView, tipView)
+            viewTransition.onShowViewListener = this
 
-            mRecyclerView.addOnScrollListener(mOnScrollListener)
-            mRefreshLayout.setOnRefreshListener(mOnRefreshListener)
+            recyclerView.addOnScrollListener(onScrollListener)
+            refreshLayout.setOnRefreshListener(onRefreshListener)
 
             // Tap the tip to reload
-            mTipView.setOnClickListener { refresh() }
+            tipView.setOnClickListener { refresh() }
         }
 
         /**
@@ -356,7 +355,7 @@ class ContentLayout : FrameLayout {
             notifyDataSetChanged()
         }
 
-        protected open fun onScrollToPosition(postion: Int) {
+        protected open fun onScrollToPosition(position: Int) {
         }
 
         override fun onShowView(hiddenView: View, shownView: View) {
@@ -364,59 +363,47 @@ class ContentLayout : FrameLayout {
         }
 
         val shownViewIndex: Int
-            get() = mViewTransition.shownViewIndex
+            get() = viewTransition.shownViewIndex
 
         fun setRefreshLayoutEnable(enable: Boolean) {
-            mRefreshLayout.isEnabled = enable
+            refreshLayout.isEnabled = enable
         }
 
         fun setEnable(enable: Boolean) {
-            mRefreshLayout.isEnabled = enable
-        }
-
-        fun setEmptyString(str: String?) {
-            mEmptyString = str
-        }
-
-        fun getData(): MutableList<E> {
-            return mData
+            refreshLayout.isEnabled = enable
         }
 
         /**
          * @throws IndexOutOfBoundsException if `location < 0 || location >= size()`
          */
         fun getDataAt(location: Int): E {
-            return mData[location]
+            return rows[location]
         }
 
         fun getDataAtEx(location: Int): E? {
-            return if (location >= 0 && location < mData.size) {
-                mData[location]
+            return if (location >= 0 && location < rows.size) {
+                rows[location]
             } else {
                 null
             }
         }
 
         fun size(): Int {
-            return mData.size
+            return rows.size
         }
 
         fun isCurrentTask(taskId: Int): Boolean {
-            return mCurrentTaskId == taskId
-        }
-
-        fun getPages(): Int {
-            return mPages
+            return currentTaskId == taskId
         }
 
         fun addAt(index: Int, data: E) {
-            mData.add(index, data)
+            rows.add(index, data)
             onAddData(data)
 
-            for (i in 0 until mPageDivider.size()) {
-                val divider = mPageDivider.get(i)
+            for (i in 0 until pageDivider.size()) {
+                val divider = pageDivider.get(i)
                 if (index < divider) {
-                    mPageDivider.set(i, divider + 1)
+                    pageDivider.set(i, divider + 1)
                 }
             }
 
@@ -424,13 +411,13 @@ class ContentLayout : FrameLayout {
         }
 
         fun removeAt(index: Int) {
-            val data = mData.removeAt(index)
+            val data = rows.removeAt(index)
             onRemoveData(data)
 
-            for (i in 0 until mPageDivider.size()) {
-                val divider = mPageDivider.get(i)
+            for (i in 0 until pageDivider.size()) {
+                val divider = pageDivider.get(i)
                 if (index < divider) {
-                    mPageDivider.set(i, divider - 1)
+                    pageDivider.set(i, divider - 1)
                 }
             }
 
@@ -440,7 +427,7 @@ class ContentLayout : FrameLayout {
         protected abstract fun isDuplicate(d1: E, d2: E): Boolean
 
         /**
-         * Compute the difference between `oldData` and the current `mData`,
+         * Compute the difference between `oldData` and the current [rows],
          * then dispatch granular insert/remove/move/change notifications.
          *
          * Uses [DiffUtil] (see
@@ -453,12 +440,12 @@ class ContentLayout : FrameLayout {
          * and the new ones inserted as two range notifications instead.
          */
         private fun dispatchDiffUpdates(oldData: List<E>) {
-            if (oldData.size > MAX_FULL_DIFF || mData.size > MAX_FULL_DIFF) {
+            if (oldData.size > MAX_FULL_DIFF || rows.size > MAX_FULL_DIFF) {
                 if (oldData.isNotEmpty()) notifyItemRangeRemoved(0, oldData.size)
-                if (mData.isNotEmpty()) notifyItemRangeInserted(0, mData.size)
+                if (rows.isNotEmpty()) notifyItemRangeInserted(0, rows.size)
                 return
             }
-            dispatchWindowDiff(oldData, mData, 0)
+            dispatchWindowDiff(oldData, rows, 0)
         }
 
         /**
@@ -512,16 +499,16 @@ class ContentLayout : FrameLayout {
         }
 
         /**
-         * [data] without the rows that duplicate one of `mData[start, end)`.
+         * [data] without the rows that duplicate one of `rows[start, end)`.
          * Returns a copy: Kotlin callers may hand in read-only lists.
          */
         private fun removeDuplicateData(data: List<E>, start: Int, end: Int): List<E> {
             val from = max(0, start)
-            val to = min(mData.size, end)
+            val to = min(rows.size, end)
             return data.filterNot { d ->
                 var duplicate = false
                 for (i in from until to) {
-                    if (isDuplicate(d, mData[i])) {
+                    if (isDuplicate(d, rows[i])) {
                         duplicate = true
                         break
                     }
@@ -547,162 +534,162 @@ class ContentLayout : FrameLayout {
 
         // LANraragi: E-Hentai parser overloads removed (GalleryListParser, FavoritesParser)
 
-        fun onGetPageData(taskId: Int, pages: Int, nextPage: Int, data: List<E>) {
-            if (mCurrentTaskId == taskId) {
-                when (mCurrentTaskType) {
-                    TYPE_REFRESH -> onTypeRefresh(pages, nextPage, data)
-                    TYPE_PRE_PAGE, TYPE_PRE_PAGE_KEEP_POS -> onTypeRpePage(pages, data)
-                    TYPE_NEXT_PAGE, TYPE_NEXT_PAGE_KEEP_POS -> onTypeNextPage(pages, nextPage, data)
-                    TYPE_SOMEWHERE -> onTypeSomeWhere(pages, nextPage, data)
-                    TYPE_REFRESH_PAGE -> onTypeRefreshPage(pages, nextPage, data)
+        fun onGetPageData(taskId: Int, pageCount: Int, nextPage: Int, data: List<E>) {
+            if (currentTaskId == taskId) {
+                when (currentTaskType) {
+                    TYPE_REFRESH -> onTypeRefresh(pageCount, nextPage, data)
+                    TYPE_PRE_PAGE, TYPE_PRE_PAGE_KEEP_POS -> onTypePrePage(pageCount, data)
+                    TYPE_NEXT_PAGE, TYPE_NEXT_PAGE_KEEP_POS -> onTypeNextPage(pageCount, nextPage, data)
+                    TYPE_SOMEWHERE -> onTypeSomewhere(pageCount, nextPage, data)
+                    TYPE_REFRESH_PAGE -> onTypeRefreshPage(pageCount, nextPage, data)
                 }
             }
         }
 
-        private fun onTypeRefreshPage(pages: Int, nextPage: Int, data: List<E>) {
-            if (mCurrentTaskPage < mStartPage || mCurrentTaskPage >= mEndPage) {
+        private fun onTypeRefreshPage(pageCount: Int, nextPage: Int, data: List<E>) {
+            if (currentTaskPage < startPage || currentTaskPage >= endPage) {
                 Log.e(
-                    TAG, "TYPE_REFRESH_PAGE, but mCurrentTaskPage = " + mCurrentTaskPage +
-                        ", mStartPage = " + mStartPage + ", mEndPage = " + mEndPage
+                    TAG, "TYPE_REFRESH_PAGE, but currentTaskPage = " + currentTaskPage +
+                        ", startPage = " + startPage + ", endPage = " + endPage
                 )
                 return
             }
 
-            if (mCurrentTaskPage == mEndPage - 1) {
-                mNextPage = nextPage
+            if (currentTaskPage == endPage - 1) {
+                reportedNextPage = nextPage
             }
 
-            mPages = max(mEndPage, pages)
+            pages = max(endPage, pageCount)
 
-            val oldIndexStart = if (mCurrentTaskPage == mStartPage) 0 else mPageDivider.get(mCurrentTaskPage - mStartPage - 1)
-            val oldIndexEnd = mPageDivider.get(mCurrentTaskPage - mStartPage)
+            val oldIndexStart = if (currentTaskPage == startPage) 0 else pageDivider.get(currentTaskPage - startPage - 1)
+            val oldIndexEnd = pageDivider.get(currentTaskPage - startPage)
             // Snapshot of the refreshed page only: every other row is
             // untouched, so diffing just this window keeps the main-thread
             // cost at one page however far the list was scrolled.
-            val oldWindow = ArrayList(mData.subList(oldIndexStart, oldIndexEnd))
-            val toRemove = mData.subList(oldIndexStart, oldIndexEnd)
+            val oldWindow = ArrayList(rows.subList(oldIndexStart, oldIndexEnd))
+            val toRemove = rows.subList(oldIndexStart, oldIndexEnd)
             onRemoveData(toRemove)
             toRemove.clear()
             val pageData = removeDuplicateData(data, oldIndexStart - CHECK_DUPLICATE_RANGE, oldIndexStart + CHECK_DUPLICATE_RANGE)
             val newIndexEnd = oldIndexStart + pageData.size
-            mData.addAll(oldIndexStart, pageData)
+            rows.addAll(oldIndexStart, pageData)
             onAddData(pageData)
-            dispatchWindowDiff(oldWindow, ArrayList(mData.subList(oldIndexStart, newIndexEnd)), oldIndexStart)
+            dispatchWindowDiff(oldWindow, ArrayList(rows.subList(oldIndexStart, newIndexEnd)), oldIndexStart)
 
-            for (i in mCurrentTaskPage - mStartPage until mPageDivider.size()) {
-                mPageDivider.set(i, mPageDivider.get(i) - oldIndexEnd + newIndexEnd)
+            for (i in currentTaskPage - startPage until pageDivider.size()) {
+                pageDivider.set(i, pageDivider.get(i) - oldIndexEnd + newIndexEnd)
             }
 
-            if (mData.isEmpty()) {
+            if (rows.isEmpty()) {
                 // Ui change, show empty string
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
                 showEmptyString()
             } else {
                 // Ui change, show content
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
                 showContent()
 
                 // RecyclerView scroll
-                if (newIndexEnd > oldIndexEnd && newIndexEnd > 0 && mRecyclerView.isAttachedToWindow) {
-                    mRecyclerView.stopScroll()
-                    val manager = mRecyclerView.layoutManager ?: return
+                if (newIndexEnd > oldIndexEnd && newIndexEnd > 0 && recyclerView.isAttachedToWindow) {
+                    recyclerView.stopScroll()
+                    val manager = recyclerView.layoutManager ?: return
                     LayoutManagerUtils.scrollToPositionWithOffset(manager, newIndexEnd - 1, 0)
                     onScrollToPosition(newIndexEnd - 1)
                 }
             }
         }
 
-        private fun onTypeSomeWhere(pages: Int, nextPage: Int, data: List<E>) {
-            mStartPage = mCurrentTaskPage
-            mEndPage = mCurrentTaskPage + 1
-            mNextPage = nextPage
-            mPages = pages
-            mPageDivider.clear()
-            mPageDivider.add(data.size)
+        private fun onTypeSomewhere(pageCount: Int, nextPage: Int, data: List<E>) {
+            startPage = currentTaskPage
+            endPage = currentTaskPage + 1
+            reportedNextPage = nextPage
+            pages = pageCount
+            pageDivider.clear()
+            pageDivider.add(data.size)
 
             // Snapshot old data for DiffUtil comparison
-            val oldSnapshot = ArrayList(mData)
+            val oldSnapshot = ArrayList(rows)
 
             if (data.isEmpty()) {
-                mData.clear()
+                rows.clear()
                 onClearData()
                 dispatchDiffUpdates(oldSnapshot)
 
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
                 showEmptyString()
             } else {
-                mData.clear()
+                rows.clear()
                 onClearData()
-                mData.addAll(data)
+                rows.addAll(data)
                 onAddData(data)
                 dispatchDiffUpdates(oldSnapshot)
 
                 // Ui change, show content
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
                 showContent()
 
-                if (mRecyclerView.isAttachedToWindow) {
+                if (recyclerView.isAttachedToWindow) {
                     // RecyclerView scroll
-                    mRecyclerView.stopScroll()
-                    val manager = mRecyclerView.layoutManager ?: return
+                    recyclerView.stopScroll()
+                    val manager = recyclerView.layoutManager ?: return
                     LayoutManagerUtils.scrollToPositionWithOffset(manager, 0, 0)
                     onScrollToPosition(0)
                 }
             }
         }
 
-        private fun onTypeNextPage(pages: Int, nextPage: Int, data: List<E>) {
-            val pageData = removeDuplicateData(data, mData.size - CHECK_DUPLICATE_RANGE, mData.size)
+        private fun onTypeNextPage(pageCount: Int, nextPage: Int, data: List<E>) {
+            val pageData = removeDuplicateData(data, rows.size - CHECK_DUPLICATE_RANGE, rows.size)
             val dataSize = pageData.size
-            val oldDataSize = mData.size
-            mPageDivider.add(oldDataSize + dataSize)
-            if (nextPage > -1 || pages > -1) {
-                mEndPage++
-                mNextPage = nextPage
-                mPages = max(mEndPage, pages)
+            val oldDataSize = rows.size
+            pageDivider.add(oldDataSize + dataSize)
+            if (nextPage > -1 || pageCount > -1) {
+                endPage++
+                reportedNextPage = nextPage
+                pages = max(endPage, pageCount)
             }
 
             if (pageData.isEmpty()) {
-                if (mData.isEmpty()) {
+                if (rows.isEmpty()) {
                     // Ui change, show empty string
-                    mRefreshLayout.setHeaderRefreshing(false)
-                    mRefreshLayout.setFooterRefreshing(false)
+                    refreshLayout.setHeaderRefreshing(false)
+                    refreshLayout.setFooterRefreshing(false)
                     showEmptyString()
                 } else {
                     // Ui change, show content
-                    mRefreshLayout.setHeaderRefreshing(false)
-                    mRefreshLayout.setFooterRefreshing(false)
+                    refreshLayout.setHeaderRefreshing(false)
+                    refreshLayout.setFooterRefreshing(false)
                     showContent()
 
-                    if (mCurrentTaskType == TYPE_NEXT_PAGE && mRecyclerView.isAttachedToWindow) {
+                    if (currentTaskType == TYPE_NEXT_PAGE && recyclerView.isAttachedToWindow) {
                         // RecyclerView scroll
-                        mRecyclerView.stopScroll()
-                        val manager = mRecyclerView.layoutManager ?: return
+                        recyclerView.stopScroll()
+                        val manager = recyclerView.layoutManager ?: return
                         LayoutManagerUtils.scrollToPositionWithOffset(manager, oldDataSize, 0)
                         onScrollToPosition(oldDataSize)
                     }
                 }
             } else {
-                mData.addAll(pageData)
+                rows.addAll(pageData)
                 onAddData(pageData)
                 notifyItemRangeInserted(oldDataSize, dataSize)
 
                 // Ui change, show content
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
                 showContent()
 
-                if (mRecyclerView.isAttachedToWindow) {
-                    if (mCurrentTaskType == TYPE_NEXT_PAGE_KEEP_POS) {
-                        mRecyclerView.stopScroll()
-                        mRecyclerView.smoothScrollBy(0, mNextPageScrollSize)
+                if (recyclerView.isAttachedToWindow) {
+                    if (currentTaskType == TYPE_NEXT_PAGE_KEEP_POS) {
+                        recyclerView.stopScroll()
+                        recyclerView.smoothScrollBy(0, nextPageScrollSize)
                     } else {
-                        mRecyclerView.stopScroll()
-                        val manager = mRecyclerView.layoutManager ?: return
+                        recyclerView.stopScroll()
+                        val manager = recyclerView.layoutManager ?: return
                         LayoutManagerUtils.scrollToPositionWithOffset(manager, oldDataSize, 0)
                         onScrollToPosition(oldDataSize)
                     }
@@ -710,58 +697,58 @@ class ContentLayout : FrameLayout {
             }
         }
 
-        private fun onTypeRpePage(pages: Int, data: List<E>) {
+        private fun onTypePrePage(pageCount: Int, data: List<E>) {
             val pageData = removeDuplicateData(data, 0, CHECK_DUPLICATE_RANGE)
             val dataSize = pageData.size
-            for (i in 0 until mPageDivider.size()) {
-                mPageDivider.set(i, mPageDivider.get(i) + dataSize)
+            for (i in 0 until pageDivider.size()) {
+                pageDivider.set(i, pageDivider.get(i) + dataSize)
             }
-            mPageDivider.add(0, dataSize)
-            mStartPage--
-            mPages = max(mEndPage, pages)
-            // assert mStartPage >= 0
+            pageDivider.add(0, dataSize)
+            startPage--
+            pages = max(endPage, pageCount)
+            // assert startPage >= 0
 
             if (pageData.isEmpty()) {
-                if (mData.isEmpty()) {
+                if (rows.isEmpty()) {
                     // Ui change, show empty string
-                    mRefreshLayout.setHeaderRefreshing(false)
-                    mRefreshLayout.setFooterRefreshing(false)
+                    refreshLayout.setHeaderRefreshing(false)
+                    refreshLayout.setFooterRefreshing(false)
                     showEmptyString()
                 } else {
                     // Ui change, show content
-                    mRefreshLayout.setHeaderRefreshing(false)
-                    mRefreshLayout.setFooterRefreshing(false)
+                    refreshLayout.setHeaderRefreshing(false)
+                    refreshLayout.setFooterRefreshing(false)
                     showContent()
 
-                    if (mCurrentTaskType == TYPE_PRE_PAGE && mRecyclerView.isAttachedToWindow) {
+                    if (currentTaskType == TYPE_PRE_PAGE && recyclerView.isAttachedToWindow) {
                         // RecyclerView scroll, to top
-                        mRecyclerView.stopScroll()
-                        val manager = mRecyclerView.layoutManager ?: return
+                        recyclerView.stopScroll()
+                        val manager = recyclerView.layoutManager ?: return
                         LayoutManagerUtils.scrollToPositionWithOffset(manager, 0, 0)
                         onScrollToPosition(0)
                     }
                 }
             } else {
-                mData.addAll(0, pageData)
+                rows.addAll(0, pageData)
                 onAddData(pageData)
                 notifyItemRangeInserted(0, pageData.size)
 
                 // Ui change, show content
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
                 showContent()
 
-                if (mRecyclerView.isAttachedToWindow) {
+                if (recyclerView.isAttachedToWindow) {
                     // RecyclerView scroll
-                    if (mCurrentTaskType == TYPE_PRE_PAGE_KEEP_POS) {
-                        mRecyclerView.stopScroll()
+                    if (currentTaskType == TYPE_PRE_PAGE_KEEP_POS) {
+                        recyclerView.stopScroll()
                         LayoutManagerUtils.scrollToPositionProperly(
-                            mRecyclerView.layoutManager, requireContext(),
-                            dataSize - 1, mOnScrollToPositionListener
+                            recyclerView.layoutManager, requireContext(),
+                            dataSize - 1, onScrollToPositionListener
                         )
                     } else {
-                        mRecyclerView.stopScroll()
-                        val manager = mRecyclerView.layoutManager ?: return
+                        recyclerView.stopScroll()
+                        val manager = recyclerView.layoutManager ?: return
                         LayoutManagerUtils.scrollToPositionWithOffset(manager, 0, 0)
                         onScrollToPosition(0)
                     }
@@ -769,40 +756,40 @@ class ContentLayout : FrameLayout {
             }
         }
 
-        private fun onTypeRefresh(pages: Int, nextPage: Int, data: List<E>) {
-            mStartPage = 0
-            mEndPage = 1
-            mPages = pages
-            mNextPage = nextPage
-            mPageDivider.clear()
-            mPageDivider.add(data.size)
+        private fun onTypeRefresh(pageCount: Int, nextPage: Int, data: List<E>) {
+            startPage = 0
+            endPage = 1
+            pages = pageCount
+            reportedNextPage = nextPage
+            pageDivider.clear()
+            pageDivider.add(data.size)
 
             // Snapshot before mutation for DiffUtil
-            val oldSnapshot = ArrayList(mData)
+            val oldSnapshot = ArrayList(rows)
 
             if (data.isEmpty()) {
-                mData.clear()
+                rows.clear()
                 onClearData()
                 dispatchDiffUpdates(oldSnapshot)
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
                 showEmptyString()
             } else {
-                mData.clear()
+                rows.clear()
                 onClearData()
-                mData.addAll(data)
+                rows.addAll(data)
                 onAddData(data)
                 dispatchDiffUpdates(oldSnapshot)
 
                 // Ui change, show content
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
                 showContent()
 
                 // RecyclerView scroll
-                if (mRecyclerView.isAttachedToWindow) {
-                    mRecyclerView.stopScroll()
-                    val manager = mRecyclerView.layoutManager ?: return
+                if (recyclerView.isAttachedToWindow) {
+                    recyclerView.stopScroll()
+                    val manager = recyclerView.layoutManager ?: return
                     LayoutManagerUtils.scrollToPositionWithOffset(manager, 0, 0)
                     onScrollToPosition(0)
                 }
@@ -810,9 +797,9 @@ class ContentLayout : FrameLayout {
         }
 
         fun onGetException(taskId: Int, e: Exception?) {
-            if (mCurrentTaskId == taskId) {
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(false)
+            if (currentTaskId == taskId) {
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(false)
 
                 val readableError: String
                 if (e != null) {
@@ -825,7 +812,7 @@ class ContentLayout : FrameLayout {
                     readableError = requireContext().getString(R.string.error_unknown)
                 }
 
-                if (mViewTransition.shownViewIndex == 0) {
+                if (viewTransition.shownViewIndex == 0) {
                     Toast.makeText(getContext(), readableError, Toast.LENGTH_SHORT).show()
                 } else {
                     showText(readableError)
@@ -834,11 +821,11 @@ class ContentLayout : FrameLayout {
         }
 
         fun showContent() {
-            mViewTransition.showView(0)
+            viewTransition.showView(0)
         }
 
         private fun isContentShowing(): Boolean {
-            return mViewTransition.shownViewIndex == 0
+            return viewTransition.shownViewIndex == 0
         }
 
         fun showProgressBar() {
@@ -846,56 +833,56 @@ class ContentLayout : FrameLayout {
         }
 
         fun showProgressBar(animation: Boolean) {
-            mViewTransition.showView(1, animation)
+            viewTransition.showView(1, animation)
         }
 
         fun showText(text: CharSequence?) {
-            mTipView.text = text
-            mViewTransition.showView(2)
+            tipView.text = text
+            viewTransition.showView(2)
         }
 
         fun showEmptyString() {
-            showText(mEmptyString)
+            showText(emptyString)
         }
 
         /**
-         * Be carefull
+         * Be careful
          */
         fun doGetData(type: Int, page: Int, refreshType: Int) {
             when (refreshType) {
                 REFRESH_TYPE_FOOTER -> {
                     showContent()
-                    mRefreshLayout.setHeaderRefreshing(false)
-                    mRefreshLayout.setFooterRefreshing(true)
+                    refreshLayout.setHeaderRefreshing(false)
+                    refreshLayout.setFooterRefreshing(true)
                 }
                 REFRESH_TYPE_PROGRESS_VIEW -> {
                     showProgressBar()
-                    mRefreshLayout.setHeaderRefreshing(false)
-                    mRefreshLayout.setFooterRefreshing(false)
+                    refreshLayout.setHeaderRefreshing(false)
+                    refreshLayout.setFooterRefreshing(false)
                 }
                 // REFRESH_TYPE_HEADER and anything else
                 else -> {
                     showContent()
-                    mRefreshLayout.setFooterRefreshing(false)
-                    mRefreshLayout.setHeaderRefreshing(true)
+                    refreshLayout.setFooterRefreshing(false)
+                    refreshLayout.setHeaderRefreshing(true)
                 }
             }
 
-            mCurrentTaskId = mIdGenerator.nextId()
-            mCurrentTaskType = type
-            mCurrentTaskPage = page
-            getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage)
+            currentTaskId = idGenerator.nextId()
+            currentTaskType = type
+            currentTaskPage = page
+            getPageData(currentTaskId, currentTaskType, currentTaskPage)
         }
 
         private fun doRefresh() {
-            mCurrentTaskId = mIdGenerator.nextId()
-            mCurrentTaskType = TYPE_REFRESH
-            mCurrentTaskPage = 0
-            getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage)
+            currentTaskId = idGenerator.nextId()
+            currentTaskType = TYPE_REFRESH
+            currentTaskPage = 0
+            getPageData(currentTaskId, currentTaskType, currentTaskPage)
         }
 
         /**
-         * Lisk [refresh], but no animation when show progress bar
+         * Like [refresh], but without animating to the progress bar
          */
         fun firstRefresh() {
             showProgressBar(false)
@@ -903,7 +890,7 @@ class ContentLayout : FrameLayout {
         }
 
         /**
-         * Show progress bar first, than do refresh
+         * Show the progress bar first, then refresh
          */
         fun refresh() {
             showProgressBar()
@@ -912,23 +899,23 @@ class ContentLayout : FrameLayout {
 
         fun refreshSort(sort: String?) {
             showProgressBar()
-            mCurrentTaskId = mIdGenerator.nextId()
-            mCurrentTaskType = TYPE_REFRESH
-            mCurrentTaskPage = 0
-            getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage, sort)
+            currentTaskId = idGenerator.nextId()
+            currentTaskType = TYPE_REFRESH
+            currentTaskPage = 0
+            getPageData(currentTaskId, currentTaskType, currentTaskPage, sort)
         }
 
         protected fun cancelCurrentTask() {
-            mCurrentTaskId = mIdGenerator.nextId()
-            mRefreshLayout.setHeaderRefreshing(false)
-            mRefreshLayout.setFooterRefreshing(false)
+            currentTaskId = idGenerator.nextId()
+            refreshLayout.setHeaderRefreshing(false)
+            refreshLayout.setFooterRefreshing(false)
         }
 
         private fun getPageStart(page: Int): Int {
-            return if (mStartPage == page) {
+            return if (startPage == page) {
                 0
             } else {
-                mPageDivider.get(page - mStartPage - 1)
+                pageDivider.get(page - startPage - 1)
             }
         }
 
@@ -937,23 +924,21 @@ class ContentLayout : FrameLayout {
                 return -1
             }
 
-            val pageDivider = mPageDivider
+            val pageDivider = pageDivider
             for (i in 0 until pageDivider.size()) {
                 if (position < pageDivider.get(i)) {
-                    return i + mStartPage
+                    return i + startPage
                 }
             }
 
             return -1
         }
 
-        fun getPageForTop(): Int {
-            return getPageForPosition(LayoutManagerUtils.getFirstVisibleItemPosition(mRecyclerView.layoutManager))
-        }
+        val pageForTop: Int
+            get() = getPageForPosition(LayoutManagerUtils.getFirstVisibleItemPosition(recyclerView.layoutManager))
 
-        fun getPageForBottom(): Int {
-            return getPageForPosition(LayoutManagerUtils.getLastVisibleItemPosition(mRecyclerView.layoutManager))
-        }
+        val pageForBottom: Int
+            get() = getPageForPosition(LayoutManagerUtils.getLastVisibleItemPosition(recyclerView.layoutManager))
 
         fun canGoTo(): Boolean {
             return isContentShowing()
@@ -967,72 +952,72 @@ class ContentLayout : FrameLayout {
          */
         fun goTo(page: Int) {
             if (page == -996) {
-                mRefreshLayout.setFooterRefreshing(false)
-                mRefreshLayout.setHeaderRefreshing(true)
+                refreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(true)
 
-                mCurrentTaskId = mIdGenerator.nextId()
-                mCurrentTaskType = TYPE_SOMEWHERE
-                mCurrentTaskPage = page
-                getExPageData(mCurrentTaskType, mCurrentTaskId, mPages)
-            } else if (page < 0 || page >= mPages) {
-                throw IndexOutOfBoundsException("Page count is $mPages, page is $page")
-            } else if (page >= mStartPage && page < mEndPage) {
+                currentTaskId = idGenerator.nextId()
+                currentTaskType = TYPE_SOMEWHERE
+                currentTaskPage = page
+                getExPageData(currentTaskType, currentTaskId, pages)
+            } else if (page < 0 || page >= pages) {
+                throw IndexOutOfBoundsException("Page count is $pages, page is $page")
+            } else if (page >= startPage && page < endPage) {
                 cancelCurrentTask()
 
                 val position = getPageStart(page)
-                mRecyclerView.stopScroll()
-                LayoutManagerUtils.scrollToPositionWithOffset(mRecyclerView.layoutManager, position, 0)
+                recyclerView.stopScroll()
+                LayoutManagerUtils.scrollToPositionWithOffset(recyclerView.layoutManager, position, 0)
                 onScrollToPosition(position)
-            } else if (page == mStartPage - 1) {
-                mRefreshLayout.setFooterRefreshing(false)
-                mRefreshLayout.setHeaderRefreshing(true)
+            } else if (page == startPage - 1) {
+                refreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(true)
 
-                mCurrentTaskId = mIdGenerator.nextId()
-                mCurrentTaskType = TYPE_PRE_PAGE
-                mCurrentTaskPage = page
-                getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage)
-            } else if (page == mEndPage) {
-                mRefreshLayout.setHeaderRefreshing(false)
-                mRefreshLayout.setFooterRefreshing(true)
+                currentTaskId = idGenerator.nextId()
+                currentTaskType = TYPE_PRE_PAGE
+                currentTaskPage = page
+                getPageData(currentTaskId, currentTaskType, currentTaskPage)
+            } else if (page == endPage) {
+                refreshLayout.setHeaderRefreshing(false)
+                refreshLayout.setFooterRefreshing(true)
 
-                mCurrentTaskId = mIdGenerator.nextId()
-                mCurrentTaskType = TYPE_NEXT_PAGE
-                mCurrentTaskPage = page
-                getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage)
+                currentTaskId = idGenerator.nextId()
+                currentTaskType = TYPE_NEXT_PAGE
+                currentTaskPage = page
+                getPageData(currentTaskId, currentTaskType, currentTaskPage)
             } else {
-                mRefreshLayout.setFooterRefreshing(false)
-                mRefreshLayout.setHeaderRefreshing(true)
+                refreshLayout.setFooterRefreshing(false)
+                refreshLayout.setHeaderRefreshing(true)
 
-                mCurrentTaskId = mIdGenerator.nextId()
-                mCurrentTaskType = TYPE_SOMEWHERE
-                mCurrentTaskPage = page
-                getPageData(mCurrentTaskId, mCurrentTaskType, mCurrentTaskPage)
+                currentTaskId = idGenerator.nextId()
+                currentTaskType = TYPE_SOMEWHERE
+                currentTaskPage = page
+                getPageData(currentTaskId, currentTaskType, currentTaskPage)
             }
         }
 
-        private var mSavedDataId = IntIdGenerator.INVALID_ID
+        private var savedDataId = IntIdGenerator.INVALID_ID
 
         open fun saveInstanceState(superState: Parcelable?): Parcelable {
             val bundle = Bundle()
             bundle.putParcelable(KEY_SUPER, superState)
-            val shownView = mViewTransition.shownViewIndex
+            val shownView = viewTransition.shownViewIndex
             bundle.putInt(KEY_SHOWN_VIEW, shownView)
-            bundle.putString(KEY_TIP, mTipView.text.toString())
+            bundle.putString(KEY_TIP, tipView.text.toString())
 
             // KNOWN-ISSUE (P2): uses LRReaderApplication global state to persist data across config changes
             val app = requireContext().applicationContext as LRReaderApplication
-            if (mSavedDataId != IntIdGenerator.INVALID_ID) {
-                app.removeGlobalStuff(mSavedDataId)
-                mSavedDataId = IntIdGenerator.INVALID_ID
+            if (savedDataId != IntIdGenerator.INVALID_ID) {
+                app.removeGlobalStuff(savedDataId)
+                savedDataId = IntIdGenerator.INVALID_ID
             }
-            mSavedDataId = app.putGlobalStuff(mData)
-            bundle.putInt(KEY_DATA, mSavedDataId)
+            savedDataId = app.putGlobalStuff(rows)
+            bundle.putInt(KEY_DATA, savedDataId)
 
-            bundle.putInt(KEY_NEXT_ID, mIdGenerator.nextId())
-            bundle.putIntArray(KEY_PAGE_DIVIDER, mPageDivider.toArray())
-            bundle.putInt(KEY_START_PAGE, mStartPage)
-            bundle.putInt(KEY_END_PAGE, mEndPage)
-            bundle.putInt(KEY_PAGES, mPages)
+            bundle.putInt(KEY_NEXT_ID, idGenerator.nextId())
+            bundle.putIntArray(KEY_PAGE_DIVIDER, pageDivider.toArray())
+            bundle.putInt(KEY_START_PAGE, startPage)
+            bundle.putInt(KEY_END_PAGE, endPage)
+            bundle.putInt(KEY_PAGES, pages)
             bundle.putString(KEY_RESULT_COUNT, resultCount)
             bundle.putString(KEY_FIRST_HREF, firstHref)
             bundle.putString(KEY_PREV_HREF, prevHref)
@@ -1043,26 +1028,26 @@ class ContentLayout : FrameLayout {
 
         open fun restoreInstanceState(state: Parcelable): Parcelable? {
             if (state is Bundle) {
-                mViewTransition.showView(state.getInt(KEY_SHOWN_VIEW), false)
-                mTipView.text = state.getString(KEY_TIP)
+                viewTransition.showView(state.getInt(KEY_SHOWN_VIEW), false)
+                tipView.text = state.getString(KEY_TIP)
 
-                mSavedDataId = state.getInt(KEY_DATA)
+                savedDataId = state.getInt(KEY_DATA)
                 var newData: ArrayList<E>? = null
                 val app = requireContext().applicationContext as LRReaderApplication
-                if (mSavedDataId != IntIdGenerator.INVALID_ID) {
+                if (savedDataId != IntIdGenerator.INVALID_ID) {
                     @Suppress("UNCHECKED_CAST") // saveInstanceState stored this helper's ArrayList<E>
-                    newData = app.removeGlobalStuff(mSavedDataId) as ArrayList<E>?
-                    mSavedDataId = IntIdGenerator.INVALID_ID
+                    newData = app.removeGlobalStuff(savedDataId) as ArrayList<E>?
+                    savedDataId = IntIdGenerator.INVALID_ID
                     if (newData != null) {
-                        mData = newData
+                        rows = newData
                     }
                 }
 
-                mIdGenerator.setNextId(state.getInt(KEY_NEXT_ID))
-                mPageDivider = IntList.of(state.getIntArray(KEY_PAGE_DIVIDER))
-                mStartPage = state.getInt(KEY_START_PAGE)
-                mEndPage = state.getInt(KEY_END_PAGE)
-                mPages = state.getInt(KEY_PAGES)
+                idGenerator.setNextId(state.getInt(KEY_NEXT_ID))
+                pageDivider = IntList.of(state.getIntArray(KEY_PAGE_DIVIDER))
+                startPage = state.getInt(KEY_START_PAGE)
+                endPage = state.getInt(KEY_END_PAGE)
+                pages = state.getInt(KEY_PAGES)
                 resultCount = state.getString(KEY_RESULT_COUNT)
                 firstHref = state.getString(KEY_FIRST_HREF)
                 prevHref = state.getString(KEY_PREV_HREF)
@@ -1072,10 +1057,10 @@ class ContentLayout : FrameLayout {
                 notifyDataSetChanged()
 
                 if (newData == null) {
-                    mPageDivider.clear()
-                    mStartPage = 0
-                    mEndPage = 0
-                    mPages = 0
+                    pageDivider.clear()
+                    startPage = 0
+                    endPage = 0
+                    pages = 0
                     firstRefresh()
                 }
 

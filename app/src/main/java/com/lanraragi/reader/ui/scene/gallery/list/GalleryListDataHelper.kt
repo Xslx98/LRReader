@@ -210,8 +210,8 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         return d1.arcid == d2.arcid
     }
 
-    override fun onScrollToPosition(postion: Int) {
-        if (0 == postion) {
+    override fun onScrollToPosition(position: Int) {
+        if (0 == position) {
             callback.showSearchBar()
             callback.showActionFab()
         }
@@ -224,7 +224,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         recordLoadedSearch(taskId, issued)
         if (isCurrentTask(taskId)) {
             pageOffsets.recordLoaded(page, nextOffset)
-            setEmptyString(callback.getString(R.string.gallery_list_empty_hit))
+            emptyString = callback.getString(R.string.gallery_list_empty_hit)
             val hasMore = nextOffset != null
             val totalPages = if (hasMore) page + 2 else page + 1
             val nextPage = if (hasMore) page + 1 else 0

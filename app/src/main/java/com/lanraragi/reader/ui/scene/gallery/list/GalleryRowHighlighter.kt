@@ -34,7 +34,7 @@ class GalleryRowHighlighter(private val scene: GalleryListScene) {
 
     private fun flushNow() {
         if (!scene.isResumed || !scene.isListViewCreated) return
-        val data = scene.mHelper?.getData() ?: return
+        val data = scene.mHelper?.data ?: return
         val recyclerView = scene.recyclerView
         val arcids = pending.toList()
         pending.clear()
