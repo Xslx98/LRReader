@@ -1603,17 +1603,6 @@
 
     <issue
         id="ClickableViewAccessibility"
-        message="Custom view `SafeCoordinatorLayout` overrides `onTouchEvent` but not `performClick`"
-        errorLine1="    public boolean onTouchEvent(MotionEvent ev) {"
-        errorLine2="                   ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/SafeCoordinatorLayout.java"
-            line="50"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
         message="Custom view `Slider` overrides `onTouchEvent` but not `performClick`"
         errorLine1="    public boolean onTouchEvent(@NonNull MotionEvent event) {"
         errorLine2="                   ~~~~~~~~~~~~">
