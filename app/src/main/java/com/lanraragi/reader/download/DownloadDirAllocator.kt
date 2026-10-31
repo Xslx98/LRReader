@@ -1,11 +1,10 @@
 package com.lanraragi.reader.download
 
-import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.reader.util.FileUtils
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.DownloadDbRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.io.File
 
 /**
  * Owns the `DOWNLOAD_DIRNAME` pointer — the only link from an arcid to

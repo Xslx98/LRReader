@@ -64,8 +64,8 @@ import com.lanraragi.framework.scene.StageActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.lanraragi.framework.lib.yorozuya.ResourcesUtils
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.attrColor
+import com.lanraragi.reader.util.ViewUtils
 import java.io.File
 
 class MainActivity : StageActivity(),
@@ -208,18 +208,18 @@ class MainActivity : StageActivity(),
 
         maybeRequestNotificationPermission()
 
-        val drawerLayout = ViewUtils.`$$`(this, R.id.draw_view) as AppDrawerLayout
+        val drawerLayout = ViewUtils.requireView(this, R.id.draw_view) as AppDrawerLayout
         mDrawerLayout = drawerLayout
         drawerLayout.setDrawerListener(this)
 
         mNavDrawer.applyCutoutInsets(drawerLayout)
-        val navView = ViewUtils.`$$`(this, R.id.nav_view) as NavigationView
+        val navView = ViewUtils.requireView(this, R.id.nav_view) as NavigationView
         mNavView = navView
-        mRightDrawer = ViewUtils.`$$`(this, R.id.right_drawer) as FrameLayout
-        val themeSwitch = ViewUtils.`$$`(this, R.id.theme_switch)
+        mRightDrawer = ViewUtils.requireView(this, R.id.right_drawer) as FrameLayout
+        val themeSwitch = ViewUtils.requireView(this, R.id.theme_switch)
 
         drawerLayout.setStatusBarColor(
-            ResourcesUtils.getAttrColor(this, androidx.appcompat.R.attr.colorPrimaryDark)
+            this.attrColor(androidx.appcompat.R.attr.colorPrimaryDark)
         )
 
         navView.setNavigationItemSelectedListener(this)

@@ -48,9 +48,9 @@ import com.lanraragi.reader.widget.ListRefreshLayout;
 import androidx.core.content.ContextCompat;
 import static com.lanraragi.reader.client.api.LRRApiUtilsKt.friendlyError;
 import com.lanraragi.reader.widget.ViewTransition;
-import com.lanraragi.framework.lib.yorozuya.IntIdGenerator;
-import com.lanraragi.framework.lib.yorozuya.LayoutUtils;
-import com.lanraragi.framework.lib.yorozuya.collect.IntList;
+import com.lanraragi.reader.util.IntIdGenerator;
+import com.lanraragi.reader.util.ViewUtils;
+import com.lanraragi.reader.util.IntList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -161,7 +161,7 @@ public class ContentLayout extends FrameLayout {
         // RecyclerView
         mRecyclerView.setPadding(mRecyclerView.getPaddingLeft(), mRecyclerViewOriginTop + fitPaddingTop, mRecyclerView.getPaddingRight(), mRecyclerView.getPaddingBottom());
         // RefreshLayout
-        mRefreshLayout.setProgressViewOffset(false, fitPaddingTop, fitPaddingTop + LayoutUtils.dp2pix(getContext(), 32));
+        mRefreshLayout.setProgressViewOffset(false, fitPaddingTop, fitPaddingTop + ViewUtils.dp2pix(getContext(), 32));
     }
 
     public void setFitPaddingBottom(int fitPaddingBottom) {
@@ -354,7 +354,7 @@ public class ContentLayout extends FrameLayout {
 //                };
 
         private void init(ContentLayout contentLayout) {
-            mNextPageScrollSize = LayoutUtils.dp2pix(contentLayout.getContext(), 48);
+            mNextPageScrollSize = ViewUtils.dp2pix(contentLayout.getContext(), 48);
 
             mProgressView = contentLayout.mProgressView;
             mTipView = contentLayout.mTipView;
@@ -1133,7 +1133,7 @@ public class ContentLayout extends FrameLayout {
             bundle.putInt(KEY_DATA, mSavedDataId);
 
             bundle.putInt(KEY_NEXT_ID, mIdGenerator.nextId());
-            bundle.putParcelable(KEY_PAGE_DIVIDER, mPageDivider);
+            bundle.putIntArray(KEY_PAGE_DIVIDER, mPageDivider.toArray());
             bundle.putInt(KEY_START_PAGE, mStartPage);
             bundle.putInt(KEY_END_PAGE, mEndPage);
             bundle.putInt(KEY_PAGES, mPages);
@@ -1163,7 +1163,7 @@ public class ContentLayout extends FrameLayout {
                 }
 
                 mIdGenerator.setNextId(bundle.getInt(KEY_NEXT_ID));
-                mPageDivider = bundle.getParcelable(KEY_PAGE_DIVIDER);
+                mPageDivider = IntList.of(bundle.getIntArray(KEY_PAGE_DIVIDER));
                 mStartPage = bundle.getInt(KEY_START_PAGE);
                 mEndPage = bundle.getInt(KEY_END_PAGE);
                 mPages = bundle.getInt(KEY_PAGES);

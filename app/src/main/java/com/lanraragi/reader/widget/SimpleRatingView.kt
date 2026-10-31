@@ -23,7 +23,7 @@ import androidx.core.graphics.withSave
 import android.util.AttributeSet
 import android.view.View
 import com.lanraragi.reader.R
-import com.lanraragi.framework.lib.yorozuya.MathUtils
+import com.lanraragi.reader.util.MathUtils
 import androidx.core.content.ContextCompat
 
 /**

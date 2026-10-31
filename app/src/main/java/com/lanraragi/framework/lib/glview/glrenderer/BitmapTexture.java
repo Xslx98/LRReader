@@ -18,7 +18,7 @@ package com.lanraragi.framework.lib.glview.glrenderer;
 
 import android.graphics.Bitmap;
 
-import com.lanraragi.framework.lib.yorozuya.AssertUtils;
+import com.lanraragi.reader.util.AssertUtils;
 
 // BitmapTexture is a texture whose content is specified by a fixed Bitmap.
 //

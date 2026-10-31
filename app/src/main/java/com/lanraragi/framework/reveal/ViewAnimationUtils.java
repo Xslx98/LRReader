@@ -22,7 +22,7 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.view.View;
 
-import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener;
+import android.animation.AnimatorListenerAdapter;
 
 public final class ViewAnimationUtils {
     private ViewAnimationUtils() {}
@@ -78,7 +78,7 @@ public final class ViewAnimationUtils {
         }
     }
 
-    private static class RevealAnimatorListener extends SimpleAnimatorListener {
+    private static class RevealAnimatorListener extends AnimatorListenerAdapter {
 
         private final Reveal mReveal;
         private final View mView;

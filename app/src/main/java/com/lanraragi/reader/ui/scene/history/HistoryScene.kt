@@ -76,8 +76,8 @@ import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
-import com.lanraragi.framework.lib.yorozuya.AssertUtils
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
@@ -125,10 +125,10 @@ class HistoryScene : ToolbarScene(),
         viewModel = ViewModelProvider(requireActivity())[HistoryViewModel::class.java]
 
         val view = inflater.inflate(R.layout.scene_history, container, false)
-        val content = ViewUtils.`$$`(view, R.id.content)
-        mRecyclerView = ViewUtils.`$$`(content, R.id.recycler_view) as EasyRecyclerView
-        val fastScroller = ViewUtils.`$$`(content, R.id.fast_scroller) as FastScroller
-        val tip = ViewUtils.`$$`(view, R.id.tip) as TextView
+        val content = ViewUtils.requireView(view, R.id.content)
+        mRecyclerView = ViewUtils.requireView(content, R.id.recycler_view) as EasyRecyclerView
+        val fastScroller = ViewUtils.requireView(content, R.id.fast_scroller) as FastScroller
+        val tip = ViewUtils.requireView(view, R.id.tip) as TextView
         mViewTransition = ViewTransition(content, tip)
 
         val context = ehContext
@@ -171,7 +171,7 @@ class HistoryScene : ToolbarScene(),
         // Bottom batch action bar (shared widget). History supports a single
         // batch op — remove-from-history — so the gallery-specific buttons are
         // hidden and the delete slot is repurposed with the remove label.
-        val bar = ViewUtils.`$$`(view, R.id.batch_action_bar)
+        val bar = ViewUtils.requireView(view, R.id.batch_action_bar)
         batchBar = bar
         batchCountView = bar.findViewById(R.id.batch_count)
         bar.findViewById<View>(R.id.batch_download).visibility = View.GONE

@@ -55,7 +55,7 @@ import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.framework.lib.image.Image
 import android.os.Handler
 import android.os.Looper
-import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.reader.util.FileUtils
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.ExceptionUtils
 import java.io.File

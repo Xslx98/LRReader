@@ -39,9 +39,7 @@ import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.util.LauncherIcon
 import com.lanraragi.reader.util.ReadableTime
-import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.lib.yorozuya.collect.SparseJBArray
-import com.lanraragi.framework.lib.yorozuya.collect.SparseJLArray
+import com.lanraragi.reader.util.FileUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

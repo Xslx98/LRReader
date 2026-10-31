@@ -21,7 +21,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
+import com.lanraragi.reader.util.MathUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

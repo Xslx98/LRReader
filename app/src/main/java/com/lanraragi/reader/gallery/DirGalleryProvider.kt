@@ -26,8 +26,7 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.framework.lib.glgallery.GalleryPageView
 import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.reader.storage.StorageFile
-import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.lib.yorozuya.IOUtils
+import com.lanraragi.reader.util.FileUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -699,18 +698,11 @@ class DirGalleryProvider : GalleryProvider2 {
 
     override fun save(index: Int, file: StorageFile): Boolean {
         val src = fileAt(index) ?: return false
-        var inputStream: java.io.InputStream? = null
-        var outputStream: java.io.OutputStream? = null
         return try {
-            inputStream = src.openInputStream()
-            outputStream = file.openOutputStream()
-            IOUtils.copy(inputStream, outputStream)
+            src.openInputStream().use { input -> file.openOutputStream().use { input.copyTo(it) } }
             true
         } catch (e: IOException) {
             false
-        } finally {
-            IOUtils.closeQuietly(inputStream)
-            IOUtils.closeQuietly(outputStream)
         }
     }
 
@@ -718,18 +710,11 @@ class DirGalleryProvider : GalleryProvider2 {
         val src = fileAt(index) ?: return null
         val extension = FileUtils.getExtensionFromFilename(src.name)
         val dst = dir.subFile(if (extension != null) "$filename.$extension" else filename)
-        var inputStream: java.io.InputStream? = null
-        var outputStream: java.io.OutputStream? = null
         return try {
-            inputStream = src.openInputStream()
-            outputStream = dst.openOutputStream()
-            IOUtils.copy(inputStream, outputStream)
+            src.openInputStream().use { input -> dst.openOutputStream().use { input.copyTo(it) } }
             dst
         } catch (e: IOException) {
             null
-        } finally {
-            IOUtils.closeQuietly(inputStream)
-            IOUtils.closeQuietly(outputStream)
         }
     }
 

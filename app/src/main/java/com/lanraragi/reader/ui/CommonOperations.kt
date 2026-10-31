@@ -25,7 +25,6 @@ import com.lanraragi.reader.download.DownloadEntryGate
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.scene.BaseScene
-import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.domain.Archive
 import java.io.IOException
@@ -146,13 +145,10 @@ object CommonOperations {
 
         val noMedia = file.createFile(".nomedia") ?: return
 
-        var inputStream: java.io.InputStream? = null
         try {
-            inputStream = noMedia.openInputStream()
+            noMedia.openInputStream().close()
         } catch (e: IOException) {
             Log.w(TAG, "Failed to open .nomedia input stream", e)
-        } finally {
-            IOUtils.closeQuietly(inputStream)
         }
     }
 

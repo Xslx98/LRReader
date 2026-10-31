@@ -19,7 +19,7 @@ package com.lanraragi.framework.lib.glview.glrenderer;
 import android.graphics.RectF;
 import android.util.Log;
 
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
+import com.lanraragi.reader.util.MathUtils;
 
 import java.util.WeakHashMap;
 

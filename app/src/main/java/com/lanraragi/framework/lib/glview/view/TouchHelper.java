@@ -22,10 +22,13 @@ import android.view.ViewConfiguration;
 
 import androidx.annotation.NonNull;
 
-import com.lanraragi.framework.lib.yorozuya.LayoutUtils;
-import com.lanraragi.framework.lib.yorozuya.SimpleHandler;
+import com.lanraragi.reader.util.ViewUtils;
+import android.os.Handler;
+import android.os.Looper;
 
 public class TouchHelper {
+
+    private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
 
     private final TouchOwner mOwner;
 
@@ -43,7 +46,7 @@ public class TouchHelper {
     private static int sTouchSlop = 8;
 
     public static void initialize(Context context) {
-        sTouchSlop = LayoutUtils.dp2pix(context, 8); // 8dp
+        sTouchSlop = ViewUtils.dp2pix(context, 8); // 8dp
     }
 
     public TouchHelper(@NonNull TouchOwner owner) {
@@ -90,7 +93,7 @@ public class TouchHelper {
                             if (mPerformClick == null) {
                                 mPerformClick = new PerformClick();
                             }
-                            if (!SimpleHandler.getInstance().post(mPerformClick)) {
+                            if (!MAIN_HANDLER.post(mPerformClick)) {
                                 owner.performClick();
                             }
                         }
@@ -100,9 +103,9 @@ public class TouchHelper {
                         }
 
                         if (mPrePressed) {
-                            SimpleHandler.getInstance().postDelayed(mUnsetPressedState,
+                            MAIN_HANDLER.postDelayed(mUnsetPressedState,
                                     ViewConfiguration.getPressedStateDuration());
-                        } else if (!SimpleHandler.getInstance().post(mUnsetPressedState)) {
+                        } else if (!MAIN_HANDLER.post(mUnsetPressedState)) {
                             // If the post failed, unpress right now
                             mUnsetPressedState.run();
                         }
@@ -120,7 +123,7 @@ public class TouchHelper {
                     }
                     mPendingCheckForTap.x = event.getX();
                     mPendingCheckForTap.y = event.getY();
-                    SimpleHandler.getInstance().postDelayed(mPendingCheckForTap, ViewConfiguration.getTapTimeout());
+                    MAIN_HANDLER.postDelayed(mPendingCheckForTap, ViewConfiguration.getTapTimeout());
                     break;
 
                 case MotionEvent.ACTION_CANCEL:
@@ -175,7 +178,7 @@ public class TouchHelper {
      */
     private void removeLongPressCallback() {
         if (mPendingCheckForLongPress != null) {
-            SimpleHandler.getInstance().removeCallbacks(mPendingCheckForLongPress);
+            MAIN_HANDLER.removeCallbacks(mPendingCheckForLongPress);
         }
     }
 
@@ -185,7 +188,7 @@ public class TouchHelper {
     private void removeTapCallback() {
         if (mPendingCheckForTap != null) {
             mPrePressed = false;
-            SimpleHandler.getInstance().removeCallbacks(mPendingCheckForTap);
+            MAIN_HANDLER.removeCallbacks(mPendingCheckForTap);
         }
     }
 
@@ -196,7 +199,7 @@ public class TouchHelper {
             if (mPendingCheckForLongPress == null) {
                 mPendingCheckForLongPress = new CheckForLongPress();
             }
-            SimpleHandler.getInstance().postDelayed(mPendingCheckForLongPress,
+            MAIN_HANDLER.postDelayed(mPendingCheckForLongPress,
                     ViewConfiguration.getLongPressTimeout() - delayOffset);
         }
     }

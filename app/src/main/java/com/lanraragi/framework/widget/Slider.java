@@ -38,12 +38,15 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.graphics.drawable.DrawableCompat;
 import com.lanraragi.reader.R;
-import com.lanraragi.framework.lib.yorozuya.AnimationUtils;
-import com.lanraragi.framework.lib.yorozuya.LayoutUtils;
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
-import com.lanraragi.framework.lib.yorozuya.SimpleHandler;
+import com.lanraragi.reader.util.AnimationUtils;
+import com.lanraragi.reader.util.ViewUtils;
+import com.lanraragi.reader.util.MathUtils;
+import android.os.Handler;
+import android.os.Looper;
 
 public class Slider extends View {
+
+    private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
 
     private static final char[] CHARACTERS = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
@@ -194,9 +197,9 @@ public class Slider extends View {
         int oldWidth = mBubbleWidth;
         int oldHeight = mBubbleHeight;
         mBubbleWidth = (int) Math.max(mBubbleMinWidth,
-                Integer.toString(mEnd).length() * mCharWidth + LayoutUtils.dp2pix(mContext, 8));
+                Integer.toString(mEnd).length() * mCharWidth + ViewUtils.dp2pix(mContext, 8));
         mBubbleHeight = (int) Math.max(mBubbleMinHeight,
-                mCharHeight + LayoutUtils.dp2pix(mContext, 8));
+                mCharHeight + ViewUtils.dp2pix(mContext, 8));
 
         if (oldWidth != mBubbleWidth && oldHeight != mBubbleHeight) {
             //noinspection deprecation
@@ -219,7 +222,7 @@ public class Slider extends View {
         mPopupX = (int) (mTemp[0] + mRadius - (mBubbleWidth / 2));
         mPopupY = (int) (mTemp[1] - popupHeight + paddingTop +
                 ((getHeight() - paddingTop - paddingBottom) / 2) -
-                mRadius -LayoutUtils.dp2pix(mContext, 2));
+                mRadius -ViewUtils.dp2pix(mContext, 2));
 
         mPopup.update(mPopupX, mPopupY, mPopupWidth, popupHeight, false);
     }
@@ -343,7 +346,7 @@ public class Slider extends View {
     protected void onDraw(@NonNull Canvas canvas) {
         int width = getWidth();
         int height = getHeight();
-        if (width < LayoutUtils.dp2pix(mContext, 24)) {
+        if (width < ViewUtils.dp2pix(mContext, 24)) {
             canvas.drawRect(0, 0, width, getHeight(), mPaint);
         } else {
             int paddingLeft = getPaddingLeft();
@@ -437,13 +440,13 @@ public class Slider extends View {
                 }
 
                 if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                    SimpleHandler.getInstance().removeCallbacks(mCheckForShowBubble);
+                    MAIN_HANDLER.removeCallbacks(mCheckForShowBubble);
                     setShowBubble(false);
                 } else if (action == MotionEvent.ACTION_DOWN) {
                     if (mCheckForShowBubble == null) {
                         mCheckForShowBubble = new CheckForShowBubble();
                     }
-                    SimpleHandler.getInstance().postDelayed(mCheckForShowBubble, ViewConfiguration.getTapTimeout());
+                    MAIN_HANDLER.postDelayed(mCheckForShowBubble, ViewConfiguration.getTapTimeout());
                 }
 
                 if (action == MotionEvent.ACTION_UP) {

@@ -27,7 +27,7 @@ import android.widget.TextView
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.GuideSettings
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 
 class GalleryGuideView @JvmOverloads constructor(
     context: Context,

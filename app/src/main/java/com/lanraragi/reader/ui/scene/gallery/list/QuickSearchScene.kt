@@ -38,7 +38,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 
@@ -75,8 +75,8 @@ class QuickSearchScene : ToolbarScene() {
 
         val view = inflater.inflate(R.layout.scene_label_list, container, false)
 
-        mRecyclerView = ViewUtils.`$$`(view, R.id.recycler_view) as EasyRecyclerView
-        val tip = ViewUtils.`$$`(view, R.id.tip) as TextView
+        mRecyclerView = ViewUtils.requireView(view, R.id.recycler_view) as EasyRecyclerView
+        val tip = ViewUtils.requireView(view, R.id.tip) as TextView
         mViewTransition = ViewTransition(mRecyclerView, tip)
 
         val context = ehContext ?: return view
@@ -171,9 +171,9 @@ class QuickSearchScene : ToolbarScene() {
     private inner class QuickSearchHolder(itemView: View) :
         AbstractDraggableItemViewHolder(itemView), View.OnClickListener {
 
-        val label: TextView = ViewUtils.`$$`(itemView, R.id.label) as TextView
-        val dragHandler: View = ViewUtils.`$$`(itemView, R.id.drag_handler)
-        val delete: View = ViewUtils.`$$`(itemView, R.id.delete)
+        val label: TextView = ViewUtils.requireView(itemView, R.id.label) as TextView
+        val dragHandler: View = ViewUtils.requireView(itemView, R.id.drag_handler)
+        val delete: View = ViewUtils.requireView(itemView, R.id.delete)
 
         init {
             delete.setOnClickListener(this)

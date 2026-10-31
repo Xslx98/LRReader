@@ -19,7 +19,7 @@ import android.R
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.FrameLayout
-import com.lanraragi.framework.lib.yorozuya.LayoutUtils
+import com.lanraragi.reader.util.ViewUtils
 import kotlin.math.min
 
 open class DrawerView : FrameLayout {
@@ -44,7 +44,7 @@ open class DrawerView : FrameLayout {
     private fun init(context: Context, attrs: AttributeSet?) {
         val a = context.obtainStyledAttributes(attrs, SIZE_ATTRS)
         mMaxWidth =
-            a.getDimensionPixelOffset(0, LayoutUtils.dp2pix(context, DEFAULT_MAX_WIDTH.toFloat()))
+            a.getDimensionPixelOffset(0, ViewUtils.dp2pix(context, DEFAULT_MAX_WIDTH.toFloat()))
         a.recycle()
     }
 

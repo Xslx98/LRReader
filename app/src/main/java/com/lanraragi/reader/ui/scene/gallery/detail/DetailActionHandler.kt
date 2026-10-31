@@ -25,7 +25,6 @@ import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.download.DownloadLabelHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.util.ClipboardUtil
-import com.lanraragi.framework.lib.yorozuya.AssertUtils
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

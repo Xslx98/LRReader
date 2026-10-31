@@ -36,7 +36,6 @@ import com.lanraragi.reader.domain.parseRatingFromTags
 import kotlinx.coroutines.CancellationException
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.framework.lib.yorozuya.ObjectUtils
 import com.lanraragi.reader.domain.Archive
 
 import kotlinx.coroutines.CoroutineScope
@@ -689,7 +688,7 @@ class DownloadManager(
         val dstList = repo.getInfoListForLabel(label) ?: run { Log.e(TAG, "Can't find label with label: $label"); return }
         val changed = ArrayList<DownloadInfo>()
         for (info in list) {
-            if (ObjectUtils.equal(info.label, label)) continue
+            if (info.label == label) continue
             val srcList = repo.getInfoListForLabel(info.label)
             if (srcList == null) { Log.e(TAG, "Can't find label with label: " + info.label); continue }
             srcList.remove(info); info.label = label; DownloadRepository.insertSorted(dstList, info); changed.add(info)

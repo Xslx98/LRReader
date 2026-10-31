@@ -57,8 +57,8 @@ import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.reader.widget.SkeletonView
-import com.lanraragi.framework.lib.yorozuya.AssertUtils
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.widget.ListRefreshLayout
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
@@ -347,18 +347,18 @@ class GalleryListScene : BaseScene(),
 
         mHideActionFabSlop = ViewConfiguration.get(context).scaledTouchSlop
 
-        val mainLayout = ViewUtils.`$$`(view, R.id.main_layout)
+        val mainLayout = ViewUtils.requireView(view, R.id.main_layout)
         rootLayout = mainLayout as ViewGroup
-        val contentLayout = ViewUtils.`$$`(mainLayout, R.id.content_layout) as ContentLayout
+        val contentLayout = ViewUtils.requireView(mainLayout, R.id.content_layout) as ContentLayout
         recyclerView = contentLayout.recyclerView
         val fastScroller = contentLayout.fastScroller
         val refreshLayout: ListRefreshLayout = contentLayout.refreshLayout
-        searchLayout = ViewUtils.`$$`(mainLayout, R.id.search_layout) as SearchLayout
-        searchBar = ViewUtils.`$$`(mainLayout, R.id.search_bar) as SearchBar
-        fabLayout = ViewUtils.`$$`(mainLayout, R.id.fab_layout) as FabLayout
-        floatingActionButton = ViewUtils.`$$`(fabLayout, R.id.tag_filter) as FloatingActionButton
+        searchLayout = ViewUtils.requireView(mainLayout, R.id.search_layout) as SearchLayout
+        searchBar = ViewUtils.requireView(mainLayout, R.id.search_bar) as SearchBar
+        fabLayout = ViewUtils.requireView(mainLayout, R.id.fab_layout) as FabLayout
+        floatingActionButton = ViewUtils.requireView(fabLayout, R.id.tag_filter) as FloatingActionButton
 
-        searchFab = ViewUtils.`$$`(mainLayout, R.id.search_fab)
+        searchFab = ViewUtils.requireView(mainLayout, R.id.search_fab)
 
         val paddingTopSB = resources.getDimensionPixelOffset(R.dimen.gallery_padding_top_search_bar)
         val paddingBottomFab = resources.getDimensionPixelOffset(R.dimen.gallery_padding_bottom_fab)

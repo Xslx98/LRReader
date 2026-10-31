@@ -27,7 +27,6 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Spinner
 import com.lanraragi.reader.R
-import com.lanraragi.framework.lib.yorozuya.NumberUtils
 
 class AdvanceSearchTable @JvmOverloads constructor(
     context: Context,
@@ -113,30 +112,30 @@ class AdvanceSearchTable @JvmOverloads constructor(
 
     fun getPageFrom(): Int {
         if (mSp.isChecked) {
-            return NumberUtils.parseIntSafely(mSpf.text.toString(), -1)
+            return mSpf.text.toString().toIntOrNull() ?: -1
         }
         return -1
     }
 
     fun getPageTo(): Int {
         if (mSp.isChecked) {
-            return NumberUtils.parseIntSafely(mSpt.text.toString(), -1)
+            return mSpt.text.toString().toIntOrNull() ?: -1
         }
         return -1
     }
 
     fun setAdvanceSearch(advanceSearch: Int) {
-        mSname.isChecked = NumberUtils.int2boolean(advanceSearch and SNAME)
-        mStags.isChecked = NumberUtils.int2boolean(advanceSearch and STAGS)
-        mSdesc.isChecked = NumberUtils.int2boolean(advanceSearch and SDESC)
-        mStorr.isChecked = NumberUtils.int2boolean(advanceSearch and STORR)
-        mSto.isChecked = NumberUtils.int2boolean(advanceSearch and STO)
-        mSdt1.isChecked = NumberUtils.int2boolean(advanceSearch and SDT1)
-        mSdt2.isChecked = NumberUtils.int2boolean(advanceSearch and SDT2)
-        mSh.isChecked = NumberUtils.int2boolean(advanceSearch and SH)
-        mSfl.isChecked = NumberUtils.int2boolean(advanceSearch and SFL)
-        mSfu.isChecked = NumberUtils.int2boolean(advanceSearch and SFU)
-        mSft.isChecked = NumberUtils.int2boolean(advanceSearch and SFT)
+        mSname.isChecked = advanceSearch and SNAME != 0
+        mStags.isChecked = advanceSearch and STAGS != 0
+        mSdesc.isChecked = advanceSearch and SDESC != 0
+        mStorr.isChecked = advanceSearch and STORR != 0
+        mSto.isChecked = advanceSearch and STO != 0
+        mSdt1.isChecked = advanceSearch and SDT1 != 0
+        mSdt2.isChecked = advanceSearch and SDT2 != 0
+        mSh.isChecked = advanceSearch and SH != 0
+        mSfl.isChecked = advanceSearch and SFL != 0
+        mSfu.isChecked = advanceSearch and SFU != 0
+        mSft.isChecked = advanceSearch and SFT != 0
     }
 
     fun setMinRating(minRating: Int) {

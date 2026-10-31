@@ -24,7 +24,6 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.ReadingSettings
-import com.lanraragi.framework.lib.yorozuya.NumberUtils
 
 object Settings {
 
@@ -133,7 +132,7 @@ object Settings {
     @JvmStatic
     fun getIntFromStr(key: String, defValue: Int): Int {
         return try {
-            NumberUtils.parseIntSafely(sSettingsPre.getString(key, defValue.toString()), defValue)
+            sSettingsPre.getString(key, defValue.toString())?.toIntOrNull() ?: defValue
         } catch (e: ClassCastException) {
             Log.d(TAG, "Get ClassCastException when get $key value", e)
             defValue

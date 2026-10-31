@@ -21,8 +21,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Debug
 import android.util.Log
-import com.lanraragi.framework.lib.yorozuya.FileUtils
-import com.lanraragi.framework.lib.yorozuya.OSUtils
+import com.lanraragi.reader.util.FileUtils
+import com.lanraragi.reader.util.OSUtils
 import com.lanraragi.framework.scene.StageActivity
 import com.lanraragi.reader.diagnostics.CrashLogStore
 import com.lanraragi.reader.diagnostics.DiagLog

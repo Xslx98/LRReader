@@ -44,8 +44,8 @@ import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter
 import com.lanraragi.reader.ui.scene.download.part.MyPageChangeListener
 import com.lanraragi.reader.widget.MyEasyRecyclerView
 import com.lanraragi.reader.widget.SearchBar
-import com.lanraragi.framework.lib.yorozuya.AssertUtils
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
@@ -258,12 +258,12 @@ class DownloadsScene : ToolbarScene(),
         mGalleryOpenHelper = DownloadGalleryOpenHelper(GalleryOpenHelperCallback())
         mSelectionHelper = DownloadSelectionHelper(SelectionHelperCallback())
 
-        mProgressView = ViewUtils.`$$`(view, R.id.download_progress_view) as ProgressView
-        val content = ViewUtils.`$$`(view, R.id.content)
-        mRecyclerView = ViewUtils.`$$`(content, R.id.recycler_view) as MyEasyRecyclerView
-        val fastScroller = ViewUtils.`$$`(content, R.id.fast_scroller) as FastScroller
-        mFabLayout = ViewUtils.`$$`(view, R.id.fab_layout) as FabLayout
-        val tip = ViewUtils.`$$`(view, R.id.tip) as TextView
+        mProgressView = ViewUtils.requireView(view, R.id.download_progress_view) as ProgressView
+        val content = ViewUtils.requireView(view, R.id.content)
+        mRecyclerView = ViewUtils.requireView(content, R.id.recycler_view) as MyEasyRecyclerView
+        val fastScroller = ViewUtils.requireView(content, R.id.fast_scroller) as FastScroller
+        mFabLayout = ViewUtils.requireView(view, R.id.fab_layout) as FabLayout
+        val tip = ViewUtils.requireView(view, R.id.tip) as TextView
         // Initialize helpers
         mPaginationHelper = DownloadPaginationHelper(viewModel)
         mDragDropHelper = DownloadDragDropHelper()
@@ -271,7 +271,7 @@ class DownloadsScene : ToolbarScene(),
         if (mPaginationIndicator != null) {
             mPaginationHelper?.needInitPage = true
         }
-        mPaginationIndicator = ViewUtils.`$$`(view, R.id.indicator) as PaginationIndicator
+        mPaginationIndicator = ViewUtils.requireView(view, R.id.indicator) as PaginationIndicator
 
         mPaginationIndicator?.setPerPageCountChoices(viewModel.perPageCountChoices, mPaginationHelper?.getPageSizePos(viewModel.pageSize.value) ?: 0)
 

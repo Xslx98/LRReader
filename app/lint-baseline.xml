@@ -383,28 +383,6 @@
     </issue>
 
     <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of `@TargetApi` to propagate the requirement to callers of `removeHardwareAccelerationSupport`"
-        errorLine1="    @TargetApi(Build.VERSION_CODES.HONEYCOMB)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
-            line="266"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of `@TargetApi` to propagate the requirement to callers of `addHardwareAccelerationSupport`"
-        errorLine1="    @TargetApi(Build.VERSION_CODES.HONEYCOMB)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
-            line="275"
-            column="5"/>
-    </issue>
-
-    <issue
         id="UseCompatLoadingForDrawables"
         message="Use `ResourcesCompat.getDrawable()`"
         errorLine1="                context.resources.getDrawable(R.drawable.shadow_8dp) as NinePatchDrawable"
@@ -1183,61 +1161,6 @@
             file="src/main/java/com/lanraragi/framework/reveal/ViewAnimationUtils.java"
             line="36"
             column="5"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 11"
-        errorLine1="    @TargetApi(Build.VERSION_CODES.HONEYCOMB)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
-            line="266"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
-            line="268"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 11"
-        errorLine1="    @TargetApi(Build.VERSION_CODES.HONEYCOMB)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
-            line="275"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
-            line="277"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/yorozuya/ViewUtils.java"
-            line="319"
-            column="17"/>
     </issue>
 
     <issue

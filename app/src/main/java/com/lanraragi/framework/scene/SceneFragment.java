@@ -25,7 +25,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import com.lanraragi.reader.util.ThemeAttrs;
 import com.lanraragi.reader.R;
-import com.lanraragi.framework.lib.yorozuya.collect.IntList;
+import com.lanraragi.reader.util.IntList;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;

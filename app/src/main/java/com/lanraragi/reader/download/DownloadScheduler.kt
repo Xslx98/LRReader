@@ -22,7 +22,6 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.spider.SpiderQueen
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.lib.yorozuya.collect.LongList
 import kotlinx.coroutines.CoroutineScope
 
 /**

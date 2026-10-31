@@ -17,7 +17,7 @@
 package com.lanraragi.framework.lib.glview.glrenderer;
 
 import com.lanraragi.framework.lib.glview.view.AnimationTime;
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
+import com.lanraragi.reader.util.MathUtils;
 
 // FadeTexture is a texture which fades the given texture along the time.
 public abstract class FadeTexture implements Texture {

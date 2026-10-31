@@ -16,13 +16,11 @@
 package com.lanraragi.reader.ui.scene.download.part
 
 import android.util.Log
-import com.lanraragi.framework.lib.yorozuya.IOUtils
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.cover.CoverStore
 import java.io.IOException
 import java.io.InputStream
-import java.io.OutputStream
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -88,16 +86,12 @@ class ThumbDataContainer(
     override fun save(input: InputStream): Boolean {
         val file = resolveDir()?.createFile(THUMB_FILE_NAME) ?: return false
 
-        var os: OutputStream? = null
-        try {
-            os = file.openOutputStream()
-            IOUtils.copy(input, os)
-            return true
+        return try {
+            file.openOutputStream().use { input.copyTo(it) }
+            true
         } catch (e: IOException) {
             e.printStackTrace()
-            return false
-        } finally {
-            IOUtils.closeQuietly(os)
+            false
         }
     }
 

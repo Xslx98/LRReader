@@ -11,8 +11,6 @@ package com.lanraragi.reader.gallery
 
 import android.content.Context
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.framework.lib.yorozuya.IOUtils
-import com.lanraragi.framework.lib.yorozuya.StringUtils
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.NaturalComparator
 import java.io.File
@@ -32,7 +30,7 @@ internal object DirImageFiles {
 
     /** Filter for files whose extensions match any supported image format. */
     val imageFilter: (String) -> Boolean = { name ->
-        StringUtils.endsWith(name.lowercase(), GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS)
+        GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS.any { name.lowercase().endsWith(it) }
     }
 
     /** Natural-order comparator (1.png < 2.png < 10.png) by filename. */
@@ -144,9 +142,7 @@ internal object DirImageFiles {
                 }
                 FileInputStream(tmpFile).use { fis -> Image.decode(fis, false) }
             } finally {
-                if (!tmpFile.delete()) {
-                    IOUtils.closeQuietly(null)
-                }
+                tmpFile.delete()
             }
         }
     }

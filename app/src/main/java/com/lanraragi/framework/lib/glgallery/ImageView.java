@@ -26,8 +26,8 @@ import com.lanraragi.framework.lib.glview.image.ImageTexture;
 import com.lanraragi.framework.lib.glview.image.TileRegions;
 import com.lanraragi.framework.lib.glview.view.GLRoot;
 import com.lanraragi.framework.lib.glview.view.GLView;
-import com.lanraragi.framework.lib.yorozuya.AnimationUtils;
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
+import com.lanraragi.reader.util.AnimationUtils;
+import com.lanraragi.reader.util.MathUtils;
 import java.util.Arrays;
 
 class ImageView extends GLView implements ImageTexture.Callback {

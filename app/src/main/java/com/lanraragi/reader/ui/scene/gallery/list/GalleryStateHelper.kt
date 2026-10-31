@@ -11,8 +11,8 @@ import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.SearchLayout
-import com.lanraragi.framework.lib.yorozuya.AnimationUtils
-import com.lanraragi.framework.lib.yorozuya.SimpleAnimatorListener
+import com.lanraragi.reader.util.AnimationUtils
+import android.animation.AnimatorListenerAdapter
 
 /**
  * Manages search state machine and FAB animations for GalleryListScene.
@@ -39,13 +39,13 @@ class GalleryStateHelper(private val callback: Callback) {
         private set
     private var mShowActionFab = true
 
-    private val mActionFabAnimatorListener: Animator.AnimatorListener = object : SimpleAnimatorListener() {
+    private val mActionFabAnimatorListener: Animator.AnimatorListener = object : AnimatorListenerAdapter() {
         override fun onAnimationEnd(animation: Animator) {
             callback.getFabLayout()?.let { (it.primaryFab as View).visibility = View.INVISIBLE }
         }
     }
 
-    private val mSearchFabAnimatorListener: Animator.AnimatorListener = object : SimpleAnimatorListener() {
+    private val mSearchFabAnimatorListener: Animator.AnimatorListener = object : AnimatorListenerAdapter() {
         override fun onAnimationEnd(animation: Animator) {
             callback.getSearchFab()?.visibility = View.INVISIBLE
         }

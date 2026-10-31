@@ -7,7 +7,7 @@ import android.view.View
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.domain.buildRatingEmoji
@@ -93,8 +93,8 @@ class DetailRatingController(private val viewModel: GalleryDetailViewModel) {
      */
     private fun rebindFromViewModel(mainView: View?) {
         mainView ?: return
-        val ratingBar = ViewUtils.`$$`(mainView, R.id.rating) as? RatingBar
-        val ratingTextView = ViewUtils.`$$`(mainView, R.id.rating_text) as? TextView
+        val ratingBar = ViewUtils.requireView(mainView, R.id.rating) as? RatingBar
+        val ratingTextView = ViewUtils.requireView(mainView, R.id.rating_text) as? TextView
         val current = viewModel.currentRating.value ?: 0f
         if (ratingBar != null) ratingBar.rating = current
         if (ratingTextView != null) {

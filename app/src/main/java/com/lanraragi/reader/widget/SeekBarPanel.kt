@@ -23,7 +23,7 @@ import android.view.MotionEvent
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import com.lanraragi.reader.R
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 
 class SeekBarPanel @JvmOverloads constructor(
     context: Context,
@@ -36,7 +36,7 @@ class SeekBarPanel @JvmOverloads constructor(
 
     override fun onFinishInflate() {
         super.onFinishInflate()
-        mSeekBar = ViewUtils.`$$`(this, R.id.seek_bar) as SeekBar
+        mSeekBar = ViewUtils.requireView(this, R.id.seek_bar) as SeekBar
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

@@ -55,7 +55,7 @@ import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.lanraragi.reader.widget.SimpleRatingView
-import com.lanraragi.framework.lib.yorozuya.ViewUtils
+import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.storage.StorageFile
@@ -494,7 +494,7 @@ class DownloadAdapter(
                 holder.progressBar.progress = target
             }
         }
-        holder.speed.text = com.lanraragi.framework.lib.yorozuya.FileUtils.humanReadableByteCount(speed, false) + "/S"
+        holder.speed.text = com.lanraragi.reader.util.FileUtils.humanReadableByteCount(speed, false) + "/S"
     }
 
     private fun cancelProgressGlide(holder: DownloadHolder) {

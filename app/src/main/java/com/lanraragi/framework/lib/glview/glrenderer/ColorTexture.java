@@ -18,7 +18,6 @@ package com.lanraragi.framework.lib.glview.glrenderer;
 
 import android.graphics.RectF;
 
-import com.lanraragi.framework.lib.yorozuya.ColorUtils;
 
 // ColorTexture is a texture which fills the rectangle with the specified color.
 public class ColorTexture implements Texture {
@@ -54,7 +53,7 @@ public class ColorTexture implements Texture {
 
     @Override
     public boolean isOpaque() {
-        return ColorUtils.isOpaque(mColor);
+        return mColor >>> 24 == 0xFF;
     }
 
     public void setSize(int width, int height) {

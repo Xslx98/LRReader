@@ -17,7 +17,7 @@
 package com.lanraragi.framework.lib.glview.anim;
 
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
+import com.lanraragi.reader.util.MathUtils;
 
 public class AlphaAnimation extends CanvasAnimation {
     private final float mStartAlpha;

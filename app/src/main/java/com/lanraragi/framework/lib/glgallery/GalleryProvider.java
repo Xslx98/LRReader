@@ -30,8 +30,8 @@ import com.lanraragi.framework.lib.glview.image.ImageWrapper;
 import com.lanraragi.framework.lib.glview.view.GLRoot;
 import com.lanraragi.framework.lib.image.Image;
 //import com.lanraragi.framework.lib.image.Image1;
-import com.lanraragi.framework.lib.yorozuya.ConcurrentPool;
-import com.lanraragi.framework.lib.yorozuya.OSUtils;
+import androidx.core.util.Pools;
+import com.lanraragi.reader.util.OSUtils;
 import com.lanraragi.reader.util.MemoryTrim;
 import com.lanraragi.reader.util.MemoryTrimmable;
 
@@ -43,7 +43,7 @@ public abstract class GalleryProvider implements MemoryTrimmable {
     public static final int STATE_WAIT = -1;
     public static final int STATE_ERROR = -2;
 
-    private final ConcurrentPool<NotifyTask> mNotifyTaskPool = new ConcurrentPool<>(5);
+    private final Pools.SynchronizedPool<NotifyTask> mNotifyTaskPool = new Pools.SynchronizedPool<>(5);
     private volatile Listener mListener;
     private volatile GLRoot mGLRoot;
 
@@ -242,7 +242,7 @@ public abstract class GalleryProvider implements MemoryTrimmable {
             return;
         }
 
-        NotifyTask task = mNotifyTaskPool.pop();
+        NotifyTask task = mNotifyTaskPool.acquire();
         if (task == null) {
             task = new NotifyTask(listener, mNotifyTaskPool);
         }
@@ -264,7 +264,7 @@ public abstract class GalleryProvider implements MemoryTrimmable {
         public static final int TYPE_FAILED = 4;
 
         private final Listener mListener;
-        private final ConcurrentPool<NotifyTask> mPool;
+        private final Pools.Pool<NotifyTask> mPool;
 
         @Type
         private int mType;
@@ -273,7 +273,7 @@ public abstract class GalleryProvider implements MemoryTrimmable {
         private ImageWrapper mImage;
         private String mError;
 
-        public NotifyTask(Listener listener, ConcurrentPool<NotifyTask> pool) {
+        public NotifyTask(Listener listener, Pools.Pool<NotifyTask> pool) {
             mListener = listener;
             mPool = pool;
         }
@@ -314,7 +314,7 @@ public abstract class GalleryProvider implements MemoryTrimmable {
             mImage = null;
             mError = null;
             // Push back
-            mPool.push(this);
+            mPool.release(this);
 
             return false;
         }

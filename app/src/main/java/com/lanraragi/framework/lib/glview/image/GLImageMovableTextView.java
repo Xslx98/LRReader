@@ -22,20 +22,20 @@ import android.text.TextUtils;
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
 import com.lanraragi.framework.lib.glview.view.GLView;
 import com.lanraragi.framework.lib.glview.view.Gravity;
-import com.lanraragi.framework.lib.yorozuya.collect.CollectionUtils;
 
 public class GLImageMovableTextView extends GLView {
 
     ImageMovableTextTexture mTextTexture;
 
     private String mText = "";
-    private int[] mIndexes = CollectionUtils.EMPTY_INT_ARRAY;
+    private static final int[] EMPTY_INDEXES = new int[0];
+    private int[] mIndexes = EMPTY_INDEXES;
 
     private int mGravity = Gravity.NO_GRAVITY;
 
     private void generateIndexes() {
         if (mTextTexture == null || TextUtils.isEmpty(mText)) {
-            mIndexes = CollectionUtils.EMPTY_INT_ARRAY;
+            mIndexes = EMPTY_INDEXES;
         } else {
             mIndexes = mTextTexture.getTextIndexes(mText);
         }

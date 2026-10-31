@@ -18,7 +18,7 @@ package com.lanraragi.reader
 
 import android.annotation.SuppressLint
 import android.content.Context
-import com.lanraragi.framework.lib.yorozuya.FileUtils
+import com.lanraragi.reader.util.FileUtils
 import java.io.File
 
 object AppConfig {

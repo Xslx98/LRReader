@@ -30,7 +30,7 @@ import android.os.Build;
 import android.util.FloatProperty;
 
 import com.lanraragi.reader.R;
-import com.lanraragi.framework.lib.yorozuya.MathUtils;
+import com.lanraragi.reader.util.MathUtils;
 
 public class AddDeleteDrawable extends Drawable {
 

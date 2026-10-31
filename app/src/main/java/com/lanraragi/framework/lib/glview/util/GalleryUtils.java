@@ -18,7 +18,6 @@ package com.lanraragi.framework.lib.glview.util;
 
 import android.graphics.Color;
 
-import com.lanraragi.framework.lib.yorozuya.AssertError;
 
 public class GalleryUtils {
 
@@ -52,7 +51,7 @@ public class GalleryUtils {
 
     public static void assertInRenderThread() {
         if (sCurrentThread != Thread.currentThread()) {
-            throw new AssertError("Should not do this in render thread");
+            throw new AssertionError("Should not do this in render thread");
         }
     }
 }
