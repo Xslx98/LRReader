@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress(
-    "LargeClass",
-    "LongMethod",
-    "NestedBlockDepth",
-) // TODO(2.4-idiom)
-
 package com.lanraragi.framework.widget.lockpattern
 
 import android.animation.Animator
@@ -751,44 +745,62 @@ class LockPatternView : View {
         val count = pattern.size
 
         if (patternDisplayMode == DisplayMode.Animate) {
-            // figure out which circles to draw
-
-            // + 1 so we pause on complete pattern
-            val oneCycle = (count + 1) * MILLIS_PER_CIRCLE_ANIMATING
-            val spotInCycle = (SystemClock.elapsedRealtime() - animatingPeriodStart).toInt() % oneCycle
-            val numCircles = spotInCycle / MILLIS_PER_CIRCLE_ANIMATING
-
-            clearPatternDrawLookup()
-            for (i in 0 until numCircles) {
-                val cell = pattern[i]
-                patternDrawLookup[cell.row][cell.column] = true
-            }
-
-            // figure out in progress portion of ghosting line
-
-            val needToUpdateInProgressPoint = numCircles > 0 && numCircles < count
-
-            if (needToUpdateInProgressPoint) {
-                val percentageOfNextCircle =
-                    (spotInCycle % MILLIS_PER_CIRCLE_ANIMATING).toFloat() / MILLIS_PER_CIRCLE_ANIMATING
-
-                val currentCell = pattern[numCircles - 1]
-                val centerX = getCenterXForColumn(currentCell.column)
-                val centerY = getCenterYForRow(currentCell.row)
-
-                val nextCell = pattern[numCircles]
-                val dx = percentageOfNextCircle * (getCenterXForColumn(nextCell.column) - centerX)
-                val dy = percentageOfNextCircle * (getCenterYForRow(nextCell.row) - centerY)
-                inProgressX = centerX + dx
-                inProgressY = centerY + dy
-            }
-            // UPSTREAM-LEGACY (AOSP): potential infinite loop in pattern detection
-            invalidate()
+            updateAnimationFrame(count)
         }
 
         currentPath.rewind()
 
-        // draw the circles
+        drawCircles(canvas)
+
+        // UPSTREAM-LEGACY (AOSP): path should be cached per cell hit-detection
+        // only the last segment of the path should be computed here
+        // draw the path of the pattern (unless we are in stealth mode)
+        if (!isInStealthMode) {
+            drawPatternPath(canvas, count)
+        }
+    }
+
+    /**
+     * Animate mode: picks the circles shown at this point of the cycle and
+     * moves the in-progress point along the ghosting line.
+     */
+    private fun updateAnimationFrame(count: Int) {
+        // figure out which circles to draw
+
+        // + 1 so we pause on complete pattern
+        val oneCycle = (count + 1) * MILLIS_PER_CIRCLE_ANIMATING
+        val spotInCycle = (SystemClock.elapsedRealtime() - animatingPeriodStart).toInt() % oneCycle
+        val numCircles = spotInCycle / MILLIS_PER_CIRCLE_ANIMATING
+
+        clearPatternDrawLookup()
+        for (i in 0 until numCircles) {
+            val cell = pattern[i]
+            patternDrawLookup[cell.row][cell.column] = true
+        }
+
+        // figure out in progress portion of ghosting line
+
+        val needToUpdateInProgressPoint = numCircles > 0 && numCircles < count
+
+        if (needToUpdateInProgressPoint) {
+            val percentageOfNextCircle =
+                (spotInCycle % MILLIS_PER_CIRCLE_ANIMATING).toFloat() / MILLIS_PER_CIRCLE_ANIMATING
+
+            val currentCell = pattern[numCircles - 1]
+            val centerX = getCenterXForColumn(currentCell.column)
+            val centerY = getCenterYForRow(currentCell.row)
+
+            val nextCell = pattern[numCircles]
+            val dx = percentageOfNextCircle * (getCenterXForColumn(nextCell.column) - centerX)
+            val dy = percentageOfNextCircle * (getCenterYForRow(nextCell.row) - centerY)
+            inProgressX = centerX + dx
+            inProgressY = centerY + dy
+        }
+        // UPSTREAM-LEGACY (AOSP): potential infinite loop in pattern detection
+        invalidate()
+    }
+
+    private fun drawCircles(canvas: Canvas) {
         for (i in 0 until 3) {
             val centerY = getCenterYForRow(i)
             for (j in 0 until 3) {
@@ -802,55 +814,50 @@ class LockPatternView : View {
                 )
             }
         }
+    }
 
-        // UPSTREAM-LEGACY (AOSP): path should be cached per cell hit-detection
-        // only the last segment of the path should be computed here
-        // draw the path of the pattern (unless we are in stealth mode)
-        val drawPath = !isInStealthMode
+    private fun drawPatternPath(canvas: Canvas, count: Int) {
+        pathPaint.color = getCurrentColor(true /* partOfPattern */)
 
-        if (drawPath) {
-            pathPaint.color = getCurrentColor(true /* partOfPattern */)
+        var anyCircles = false
+        var lastX = 0f
+        var lastY = 0f
+        for (i in 0 until count) {
+            val cell = pattern[i]
 
-            var anyCircles = false
-            var lastX = 0f
-            var lastY = 0f
-            for (i in 0 until count) {
-                val cell = pattern[i]
-
-                // only draw the part of the pattern stored in
-                // the lookup table (this is only different in the case
-                // of animation).
-                if (!patternDrawLookup[cell.row][cell.column]) {
-                    break
-                }
-                anyCircles = true
-
-                val centerX = getCenterXForColumn(cell.column)
-                val centerY = getCenterYForRow(cell.row)
-                if (i != 0) {
-                    val state = cellStates[cell.row][cell.column]
-                    currentPath.rewind()
-                    currentPath.moveTo(lastX, lastY)
-                    if (state.lineEndX != Float.MIN_VALUE && state.lineEndY != Float.MIN_VALUE) {
-                        currentPath.lineTo(state.lineEndX, state.lineEndY)
-                    } else {
-                        currentPath.lineTo(centerX, centerY)
-                    }
-                    canvas.drawPath(currentPath, pathPaint)
-                }
-                lastX = centerX
-                lastY = centerY
+            // only draw the part of the pattern stored in
+            // the lookup table (this is only different in the case
+            // of animation).
+            if (!patternDrawLookup[cell.row][cell.column]) {
+                break
             }
+            anyCircles = true
 
-            // draw last in progress section
-            if ((patternInProgress || patternDisplayMode == DisplayMode.Animate) && anyCircles) {
+            val centerX = getCenterXForColumn(cell.column)
+            val centerY = getCenterYForRow(cell.row)
+            if (i != 0) {
+                val state = cellStates[cell.row][cell.column]
                 currentPath.rewind()
                 currentPath.moveTo(lastX, lastY)
-                currentPath.lineTo(inProgressX, inProgressY)
-
-                pathPaint.alpha = (calculateLastSegmentAlpha(inProgressX, inProgressY, lastX, lastY) * 255f).toInt()
+                if (state.lineEndX != Float.MIN_VALUE && state.lineEndY != Float.MIN_VALUE) {
+                    currentPath.lineTo(state.lineEndX, state.lineEndY)
+                } else {
+                    currentPath.lineTo(centerX, centerY)
+                }
                 canvas.drawPath(currentPath, pathPaint)
             }
+            lastX = centerX
+            lastY = centerY
+        }
+
+        // draw last in progress section
+        if ((patternInProgress || patternDisplayMode == DisplayMode.Animate) && anyCircles) {
+            currentPath.rewind()
+            currentPath.moveTo(lastX, lastY)
+            currentPath.lineTo(inProgressX, inProgressY)
+
+            pathPaint.alpha = (calculateLastSegmentAlpha(inProgressX, inProgressY, lastX, lastY) * 255f).toInt()
+            canvas.drawPath(currentPath, pathPaint)
         }
     }
 
