@@ -101,17 +101,6 @@
     </issue>
 
     <issue
-        id="PrivateApi"
-        message="Accessing internal APIs via reflection is not supported and may not work on all devices or in the future"
-        errorLine1="      Class&lt;?> clazz = ClassLoader.getSystemClassLoader().loadClass(&quot;android.widget.Editor&quot;);"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/HackyTextInputEditText.java"
-            line="40"
-            column="24"/>
-    </issue>
-
-    <issue
         id="AndroidGradlePluginVersion"
         message="A newer version of com.android.application than 8.13.2 is available: 9.4.0"
         errorLine1="agp = &quot;8.13.2&quot;"
