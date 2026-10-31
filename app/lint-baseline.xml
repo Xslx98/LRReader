@@ -36,17 +36,6 @@
 
     <issue
         id="CustomViewStyleable"
-        message="By convention, the custom view (`CuteSpinner`) and the declare-styleable (`Spinner`) should have the same name (various editor features rely on this convention)"
-        errorLine1="                androidx.appcompat.R.styleable.Spinner, defStyleAttr, 0);"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/CuteSpinner.java"
-            line="61"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="CustomViewStyleable"
         message="By convention, the custom view (`IndicatingListView`) and the declare-styleable (`Indicating`) should have the same name (various editor features rely on this convention)"
         errorLine1="        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Indicating);"
         errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
