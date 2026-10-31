@@ -58,17 +58,18 @@ import com.lanraragi.reader.util.isLightTheme
  */
 class LockPatternView : View {
 
-    private val mCellStates: Array<Array<CellState>>
+    val cellStates: Array<Array<CellState>>
 
-    private val mDotSize: Int
-    private val mDotSizeActivated: Int
-    private val mPathWidth: Int
+    private val dotSize: Int
+    private val dotSizeActivated: Int
+    private val pathWidth: Int
 
-    private val mPaint = Paint()
-    private val mPathPaint = Paint()
+    private val paint = Paint()
+    private val pathPaint = Paint()
 
-    private var mOnPatternListener: OnPatternListener? = null
-    private val mPattern = ArrayList<Cell>(9)
+    /** The call back for pattern detection. */
+    var onPatternListener: OnPatternListener? = null
+    private val pattern = ArrayList<Cell>(9)
 
     /**
      * Lookup table for the circles of the pattern we are currently drawing.
@@ -76,39 +77,48 @@ class LockPatternView : View {
      * in which case we use this to hold the cells we are drawing for the in
      * progress animation.
      */
-    private val mPatternDrawLookup = Array(3) { BooleanArray(3) }
+    private val patternDrawLookup = Array(3) { BooleanArray(3) }
 
     /**
      * the in progress point:
      * - during interaction: where the user's finger is
      * - during animation: the current tip of the animating line
      */
-    private var mInProgressX = -1f
-    private var mInProgressY = -1f
+    private var inProgressX = -1f
+    private var inProgressY = -1f
 
-    private var mAnimatingPeriodStart: Long = 0
+    private var animatingPeriodStart: Long = 0
 
-    private var mPatternDisplayMode = DisplayMode.Correct
-    private var mInputEnabled = true
-    private var mInStealthMode = false
-    private var mEnableHapticFeedback = true
-    private var mPatternInProgress = false
+    private var patternDisplayMode = DisplayMode.Correct
+    private var inputEnabled = true
 
-    private val mHitFactor = 0.6f
+    /**
+     * Whether the view is in stealth mode.  If true, there will be no
+     * visible feedback as the user enters the pattern.
+     */
+    var isInStealthMode = false
 
-    private var mSquareWidth = 0f
-    private var mSquareHeight = 0f
+    /**
+     * Whether the view will use tactile feedback.  If true, there will be
+     * tactile feedback as the user enters the pattern.
+     */
+    var isTactileFeedbackEnabled = true
 
-    private val mCurrentPath = Path()
-    private val mInvalidate = Rect()
-    private val mTmpInvalidateRect = Rect()
+    private var patternInProgress = false
 
-    private val mRegularColor: Int
-    private val mErrorColor: Int
-    private val mSuccessColor: Int
+    private var squareWidth = 0f
+    private var squareHeight = 0f
 
-    private val mFastOutSlowInInterpolator: Interpolator
-    private val mLinearOutSlowInInterpolator: Interpolator
+    private val currentPath = Path()
+    private val invalidateRect = Rect()
+    private val tmpInvalidateRect = Rect()
+
+    private val regularColor: Int
+    private val errorColor: Int
+    private val successColor: Int
+
+    private val fastOutSlowInInterpolator: Interpolator
+    private val linearOutSlowInInterpolator: Interpolator
 
     /**
      * Represents a cell in the 3 X 3 matrix of the unlock pattern view.
@@ -127,7 +137,7 @@ class LockPatternView : View {
 
         companion object {
             // keep # objects limited to 9
-            private val sCells = Array(3) { i -> Array(3) { j -> Cell(i, j) } }
+            private val cells = Array(3) { i -> Array(3) { j -> Cell(i, j) } }
 
             /**
              * @param row The row of the cell.
@@ -136,7 +146,7 @@ class LockPatternView : View {
             @Synchronized
             fun of(row: Int, column: Int): Cell {
                 checkRange(row, column)
-                return sCells[row][column]
+                return cells[row][column]
             }
 
             private fun checkRange(row: Int, column: Int) {
@@ -216,11 +226,11 @@ class LockPatternView : View {
     init {
         isClickable = true
 
-        mPathPaint.isAntiAlias = true
-        mPathPaint.isDither = true
+        pathPaint.isAntiAlias = true
+        pathPaint.isDither = true
 
         // getColor(id, null) is what the deprecated getColor(id) delegates to.
-        mRegularColor = resources.getColor(
+        regularColor = resources.getColor(
             if (context.isLightTheme()) {
                 R.color.lock_pattern_view_regular_color_light
             } else {
@@ -228,70 +238,40 @@ class LockPatternView : View {
             },
             null,
         )
-        mErrorColor = resources.getColor(R.color.lock_pattern_view_error_color, null)
-        mSuccessColor = resources.getColor(R.color.lock_pattern_view_success_color, null)
+        errorColor = resources.getColor(R.color.lock_pattern_view_error_color, null)
+        successColor = resources.getColor(R.color.lock_pattern_view_success_color, null)
 
-        val pathColor = mRegularColor
-        mPathPaint.color = pathColor
+        val pathColor = regularColor
+        pathPaint.color = pathColor
 
-        mPathPaint.style = Paint.Style.STROKE
-        mPathPaint.strokeJoin = Paint.Join.ROUND
-        mPathPaint.strokeCap = Paint.Cap.ROUND
+        pathPaint.style = Paint.Style.STROKE
+        pathPaint.strokeJoin = Paint.Join.ROUND
+        pathPaint.strokeCap = Paint.Cap.ROUND
 
-        mPathWidth = resources.getDimensionPixelSize(R.dimen.lock_pattern_dot_line_width)
-        mPathPaint.strokeWidth = mPathWidth.toFloat()
+        pathWidth = resources.getDimensionPixelSize(R.dimen.lock_pattern_dot_line_width)
+        pathPaint.strokeWidth = pathWidth.toFloat()
 
-        mDotSize = resources.getDimensionPixelSize(R.dimen.lock_pattern_dot_size)
-        mDotSizeActivated = resources.getDimensionPixelSize(R.dimen.lock_pattern_dot_size_activated)
+        dotSize = resources.getDimensionPixelSize(R.dimen.lock_pattern_dot_size)
+        dotSizeActivated = resources.getDimensionPixelSize(R.dimen.lock_pattern_dot_size_activated)
 
-        mPaint.isAntiAlias = true
-        mPaint.isDither = true
+        paint.isAntiAlias = true
+        paint.isDither = true
 
-        mCellStates = Array(3) {
+        cellStates = Array(3) {
             Array(3) {
-                CellState().also { it.size = mDotSize.toFloat() }
+                CellState().also { it.size = dotSize.toFloat() }
             }
         }
 
-        mFastOutSlowInInterpolator = FastOutSlowInInterpolator()
-        mLinearOutSlowInInterpolator = LinearOutSlowInInterpolator()
+        fastOutSlowInInterpolator = FastOutSlowInInterpolator()
+        linearOutSlowInInterpolator = LinearOutSlowInInterpolator()
     }
-
-    fun getCellStates(): Array<Array<CellState>> = mCellStates
 
     val cellSize: Int
-        get() = mPattern.size
+        get() = pattern.size
 
     val patternString: String
-        get() = LockPatternUtils.patternToString(mPattern)
-
-    /**
-     * Whether the view is in stealth mode.  If true, there will be no
-     * visible feedback as the user enters the pattern.
-     */
-    var isInStealthMode: Boolean
-        get() = mInStealthMode
-        set(inStealthMode) {
-            mInStealthMode = inStealthMode
-        }
-
-    /**
-     * Whether the view will use tactile feedback.  If true, there will be
-     * tactile feedback as the user enters the pattern.
-     */
-    var isTactileFeedbackEnabled: Boolean
-        get() = mEnableHapticFeedback
-        set(tactileFeedbackEnabled) {
-            mEnableHapticFeedback = tactileFeedbackEnabled
-        }
-
-    /**
-     * Set the call back for pattern detection.
-     * @param onPatternListener The call back.
-     */
-    fun setOnPatternListener(onPatternListener: OnPatternListener?) {
-        mOnPatternListener = onPatternListener
-    }
+        get() = LockPatternUtils.patternToString(pattern)
 
     /**
      * Set the pattern explicitely (rather than waiting for the user to input
@@ -300,60 +280,59 @@ class LockPatternView : View {
      * @param pattern The pattern.
      */
     fun setPattern(displayMode: DisplayMode, pattern: List<Cell>) {
-        mPattern.clear()
-        mPattern.addAll(pattern)
+        this.pattern.clear()
+        this.pattern.addAll(pattern)
         clearPatternDrawLookup()
         for (cell in pattern) {
-            mPatternDrawLookup[cell.row][cell.column] = true
+            patternDrawLookup[cell.row][cell.column] = true
         }
 
-        setDisplayMode(displayMode)
+        applyDisplayMode(displayMode)
     }
 
     /**
-     * Set the display mode of the current pattern.  This can be useful, for
+     * The display mode of the current pattern.  Setting it can be useful, for
      * instance, after detecting a pattern to tell this view whether change the
      * in progress result to correct or wrong.
-     * @param displayMode The display mode.
      */
-    fun setDisplayMode(displayMode: DisplayMode) {
-        mPatternDisplayMode = displayMode
+    var displayMode: DisplayMode
+        get() = patternDisplayMode
+        set(displayMode) {
+            applyDisplayMode(displayMode)
+        }
+
+    private fun applyDisplayMode(displayMode: DisplayMode) {
+        patternDisplayMode = displayMode
         if (displayMode == DisplayMode.Animate) {
-            if (mPattern.size == 0) {
+            if (pattern.size == 0) {
                 throw IllegalStateException(
                     "you must have a pattern to " +
                         "animate if you want to set the display mode to animate",
                 )
             }
-            mAnimatingPeriodStart = SystemClock.elapsedRealtime()
-            val first = mPattern[0]
-            mInProgressX = getCenterXForColumn(first.column)
-            mInProgressY = getCenterYForRow(first.row)
+            animatingPeriodStart = SystemClock.elapsedRealtime()
+            val first = pattern[0]
+            inProgressX = getCenterXForColumn(first.column)
+            inProgressY = getCenterYForRow(first.row)
             clearPatternDrawLookup()
         }
         invalidate()
     }
 
-    /**
-     * Get the display mode of the current pattern.
-     * @return the display mode of the current pattern
-     */
-    fun getDisplayMode(): DisplayMode = mPatternDisplayMode
-
     private fun notifyCellAdded() {
-        mOnPatternListener?.onPatternCellAdded(mPattern)
+        onPatternListener?.onPatternCellAdded(pattern)
     }
 
     private fun notifyPatternStarted() {
-        mOnPatternListener?.onPatternStart()
+        onPatternListener?.onPatternStart()
     }
 
     private fun notifyPatternDetected() {
-        mOnPatternListener?.onPatternDetected(mPattern)
+        onPatternListener?.onPatternDetected(pattern)
     }
 
     private fun notifyPatternCleared() {
-        mOnPatternListener?.onPatternCleared()
+        onPatternListener?.onPatternCleared()
     }
 
     /**
@@ -367,9 +346,9 @@ class LockPatternView : View {
      * Reset all pattern state.
      */
     private fun resetPattern() {
-        mPattern.clear()
+        pattern.clear()
         clearPatternDrawLookup()
-        mPatternDisplayMode = DisplayMode.Correct
+        patternDisplayMode = DisplayMode.Correct
         invalidate()
     }
 
@@ -379,7 +358,7 @@ class LockPatternView : View {
     private fun clearPatternDrawLookup() {
         for (i in 0 until 3) {
             for (j in 0 until 3) {
-                mPatternDrawLookup[i][j] = false
+                patternDrawLookup[i][j] = false
             }
         }
     }
@@ -389,22 +368,22 @@ class LockPatternView : View {
      * timeout so user doesn't get view into messy state).
      */
     fun disableInput() {
-        mInputEnabled = false
+        inputEnabled = false
     }
 
     /**
      * Enable input.
      */
     fun enableInput() {
-        mInputEnabled = true
+        inputEnabled = true
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         val width = w - paddingLeft - paddingRight
-        mSquareWidth = width / 3.0f
+        squareWidth = width / 3.0f
 
         val height = h - paddingTop - paddingBottom
-        mSquareHeight = height / 3.0f
+        squareHeight = height / 3.0f
     }
 
     private fun resolveMeasured(measureSpec: Int, desired: Int): Int {
@@ -439,7 +418,6 @@ class LockPatternView : View {
         if (cell != null) {
             // check for gaps in existing pattern
             var fillInGapCell: Cell? = null
-            val pattern = mPattern
             if (!pattern.isEmpty()) {
                 val lastCell = pattern[pattern.size - 1]
                 val dRow = cell.row - lastCell.row
@@ -460,12 +438,12 @@ class LockPatternView : View {
             }
 
             if (fillInGapCell != null &&
-                !mPatternDrawLookup[fillInGapCell.row][fillInGapCell.column]
+                !patternDrawLookup[fillInGapCell.row][fillInGapCell.column]
             ) {
                 addCellToPattern(fillInGapCell)
             }
             addCellToPattern(cell)
-            if (mEnableHapticFeedback) {
+            if (isTactileFeedbackEnabled) {
                 // Honours the system touch-feedback switch (no FLAG_IGNORE_GLOBAL_SETTING).
                 performHapticFeedback(
                     HapticFeedbackConstants.VIRTUAL_KEY,
@@ -478,27 +456,27 @@ class LockPatternView : View {
     }
 
     private fun addCellToPattern(newCell: Cell) {
-        mPatternDrawLookup[newCell.row][newCell.column] = true
-        mPattern.add(newCell)
-        if (!mInStealthMode) {
+        patternDrawLookup[newCell.row][newCell.column] = true
+        pattern.add(newCell)
+        if (!isInStealthMode) {
             startCellActivatedAnimation(newCell)
         }
         notifyCellAdded()
     }
 
     private fun startCellActivatedAnimation(cell: Cell) {
-        val cellState = mCellStates[cell.row][cell.column]
+        val cellState = cellStates[cell.row][cell.column]
         startSizeAnimation(
-            mDotSize.toFloat(), mDotSizeActivated.toFloat(), 96L, mLinearOutSlowInInterpolator,
+            dotSize.toFloat(), dotSizeActivated.toFloat(), 96L, linearOutSlowInInterpolator,
             cellState,
         ) {
             startSizeAnimation(
-                mDotSizeActivated.toFloat(), mDotSize.toFloat(), 192L, mFastOutSlowInInterpolator,
+                dotSizeActivated.toFloat(), dotSize.toFloat(), 192L, fastOutSlowInInterpolator,
                 cellState, null,
             )
         }
         startLineEndAnimation(
-            cellState, mInProgressX, mInProgressY,
+            cellState, inProgressX, inProgressY,
             getCenterXForColumn(cell.column), getCenterYForRow(cell.row),
         )
     }
@@ -522,7 +500,7 @@ class LockPatternView : View {
                 state.lineAnimator = null
             }
         })
-        valueAnimator.interpolator = mFastOutSlowInInterpolator
+        valueAnimator.interpolator = fastOutSlowInInterpolator
         valueAnimator.duration = 100L
         valueAnimator.start()
         state.lineAnimator = valueAnimator
@@ -564,7 +542,7 @@ class LockPatternView : View {
             return null
         }
 
-        if (mPatternDrawLookup[rowHit][columnHit]) {
+        if (patternDrawLookup[rowHit][columnHit]) {
             return null
         }
         return Cell.of(rowHit, columnHit)
@@ -576,8 +554,7 @@ class LockPatternView : View {
      * @return The row that y falls in, or -1 if it falls in no row.
      */
     private fun getRowHit(y: Float): Int {
-        val squareHeight = mSquareHeight
-        val hitSize = squareHeight * mHitFactor
+        val hitSize = squareHeight * HIT_FACTOR
 
         val offset = paddingTop + (squareHeight - hitSize) / 2f
         for (i in 0 until 3) {
@@ -595,8 +572,7 @@ class LockPatternView : View {
      * @return The column that x falls in, or -1 if it falls in no column.
      */
     private fun getColumnHit(x: Float): Int {
-        val squareWidth = mSquareWidth
-        val hitSize = squareWidth * mHitFactor
+        val hitSize = squareWidth * HIT_FACTOR
 
         val offset = paddingLeft + (squareWidth - hitSize) / 2f
         for (i in 0 until 3) {
@@ -630,7 +606,7 @@ class LockPatternView : View {
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!mInputEnabled || !isEnabled) {
+        if (!inputEnabled || !isEnabled) {
             return false
         }
 
@@ -649,8 +625,8 @@ class LockPatternView : View {
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
-                if (mPatternInProgress) {
-                    mPatternInProgress = false
+                if (patternInProgress) {
+                    patternInProgress = false
                     resetPattern()
                     notifyPatternCleared()
                 }
@@ -663,28 +639,27 @@ class LockPatternView : View {
     private fun handleActionMove(event: MotionEvent) {
         // Handle all recent motion events so we don't skip any cells even when the device
         // is busy...
-        val radius = mPathWidth.toFloat()
+        val radius = pathWidth.toFloat()
         val historySize = event.historySize
-        mTmpInvalidateRect.setEmpty()
+        tmpInvalidateRect.setEmpty()
         var invalidateNow = false
         for (i in 0 until historySize + 1) {
             val x = if (i < historySize) event.getHistoricalX(i) else event.x
             val y = if (i < historySize) event.getHistoricalY(i) else event.y
             val hitCell = detectAndAddHit(x, y)
-            val patternSize = mPattern.size
+            val patternSize = pattern.size
             if (hitCell != null && patternSize == 1) {
-                mPatternInProgress = true
+                patternInProgress = true
                 notifyPatternStarted()
             }
             // note current x and y for rubber banding of in progress patterns
-            val dx = Math.abs(x - mInProgressX)
-            val dy = Math.abs(y - mInProgressY)
+            val dx = Math.abs(x - inProgressX)
+            val dy = Math.abs(y - inProgressY)
             if (dx > DRAG_THRESHHOLD || dy > DRAG_THRESHHOLD) {
                 invalidateNow = true
             }
 
-            if (mPatternInProgress && patternSize > 0) {
-                val pattern = mPattern
+            if (patternInProgress && patternSize > 0) {
                 val lastCell = pattern[patternSize - 1]
                 val lastCellCenterX = getCenterXForColumn(lastCell.column)
                 val lastCellCenterY = getCenterYForRow(lastCell.row)
@@ -697,8 +672,8 @@ class LockPatternView : View {
 
                 // Invalidate between the pattern's new cell and the pattern's previous cell
                 if (hitCell != null) {
-                    val width = mSquareWidth * 0.5f
-                    val height = mSquareHeight * 0.5f
+                    val width = squareWidth * 0.5f
+                    val height = squareHeight * 0.5f
                     val hitCellCenterX = getCenterXForColumn(hitCell.column)
                     val hitCellCenterY = getCenterYForRow(hitCell.row)
 
@@ -709,28 +684,28 @@ class LockPatternView : View {
                 }
 
                 // Invalidate between the pattern's last cell and the previous location
-                mTmpInvalidateRect.union(
+                tmpInvalidateRect.union(
                     Math.round(left), Math.round(top),
                     Math.round(right), Math.round(bottom),
                 )
             }
         }
-        mInProgressX = event.x
-        mInProgressY = event.y
+        inProgressX = event.x
+        inProgressY = event.y
 
         // To save updates, we only invalidate if the user moved beyond a certain amount.
         if (invalidateNow) {
-            mInvalidate.union(mTmpInvalidateRect)
+            invalidateRect.union(tmpInvalidateRect)
             @Suppress("DEPRECATION")
-            invalidate(mInvalidate)
-            mInvalidate.set(mTmpInvalidateRect)
+            invalidate(invalidateRect)
+            invalidateRect.set(tmpInvalidateRect)
         }
     }
 
     private fun handleActionUp(event: MotionEvent) {
         // report pattern detected
-        if (!mPattern.isEmpty()) {
-            mPatternInProgress = false
+        if (!pattern.isEmpty()) {
+            patternInProgress = false
             cancelLineAnimations()
             notifyPatternDetected()
             invalidate()
@@ -740,7 +715,7 @@ class LockPatternView : View {
     private fun cancelLineAnimations() {
         for (i in 0 until 3) {
             for (j in 0 until 3) {
-                val state = mCellStates[i][j]
+                val state = cellStates[i][j]
                 val lineAnimator = state.lineAnimator
                 if (lineAnimator != null) {
                     lineAnimator.cancel()
@@ -757,19 +732,19 @@ class LockPatternView : View {
         val y = event.y
         val hitCell = detectAndAddHit(x, y)
         if (hitCell != null) {
-            mPatternInProgress = true
-            mPatternDisplayMode = DisplayMode.Correct
+            patternInProgress = true
+            patternDisplayMode = DisplayMode.Correct
             notifyPatternStarted()
-        } else if (mPatternInProgress) {
-            mPatternInProgress = false
+        } else if (patternInProgress) {
+            patternInProgress = false
             notifyPatternCleared()
         }
         if (hitCell != null) {
             val startX = getCenterXForColumn(hitCell.column)
             val startY = getCenterYForRow(hitCell.row)
 
-            val widthOffset = mSquareWidth / 2f
-            val heightOffset = mSquareHeight / 2f
+            val widthOffset = squareWidth / 2f
+            val heightOffset = squareHeight / 2f
 
             @Suppress("DEPRECATION")
             invalidate(
@@ -777,35 +752,33 @@ class LockPatternView : View {
                 (startX + widthOffset).toInt(), (startY + heightOffset).toInt(),
             )
         }
-        mInProgressX = x
-        mInProgressY = y
+        inProgressX = x
+        inProgressY = y
     }
 
     private fun getCenterXForColumn(column: Int): Float {
-        return paddingLeft + column * mSquareWidth + mSquareWidth / 2f
+        return paddingLeft + column * squareWidth + squareWidth / 2f
     }
 
     private fun getCenterYForRow(row: Int): Float {
-        return paddingTop + row * mSquareHeight + mSquareHeight / 2f
+        return paddingTop + row * squareHeight + squareHeight / 2f
     }
 
     override fun onDraw(canvas: Canvas) {
-        val pattern = mPattern
         val count = pattern.size
-        val drawLookup = mPatternDrawLookup
 
-        if (mPatternDisplayMode == DisplayMode.Animate) {
+        if (patternDisplayMode == DisplayMode.Animate) {
             // figure out which circles to draw
 
             // + 1 so we pause on complete pattern
             val oneCycle = (count + 1) * MILLIS_PER_CIRCLE_ANIMATING
-            val spotInCycle = (SystemClock.elapsedRealtime() - mAnimatingPeriodStart).toInt() % oneCycle
+            val spotInCycle = (SystemClock.elapsedRealtime() - animatingPeriodStart).toInt() % oneCycle
             val numCircles = spotInCycle / MILLIS_PER_CIRCLE_ANIMATING
 
             clearPatternDrawLookup()
             for (i in 0 until numCircles) {
                 val cell = pattern[i]
-                drawLookup[cell.row][cell.column] = true
+                patternDrawLookup[cell.row][cell.column] = true
             }
 
             // figure out in progress portion of ghosting line
@@ -823,27 +796,26 @@ class LockPatternView : View {
                 val nextCell = pattern[numCircles]
                 val dx = percentageOfNextCircle * (getCenterXForColumn(nextCell.column) - centerX)
                 val dy = percentageOfNextCircle * (getCenterYForRow(nextCell.row) - centerY)
-                mInProgressX = centerX + dx
-                mInProgressY = centerY + dy
+                inProgressX = centerX + dx
+                inProgressY = centerY + dy
             }
             // UPSTREAM-LEGACY (AOSP): potential infinite loop in pattern detection
             invalidate()
         }
 
-        val currentPath = mCurrentPath
         currentPath.rewind()
 
         // draw the circles
         for (i in 0 until 3) {
             val centerY = getCenterYForRow(i)
             for (j in 0 until 3) {
-                val cellState = mCellStates[i][j]
+                val cellState = cellStates[i][j]
                 val centerX = getCenterXForColumn(j)
                 val size = cellState.size * cellState.scale
                 val translationY = cellState.translateY
                 drawCircle(
                     canvas, centerX.toInt().toFloat(), centerY.toInt() + translationY,
-                    size, drawLookup[i][j], cellState.alpha,
+                    size, patternDrawLookup[i][j], cellState.alpha,
                 )
             }
         }
@@ -851,10 +823,10 @@ class LockPatternView : View {
         // UPSTREAM-LEGACY (AOSP): path should be cached per cell hit-detection
         // only the last segment of the path should be computed here
         // draw the path of the pattern (unless we are in stealth mode)
-        val drawPath = !mInStealthMode
+        val drawPath = !isInStealthMode
 
         if (drawPath) {
-            mPathPaint.color = getCurrentColor(true /* partOfPattern */)
+            pathPaint.color = getCurrentColor(true /* partOfPattern */)
 
             var anyCircles = false
             var lastX = 0f
@@ -865,7 +837,7 @@ class LockPatternView : View {
                 // only draw the part of the pattern stored in
                 // the lookup table (this is only different in the case
                 // of animation).
-                if (!drawLookup[cell.row][cell.column]) {
+                if (!patternDrawLookup[cell.row][cell.column]) {
                     break
                 }
                 anyCircles = true
@@ -873,7 +845,7 @@ class LockPatternView : View {
                 val centerX = getCenterXForColumn(cell.column)
                 val centerY = getCenterYForRow(cell.row)
                 if (i != 0) {
-                    val state = mCellStates[cell.row][cell.column]
+                    val state = cellStates[cell.row][cell.column]
                     currentPath.rewind()
                     currentPath.moveTo(lastX, lastY)
                     if (state.lineEndX != Float.MIN_VALUE && state.lineEndY != Float.MIN_VALUE) {
@@ -881,20 +853,20 @@ class LockPatternView : View {
                     } else {
                         currentPath.lineTo(centerX, centerY)
                     }
-                    canvas.drawPath(currentPath, mPathPaint)
+                    canvas.drawPath(currentPath, pathPaint)
                 }
                 lastX = centerX
                 lastY = centerY
             }
 
             // draw last in progress section
-            if ((mPatternInProgress || mPatternDisplayMode == DisplayMode.Animate) && anyCircles) {
+            if ((patternInProgress || patternDisplayMode == DisplayMode.Animate) && anyCircles) {
                 currentPath.rewind()
                 currentPath.moveTo(lastX, lastY)
-                currentPath.lineTo(mInProgressX, mInProgressY)
+                currentPath.lineTo(inProgressX, inProgressY)
 
-                mPathPaint.alpha = (calculateLastSegmentAlpha(mInProgressX, mInProgressY, lastX, lastY) * 255f).toInt()
-                canvas.drawPath(currentPath, mPathPaint)
+                pathPaint.alpha = (calculateLastSegmentAlpha(inProgressX, inProgressY, lastX, lastY) * 255f).toInt()
+                canvas.drawPath(currentPath, pathPaint)
             }
         }
     }
@@ -903,23 +875,23 @@ class LockPatternView : View {
         val diffX = x - lastX
         val diffY = y - lastY
         val dist = Math.sqrt((diffX * diffX + diffY * diffY).toDouble()).toFloat()
-        val frac = dist / mSquareWidth
+        val frac = dist / squareWidth
         return Math.min(1f, Math.max(0f, (frac - 0.3f) * 4f))
     }
 
     private fun getCurrentColor(partOfPattern: Boolean): Int {
-        return if (!partOfPattern || mInStealthMode || mPatternInProgress) {
+        return if (!partOfPattern || isInStealthMode || patternInProgress) {
             // unselected circle
-            mRegularColor
-        } else if (mPatternDisplayMode == DisplayMode.Wrong) {
+            regularColor
+        } else if (patternDisplayMode == DisplayMode.Wrong) {
             // the pattern is wrong
-            mErrorColor
-        } else if (mPatternDisplayMode == DisplayMode.Correct ||
-            mPatternDisplayMode == DisplayMode.Animate
+            errorColor
+        } else if (patternDisplayMode == DisplayMode.Correct ||
+            patternDisplayMode == DisplayMode.Animate
         ) {
-            mSuccessColor
+            successColor
         } else {
-            throw IllegalStateException("unknown display mode $mPatternDisplayMode")
+            throw IllegalStateException("unknown display mode $patternDisplayMode")
         }
     }
 
@@ -934,18 +906,18 @@ class LockPatternView : View {
         partOfPattern: Boolean,
         alpha: Float,
     ) {
-        mPaint.color = getCurrentColor(partOfPattern)
-        mPaint.alpha = (alpha * 255).toInt()
-        canvas.drawCircle(centerX, centerY, size / 2, mPaint)
+        paint.color = getCurrentColor(partOfPattern)
+        paint.alpha = (alpha * 255).toInt()
+        canvas.drawCircle(centerX, centerY, size / 2, paint)
     }
 
     override fun onSaveInstanceState(): Parcelable {
         val superState = super.onSaveInstanceState()
         return SavedState(
             superState,
-            LockPatternUtils.patternToString(mPattern),
-            mPatternDisplayMode.ordinal,
-            mInputEnabled, mInStealthMode, mEnableHapticFeedback,
+            LockPatternUtils.patternToString(pattern),
+            patternDisplayMode.ordinal,
+            inputEnabled, isInStealthMode, isTactileFeedbackEnabled,
         )
     }
 
@@ -956,10 +928,10 @@ class LockPatternView : View {
             DisplayMode.Correct,
             LockPatternUtils.stringToPattern(ss.serializedPattern),
         )
-        mPatternDisplayMode = DisplayMode.entries[ss.displayMode]
-        mInputEnabled = ss.isInputEnabled
-        mInStealthMode = ss.isInStealthMode
-        mEnableHapticFeedback = ss.isTactileFeedbackEnabled
+        patternDisplayMode = DisplayMode.entries[ss.displayMode]
+        inputEnabled = ss.isInputEnabled
+        isInStealthMode = ss.isInStealthMode
+        isTactileFeedbackEnabled = ss.isTactileFeedbackEnabled
     }
 
     /**
@@ -1030,6 +1002,8 @@ class LockPatternView : View {
          * constant * the length of the pattern to complete.
          */
         private const val MILLIS_PER_CIRCLE_ANIMATING = 700
+
+        private const val HIT_FACTOR = 0.6f
 
         /**
          * This can be used to avoid updating the display for very small motions or noisy panels.
