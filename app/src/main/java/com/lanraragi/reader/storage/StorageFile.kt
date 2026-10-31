@@ -112,8 +112,7 @@ class StorageFile(file: File) {
             return StorageFile(File(path))
         }
 
-        @JvmStatic
-        fun isFileUri(uri: Uri?): Boolean = uri?.scheme == ContentResolver.SCHEME_FILE
+        private fun isFileUri(uri: Uri?): Boolean = uri?.scheme == ContentResolver.SCHEME_FILE
 
         private fun deleteContents(dir: File): Boolean {
             var success = true

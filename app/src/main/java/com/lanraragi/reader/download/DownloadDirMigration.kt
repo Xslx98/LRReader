@@ -84,7 +84,7 @@ class DownloadDirMigration(
         val root = resolveRoot(info.downloadRootUri) ?: return RowResult.ALREADY_NEW
         if (root.findFile(dirname) != null) return RowResult.ALREADY_NEW
         val legacy = root.listFiles()?.firstOrNull { f ->
-            f.isDirectory && f.name?.let { DownloadDirNaming.isLegacyName(info.arcid, it) } == true
+            f.isDirectory && DownloadDirNaming.isLegacyName(info.arcid, f.name)
         } ?: return RowResult.ALREADY_NEW
         return if (legacy.renameTo(dirname)) RowResult.RENAMED else RowResult.FAILED
     }

@@ -57,7 +57,7 @@ class DownloadDirAllocator(
             val root = resolveRoot(rootUriOverride ?: repo.getDownloadRootUri(arcid)) ?: return@withLock null
             storedPointer(arcid)?.let { name ->
                 val dir = root.subFile(name)
-                return@withLock if (dir?.ensureDir() == true) dir else null
+                return@withLock if (dir.ensureDir()) dir else null
             }
             // Case-insensitive: shared storage is, so "Title" and "title"
             // would be the same directory there.
@@ -84,7 +84,7 @@ class DownloadDirAllocator(
     suspend fun delete(arcid: String, rootUriOverride: String?): Boolean = mutex.withLock {
         val name = storedPointer(arcid) ?: return@withLock false
         val root = resolveRoot(rootUriOverride ?: repo.getDownloadRootUri(arcid)) ?: return@withLock false
-        val dir = root.subFile(name) ?: return@withLock false
+        val dir = root.subFile(name)
         if (!isStrictChild(root, dir)) return@withLock false
         repo.removeDownloadDirname(arcid)
         dir.delete()
@@ -93,13 +93,8 @@ class DownloadDirAllocator(
     }
 
     private fun isStrictChild(root: StorageFile, dir: StorageFile): Boolean {
-        val rootUri = root.uri
-        val dirUri = dir.uri
-        if (rootUri == dirUri) return false
-        if ("file" != rootUri.scheme || "file" != dirUri.scheme) return true
-        val rootFile = File(rootUri.path ?: return false).canonicalFile
-        val dirFile = File(dirUri.path ?: return false).canonicalFile
-        return dirFile.parentFile == rootFile
+        if (root.uri == dir.uri) return false
+        return dir.file.canonicalFile.parentFile == root.file.canonicalFile
     }
 
     private suspend fun storedPointer(arcid: String): String? {

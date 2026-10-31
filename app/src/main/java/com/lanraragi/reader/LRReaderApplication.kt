@@ -493,10 +493,8 @@ class LRReaderApplication : SceneApplication() {
                 try {
                     val oldBase = File(getExternalFilesDir(null), "download")
                     if (oldBase.exists() && oldBase.isDirectory) {
-                        val newBase = DownloadSettings.getDownloadLocation()
-                        val path = newBase?.uri?.path
-                        if (newBase != null && "file" == newBase.uri.scheme && path != null) {
-                            val newBaseFile = File(path)
+                        val newBaseFile = DownloadSettings.getDownloadLocation()?.file
+                        if (newBaseFile != null) {
                             val children = oldBase.listFiles()
                             if (children != null) {
                                 for (child in children) {

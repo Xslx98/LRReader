@@ -659,7 +659,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
                 // decoding files[page] positionally would hand the NEXT page's
                 // image to the slot under this page's index, and the provider
                 // cache would pin the wrong picture (RD-2).
-                val target = DirImageFiles.warmTarget(files.map { it.name ?: "" }, requestedPage)
+                val target = DirImageFiles.warmTarget(files.map { it.name }, requestedPage)
                 if (target == null) {
                     Log.i(TAG, "[WARM] warmDir skip missing page arcid=$arcId page=$requestedPage")
                     return@launch

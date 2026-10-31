@@ -31,16 +31,16 @@ object ReaderSessionSetup {
         tankSeed: TankSessionSeed?,
     ): GalleryProvider2? = when (action) {
         GalleryActivity.ACTION_DIR -> {
-            filename?.let { StorageFile(File(it)) }?.let { uniFile ->
+            filename?.let { StorageFile(File(it)) }?.let { dir ->
                 if (archive != null) {
                     DirGalleryProvider(
-                        uniFile, context, archive.arcid, archive.serverProfileId,
+                        dir, context, archive.arcid, archive.serverProfileId,
                         archive.progress, archive.lastreadtime,
                     ).also {
                         it.expectedPageCount = archive.pagecount
                     }
                 } else {
-                    DirGalleryProvider(uniFile)
+                    DirGalleryProvider(dir)
                 }
             }
         }

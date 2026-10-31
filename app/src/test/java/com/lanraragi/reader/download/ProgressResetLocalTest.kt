@@ -57,7 +57,7 @@ class ProgressResetLocalTest {
 
     /** Opens [arcid] from the Downloads list the way GalleryActivity does (no server snapshot). */
     private fun openDownload(arcid: String, sourceProfileId: Long): DirGalleryProvider =
-        DirGalleryProvider(StorageFile(tmp.root)!!, ctx, arcid, sourceProfileId)
+        DirGalleryProvider(StorageFile(tmp.root), ctx, arcid, sourceProfileId)
 
     private fun keys(): Set<String> = LocalReadingProgress.prefs(ctx).all.keys
 

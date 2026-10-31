@@ -27,11 +27,11 @@ class DownloadRelinker(private val listDirs: (rootUri: String) -> List<Pair<Stri
     }
 
     companion object {
-        fun onDisk(context: Context): DownloadRelinker = DownloadRelinker { rootUri ->
+        fun onDisk(): DownloadRelinker = DownloadRelinker { rootUri ->
             val root = StorageFile.fromUri(rootUri.toUri())
             root?.listFiles().orEmpty()
-                .filter { it.isDirectory && it.name?.startsWith(".") == false }
-                .map { dir -> dir.name.orEmpty() to DownloadDirMarker.read(dir)?.arcid }
+                .filter { it.isDirectory && !it.name.startsWith(".") }
+                .map { dir -> dir.name to DownloadDirMarker.read(dir)?.arcid }
         }
     }
 }

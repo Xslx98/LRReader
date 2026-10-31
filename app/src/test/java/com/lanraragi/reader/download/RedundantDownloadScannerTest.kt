@@ -60,7 +60,7 @@ class RedundantDownloadScannerTest {
         File(root, dirname).mkdirs()
     }
 
-    private suspend fun scanNames() = RedundantDownloadScanner(repo).scan(StorageFile(root)!!).map { it.name }
+    private suspend fun scanNames() = RedundantDownloadScanner(repo).scan(StorageFile(root)).map { it.name }
 
     @Test
     fun titleNamedDownloadsAreNeverRedundant() = runTest {

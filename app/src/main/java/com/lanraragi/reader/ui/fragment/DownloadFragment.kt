@@ -444,21 +444,12 @@ class DownloadFragment : PreferenceFragmentCompat(),
             if (f.isDirectory) {
                 collectImagePaths(f, paths)
             } else {
-                val name = f.name
-                if (name != null) {
-                    val lower = name.lowercase()
-                    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
-                        lower.endsWith(".png") || lower.endsWith(".gif") ||
-                        lower.endsWith(".webp")
-                    ) {
-                        val uri = f.uri
-                        if (uri != null && "file" == uri.scheme) {
-                            val path = uri.path
-                            if (path != null) {
-                                paths.add(path)
-                            }
-                        }
-                    }
+                val lower = f.name.lowercase()
+                if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
+                    lower.endsWith(".png") || lower.endsWith(".gif") ||
+                    lower.endsWith(".webp")
+                ) {
+                    paths.add(f.file.path)
                 }
             }
         }

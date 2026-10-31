@@ -59,9 +59,8 @@ internal object TankMemberRouting {
     ): TankMemberSource? {
         val complete = resolver.isLocalCopyComplete(localDir, member.pagecount)
         if (!complete && networkAvailable()) return null
-        val uniFile = StorageFile(localDir) ?: return null
         val expected = if (complete) 0 else member.pagecount
-        return DirTankMemberSource(context, member.arcid, uniFile, expected)
+        return DirTankMemberSource(context, member.arcid, StorageFile(localDir), expected)
     }
 }
 

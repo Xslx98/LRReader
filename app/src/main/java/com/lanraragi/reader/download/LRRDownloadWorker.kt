@@ -310,10 +310,8 @@ class LRRDownloadWorker(
         DownloadTempSweeper.sweep(downloadDir)
         // Self-describing directory (audit C05): names the arcid on disk, since
         // the title-based directory name alone cannot be traced back to it.
-        StorageFile(downloadDir)?.let { dir ->
-            if (!DownloadDirMarker.write(dir, DownloadDirMarker.of(info, total))) {
-                Log.w(TAG, "Failed to write the download dir marker")
-            }
+        if (!DownloadDirMarker.write(StorageFile(downloadDir), DownloadDirMarker.of(info, total))) {
+            Log.w(TAG, "Failed to write the download dir marker")
         }
 
         // Step 3: Download pages through an ordered sliding window.
@@ -552,9 +550,7 @@ class LRRDownloadWorker(
         }.getOrNull() ?: return false
         if (pagecount <= 0) return false
         // Lookup only: a verifier must not create a directory it then reports on.
-        val uni = suspendRunCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false
-        if ("file" != uni.uri.scheme) return false
-        val dir = File(uni.uri.path ?: return false)
+        val dir = suspendRunCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull()?.file ?: return false
         if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish")
@@ -748,12 +744,7 @@ class LRRDownloadWorker(
          */
         private suspend fun allocateDownloadDir(info: DownloadInfo): File? {
             try {
-                val uniDir = SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title) ?: return null
-                val uri = uniDir.uri
-                if ("file" == uri.scheme) {
-                    return File(uri.path ?: return null)
-                }
-                Log.w(TAG, "Download root is not a file:// directory; cannot download")
+                return SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title)?.file
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

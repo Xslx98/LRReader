@@ -36,9 +36,6 @@ class SpiderQueen private constructor() : Runnable {
     fun getStartPage(): Int = 0
     fun putStartPage(page: Int) {}
 
-    fun save(index: Int, file: StorageFile): Boolean = false
-    fun save(index: Int, dir: StorageFile, filename: String): StorageFile? = null
-
     override fun run() {}
 
     @IntDef(MODE_READ, MODE_DOWNLOAD)

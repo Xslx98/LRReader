@@ -52,7 +52,7 @@ internal class DirTankMemberSource(
             pageSpace?.let { return it }
             val listed = withContext(Dispatchers.IO) { DirImageFiles.listSorted(dir) }
                 ?: throw IOException("Cannot enumerate download dir for $arcid")
-            val map = DirImageFiles.numericPageIndices(listed.map { it.name ?: "" })
+            val map = DirImageFiles.numericPageIndices(listed.map { it.name })
             files = listed
             pageIndexMap = map
             return DirImageFiles.pageSpaceSize(map, listed.size, expectedPageCount)

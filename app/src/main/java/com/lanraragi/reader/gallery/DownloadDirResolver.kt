@@ -40,9 +40,8 @@ interface DownloadDirResolver {
     /**
      * The download directory of an archive that is in the download list but
      * has no page on disk yet, or null when the archive is not being
-     * downloaded or its root is not a plain `file://` tree (SAF roots stay
-     * on the streaming path, matching [localDownloadDir]). The directory
-     * may not exist yet; the hybrid page store creates it.
+     * downloaded. The directory may not exist yet; the hybrid page store
+     * creates it.
      */
     suspend fun pendingDownloadDir(archive: Archive): File?
 
@@ -60,7 +59,7 @@ interface DownloadDirResolver {
 
         override suspend fun localDownloadDir(context: Context, archive: Archive): File? {
             // 1. Primary resolution.
-            fileDirFromUni(SpiderDen.findGalleryDownloadDir(archive.arcid))
+            existingDir(SpiderDen.findGalleryDownloadDir(archive.arcid))
                 ?.let { primary -> if (hasImageFiles(primary)) return primary }
 
             // 2. Legacy app-private fallback.
@@ -78,14 +77,11 @@ interface DownloadDirResolver {
                 ServiceRegistry.dataModule.downloadDbRepository.isDownloadTracked(archive.arcid)
             }.getOrDefault(false)
             if (!tracked) return null
-            val uni = suspendRunCatching {
+            return suspendRunCatching {
                 // Tracked download: the reader writes pages through into this
                 // directory, so it may allocate it ahead of the worker.
                 SpiderDen.allocateGalleryDownloadDir(archive.arcid, archive.title)
-            }.getOrNull() ?: return null
-            val uri = uni.uri
-            if ("file" != uri.scheme) return null
-            return File(uri.path ?: return null)
+            }.getOrNull()?.file
         }
 
         override fun isLocalCopyComplete(dir: File, expectedPages: Int): Boolean {
@@ -114,18 +110,8 @@ interface DownloadDirResolver {
         private fun isImageFile(f: File): Boolean =
             f.isFile && StringUtils.endsWith(f.name.lowercase(), GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS)
 
-        /**
-         * Map a [StorageFile] to a [File] only when it is a `file://` directory.
-         * Returns null for content:// (SAF) trees — those can't be handed to
-         * `ACTION_DIR`, which expects a filesystem path — and for
-         * non-existent paths.
-         */
-        private fun fileDirFromUni(uni: StorageFile?): File? {
-            val uri = uni?.uri ?: return null
-            if ("file" != uri.scheme) return null
-            val dir = File(uri.path ?: return null)
-            return if (dir.isDirectory) dir else null
-        }
+        /** The directory [storage] names, or null when it does not exist. */
+        private fun existingDir(storage: StorageFile?): File? = storage?.file?.takeIf { it.isDirectory }
 
         private val LEGACY_DIR_NAME_ILLEGAL = "[\\/:*?\"<>|]".toRegex()
     }

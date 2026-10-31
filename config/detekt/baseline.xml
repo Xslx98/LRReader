@@ -60,8 +60,6 @@
     <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun getError(): String</ID>
     <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun getStartPage(): Int</ID>
     <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun request(index: Int): Any?</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun save(index: Int, dir: UniFile, filename: String): UniFile?</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun save(index: Int, file: UniFile): Boolean</ID>
     <ID>FunctionParameterNaming:QuickSearch.kt$QuickSearch.Companion$`object`: JSONObject</ID>
     <ID>ImplicitDefaultLocale:DetailHeaderBinder.kt$DetailHeaderBinder$String.format("%.0f★", archive.rating)</ID>
     <ID>ImplicitDefaultLocale:ReaderPageCache.kt$ReaderPageCache$String.format( "Unknown image format: %02X %02X %02X %02X", header[0], header[1], header[2], header[3] )</ID>
@@ -151,10 +149,9 @@
     <ID>MayBeConst:SolidScene.kt$SolidScene.Companion$@JvmField val KEY_TARGET_SCENE = "target_scene"</ID>
     <ID>MayBeConst:UpdateSettings.kt$UpdateSettings$// --- Last Update Time (1-day throttle for auto-check) --- @JvmField val KEY_LAST_UPDATE_TIME = "last_update_time"</ID>
     <ID>NestedBlockDepth:Crash.kt$Crash$@SuppressLint("HardwareIds") @Throws(IOException::class) private fun collectInfo(context: Context, fw: FileWriter)</ID>
-    <ID>NestedBlockDepth:DirImageFiles.kt$DirImageFiles$fun decode(context: Context, file: UniFile): Image?</ID>
+    <ID>NestedBlockDepth:DirImageFiles.kt$DirImageFiles$fun decode(context: Context, file: StorageFile): Image?</ID>
     <ID>NestedBlockDepth:DownloadAdapter.kt$DownloadAdapter$override fun onBindViewHolder( holder: DownloadHolder, position: Int, payloads: MutableList&lt;Any&gt; )</ID>
-    <ID>NestedBlockDepth:DownloadFragment.kt$DownloadFragment$private fun collectImagePaths(dir: UniFile?, paths: MutableList&lt;String&gt;)</ID>
-    <ID>NestedBlockDepth:DownloadFragment.kt$DownloadFragment$private fun saveCleanLog(downloadDir: UniFile, logs: List&lt;String&gt;)</ID>
+    <ID>NestedBlockDepth:DownloadFragment.kt$DownloadFragment$private fun saveCleanLog(downloadDir: StorageFile, logs: List&lt;String&gt;)</ID>
     <ID>NestedBlockDepth:FileUtils.kt$FileUtils.Companion$@JvmStatic fun getFileName(context: Context, uri: Uri): String?</ID>
     <ID>NestedBlockDepth:GalleryInputHandler.kt$GalleryInputHandler$fun handleGenericMotion(view: View?, motionEvent: MotionEvent): Boolean</ID>
     <ID>NestedBlockDepth:Image.kt$Image$@Synchronized fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int)</ID>
@@ -162,7 +159,7 @@
     <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
     <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
     <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
-    <ID>NestedBlockDepth:LRRGalleryProvider.kt$LRRGalleryProvider$override fun save(index: Int, file: UniFile): Boolean</ID>
+    <ID>NestedBlockDepth:LRRGalleryProvider.kt$LRRGalleryProvider$override fun save(index: Int, file: StorageFile): Boolean</ID>
     <ID>NestedBlockDepth:LRRUrlHelper.kt$LRRUrlHelper$@Suppress("ReturnCount", "ThrowsCount") suspend fun connectWithFallback( testClient: OkHttpClient, rawInput: String, apiKey: String?, allowCleartext: Boolean = false ): ConnectResult</ID>
     <ID>NestedBlockDepth:LegacyDb.kt$LegacyDb$suspend fun mergeOldDB(context: Context)</ID>
     <ID>NestedBlockDepth:LegacySearchHistoryImporter.kt$LegacySearchHistoryImporter$suspend fun importIfPresent(context: Context, db: AppDatabase, activeProfileId: Long)</ID>
@@ -258,14 +255,11 @@
     <ID>UnusedParameter:GalleryInputHandler.kt$GalleryInputHandler$view: View?</ID>
     <ID>UnusedParameter:LRRDownloadWorker.kt$LRRDownloadWorker$total: Int</ID>
     <ID>UnusedParameter:LRRUrlOpener.kt$LRRUrlOpener$url: String?</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$dir: UniFile</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$file: UniFile</ID>
     <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$filename: String</ID>
     <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$index: Int</ID>
     <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$listener: OnSpiderListener?</ID>
     <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$page: Int</ID>
     <ID>UnusedPrivateMember:AppHelper.kt$AppHelper$private fun isWifiProxy(context: Context?): Boolean</ID>
-    <ID>UnusedPrivateMember:DownloadsViewModel.kt$DownloadsViewModel.Companion$private fun deleteFileAsync(vararg files: UniFile?)</ID>
     <ID>UnusedPrivateProperty:AppConfig.kt$AppConfig$private const val APP_DIRNAME = "LRReader"</ID>
     <ID>UnusedPrivateProperty:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$val context = callback.ehContext ?: return false</ID>
     <ID>UnusedPrivateProperty:DownloadRepository.kt$DownloadRepository$private val context: Context</ID>

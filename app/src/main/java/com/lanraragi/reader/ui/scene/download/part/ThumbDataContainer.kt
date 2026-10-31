@@ -120,7 +120,7 @@ class ThumbDataContainer(
         private const val THUMB_FILE_NAME = ".thumb"
 
         /**
-         * Typical resolution is a Room lookup plus a SAF directory probe
+         * Typical resolution is a Room lookup plus a directory probe
          * (tens of ms). 250 ms covers the slow tail while capping the
          * worst-case stall a single bind can inflict on a loader I/O
          * thread; past the bound the container silently degrades.

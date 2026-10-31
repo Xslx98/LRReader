@@ -58,7 +58,7 @@ class ReaderPageCacheWarmDirSkipTest {
         val bitmap = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888)
         FileOutputStream(File(folder, "0001.png")).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
-        dir = StorageFile(folder)!!
+        dir = StorageFile(folder)
     }
 
     @After

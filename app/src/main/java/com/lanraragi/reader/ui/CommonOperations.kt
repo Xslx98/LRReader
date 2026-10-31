@@ -161,7 +161,7 @@ object CommonOperations {
         if (file == null) return
 
         val noMedia = file.subFile(".nomedia")
-        if (noMedia != null && noMedia.isFile) {
+        if (noMedia.isFile) {
             noMedia.delete()
         }
     }

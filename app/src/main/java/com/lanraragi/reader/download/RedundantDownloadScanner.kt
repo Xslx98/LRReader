@@ -26,7 +26,7 @@ class RedundantDownloadScanner(private val repo: DownloadDbRepository) {
         val children = root.listFiles() ?: return emptyList()
         return children.filter { child ->
             val name = child.name
-            child.isDirectory && name != null && !name.startsWith(".") && name.lowercase() !in claimed &&
+            child.isDirectory && !name.startsWith(".") && name.lowercase() !in claimed &&
                 DownloadDirMarker.read(child)?.arcid.let { it == null || it !in tracked }
         }.sortedBy { it.name }
     }

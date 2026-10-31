@@ -512,17 +512,15 @@ class GalleryDetailViewModel : ViewModel() {
                     .getLocalDownloadDir(context, archive)
             }
             if (dir != null) {
-                val uniFile = com.lanraragi.reader.storage.StorageFile(dir)
-                if (uniFile != null) {
-                    if (BuildConfig.DEBUG) {
-                        android.util.Log.i(
-                            TAG,
-                            "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage"
-                        )
-                    }
-                    ReaderPageCache.joinOwned(ReaderPageCache.warmDir(context, arcId, uniFile, startPage))
-                    return@launch
+                if (BuildConfig.DEBUG) {
+                    android.util.Log.i(
+                        TAG,
+                        "[WARM] detailVM DIR trigger arcid=$arcId page=$startPage"
+                    )
                 }
+                val storage = com.lanraragi.reader.storage.StorageFile(dir)
+                ReaderPageCache.joinOwned(ReaderPageCache.warmDir(context, arcId, storage, startPage))
+                return@launch
             }
             val serverUrl = try {
                 resolveSourceServerUrl()

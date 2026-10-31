@@ -577,7 +577,7 @@ class DirGalleryProvider : GalleryProvider2 {
                 }
 
                 fileList.lazySet(files)
-                val numeric = DirImageFiles.numericPageIndices(files.map { it.name ?: "" })
+                val numeric = DirImageFiles.numericPageIndices(files.map { it.name })
                 pageIndexMap.lazySet(numeric)
                 sizeValue = DirImageFiles.pageSpaceSize(numeric, files.size, expectedPageCount)
                 if (numeric != null && sizeValue != files.size && BuildConfig.DEBUG) {
@@ -718,7 +718,6 @@ class DirGalleryProvider : GalleryProvider2 {
         val src = fileAt(index) ?: return null
         val extension = FileUtils.getExtensionFromFilename(src.name)
         val dst = dir.subFile(if (extension != null) "$filename.$extension" else filename)
-                ?: return null
         var inputStream: java.io.InputStream? = null
         var outputStream: java.io.OutputStream? = null
         return try {

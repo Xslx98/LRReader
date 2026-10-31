@@ -575,13 +575,5 @@ class DownloadsViewModel(
 
         /** Available per-page count choices for the pagination indicator. */
         private val PER_PAGE_COUNT_CHOICES = intArrayOf(50, 100, 200, 300, 500)
-
-        private fun deleteFileAsync(vararg files: StorageFile?) {
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                for (file in files) {
-                    file?.delete()
-                }
-            }
-        }
     }
 }

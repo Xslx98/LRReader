@@ -102,14 +102,13 @@ object SpiderDen {
     }
 
     /**
-     * Build a [StorageFile] for the supplied tree URI, falling back to
+     * Build a [StorageFile] for the supplied root URI, falling back to
      * [DownloadSettings.getDownloadLocation] when [storedUri] is null,
-     * malformed, or no longer accessible (SAF permission revoked,
-     * directory deleted). This is the per-archive root resolver used
-     * by the download read paths so a setting change after-the-fact
-     * doesn't orphan a previously-downloaded archive — and a SAF
-     * revoke surfaces as a `null` from the entire helper rather than
-     * a crash.
+     * malformed, or not a `file://` uri (only pre-v1.16.2 rows can hold a
+     * SAF `content://` root, and their pages were written to the app
+     * directory anyway). This is the per-archive root resolver used by the
+     * download read paths so a setting change after-the-fact doesn't
+     * orphan a previously-downloaded archive.
      */
     internal fun resolveRootDir(storedUri: String?): StorageFile? {
         if (!storedUri.isNullOrEmpty()) {

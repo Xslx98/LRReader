@@ -154,7 +154,7 @@ class LRRDownloadWorkerTest {
         assertEquals(3, r.finished)
         assertEquals(3, r.total)
         assertEquals(3, dir.listFiles()!!.count { it.name.endsWith(".jpg") })
-        assertEquals(ARCID, DownloadDirMarker.read(com.lanraragi.reader.storage.StorageFile(dir)!!)?.arcid)
+        assertEquals(ARCID, DownloadDirMarker.read(com.lanraragi.reader.storage.StorageFile(dir))?.arcid)
         assertEquals(null, worker.failureReason)
     }
 

@@ -83,9 +83,7 @@ data class DownloadDirMarker(
                 tmp.delete()
                 return false
             }
-            // A file:// rename replaces the old marker atomically; a document
-            // provider would pick a new name instead, so drop the old one first.
-            if (!StorageFile.isFileUri(dir.uri)) dir.findFile(FILE_NAME)?.delete()
+            // The rename replaces the old marker atomically.
             if (tmp.renameTo(FILE_NAME)) return true
             tmp.delete()
             return false

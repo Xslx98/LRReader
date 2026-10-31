@@ -47,16 +47,11 @@ object DownloadSettings {
         } catch (e: Throwable) {
             ExceptionUtils.throwIfFatal(e)
         }
-        // Only file:// locations are honored. The download worker writes pages with
-        // java.io.File and cannot write into a SAF tree (content://); a stored content://
-        // location used to silently degrade to app-private storage — invisible files that
-        // "delete with files" could never reclaim. Fall back to the default app file://
-        // directory for any non-file (or unresolved) location.
-        val location = if (dir == null || dir.uri.scheme != "file") {
-            AppConfig.getDefaultDownloadDir()?.let(::StorageFile)
-        } else {
-            dir
-        }
+        // Only file:// locations resolve (the download worker writes pages with
+        // java.io.File). A stored content:// location used to silently degrade to
+        // app-private storage — invisible files that "delete with files" could never
+        // reclaim — so any unresolved location falls back to the default app directory.
+        val location = dir ?: AppConfig.getDefaultDownloadDir()?.let(::StorageFile)
         // Its child directories are archive titles: keep them out of crash
         // reports and diagnostics (audit 2026-10-06 C06).
         Redactor.registerDownloadRoot(location?.uri?.toString())

@@ -59,7 +59,7 @@ class DownloadDirMarkerTest {
         db.close()
     }
 
-    private fun dir(name: String) = StorageFile(File(root, name).apply { mkdirs() })!!
+    private fun dir(name: String) = StorageFile(File(root, name).apply { mkdirs() })
 
     @Suppress("DEPRECATION")
     private suspend fun download(arcid: String, dirname: String?, title: String = "T") {
@@ -134,7 +134,7 @@ class DownloadDirMarkerTest {
         DownloadDirMarker.write(dir("Vol 1 copy"), DownloadDirMarker(arcid = "a1", serverProfileId = 7L))
         DownloadDirMarker.write(dir("Gone"), DownloadDirMarker(arcid = "deleted", serverProfileId = 7L))
 
-        val names = RedundantDownloadScanner(repo).scan(StorageFile(root)!!).map { it.name }
+        val names = RedundantDownloadScanner(repo).scan(StorageFile(root)).map { it.name }
 
         assertEquals(listOf("Gone"), names)
     }
