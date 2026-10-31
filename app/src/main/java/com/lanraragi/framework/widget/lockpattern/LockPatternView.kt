@@ -137,7 +137,6 @@ class LockPatternView : View {
              * @param row The row of the cell.
              * @param column The column of the cell.
              */
-            @JvmStatic
             @Synchronized
             fun of(row: Int, column: Int): Cell {
                 checkRange(row, column)

@@ -33,7 +33,6 @@ object LockPatternUtils {
      * @param string The pattern serialized with [patternToString]
      * @return The pattern.
      */
-    @JvmStatic
     fun stringToPattern(string: String): List<LockPatternView.Cell> {
         val result = ArrayList<LockPatternView.Cell>()
 
@@ -50,7 +49,6 @@ object LockPatternUtils {
      * @param pattern The pattern.
      * @return The pattern in string form.
      */
-    @JvmStatic
     fun patternToString(pattern: List<LockPatternView.Cell>?): String {
         if (pattern == null) {
             return ""
@@ -65,7 +63,6 @@ object LockPatternUtils {
         return String(res, Charset.defaultCharset())
     }
 
-    @JvmStatic
     fun isPatternVaild(pattern: String): Boolean {
         val bytes = pattern.toByteArray(Charset.defaultCharset())
         if (bytes.size <= 9 && bytes.size >= 2) {
