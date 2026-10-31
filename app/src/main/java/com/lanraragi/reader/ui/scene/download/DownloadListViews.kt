@@ -81,13 +81,13 @@ internal object DownloadListViews {
     fun configureFab(scene: DownloadsScene, context: Context, fabLayout: FabLayout): AddDeleteDrawable {
         val resources = context.resources
         fabLayout.setExpanded(false, true)
-        fabLayout.setHidePrimaryFab(false)
-        fabLayout.setAutoCancel(false)
-        fabLayout.setOnClickFabListener(scene)
-        fabLayout.setOnExpandListener(scene)
+        fabLayout.hidePrimaryFab = false
+        fabLayout.autoCancel = false
+        fabLayout.onClickFabListener = scene
+        fabLayout.onExpandListener = scene
         val actionFabDrawable = AddDeleteDrawable(context, resources.getColor(R.color.primary_drawable_dark, null))
         fabLayout.primaryFab.setImageDrawable(actionFabDrawable)
-        val fab = fabLayout.getSecondaryFabAt(6)
+        val fab = checkNotNull(fabLayout.getSecondaryFabAt(6))
         if (DRAG_ENABLE) {
             fab.setImageDrawable(ResourcesCompat.getDrawable(scene.resources, R.drawable.v_mobile_hand_left_x24, context.theme))
         } else {

@@ -22,7 +22,7 @@ internal class GalleryFabHelper(
     private val uploadHelper: () -> GalleryUploadHelper?,
 ) : FabLayout.OnClickFabListener, FabLayout.OnExpandListener {
 
-    override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton) {
+    override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?) {
         if ((stateHelper()?.state
                 ?: GalleryStateHelper.STATE_NORMAL) == GalleryStateHelper.STATE_NORMAL
         ) {

@@ -54,11 +54,11 @@ object GalleryListChrome {
             searchLayout.paddingRight, searchLayout.paddingBottom + paddingBottomFab
         )
 
-        fabLayout.setAutoCancel(true)
+        fabLayout.autoCancel = true
         fabLayout.isExpanded = false
-        fabLayout.setHidePrimaryFab(false)
-        fabLayout.setOnClickFabListener(scene.mFabHelper)
-        fabLayout.setOnExpandListener(scene.mFabHelper)
+        fabLayout.hidePrimaryFab = false
+        fabLayout.onClickFabListener = scene.mFabHelper
+        fabLayout.onExpandListener = scene.mFabHelper
         scene.addAboveSnackView(fabLayout)
 
         scene.actionFabDrawable = AddDeleteDrawable(
@@ -75,6 +75,8 @@ object GalleryListChrome {
             if (fabUrlDownload != null) fabLayout.removeView(fabUrlDownload)
         }
 
-        scene.searchBarMover = SearchBarMover(searchBarHelper, searchBar, scene.recyclerView, searchLayout)
+        scene.searchBarMover = SearchBarMover(
+            checkNotNull(searchBarHelper), searchBar, scene.recyclerView, searchLayout
+        )
     }
 }

@@ -64,7 +64,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
 
     fun onThumbItemClick(position: Int, view: View, gi: Archive?) {
         val thumb: LoadImageViewNew = view.findViewById(R.id.thumb_new)
-        if (thumb.mFailed) {
+        if (thumb.isFailed) {
             thumb.load()
             return
         }

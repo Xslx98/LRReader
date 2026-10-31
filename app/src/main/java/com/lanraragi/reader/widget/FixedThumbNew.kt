@@ -37,7 +37,7 @@ class FixedThumbNew @JvmOverloads constructor(
             minAspect = getFloat(R.styleable.FixedThumb_minAspect, 0.0f)
             maxAspect = getFloat(R.styleable.FixedThumb_maxAspect, 0.0f)
         }
-        setPlaceholder(CoverPlaceholderDrawable(context))
+        placeholder = CoverPlaceholderDrawable(context)
     }
 
     fun setFix(minAspect: Float, maxAspect: Float) {

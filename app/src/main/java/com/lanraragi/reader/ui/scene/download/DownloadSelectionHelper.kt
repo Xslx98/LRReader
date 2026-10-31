@@ -94,7 +94,7 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
                 it.setOnItemLongClickListener(null)
                 it.isLongClickable = false
             }
-            callback.mFabLayout?.setExpanded(true)
+            callback.mFabLayout?.isExpanded = true
             callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
             callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
         }
@@ -102,7 +102,7 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
         override fun onOutOfCustomChoice(view: EasyRecyclerView) {
             dragSelect?.cancel()
             callback.mRecyclerView?.setOnItemLongClickListener(callback.longClickListener)
-            callback.mFabLayout?.setExpanded(false)
+            callback.mFabLayout?.isExpanded = false
             callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
             callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
         }
