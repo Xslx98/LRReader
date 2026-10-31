@@ -113,8 +113,8 @@ abstract class GalleryAdapterNew(
         when (type) {
             TYPE_GRID -> {
                 val columnWidth = mResources.getDimensionPixelOffset(AppearanceSettings.getThumbSizeResId())
-                mLayoutManager.setColumnSize(columnWidth)
-                mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_SUITABLE_SIZE)
+                mLayoutManager.columnSize = columnWidth
+                mLayoutManager.strategy = AutoStaggeredGridLayoutManager.STRATEGY_SUITABLE_SIZE
                 mListDecoration?.let { mRecyclerView.removeItemDecoration(it) }
                 if (mGirdDecoration == null) {
                     val interval = mResources.getDimensionPixelOffset(R.dimen.gallery_grid_interval)
@@ -130,8 +130,8 @@ abstract class GalleryAdapterNew(
             else -> {
                 // TYPE_LIST or default
                 val columnWidth = mResources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
-                mLayoutManager.setColumnSize(columnWidth)
-                mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
+                mLayoutManager.columnSize = columnWidth
+                mLayoutManager.strategy = AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE
                 mGirdDecoration?.let { mRecyclerView.removeItemDecoration(it) }
                 if (mListDecoration == null) {
                     val interval = mResources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
@@ -156,7 +156,7 @@ abstract class GalleryAdapterNew(
             TYPE_GRID -> mResources.getDimensionPixelOffset(AppearanceSettings.getThumbSizeResId())
             else -> mResources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
         }
-        mLayoutManager.setColumnSize(columnWidth)
+        mLayoutManager.columnSize = columnWidth
         mRecyclerView.requestLayout()
     }
 

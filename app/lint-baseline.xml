@@ -35,39 +35,6 @@
     </issue>
 
     <issue
-        id="CustomViewStyleable"
-        message="By convention, the custom view (`CuteSpinner`) and the declare-styleable (`Spinner`) should have the same name (various editor features rely on this convention)"
-        errorLine1="                androidx.appcompat.R.styleable.Spinner, defStyleAttr, 0);"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/CuteSpinner.java"
-            line="61"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="CustomViewStyleable"
-        message="By convention, the custom view (`IndicatingListView`) and the declare-styleable (`Indicating`) should have the same name (various editor features rely on this convention)"
-        errorLine1="        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Indicating);"
-        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/IndicatingListView.java"
-            line="53"
-            column="62"/>
-    </issue>
-
-    <issue
-        id="CustomViewStyleable"
-        message="By convention, the custom view (`IndicatingScrollView`) and the declare-styleable (`Indicating`) should have the same name (various editor features rely on this convention)"
-        errorLine1="        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Indicating);"
-        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/IndicatingScrollView.java"
-            line="53"
-            column="62"/>
-    </issue>
-
-    <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
         errorLine1="            ratingText.text = String.format(&quot;%.0f★&quot;, archive.rating)"
@@ -109,17 +76,6 @@
             file="src/main/java/com/lanraragi/framework/scene/StageLayout.java"
             line="56"
             column="42"/>
-    </issue>
-
-    <issue
-        id="PrivateApi"
-        message="Accessing internal APIs via reflection is not supported and may not work on all devices or in the future"
-        errorLine1="      Class&lt;?> clazz = ClassLoader.getSystemClassLoader().loadClass(&quot;android.widget.Editor&quot;);"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/HackyTextInputEditText.java"
-            line="40"
-            column="24"/>
     </issue>
 
     <issue
@@ -339,17 +295,6 @@
     </issue>
 
     <issue
-        id="SwitchIntDef"
-        message="Switch statement on an `int` with known associated constant missing case `MeasureSpec.EXACTLY`"
-        errorLine1="        switch (mode) {"
-        errorLine2="        ~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/MaxSizeContainer.java"
-            line="57"
-            column="9"/>
-    </issue>
-
-    <issue
         id="UseRequiresApi"
         message="Use `@RequiresApi(Build.VERSION_CODES.JELLY_BEAN) instead of `@TargetApi` to propagate the requirement to callers of `setLightsOutMode`"
         errorLine1="    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
@@ -380,17 +325,6 @@
             file="src/main/java/com/lanraragi/reader/ui/scene/download/DownloadDragDropHelper.kt"
             line="60"
             column="17"/>
-    </issue>
-
-    <issue
-        id="UseCompatLoadingForDrawables"
-        message="Use `ResourcesCompat.getDrawable()`"
-        errorLine1="            setShadow((NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_2dp)); // LEGACY (upstream): dark theme shadow not implemented"
-        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
-            line="57"
-            column="43"/>
     </issue>
 
     <issue
@@ -1088,17 +1022,6 @@
 
     <issue
         id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
-            line="53"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
         message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `mipmap-anydpi`.">
         <location
             file="src/main/res/mipmap-anydpi-v26"/>
@@ -1599,17 +1522,6 @@
             file="src/main/java/com/lanraragi/reader/ui/gallery/ReaderContinuationController.kt"
             line="52"
             column="36"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="Custom view `SafeCoordinatorLayout` overrides `onTouchEvent` but not `performClick`"
-        errorLine1="    public boolean onTouchEvent(MotionEvent ev) {"
-        errorLine2="                   ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/SafeCoordinatorLayout.java"
-            line="50"
-            column="20"/>
     </issue>
 
     <issue

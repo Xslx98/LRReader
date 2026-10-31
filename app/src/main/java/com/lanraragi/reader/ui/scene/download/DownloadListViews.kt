@@ -33,8 +33,8 @@ internal object DownloadListViews {
     ): AutoStaggeredGridLayoutManager {
         val resources = context.resources
         val layoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
-        layoutManager.setColumnSize(resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId()))
-        layoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
+        layoutManager.columnSize = resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
+        layoutManager.strategy = AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE
 
         // Configure drag-related RecyclerView properties
         dragDropHelper?.configureRecyclerView(recyclerView)

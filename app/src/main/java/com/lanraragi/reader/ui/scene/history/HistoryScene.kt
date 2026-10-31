@@ -154,10 +154,8 @@ class HistoryScene : ToolbarScene(),
         mLayoutManager = AutoStaggeredGridLayoutManager(
             0, StaggeredGridLayoutManager.VERTICAL
         )
-        mLayoutManager.setColumnSize(
-            resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
-        )
-        mLayoutManager.setStrategy(AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE)
+        mLayoutManager.columnSize = resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
+        mLayoutManager.strategy = AutoStaggeredGridLayoutManager.STRATEGY_MIN_SIZE
         mRecyclerView.layoutManager = mLayoutManager
         mRecyclerView.selector = Ripples.rippleDrawable(
             !context.isLightTheme(),
@@ -279,7 +277,7 @@ class HistoryScene : ToolbarScene(),
         // Refresh column size to pick up detail_size changes from settings
         if (::mLayoutManager.isInitialized) {
             val columnWidth = resources.getDimensionPixelOffset(AppearanceSettings.getDetailSizeResId())
-            mLayoutManager.setColumnSize(columnWidth)
+            mLayoutManager.columnSize = columnWidth
             mRecyclerView.requestLayout()
         }
         // Reload history to pick up rating changes made in detail page.
