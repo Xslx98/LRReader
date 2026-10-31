@@ -37,8 +37,6 @@ class AddDeleteDrawable(context: Context, color: Int) : Drawable() {
 
     private var mProgress = 0f
 
-    private var mAutoUpdateMirror = false
-    private var mVerticalMirror = false
 
     init {
         val resources = context.resources
@@ -61,11 +59,7 @@ class AddDeleteDrawable(context: Context, color: Int) : Drawable() {
 
     override fun draw(canvas: Canvas) {
         val bounds = bounds
-        val canvasRotate = if (mVerticalMirror) {
-            MathUtils.lerp(270f, 135f, mProgress)
-        } else {
-            MathUtils.lerp(0f, 135f, mProgress)
-        }
+        val canvasRotate = MathUtils.lerp(0f, 135f, mProgress)
 
         canvas.save()
         canvas.translate(bounds.centerX().toFloat(), bounds.centerY().toFloat())
@@ -91,27 +85,9 @@ class AddDeleteDrawable(context: Context, color: Int) : Drawable() {
 
     override fun getIntrinsicWidth(): Int = mSize * 6 / 5
 
-    /**
-     * If set, canvas is flipped when progress reached to end and going back to start.
-     */
-    private fun setVerticalMirror(verticalMirror: Boolean) {
-        mVerticalMirror = verticalMirror
-    }
-
-    fun setAutoUpdateMirror(autoUpdateMirror: Boolean) {
-        mAutoUpdateMirror = autoUpdateMirror
-    }
-
     var progress: Float
         get() = mProgress
         set(progress) {
-            if (mAutoUpdateMirror) {
-                if (progress == 1f) {
-                    setVerticalMirror(true)
-                } else if (progress == 0f) {
-                    setVerticalMirror(false)
-                }
-            }
             mProgress = progress
             invalidateSelf()
         }
