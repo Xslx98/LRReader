@@ -16,7 +16,6 @@
 
 package com.lanraragi.framework.widget
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -24,6 +23,8 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.widget.ScrollView
+import androidx.core.content.withStyledAttributes
+import androidx.core.graphics.withTranslation
 import com.lanraragi.reader.R
 
 class IndicatingScrollView : ScrollView {
@@ -45,13 +46,12 @@ class IndicatingScrollView : ScrollView {
         init(context, attrs)
     }
 
-    @SuppressLint("CustomViewStyleable") // Indicating is shared with IndicatingListView
     private fun init(context: Context, attrs: AttributeSet?) {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.Indicating)
-        indicatorHeight = a.getDimensionPixelOffset(R.styleable.Indicating_indicatorHeight, 1)
-        paint.color = a.getColor(R.styleable.Indicating_indicatorColor, Color.BLACK)
-        paint.style = Paint.Style.FILL
-        a.recycle()
+        context.withStyledAttributes(attrs, R.styleable.Indicating) {
+            indicatorHeight = getDimensionPixelOffset(R.styleable.Indicating_indicatorHeight, 1)
+            paint.color = getColor(R.styleable.Indicating_indicatorColor, Color.BLACK)
+            paint.style = Paint.Style.FILL
+        }
     }
 
     private fun fillTopIndicatorDrawRect() {
@@ -69,20 +69,17 @@ class IndicatingScrollView : ScrollView {
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
 
-        val restoreCount = canvas.save()
-        canvas.translate(scrollX.toFloat(), scrollY.toFloat())
-
-        // Draw top indicator
-        if (needShowTopIndicator()) {
-            fillTopIndicatorDrawRect()
-            canvas.drawRect(tempRect, paint)
+        canvas.withTranslation(scrollX.toFloat(), scrollY.toFloat()) {
+            // Draw top indicator
+            if (needShowTopIndicator()) {
+                fillTopIndicatorDrawRect()
+                drawRect(tempRect, paint)
+            }
+            // Draw bottom indicator
+            if (needShowBottomIndicator()) {
+                fillBottomIndicatorDrawRect()
+                drawRect(tempRect, paint)
+            }
         }
-        // Draw bottom indicator
-        if (needShowBottomIndicator()) {
-            fillBottomIndicatorDrawRect()
-            canvas.drawRect(tempRect, paint)
-        }
-
-        canvas.restoreToCount(restoreCount)
     }
 }

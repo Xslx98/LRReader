@@ -19,8 +19,9 @@ package com.lanraragi.framework.widget
 import android.content.Context
 import android.graphics.Rect
 import android.util.AttributeSet
-import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.withStyledAttributes
+import androidx.core.view.isGone
 import com.lanraragi.reader.R
 import kotlin.math.max
 import kotlin.math.min
@@ -68,14 +69,12 @@ class AutoWrapLayout : ViewGroup {
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
 
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle) {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.AutoWrapLayout, defStyle, 0)
-
-        val index = a.getInt(R.styleable.AutoWrapLayout_alignment, -1)
-        if (index >= 0) {
-            alignment = ALIGNMENTS_BY_ATTR_INDEX[index]
+        context.withStyledAttributes(attrs, R.styleable.AutoWrapLayout, defStyle, 0) {
+            val index = getInt(R.styleable.AutoWrapLayout_alignment, -1)
+            if (index >= 0) {
+                alignment = ALIGNMENTS_BY_ATTR_INDEX[index]
+            }
         }
-
-        a.recycle()
     }
 
     private fun obtainRect(): Rect {
@@ -154,7 +153,7 @@ class AutoWrapLayout : ViewGroup {
     private fun placeChild(index: Int, maxWidth: Int, maxRightBound: Int, maxBottomBound: Int): Boolean {
         val child = getChildAt(index)
         child.measure(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED)
-        if (child.visibility == View.GONE) {
+        if (child.isGone) {
             return true
         }
         val lp = child.layoutParams as MarginLayoutParams
@@ -201,7 +200,7 @@ class AutoWrapLayout : ViewGroup {
         val count = rectList.size
         for (i in 0 until count) {
             val child = getChildAt(i)
-            if (child.visibility == View.GONE) {
+            if (child.isGone) {
                 continue
             }
             val rect = rectList[i]

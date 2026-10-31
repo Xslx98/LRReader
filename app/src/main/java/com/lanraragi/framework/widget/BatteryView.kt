@@ -25,6 +25,7 @@ import android.graphics.Color
 import android.os.BatteryManager
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.core.content.withStyledAttributes
 import com.lanraragi.framework.drawable.BatteryDrawable
 import com.lanraragi.reader.R
 
@@ -94,10 +95,10 @@ class BatteryView : AppCompatTextView {
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         init()
 
-        val typedArray = context.obtainStyledAttributes(attrs, R.styleable.BatteryView, defStyleAttr, 0)
-        color = typedArray.getColor(R.styleable.BatteryView_color, Color.WHITE)
-        warningColor = typedArray.getColor(R.styleable.BatteryView_warningColor, Color.RED)
-        typedArray.recycle()
+        context.withStyledAttributes(attrs, R.styleable.BatteryView, defStyleAttr, 0) {
+            color = getColor(R.styleable.BatteryView_color, Color.WHITE)
+            warningColor = getColor(R.styleable.BatteryView_warningColor, Color.RED)
+        }
 
         drawable.setColor(color)
         drawable.setWarningColor(warningColor)

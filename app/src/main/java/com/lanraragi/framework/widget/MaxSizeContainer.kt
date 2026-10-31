@@ -19,6 +19,8 @@ package com.lanraragi.framework.widget
 import android.content.Context
 import android.util.AttributeSet
 import android.view.ViewGroup
+import androidx.core.content.withStyledAttributes
+import androidx.core.view.isGone
 import com.lanraragi.reader.R
 import com.lanraragi.reader.util.AssertUtils
 import kotlin.math.min
@@ -37,10 +39,10 @@ class MaxSizeContainer : ViewGroup {
     }
 
     private fun init(context: Context, attrs: AttributeSet?) {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.MaxSizeContainer)
-        maxWidth = a.getDimensionPixelOffset(R.styleable.MaxSizeContainer_maxWidth, -1)
-        maxHeight = a.getDimensionPixelOffset(R.styleable.MaxSizeContainer_maxHeight, -1)
-        a.recycle()
+        context.withStyledAttributes(attrs, R.styleable.MaxSizeContainer) {
+            maxWidth = getDimensionPixelOffset(R.styleable.MaxSizeContainer_maxWidth, -1)
+            maxHeight = getDimensionPixelOffset(R.styleable.MaxSizeContainer_maxHeight, -1)
+        }
     }
 
     private fun getMeasureSpec(measureSpec: Int, max: Int): Int {
@@ -66,7 +68,7 @@ class MaxSizeContainer : ViewGroup {
         AssertUtils.assertEquals("getChildCount() must be 1", 1, childCount)
 
         val child = getChildAt(0)
-        if (child.visibility != GONE) {
+        if (!child.isGone) {
             child.measure(getMeasureSpec(widthMeasureSpec, maxWidth), getMeasureSpec(heightMeasureSpec, maxHeight))
             setMeasuredDimension(child.measuredWidth, child.measuredHeight)
         } else {
@@ -78,7 +80,7 @@ class MaxSizeContainer : ViewGroup {
         AssertUtils.assertEquals("getChildCount() must be 1", 1, childCount)
 
         val child = getChildAt(0)
-        if (child.visibility != GONE) {
+        if (!child.isGone) {
             child.layout(0, 0, r - l, b - t)
         }
     }

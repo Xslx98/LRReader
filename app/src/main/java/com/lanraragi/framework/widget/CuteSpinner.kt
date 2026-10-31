@@ -16,12 +16,12 @@
 
 package com.lanraragi.framework.widget
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
 import android.util.AttributeSet
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.AppCompatSpinner
+import androidx.core.content.withStyledAttributes
 import com.lanraragi.reader.R
 
 class CuteSpinner : AppCompatSpinner {
@@ -57,15 +57,14 @@ class CuteSpinner : AppCompatSpinner {
         init(context, attrs, defStyleAttr)
     }
 
-    @SuppressLint("CustomViewStyleable") // Reads AppCompat's own Spinner styleable for android:entries
     private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
-        val a = context.obtainStyledAttributes(attrs, androidx.appcompat.R.styleable.Spinner, defStyleAttr, 0)
-        val entries = a.getTextArray(androidx.appcompat.R.styleable.Spinner_android_entries)
-        if (entries != null) {
-            val adapter = ArrayAdapter(context, R.layout.item_cute_spinner_item, entries)
-            adapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item)
-            setAdapter(adapter)
+        context.withStyledAttributes(attrs, androidx.appcompat.R.styleable.Spinner, defStyleAttr, 0) {
+            val entries = getTextArray(androidx.appcompat.R.styleable.Spinner_android_entries)
+            if (entries != null) {
+                val adapter = ArrayAdapter(context, R.layout.item_cute_spinner_item, entries)
+                adapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item)
+                setAdapter(adapter)
+            }
         }
-        a.recycle()
     }
 }
