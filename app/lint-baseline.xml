@@ -35,17 +35,6 @@
     </issue>
 
     <issue
-        id="CustomViewStyleable"
-        message="By convention, the custom view (`IndicatingScrollView`) and the declare-styleable (`Indicating`) should have the same name (various editor features rely on this convention)"
-        errorLine1="        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Indicating);"
-        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/IndicatingScrollView.java"
-            line="53"
-            column="62"/>
-    </issue>
-
-    <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
         errorLine1="            ratingText.text = String.format(&quot;%.0f★&quot;, archive.rating)"
