@@ -46,54 +46,48 @@ import kotlin.math.min
 
 class Slider : View {
 
-    private lateinit var mContext: Context
+    private lateinit var paint: Paint
+    private lateinit var bgPaint: Paint
 
-    private lateinit var mPaint: Paint
-    private lateinit var mBgPaint: Paint
+    private val leftRect = RectF()
+    private val rightRect = RectF()
 
-    private val mLeftRectF = RectF()
-    private val mRightRectF = RectF()
+    private lateinit var popup: PopupWindow
+    private lateinit var bubble: BubbleView
 
-    private lateinit var mPopup: PopupWindow
-    private lateinit var mBubble: BubbleView
+    private var rangeStart = 0
+    private var rangeEnd = 0
+    private var progressValue = 0
+    private var progressPercent = 0f
+    private var drawProgress = 0
+    private var drawPercent = 0f
+    private var targetProgress = 0
 
-    private var mStart = 0
-    private var mEnd = 0
-    private var mProgress = 0
-    private var mPercent = 0f
-    private var mDrawProgress = 0
-    private var mDrawPercent = 0f
-    private var mTargetProgress = 0
+    private var thickness = 0f
+    private var radius = 0f
 
-    private var mThickness = 0f
-    private var mRadius = 0f
+    private var charWidth = 0f
+    private var charHeight = 0f
 
-    private var mCharWidth = 0f
-    private var mCharHeight = 0f
+    private var bubbleWidth = 0
+    private var bubbleHeight = 0
+    private var bubbleMinWidth = 0
+    private var bubbleMinHeight = 0
 
-    private var mBubbleWidth = 0
-    private var mBubbleHeight = 0
-    private var mBubbleMinWidth = 0
-    private var mBubbleMinHeight = 0
+    private var popupX = 0
+    private var popupY = 0
+    private var popupWidth = 0
 
-    private var mPopupX = 0
-    private var mPopupY = 0
-    private var mPopupWidth = 0
+    private val locationInWindow = IntArray(2)
 
-    private val mTemp = IntArray(2)
+    private var bubbleShown = false
 
-    private var mReverse = false
+    private var drawBubbleScale = 0f
 
-    private var mShowBubble = false
+    private var progressAnimation: ValueAnimator? = null
+    private lateinit var bubbleScaleAnimation: ValueAnimator
 
-    private var mDrawBubbleScale = 0f
-
-    private var mProgressAnimation: ValueAnimator? = null
-    private lateinit var mBubbleScaleAnimation: ValueAnimator
-
-    private var mListener: OnSetProgressListener? = null
-
-    private var mCheckForShowBubble: CheckForShowBubble? = null
+    private var checkForShowBubble: CheckForShowBubble? = null
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         init(context, attrs)
@@ -105,25 +99,24 @@ class Slider : View {
 
     @Suppress("DEPRECATION") // AbsoluteLayout hosts the bubble inside the popup; kept as is
     private fun init(context: Context, attrs: AttributeSet?) {
-        mContext = context
-        mPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint = Paint(Paint.ANTI_ALIAS_FLAG)
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         textPaint.textAlign = Paint.Align.CENTER
 
         val resources = context.resources
-        mBubbleMinWidth = resources.getDimensionPixelOffset(R.dimen.slider_bubble_width)
-        mBubbleMinHeight = resources.getDimensionPixelOffset(R.dimen.slider_bubble_height)
+        bubbleMinWidth = resources.getDimensionPixelOffset(R.dimen.slider_bubble_width)
+        bubbleMinHeight = resources.getDimensionPixelOffset(R.dimen.slider_bubble_height)
 
-        mBubble = BubbleView(context, textPaint)
-        mBubble.scaleX = 0.0f
-        mBubble.scaleY = 0.0f
+        bubble = BubbleView(context, textPaint)
+        bubble.scaleX = 0.0f
+        bubble.scaleY = 0.0f
         val absoluteLayout = AbsoluteLayout(context)
-        absoluteLayout.addView(mBubble)
+        absoluteLayout.addView(bubble)
         absoluteLayout.background = null
-        mPopup = PopupWindow(absoluteLayout)
-        mPopup.isOutsideTouchable = false
-        mPopup.isTouchable = false
-        mPopup.isFocusable = false
+        popup = PopupWindow(absoluteLayout)
+        popup.isOutsideTouchable = false
+        popup.isTouchable = false
+        popup.isFocusable = false
 
         val a = context.obtainStyledAttributes(attrs, R.styleable.Slider)
         textPaint.color = a.getColor(R.styleable.Slider_textColor, Color.WHITE)
@@ -132,13 +125,13 @@ class Slider : View {
         updateTextSize()
 
         setRange(a.getInteger(R.styleable.Slider_start, 0), a.getInteger(R.styleable.Slider_end, 0))
-        setProgress(a.getInteger(R.styleable.Slider_slider_progress, 0))
-        mThickness = a.getDimension(R.styleable.Slider_thickness, 2f)
-        mRadius = a.getDimension(R.styleable.Slider_radius, 6f)
+        progress = a.getInteger(R.styleable.Slider_slider_progress, 0)
+        thickness = a.getDimension(R.styleable.Slider_thickness, 2f)
+        radius = a.getDimension(R.styleable.Slider_radius, 6f)
         setColor(a.getColor(R.styleable.Slider_color, Color.BLACK))
 
-        mBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        mBgPaint.color = if (a.getBoolean(R.styleable.Slider_dark, false)) 0x4dffffff else 0x42000000
+        bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        bgPaint.color = if (a.getBoolean(R.styleable.Slider_dark, false)) 0x4dffffff else 0x42000000
 
         a.recycle()
 
@@ -146,20 +139,20 @@ class Slider : View {
         progressAnimation.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
         progressAnimation.addUpdateListener { animation ->
             val value = animation.animatedValue as Float
-            mDrawPercent = value
-            mDrawProgress = Math.round(MathUtils.lerp(mStart.toFloat(), mEnd.toFloat(), value))
+            drawPercent = value
+            drawProgress = Math.round(MathUtils.lerp(rangeStart.toFloat(), rangeEnd.toFloat(), value))
             updateBubblePosition()
-            mBubble.setProgress(mDrawProgress)
+            bubble.setProgress(drawProgress)
             invalidate()
         }
-        mProgressAnimation = progressAnimation
+        this.progressAnimation = progressAnimation
 
-        mBubbleScaleAnimation = ValueAnimator()
-        mBubbleScaleAnimation.addUpdateListener { animation ->
+        bubbleScaleAnimation = ValueAnimator()
+        bubbleScaleAnimation.addUpdateListener { animation ->
             val value = animation.animatedValue as Float
-            mDrawBubbleScale = value
-            mBubble.scaleX = value
-            mBubble.scaleY = value
+            drawBubbleScale = value
+            bubble.scaleX = value
+            bubble.scaleY = value
             invalidate()
         }
     }
@@ -167,34 +160,34 @@ class Slider : View {
     private fun updateTextSize() {
         val length = CHARACTERS.size
         val widths = FloatArray(length)
-        mPaint.getTextWidths(CHARACTERS, 0, length, widths)
-        mCharWidth = 0.0f
+        paint.getTextWidths(CHARACTERS, 0, length, widths)
+        charWidth = 0.0f
         for (f in widths) {
-            mCharWidth = max(mCharWidth, f)
+            charWidth = max(charWidth, f)
         }
 
-        val fm = mPaint.fontMetrics
-        mCharHeight = fm.bottom - fm.top
+        val fm = paint.fontMetrics
+        charHeight = fm.bottom - fm.top
     }
 
     @Suppress("DEPRECATION") // the bubble's AbsoluteLayout.LayoutParams
     private fun updateBubbleSize() {
-        val oldWidth = mBubbleWidth
-        val oldHeight = mBubbleHeight
-        mBubbleWidth = max(
-            mBubbleMinWidth.toFloat(),
-            mEnd.toString().length * mCharWidth + ViewUtils.dp2pix(mContext, 8f),
+        val oldWidth = bubbleWidth
+        val oldHeight = bubbleHeight
+        bubbleWidth = max(
+            bubbleMinWidth.toFloat(),
+            rangeEnd.toString().length * charWidth + ViewUtils.dp2pix(context, 8f),
         ).toInt()
-        mBubbleHeight = max(
-            mBubbleMinHeight.toFloat(),
-            mCharHeight + ViewUtils.dp2pix(mContext, 8f),
+        bubbleHeight = max(
+            bubbleMinHeight.toFloat(),
+            charHeight + ViewUtils.dp2pix(context, 8f),
         ).toInt()
 
-        if (oldWidth != mBubbleWidth && oldHeight != mBubbleHeight) {
-            val lp = mBubble.layoutParams as AbsoluteLayout.LayoutParams
-            lp.width = mBubbleWidth
-            lp.height = mBubbleHeight
-            mBubble.layoutParams = lp
+        if (oldWidth != bubbleWidth && oldHeight != bubbleHeight) {
+            val lp = bubble.layoutParams as AbsoluteLayout.LayoutParams
+            lp.width = bubbleWidth
+            lp.height = bubbleHeight
+            bubble.layoutParams = lp
         }
     }
 
@@ -203,22 +196,22 @@ class Slider : View {
         val paddingTop = paddingTop
         val paddingBottom = paddingBottom
 
-        getLocationInWindow(mTemp)
+        getLocationInWindow(locationInWindow)
 
-        mPopupWidth = (width - mRadius - mRadius + mBubbleWidth).toInt()
-        val popupHeight = mBubbleHeight
-        mPopupX = (mTemp[0] + mRadius - mBubbleWidth / 2).toInt()
-        mPopupY = (
-            mTemp[1] - popupHeight + paddingTop + (height - paddingTop - paddingBottom) / 2 -
-                mRadius - ViewUtils.dp2pix(mContext, 2f)
+        popupWidth = (width - radius - radius + bubbleWidth).toInt()
+        val popupHeight = bubbleHeight
+        popupX = (locationInWindow[0] + radius - bubbleWidth / 2).toInt()
+        popupY = (
+            locationInWindow[1] - popupHeight + paddingTop + (height - paddingTop - paddingBottom) / 2 -
+                radius - ViewUtils.dp2pix(context, 2f)
             ).toInt()
 
-        mPopup.update(mPopupX, mPopupY, mPopupWidth, popupHeight, false)
+        popup.update(popupX, popupY, popupWidth, popupHeight, false)
     }
 
     private fun updateBubblePosition() {
-        val x = (mPopupWidth - mBubbleWidth) * if (mReverse) 1.0f - mDrawPercent else mDrawPercent
-        mBubble.x = x
+        val x = (popupWidth - bubbleWidth) * if (reverse) 1.0f - drawPercent else drawPercent
+        bubble.x = x
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -228,28 +221,28 @@ class Slider : View {
         updateBubblePosition()
     }
 
-    @SuppressLint("RtlHardcoded") // mPopupX is an absolute window x from getLocationInWindow, so LEFT is meant
+    @SuppressLint("RtlHardcoded") // popupX is an absolute window x from getLocationInWindow, so LEFT is meant
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        mPopup.showAtLocation(this, Gravity.TOP or Gravity.LEFT, mPopupX, mPopupY)
+        popup.showAtLocation(this, Gravity.TOP or Gravity.LEFT, popupX, popupY)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
-        mPopup.dismiss()
+        popup.dismiss()
     }
 
     private fun startProgressAnimation(percent: Float) {
-        val progressAnimation = mProgressAnimation ?: return
+        val progressAnimation = this.progressAnimation ?: return
         val currentValue: Float
         if (progressAnimation.isRunning) {
             progressAnimation.currentPlayTime = progressAnimation.currentPlayTime
             val value = progressAnimation.animatedValue
-            currentValue = if (value is Float) value else mDrawPercent
+            currentValue = if (value is Float) value else drawPercent
         } else {
-            currentValue = mDrawPercent
+            currentValue = drawPercent
         }
         progressAnimation.cancel()
         progressAnimation.setFloatValues(currentValue, percent)
@@ -258,82 +251,79 @@ class Slider : View {
     }
 
     private fun startShowBubbleAnimation() {
-        mBubbleScaleAnimation.cancel()
-        mBubbleScaleAnimation.setFloatValues(mDrawBubbleScale, 1.0f)
-        mBubbleScaleAnimation.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
-        mBubbleScaleAnimation.duration = (300 * abs(mDrawBubbleScale - 1.0f)).toLong()
-        mBubbleScaleAnimation.start()
+        bubbleScaleAnimation.cancel()
+        bubbleScaleAnimation.setFloatValues(drawBubbleScale, 1.0f)
+        bubbleScaleAnimation.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
+        bubbleScaleAnimation.duration = (300 * abs(drawBubbleScale - 1.0f)).toLong()
+        bubbleScaleAnimation.start()
     }
 
     private fun startHideBubbleAnimation() {
-        mBubbleScaleAnimation.cancel()
-        mBubbleScaleAnimation.setFloatValues(mDrawBubbleScale, 0.0f)
-        mBubbleScaleAnimation.interpolator = AnimationUtils.SLOW_FAST_INTERPOLATOR
-        mBubbleScaleAnimation.duration = (300 * abs(mDrawBubbleScale - 0.0f)).toLong()
-        mBubbleScaleAnimation.start()
+        bubbleScaleAnimation.cancel()
+        bubbleScaleAnimation.setFloatValues(drawBubbleScale, 0.0f)
+        bubbleScaleAnimation.interpolator = AnimationUtils.SLOW_FAST_INTERPOLATOR
+        bubbleScaleAnimation.duration = (300 * abs(drawBubbleScale - 0.0f)).toLong()
+        bubbleScaleAnimation.start()
     }
 
     fun setColor(color: Int) {
-        mPaint.color = color
-        mBubble.setColor(color)
+        paint.color = color
+        bubble.setColor(color)
         invalidate()
     }
 
     fun setRange(start: Int, end: Int) {
-        mStart = start
-        mEnd = end
-        setProgress(mProgress)
+        rangeStart = start
+        rangeEnd = end
+        progress = progressValue
 
         updateBubbleSize()
     }
 
-    fun setProgress(progress: Int) {
-        val clamped = MathUtils.clamp(progress, mStart, mEnd)
-        val oldProgress = mProgress
-        if (mProgress != clamped) {
-            mProgress = clamped
-            mPercent = MathUtils.delerp(mStart, mEnd, mProgress)
-            mTargetProgress = clamped
+    var progress: Int
+        get() = progressValue
+        set(value) {
+            val clamped = MathUtils.clamp(value, rangeStart, rangeEnd)
+            val oldProgress = progressValue
+            if (progressValue != clamped) {
+                progressValue = clamped
+                progressPercent = MathUtils.delerp(rangeStart, rangeEnd, progressValue)
+                targetProgress = clamped
 
-            if (mProgressAnimation == null) {
-                // For init
-                mDrawPercent = mPercent
-                mDrawProgress = mProgress
-                updateBubblePosition()
-                mBubble.setProgress(mDrawProgress)
-            } else {
-                startProgressAnimation(mPercent)
+                if (progressAnimation == null) {
+                    // For init
+                    drawPercent = progressPercent
+                    drawProgress = progressValue
+                    updateBubblePosition()
+                    bubble.setProgress(drawProgress)
+                } else {
+                    startProgressAnimation(progressPercent)
+                }
+                invalidate()
             }
-            invalidate()
+            onSetProgressListener?.onSetProgress(this, clamped, oldProgress, false, true)
         }
-        mListener?.onSetProgress(this, clamped, oldProgress, false, true)
-    }
 
-    fun getProgress(): Int = mProgress
-
-    fun setReverse(reverse: Boolean) {
-        if (mReverse != reverse) {
-            mReverse = reverse
-            invalidate()
+    var reverse = false
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
         }
-    }
 
-    fun setOnSetProgressListener(listener: OnSetProgressListener?) {
-        mListener = listener
-    }
+    var onSetProgressListener: OnSetProgressListener? = null
 
     override fun onDraw(canvas: Canvas) {
         val width = width
         val height = height
-        if (width < ViewUtils.dp2pix(mContext, 24f)) {
-            canvas.drawRect(0f, 0f, width.toFloat(), getHeight().toFloat(), mPaint)
+        if (width < ViewUtils.dp2pix(context, 24f)) {
+            canvas.drawRect(0f, 0f, width.toFloat(), getHeight().toFloat(), paint)
         } else {
             val paddingLeft = paddingLeft
             val paddingTop = paddingTop
             val paddingRight = paddingRight
             val paddingBottom = paddingBottom
-            val thickness = mThickness
-            val radius = mRadius
             val halfThickness = thickness / 2
 
             val saved = canvas.save()
@@ -341,25 +331,25 @@ class Slider : View {
             canvas.translate(0f, (paddingTop + (height - paddingTop - paddingBottom) / 2).toFloat())
 
             val currentX = paddingLeft + radius + (width - radius - radius - paddingLeft - paddingRight) *
-                if (mReverse) 1.0f - mDrawPercent else mDrawPercent
+                if (reverse) 1.0f - drawPercent else drawPercent
 
-            mLeftRectF.set(paddingLeft + radius, -halfThickness, currentX, halfThickness)
-            mRightRectF.set(currentX, -halfThickness, width - paddingRight - radius, halfThickness)
+            leftRect.set(paddingLeft + radius, -halfThickness, currentX, halfThickness)
+            rightRect.set(currentX, -halfThickness, width - paddingRight - radius, halfThickness)
 
             // Draw bar
-            if (mReverse) {
-                canvas.drawRect(mRightRectF, mPaint)
-                canvas.drawRect(mLeftRectF, mBgPaint)
+            if (reverse) {
+                canvas.drawRect(rightRect, paint)
+                canvas.drawRect(leftRect, bgPaint)
             } else {
-                canvas.drawRect(mLeftRectF, mPaint)
-                canvas.drawRect(mRightRectF, mBgPaint)
+                canvas.drawRect(leftRect, paint)
+                canvas.drawRect(rightRect, bgPaint)
             }
 
             // Draw controller
-            val scale = 1.0f - mDrawBubbleScale
+            val scale = 1.0f - drawBubbleScale
             if (scale != 0.0f) {
                 canvas.scale(scale, scale, currentX, 0f)
-                canvas.drawCircle(currentX, 0f, radius, mPaint)
+                canvas.drawCircle(currentX, 0f, radius, paint)
             }
 
             canvas.restoreToCount(saved)
@@ -367,8 +357,8 @@ class Slider : View {
     }
 
     private fun setShowBubble(showBubble: Boolean) {
-        if (mShowBubble != showBubble) {
-            mShowBubble = showBubble
+        if (bubbleShown != showBubble) {
+            bubbleShown = showBubble
             if (showBubble) {
                 startShowBubbleAnimation()
             } else {
@@ -382,7 +372,7 @@ class Slider : View {
         val action = event.action
         when (action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                val listener = mListener
+                val listener = onSetProgressListener
                 if (listener != null) {
                     if (action == MotionEvent.ACTION_DOWN) {
                         listener.onFingerDown()
@@ -393,48 +383,47 @@ class Slider : View {
 
                 val paddingLeft = paddingLeft
                 val paddingRight = paddingRight
-                val radius = mRadius
                 val x = event.x
-                var progress = Math.round(
+                var touchProgress = Math.round(
                     MathUtils.lerp(
-                        mStart.toFloat(), mEnd.toFloat(),
+                        rangeStart.toFloat(), rangeEnd.toFloat(),
                         MathUtils.clamp(
-                            (if (mReverse) width - paddingLeft - radius - x else x - radius - paddingLeft) /
+                            (if (reverse) width - paddingLeft - radius - x else x - radius - paddingLeft) /
                                 (width - radius - radius - paddingLeft - paddingRight),
                             0.0f, 1.0f,
                         ),
                     ),
                 )
-                var percent = MathUtils.delerp(mStart, mEnd, progress)
+                var touchPercent = MathUtils.delerp(rangeStart, rangeEnd, touchProgress)
 
                 // ACTION_CANCEL not changed
                 if (action == MotionEvent.ACTION_CANCEL) {
-                    progress = mProgress
-                    percent = mPercent
+                    touchProgress = progressValue
+                    touchPercent = progressPercent
                 }
 
-                if (mTargetProgress != progress) {
-                    mTargetProgress = progress
-                    startProgressAnimation(percent)
+                if (targetProgress != touchProgress) {
+                    targetProgress = touchProgress
+                    startProgressAnimation(touchPercent)
 
-                    mListener?.onSetProgress(this, mProgress, progress, true, false)
+                    onSetProgressListener?.onSetProgress(this, progressValue, touchProgress, true, false)
                 }
 
                 if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                    mCheckForShowBubble?.let { MAIN_HANDLER.removeCallbacks(it) }
+                    checkForShowBubble?.let { MAIN_HANDLER.removeCallbacks(it) }
                     setShowBubble(false)
                 } else if (action == MotionEvent.ACTION_DOWN) {
-                    val checkForShowBubble = mCheckForShowBubble ?: CheckForShowBubble().also { mCheckForShowBubble = it }
+                    val checkForShowBubble = this.checkForShowBubble ?: CheckForShowBubble().also { this.checkForShowBubble = it }
                     MAIN_HANDLER.postDelayed(checkForShowBubble, ViewConfiguration.getTapTimeout().toLong())
                 }
 
                 if (action == MotionEvent.ACTION_UP) {
-                    val oldProgress = mProgress
-                    if (mProgress != progress) {
-                        mProgress = progress
-                        mPercent = mDrawPercent
+                    val oldProgress = progressValue
+                    if (progressValue != touchProgress) {
+                        progressValue = touchProgress
+                        progressPercent = drawPercent
                     }
-                    mListener?.onSetProgress(this, progress, oldProgress, true, true)
+                    onSetProgressListener?.onSetProgress(this, touchProgress, oldProgress, true, true)
                 }
             }
         }
@@ -443,32 +432,29 @@ class Slider : View {
     }
 
     @SuppressLint("ViewConstructor")
-    private class BubbleView(context: Context, paint: Paint) : AppCompatImageView(context) {
+    private class BubbleView(context: Context, private val textPaint: Paint) : AppCompatImageView(context) {
 
-        private val mDrawable: Drawable
+        private val bubbleDrawable: Drawable
 
-        private val mTextPaint: Paint
+        private var progressText = ""
 
-        private var mProgressStr = ""
-
-        private val mRect = Rect()
+        private val textBounds = Rect()
 
         init {
             setImageResource(R.drawable.v_slider_bubble)
-            mDrawable = DrawableCompat.wrap(checkNotNull(drawable))
-            setImageDrawable(mDrawable)
-            mTextPaint = paint
+            bubbleDrawable = DrawableCompat.wrap(checkNotNull(drawable))
+            setImageDrawable(bubbleDrawable)
         }
 
         fun setColor(color: Int) {
-            DrawableCompat.setTint(mDrawable, color)
+            DrawableCompat.setTint(bubbleDrawable, color)
         }
 
         fun setProgress(progress: Int) {
             val str = progress.toString()
-            if (str != mProgressStr) {
-                mProgressStr = str
-                mTextPaint.getTextBounds(str, 0, str.length, mRect)
+            if (str != progressText) {
+                progressText = str
+                textPaint.getTextBounds(str, 0, str.length, textBounds)
                 invalidate()
             }
         }
@@ -485,8 +471,8 @@ class Slider : View {
             val width = width
             val height = height
             val x = width / 2
-            val y = (height * TEXT_CENTER + mRect.height() / 2).toInt()
-            canvas.drawText(mProgressStr, x.toFloat(), y.toFloat(), mTextPaint)
+            val y = (height * TEXT_CENTER + textBounds.height() / 2).toInt()
+            canvas.drawText(progressText, x.toFloat(), y.toFloat(), textPaint)
         }
 
         companion object {

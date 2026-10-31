@@ -38,19 +38,14 @@ import kotlin.math.min
 // Base on android.graphics.drawable.MaterialProgressDrawable in L preview
 class ProgressView : View {
 
-    private val mAnimators = ArrayList<Animator>()
-    private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val mRectF = RectF()
+    private val animators = ArrayList<Animator>()
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val rect = RectF()
 
-    private var mIndeterminate = false
-
-    private var mTrimStart = 0.0f
-    private var mTrimEnd = 0.0f
-    private var mTrimOffset = 0.0f
-    private var mTrimRotation = 0.0f
+    private var indeterminate = false
 
     // It is a trick to avoid first sight stuck. Get it from ProgressBar
-    private var mShouldStartAnimationDrawable = false
+    private var shouldStartAnimation = false
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         init(context, attrs)
@@ -63,11 +58,11 @@ class ProgressView : View {
     private fun init(context: Context, attrs: AttributeSet?) {
         val a = context.obtainStyledAttributes(attrs, R.styleable.ProgressView)
         val color = a.getColor(R.styleable.ProgressView_color, Color.BLACK)
-        mPaint.color = color
-        mPaint.strokeCap = Paint.Cap.SQUARE
-        mPaint.strokeJoin = Paint.Join.MITER
-        mPaint.style = Paint.Style.STROKE
-        mIndeterminate = a.getBoolean(R.styleable.ProgressView_indeterminate, true)
+        paint.color = color
+        paint.strokeCap = Paint.Cap.SQUARE
+        paint.strokeJoin = Paint.Join.MITER
+        paint.style = Paint.Style.STROKE
+        indeterminate = a.getBoolean(R.styleable.ProgressView_indeterminate, true)
         setProgress(a.getFloat(R.styleable.ProgressView_progress, 0f))
         a.recycle()
 
@@ -75,39 +70,38 @@ class ProgressView : View {
     }
 
     private fun setupAnimators() {
-        val trimStart = ObjectAnimator.ofFloat(this, TRIM_START, 0.0f, 0.75f)
-        trimStart.duration = 1333L
-        trimStart.interpolator = TRIM_START_INTERPOLATOR
-        trimStart.repeatCount = Animation.INFINITE
+        val trimStartAnimator = ObjectAnimator.ofFloat(this, TRIM_START, 0.0f, 0.75f)
+        trimStartAnimator.duration = 1333L
+        trimStartAnimator.interpolator = TRIM_START_INTERPOLATOR
+        trimStartAnimator.repeatCount = Animation.INFINITE
 
-        val trimEnd = ObjectAnimator.ofFloat(this, TRIM_END, 0.0f, 0.75f)
-        trimEnd.duration = 1333L
-        trimEnd.interpolator = TRIM_END_INTERPOLATOR
-        trimEnd.repeatCount = Animation.INFINITE
+        val trimEndAnimator = ObjectAnimator.ofFloat(this, TRIM_END, 0.0f, 0.75f)
+        trimEndAnimator.duration = 1333L
+        trimEndAnimator.interpolator = TRIM_END_INTERPOLATOR
+        trimEndAnimator.repeatCount = Animation.INFINITE
 
-        val trimOffset = ObjectAnimator.ofFloat(this, TRIM_OFFSET, 0.0f, 0.25f)
-        trimOffset.duration = 1333L
-        trimOffset.interpolator = LINEAR_INTERPOLATOR
-        trimOffset.repeatCount = Animation.INFINITE
+        val trimOffsetAnimator = ObjectAnimator.ofFloat(this, TRIM_OFFSET, 0.0f, 0.25f)
+        trimOffsetAnimator.duration = 1333L
+        trimOffsetAnimator.interpolator = LINEAR_INTERPOLATOR
+        trimOffsetAnimator.repeatCount = Animation.INFINITE
 
-        val trimRotation = ObjectAnimator.ofFloat(this, TRIM_ROTATION, 0.0f, 720.0f)
-        trimRotation.duration = 6665L
-        trimRotation.interpolator = LINEAR_INTERPOLATOR
-        trimRotation.repeatCount = Animation.INFINITE
+        val trimRotationAnimator = ObjectAnimator.ofFloat(this, TRIM_ROTATION, 0.0f, 720.0f)
+        trimRotationAnimator.duration = 6665L
+        trimRotationAnimator.interpolator = LINEAR_INTERPOLATOR
+        trimRotationAnimator.repeatCount = Animation.INFINITE
 
-        mAnimators.add(trimStart)
-        mAnimators.add(trimEnd)
-        mAnimators.add(trimOffset)
-        mAnimators.add(trimRotation)
+        animators.add(trimStartAnimator)
+        animators.add(trimEndAnimator)
+        animators.add(trimOffsetAnimator)
+        animators.add(trimRotationAnimator)
     }
 
     private fun startAnimation() {
-        mShouldStartAnimationDrawable = true
+        shouldStartAnimation = true
         postInvalidate()
     }
 
     private fun startAnimationActually() {
-        val animators = mAnimators
         for (i in 0 until animators.size) {
             val animator = animators[i]
             if (!animator.isRunning) {
@@ -117,8 +111,7 @@ class ProgressView : View {
     }
 
     private fun stopAnimation() {
-        mShouldStartAnimationDrawable = false
-        val animators = mAnimators
+        shouldStartAnimation = false
         for (i in 0 until animators.size) {
             animators[i].cancel()
         }
@@ -126,7 +119,6 @@ class ProgressView : View {
 
     val isRunning: Boolean
         get() {
-            val animators = mAnimators
             for (i in 0 until animators.size) {
                 if (animators[i].isRunning) {
                     return true
@@ -135,43 +127,39 @@ class ProgressView : View {
             return false
         }
 
-    var trimStart: Float
-        get() = mTrimStart
-        set(trimStart) {
-            mTrimStart = trimStart
+    var trimStart = 0.0f
+        set(value) {
+            field = value
             invalidate()
         }
 
-    var trimEnd: Float
-        get() = mTrimEnd
-        set(trimEnd) {
-            mTrimEnd = trimEnd
+    var trimEnd = 0.0f
+        set(value) {
+            field = value
             invalidate()
         }
 
-    var trimOffset: Float
-        get() = mTrimOffset
-        set(trimOffset) {
-            mTrimOffset = trimOffset
+    var trimOffset = 0.0f
+        set(value) {
+            field = value
             invalidate()
         }
 
-    var trimRotation: Float
-        get() = mTrimRotation
-        set(trimRotation) {
-            mTrimRotation = trimRotation
+    var trimRotation = 0.0f
+        set(value) {
+            field = value
             invalidate()
         }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (mIndeterminate && visibility == VISIBLE) {
+        if (indeterminate && visibility == VISIBLE) {
             startAnimation()
         }
     }
 
     override fun onDetachedFromWindow() {
-        if (mIndeterminate) {
+        if (indeterminate) {
             stopAnimation()
         }
         // This should come after stopAnimation(), otherwise an invalidate message remains in the
@@ -183,7 +171,7 @@ class ProgressView : View {
         if (visibility != v) {
             super.setVisibility(v)
 
-            if (mIndeterminate) {
+            if (indeterminate) {
                 if (v == GONE || v == INVISIBLE) {
                     stopAnimation()
                 } else if (isAttachedToWindow) {
@@ -196,7 +184,7 @@ class ProgressView : View {
     override fun onVisibilityChanged(changedView: View, visibility: Int) {
         super.onVisibilityChanged(changedView, visibility)
 
-        if (mIndeterminate && isAttachedToWindow) {
+        if (indeterminate && isAttachedToWindow) {
             if (visibility == GONE || visibility == INVISIBLE) {
                 stopAnimation()
             } else if (isAttachedToWindow) {
@@ -206,16 +194,16 @@ class ProgressView : View {
     }
 
     fun setColor(color: Int) {
-        mPaint.color = color
+        paint.color = color
         invalidate()
     }
 
     var isIndeterminate: Boolean
-        get() = mIndeterminate
-        set(indeterminate) {
-            if (mIndeterminate != indeterminate) {
-                mIndeterminate = indeterminate
-                if (indeterminate) {
+        get() = indeterminate
+        set(value) {
+            if (indeterminate != value) {
+                indeterminate = value
+                if (value) {
                     if (isShown && isAttachedToWindow) {
                         startAnimation()
                     }
@@ -226,12 +214,11 @@ class ProgressView : View {
         }
 
     fun setProgress(progress: Float) {
-        if (!mIndeterminate) {
-            mTrimStart = 0f
-            mTrimEnd = progress
-            mTrimOffset = 0f
-            mTrimRotation = 0f
-            invalidate()
+        if (!indeterminate) {
+            trimStart = 0f
+            trimEnd = progress
+            trimOffset = 0f
+            trimRotation = 0f
         }
     }
 
@@ -243,23 +230,23 @@ class ProgressView : View {
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        mPaint.strokeWidth = min(w, h) / 12.0f
-        mRectF.set(0f, 0f, w.toFloat(), h.toFloat())
-        mRectF.inset(w / 48.0f * 5.0f, h / 48.0f * 5.0f)
+        paint.strokeWidth = min(w, h) / 12.0f
+        rect.set(0f, 0f, w.toFloat(), h.toFloat())
+        rect.inset(w / 48.0f * 5.0f, h / 48.0f * 5.0f)
     }
 
     override fun onDraw(canvas: Canvas) {
         val saved = canvas.save()
-        canvas.rotate(mTrimRotation, mRectF.centerX(), mRectF.centerY())
+        canvas.rotate(trimRotation, rect.centerX(), rect.centerY())
 
-        val startAngle = (mTrimStart + mTrimOffset) * 360.0f - 90
-        val sweepAngle = (mTrimEnd - mTrimStart) * 360.0f
-        canvas.drawArc(mRectF, startAngle, sweepAngle, false, mPaint)
+        val startAngle = (trimStart + trimOffset) * 360.0f - 90
+        val sweepAngle = (trimEnd - trimStart) * 360.0f
+        canvas.drawArc(rect, startAngle, sweepAngle, false, paint)
 
         canvas.restoreToCount(saved)
 
-        if (mShouldStartAnimationDrawable) {
-            mShouldStartAnimationDrawable = false
+        if (shouldStartAnimation) {
+            shouldStartAnimation = false
             startAnimationActually()
         }
     }

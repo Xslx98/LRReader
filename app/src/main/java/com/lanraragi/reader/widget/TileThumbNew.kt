@@ -28,7 +28,7 @@ class TileThumbNew @JvmOverloads constructor(
 ) : LoadImageViewNew(context, attrs, defStyleAttr) {
 
     init {
-        setPlaceholder(CoverPlaceholderDrawable(context))
+        placeholder = CoverPlaceholderDrawable(context)
     }
 
     fun setThumbSize(thumbWidth: Int, thumbHeight: Int) {

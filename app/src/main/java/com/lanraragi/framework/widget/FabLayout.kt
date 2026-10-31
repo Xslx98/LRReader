@@ -36,18 +36,55 @@ import kotlin.math.max
 
 class FabLayout : ViewGroup, View.OnClickListener {
 
-    private var mFabSize = 0
-    private var mFabMiniSize = 0
-    private var mIntervalPrimary = 0
-    private var mIntervalSecondary = 0
+    private var fabSize = 0
+    private var fabMiniSize = 0
+    private var intervalPrimary = 0
+    private var intervalSecondary = 0
 
-    private var mExpanded = true
-    private var mAutoCancel = true
-    private var mHidePrimaryFab = false
-    private var mMainFabCenterY = -1f
+    private var expandedState = true
+    private var mainFabCenterY = -1f
 
-    private var mOnExpandListener: OnExpandListener? = null
-    private var mOnClickFabListener: OnClickFabListener? = null
+    var onExpandListener: OnExpandListener? = null
+
+    var onClickFabListener: OnClickFabListener? = null
+        set(listener) {
+            field = listener
+            if (listener != null) {
+                for (i in 0 until childCount) {
+                    getChildAt(i).setOnClickListener(this)
+                }
+            } else {
+                for (i in 0 until childCount) {
+                    getChildAt(i).isClickable = false
+                }
+            }
+        }
+
+    var hidePrimaryFab = false
+        set(hidePrimaryFab) {
+            if (field != hidePrimaryFab) {
+                field = hidePrimaryFab
+                val count = childCount
+                if (!expandedState && count > 0) {
+                    getChildAt(count - 1).visibility = if (hidePrimaryFab) INVISIBLE else VISIBLE
+                }
+            }
+        }
+
+    var autoCancel = true
+        set(autoCancel) {
+            if (field != autoCancel) {
+                field = autoCancel
+
+                if (expandedState) {
+                    if (autoCancel) {
+                        setOnClickListener(this)
+                    } else {
+                        isClickable = false
+                    }
+                }
+            }
+        }
 
     constructor(context: Context) : super(context) {
         init(context)
@@ -64,10 +101,10 @@ class FabLayout : ViewGroup, View.OnClickListener {
     private fun init(context: Context) {
         isSoundEffectsEnabled = false
         clipToPadding = false
-        mFabSize = context.resources.getDimensionPixelOffset(R.dimen.fab_size)
-        mFabMiniSize = context.resources.getDimensionPixelOffset(R.dimen.fab_min_size)
-        mIntervalPrimary = context.resources.getDimensionPixelOffset(R.dimen.fab_layout_primary_margin)
-        mIntervalSecondary = context.resources.getDimensionPixelOffset(R.dimen.fab_layout_secondary_margin)
+        fabSize = context.resources.getDimensionPixelOffset(R.dimen.fab_size)
+        fabMiniSize = context.resources.getDimensionPixelOffset(R.dimen.fab_min_size)
+        intervalPrimary = context.resources.getDimensionPixelOffset(R.dimen.fab_layout_primary_margin)
+        intervalSecondary = context.resources.getDimensionPixelOffset(R.dimen.fab_layout_secondary_margin)
     }
 
     override fun addView(child: View, index: Int, params: LayoutParams?) {
@@ -96,7 +133,7 @@ class FabLayout : ViewGroup, View.OnClickListener {
         if (fab != null) {
             if (visible && fab.visibility == View.GONE) {
                 fab.animate().cancel()
-                fab.visibility = if (mExpanded) View.VISIBLE else View.INVISIBLE
+                fab.visibility = if (expandedState) View.VISIBLE else View.INVISIBLE
             } else if (!visible && fab.visibility != View.GONE) {
                 fab.animate().cancel()
                 fab.visibility = View.GONE
@@ -146,77 +183,35 @@ class FabLayout : ViewGroup, View.OnClickListener {
             val layoutBottom: Int
             val layoutRight: Int
             if (i == count - 1) {
-                layoutBottom = bottom + (childHeight - mFabSize) / 2
-                layoutRight = measuredWidth - paddingRight + (childWidth - mFabSize) / 2
-                bottom -= mFabSize + mIntervalPrimary
+                layoutBottom = bottom + (childHeight - fabSize) / 2
+                layoutRight = measuredWidth - paddingRight + (childWidth - fabSize) / 2
+                bottom -= fabSize + intervalPrimary
                 centerX = layoutRight - childWidth / 2
-                mMainFabCenterY = layoutBottom - childHeight / 2f
+                mainFabCenterY = layoutBottom - childHeight / 2f
             } else {
-                layoutBottom = bottom + (childHeight - mFabMiniSize) / 2
+                layoutBottom = bottom + (childHeight - fabMiniSize) / 2
                 layoutRight = centerX + childWidth / 2
-                bottom -= mFabMiniSize + mIntervalSecondary
+                bottom -= fabMiniSize + intervalSecondary
             }
             child.layout(layoutRight - childWidth, layoutBottom - childHeight, layoutRight, layoutBottom)
         }
     }
 
-    fun setOnExpandListener(listener: OnExpandListener?) {
-        mOnExpandListener = listener
-    }
-
-    fun setOnClickFabListener(listener: OnClickFabListener?) {
-        mOnClickFabListener = listener
-        if (listener != null) {
-            for (i in 0 until childCount) {
-                getChildAt(i).setOnClickListener(this)
-            }
-        } else {
-            for (i in 0 until childCount) {
-                getChildAt(i).isClickable = false
-            }
-        }
-    }
-
-    fun setHidePrimaryFab(hidePrimaryFab: Boolean) {
-        if (mHidePrimaryFab != hidePrimaryFab) {
-            mHidePrimaryFab = hidePrimaryFab
-            val expanded = mExpanded
-            val count = childCount
-            if (!expanded && count > 0) {
-                getChildAt(count - 1).visibility = if (hidePrimaryFab) INVISIBLE else VISIBLE
-            }
-        }
-    }
-
-    fun setAutoCancel(autoCancel: Boolean) {
-        if (mAutoCancel != autoCancel) {
-            mAutoCancel = autoCancel
-
-            if (mExpanded) {
-                if (autoCancel) {
-                    setOnClickListener(this)
-                } else {
-                    isClickable = false
-                }
-            }
-        }
-    }
-
     fun toggle() {
-        isExpanded = !mExpanded
+        isExpanded = !expandedState
     }
 
     var isExpanded: Boolean
-        get() = mExpanded
+        get() = expandedState
         set(expanded) {
             setExpanded(expanded, true)
         }
 
     fun setExpanded(expanded: Boolean, animation: Boolean) {
-        if (mExpanded != expanded) {
-            mExpanded = expanded
+        if (expandedState != expanded) {
+            expandedState = expanded
 
-            if (mAutoCancel) {
+            if (autoCancel) {
                 if (expanded) {
                     setOnClickListener(this)
                 } else {
@@ -226,9 +221,9 @@ class FabLayout : ViewGroup, View.OnClickListener {
 
             val count = childCount
             if (count > 0) {
-                if (mMainFabCenterY == -1f || !animation) {
+                if (mainFabCenterY == -1f || !animation) {
                     // It is before first onLayout
-                    val checkCount = if (mHidePrimaryFab) count else count - 1
+                    val checkCount = if (hidePrimaryFab) count else count - 1
                     for (i in 0 until checkCount) {
                         val child = getChildAt(i)
                         if (child.visibility == GONE) {
@@ -240,7 +235,7 @@ class FabLayout : ViewGroup, View.OnClickListener {
                         }
                     }
                 } else {
-                    if (mHidePrimaryFab) {
+                    if (hidePrimaryFab) {
                         setPrimaryFabAnimation(getChildAt(count - 1), expanded, !expanded)
                     }
 
@@ -254,7 +249,7 @@ class FabLayout : ViewGroup, View.OnClickListener {
                 }
             }
 
-            mOnExpandListener?.onExpand(expanded)
+            onExpandListener?.onExpand(expanded)
         }
     }
 
@@ -310,14 +305,14 @@ class FabLayout : ViewGroup, View.OnClickListener {
         val endAlpha: Float
         val interpolator: Interpolator
         if (expanded) {
-            startTranslationY = mMainFabCenterY - (child.top + child.height / 2)
+            startTranslationY = mainFabCenterY - (child.top + child.height / 2)
             endTranslationY = 0f
             startAlpha = 0f
             endAlpha = 1f
             interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
         } else {
             startTranslationY = 0f
-            endTranslationY = mMainFabCenterY - (child.top + child.height / 2)
+            endTranslationY = mainFabCenterY - (child.top + child.height / 2)
             startAlpha = 1f
             endAlpha = 0f
             interpolator = AnimationUtils.SLOW_FAST_INTERPOLATOR
@@ -347,14 +342,14 @@ class FabLayout : ViewGroup, View.OnClickListener {
     }
 
     override fun onClick(v: View) {
-        val listener = mOnClickFabListener
+        val listener = onClickFabListener
         if (this === v) {
             isExpanded = false
         } else if (listener != null) {
             val position = indexOfChild(v)
             if (position == childCount - 1) {
                 listener.onClickPrimaryFab(this, v as FloatingActionButton)
-            } else if (position >= 0 && mExpanded) {
+            } else if (position >= 0 && expandedState) {
                 listener.onClickSecondaryFab(this, v as FloatingActionButton, position)
             }
         }
@@ -367,15 +362,15 @@ class FabLayout : ViewGroup, View.OnClickListener {
     override fun onSaveInstanceState(): Parcelable {
         val state = Bundle()
         state.putParcelable(STATE_KEY_SUPER, super.onSaveInstanceState())
-        state.putBoolean(STATE_KEY_AUTO_CANCEL, mAutoCancel)
-        state.putBoolean(STATE_KEY_EXPANDED, mExpanded)
+        state.putBoolean(STATE_KEY_AUTO_CANCEL, autoCancel)
+        state.putBoolean(STATE_KEY_EXPANDED, expandedState)
         return state
     }
 
     override fun onRestoreInstanceState(state: Parcelable?) {
         if (state is Bundle) {
             super.onRestoreInstanceState(BundleCompat.getParcelable(state, STATE_KEY_SUPER, Parcelable::class.java))
-            setAutoCancel(state.getBoolean(STATE_KEY_AUTO_CANCEL))
+            autoCancel = state.getBoolean(STATE_KEY_AUTO_CANCEL)
             setExpanded(state.getBoolean(STATE_KEY_EXPANDED), false)
         }
     }

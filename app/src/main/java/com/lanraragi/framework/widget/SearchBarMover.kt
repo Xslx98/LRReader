@@ -25,13 +25,13 @@ import com.lanraragi.reader.util.MathUtils
 import com.lanraragi.reader.util.ViewUtils
 
 class SearchBarMover(
-    private val mHelper: Helper,
-    private val mSearchBar: View,
+    private val helper: Helper,
+    private val searchBar: View,
     vararg recyclerViews: RecyclerView,
 ) : RecyclerView.OnScrollListener() {
 
-    private var mShow = false
-    private var mSearchBarMoveAnimator: ValueAnimator? = null
+    private var targetShown = false
+    private var moveAnimator: ValueAnimator? = null
 
     init {
         for (recyclerView in recyclerViews) {
@@ -40,21 +40,21 @@ class SearchBarMover(
     }
 
     fun cancelAnimation() {
-        mSearchBarMoveAnimator?.cancel()
+        moveAnimator?.cancel()
     }
 
     override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-        if (newState == RecyclerView.SCROLL_STATE_IDLE && mHelper.isValidView(recyclerView)) {
+        if (newState == RecyclerView.SCROLL_STATE_IDLE && helper.isValidView(recyclerView)) {
             returnSearchBarPosition()
         }
     }
 
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-        if (mHelper.isValidView(recyclerView)) {
-            val oldBottom = ViewUtils.getY2(mSearchBar).toInt()
-            val offsetYStep = MathUtils.clamp(-dy, -oldBottom, -mSearchBar.translationY.toInt())
+        if (helper.isValidView(recyclerView)) {
+            val oldBottom = ViewUtils.getY2(searchBar).toInt()
+            val offsetYStep = MathUtils.clamp(-dy, -oldBottom, -searchBar.translationY.toInt())
             if (offsetYStep != 0) {
-                ViewUtils.translationYBy(mSearchBar, offsetYStep.toFloat())
+                ViewUtils.translationYBy(searchBar, offsetYStep.toFloat())
             }
         }
     }
@@ -64,29 +64,29 @@ class SearchBarMover(
     }
 
     fun returnSearchBarPosition(animation: Boolean) {
-        if (mSearchBar.height == 0) {
+        if (searchBar.height == 0) {
             // Layout not called
             return
         }
 
         val show: Boolean
-        if (mHelper.forceShowSearchBar()) {
+        if (helper.forceShowSearchBar()) {
             show = true
         } else {
-            val recyclerView = mHelper.getValidRecyclerView() ?: return
+            val recyclerView = helper.getValidRecyclerView() ?: return
             show = if (!recyclerView.isShown) {
                 true
-            } else if (recyclerView.computeVerticalScrollOffset() < mSearchBar.bottom) {
+            } else if (recyclerView.computeVerticalScrollOffset() < searchBar.bottom) {
                 true
             } else {
-                ViewUtils.getY2(mSearchBar).toInt() > mSearchBar.height / 2
+                ViewUtils.getY2(searchBar).toInt() > searchBar.height / 2
             }
         }
 
         val offset = if (show) {
-            -mSearchBar.translationY.toInt()
+            -searchBar.translationY.toInt()
         } else {
-            -ViewUtils.getY2(mSearchBar).toInt()
+            -ViewUtils.getY2(searchBar).toInt()
         }
 
         if (offset == 0) {
@@ -95,24 +95,24 @@ class SearchBarMover(
         }
 
         if (animation) {
-            val animator = mSearchBarMoveAnimator
+            val animator = moveAnimator
             if (animator != null) {
-                if (mShow == show) {
+                if (targetShown == show) {
                     // The same target, no need to do animation
                     return
                 } else {
                     // Cancel it
                     animator.cancel()
-                    mSearchBarMoveAnimator = null
+                    moveAnimator = null
                 }
             }
 
-            mShow = show
+            targetShown = show
             val va = ValueAnimator.ofInt(0, offset)
             va.duration = ANIMATE_TIME
             va.addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    mSearchBarMoveAnimator = null
+                    moveAnimator = null
                 }
             })
             va.addUpdateListener(object : ValueAnimator.AnimatorUpdateListener {
@@ -122,14 +122,14 @@ class SearchBarMover(
                     val value = animation.animatedValue as Int
                     val offsetStep = value - lastValue
                     lastValue = value
-                    ViewUtils.translationYBy(mSearchBar, offsetStep.toFloat())
+                    ViewUtils.translationYBy(searchBar, offsetStep.toFloat())
                 }
             })
-            mSearchBarMoveAnimator = va
+            moveAnimator = va
             va.start()
         } else {
-            mSearchBarMoveAnimator?.cancel()
-            ViewUtils.translationYBy(mSearchBar, offset.toFloat())
+            moveAnimator?.cancel()
+            ViewUtils.translationYBy(searchBar, offset.toFloat())
         }
     }
 
@@ -138,12 +138,12 @@ class SearchBarMover(
     }
 
     fun showSearchBar(animation: Boolean) {
-        if (mSearchBar.height == 0) {
+        if (searchBar.height == 0) {
             // Layout not called
             return
         }
 
-        val offset = -mSearchBar.translationY.toInt()
+        val offset = -searchBar.translationY.toInt()
 
         if (offset == 0) {
             // No need to scroll
@@ -151,24 +151,24 @@ class SearchBarMover(
         }
 
         if (animation) {
-            val animator = mSearchBarMoveAnimator
+            val animator = moveAnimator
             if (animator != null) {
-                if (mShow) {
+                if (targetShown) {
                     // The same target, no need to do animation
                     return
                 } else {
                     // Cancel it
                     animator.cancel()
-                    mSearchBarMoveAnimator = null
+                    moveAnimator = null
                 }
             }
 
-            mShow = true
+            targetShown = true
             val va = ValueAnimator.ofInt(0, offset)
             va.duration = ANIMATE_TIME
             va.addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    mSearchBarMoveAnimator = null
+                    moveAnimator = null
                 }
             })
             va.addUpdateListener(object : ValueAnimator.AnimatorUpdateListener {
@@ -178,14 +178,14 @@ class SearchBarMover(
                     val value = animation.animatedValue as Int
                     val offsetStep = value - lastValue
                     lastValue = value
-                    ViewUtils.translationYBy(mSearchBar, offsetStep.toFloat())
+                    ViewUtils.translationYBy(searchBar, offsetStep.toFloat())
                 }
             })
-            mSearchBarMoveAnimator = va
+            moveAnimator = va
             va.start()
         } else {
-            mSearchBarMoveAnimator?.cancel()
-            ViewUtils.translationYBy(mSearchBar, offset.toFloat())
+            moveAnimator?.cancel()
+            ViewUtils.translationYBy(searchBar, offset.toFloat())
         }
     }
 

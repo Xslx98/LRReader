@@ -36,19 +36,20 @@ import com.lanraragi.reader.cover.CoverStore
 open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     View.OnClickListener, View.OnLongClickListener, Animatable {
 
-    private var mRequest: Disposable? = null
-    private var mKey: String? = null
-    private var mUrl: String? = null
-    private var mUseNetwork = false
-    private var mOffsetX = Int.MIN_VALUE
-    private var mOffsetY = Int.MIN_VALUE
-    private var mClipWidth = Int.MIN_VALUE
-    private var mClipHeight = Int.MIN_VALUE
-    private var mRetryType = 0
+    private var request: Disposable? = null
+    private var currentKey: String? = null
+    private var currentUrl: String? = null
+    private var currentUseNetwork = false
+    private var clipOffsetX = Int.MIN_VALUE
+    private var clipOffsetY = Int.MIN_VALUE
+    private var clipWidth = Int.MIN_VALUE
+    private var clipHeight = Int.MIN_VALUE
+    private var retryType = 0
 
-    @JvmField
-    var mFailed = false
-    private var mLoadFromDrawable = false
+    /** True while the view shows the failure image of its last load. */
+    var isFailed = false
+        private set
+    private var loadFromDrawable = false
 
     constructor(context: Context) : super(context) {
         init(context, null, 0)
@@ -70,26 +71,23 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     }
 
     private fun isLoading(): Boolean {
-        val request = mRequest
-        return request != null && !request.isDisposed
+        val current = request
+        return current != null && !current.isDisposed
     }
 
     private fun cancelRequest() {
-        val request = mRequest
-        if (request != null) {
-            request.dispose()
-            mRequest = null
-        }
+        request?.dispose()
+        request = null
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        if (!mLoadFromDrawable) {
-            if (mFailed) {
+        if (!loadFromDrawable) {
+            if (isFailed) {
                 onFailure()
             } else if (!isLoading()) {
-                load(mKey, mUrl, mUseNetwork)
+                load(currentKey, currentUrl, currentUseNetwork)
             }
         }
     }
@@ -97,7 +95,7 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
-        if (!mLoadFromDrawable) {
+        if (!loadFromDrawable) {
             cancelRequest()
             // Clear drawable
             clearDrawable()
@@ -123,21 +121,21 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     }
 
     private fun clearRetry() {
-        if (mRetryType == RETRY_TYPE_CLICK) {
+        if (retryType == RETRY_TYPE_CLICK) {
             setOnClickListener(null)
             isClickable = false
-        } else if (mRetryType == RETRY_TYPE_LONG_CLICK) {
+        } else if (retryType == RETRY_TYPE_LONG_CLICK) {
             setOnLongClickListener(null)
             isLongClickable = false
         }
     }
 
     fun setRetryType(@RetryType retryType: Int) {
-        if (mRetryType != retryType) {
-            val oldRetryType = mRetryType
-            mRetryType = retryType
+        if (this.retryType != retryType) {
+            val oldRetryType = this.retryType
+            this.retryType = retryType
 
-            if (mFailed) {
+            if (isFailed) {
                 if (oldRetryType == RETRY_TYPE_CLICK) {
                     setOnClickListener(null)
                     isClickable = false
@@ -156,17 +154,17 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     }
 
     fun setClip(offsetX: Int, offsetY: Int, clipWidth: Int, clipHeight: Int) {
-        mOffsetX = offsetX
-        mOffsetY = offsetY
-        mClipWidth = clipWidth
-        mClipHeight = clipHeight
+        clipOffsetX = offsetX
+        clipOffsetY = offsetY
+        this.clipWidth = clipWidth
+        this.clipHeight = clipHeight
     }
 
     fun resetClip() {
-        mOffsetX = Int.MIN_VALUE
-        mOffsetY = Int.MIN_VALUE
-        mClipWidth = Int.MIN_VALUE
-        mClipHeight = Int.MIN_VALUE
+        clipOffsetX = Int.MIN_VALUE
+        clipOffsetY = Int.MIN_VALUE
+        clipWidth = Int.MIN_VALUE
+        clipHeight = Int.MIN_VALUE
     }
 
     fun load(key: String?, url: String?) {
@@ -191,38 +189,38 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
         // discard their partial bytes). Store loads are exempt — the caller
         // wants the bytes delivered into ITS store instance.
         if (store == null && LoadImageSameKeyPolicy.shouldSkipLoad(
-                mKey, key, mFailed, mUseNetwork == useNetwork, isLoading(),
+                currentKey, key, isFailed, currentUseNetwork == useNetwork, isLoading(),
             )
         ) {
             return
         }
 
-        mLoadFromDrawable = false
-        mFailed = false
+        loadFromDrawable = false
+        isFailed = false
         clearRetry()
 
-        mKey = key
-        mUrl = url
-        mUseNetwork = useNetwork
+        currentKey = key
+        currentUrl = url
+        currentUseNetwork = useNetwork
 
         cancelRequest()
         // Callbacks for a memory hit arrive inside load(); clear first so a
         // hit replaces the old image and a miss starts from blank.
         clearDrawable()
-        mRequest = CoverLoader.load(this, key, url, useNetwork, hardware, store, this)
+        request = CoverLoader.load(this, key, url, useNetwork, hardware, store, this)
     }
 
     fun unload() {
         cancelRequest()
-        mKey = null
-        mUrl = null
+        currentKey = null
+        currentUrl = null
         clearDrawable()
     }
 
     override fun onSuccess(drawable: Drawable, fromMemory: Boolean) {
         var target = drawable
-        if (Int.MIN_VALUE != mOffsetX) {
-            target = PreciselyClipDrawable(target, mOffsetX, mOffsetY, mClipWidth, mClipHeight)
+        if (Int.MIN_VALUE != clipOffsetX) {
+            target = PreciselyClipDrawable(target, clipOffsetX, clipOffsetY, clipWidth, clipHeight)
         }
 
         onPreSetImageDrawable(target, true)
@@ -243,20 +241,20 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     }
 
     private fun onFailure() {
-        mFailed = true
+        isFailed = true
         clearDrawable()
         val drawable = ContextCompat.getDrawable(context, R.drawable.image_failed_new)
 
         onPreSetImageDrawable(drawable, true)
         setImageDrawable(drawable)
-        if (mRetryType == RETRY_TYPE_CLICK) {
+        if (retryType == RETRY_TYPE_CLICK) {
             setOnClickListener(this)
-        } else if (mRetryType == RETRY_TYPE_LONG_CLICK) {
+        } else if (retryType == RETRY_TYPE_LONG_CLICK) {
             setOnLongClickListener(this)
         } else {
             // Can't retry, so release
-            mKey = null
-            mUrl = null
+            currentKey = null
+            currentUrl = null
         }
     }
 
@@ -283,11 +281,11 @@ open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     }
 
     override fun onClick(v: View) {
-        load(mKey, mUrl, true)
+        load(currentKey, currentUrl, true)
     }
 
     override fun onLongClick(v: View): Boolean {
-        load(mKey, mUrl, true)
+        load(currentKey, currentUrl, true)
         return true
     }
 
