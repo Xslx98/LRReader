@@ -188,8 +188,6 @@ class ListPreference : DialogPreference {
     }
 
     override fun onDialogClosed(positiveResult: Boolean) {
-        super.onDialogClosed(positiveResult)
-
         val entryValues = mEntryValues
         if (positiveResult && mClickedDialogEntryIndex >= 0 && entryValues != null) {
             val value = entryValues[mClickedDialogEntryIndex].toString()

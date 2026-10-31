@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnnecessaryAbstractClass") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.preference
 
 import android.app.Dialog
@@ -238,8 +236,7 @@ abstract class DialogPreference : Preference, DialogInterface.OnClickListener, D
      * @param positiveResult Whether the positive button was clicked (true), or
      * the negative button was clicked or the dialog was canceled (false).
      */
-    protected open fun onDialogClosed(positiveResult: Boolean) {
-    }
+    protected abstract fun onDialogClosed(positiveResult: Boolean)
 
     /** Gets the dialog that is shown by this preference, or null if a dialog is not being shown. */
     fun getDialog(): Dialog? = mDialog
