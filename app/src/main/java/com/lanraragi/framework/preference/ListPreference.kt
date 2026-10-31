@@ -29,12 +29,37 @@ import com.lanraragi.reader.R
 
 class ListPreference : DialogPreference {
 
-    private var mEntries: Array<CharSequence>? = null
-    private var mEntryValues: Array<out Any>? = null
-    private var mValue: String? = null
-    private var mSummary: String? = null
-    private var mClickedDialogEntryIndex = 0
-    private var mValueSet = false
+    /**
+     * The human-readable entries shown in the list of subsequent dialogs; each one
+     * has a corresponding index in [entryValues].
+     */
+    var entries: Array<CharSequence>? = null
+
+    /**
+     * The values saved for the preference: picking the second entry saves the
+     * second value.
+     */
+    var entryValues: Array<out Any>? = null
+
+    /** The value of the key; one of [entryValues]. Persisted and notified on change. */
+    var value: String? = null
+        set(value) {
+            // Always persist/notify the first time.
+            val changed = !TextUtils.equals(field, value)
+            if (changed || !valueSet) {
+                field = value
+                valueSet = true
+                persistString(value)
+                if (changed) {
+                    notifyChanged()
+                }
+            }
+        }
+
+    // The XML summary, a String.format pattern that receives the current entry.
+    private var summaryFormat: String? = null
+    private var clickedDialogEntryIndex = 0
+    private var valueSet = false
 
     constructor(context: Context) : super(context) {
         init(context, null, 0, 0)
@@ -52,63 +77,22 @@ class ListPreference : DialogPreference {
         setNegativeButtonText(android.R.string.cancel)
 
         var a = context.obtainStyledAttributes(attrs, R.styleable.ListPreference, defStyleAttr, defStyleRes)
-        mEntries = a.getTextArray(R.styleable.ListPreference_entries)
-        mEntryValues = a.getTextArray(R.styleable.ListPreference_entryValues)
+        entries = a.getTextArray(R.styleable.ListPreference_entries)
+        entryValues = a.getTextArray(R.styleable.ListPreference_entryValues)
         a.recycle()
 
         // Retrieve the Preference summary attribute since it's private in the Preference class.
         a = context.obtainStyledAttributes(attrs, intArrayOf(android.R.attr.summary), defStyleAttr, defStyleRes)
-        mSummary = a.getString(0)
+        summaryFormat = a.getString(0)
         a.recycle()
     }
 
-    /**
-     * Sets the human-readable entries to be shown in the list. This will be
-     * shown in subsequent dialogs.
-     *
-     * Each entry must have a corresponding index in [setEntryValues].
-     */
-    fun setEntries(entries: Array<CharSequence>?) {
-        mEntries = entries
-    }
-
     fun setEntries(@ArrayRes entriesResId: Int) {
-        setEntries(context.resources.getTextArray(entriesResId))
-    }
-
-    /** The list of entries to be shown in the list in subsequent dialogs. */
-    fun getEntries(): Array<CharSequence>? = mEntries
-
-    /**
-     * The array to find the value to save for a preference when an entry from
-     * entries is selected. If a user clicks on the second item in entries, the
-     * second item in this array will be saved to the preference.
-     */
-    fun setEntryValues(entryValues: Array<CharSequence>?) {
-        mEntryValues = entryValues
+        entries = context.resources.getTextArray(entriesResId)
     }
 
     fun setEntryValues(@ArrayRes entryValuesResId: Int) {
-        setEntryValues(context.resources.getTextArray(entryValuesResId))
-    }
-
-    /** Returns the array of values to be saved for the preference. */
-    fun getEntryValues(): Array<out Any>? = mEntryValues
-
-    /**
-     * Sets the value of the key. This should be one of the entries in [getEntryValues].
-     */
-    fun setValue(value: String?) {
-        // Always persist/notify the first time.
-        val changed = !TextUtils.equals(mValue, value)
-        if (changed || !mValueSet) {
-            mValue = value
-            mValueSet = true
-            persistString(value)
-            if (changed) {
-                notifyChanged()
-            }
-        }
+        entryValues = context.resources.getTextArray(entryValuesResId)
     }
 
     /**
@@ -117,8 +101,7 @@ class ListPreference : DialogPreference {
      * value will be substituted in its place.
      */
     override fun getSummary(): CharSequence? {
-        val entry = getEntry()
-        val summary = mSummary ?: return super.getSummary()
+        val summary = summaryFormat ?: return super.getSummary()
         return String.format(summary, entry ?: "")
     }
 
@@ -129,34 +112,32 @@ class ListPreference : DialogPreference {
      */
     override fun setSummary(summary: CharSequence?) {
         super.setSummary(summary)
-        if (summary == null && mSummary != null) {
-            mSummary = null
-        } else if (summary != null && summary != mSummary) {
-            mSummary = summary.toString()
+        if (summary == null && summaryFormat != null) {
+            summaryFormat = null
+        } else if (summary != null && summary != summaryFormat) {
+            summaryFormat = summary.toString()
         }
     }
 
     /** Sets the value to the given index from the entry values. */
     fun setValueIndex(index: Int) {
-        val entryValues = mEntryValues ?: return
-        setValue(entryValues[index].toString())
+        val entryValues = entryValues ?: return
+        value = entryValues[index].toString()
     }
 
-    /** Returns the value of the key. This should be one of the entries in [getEntryValues]. */
-    fun getValue(): String? = mValue
-
-    /** Returns the entry corresponding to the current value, or null. */
-    fun getEntry(): CharSequence? {
-        val index = getValueIndex()
-        val entries = mEntries
-        return if (index >= 0 && entries != null) entries[index] else null
-    }
+    /** The entry corresponding to the current value, or null. */
+    val entry: CharSequence?
+        get() {
+            val index = valueIndex
+            val entries = entries
+            return if (index >= 0 && entries != null) entries[index] else null
+        }
 
     /**
      * Returns the index of the given value (in the entry values array), or -1 if not found.
      */
     fun findIndexOfValue(value: String?): Int {
-        val entryValues = mEntryValues
+        val entryValues = entryValues
         if (value != null && entryValues != null) {
             for (i in entryValues.indices.reversed()) {
                 if (entryValues[i] == value) {
@@ -167,19 +148,19 @@ class ListPreference : DialogPreference {
         return -1
     }
 
-    private fun getValueIndex(): Int = findIndexOfValue(mValue)
+    private val valueIndex: Int get() = findIndexOfValue(value)
 
     override fun onPrepareDialogBuilder(builder: AlertDialog.Builder) {
         super.onPrepareDialogBuilder(builder)
 
-        val entries = mEntries
-        check(entries != null && mEntryValues != null) {
+        val entries = entries
+        check(entries != null && entryValues != null) {
             "ListPreference requires an entries array and an entryValues array."
         }
 
-        mClickedDialogEntryIndex = getValueIndex()
-        builder.setSingleChoiceItems(entries, mClickedDialogEntryIndex) { dialog, which ->
-            mClickedDialogEntryIndex = which
+        clickedDialogEntryIndex = valueIndex
+        builder.setSingleChoiceItems(entries, clickedDialogEntryIndex) { dialog, which ->
+            clickedDialogEntryIndex = which
 
             // Clicking on an item simulates the positive button click, and dismisses the dialog.
             onClick(dialog, DialogInterface.BUTTON_POSITIVE)
@@ -188,11 +169,11 @@ class ListPreference : DialogPreference {
     }
 
     override fun onDialogClosed(positiveResult: Boolean) {
-        val entryValues = mEntryValues
-        if (positiveResult && mClickedDialogEntryIndex >= 0 && entryValues != null) {
-            val value = entryValues[mClickedDialogEntryIndex].toString()
+        val entryValues = entryValues
+        if (positiveResult && clickedDialogEntryIndex >= 0 && entryValues != null) {
+            val value = entryValues[clickedDialogEntryIndex].toString()
             if (callChangeListener(value)) {
-                setValue(value)
+                this.value = value
             }
         }
     }
@@ -200,7 +181,7 @@ class ListPreference : DialogPreference {
     override fun onGetDefaultValue(a: TypedArray, index: Int): Any? = a.getString(index)
 
     override fun onSetInitialValue(defaultValue: Any?) {
-        setValue(getPersistedString(defaultValue as String?))
+        value = getPersistedString(defaultValue as String?)
     }
 
     override fun onSaveInstanceState(): Parcelable? {
@@ -211,7 +192,7 @@ class ListPreference : DialogPreference {
         }
 
         val myState = SavedState(superState)
-        myState.value = getValue()
+        myState.value = value
         return myState
     }
 
@@ -224,7 +205,7 @@ class ListPreference : DialogPreference {
 
         val myState = state as SavedState
         super.onRestoreInstanceState(myState.superState)
-        setValue(myState.value)
+        value = myState.value
     }
 
     private class SavedState : BaseSavedState {

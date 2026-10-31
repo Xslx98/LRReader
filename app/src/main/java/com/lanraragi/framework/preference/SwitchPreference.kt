@@ -28,11 +28,21 @@ import com.lanraragi.reader.R
 
 class SwitchPreference : TwoStatePreference {
 
-    // Switch text for on and off states
-    private var mSwitchOn: CharSequence? = null
-    private var mSwitchOff: CharSequence? = null
+    /** Text on the switch widget in the on state; a very short string, one word if possible. */
+    var switchTextOn: CharSequence? = null
+        set(value) {
+            field = value
+            notifyChanged()
+        }
 
-    private val mListener = CompoundButton.OnCheckedChangeListener { buttonView, isChecked ->
+    /** Text on the switch widget in the off state; a very short string, one word if possible. */
+    var switchTextOff: CharSequence? = null
+        set(value) {
+            field = value
+            notifyChanged()
+        }
+
+    private val checkedListener = CompoundButton.OnCheckedChangeListener { buttonView, isChecked ->
         if (!callChangeListener(isChecked)) {
             // Listener didn't like it, change it back.
             // CompoundButton will make sure we don't recurse.
@@ -59,8 +69,8 @@ class SwitchPreference : TwoStatePreference {
         val a = context.obtainStyledAttributes(attrs, R.styleable.SwitchPreference, defStyleAttr, defStyleRes)
         summaryOn = a.getString(R.styleable.SwitchPreference_summaryOn)
         summaryOff = a.getString(R.styleable.SwitchPreference_summaryOff)
-        setSwitchTextOn(a.getString(R.styleable.SwitchPreference_switchTextOn))
-        setSwitchTextOff(a.getString(R.styleable.SwitchPreference_switchTextOff))
+        switchTextOn = a.getString(R.styleable.SwitchPreference_switchTextOn)
+        switchTextOff = a.getString(R.styleable.SwitchPreference_switchTextOff)
         disableDependentsState = a.getBoolean(R.styleable.SwitchPreference_disableDependentsState, false)
         a.recycle()
     }
@@ -77,42 +87,18 @@ class SwitchPreference : TwoStatePreference {
             checkableView.isChecked = isChecked
 
             if (checkableView is SwitchCompat) {
-                checkableView.textOn = mSwitchOn
-                checkableView.textOff = mSwitchOff
-                checkableView.setOnCheckedChangeListener(mListener)
+                checkableView.textOn = switchTextOn
+                checkableView.textOff = switchTextOff
+                checkableView.setOnCheckedChangeListener(checkedListener)
             }
         }
     }
 
-    /**
-     * Set the text displayed on the switch widget in the on state.
-     * This should be a very short string; one word if possible.
-     */
-    fun setSwitchTextOn(onText: CharSequence?) {
-        mSwitchOn = onText
-        notifyChanged()
-    }
-
-    /**
-     * Set the text displayed on the switch widget in the off state.
-     * This should be a very short string; one word if possible.
-     */
-    fun setSwitchTextOff(offText: CharSequence?) {
-        mSwitchOff = offText
-        notifyChanged()
-    }
-
     fun setSwitchTextOn(@StringRes resId: Int) {
-        setSwitchTextOn(context.getString(resId))
+        switchTextOn = context.getString(resId)
     }
 
     fun setSwitchTextOff(@StringRes resId: Int) {
-        setSwitchTextOff(context.getString(resId))
+        switchTextOff = context.getString(resId)
     }
-
-    /** The text that will be displayed on the switch widget in the on state. */
-    fun getSwitchTextOn(): CharSequence? = mSwitchOn
-
-    /** The text that will be displayed on the switch widget in the off state. */
-    fun getSwitchTextOff(): CharSequence? = mSwitchOff
 }

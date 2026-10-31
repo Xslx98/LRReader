@@ -27,7 +27,7 @@ import com.lanraragi.reader.util.ExceptionUtils
 
 class ActivityPreference : Preference {
 
-    private var mActivityClazz: Class<*>? = null
+    private var activityClass: Class<*>? = null
 
     constructor(context: Context) : super(context) {
         init(context, null, 0, 0)
@@ -46,7 +46,7 @@ class ActivityPreference : Preference {
         val clazzName = a.getString(R.styleable.ActivityPreference_activity)
         if (null != clazzName) {
             try {
-                mActivityClazz = Class.forName(clazzName)
+                activityClass = Class.forName(clazzName)
             } catch (e: ClassNotFoundException) {
                 Log.e(TAG, "Can't find class $clazzName", e)
             }
@@ -55,7 +55,7 @@ class ActivityPreference : Preference {
     }
 
     override fun onClick() {
-        val clazz = mActivityClazz ?: return
+        val clazz = activityClass ?: return
 
         val context = context
         val intent = Intent(context, clazz)

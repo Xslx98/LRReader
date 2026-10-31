@@ -28,9 +28,26 @@ import com.lanraragi.reader.R
 
 class SeekBarPreference : Preference, SeekBar.OnSeekBarChangeListener {
 
-    private var mProgress = 0
-    private var mMax = 0
-    private var mTrackingTouch = false
+    private var progressValue = 0
+    private var maxValue = 0
+    private var trackingTouch = false
+
+    /** The upper bound of [progress]. */
+    var max: Int
+        get() = maxValue
+        set(value) {
+            if (value != maxValue) {
+                maxValue = value
+                notifyChanged()
+            }
+        }
+
+    /** The value, kept within 0..[max] and persisted. */
+    var progress: Int
+        get() = progressValue
+        set(value) {
+            updateProgress(value, notifyChanged = true)
+        }
 
     constructor(context: Context) : super(context) {
         init(context, null, 0, 0)
@@ -46,7 +63,7 @@ class SeekBarPreference : Preference, SeekBar.OnSeekBarChangeListener {
 
     private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) {
         val a = context.obtainStyledAttributes(attrs, R.styleable.SeekBarPreference, defStyleAttr, defStyleRes)
-        setMax(a.getInt(R.styleable.SeekBarPreference_max, mMax))
+        max = a.getInt(R.styleable.SeekBarPreference_max, maxValue)
         a.recycle()
 
         layoutResource = R.layout.preference_widget_seekbar
@@ -56,32 +73,21 @@ class SeekBarPreference : Preference, SeekBar.OnSeekBarChangeListener {
         super.onBindViewHolder(holder)
         val seekBar = holder.findViewById(R.id.seekbar) as SeekBar
         seekBar.setOnSeekBarChangeListener(this)
-        seekBar.max = mMax
-        seekBar.progress = mProgress
+        seekBar.max = maxValue
+        seekBar.progress = progressValue
         seekBar.isEnabled = isEnabled
     }
 
     override fun onSetInitialValue(defaultValue: Any?) {
-        setProgress(getPersistedInt(mProgress))
+        progress = getPersistedInt(progressValue)
     }
 
     override fun onGetDefaultValue(a: TypedArray, index: Int): Any = a.getInt(index, 0)
 
-    fun setMax(max: Int) {
-        if (max != mMax) {
-            mMax = max
-            notifyChanged()
-        }
-    }
-
-    fun setProgress(progress: Int) {
-        setProgress(progress, true)
-    }
-
-    private fun setProgress(progress: Int, notifyChanged: Boolean) {
-        val clamped = progress.coerceAtMost(mMax).coerceAtLeast(0)
-        if (clamped != mProgress) {
-            mProgress = clamped
+    private fun updateProgress(value: Int, notifyChanged: Boolean) {
+        val clamped = value.coerceAtMost(maxValue).coerceAtLeast(0)
+        if (clamped != progressValue) {
+            progressValue = clamped
             persistInt(clamped)
             if (notifyChanged) {
                 notifyChanged()
@@ -89,36 +95,34 @@ class SeekBarPreference : Preference, SeekBar.OnSeekBarChangeListener {
         }
     }
 
-    fun getProgress(): Int = mProgress
-
     /**
      * Persist the seekBar's progress value if callChangeListener
      * returns true, otherwise set the seekBar's progress to the stored value
      */
     private fun syncProgress(seekBar: SeekBar) {
-        val progress = seekBar.progress
-        if (progress != mProgress) {
-            if (callChangeListener(progress)) {
-                setProgress(progress, false)
+        val value = seekBar.progress
+        if (value != progressValue) {
+            if (callChangeListener(value)) {
+                updateProgress(value, notifyChanged = false)
             } else {
-                seekBar.progress = mProgress
+                seekBar.progress = progressValue
             }
         }
     }
 
     override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-        if (fromUser && !mTrackingTouch) {
+        if (fromUser && !trackingTouch) {
             syncProgress(seekBar)
         }
     }
 
     override fun onStartTrackingTouch(seekBar: SeekBar) {
-        mTrackingTouch = true
+        trackingTouch = true
     }
 
     override fun onStopTrackingTouch(seekBar: SeekBar) {
-        mTrackingTouch = false
-        if (seekBar.progress != mProgress) {
+        trackingTouch = false
+        if (seekBar.progress != progressValue) {
             syncProgress(seekBar)
         }
     }
@@ -133,25 +137,22 @@ class SeekBarPreference : Preference, SeekBar.OnSeekBarChangeListener {
             return superState
         }
 
-        // Save the instance state
-        val myState = SavedState(superState)
-        myState.progress = mProgress
-        myState.max = mMax
-        return myState
+        return SavedState(superState).apply {
+            progress = progressValue
+            max = maxValue
+        }
     }
 
     override fun onRestoreInstanceState(state: Parcelable?) {
-        if (state == null || state.javaClass != SavedState::class.java) {
+        if (state !is SavedState || state.javaClass != SavedState::class.java) {
             // Didn't save state for us in onSaveInstanceState
             super.onRestoreInstanceState(state)
             return
         }
 
-        // Restore the instance state
-        val myState = state as SavedState
-        super.onRestoreInstanceState(myState.superState)
-        mProgress = myState.progress
-        mMax = myState.max
+        super.onRestoreInstanceState(state.superState)
+        progressValue = state.progress
+        maxValue = state.max
         notifyChanged()
     }
 
