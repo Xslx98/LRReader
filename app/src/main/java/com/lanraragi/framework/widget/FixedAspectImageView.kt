@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("NestedBlockDepth") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.widget
 
 import android.annotation.SuppressLint
@@ -168,74 +166,84 @@ open class FixedAspectImageView : ShapeableImageView {
             }
         }
 
-        val pLeft = paddingLeft
-        val pRight = paddingRight
-        val pTop = paddingTop
-        val pBottom = paddingBottom
-
-        var widthSize: Int
-        var heightSize: Int
+        w += paddingLeft + paddingRight
+        h += paddingTop + paddingBottom
 
         if (resizeWidth || resizeHeight) {
-            // If we get here, it means we want to resize to match the
-            // drawables aspect ratio, and we have the freedom to change at
-            // least one dimension.
-
-            // Get the max possible width given our constraints
-            widthSize = resolveAdjustedSize(w + pLeft + pRight, minimumWidth, maxWidth, widthMeasureSpec)
-
-            // Get the max possible height given our constraints
-            heightSize = resolveAdjustedSize(h + pTop + pBottom, minimumHeight, maxHeight, heightMeasureSpec)
-
-            if (desiredAspect != 0.0f) {
-                // See what our actual aspect ratio is
-                val actualAspect = (widthSize - pLeft - pRight).toFloat() / (heightSize - pTop - pBottom)
-
-                if (abs(actualAspect - desiredAspect) > 0.0000001) {
-                    var done = false
-
-                    // Try adjusting width to be proportional to height
-                    if (resizeWidth) {
-                        val newWidth = (desiredAspect * (heightSize - pTop - pBottom)).toInt() + pLeft + pRight
-
-                        // Allow the width to outgrow its original estimate if height is fixed.
-                        // if (!resizeHeight) {
-                        //     widthSize = resolveAdjustedSize(newWidth, minimumWidth, maxWidth, widthMeasureSpec)
-                        // }
-
-                        if (isSizeAcceptable(newWidth, minimumWidth, maxWidth, widthMeasureSpec)) {
-                            widthSize = newWidth
-                            done = true
-                        }
-                    }
-
-                    // Try adjusting height to be proportional to width
-                    if (!done && resizeHeight) {
-                        val newHeight = ((widthSize - pLeft - pRight) / desiredAspect).toInt() + pTop + pBottom
-
-                        // Allow the height to outgrow its original estimate if width is fixed.
-                        if (!resizeWidth) {
-                            heightSize = resolveAdjustedSize(newHeight, minimumHeight, maxHeight, heightMeasureSpec)
-                        }
-
-                        if (isSizeAcceptable(newHeight, minimumHeight, maxHeight, heightMeasureSpec)) {
-                            heightSize = newHeight
-                        }
-                    }
-                }
-            }
+            // We want to resize to match the drawables aspect ratio, and we
+            // have the freedom to change at least one dimension.
+            measureToAspect(w, h, desiredAspect, resizeWidth, resizeHeight, widthMeasureSpec, heightMeasureSpec)
         } else {
             // We are either don't want to preserve the drawables aspect ratio,
             // or we are not allowed to change view dimensions. Just measure in
             // the normal way.
-            w += pLeft + pRight
-            h += pTop + pBottom
-
             w = max(w, suggestedMinimumWidth)
             h = max(h, suggestedMinimumHeight)
 
-            widthSize = View.resolveSizeAndState(w, widthMeasureSpec, 0)
-            heightSize = View.resolveSizeAndState(h, heightMeasureSpec, 0)
+            setMeasuredDimension(
+                View.resolveSizeAndState(w, widthMeasureSpec, 0),
+                View.resolveSizeAndState(h, heightMeasureSpec, 0),
+            )
+        }
+    }
+
+    /**
+     * Measures for [desiredAspect] (0 for none) of the content, from the
+     * padded intrinsic size [desiredWidth] x [desiredHeight]; at least one of
+     * [resizeWidth] and [resizeHeight] is true.
+     */
+    private fun measureToAspect(
+        desiredWidth: Int,
+        desiredHeight: Int,
+        desiredAspect: Float,
+        resizeWidth: Boolean,
+        resizeHeight: Boolean,
+        widthMeasureSpec: Int,
+        heightMeasureSpec: Int,
+    ) {
+        val hPadding = paddingLeft + paddingRight
+        val vPadding = paddingTop + paddingBottom
+
+        // Get the max possible width given our constraints
+        var widthSize = resolveAdjustedSize(desiredWidth, minimumWidth, maxWidth, widthMeasureSpec)
+
+        // Get the max possible height given our constraints
+        var heightSize = resolveAdjustedSize(desiredHeight, minimumHeight, maxHeight, heightMeasureSpec)
+
+        // See what our actual aspect ratio is
+        if (desiredAspect != 0.0f &&
+            abs((widthSize - hPadding).toFloat() / (heightSize - vPadding) - desiredAspect) > 0.0000001
+        ) {
+            var done = false
+
+            // Try adjusting width to be proportional to height
+            if (resizeWidth) {
+                val newWidth = (desiredAspect * (heightSize - vPadding)).toInt() + hPadding
+
+                // Allow the width to outgrow its original estimate if height is fixed.
+                // if (!resizeHeight) {
+                //     widthSize = resolveAdjustedSize(newWidth, minimumWidth, maxWidth, widthMeasureSpec)
+                // }
+
+                if (isSizeAcceptable(newWidth, minimumWidth, maxWidth, widthMeasureSpec)) {
+                    widthSize = newWidth
+                    done = true
+                }
+            }
+
+            // Try adjusting height to be proportional to width
+            if (!done && resizeHeight) {
+                val newHeight = ((widthSize - hPadding) / desiredAspect).toInt() + vPadding
+
+                // Allow the height to outgrow its original estimate if width is fixed.
+                if (!resizeWidth) {
+                    heightSize = resolveAdjustedSize(newHeight, minimumHeight, maxHeight, heightMeasureSpec)
+                }
+
+                if (isSizeAcceptable(newHeight, minimumHeight, maxHeight, heightMeasureSpec)) {
+                    heightSize = newHeight
+                }
+            }
         }
 
         setMeasuredDimension(widthSize, heightSize)

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("NestedBlockDepth") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.widget
 
 import android.animation.Animator
@@ -208,48 +206,57 @@ class FabLayout : ViewGroup, View.OnClickListener {
         }
 
     fun setExpanded(expanded: Boolean, animation: Boolean) {
-        if (expandedState != expanded) {
-            expandedState = expanded
+        if (expandedState == expanded) {
+            return
+        }
+        expandedState = expanded
 
-            if (autoCancel) {
-                if (expanded) {
-                    setOnClickListener(this)
-                } else {
-                    isClickable = false
-                }
+        if (autoCancel) {
+            if (expanded) {
+                setOnClickListener(this)
+            } else {
+                isClickable = false
             }
+        }
 
-            val count = childCount
-            if (count > 0) {
-                if (mainFabCenterY == -1f || !animation) {
-                    // It is before first onLayout
-                    val checkCount = if (hidePrimaryFab) count else count - 1
-                    for (i in 0 until checkCount) {
-                        val child = getChildAt(i)
-                        if (child.visibility == GONE) {
-                            continue
-                        }
-                        child.visibility = if (expanded) View.VISIBLE else View.INVISIBLE
-                        if (expanded) {
-                            child.alpha = 1f
-                        }
-                    }
-                } else {
-                    if (hidePrimaryFab) {
-                        setPrimaryFabAnimation(getChildAt(count - 1), expanded, !expanded)
-                    }
-
-                    for (i in 0 until count - 1) {
-                        val child = getChildAt(i)
-                        if (child.visibility == GONE) {
-                            continue
-                        }
-                        setSecondaryFabAnimation(child, expanded, expanded)
-                    }
-                }
+        val count = childCount
+        if (count > 0) {
+            if (mainFabCenterY == -1f || !animation) {
+                // It is before first onLayout
+                setFabsVisibility(count, expanded)
+            } else {
+                animateFabs(count, expanded)
             }
+        }
 
-            onExpandListener?.onExpand(expanded)
+        onExpandListener?.onExpand(expanded)
+    }
+
+    private fun setFabsVisibility(count: Int, expanded: Boolean) {
+        val checkCount = if (hidePrimaryFab) count else count - 1
+        for (i in 0 until checkCount) {
+            val child = getChildAt(i)
+            if (child.visibility == GONE) {
+                continue
+            }
+            child.visibility = if (expanded) View.VISIBLE else View.INVISIBLE
+            if (expanded) {
+                child.alpha = 1f
+            }
+        }
+    }
+
+    private fun animateFabs(count: Int, expanded: Boolean) {
+        if (hidePrimaryFab) {
+            setPrimaryFabAnimation(getChildAt(count - 1), expanded, !expanded)
+        }
+
+        for (i in 0 until count - 1) {
+            val child = getChildAt(i)
+            if (child.visibility == GONE) {
+                continue
+            }
+            setSecondaryFabAnimation(child, expanded, expanded)
         }
     }
 
