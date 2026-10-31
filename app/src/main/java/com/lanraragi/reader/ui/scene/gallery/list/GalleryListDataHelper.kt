@@ -168,7 +168,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         }
     }
 
-    override fun getPageData(taskId: Int, type: Int, page: Int, append: String) {
+    override fun getPageData(taskId: Int, type: Int, page: Int, append: String?) {
         getPageData(taskId, type, page)
     }
 

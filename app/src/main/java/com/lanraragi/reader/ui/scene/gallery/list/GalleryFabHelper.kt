@@ -41,7 +41,7 @@ internal class GalleryFabHelper(
                 helper.refresh()
             }
             2 -> { // Random
-                val gInfoL = helper.data
+                val gInfoL = helper.getData()
                 if (gInfoL.isNullOrEmpty()) return
                 itemActionHelper()?.onItemClick(
                     null,
