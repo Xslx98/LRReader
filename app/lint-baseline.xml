@@ -1481,17 +1481,6 @@
     </issue>
 
     <issue
-        id="ClickableViewAccessibility"
-        message="Custom view `Slider` overrides `onTouchEvent` but not `performClick`"
-        errorLine1="    public boolean onTouchEvent(@NonNull MotionEvent event) {"
-        errorLine2="                   ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/Slider.java"
-            line="399"
-            column="20"/>
-    </issue>
-
-    <issue
         id="LabelFor"
         message="Missing accessibility label: provide either a view with an `android:labelFor` that references this view or provide an `android:hint`"
         errorLine1="        &lt;EditText"
@@ -1885,17 +1874,6 @@
             file="src/main/java/com/lanraragi/reader/ui/scene/gallery/list/GalleryTagChipHelper.kt"
             line="158"
             column="42"/>
-    </issue>
-
-    <issue
-        id="RtlHardcoded"
-        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
-        errorLine1="        mPopup.showAtLocation(this, Gravity.TOP | Gravity.LEFT, mPopupX, mPopupY);"
-        errorLine2="                                                          ~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/Slider.java"
-            line="244"
-            column="59"/>
     </issue>
 
     <issue
