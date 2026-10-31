@@ -350,17 +350,6 @@
     </issue>
 
     <issue
-        id="UseCompatLoadingForDrawables"
-        message="Use `ResourcesCompat.getDrawable()`"
-        errorLine1="            setShadow((NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_2dp)); // LEGACY (upstream): dark theme shadow not implemented"
-        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
-            line="57"
-            column="43"/>
-    </issue>
-
-    <issue
         id="Typos"
         message="Did you mean &quot;sha!&quot; instead of &quot;sha1&quot;?"
         errorLine1="        &lt;item>tag-translations-zh-rCN.sha1&lt;/item>"
@@ -1051,17 +1040,6 @@
             file="src/main/java/com/lanraragi/framework/lib/glview/util/MotionEventHelper.java"
             line="36"
             column="5"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/ShadowLinearLayout.java"
-            line="53"
-            column="13"/>
     </issue>
 
     <issue
