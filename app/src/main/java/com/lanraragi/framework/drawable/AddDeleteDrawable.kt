@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("ComplexCondition") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.drawable
 
 import android.animation.ObjectAnimator
@@ -127,15 +125,15 @@ class AddDeleteDrawable(context: Context, color: Int) : Drawable() {
     }
 
     fun setShape(delete: Boolean, duration: Long) {
-        if (!((!delete && mProgress == 0f) || (delete && mProgress == 1f))) {
-            val endProgress = if (delete) 1f else 0f
-            if (duration <= 0) {
-                progress = endProgress
-            } else {
-                val oa = ObjectAnimator.ofFloat(this, PROGRESS, endProgress)
-                oa.duration = duration
-                oa.setAutoCancel(true)
-                oa.start()
+        val endProgress = if (delete) 1f else 0f
+        if (mProgress == endProgress) return
+        if (duration <= 0) {
+            progress = endProgress
+        } else {
+            ObjectAnimator.ofFloat(this, PROGRESS, endProgress).apply {
+                this.duration = duration
+                setAutoCancel(true)
+                start()
             }
         }
     }
