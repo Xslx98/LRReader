@@ -20,8 +20,6 @@
     "NestedBlockDepth",
     "ReturnCount",
     "UnusedParameter",
-    "UseCheckOrError",
-    "UseRequire",
 ) // TODO(2.4-idiom)
 
 package com.lanraragi.framework.widget.lockpattern
@@ -150,12 +148,8 @@ class LockPatternView : View {
             }
 
             private fun checkRange(row: Int, column: Int) {
-                if (row < 0 || row > 2) {
-                    throw IllegalArgumentException("row must be in range 0-2")
-                }
-                if (column < 0 || column > 2) {
-                    throw IllegalArgumentException("column must be in range 0-2")
-                }
+                require(row in 0..2) { "row must be in range 0-2" }
+                require(column in 0..2) { "column must be in range 0-2" }
             }
         }
     }
@@ -304,11 +298,8 @@ class LockPatternView : View {
     private fun applyDisplayMode(displayMode: DisplayMode) {
         patternDisplayMode = displayMode
         if (displayMode == DisplayMode.Animate) {
-            if (pattern.size == 0) {
-                throw IllegalStateException(
-                    "you must have a pattern to " +
-                        "animate if you want to set the display mode to animate",
-                )
+            check(pattern.isNotEmpty()) {
+                "you must have a pattern to animate if you want to set the display mode to animate"
             }
             animatingPeriodStart = SystemClock.elapsedRealtime()
             val first = pattern[0]
@@ -880,18 +871,14 @@ class LockPatternView : View {
     }
 
     private fun getCurrentColor(partOfPattern: Boolean): Int {
-        return if (!partOfPattern || isInStealthMode || patternInProgress) {
+        if (!partOfPattern || isInStealthMode || patternInProgress) {
             // unselected circle
-            regularColor
-        } else if (patternDisplayMode == DisplayMode.Wrong) {
+            return regularColor
+        }
+        return when (patternDisplayMode) {
             // the pattern is wrong
-            errorColor
-        } else if (patternDisplayMode == DisplayMode.Correct ||
-            patternDisplayMode == DisplayMode.Animate
-        ) {
-            successColor
-        } else {
-            throw IllegalStateException("unknown display mode $patternDisplayMode")
+            DisplayMode.Wrong -> errorColor
+            DisplayMode.Correct, DisplayMode.Animate -> successColor
         }
     }
 
