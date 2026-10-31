@@ -17,20 +17,12 @@
 package com.lanraragi.framework.widget
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Rect
-import android.graphics.drawable.NinePatchDrawable
-import android.os.Build
 import android.util.AttributeSet
 import android.view.ViewOutlineProvider
 import android.widget.LinearLayout
-import com.lanraragi.reader.R
 import com.lanraragi.reader.util.ViewUtils
 
 class ShadowLinearLayout : LinearLayout {
-
-    private var mShadow: NinePatchDrawable? = null
-    private val mShadowPaddings = Rect()
 
     constructor(context: Context) : super(context) {
         init(context)
@@ -46,40 +38,7 @@ class ShadowLinearLayout : LinearLayout {
 
     private fun init(context: Context) {
         // LEGACY (upstream): only 2dp shadow supported
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            outlineProvider = ViewOutlineProvider.BOUNDS
-            elevation = ViewUtils.dp2pix(context, 2f).toFloat()
-        } else {
-            // LEGACY (upstream): dark theme shadow not implemented
-            setShadow(context.resources.getDrawable(R.drawable.shadow_2dp) as NinePatchDrawable)
-        }
-    }
-
-    private fun setShadow(shadow: NinePatchDrawable) {
-        mShadow = shadow
-        shadow.getPadding(mShadowPaddings)
-        updateShadowBounds()
-        setWillNotDraw(false)
-    }
-
-    private fun updateShadowBounds() {
-        val shadow = mShadow ?: return
-
-        val width = width
-        val height = height
-        val paddings = mShadowPaddings
-        if (width != 0 && height != 0) {
-            shadow.setBounds(-paddings.left, -paddings.top, width + paddings.right, height + paddings.bottom)
-        }
-    }
-
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
-        updateShadowBounds()
-    }
-
-    override fun draw(canvas: Canvas) {
-        mShadow?.draw(canvas)
-        super.draw(canvas)
+        outlineProvider = ViewOutlineProvider.BOUNDS
+        elevation = ViewUtils.dp2pix(context, 2f).toFloat()
     }
 }
