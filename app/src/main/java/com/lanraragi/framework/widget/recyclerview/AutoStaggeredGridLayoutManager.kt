@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("DoubleMutabilityForCollection") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.widget.recyclerview
 
 import android.view.View
@@ -30,7 +28,7 @@ class AutoStaggeredGridLayoutManager(columnSize: Int, orientation: Int) : Stagge
     private var mColumnSizeChanged = true
     private var mStrategy = 0
 
-    private var mListeners: MutableList<OnUpdateSpanCountListener>? = null
+    private val mListeners: MutableList<OnUpdateSpanCountListener> = ArrayList()
 
     init {
         setColumnSize(columnSize)
@@ -74,23 +72,19 @@ class AutoStaggeredGridLayoutManager(columnSize: Int, orientation: Int) : Stagge
             setSpanCount(spanCount)
             mColumnSizeChanged = false
 
-            val listeners = mListeners
-            if (listeners != null) {
-                for (i in 0 until listeners.size) {
-                    listeners[i].onUpdateSpanCount(spanCount)
-                }
+            for (i in 0 until mListeners.size) {
+                mListeners[i].onUpdateSpanCount(spanCount)
             }
         }
         super.onMeasure(recycler, state, widthSpec, heightSpec)
     }
 
     fun addOnUpdateSpanCountListener(listener: OnUpdateSpanCountListener) {
-        val listeners = mListeners ?: ArrayList<OnUpdateSpanCountListener>().also { mListeners = it }
-        listeners.add(listener)
+        mListeners.add(listener)
     }
 
     fun removeOnUpdateSpanCountListener(listener: OnUpdateSpanCountListener) {
-        mListeners?.remove(listener)
+        mListeners.remove(listener)
     }
 
     interface OnUpdateSpanCountListener {

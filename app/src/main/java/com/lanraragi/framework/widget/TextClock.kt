@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("MayBeConst") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.widget
 
 import android.content.BroadcastReceiver
@@ -233,11 +231,9 @@ class TextClock : AppCompatTextView {
     }
 
     companion object {
-        @JvmField
-        val DEFAULT_FORMAT_12_HOUR: CharSequence = "hh:mm a"
+        const val DEFAULT_FORMAT_12_HOUR = "hh:mm a"
 
-        @JvmField
-        val DEFAULT_FORMAT_24_HOUR: CharSequence = "HH:mm"
+        const val DEFAULT_FORMAT_24_HOUR = "HH:mm"
     }
 }
 
