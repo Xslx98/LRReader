@@ -317,17 +317,6 @@
     </issue>
 
     <issue
-        id="SwitchIntDef"
-        message="Switch statement on an `int` with known associated constant missing case `MeasureSpec.EXACTLY`"
-        errorLine1="        switch (mode) {"
-        errorLine2="        ~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/MaxSizeContainer.java"
-            line="57"
-            column="9"/>
-    </issue>
-
-    <issue
         id="UseRequiresApi"
         message="Use `@RequiresApi(Build.VERSION_CODES.JELLY_BEAN) instead of `@TargetApi` to propagate the requirement to callers of `setLightsOutMode`"
         errorLine1="    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)"
