@@ -72,14 +72,14 @@ class GalleryListEvents(private val scene: GalleryListScene) {
         // notifyItemChanged on a stopped view is applied at the next layout.
         collectFlowWhileCreated(scene, AppEventBus.archiveCoverChangedEvent) { event ->
             val helper = scene.mHelper ?: return@collectFlowWhileCreated
-            val position = helper.getData().indexOfFirst { it.arcid == event.arcid }
+            val position = helper.data.indexOfFirst { it.arcid == event.arcid }
             if (position >= 0) scene.adapter?.notifyItemChanged(position)
         }
 
         // Rating saved on the detail page: update the row in place. Whole-
         // lifetime like the cover collector — this list is covered then.
         collectFlowWhileCreated(scene, AppEventBus.archiveRatingChangedEvent) { event ->
-            val list = scene.mHelper?.getData() ?: return@collectFlowWhileCreated
+            val list = scene.mHelper?.data ?: return@collectFlowWhileCreated
             val i = list.indexOfFirst { it.arcid == event.arcid }
             if (i >= 0) {
                 list[i] = list[i].copy(rating = event.rating)

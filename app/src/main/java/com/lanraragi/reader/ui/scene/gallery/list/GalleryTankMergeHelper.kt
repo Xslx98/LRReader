@@ -39,7 +39,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         tankCoverStampSeen = stamp
         val helper = scene.mHelper ?: return
         val adapter = scene.adapter ?: return
-        helper.getData().forEachIndexed { index, archive ->
+        helper.data.forEachIndexed { index, archive ->
             if (isTankoubonId(archive.arcid)) adapter.notifyItemChanged(index)
         }
     }
@@ -74,7 +74,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         val groupMode = AppearanceSettings.getGroupTanks() && !TankoubonSupportGate.isUnsupported(baseUrl)
         val (first, last) = visibleRange()
         val plan = TankMergePlanner.plan(
-            loadedIds = helper.getData().map { it.arcid },
+            loadedIds = helper.data.map { it.arcid },
             firstVisible = first,
             lastVisible = last,
             succeeded = succeeded,
@@ -90,7 +90,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
                 tankId = tankId,
                 tankName = tankName,
                 wasEmpty = wasEmpty,
-                firstAddedThumbnailUrl = helper.getData().firstOrNull { it.arcid == succeeded.first() }?.thumbnailUrl,
+                firstAddedThumbnailUrl = helper.data.firstOrNull { it.arcid == succeeded.first() }?.thumbnailUrl,
                 sourceProfileId = LRRAuthManager.getActiveProfileId(),
                 sourceBaseUrl = baseUrl,
             )
@@ -112,7 +112,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
                     // removal and move has finished, and with the first visible
                     // rows gone it would also anchor the inserted row above the fold.
                     plan.removals.filter { it != replaceAt }.forEach { if (it < helper.size()) helper.removeAt(it) }
-                    helper.getData()[replaceAt] = provisional
+                    helper.data[replaceAt] = provisional
                     scene.adapter?.notifyItemChanged(replaceAt)
                     return
                 }
@@ -158,7 +158,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         }
         // Only a row of THIS list can merge; an archive edited from elsewhere
         // (history, another server's list) has nothing here to animate.
-        val loadedHere = scene.mHelper?.getData()?.any { it.arcid == event.arcid } == true
+        val loadedHere = scene.mHelper?.data?.any { it.arcid == event.arcid } == true
         if (!loadedHere) return
         runTankMerge(joined.id, joined.name, joined.wasEmpty, listOf(event.arcid)) {
             val res = scene.resources2 ?: return@runTankMerge

@@ -42,11 +42,11 @@ abstract class GalleryInfoContentHelper : ContentLayout.ContentHelper<Archive>()
         // No-op
     }
 
-    override fun saveInstanceState(superState: Parcelable): Parcelable {
+    override fun saveInstanceState(superState: Parcelable?): Parcelable {
         return super.saveInstanceState(superState)
     }
 
-    override fun restoreInstanceState(state: Parcelable): Parcelable {
+    override fun restoreInstanceState(state: Parcelable): Parcelable? {
         return super.restoreInstanceState(state)
     }
 }
