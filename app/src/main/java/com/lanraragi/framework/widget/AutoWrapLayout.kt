@@ -58,10 +58,11 @@ class AutoWrapLayout : ViewGroup {
     private var maxBottom = 0
     private var lineStartIndex = 0
 
-    enum class Alignment(internal val nativeInt: Int) {
-        TOP(0),
-        CENTER(1),
-        BOTTOM(2),
+    /** In the order of the `alignment` attribute's enum values. */
+    enum class Alignment {
+        TOP,
+        CENTER,
+        BOTTOM,
     }
 
     constructor(context: Context) : super(context)
@@ -72,7 +73,7 @@ class AutoWrapLayout : ViewGroup {
         context.withStyledAttributes(attrs, R.styleable.AutoWrapLayout, defStyle, 0) {
             val index = getInt(R.styleable.AutoWrapLayout_alignment, -1)
             if (index >= 0) {
-                alignment = ALIGNMENTS_BY_ATTR_INDEX[index]
+                alignment = Alignment.entries[index]
             }
         }
     }
@@ -214,8 +215,4 @@ class AutoWrapLayout : ViewGroup {
         MarginLayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
 
     override fun generateLayoutParams(p: LayoutParams?): MarginLayoutParams = MarginLayoutParams(p)
-
-    private companion object {
-        private val ALIGNMENTS_BY_ATTR_INDEX = arrayOf(Alignment.TOP, Alignment.CENTER, Alignment.BOTTOM)
-    }
 }
