@@ -34,136 +34,128 @@ import com.lanraragi.reader.util.MathUtils
  */
 class DrawerArrowDrawable(context: Context, color: Int) : Drawable() {
 
-    private val mPaint = Paint()
+    private val paint = Paint()
 
-    private val mBarThickness: Float
+    private val barThickness: Float
     // The length of top and bottom bars when they merge into an arrow
-    private val mTopBottomArrowSize: Float
+    private val topBottomArrowSize: Float
     // The length of middle bar
-    private val mBarSize: Float
+    private val barSize: Float
     // The length of the middle bar when arrow is shaped
-    private val mMiddleArrowSize: Float
+    private val middleArrowSize: Float
     // The space between bars when they are parallel
-    private val mBarGap: Float
+    private val barGap: Float
     // Whether bars should spin or not during progress
-    private val mSpin: Boolean
+    private val spin: Boolean
     // Use Path instead of canvas operations so that if color has transparency, overlapping sections
     // wont look different
-    private val mPath = Path()
+    private val path = Path()
     // The reported intrinsic size of the drawable.
-    private val mSize: Int
+    private val size: Int
     // Whether we should mirror animation when animation is reversed.
-    private var mVerticalMirror = false
-    // The interpolated version of the original progress
-    private var mProgress = 0f
+    private var verticalMirror = false
     // the amount that overlaps w/ bar size when rotation is max
-    private val mMaxCutForBarSize: Float
+    private val maxCutForBarSize: Float
 
     init {
         val resources = context.resources
 
-        mPaint.isAntiAlias = true
-        mPaint.color = color
-        mSize = resources.getDimensionPixelSize(R.dimen.dad_drawable_size)
+        paint.isAntiAlias = true
+        paint.color = color
+        size = resources.getDimensionPixelSize(R.dimen.dad_drawable_size)
         // round this because having this floating may cause bad measurements
-        mBarSize = Math.round(resources.getDimension(R.dimen.dad_bar_size)).toFloat()
+        barSize = Math.round(resources.getDimension(R.dimen.dad_bar_size)).toFloat()
         // round this because having this floating may cause bad measurements
-        mTopBottomArrowSize = Math.round(resources.getDimension(R.dimen.dad_top_bottom_bar_arrow_size)).toFloat()
-        mBarThickness = resources.getDimension(R.dimen.dad_thickness)
+        topBottomArrowSize = Math.round(resources.getDimension(R.dimen.dad_top_bottom_bar_arrow_size)).toFloat()
+        barThickness = resources.getDimension(R.dimen.dad_thickness)
         // round this because having this floating may cause bad measurements
-        mBarGap = Math.round(resources.getDimension(R.dimen.dad_gap_between_bars)).toFloat()
-        mSpin = resources.getBoolean(R.bool.dad_spin_bars)
-        mMiddleArrowSize = resources.getDimension(R.dimen.dad_middle_bar_arrow_size)
+        barGap = Math.round(resources.getDimension(R.dimen.dad_gap_between_bars)).toFloat()
+        spin = resources.getBoolean(R.bool.dad_spin_bars)
+        middleArrowSize = resources.getDimension(R.dimen.dad_middle_bar_arrow_size)
 
-        mPaint.style = Paint.Style.STROKE
-        mPaint.strokeJoin = Paint.Join.MITER
-        mPaint.strokeCap = Paint.Cap.BUTT
-        mPaint.strokeWidth = mBarThickness
+        paint.style = Paint.Style.STROKE
+        paint.strokeJoin = Paint.Join.MITER
+        paint.strokeCap = Paint.Cap.BUTT
+        paint.strokeWidth = barThickness
 
-        mMaxCutForBarSize = (mBarThickness / 2 * Math.cos(ARROW_HEAD_ANGLE.toDouble())).toFloat()
-    }
-
-    /**
-     * If set, canvas is flipped when progress reached to end and going back to start.
-     */
-    private fun setVerticalMirror(verticalMirror: Boolean) {
-        mVerticalMirror = verticalMirror
+        maxCutForBarSize = (barThickness / 2 * Math.cos(ARROW_HEAD_ANGLE.toDouble())).toFloat()
     }
 
     override fun draw(canvas: Canvas) {
         val bounds = bounds
         // Interpolated widths of arrow bars
-        val arrowSize = MathUtils.lerp(mBarSize, mTopBottomArrowSize, mProgress)
-        val middleBarSize = MathUtils.lerp(mBarSize, mMiddleArrowSize, mProgress)
+        val arrowSize = MathUtils.lerp(barSize, topBottomArrowSize, progress)
+        val middleBarSize = MathUtils.lerp(barSize, middleArrowSize, progress)
         // Interpolated size of middle bar
-        val middleBarCut = Math.round(MathUtils.lerp(0f, mMaxCutForBarSize, mProgress)).toFloat()
+        val middleBarCut = Math.round(MathUtils.lerp(0f, maxCutForBarSize, progress)).toFloat()
         // The rotation of the top and bottom bars (that make the arrow head)
-        val rotation = MathUtils.lerp(0f, ARROW_HEAD_ANGLE, mProgress)
+        val rotation = MathUtils.lerp(0f, ARROW_HEAD_ANGLE, progress)
 
         // The whole canvas rotates as the transition happens
-        val canvasRotate = MathUtils.lerp(-180, 0, mProgress).toFloat()
+        val canvasRotate = MathUtils.lerp(-180, 0, progress).toFloat()
         val arrowWidth = Math.round(arrowSize * Math.cos(rotation.toDouble())).toFloat()
         val arrowHeight = Math.round(arrowSize * Math.sin(rotation.toDouble())).toFloat()
 
-        mPath.rewind()
-        val topBottomBarOffset = MathUtils.lerp(mBarGap + mBarThickness, -mMaxCutForBarSize, mProgress)
+        path.rewind()
+        val topBottomBarOffset = MathUtils.lerp(barGap + barThickness, -maxCutForBarSize, progress)
 
         val arrowEdge = -middleBarSize / 2
         // draw middle bar
-        mPath.moveTo(arrowEdge + middleBarCut, 0f)
-        mPath.rLineTo(middleBarSize - middleBarCut * 2, 0f)
+        path.moveTo(arrowEdge + middleBarCut, 0f)
+        path.rLineTo(middleBarSize - middleBarCut * 2, 0f)
 
         // bottom bar
-        mPath.moveTo(arrowEdge, topBottomBarOffset)
-        mPath.rLineTo(arrowWidth, arrowHeight)
+        path.moveTo(arrowEdge, topBottomBarOffset)
+        path.rLineTo(arrowWidth, arrowHeight)
 
         // top bar
-        mPath.moveTo(arrowEdge, -topBottomBarOffset)
-        mPath.rLineTo(arrowWidth, -arrowHeight)
+        path.moveTo(arrowEdge, -topBottomBarOffset)
+        path.rLineTo(arrowWidth, -arrowHeight)
 
-        mPath.close()
+        path.close()
 
         canvas.save()
         // Rotate the whole canvas if spinning, if not, rotate it 180 to get
         // the arrow pointing the other way for RTL.
         canvas.translate(bounds.centerX().toFloat(), bounds.centerY().toFloat())
-        if (mSpin) {
-            canvas.rotate(canvasRotate * if (mVerticalMirror) -1 else 1)
+        if (spin) {
+            canvas.rotate(canvasRotate * if (verticalMirror) -1 else 1)
         }
-        canvas.drawPath(mPath, mPaint)
+        canvas.drawPath(path, paint)
 
         canvas.restore()
     }
 
     fun setColor(@ColorInt color: Int) {
-        mPaint.color = color
+        paint.color = color
         invalidateSelf()
     }
 
     override fun setAlpha(i: Int) {
-        mPaint.alpha = i
+        paint.alpha = i
     }
 
     override fun setColorFilter(colorFilter: ColorFilter?) {
-        mPaint.colorFilter = colorFilter
+        paint.colorFilter = colorFilter
     }
 
-    override fun getIntrinsicHeight(): Int = mSize
+    override fun getIntrinsicHeight(): Int = size
 
-    override fun getIntrinsicWidth(): Int = mSize
+    override fun getIntrinsicWidth(): Int = size
 
     @Deprecated("Deprecated in Java")
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 
-    var progress: Float
-        get() = mProgress
-        set(progress) {
-            if (progress == 1f) {
-                setVerticalMirror(true)
-            } else if (progress == 0f) {
-                setVerticalMirror(false)
+    // The interpolated version of the original progress
+    var progress = 0f
+        set(value) {
+            // Mirror the spin when the morph reverses from the arrow.
+            if (value == 1f) {
+                verticalMirror = true
+            } else if (value == 0f) {
+                verticalMirror = false
             }
-            mProgress = progress
+            field = value
             invalidateSelf()
         }
 
@@ -175,9 +167,9 @@ class DrawerArrowDrawable(context: Context, color: Int) : Drawable() {
         setShape(true, duration)
     }
 
-    fun setShape(arrow: Boolean, duration: Long) {
+    private fun setShape(arrow: Boolean, duration: Long) {
         val endProgress = if (arrow) 1f else 0f
-        if (mProgress == endProgress) return
+        if (progress == endProgress) return
         if (duration <= 0) {
             progress = endProgress
         } else {

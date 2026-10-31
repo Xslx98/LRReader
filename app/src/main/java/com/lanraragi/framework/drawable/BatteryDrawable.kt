@@ -27,21 +27,21 @@ import com.lanraragi.reader.util.MathUtils
 
 class BatteryDrawable : Drawable() {
 
-    private var mColor = Color.WHITE
-    private var mWarningColor = Color.RED
-    private var mElect = -1
-    private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG)
+    private var color = Color.WHITE
+    private var warningColor = Color.RED
+    private var elect = -1
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG)
 
-    private val mTopRect = Rect()
-    private val mBottomRect = Rect()
-    private val mRightRect = Rect()
-    private val mHeadRect = Rect()
-    private val mElectRect = Rect()
-    private var mStart = 0
-    private var mStop = 0
+    private val topRect = Rect()
+    private val bottomRect = Rect()
+    private val rightRect = Rect()
+    private val headRect = Rect()
+    private val electRect = Rect()
+    private var start = 0
+    private var stop = 0
 
     init {
-        mPaint.style = Paint.Style.FILL
+        paint.style = Paint.Style.FILL
         updatePaint()
     }
 
@@ -52,14 +52,14 @@ class BatteryDrawable : Drawable() {
         val turn1 = width * 6 / 7
         val turn2 = height / 3
         val secBottom = height - strokeWidth
-        mStart = strokeWidth
-        mStop = turn1 - strokeWidth
+        start = strokeWidth
+        stop = turn1 - strokeWidth
 
-        mTopRect.set(0, 0, turn1, strokeWidth)
-        mBottomRect.set(0, secBottom, turn1, height)
-        mRightRect.set(turn1 - strokeWidth, strokeWidth, turn1, secBottom)
-        mHeadRect.set(turn1, turn2, width, height - turn2)
-        mElectRect.set(0, strokeWidth, mStop, secBottom)
+        topRect.set(0, 0, turn1, strokeWidth)
+        bottomRect.set(0, secBottom, turn1, height)
+        rightRect.set(turn1 - strokeWidth, strokeWidth, turn1, secBottom)
+        headRect.set(turn1, turn2, width, height - turn2)
+        electRect.set(0, strokeWidth, stop, secBottom)
     }
 
     /**
@@ -74,74 +74,74 @@ class BatteryDrawable : Drawable() {
      * |------------------------------|
      */
     override fun draw(canvas: Canvas) {
-        if (mElect == -1) {
+        if (elect == -1) {
             return
         }
 
-        mElectRect.right = MathUtils.lerp(mStart, mStop, mElect / 100.0f)
+        electRect.right = MathUtils.lerp(start, stop, elect / 100.0f)
 
-        canvas.drawRect(mTopRect, mPaint)
-        canvas.drawRect(mBottomRect, mPaint)
-        canvas.drawRect(mRightRect, mPaint)
-        canvas.drawRect(mHeadRect, mPaint)
-        canvas.drawRect(mElectRect, mPaint)
+        canvas.drawRect(topRect, paint)
+        canvas.drawRect(bottomRect, paint)
+        canvas.drawRect(rightRect, paint)
+        canvas.drawRect(headRect, paint)
+        canvas.drawRect(electRect, paint)
     }
 
-    private fun isWarn(): Boolean = mElect <= WARN_LIMIT
+    private fun isWarn(): Boolean = elect <= WARN_LIMIT
 
     fun setColor(color: Int) {
-        if (mColor == color) {
+        if (this.color == color) {
             return
         }
 
-        mColor = color
+        this.color = color
         if (!isWarn()) {
-            mPaint.color = mColor
+            paint.color = color
             invalidateSelf()
         }
     }
 
     fun setWarningColor(color: Int) {
-        if (mWarningColor == color) {
+        if (warningColor == color) {
             return
         }
 
-        mWarningColor = color
+        warningColor = color
         if (isWarn()) {
-            mPaint.color = mWarningColor
+            paint.color = warningColor
             invalidateSelf()
         }
     }
 
     fun setElect(elect: Int) {
-        if (mElect == elect) {
+        if (this.elect == elect) {
             return
         }
 
-        mElect = elect
+        this.elect = elect
         updatePaint()
     }
 
     fun setElect(elect: Int, warn: Boolean) {
-        if (mElect == elect) {
+        if (this.elect == elect) {
             return
         }
 
-        mElect = elect
+        this.elect = elect
         updatePaint(warn)
     }
 
     private fun updatePaint(warn: Boolean = isWarn()) {
-        mPaint.color = if (warn) mWarningColor else mColor
+        paint.color = if (warn) warningColor else color
         invalidateSelf()
     }
 
     override fun setAlpha(alpha: Int) {
-        mPaint.alpha = alpha
+        paint.alpha = alpha
     }
 
     override fun setColorFilter(cf: ColorFilter?) {
-        mPaint.colorFilter = cf
+        paint.colorFilter = cf
     }
 
     @Deprecated("Deprecated in Java")

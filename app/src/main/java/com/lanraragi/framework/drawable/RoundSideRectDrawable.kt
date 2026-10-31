@@ -27,19 +27,18 @@ import android.graphics.drawable.Drawable
 
 class RoundSideRectDrawable(color: Int) : Drawable() {
 
-    private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG)
-    private val mPath = Path()
-    private val mTempRectF = RectF()
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG)
+    private val path = Path()
+    private val tempRectF = RectF()
 
     init {
-        mPaint.color = color
+        paint.color = color
     }
 
     override fun onBoundsChange(bounds: Rect) {
         val width = bounds.width()
         val height = bounds.height()
-        val rectF = mTempRectF
-        val path = mPath
+        val rectF = tempRectF
 
         path.reset()
         if (width > height) {
@@ -66,15 +65,15 @@ class RoundSideRectDrawable(color: Int) : Drawable() {
     }
 
     override fun draw(canvas: Canvas) {
-        canvas.drawPath(mPath, mPaint)
+        canvas.drawPath(path, paint)
     }
 
     override fun setAlpha(alpha: Int) {
-        mPaint.alpha = alpha
+        paint.alpha = alpha
     }
 
     override fun setColorFilter(colorFilter: ColorFilter?) {
-        mPaint.colorFilter = colorFilter
+        paint.colorFilter = colorFilter
     }
 
     @Deprecated("Deprecated in Java")

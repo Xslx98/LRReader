@@ -30,65 +30,62 @@ import com.lanraragi.reader.util.MathUtils
 
 class AddDeleteDrawable(context: Context, color: Int) : Drawable() {
 
-    private val mPaint = Paint()
-    private val mPath = Path()
+    private val paint = Paint()
+    private val path = Path()
 
-    private val mSize: Int
-
-    private var mProgress = 0f
+    private val size: Int
 
 
     init {
         val resources = context.resources
 
-        mSize = resources.getDimensionPixelSize(R.dimen.add_size)
+        size = resources.getDimensionPixelSize(R.dimen.add_size)
         val barThickness = Math.round(resources.getDimension(R.dimen.add_thickness)).toFloat()
 
-        mPaint.color = color
-        mPaint.style = Paint.Style.STROKE
-        mPaint.strokeJoin = Paint.Join.MITER
-        mPaint.strokeCap = Paint.Cap.BUTT
-        mPaint.strokeWidth = barThickness
+        paint.color = color
+        paint.style = Paint.Style.STROKE
+        paint.strokeJoin = Paint.Join.MITER
+        paint.strokeCap = Paint.Cap.BUTT
+        paint.strokeWidth = barThickness
 
-        val halfSize = (mSize / 2).toFloat()
-        mPath.moveTo(0f, -halfSize)
-        mPath.lineTo(0f, halfSize)
-        mPath.moveTo(-halfSize, 0f)
-        mPath.lineTo(halfSize, 0f)
+        val halfSize = (size / 2).toFloat()
+        path.moveTo(0f, -halfSize)
+        path.lineTo(0f, halfSize)
+        path.moveTo(-halfSize, 0f)
+        path.lineTo(halfSize, 0f)
     }
 
     override fun draw(canvas: Canvas) {
         val bounds = bounds
-        val canvasRotate = MathUtils.lerp(0f, 135f, mProgress)
+        val canvasRotate = MathUtils.lerp(0f, 135f, progress)
 
         canvas.save()
         canvas.translate(bounds.centerX().toFloat(), bounds.centerY().toFloat())
         canvas.rotate(canvasRotate)
-        canvas.drawPath(mPath, mPaint)
+        canvas.drawPath(path, paint)
         canvas.restore()
     }
 
     fun setColor(color: Int) {
-        mPaint.color = color
+        paint.color = color
         invalidateSelf()
     }
 
     override fun setAlpha(alpha: Int) {
-        mPaint.alpha = alpha
+        paint.alpha = alpha
     }
 
     override fun setColorFilter(cf: ColorFilter?) {
-        mPaint.colorFilter = cf
+        paint.colorFilter = cf
     }
 
-    override fun getIntrinsicHeight(): Int = mSize * 6 / 5
+    override fun getIntrinsicHeight(): Int = size * 6 / 5
 
-    override fun getIntrinsicWidth(): Int = mSize * 6 / 5
+    override fun getIntrinsicWidth(): Int = size * 6 / 5
 
-    var progress: Float
-        get() = mProgress
-        set(progress) {
-            mProgress = progress
+    var progress = 0f
+        set(value) {
+            field = value
             invalidateSelf()
         }
 
@@ -100,9 +97,9 @@ class AddDeleteDrawable(context: Context, color: Int) : Drawable() {
         setShape(true, duration)
     }
 
-    fun setShape(delete: Boolean, duration: Long) {
+    private fun setShape(delete: Boolean, duration: Long) {
         val endProgress = if (delete) 1f else 0f
-        if (mProgress == endProgress) return
+        if (progress == endProgress) return
         if (duration <= 0) {
             progress = endProgress
         } else {
