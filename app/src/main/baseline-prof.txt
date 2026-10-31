@@ -6736,8 +6736,8 @@ HSPLcom/lanraragi/framework/drawable/AddDeleteDrawable;->draw(Landroid/graphics/
 HSPLcom/lanraragi/framework/drawable/AddDeleteDrawable;->getIntrinsicHeight()I
 HSPLcom/lanraragi/framework/drawable/AddDeleteDrawable;->getIntrinsicWidth()I
 HSPLcom/lanraragi/framework/drawable/AddDeleteDrawable;->getOpacity()I
-Lcom/lanraragi/framework/drawable/AddDeleteDrawable$1;
-HSPLcom/lanraragi/framework/drawable/AddDeleteDrawable$1;-><init>(Ljava/lang/String;)V
+Lcom/lanraragi/framework/drawable/AddDeleteDrawable$Companion$PROGRESS$1;
+HSPLcom/lanraragi/framework/drawable/AddDeleteDrawable$Companion$PROGRESS$1;-><init>(Ljava/lang/String;)V
 PLcom/lanraragi/framework/drawable/BatteryDrawable;-><clinit>()V
 PLcom/lanraragi/framework/drawable/BatteryDrawable;-><init>()V
 PLcom/lanraragi/framework/drawable/BatteryDrawable;->draw(Landroid/graphics/Canvas;)V
@@ -6755,8 +6755,8 @@ HSPLcom/lanraragi/framework/drawable/DrawerArrowDrawable;->draw(Landroid/graphic
 HSPLcom/lanraragi/framework/drawable/DrawerArrowDrawable;->getIntrinsicHeight()I
 HSPLcom/lanraragi/framework/drawable/DrawerArrowDrawable;->getIntrinsicWidth()I
 HSPLcom/lanraragi/framework/drawable/DrawerArrowDrawable;->getOpacity()I
-Lcom/lanraragi/framework/drawable/DrawerArrowDrawable$1;
-HSPLcom/lanraragi/framework/drawable/DrawerArrowDrawable$1;-><init>(Ljava/lang/String;)V
+Lcom/lanraragi/framework/drawable/DrawerArrowDrawable$Companion$PROGRESS$1;
+HSPLcom/lanraragi/framework/drawable/DrawerArrowDrawable$Companion$PROGRESS$1;-><init>(Ljava/lang/String;)V
 PLcom/lanraragi/framework/drawable/RoundSideRectDrawable;-><init>(I)V
 PLcom/lanraragi/framework/drawable/RoundSideRectDrawable;->draw(Landroid/graphics/Canvas;)V
 PLcom/lanraragi/framework/drawable/RoundSideRectDrawable;->getOpacity()I
