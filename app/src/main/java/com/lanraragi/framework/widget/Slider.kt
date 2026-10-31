@@ -99,7 +99,7 @@ class Slider : View {
         init(context, attrs)
     }
 
-    @Suppress("DEPRECATION") // AbsoluteLayout hosts the bubble inside the popup; kept as is
+    @Suppress("DEPRECATION") // AbsoluteLayout pins the bubble at x = 0 in any layout direction; it moves by translation
     private fun init(context: Context, attrs: AttributeSet?) {
         paint = Paint(Paint.ANTI_ALIAS_FLAG)
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -171,7 +171,7 @@ class Slider : View {
         charHeight = fm.bottom - fm.top
     }
 
-    @Suppress("DEPRECATION") // the bubble's AbsoluteLayout.LayoutParams
+    @Suppress("DEPRECATION") // the bubble's AbsoluteLayout.LayoutParams, see init
     private fun updateBubbleSize() {
         val oldWidth = bubbleWidth
         val oldHeight = bubbleHeight
@@ -430,7 +430,7 @@ class Slider : View {
 
     override fun performClick(): Boolean = super.performClick()
 
-    @SuppressLint("ViewConstructor")
+    @SuppressLint("ViewConstructor") // only Slider creates it, in code; never inflated
     private class BubbleView(context: Context, private val textPaint: Paint) : AppCompatImageView(context) {
 
         private val bubbleDrawable: Drawable
