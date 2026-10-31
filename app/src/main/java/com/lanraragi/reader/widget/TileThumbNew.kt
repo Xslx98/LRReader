@@ -37,7 +37,7 @@ class TileThumbNew @JvmOverloads constructor(
         } else {
             DEFAULT_ASPECT
         }
-        setAspect(aspect)
+        this.aspect = aspect
     }
 
     companion object {
