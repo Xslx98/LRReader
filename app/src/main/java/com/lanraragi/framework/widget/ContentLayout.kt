@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("ComplexCondition", "EmptyFunctionBlock", "UnusedPrivateMember") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.widget
 
 import android.content.Context
@@ -233,15 +231,16 @@ class ContentLayout : FrameLayout {
 
         private val mOnScrollListener = object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                if (!mRefreshLayout.isAnyRefreshing && mRefreshLayout.isAlmostBottom() &&
-                    (mEndPage < mPages || mNextPage == -1 || mPages == -1)
-                ) {
+                if (!mRefreshLayout.isAnyRefreshing && mRefreshLayout.isAlmostBottom() && hasMorePages()) {
                     // Get next page
                     mRefreshLayout.setFooterRefreshing(true)
                     mOnRefreshListener.onFooterRefresh()
                 }
             }
         }
+
+        /** Another page may follow the loaded ones (or the page count is unknown). */
+        private fun hasMorePages(): Boolean = mEndPage < mPages || mNextPage == -1 || mPages == -1
 
         private val mOnRefreshListener = object : ListRefreshLayout.OnRefreshListener {
             override fun onHeaderRefresh() {
@@ -361,6 +360,7 @@ class ContentLayout : FrameLayout {
         }
 
         override fun onShowView(hiddenView: View, shownView: View) {
+            // Optional hook for subclasses.
         }
 
         val shownViewIndex: Int
@@ -932,10 +932,6 @@ class ContentLayout : FrameLayout {
             }
         }
 
-        private fun getPageEnd(page: Int): Int {
-            return mPageDivider.get(page - mStartPage)
-        }
-
         private fun getPageForPosition(position: Int): Int {
             if (position < 0) {
                 return -1
@@ -1054,7 +1050,7 @@ class ContentLayout : FrameLayout {
                 var newData: ArrayList<E>? = null
                 val app = requireContext().applicationContext as LRReaderApplication
                 if (mSavedDataId != IntIdGenerator.INVALID_ID) {
-                    @Suppress("UNCHECKED_CAST")
+                    @Suppress("UNCHECKED_CAST") // saveInstanceState stored this helper's ArrayList<E>
                     newData = app.removeGlobalStuff(mSavedDataId) as ArrayList<E>?
                     mSavedDataId = IntIdGenerator.INVALID_ID
                     if (newData != null) {
