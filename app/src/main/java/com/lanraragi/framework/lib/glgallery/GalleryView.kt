@@ -382,18 +382,12 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     private fun setPagerIntervalInternal(interval: Int) {
         pagerInterval = interval
-        val pagerLayoutManager = this.pagerLayoutManager
-        if (pagerLayoutManager != null) {
-            pagerLayoutManager.setInterval(interval)
-        }
+        pagerLayoutManager?.setInterval(interval)
     }
 
     private fun setScrollIntervalInternal(interval: Int) {
         scrollInterval = interval
-        val scrollLayoutManager = this.scrollLayoutManager
-        if (scrollLayoutManager != null) {
-            scrollLayoutManager.setInterval(interval)
-        }
+        scrollLayoutManager?.setInterval(interval)
     }
 
     override fun onAttachToRoot(root: GLRoot) {
@@ -617,10 +611,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     fun onDataChanged() {
         try {
             GalleryUtils.assertInRenderThread()
-            val layoutManager = this.layoutManager
-            if (layoutManager != null) {
-                layoutManager.onDataChanged()
-            }
+            layoutManager?.onDataChanged()
         } catch (e: AssertionError) {
             Log.e(this.javaClass.name, e.message, e)
         }
@@ -656,17 +647,11 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
         val page = findPageUnder(x, y)
         if (page != null && isErrorTextTap(page, x, y)) {
-            if (listener != null) {
-                listener.onTapErrorText(page.index)
-            }
+            listener?.onTapErrorText(page.index)
         } else if (sliderArea.contains(x.toInt(), y.toInt())) {
-            if (listener != null) {
-                listener.onTapSliderArea()
-            }
+            listener?.onTapSliderArea()
         } else if (menuArea.contains(x.toInt(), y.toInt())) {
-            if (listener != null) {
-                listener.onTapMenuArea()
-            }
+            listener?.onTapMenuArea()
         } else if (leftArea.contains(x.toInt(), y.toInt())) {
             layoutManager.onPageLeft()
         } else if (rightArea.contains(x.toInt(), y.toInt())) {
@@ -679,10 +664,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
             return
         }
 
-        val layoutManager = this.layoutManager
-        if (layoutManager != null) {
-            layoutManager.onDoubleTapConfirmed(x, y)
-        }
+        layoutManager?.onDoubleTapConfirmed(x, y)
     }
 
     private fun onLongPressInternal(x: Float, y: Float) {
@@ -697,9 +679,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
             return
         }
 
-        if (listener != null) {
-            listener.onLongPressPage(index)
-        }
+        listener?.onLongPressPage(index)
     }
 
     private fun onScrollInternal(dx: Float, dy: Float, totalX: Float, totalY: Float, x: Float, y: Float) {
@@ -708,17 +688,11 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         }
         scrolling = true
 
-        val layoutManager = this.layoutManager
-        if (layoutManager != null) {
-            layoutManager.onScroll(dx, dy, totalX, totalY, x, y)
-        }
+        layoutManager?.onScroll(dx, dy, totalX, totalY, x, y)
     }
 
     private fun onFlingInternal(velocityX: Float, velocityY: Float) {
-        val layoutManager = this.layoutManager
-        if (layoutManager != null) {
-            layoutManager.onFling(velocityX, velocityY)
-        }
+        layoutManager?.onFling(velocityX, velocityY)
     }
 
     private fun onScaleBeginInternal(focusX: Float, focusY: Float) {
@@ -741,17 +715,11 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         scaling = false
         scrolling = false
         firstScroll = true
-        val layoutManager = this.layoutManager
-        if (layoutManager != null) {
-            layoutManager.onDown()
-        }
+        layoutManager?.onDown()
     }
 
     private fun onUpInternal() {
-        val layoutManager = this.layoutManager
-        if (layoutManager != null) {
-            layoutManager.onUp()
-        }
+        layoutManager?.onUp()
     }
 
     private fun onPointerDownInternal() {
@@ -833,33 +801,21 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun pageLeftInternal() {
-        val layoutManager = this.layoutManager
-        if (layoutManager != null) {
-            layoutManager.onPageLeft()
-        }
+        layoutManager?.onPageLeft()
     }
 
     private fun pageRightInternal() {
-        val layoutManager = this.layoutManager
-        if (layoutManager != null) {
-            layoutManager.onPageRight()
-        }
+        layoutManager?.onPageRight()
     }
 
     private fun setScaleModeInternal(scaleMode: Int) {
         this.scaleMode = scaleMode
-        val pagerLayoutManager = this.pagerLayoutManager
-        if (pagerLayoutManager != null) {
-            pagerLayoutManager.setScaleMode(scaleMode)
-        }
+        pagerLayoutManager?.setScaleMode(scaleMode)
     }
 
     private fun setStartPositionInternal(startPosition: Int) {
         this.startPosition = startPosition
-        val pagerLayoutManager = this.pagerLayoutManager
-        if (pagerLayoutManager != null) {
-            pagerLayoutManager.setStartPosition(startPosition)
-        }
+        pagerLayoutManager?.setStartPosition(startPosition)
     }
 
     @RenderThread
@@ -879,10 +835,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
         // Disable request layout
         requestFillEnabled = false
-        val layoutManager = this.layoutManager
-        if (layoutManager != null) {
-            layoutManager.onFill()
-        }
+        layoutManager?.onFill()
         requestFillEnabled = true
         fillRequested = false
     }
@@ -1029,10 +982,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
             return
         }
         pageTransforms = Collections.unmodifiableList(ArrayList(transformScratch))
-        val listener = this.listener
-        if (listener != null) {
-            listener.onPageTransformsChanged()
-        }
+        listener?.onPageTransformsChanged()
     }
 
     @RenderThread
