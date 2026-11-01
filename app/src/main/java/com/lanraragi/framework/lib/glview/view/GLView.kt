@@ -63,8 +63,7 @@ open class GLView : TouchOwner {
     /**
      * Position in parent, just like left, top, right, bottom in [android.view.View]
      */
-    @JvmField
-    protected val mBounds = Rect()
+    private val boundsRect = Rect()
 
     /**
      * Position in root
@@ -78,8 +77,7 @@ open class GLView : TouchOwner {
 
     private var root: GLRoot? = null
 
-    @JvmField
-    protected var mParent: GLView? = null
+    private var parent: GLView? = null
 
     private var components: ArrayList<GLView>? = null
     private var motionTarget: GLView? = null
@@ -88,11 +86,11 @@ open class GLView : TouchOwner {
 
     private var viewFlags = 0
 
-    @JvmField
-    protected var mMeasuredWidth = 0
+    var measuredWidth = 0
+        private set
 
-    @JvmField
-    protected var mMeasuredHeight = 0
+    var measuredHeight = 0
+        private set
 
     private var lastWidthSpec = -1
     private var lastHeightSpec = -1
@@ -136,7 +134,7 @@ open class GLView : TouchOwner {
         set(params) {
             var validParams = params
             if (validParams == null) {
-                val parent = mParent ?: throw NullPointerException("Layout parameters cannot be null")
+                val parent = this.parent ?: throw NullPointerException("Layout parameters cannot be null")
                 validParams = parent.generateDefaultLayoutParams()
             }
             field = validParams
@@ -208,16 +206,14 @@ open class GLView : TouchOwner {
         }
 
     // This should only be called on the content pane (the topmost GLView).
-    @JvmName("attachToRoot")
     internal fun attachToRoot(root: GLRoot) {
-        AssertUtils.assertTrue(mParent == null && this.root == null)
+        AssertUtils.assertTrue(parent == null && this.root == null)
         onAttachToRoot(root)
     }
 
     // This should only be called on the content pane (the topmost GLView).
-    @JvmName("detachFromRoot")
     internal fun detachFromRoot() {
-        AssertUtils.assertTrue(mParent == null && root != null)
+        AssertUtils.assertTrue(parent == null && root != null)
         onDetachFromRoot()
     }
 
@@ -247,7 +243,7 @@ open class GLView : TouchOwner {
 
     fun addComponent(component: GLView, index: Int, params: LayoutParams?) {
         // Make sure the component doesn't have a parent currently.
-        check(component.mParent == null) {
+        check(component.parent == null) {
             "Component $this being added, but it already has a parent"
         }
 
@@ -271,7 +267,7 @@ open class GLView : TouchOwner {
         }
 
         components.add(validIndex, component)
-        component.mParent = this
+        component.parent = this
         component.layoutParams = validParams
 
         // If this is added after we have a root, tell the component.
@@ -302,10 +298,10 @@ open class GLView : TouchOwner {
             cancelEvent.recycle()
         }
         component.onDetachFromRoot()
-        component.mParent = null
+        component.parent = null
     }
 
-    fun bounds(): Rect = mBounds
+    fun bounds(): Rect = boundsRect
 
     override fun setHotspot(x: Float, y: Float) {
         hotspotX = x
@@ -340,10 +336,10 @@ open class GLView : TouchOwner {
     }
 
     override val width: Int
-        get() = mBounds.right - mBounds.left
+        get() = boundsRect.right - boundsRect.left
 
     override val height: Int
-        get() = mBounds.bottom - mBounds.top
+        get() = boundsRect.bottom - boundsRect.top
 
     /**
      * Offset this GLView's vertical location by the specified number of pixels.
@@ -352,7 +348,7 @@ open class GLView : TouchOwner {
      */
     fun offsetTopAndBottom(offset: Int) {
         if (offset != 0) {
-            mBounds.offset(0, offset)
+            boundsRect.offset(0, offset)
             dispatchNotifyPositionInRoot()
             invalidate()
         }
@@ -372,7 +368,7 @@ open class GLView : TouchOwner {
         viewFlags = viewFlags or FLAG_LAYOUT_REQUESTED
         lastWidthSpec = -1
         lastHeightSpec = -1
-        val parent = mParent
+        val parent = this.parent
         if (parent != null) {
             parent.requestLayout()
         } else {
@@ -417,8 +413,8 @@ open class GLView : TouchOwner {
             return
         }
 
-        val xOffset = component.mBounds.left
-        val yOffset = component.mBounds.top
+        val xOffset = component.boundsRect.left
+        val yOffset = component.boundsRect.top
 
         canvas.translate(xOffset.toFloat(), yOffset.toFloat())
 
@@ -453,7 +449,7 @@ open class GLView : TouchOwner {
         component: GLView,
         checkBounds: Boolean
     ): Boolean {
-        val rect = component.mBounds
+        val rect = component.boundsRect
         val left = rect.left
         val top = rect.top
         if (!checkBounds || rect.contains(x, y)) {
@@ -607,15 +603,15 @@ open class GLView : TouchOwner {
         val position = positionInRoot
         val oldX = position[0]
         val oldY = position[1]
-        val parent = mParent
+        val parent = this.parent
         if (parent == null) {
             position[0] = 0
             position[1] = 0
         } else {
             parent.getPositionInRoot(position)
             // Apply offset in parent
-            position[0] += mBounds.left
-            position[1] += mBounds.top
+            position[0] += boundsRect.left
+            position[1] += boundsRect.top
         }
         val x = position[0]
         val y = position[1]
@@ -628,7 +624,7 @@ open class GLView : TouchOwner {
     }
 
     private fun setBounds(left: Int, top: Int, right: Int, bottom: Int): Boolean {
-        val bounds = mBounds
+        val bounds = boundsRect
         val oldW = bounds.right - bounds.left
         val oldH = bounds.bottom - bounds.top
         val newW = right - left
@@ -713,15 +709,10 @@ open class GLView : TouchOwner {
 
     protected fun setMeasuredSize(width: Int, height: Int) {
         viewFlags = viewFlags or FLAG_SET_MEASURED_SIZE
-        mMeasuredWidth = width
-        mMeasuredHeight = height
+        measuredWidth = width
+        measuredHeight = height
     }
 
-    val measuredWidth: Int
-        get() = mMeasuredWidth
-
-    val measuredHeight: Int
-        get() = mMeasuredHeight
 
     protected open fun onLayout(
         changeSize: Boolean,
@@ -750,10 +741,10 @@ open class GLView : TouchOwner {
         var view: GLView? = descendant
         while (view !== this) {
             if (view == null) return false
-            val bounds = view.mBounds
+            val bounds = view.boundsRect
             xOffset += bounds.left
             yOffset += bounds.top
-            view = view.mParent
+            view = view.parent
         }
         out.set(
             xOffset, yOffset, xOffset + descendant.width,
@@ -976,7 +967,6 @@ open class GLView : TouchOwner {
          * [Gravity.POSITION_FINISH]
          * @return the begin size
          */
-        @JvmStatic
         fun getDefaultBegin(
             size: Int,
             specSize: Int,
@@ -1007,7 +997,6 @@ open class GLView : TouchOwner {
          * @param measureSpec Constraints imposed by the parent
          * @return The size this view should be.
          */
-        @JvmStatic
         fun getDefaultSize(size: Int, measureSpec: Int): Int {
             var result = size
             val specMode = MeasureSpec.getMode(measureSpec)
@@ -1021,7 +1010,6 @@ open class GLView : TouchOwner {
             return result
         }
 
-        @JvmStatic
         fun getComponentSpec(spec: Int, childSize: Int): Int {
             val specMode = MeasureSpec.getMode(spec)
             val specSize = MeasureSpec.getSize(spec)
@@ -1084,7 +1072,6 @@ open class GLView : TouchOwner {
             return MeasureSpec.makeMeasureSpec(resultSize, resultMode)
         }
 
-        @JvmStatic
         fun measureComponent(component: GLView, widthSpec: Int, heightSpec: Int) {
             // addComponent always gives a component its layout params.
             val lp = checkNotNull(component.layoutParams)
@@ -1093,7 +1080,6 @@ open class GLView : TouchOwner {
             component.measure(componentWidthSpec, componentHeightSpec)
         }
 
-        @JvmStatic
         fun measureAllComponents(parent: GLView, widthSpec: Int, heightSpec: Int) {
             for (i in 0 until parent.componentCount) {
                 val component = parent.getComponent(i)
