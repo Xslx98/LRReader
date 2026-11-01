@@ -25,7 +25,7 @@ import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.LRRCategoriesScene
 import com.lanraragi.reader.ui.scene.ServerConfigScene
 import com.lanraragi.reader.ui.scene.ServerListScene
-import com.lanraragi.reader.ui.scene.TankoubonsScene
+import com.lanraragi.reader.ui.scene.gallery.list.GalleryTankListScene
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.ui.scene.history.HistoryScene
@@ -178,7 +178,7 @@ class MainNavDrawer(
                 )
             }
             R.id.nav_favourite -> activity.startScene(Announcer(LRRCategoriesScene::class.java))
-            R.id.nav_tankoubons -> activity.startScene(Announcer(TankoubonsScene::class.java))
+            R.id.nav_tankoubons -> activity.startScene(Announcer(GalleryTankListScene::class.java))
             R.id.nav_history -> activity.startScene(Announcer(HistoryScene::class.java))
             R.id.nav_downloads -> activity.startScene(Announcer(DownloadsScene::class.java))
             R.id.nav_stats -> activity.startScene(Announcer(ReadingStatsScene::class.java))

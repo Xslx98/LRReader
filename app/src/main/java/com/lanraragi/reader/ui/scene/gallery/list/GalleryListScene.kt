@@ -23,6 +23,7 @@ import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Point
+import android.graphics.drawable.Drawable
 import androidx.core.graphics.drawable.toDrawable
 import android.os.Bundle
 import android.text.TextUtils
@@ -35,7 +36,16 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
+import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.tankoubon.TankBrowse
+import com.lanraragi.reader.ui.scene.TankDialogs
+import com.lanraragi.reader.widget.drawer.DrawerLayout
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.util.isLightTheme
@@ -69,7 +79,7 @@ import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.client.api.LRRAuthManager
 
-class GalleryListScene : BaseScene(),
+open class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
     View.OnClickListener {
 
@@ -103,6 +113,9 @@ class GalleryListScene : BaseScene(),
     internal var rightDrawable: AddDeleteDrawable? = null
     internal var searchBarMover: SearchBarMover? = null
     internal var actionFabDrawable: AddDeleteDrawable? = null
+
+    /** Tank mode's normal-state right icon (sort); null outside tank mode. */
+    internal var tankSortDrawable: Drawable? = null
 
     private var mHideActionFabSlop = 0
 
@@ -193,8 +206,71 @@ class GalleryListScene : BaseScene(),
         }
     }
 
+    /**
+     * The list shows tankoubons only ([GalleryTankListScene], the drawer's
+     * Tankoubons entry; docs/plan-2.4.0-tank-ux.md PR-B): the whole tank list
+     * filtered and sorted locally, no quick-search drawer, a create-only FAB.
+     */
+    internal open val isTankMode: Boolean get() = false
+
     override fun getNavCheckedItem(): Int {
         return mNavCheckedId
+    }
+
+    @SuppressLint("RtlHardcoded")
+    override fun setDrawerLockMode(lockMode: Int, edgeGravity: Int) {
+        // Tank mode has no quick-search drawer: keep the right edge shut whatever
+        // the search state machine asks for.
+        val mode = if (isTankMode && edgeGravity == Gravity.RIGHT) DrawerLayout.LOCK_MODE_LOCKED_CLOSED else lockMode
+        super.setDrawerLockMode(mode, edgeGravity)
+    }
+
+    /** Tank mode's sort choice (search bar right icon). */
+    internal fun showTankSortMenu(anchor: View) {
+        val current = AppearanceSettings.getTankListSort()
+        val popup = PopupMenu(anchor.context, anchor, Gravity.END)
+        for ((i, sort) in TankBrowse.Sort.entries.withIndex()) {
+            popup.menu.add(0, i, i, tankSortLabel(sort)).apply {
+                isCheckable = true
+                isChecked = sort == current
+            }
+        }
+        popup.menu.setGroupCheckable(0, true, true)
+        popup.setOnMenuItemClickListener { item ->
+            val picked = TankBrowse.Sort.entries[item.itemId]
+            if (picked != current) {
+                AppearanceSettings.putTankListSort(picked)
+                mHelper?.refresh()
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun tankSortLabel(sort: TankBrowse.Sort): Int = when (sort) {
+        TankBrowse.Sort.NAME -> R.string.tank_sort_name
+        TankBrowse.Sort.MEMBERS -> R.string.tank_sort_members
+        TankBrowse.Sort.RECENT_READ -> R.string.tank_sort_recent_read
+    }
+
+    /** Tank mode's FAB: name dialog, create on the active server, reload. */
+    internal fun showCreateTankDialog() {
+        val context = ehContext ?: return
+        TankDialogs.showNameInputDialog(context, R.string.tank_create, "") { name ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
+                    // Main-safe: the API call switches to IO itself.
+                    TankListService(ServiceRegistry.coroutineModule.ioScope).create(serverUrl, name)
+                    showTip(R.string.tank_op_done, LENGTH_SHORT)
+                    mHelper?.refresh()
+                } catch (ce: CancellationException) {
+                    throw ce
+                } catch (e: Exception) {
+                    showTip(friendlyError(context, e), LENGTH_SHORT)
+                }
+            }
+        }
     }
 
     private fun handleArgs(args: Bundle?) {
@@ -316,13 +392,19 @@ class GalleryListScene : BaseScene(),
             searchBar.cursorToEnd()
         }
 
-        var title = GallerySearchHelper.getSuitableTitleForUrlBuilder(resources, builder, true)
+        var title = if (isTankMode) {
+            keyword?.takeIf { it.isNotEmpty() } ?: resources.getString(R.string.tankoubons_title)
+        } else {
+            GallerySearchHelper.getSuitableTitleForUrlBuilder(resources, builder, true)
+        }
         if (title == null) {
             title = resources.getString(R.string.search)
         }
         if (::searchBar.isInitialized) searchBar.setTitle(title)
 
-        val checkedItemId = if (ListUrlBuilder.MODE_NORMAL == builder.mode &&
+        val checkedItemId = if (isTankMode) {
+            R.id.nav_tankoubons
+        } else if (ListUrlBuilder.MODE_NORMAL == builder.mode &&
             LRRUtils.NONE == category &&
             builder.categoryId == null &&
             TextUtils.isEmpty(keyword)
@@ -495,6 +577,7 @@ class GalleryListScene : BaseScene(),
         leftDrawable = null
         rightDrawable = null
         actionFabDrawable = null
+        tankSortDrawable = null
         multiSelectHelper = null
         batchOpsHelper = null
         uploadHelper = null
@@ -531,6 +614,7 @@ class GalleryListScene : BaseScene(),
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        if (isTankMode) return null
         return mDrawerHelper?.onCreateDrawerView(inflater, container, savedInstanceState)
     }
 

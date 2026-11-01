@@ -13,6 +13,10 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.client.api.isTankoubonId
+import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.widget.GalleryInfoContentHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -77,7 +81,20 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
          * "continue to the next archive" must re-issue this query, not a default.
          */
         fun onSearchLoaded(params: GalleryListViewModel.SearchParams)
+
+        /** The list shows tanks only (docs/plan-2.4.0-tank-ux.md, PR-B): [loadTanks] replaces `/api/search`. */
+        fun isTankMode(): Boolean = false
+
+        fun getTankSort(): TankBrowse.Sort = TankBrowse.Sort.NAME
     }
+
+    private val tankService by lazy { TankListService(ServiceRegistry.coroutineModule.ioScope) }
+
+    /**
+     * tankId → stand-in cover for tanks whose generated cover is missing,
+     * from the last probe. Applied to later loads at once; Main-thread only.
+     */
+    private var tankCoverFallbacks: Map<String, TankListService.CoverFallback> = emptyMap()
 
     override fun getPageData(taskId: Int, type: Int, page: Int) {
         // Any load that replaces or prepends rows invalidates adapter positions,
@@ -94,6 +111,11 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
             // Signal failure instead of returning silently, otherwise the refresh
             // spinner spins forever when no server profile is configured.
             onGetFailure(Exception(callback.getString(R.string.lrr_no_servers)), taskId)
+            return
+        }
+
+        if (callback.isTankMode()) {
+            loadTanks(taskId, serverUrl)
             return
         }
 
@@ -164,6 +186,64 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
                 withContext(Dispatchers.Main) {
                     onGetFailure(e, taskId)
                 }
+            }
+        }
+    }
+
+    /**
+     * Tanks-only load: the whole tank list in one page (the server can neither
+     * search nor sort tanks), filtered and ordered locally by the search bar's
+     * keyword and the chosen sort. The missing-cover probe runs after the rows
+     * land and patches the affected rows in place.
+     */
+    private fun loadTanks(taskId: Int, serverUrl: String) {
+        val profileId = LRRAuthManager.getActiveProfileId()
+        val query = callback.getUrlBuilder()?.keyword.orEmpty()
+        val sort = callback.getTankSort()
+        replaceLoad {
+            try {
+                val tanks = tankService.loadAll(serverUrl, profileId)
+                val lastRead = if (sort == TankBrowse.Sort.RECENT_READ) tankReadTimes() else emptyMap()
+                val ordered = TankBrowse.order(tanks, query, sort, lastRead)
+                withContext(Dispatchers.Main) {
+                    if (!isCurrentTask(taskId)) return@withContext
+                    val rows = ordered.map {
+                        TankBrowse.toArchive(
+                            it, profileId, serverUrl, tankCoverFallbacks[it.id]?.thumbnailUrl, lastRead[it.id] ?: 0L,
+                        )
+                    }
+                    emptyString = callback.getString(R.string.tankoubons_empty)
+                    onGetPageData(taskId, 1, 0, rows)
+                }
+                val fallbacks = tankService.probeCoverFallbacks(serverUrl, tanks)
+                withContext(Dispatchers.Main) { applyTankCoverFallbacks(fallbacks) }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                val shown = if (TankoubonSupportGate.markFrom(serverUrl, e)) {
+                    Exception(callback.getString(R.string.tankoubons_unsupported))
+                } else {
+                    e
+                }
+                withContext(Dispatchers.Main) { onGetFailure(shown, taskId) }
+            }
+        }
+    }
+
+    /** tankId → the local `TANK_` history row's time, for the recently-read sort. */
+    private suspend fun tankReadTimes(): Map<String, Long> =
+        ServiceRegistry.dataModule.historyRepository.getHistoryLazyList()
+            .filter { isTankoubonId(it.arcid) }
+            .associate { it.arcid to it.time }
+
+    private fun applyTankCoverFallbacks(fallbacks: Map<String, TankListService.CoverFallback>) {
+        tankCoverFallbacks = fallbacks
+        if (fallbacks.isEmpty()) return
+        val rows = data
+        for (i in rows.indices) {
+            val url = fallbacks[rows[i].arcid]?.thumbnailUrl
+            if (url != null && rows[i].thumbnailUrl != url) {
+                rows[i] = rows[i].copy(thumbnailUrl = url)
+                notifyItemRangeChanged(i, 1)
             }
         }
     }

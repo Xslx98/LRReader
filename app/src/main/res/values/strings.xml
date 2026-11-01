@@ -498,6 +498,10 @@
     <string name="tank_picker_section_all">All tankoubons</string>
     <string name="tank_picker_apply">Apply</string>
     <string name="tank_picker_empty">No matching tankoubon</string>
+    <string name="tank_sort">Sort</string>
+    <string name="tank_sort_name">By name</string>
+    <string name="tank_sort_members">By archive count</string>
+    <string name="tank_sort_recent_read">Recently read</string>
     <string name="tank_picker_meta" translatable="false">%1$s · %2$s</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 

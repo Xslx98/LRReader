@@ -430,6 +430,10 @@
     <string name="tank_picker_section_all">모든 단행본</string>
     <string name="tank_picker_apply">적용</string>
     <string name="tank_picker_empty">일치하는 단행본이 없습니다</string>
+    <string name="tank_sort">정렬</string>
+    <string name="tank_sort_name">이름순</string>
+    <string name="tank_sort_members">아카이브 수순</string>
+    <string name="tank_sort_recent_read">최근 읽은 순</string>
     <string name="batch_add_to_tankoubon">단행본</string>
 
     <!-- List multi-select batch operations -->

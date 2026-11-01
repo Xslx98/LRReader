@@ -426,6 +426,10 @@
     <string name="tank_picker_section_all">ทังโคบงทั้งหมด</string>
     <string name="tank_picker_apply">ใช้</string>
     <string name="tank_picker_empty">ไม่มีทังโคบงที่ตรงกัน</string>
+    <string name="tank_sort">เรียงลำดับ</string>
+    <string name="tank_sort_name">ตามชื่อ</string>
+    <string name="tank_sort_members">ตามจำนวนไฟล์</string>
+    <string name="tank_sort_recent_read">อ่านล่าสุด</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
     <!-- List multi-select batch operations -->

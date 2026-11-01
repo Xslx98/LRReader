@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.util.attrColor
@@ -38,15 +39,19 @@ object GalleryListChrome {
         searchBar.setRightDrawable(scene.rightDrawable)
         searchBar.setHelper(searchBarHelper)
         searchBar.setOnStateChangeListener(searchBarHelper)
-        GallerySearchHelper.setSearchBarHint(context, searchBar)
-        scene.mSearchHelper?.let { searchBar.setSuggestionProvider(it.createSuggestionProvider()) }
-        val historyStore = ProfileSearchHistoryStore(
-            scene.viewLifecycleOwner.lifecycleScope,
-            ServiceRegistry.dataModule.searchHistoryRepository,
-        )
-        scene.mHistoryStore = historyStore
-        searchBar.setHistoryStore(historyStore)
-        historyStore.refresh()
+        if (scene.isTankMode) {
+            bindTankModeSearchBar(scene, context)
+        } else {
+            GallerySearchHelper.setSearchBarHint(context, searchBar)
+            scene.mSearchHelper?.let { searchBar.setSuggestionProvider(it.createSuggestionProvider()) }
+            val historyStore = ProfileSearchHistoryStore(
+                scene.viewLifecycleOwner.lifecycleScope,
+                ServiceRegistry.dataModule.searchHistoryRepository,
+            )
+            scene.mHistoryStore = historyStore
+            searchBar.setHistoryStore(historyStore)
+            historyStore.refresh()
+        }
 
         searchLayout.setHelper(searchBarHelper)
         searchLayout.setPadding(
@@ -68,7 +73,14 @@ object GalleryListChrome {
 
         scene.searchFab.setOnClickListener(scene)
 
-        if (LRRAuthManager.getServerUrl() == null) {
+        if (scene.isTankMode) {
+            // Create-only: no filter / refresh / random / upload menu to expand.
+            for (i in fabLayout.childCount - 1 downTo 0) {
+                val child = fabLayout.getChildAt(i)
+                if (child !== fabLayout.primaryFab) fabLayout.removeView(child)
+            }
+            fabLayout.primaryFab.contentDescription = context.getString(R.string.tank_create)
+        } else if (LRRAuthManager.getServerUrl() == null) {
             val fabUpload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_upload)
             val fabUrlDownload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_url_download)
             if (fabUpload != null) fabLayout.removeView(fabUpload)
@@ -78,5 +90,22 @@ object GalleryListChrome {
         scene.searchBarMover = SearchBarMover(
             checkNotNull(searchBarHelper), searchBar, scene.recyclerView, searchLayout
         )
+    }
+
+    /**
+     * Tank mode searches the loaded tanks locally: its own hint, no search
+     * history and no server tag suggestions; the right icon sorts.
+     */
+    private fun bindTankModeSearchBar(scene: GalleryListScene, context: Context) {
+        val searchBar = scene.searchBar
+        searchBar.setEditTextHint(R.string.tank_picker_search_hint)
+        val sortIcon = ContextCompat.getDrawable(context, R.drawable.ic_sort_filter)?.mutate()?.also {
+            it.setTint(context.attrColor(R.attr.drawableColorPrimary))
+        }
+        scene.tankSortDrawable = sortIcon
+        if (sortIcon != null) {
+            searchBar.setRightDrawable(sortIcon)
+            searchBar.setRightIconContentDescription(R.string.tank_sort)
+        }
     }
 }

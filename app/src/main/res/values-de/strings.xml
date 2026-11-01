@@ -372,6 +372,10 @@
     <string name="tank_picker_section_all">Alle Tankoubons</string>
     <string name="tank_picker_apply">Übernehmen</string>
     <string name="tank_picker_empty">Kein passendes Tankoubon</string>
+    <string name="tank_sort">Sortieren</string>
+    <string name="tank_sort_name">Nach Name</string>
+    <string name="tank_sort_members">Nach Anzahl der Archive</string>
+    <string name="tank_sort_recent_read">Zuletzt gelesen</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
     <!-- List multi-select batch operations -->

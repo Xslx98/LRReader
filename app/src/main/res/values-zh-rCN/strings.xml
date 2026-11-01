@@ -422,6 +422,10 @@
     <string name="tank_picker_section_all">全部合订本</string>
     <string name="tank_picker_apply">应用</string>
     <string name="tank_picker_empty">没有匹配的合订本</string>
+    <string name="tank_sort">排序</string>
+    <string name="tank_sort_name">按名称</string>
+    <string name="tank_sort_members">按成员数</string>
+    <string name="tank_sort_recent_read">最近阅读</string>
     <string name="batch_add_to_tankoubon">合订本</string>
 
     <!-- List multi-select batch operations -->

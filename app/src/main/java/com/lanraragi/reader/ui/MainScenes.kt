@@ -13,6 +13,7 @@ import com.lanraragi.reader.ui.scene.download.DownloadLabelsScene
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
+import com.lanraragi.reader.ui.scene.gallery.list.GalleryTankListScene
 import com.lanraragi.reader.ui.scene.gallery.list.QuickSearchScene
 import com.lanraragi.reader.ui.scene.history.HistoryScene
 import com.lanraragi.reader.ui.scene.stats.ReadingStatsScene
@@ -35,6 +36,7 @@ object MainScenes {
         StageActivity.registerLaunchMode(DownloadLabelsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
         StageActivity.registerLaunchMode(LRRCategoriesScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
         StageActivity.registerLaunchMode(TankoubonsScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
+        StageActivity.registerLaunchMode(GalleryTankListScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TASK)
         StageActivity.registerLaunchMode(TankoubonDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
         StageActivity.registerLaunchMode(TankDetailScene::class.java, SceneFragment.LAUNCH_MODE_STANDARD)
         StageActivity.registerLaunchMode(HistoryScene::class.java, SceneFragment.LAUNCH_MODE_SINGLE_TOP)
@@ -51,6 +53,7 @@ object MainScenes {
         SceneFactory.register(DownloadLabelsScene::class.java.name) { DownloadLabelsScene() }
         SceneFactory.register(LRRCategoriesScene::class.java.name) { LRRCategoriesScene() }
         SceneFactory.register(TankoubonsScene::class.java.name) { TankoubonsScene() }
+        SceneFactory.register(GalleryTankListScene::class.java.name) { GalleryTankListScene() }
         SceneFactory.register(TankoubonDetailScene::class.java.name) { TankoubonDetailScene() }
         SceneFactory.register(TankDetailScene::class.java.name) { TankDetailScene() }
         SceneFactory.register(HistoryScene::class.java.name) { HistoryScene() }

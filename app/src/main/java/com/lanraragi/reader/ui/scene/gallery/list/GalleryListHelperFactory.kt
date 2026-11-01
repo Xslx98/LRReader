@@ -10,7 +10,10 @@ import android.view.View
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
+import com.lanraragi.reader.R
 import com.lanraragi.reader.client.TagTranslationDatabase
+import com.lanraragi.reader.settings.AppearanceSettings
+import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -68,6 +71,11 @@ internal object GalleryListHelperFactory {
             override fun getRightDrawable(): AddDeleteDrawable? = scene.rightDrawable
             override fun setDrawerLockMode(mode: Int, gravity: Int) =
                 scene.setDrawerLockMode(mode, gravity)
+            override fun onRightIconNormal(normal: Boolean) {
+                val sortIcon = scene.tankSortDrawable ?: return
+                scene.searchBar.setRightDrawable(if (normal) sortIcon else scene.rightDrawable)
+                if (normal) scene.searchBar.setRightIconContentDescription(R.string.tank_sort)
+            }
         })
 
         val itemActionHelper = GalleryItemActionHelper(object : GalleryItemActionHelper.Callback {
@@ -131,6 +139,8 @@ internal object GalleryListHelperFactory {
                 // swallows the pre-API-29 permission quirk).
                 scene.activity?.reportFullyDrawn()
             }
+            override fun isTankMode(): Boolean = scene.isTankMode
+            override fun getTankSort(): TankBrowse.Sort = AppearanceSettings.getTankListSort()
         })
 
         val searchHelper = GallerySearchHelper(object : GallerySearchHelper.Callback {
@@ -152,6 +162,11 @@ internal object GalleryListHelperFactory {
             override fun showTip(message: String, length: Int) = scene.showTip(message, length)
             override fun toggleDrawer(gravity: Int) = scene.toggleDrawer(gravity)
             override fun hideSoftInput() = scene.hideSoftInput()
+            override fun onTankSortClick(): Boolean {
+                if (!scene.isTankMode) return false
+                scene.showTankSortMenu(scene.searchBar.findViewById(R.id.search_action) ?: scene.searchBar)
+                return true
+            }
         })
 
         val uploadHelper = GalleryUploadHelper(object : GalleryUploadHelper.Callback {
@@ -182,6 +197,10 @@ internal object GalleryListHelperFactory {
             filterHelper = { scene.filterHelper },
             itemActionHelper = { scene.itemActionHelper },
             uploadHelper = { scene.uploadHelper },
+            createTank = {
+                if (scene.isTankMode) scene.showCreateTankDialog()
+                scene.isTankMode
+            },
         )
 
         val drawerHelper = GalleryDrawerHelper(object : GalleryDrawerHelper.Callback {

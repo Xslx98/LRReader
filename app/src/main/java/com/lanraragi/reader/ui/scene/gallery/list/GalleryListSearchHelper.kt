@@ -29,6 +29,9 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
         fun showTip(message: String, length: Int)
         fun toggleDrawer(gravity: Int)
         fun hideSoftInput()
+
+        /** Tank mode: the normal-state right icon opens the sort menu. @return handled */
+        fun onTankSortClick(): Boolean = false
     }
 
     // SearchBar.Helper callbacks
@@ -52,6 +55,7 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
     fun onClickRightIcon() {
         val searchBar = callback.getSearchBar() ?: return
         if (searchBar.getState() == SearchBar.STATE_NORMAL) {
+            if (callback.onTankSortClick()) return
             callback.getStateHelper()?.setState(GalleryStateHelper.STATE_SEARCH)
         } else {
             searchBar.setText("")
