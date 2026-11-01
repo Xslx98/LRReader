@@ -14,37 +14,39 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.glrenderer;
+@file:Suppress("UseRequire") // TODO(2.4-idiom)
 
-public class GLPaint {
-    private float mLineWidth = 1f;
-    private int mColor = 0;
-    private int mBackgroundColor = 0;
+package com.lanraragi.framework.lib.glview.glrenderer
 
-    public void setColor(int color) {
-        mColor = color;
+class GLPaint {
+    private var mLineWidth = 1f
+    private var mColor = 0
+    private var mBackgroundColor = 0
+
+    fun setColor(color: Int) {
+        mColor = color
     }
 
-    public int getColor() {
-        return mColor;
+    fun getColor(): Int {
+        return mColor
     }
 
-    public void setBackgroundColor(int backgroundColor) {
-        mBackgroundColor = backgroundColor;
+    fun setBackgroundColor(backgroundColor: Int) {
+        mBackgroundColor = backgroundColor
     }
 
-    public int getBackgroundColor() {
-        return mBackgroundColor;
+    fun getBackgroundColor(): Int {
+        return mBackgroundColor
     }
 
-    public void setLineWidth(float width) {
+    fun setLineWidth(width: Float) {
         if (width < 0) {
-            throw new IllegalArgumentException("width < 0");
+            throw IllegalArgumentException("width < 0")
         }
-        mLineWidth = width;
+        mLineWidth = width
     }
 
-    public float getLineWidth() {
-        return mLineWidth;
+    fun getLineWidth(): Float {
+        return mLineWidth
     }
 }
