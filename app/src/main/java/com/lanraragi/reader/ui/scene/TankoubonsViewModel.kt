@@ -1,8 +1,5 @@
 package com.lanraragi.reader.ui.scene
 
-import com.lanraragi.reader.tankoubon.TankListCache
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -10,23 +7,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.tankoubon.TankCategorySyncer
-import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.gallery.TankSessionRouter
-import com.lanraragi.reader.tankoubon.TankMemberOrderOps
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
+import com.lanraragi.reader.ui.scene.gallery.list.TankListService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -54,10 +44,7 @@ class TankoubonsViewModel : ViewModel() {
     /** Tankoubon list in server order. */
     val tanks: StateFlow<List<LRRTankoubonApi.Tankoubon>> = _tanks.asStateFlow()
 
-    /** Stand-in cover for a tank whose generated cover is missing server-side. */
-    data class CoverFallback(val arcid: String, val thumbnailUrl: String)
-
-    private val _coverFallbacks = MutableStateFlow<Map<String, CoverFallback>>(emptyMap())
+    private val _coverFallbacks = MutableStateFlow<Map<String, TankListService.CoverFallback>>(emptyMap())
 
     /**
      * tankId → first member's cover, for tanks the cover probe reported
@@ -65,7 +52,7 @@ class TankoubonsViewModel : ViewModel() {
      * server-side generation). Published before [tanks] on each load so
      * cover binds already see it.
      */
-    val coverFallbacks: StateFlow<Map<String, CoverFallback>> = _coverFallbacks.asStateFlow()
+    val coverFallbacks: StateFlow<Map<String, TankListService.CoverFallback>> = _coverFallbacks.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Loading state
@@ -169,16 +156,12 @@ class TankoubonsViewModel : ViewModel() {
             val context = ServiceRegistry.appModule.getContext()
             try {
                 val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-                val full = LRRTankoubonApi.getTankoubonFull(client, serverUrl, tank.id).result
-                val titles = full.fullData.associate { it.arcid to it.title }
-                val sorted = TankMemberOrderOps.sortByTitle(full.archives) { titles[it].orEmpty() }
-                if (sorted == full.archives) {
+                val previous = service.autoSort(serverUrl, tank.id)
+                if (previous == null) {
                     _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_already_sorted))
                     return@launch
                 }
-                LRRTankoubonApi.updateTankoubon(client, serverUrl, tank.id, archives = sorted)
-                _uiEvent.tryEmit(TankUiEvent.Sorted(tank.id, full.archives))
+                _uiEvent.tryEmit(TankUiEvent.Sorted(tank.id, previous))
                 loadTankoubonsInternal()
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -193,8 +176,7 @@ class TankoubonsViewModel : ViewModel() {
             val context = ServiceRegistry.appModule.getContext()
             try {
                 val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-                LRRTankoubonApi.updateTankoubon(client, serverUrl, tankId, archives = previousOrder)
+                service.restoreOrder(serverUrl, tankId, previousOrder)
                 _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
                 loadTankoubonsInternal()
             } catch (e: Exception) {
@@ -209,14 +191,8 @@ class TankoubonsViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-                val full = LRRTankoubonApi.getTankoubonFull(client, serverUrl, tank.id).result
-                val profileId = LRRAuthManager.getActiveProfileId()
-                val byId = full.fullData.associateBy { it.arcid }
-                val members = full.archives.mapNotNull { id ->
-                    byId[id]?.toArchive(sourceProfileId = profileId, sourceBaseUrl = serverUrl)
-                }
-                _uiEvent.tryEmit(TankUiEvent.FillTank(tank.id, full.name, members, full.archives))
+                val m = service.members(serverUrl, LRRAuthManager.getActiveProfileId(), tank.id)
+                _uiEvent.tryEmit(TankUiEvent.FillTank(m.tankId, m.name, m.members, m.memberIdsInOrder))
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 val context = ServiceRegistry.appModule.getContext()
@@ -236,10 +212,9 @@ class TankoubonsViewModel : ViewModel() {
                     return@launch
                 }
 
-                val tanks = fetchAllTanks(serverUrl)
+                val tanks = service.loadAll(serverUrl, LRRAuthManager.getActiveProfileId())
                 _tanks.value = tanks
                 _isLoading.value = false
-                syncMembership(serverUrl, tanks)
                 refreshCoverFallbacks(serverUrl, tanks)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -258,10 +233,7 @@ class TankoubonsViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                LRRTankoubonApi.createTankoubon(client, serverUrl, name)
-
+                service.create(serverUrl, name)
                 _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
                 loadTankoubonsInternal()
             } catch (e: Exception) {
@@ -281,16 +253,7 @@ class TankoubonsViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                // Upstream leaves the deleted id dangling in static categories
-                // (spec 2026-09-22 §6): clear it first, while the tank still exists.
-                TankCategorySyncer.onDissolve(client, serverUrl, tankId, TankCategorySyncer.nameOf(client, serverUrl, tankId))
-                LRRTankoubonApi.deleteTankoubon(client, serverUrl, tankId)
-                // Dissolve any downloaded-tank grouping; member downloads
-                // reappear standalone (files untouched).
-                ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(tankId)
-
+                service.delete(serverUrl, tankId)
                 _uiEvent.tryEmit(TankUiEvent.ShowSuccess(R.string.tank_op_done))
                 loadTankoubonsInternal()
             } catch (e: Exception) {
@@ -314,9 +277,8 @@ class TankoubonsViewModel : ViewModel() {
         try {
             val serverUrl = LRRAuthManager.getServerUrl() ?: return
 
-            val tanks = fetchAllTanks(serverUrl)
+            val tanks = service.loadAll(serverUrl, LRRAuthManager.getActiveProfileId())
             _tanks.value = tanks
-            syncMembership(serverUrl, tanks)
             refreshCoverFallbacks(serverUrl, tanks)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
@@ -326,52 +288,14 @@ class TankoubonsViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Membership follow seam (spec 2026-09-21 §1/§3): every successful list
-     * fetch hands the server's member lists to [TankMembershipSync] so
-     * downloaded group rows and member history rows follow the server.
-     * Replaceable for tests; the default no-ops outside a live app.
-     */
-    internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
+    private val service = TankListService(viewModelScope)
 
-    private fun syncMembership(serverUrl: String, tanks: List<LRRTankoubonApi.Tankoubon>) {
-        val profileId = LRRAuthManager.getActiveProfileId()
-        val truth = tanks.map {
-            TankMembershipSync.TankTruth(it.id, it.name, it.archives, it.progress, pagecount = 0)
+    /** Membership follow seam, forwarded to [TankListService.membershipSync]; replaceable for tests. */
+    internal var membershipSync: TankMembershipSyncFactory.Runner
+        get() = service.membershipSync
+        set(value) {
+            service.membershipSync = value
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                membershipSync.sync(profileId, serverUrl, truth)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w(TAG, "tank membership sync failed")
-            }
-        }
-    }
-
-    /**
-     * Pages through GET /api/tankoubons until all `total` entries are held.
-     * Server pages are 0-BASED (page 0 = parameterless request); a 1-based
-     * loop starts on the empty second page and shows a blank list.
-     */
-    private suspend fun fetchAllTanks(serverUrl: String): List<LRRTankoubonApi.Tankoubon> {
-        val client = ServiceRegistry.networkModule.okHttpClient
-        val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
-        var page = 0
-        while (page < MAX_PAGES) {
-            val r = LRRTankoubonApi.getTankoubons(client, serverUrl, page)
-            all.addAll(r.result)
-            if (r.result.isEmpty() || all.size >= r.total) break
-            page++
-        }
-        // Fresh server truth in hand — re-key the covers of tanks whose
-        // member list changed. Must precede the callers' _tanks publication
-        // so cover binds already see the new stamps.
-        for (tank in all) TankCoverCacheStamp.observe(tank.id, tank.archives)
-        TankListCache.put(serverUrl, all)
-        return ArrayList(all)
-    }
 
     /**
      * Cover probing runs AFTER the list is published (the list used to wait
@@ -381,56 +305,13 @@ class TankoubonsViewModel : ViewModel() {
     private fun refreshCoverFallbacks(serverUrl: String, tanks: List<LRRTankoubonApi.Tankoubon>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                _coverFallbacks.value = probeCoverFallbacks(serverUrl, tanks)
+                _coverFallbacks.value = service.probeCoverFallbacks(serverUrl, tanks)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.w(TAG, "tank cover probe failed")
             }
         }
-    }
-
-    /**
-     * Probes each member-having tank for a generated cover; the missing ones
-     * ([LRRTankoubonApi.hasTankThumbnail] 202, which also queues server-side
-     * generation) map to their FIRST member's cover as a visual stand-in —
-     * matching what the tank's own cover would show once generated. A probe
-     * failure degrades to "has cover" (plain URL → server placeholder), the
-     * pre-probe behavior. Empty tanks are skipped: nothing to stand in AND
-     * the server-side generation job would just fail.
-     */
-    private suspend fun probeCoverFallbacks(
-        serverUrl: String,
-        tanks: List<LRRTankoubonApi.Tankoubon>,
-    ): Map<String, CoverFallback> = coroutineScope {
-        val client = ServiceRegistry.networkModule.okHttpClient
-        val gate = Semaphore(PROBE_PARALLELISM)
-        tanks.filter { it.archives.isNotEmpty() && coverKey(serverUrl, it.id) !in confirmedCovers }
-            .map { tank ->
-                async {
-                    val missing = try {
-                        gate.withPermit { !LRRTankoubonApi.hasTankThumbnail(client, serverUrl, tank.id) }
-                    } catch (ce: CancellationException) {
-                        throw ce
-                    } catch (ignored: Exception) {
-                        false
-                    }
-                    if (!missing) {
-                        confirmedCovers += coverKey(serverUrl, tank.id)
-                        return@async null
-                    }
-                    val arcid = tank.archives.first()
-                    val fallback = try {
-                        CoverFallback(arcid, archiveThumbnailUrl(serverUrl, arcid))
-                    } catch (ignored: Exception) {
-                        null // malformed arcid — keep the plain tank URL
-                    }
-                    fallback?.let { tank.id to it }
-                }
-            }
-            .awaitAll()
-            .filterNotNull()
-            .toMap()
     }
 
     /**
@@ -445,18 +326,6 @@ class TankoubonsViewModel : ViewModel() {
         }
 
     private companion object {
-        /**
-         * `server|tank` pairs whose generated cover was confirmed: never
-         * probed again in this process (a cover, once generated, does not
-         * go away). Process-wide so reopening the list does not re-probe
-         * every tank (audit C38 / SCAL-09).
-         */
-        val confirmedCovers: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
-
-        fun coverKey(serverUrl: String, tankId: String) = "$serverUrl|$tankId"
-
-        const val MAX_PAGES = 100
-        const val PROBE_PARALLELISM = 6
         const val HTTP_LOCKED = 423
         const val TAG = "TankoubonsViewModel"
     }
