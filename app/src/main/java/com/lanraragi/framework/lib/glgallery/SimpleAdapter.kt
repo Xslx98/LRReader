@@ -22,17 +22,17 @@ import com.lanraragi.framework.lib.glview.view.GLRootView
 
 open class SimpleAdapter(
     glRootView: GLRootView,
-    private val mProvider: GalleryProvider,
+    private val provider: GalleryProvider,
 ) : GalleryView.Adapter(), GalleryProvider.Listener {
 
-    private val mUploader: ImageTexture.Uploader = ImageTexture.Uploader(glRootView)
+    private val uploader: ImageTexture.Uploader = ImageTexture.Uploader(glRootView)
 
     fun clearUploader() {
-        mUploader.clear()
+        uploader.clear()
     }
 
     override fun onBind(view: GalleryPageView, index: Int) {
-        mProvider.request(index)
+        provider.request(index)
         view.showInfo()
         view.setImage(null)
         view.setPage(index + 1)
@@ -41,14 +41,14 @@ open class SimpleAdapter(
     }
 
     override fun onUnbind(view: GalleryPageView, index: Int) {
-        mProvider.cancelRequest(index)
+        provider.cancelRequest(index)
         view.setImage(null)
         view.setError(null, null)
     }
 
-    override fun getError(): String? = mProvider.getError()
+    override fun getError(): String? = provider.getError()
 
-    override fun size(): Int = mProvider.size()
+    override fun size(): Int = provider.size()
 
     override fun onDataChanged() {
         mGalleryView.onDataChanged()
@@ -64,7 +64,7 @@ open class SimpleAdapter(
             // the visible image -> white -> image flicker. Keep the image up;
             // if a decode is genuinely in flight, onPageSucceed replaces it in
             // place when it lands.
-            if (page.isLoaded()) {
+            if (page.isLoaded) {
                 return
             }
             page.showInfo()
@@ -80,7 +80,7 @@ open class SimpleAdapter(
         if (page != null) {
             // Same guard as onPageWait: a percent update for an
             // already-displayed page must not blank it back to the spinner.
-            if (page.isLoaded()) {
+            if (page.isLoaded) {
                 return
             }
             page.showInfo()
@@ -96,7 +96,7 @@ open class SimpleAdapter(
         if (page != null) {
             if (image.obtain()) {
                 val imageTexture = ImageTexture(image)
-                mUploader.addTexture(imageTexture)
+                uploader.addTexture(imageTexture)
                 page.showImage()
                 page.setImage(imageTexture)
                 page.setPage(index + 1)
@@ -105,7 +105,7 @@ open class SimpleAdapter(
             } else {
                 // The image is recycled, request again.
                 // UPSTREAM-LEGACY: potential infinite request loop if adapter keeps returning RESULT_ERROR
-                mProvider.request(index)
+                provider.request(index)
             }
         } else if (image.isUncached) {
             // The target page is no longer bound (scrolled away before the
@@ -132,7 +132,7 @@ open class SimpleAdapter(
     override fun onDataChanged(index: Int) {
         val page = findPageByIndex(index)
         if (page != null) {
-            mProvider.request(index)
+            provider.request(index)
         }
     }
 

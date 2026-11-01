@@ -40,52 +40,99 @@ import kotlin.math.min
 
 internal class ImageView : GLView(), ImageTexture.Callback {
 
-    private var mImageTexture: ImageTexture? = null
-    private var mTextureWidth = 0
-    private var mTextureHeight = 0
+    var imageTexture: ImageTexture? = null
+        set(imageTexture) {
+            // Remove callback
+            val oldTexture = field
+            if (oldTexture != null) {
+                oldTexture.callback = null
+                oldTexture.stop()
+            }
 
-    private val mDst = RectF()
-    private val mSrcActual = RectF()
-    private val mDstActual = RectF()
-    private val mValidRect = Rect()
-    private val mScreenInTexture = RectF()
-    private val mRootPosition = IntArray(2)
+            val oldTextureWidth = textureWidth
+            val oldTextureHeight = textureHeight
 
-    private var mScaleMode = SCALE_FIT
-    private var mStartPosition = START_POSITION_TOP_RIGHT
-    private var mScaleValue = 1.0f
+            field = imageTexture
 
-    private var mScale = 1.0f
+            if (imageTexture != null) {
+                imageTexture.callback = this
+                textureWidth = imageTexture.getWidth()
+                textureHeight = imageTexture.getHeight()
+                // Avoid zero and negative
+                if (textureWidth <= 0) {
+                    textureWidth = 1
+                }
+                if (textureHeight <= 0) {
+                    textureHeight = 1
+                }
 
-    private var mScaleOffsetDirty = true
-    private var mPositionInRootDirty = true
+                // Start alpha animation, do not show animation for image has no valid rect
+                getValidRect(validRect)
+                if (!validRect.isEmpty) {
+                    // Follows the system animator scale (0 = no fade).
+                    alphaAnimation.duration = AnimatorDurationScale.scale(ALPHA_ANIMATION_DURING)
+                    startAnimation(alphaAnimation, true)
+                    imageTexture.start()
+                }
+            } else {
+                textureWidth = 1
+                textureHeight = 1
+            }
 
-    private val mAlphaAnimation: AlphaAnimation = AlphaAnimation(0.0f, 1.0f)
+            scaleOffsetDirty = true
+            positionInRootDirty = true
+
+            if (oldTextureWidth != textureWidth || oldTextureHeight != textureHeight) {
+                requestLayout()
+            }
+        }
+
+    private var textureWidth = 0
+    private var textureHeight = 0
+
+    private val dstRect = RectF()
+    private val srcActualRect = RectF()
+    private val dstActualRect = RectF()
+    private val validRect = Rect()
+    private val screenInTexture = RectF()
+    private val rootPosition = IntArray(2)
+
+    private var scaleMode = SCALE_FIT
+    private var startPosition = START_POSITION_TOP_RIGHT
+    private var scaleValue = 1.0f
+
+    var scale = 1.0f
+        private set
+
+    private var scaleOffsetDirty = true
+    private var positionInRootDirty = true
+
+    private val alphaAnimation: AlphaAnimation = AlphaAnimation(0.0f, 1.0f)
 
     init {
-        mAlphaAnimation.duration = ALPHA_ANIMATION_DURING
-        mAlphaAnimation.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
+        alphaAnimation.duration = ALPHA_ANIMATION_DURING
+        alphaAnimation.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
     }
 
     override fun getSuggestedMinimumWidth(): Int {
         return max(
             super.getSuggestedMinimumWidth(),
-            if (mImageTexture == null) 0 else mTextureWidth
+            if (imageTexture == null) 0 else textureWidth
         )
     }
 
     override fun getSuggestedMinimumHeight(): Int {
         return max(
             super.getSuggestedMinimumHeight(),
-            if (mImageTexture == null) 0 else mTextureHeight
+            if (imageTexture == null) 0 else textureHeight
         )
     }
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
-        if (mImageTexture == null) {
+        if (imageTexture == null) {
             super.onMeasure(widthSpec, heightSpec)
         } else {
-            val ratio = mTextureWidth.toFloat() / mTextureHeight
+            val ratio = textureWidth.toFloat() / textureHeight
             val widthSize = MeasureSpec.getSize(widthSpec)
             val heightSize = MeasureSpec.getSize(heightSpec)
             val widthMode = MeasureSpec.getMode(widthSpec)
@@ -120,32 +167,32 @@ internal class ImageView : GLView(), ImageTexture.Callback {
     }
 
     override fun onSizeChanged(newW: Int, newH: Int, oldW: Int, oldH: Int) {
-        mScaleOffsetDirty = true
-        mPositionInRootDirty = true
+        scaleOffsetDirty = true
+        positionInRootDirty = true
     }
 
     override fun onPositionInRootChanged(x: Int, y: Int, oldX: Int, oldY: Int) {
-        mPositionInRootDirty = true
+        positionInRootDirty = true
 
-        val imageTexture = mImageTexture
-        if (imageTexture != null) {
-            getValidRect(mValidRect)
-            if (!mValidRect.isEmpty) {
-                imageTexture.start()
+        val texture = imageTexture
+        if (texture != null) {
+            getValidRect(validRect)
+            if (!validRect.isEmpty) {
+                texture.start()
             } else {
-                imageTexture.stop()
+                texture.stop()
             }
         }
     }
 
     fun getScaleDefault(scaleDefault: FloatArray) {
-        if (mImageTexture == null) {
+        if (imageTexture == null) {
             return
         }
 
         scaleDefault[0] = 1.0f
-        scaleDefault[1] = width.toFloat() / mTextureWidth
-        scaleDefault[2] = height.toFloat() / mTextureHeight
+        scaleDefault[1] = width.toFloat() / textureWidth
+        scaleDefault[2] = height.toFloat() / textureHeight
         scaleDefault[3] = max(scaleDefault[1], scaleDefault[2]) * 2
 
         scaleDefault[0] = MathUtils.clamp(scaleDefault[0], SCALE_MIN, SCALE_MAX)
@@ -156,145 +203,96 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         Arrays.sort(scaleDefault)
     }
 
-    fun setImageTexture(imageTexture: ImageTexture?) {
-        // Remove callback
-        val oldTexture = mImageTexture
-        if (oldTexture != null) {
-            oldTexture.callback = null
-            oldTexture.stop()
-        }
-
-        val oldTextureWidth = mTextureWidth
-        val oldTextureHeight = mTextureHeight
-
-        mImageTexture = imageTexture
-
-        if (imageTexture != null) {
-            imageTexture.callback = this
-            mTextureWidth = imageTexture.getWidth()
-            mTextureHeight = imageTexture.getHeight()
-            // Avoid zero and negative
-            if (mTextureWidth <= 0) {
-                mTextureWidth = 1
-            }
-            if (mTextureHeight <= 0) {
-                mTextureHeight = 1
-            }
-
-            // Start alpha animation, do not show animation for image has no valid rect
-            getValidRect(mValidRect)
-            if (!mValidRect.isEmpty) {
-                // Follows the system animator scale (0 = no fade).
-                mAlphaAnimation.duration = AnimatorDurationScale.scale(ALPHA_ANIMATION_DURING)
-                startAnimation(mAlphaAnimation, true)
-                imageTexture.start()
-            }
-        } else {
-            mTextureWidth = 1
-            mTextureHeight = 1
-        }
-
-        mScaleOffsetDirty = true
-        mPositionInRootDirty = true
-
-        if (oldTextureWidth != mTextureWidth || oldTextureHeight != mTextureHeight) {
-            requestLayout()
-        }
-    }
-
-    fun getImageTexture(): ImageTexture? = mImageTexture
-
-    fun isLoaded(): Boolean = mImageTexture != null
+    val isLoaded: Boolean
+        get() = imageTexture != null
 
     fun canFlingVertically(): Boolean {
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
-            if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
+            if (scaleOffsetDirty) {
                 return false
             }
         }
 
-        return mDst.top < 0.0f || mDst.bottom > height
+        return dstRect.top < 0.0f || dstRect.bottom > height
     }
 
     fun canFlingHorizontally(): Boolean {
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
-            if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
+            if (scaleOffsetDirty) {
                 return false
             }
         }
 
-        return mDst.left < 0.0f || mDst.right > width
+        return dstRect.left < 0.0f || dstRect.right > width
     }
 
     fun canFling(): Boolean {
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
-            if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
+            if (scaleOffsetDirty) {
                 return false
             }
         }
 
-        return mDst.left < 0.0f || mDst.top < 0.0f || mDst.right > width || mDst.bottom > height
+        return dstRect.left < 0.0f || dstRect.top < 0.0f || dstRect.right > width || dstRect.bottom > height
     }
 
     fun getMaxDx(): Int {
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
-            if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
+            if (scaleOffsetDirty) {
                 return 0
             }
         }
-        return max(0, -mDst.left.toInt())
+        return max(0, -dstRect.left.toInt())
     }
 
     fun getMinDx(): Int {
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
-            if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
+            if (scaleOffsetDirty) {
                 return 0
             }
         }
-        return min(0, width - mDst.right.toInt())
+        return min(0, width - dstRect.right.toInt())
     }
 
     fun getMaxDy(): Int {
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
-            if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
+            if (scaleOffsetDirty) {
                 return 0
             }
         }
-        return max(0, -mDst.top.toInt())
+        return max(0, -dstRect.top.toInt())
     }
 
     fun getMinDy(): Int {
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
-            if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
+            if (scaleOffsetDirty) {
                 return 0
             }
         }
-        return min(0, height - mDst.bottom.toInt())
+        return min(0, height - dstRect.bottom.toInt())
     }
-
-    fun getScale(): Float = mScale
 
     /**
      * Copies the current destination rect of the rendered image (view-local
      * coordinates, scale/offset applied) into `out`. Additive read-only
      * accessor for page-transform snapshots; false when no image is loaded.
-     * "Loaded" here means texture-attached (`mImageTexture != null`),
+     * "Loaded" here means texture-attached (`imageTexture != null`),
      * which can lead the page's visibility state by a frame — the rect tracks
      * the texture's draw destination, not visual visibility.
      */
     @JvmName("getImageRect")
     internal fun getImageRect(out: RectF): Boolean {
-        if (!isLoaded()) {
+        if (!isLoaded) {
             return false
         }
-        out.set(mDst)
+        out.set(dstRect)
         return true
     }
 
@@ -303,7 +301,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
      * longer then parent, make sure target fill parent over
      */
     private fun adjustPosition() {
-        val dst = mDst
+        val dst = dstRect
         val screenWidth = width
         val screenHeight = height
         val targetWidth = dst.width()
@@ -344,74 +342,74 @@ internal class ImageView : GLView(), ImageTexture.Callback {
     }
 
     fun setScaleOffset(scaleMode: Int, startPosition: Int, scaleValue: Float) {
-        mScaleMode = scaleMode
-        mStartPosition = startPosition
-        mScaleValue = scaleValue
+        this.scaleMode = scaleMode
+        this.startPosition = startPosition
+        this.scaleValue = scaleValue
 
         val screenWidth = width
         val screenHeight = height
 
-        if (mImageTexture == null || screenWidth == 0 || screenHeight == 0) {
-            mScaleOffsetDirty = true
+        if (imageTexture == null || screenWidth == 0 || screenHeight == 0) {
+            scaleOffsetDirty = true
             return
         }
 
-        val textureWidth = mTextureWidth
-        val textureHeight = mTextureHeight
+        val texWidth = textureWidth
+        val texHeight = textureHeight
 
         // Set scale
         var targetWidth: Float
         var targetHeight: Float
         when (scaleMode) {
             SCALE_ORIGIN -> {
-                mScale = 1.0f
-                targetWidth = textureWidth.toFloat()
-                targetHeight = textureHeight.toFloat()
+                scale = 1.0f
+                targetWidth = texWidth.toFloat()
+                targetHeight = texHeight.toFloat()
             }
             SCALE_FIT_WIDTH -> {
-                mScale = screenWidth.toFloat() / textureWidth
+                scale = screenWidth.toFloat() / texWidth
                 targetWidth = screenWidth.toFloat()
-                targetHeight = textureHeight * mScale
+                targetHeight = texHeight * scale
             }
             SCALE_FIT_HEIGHT -> {
-                mScale = screenHeight.toFloat() / textureHeight
-                targetWidth = textureWidth * mScale
+                scale = screenHeight.toFloat() / texHeight
+                targetWidth = texWidth * scale
                 targetHeight = screenHeight.toFloat()
             }
             SCALE_FIT -> {
-                val scaleX = screenWidth.toFloat() / textureWidth
-                val scaleY = screenHeight.toFloat() / textureHeight
+                val scaleX = screenWidth.toFloat() / texWidth
+                val scaleY = screenHeight.toFloat() / texHeight
                 if (scaleX < scaleY) {
-                    mScale = scaleX
+                    scale = scaleX
                     targetWidth = screenWidth.toFloat()
-                    targetHeight = textureHeight * scaleX
+                    targetHeight = texHeight * scaleX
                 } else {
-                    mScale = scaleY
-                    targetWidth = textureWidth * scaleY
+                    scale = scaleY
+                    targetWidth = texWidth * scaleY
                     targetHeight = screenHeight.toFloat()
                 }
             }
             // SCALE_FIXED and anything else
             else -> {
-                mScale = scaleValue
-                targetWidth = textureWidth * scaleValue
-                targetHeight = textureHeight * scaleValue
+                scale = scaleValue
+                targetWidth = texWidth * scaleValue
+                targetHeight = texHeight * scaleValue
             }
         }
 
         // adjust scale, not too big, not too small
-        if (mScale < SCALE_MIN) {
-            mScale = SCALE_MIN
-            targetWidth = textureWidth * SCALE_MIN
-            targetHeight = textureHeight * SCALE_MIN
-        } else if (mScale > SCALE_MAX) {
-            mScale = SCALE_MAX
-            targetWidth = textureWidth * SCALE_MAX
-            targetHeight = textureHeight * SCALE_MAX
+        if (scale < SCALE_MIN) {
+            scale = SCALE_MIN
+            targetWidth = texWidth * SCALE_MIN
+            targetHeight = texHeight * SCALE_MIN
+        } else if (scale > SCALE_MAX) {
+            scale = SCALE_MAX
+            targetWidth = texWidth * SCALE_MAX
+            targetHeight = texHeight * SCALE_MAX
         }
 
-        // Set mDst.left and mDst.right
-        val dst = mDst
+        // Set dstRect.left and dstRect.top
+        val dst = dstRect
         when (startPosition) {
             START_POSITION_TOP_LEFT -> {
                 dst.left = 0f
@@ -436,29 +434,29 @@ internal class ImageView : GLView(), ImageTexture.Callback {
             }
         }
 
-        // Set mDst.right and mDst.bottom
+        // Set dstRect.right and dstRect.bottom
         dst.right = dst.left + targetWidth
         dst.bottom = dst.top + targetHeight
 
         // adjust position
         adjustPosition()
 
-        mScaleOffsetDirty = false
-        mPositionInRootDirty = true
+        scaleOffsetDirty = false
+        positionInRootDirty = true
     }
 
     fun scroll(dx: Int, dy: Int, remain: IntArray) {
         // Only work after layout
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
         }
-        if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
             remain[0] = dx
             remain[1] = dy
             return
         }
 
-        val dst = mDst
+        val dst = dstRect
         val screenWidth = width
         val screenHeight = height
         val targetWidth = dst.width()
@@ -510,58 +508,58 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         }
 
         if (dx != remain[0] || dy != remain[1]) {
-            mPositionInRootDirty = true
+            positionInRootDirty = true
             invalidate()
         }
     }
 
     fun scale(focusX: Float, focusY: Float, scale: Float) {
         // Only work after layout
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
+        if (scaleOffsetDirty) {
+            setScaleOffset(this.scaleMode, startPosition, this.scaleValue)
         }
-        if (mScaleOffsetDirty) {
+        if (scaleOffsetDirty) {
             return
         }
 
-        if ((mScale == SCALE_MAX && scale >= 1.0f) || (mScale == SCALE_MIN && scale < 1.0f)) {
+        if ((this.scale == SCALE_MAX && scale >= 1.0f) || (this.scale == SCALE_MIN && scale < 1.0f)) {
             return
         }
 
-        var newScale = mScale * scale
+        var newScale = this.scale * scale
         newScale = MathUtils.clamp(newScale, SCALE_MIN, SCALE_MAX)
-        mScale = newScale
-        val dst = mDst
+        this.scale = newScale
+        val dst = dstRect
         val left = (focusX - ((focusX - dst.left) * scale))
         val top = (focusY - ((focusY - dst.top) * scale))
         dst.set(
             left,
             top,
-            (left + (mImageTexture!!.getWidth() * newScale)),
-            (top + (mImageTexture!!.getHeight() * newScale))
+            (left + (imageTexture!!.getWidth() * newScale)),
+            (top + (imageTexture!!.getHeight() * newScale))
         )
 
         // adjust position
         adjustPosition()
 
-        mPositionInRootDirty = true
+        positionInRootDirty = true
         invalidate()
     }
 
     private fun applyPositionInRoot() {
-        val width = mImageTexture!!.getWidth()
-        val height = mImageTexture!!.getHeight()
-        val dst = mDst
-        val dstActual = mDstActual
-        val srcActual = mSrcActual
+        val width = imageTexture!!.getWidth()
+        val height = imageTexture!!.getHeight()
+        val dst = dstRect
+        val dstActual = dstActualRect
+        val srcActual = srcActualRect
 
         dstActual.set(dst)
-        getValidRect(mValidRect)
+        getValidRect(validRect)
         if (dstActual.intersect(
-                mValidRect.left.toFloat(),
-                mValidRect.top.toFloat(),
-                mValidRect.right.toFloat(),
-                mValidRect.bottom.toFloat()
+                validRect.left.toFloat(),
+                validRect.top.toFloat(),
+                validRect.right.toFloat(),
+                validRect.bottom.toFloat()
             )
         ) {
             // The int lerp overload, as in Java: the source edges are whole texels.
@@ -595,32 +593,32 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         // it first and releases those far away (audit 2026-10-13 PERF-02).
         val root = getGLRoot()
         if (root != null) {
-            getPositionInRoot(mRootPosition)
+            getPositionInRoot(rootPosition)
             TileRegions.screenInTexture(
-                mScreenInTexture, dst, mRootPosition[0], mRootPosition[1],
+                screenInTexture, dst, rootPosition[0], rootPosition[1],
                 root.getWidth(), root.getHeight(), width, height
             )
         } else {
-            mScreenInTexture.setEmpty()
+            screenInTexture.setEmpty()
         }
-        mImageTexture!!.setScreenRegion(mScreenInTexture)
+        imageTexture!!.setScreenRegion(screenInTexture)
 
-        mPositionInRootDirty = false
+        positionInRootDirty = false
     }
 
     override fun onRender(canvas: GLCanvas) {
-        val texture: Texture = mImageTexture ?: return
+        val texture: Texture = imageTexture ?: return
 
-        if (mScaleOffsetDirty) {
-            setScaleOffset(mScaleMode, mStartPosition, mScaleValue)
+        if (scaleOffsetDirty) {
+            setScaleOffset(scaleMode, startPosition, scaleValue)
         }
 
-        if (mPositionInRootDirty) {
+        if (positionInRootDirty) {
             applyPositionInRoot()
         }
 
-        if (!mSrcActual.isEmpty) {
-            texture.draw(canvas, mSrcActual, mDstActual)
+        if (!srcActualRect.isEmpty) {
+            texture.draw(canvas, srcActualRect, dstActualRect)
         }
     }
 

@@ -45,44 +45,44 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     cacheMaxBytes: Int,
 ) : MemoryTrimmable {
 
-    private val mNotifyTaskPool = Pools.SynchronizedPool<NotifyTask>(5)
+    private val notifyTaskPool = Pools.SynchronizedPool<NotifyTask>(5)
 
     @Volatile
-    private var mListener: Listener? = null
+    private var listener: Listener? = null
 
     @Volatile
-    private var mGLRoot: GLRoot? = null
+    private var glRoot: GLRoot? = null
 
-    private val mImageCache: ImageCache = ImageCache(cacheMaxBytes)
+    private val imageCache: ImageCache = ImageCache(cacheMaxBytes)
 
     protected constructor() : this(
         MemoryTrim.readerCacheBytes(OSUtils.getTotalMemory(), MemoryTrim.isLowRamDevice())
     )
 
-    private var mStarted = false
+    private var started = false
 
     // Written on the UI thread in stop(), read on decoder threads in
     // notifyPageSucceed — must be volatile.
     @Volatile
-    private var mStopped = false
+    private var stopped = false
 
     @UiThread
     open fun start() {
         OSUtils.checkMainLoop()
 
-        if (mStarted) {
+        if (started) {
             throw IllegalStateException("Can't start it twice")
         }
-        mStarted = true
+        started = true
         MemoryTrim.register(this)
     }
 
     @UiThread
     open fun stop() {
         OSUtils.checkMainLoop()
-        mStopped = true
+        stopped = true
         MemoryTrim.unregister(this)
-        mImageCache.evictAll()
+        imageCache.evictAll()
         ImageTexture.trimFreeTiles()
     }
 
@@ -97,14 +97,14 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     override fun onTrimMemory(action: MemoryTrim.Action) {
         ImageTexture.trimFreeTiles()
         if (action == MemoryTrim.Action.CLEAR) {
-            mImageCache.evictAll()
+            imageCache.evictAll()
         } else if (action == MemoryTrim.Action.TRIM) {
-            mImageCache.trimToSize(mImageCache.maxSize() / 4)
+            imageCache.trimToSize(imageCache.maxSize() / 4)
         }
     }
 
     fun setGLRoot(glRoot: GLRoot?) {
-        mGLRoot = glRoot
+        this.glRoot = glRoot
     }
 
     /**
@@ -122,7 +122,7 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
      */
     @AnyThread
     protected fun postBarrierAfterPendingNotifications(callback: Runnable) {
-        val glRoot = mGLRoot
+        val glRoot = this.glRoot
         if (glRoot == null) {
             callback.run()
             return
@@ -141,7 +141,7 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     abstract fun size(): Int
 
     fun request(index: Int) {
-        val imageWrapper = mImageCache.get(index)
+        val imageWrapper = imageCache.get(index)
         if (imageWrapper != null) {
             notifyPageSucceed(index, imageWrapper)
         } else {
@@ -154,7 +154,7 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     }
 
     fun removeCache(index: Int) {
-        mImageCache.remove(index)
+        imageCache.remove(index)
     }
 
     /**
@@ -163,7 +163,7 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
      * LruCache stays the single source of truth (the `get` also bumps
      * the entry's recency, which is desirable for pages near the reader).
      */
-    fun hasCache(index: Int): Boolean = mImageCache.get(index) != null
+    fun hasCache(index: Int): Boolean = imageCache.get(index) != null
 
     protected abstract fun onRequest(index: Int)
 
@@ -178,7 +178,7 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     abstract fun getError(): String?
 
     fun setListener(listener: Listener?) {
-        mListener = listener
+        this.listener = listener
     }
 
     fun notifyDataChanged() {
@@ -199,7 +199,7 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
 
     fun notifyPageSucceed(index: Int, image: Image) {
         val imageWrapper = ImageWrapper(image)
-        if (mStopped) {
+        if (stopped) {
             // A decode completing after stop() must not repopulate the
             // already-evicted cache — nothing would evict the entry again and
             // the page would be retained until the provider graph is GC'd.
@@ -208,7 +208,7 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
             imageWrapper.release()
             return
         }
-        mImageCache.add(index, imageWrapper)
+        imageCache.add(index, imageWrapper)
         notifyPageSucceed(index, imageWrapper)
     }
 
@@ -221,12 +221,12 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     }
 
     private fun notify(@NotifyTask.Type type: Int, index: Int, percent: Float, image: ImageWrapper?, error: String?) {
-        val listener = mListener
-        val glRoot = mGLRoot
+        val listener = this.listener
+        val glRoot = this.glRoot
         if (listener == null || glRoot == null) {
             // The provider is being torn down (listener/GLRoot already cleared)
             // yet an in-flight decode still completed. A successful animated
-            // page is never retained by mImageCache (see ImageCache.add), so if
+            // page is never retained by imageCache (see ImageCache.add), so if
             // we drop the notification here nothing will ever recycle its
             // native image. Release it to free the underlying Image. The same
             // holds for a page bigger than the cache budget. Cached pages are
@@ -239,14 +239,14 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
             return
         }
 
-        val task = mNotifyTaskPool.acquire() ?: NotifyTask(listener, mNotifyTaskPool)
+        val task = notifyTaskPool.acquire() ?: NotifyTask(listener, notifyTaskPool)
         task.setData(type, index, percent, image, error)
         glRoot.addOnGLIdleListener(task)
     }
 
     private class NotifyTask(
-        private val mListener: Listener,
-        private val mPool: Pools.Pool<NotifyTask>,
+        private val listener: Listener,
+        private val pool: Pools.Pool<NotifyTask>,
     ) : GLRoot.OnGLIdleListener {
 
         @IntDef(TYPE_DATA_CHANGED, TYPE_WAIT, TYPE_PERCENT, TYPE_SUCCEED, TYPE_FAILED)
@@ -254,38 +254,38 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
         annotation class Type
 
         @Type
-        private var mType = 0
-        private var mIndex = 0
-        private var mPercent = 0f
-        private var mImage: ImageWrapper? = null
-        private var mError: String? = null
+        private var type = 0
+        private var index = 0
+        private var percent = 0f
+        private var image: ImageWrapper? = null
+        private var error: String? = null
 
         fun setData(@Type type: Int, index: Int, percent: Float, image: ImageWrapper?, error: String?) {
-            mType = type
-            mIndex = index
-            mPercent = percent
-            mImage = image
-            mError = error
+            this.type = type
+            this.index = index
+            this.percent = percent
+            this.image = image
+            this.error = error
         }
 
         override fun onGLIdle(canvas: GLCanvas?, renderRequested: Boolean): Boolean {
-            when (mType) {
-                TYPE_DATA_CHANGED -> if (mIndex < 0) {
-                    mListener.onDataChanged()
+            when (type) {
+                TYPE_DATA_CHANGED -> if (index < 0) {
+                    listener.onDataChanged()
                 } else {
-                    mListener.onDataChanged(mIndex)
+                    listener.onDataChanged(index)
                 }
-                TYPE_WAIT -> mListener.onPageWait(mIndex)
-                TYPE_PERCENT -> mListener.onPagePercent(mIndex, mPercent)
-                TYPE_SUCCEED -> mListener.onPageSucceed(mIndex, mImage!!)
-                TYPE_FAILED -> mListener.onPageFailed(mIndex, mError)
+                TYPE_WAIT -> listener.onPageWait(index)
+                TYPE_PERCENT -> listener.onPagePercent(index, percent)
+                TYPE_SUCCEED -> listener.onPageSucceed(index, image!!)
+                TYPE_FAILED -> listener.onPageFailed(index, error)
             }
 
             // Clean data
-            mImage = null
-            mError = null
+            image = null
+            error = null
             // Push back
-            mPool.release(this)
+            pool.release(this)
 
             return false
         }

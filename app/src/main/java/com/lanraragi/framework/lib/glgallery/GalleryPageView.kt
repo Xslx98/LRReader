@@ -33,94 +33,85 @@ class GalleryPageView(
     progressColor: Int,
     progressBgColor: Int,
     progressSize: Int,
-    minHeight: Int,
+    private val minHeight: Int,
     infoInterval: Int,
 ) : GLFrameLayout() {
 
-    private val mImage: ImageView
-    private val mInfo: GLLinearLayout
-    private val mPage: GLImageMovableTextView
-    private val mError: GLTextureView
-    private val mProgress: GLProgressView
+    @get:JvmName("getImageView")
+    internal val imageView: ImageView
+    private val info: GLLinearLayout
+    private val pageText: GLImageMovableTextView
+    private val errorView: GLTextureView
+    private val progressView: GLProgressView
 
-    private val mMinHeight: Int
-
-    private var mIndex = INVALID_INDEX
+    @get:JvmName("getIndex")
+    @set:JvmName("setIndex")
+    internal var index = INVALID_INDEX
 
     init {
         // Add image
-        mImage = ImageView()
+        imageView = ImageView()
         var glp = GravityLayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-        addComponent(mImage, glp)
+        addComponent(imageView, glp)
 
         // Add other panel
-        mInfo = GLLinearLayout()
-        mInfo.orientation = GLLinearLayout.VERTICAL
-        mInfo.interval = infoInterval
+        info = GLLinearLayout()
+        info.orientation = GLLinearLayout.VERTICAL
+        info.interval = infoInterval
         glp = GravityLayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         glp.gravity = Gravity.CENTER
-        addComponent(mInfo, glp)
+        addComponent(info, glp)
 
         // Add page
-        mPage = GLImageMovableTextView()
-        mPage.setTextTexture(pageTextTexture)
+        pageText = GLImageMovableTextView()
+        pageText.setTextTexture(pageTextTexture)
         var lp = GLLinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         lp.gravity = Gravity.CENTER_HORIZONTAL
-        mInfo.addComponent(mPage, lp)
+        info.addComponent(pageText, lp)
 
         // Add error
-        mError = GLTextureView()
+        errorView = GLTextureView()
         lp = GLLinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         lp.gravity = Gravity.CENTER_HORIZONTAL
-        mInfo.addComponent(mError, lp)
+        info.addComponent(errorView, lp)
 
         // Add progress
-        mProgress = GLProgressView()
-        mProgress.setBgColor(progressBgColor)
-        mProgress.setColor(progressColor)
-        mProgress.minimumWidth = progressSize
-        mProgress.minimumHeight = progressSize
+        progressView = GLProgressView()
+        progressView.setBgColor(progressBgColor)
+        progressView.setColor(progressColor)
+        progressView.minimumWidth = progressSize
+        progressView.minimumHeight = progressSize
         lp = GLLinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         lp.gravity = Gravity.CENTER_HORIZONTAL
-        mInfo.addComponent(mProgress, lp)
-
-        mMinHeight = minHeight
+        info.addComponent(progressView, lp)
     }
 
     override fun getSuggestedMinimumHeight(): Int {
-        // The height of the actual image may be smaller than mPageMinHeight.
+        // The height of the actual image may be smaller than minHeight.
         // Set min height as 0 when the image is visible.
         // For PageLayoutManager, min height is useless.
-        return if (mImage.visibility == VISIBLE) {
+        return if (imageView.visibility == VISIBLE) {
             0
         } else {
-            mMinHeight
+            minHeight
         }
     }
 
-    @JvmName("getIndex")
-    internal fun getIndex(): Int = mIndex
-
-    @JvmName("setIndex")
-    internal fun setIndex(index: Int) {
-        mIndex = index
-    }
-
     fun showImage() {
-        mImage.visibility = VISIBLE
-        mInfo.visibility = GONE
+        imageView.visibility = VISIBLE
+        info.visibility = GONE
     }
 
     fun showInfo() {
         // For image valid rect
-        mImage.visibility = INVISIBLE
-        mInfo.visibility = VISIBLE
+        imageView.visibility = INVISIBLE
+        info.visibility = VISIBLE
     }
 
     private fun unbindImage() {
-        val texture = mImage.getImageTexture()
+        val texture = imageView.imageTexture
         if (texture != null) {
-            mImage.setImageTexture(null)
+            imageView.imageTexture = null
             texture.recycle()
         }
     }
@@ -128,32 +119,32 @@ class GalleryPageView(
     fun setImage(imageTexture: ImageTexture?) {
         unbindImage()
         if (imageTexture != null) {
-            mImage.setImageTexture(imageTexture)
+            imageView.imageTexture = imageTexture
         }
     }
 
     fun setPage(page: Int) {
-        mPage.visibility = VISIBLE
-        mPage.setText(page.toString())
+        pageText.visibility = VISIBLE
+        pageText.setText(page.toString())
     }
 
     fun setProgress(progress: Float) {
         if (progress == PROGRESS_GONE) {
-            mProgress.visibility = GONE
+            progressView.visibility = GONE
         } else if (progress == PROGRESS_INDETERMINATE) {
-            mProgress.visibility = VISIBLE
-            mProgress.isIndeterminate = true
+            progressView.visibility = VISIBLE
+            progressView.isIndeterminate = true
         } else {
-            mProgress.visibility = VISIBLE
-            mProgress.isIndeterminate = false
-            mProgress.setProgress(progress)
+            progressView.visibility = VISIBLE
+            progressView.isIndeterminate = false
+            progressView.setProgress(progress)
         }
     }
 
     private fun unbindError() {
-        val texture = mError.texture
+        val texture = errorView.texture
         if (texture != null) {
-            mError.texture = null
+            errorView.texture = null
             if (texture is BasicTexture) {
                 texture.recycle()
             }
@@ -163,24 +154,23 @@ class GalleryPageView(
     fun setError(error: String?, galleryView: GalleryView?) {
         unbindError()
         if (error == null) {
-            mError.visibility = GONE
+            errorView.visibility = GONE
         } else {
-            mError.visibility = VISIBLE
-            galleryView!!.bindErrorView(mError, error)
+            errorView.visibility = VISIBLE
+            galleryView!!.bindErrorView(errorView, error)
         }
     }
 
-    @JvmName("getImageView")
-    internal fun getImageView(): ImageView = mImage
+    @get:JvmName("isLoaded")
+    internal val isLoaded: Boolean
+        get() = imageView.visibility == VISIBLE
 
-    @JvmName("isLoaded")
-    internal fun isLoaded(): Boolean = mImage.visibility == VISIBLE
-
-    @JvmName("isError")
-    internal fun isError(): Boolean = mError.visibility == VISIBLE
+    @get:JvmName("isError")
+    internal val isError: Boolean
+        get() = errorView.visibility == VISIBLE
 
     @JvmName("isUnderInfo")
-    internal fun isUnderInfo(x: Float, y: Float): Boolean = mInfo.bounds().contains(x.toInt(), y.toInt())
+    internal fun isUnderInfo(x: Float, y: Float): Boolean = info.bounds().contains(x.toInt(), y.toInt())
 
     companion object {
         const val INVALID_INDEX = -1

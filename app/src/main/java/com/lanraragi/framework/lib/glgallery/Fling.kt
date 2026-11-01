@@ -27,11 +27,11 @@ import kotlin.math.ln
 
 internal abstract class Fling(context: Context) : Animation() {
 
-    private val mPhysicalCoeff: Float
+    private val physicalCoeff: Float
 
     init {
         val ppi = context.resources.displayMetrics.density * 160.0f
-        mPhysicalCoeff = SensorManager.GRAVITY_EARTH * // g (m/s^2)
+        physicalCoeff = SensorManager.GRAVITY_EARTH * // g (m/s^2)
             39.37f * // inch/meter
             ppi *
             0.84f // look and feel tuning
@@ -39,7 +39,7 @@ internal abstract class Fling(context: Context) : Animation() {
     }
 
     private fun getSplineDeceleration(velocity: Int): Double {
-        return ln((INFLEXION * abs(velocity) / (FLING_FRICTION * mPhysicalCoeff)).toDouble())
+        return ln((INFLEXION * abs(velocity) / (FLING_FRICTION * physicalCoeff)).toDouble())
     }
 
     /* Returns the duration, expressed in milliseconds */
@@ -52,11 +52,11 @@ internal abstract class Fling(context: Context) : Animation() {
     protected fun getSplineFlingDistance(velocity: Int): Double {
         val l = getSplineDeceleration(velocity)
         val decelMinusOne = DECELERATION_RATE - 1.0
-        return (FLING_FRICTION * mPhysicalCoeff).toDouble() * exp(DECELERATION_RATE / decelMinusOne * l)
+        return (FLING_FRICTION * physicalCoeff).toDouble() * exp(DECELERATION_RATE / decelMinusOne * l)
     }
 
     /**
-     * Modifies mDuration to the duration it takes to get from start to newFinal using the
+     * Modifies duration to the duration it takes to get from start to newFinal using the
      * spline interpolation. The previous duration was needed to get to oldFinal.
      */
     protected fun adjustDuration(start: Int, oldFinal: Int, newFinal: Int, duration: Int): Int {

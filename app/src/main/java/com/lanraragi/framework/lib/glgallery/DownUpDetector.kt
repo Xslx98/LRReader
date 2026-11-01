@@ -18,7 +18,7 @@ package com.lanraragi.framework.lib.glgallery
 
 import android.view.MotionEvent
 
-internal class DownUpDetector(private val mListener: DownUpListener) {
+internal class DownUpDetector(private val listener: DownUpListener) {
     interface DownUpListener {
         fun onDown(e: MotionEvent)
         fun onUp(e: MotionEvent)
@@ -26,24 +26,24 @@ internal class DownUpDetector(private val mListener: DownUpListener) {
         fun onPointerUp(e: MotionEvent)
     }
 
-    private var mStillDown = false
+    private var stillDown = false
 
     private fun setState(down: Boolean, e: MotionEvent) {
-        if (down == mStillDown) return
-        mStillDown = down
+        if (down == stillDown) return
+        stillDown = down
         if (down) {
-            mListener.onDown(e)
+            listener.onDown(e)
         } else {
-            mListener.onUp(e)
+            listener.onUp(e)
         }
     }
 
     fun onTouchEvent(ev: MotionEvent) {
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> setState(true, ev)
-            MotionEvent.ACTION_POINTER_DOWN -> mListener.onPointerDown(ev)
+            MotionEvent.ACTION_POINTER_DOWN -> listener.onPointerDown(ev)
             MotionEvent.ACTION_UP -> {
-                mListener.onPointerUp(ev)
+                listener.onPointerUp(ev)
                 setState(false, ev)
             }
             MotionEvent.ACTION_CANCEL -> setState(false, ev)

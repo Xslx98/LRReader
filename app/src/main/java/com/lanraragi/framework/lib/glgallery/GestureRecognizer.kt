@@ -25,7 +25,7 @@ import android.view.ScaleGestureDetector
 
 // This class aggregates three gesture detectors: GestureDetector,
 // ScaleGestureDetector, and DownUpDetector.
-internal class GestureRecognizer(context: Context, private val mListener: Listener) {
+internal class GestureRecognizer(context: Context, private val listener: Listener) {
 
     interface Listener {
         fun onSingleTapUp(x: Float, y: Float): Boolean
@@ -49,81 +49,81 @@ internal class GestureRecognizer(context: Context, private val mListener: Listen
         fun onPointerUp()
     }
 
-    private val mGestureDetector: GestureDetector
-    private val mScaleDetector: ScaleGestureDetector
-    private val mDownUpDetector: DownUpDetector
+    private val gestureDetector: GestureDetector
+    private val scaleDetector: ScaleGestureDetector
+    private val downUpDetector: DownUpDetector
 
     init {
         val gestureListener = MyGestureListener()
-        mGestureDetector = GestureDetector(context, gestureListener, null)
-        mGestureDetector.setOnDoubleTapListener(gestureListener)
-        mScaleDetector = ScaleGestureDetector(context, MyScaleListener())
-        mDownUpDetector = DownUpDetector(MyDownUpListener())
+        gestureDetector = GestureDetector(context, gestureListener, null)
+        gestureDetector.setOnDoubleTapListener(gestureListener)
+        scaleDetector = ScaleGestureDetector(context, MyScaleListener())
+        downUpDetector = DownUpDetector(MyDownUpListener())
     }
 
     fun onTouchEvent(event: MotionEvent) {
-        mScaleDetector.onTouchEvent(event)
-        mGestureDetector.onTouchEvent(event)
-        mDownUpDetector.onTouchEvent(event)
+        scaleDetector.onTouchEvent(event)
+        gestureDetector.onTouchEvent(event)
+        downUpDetector.onTouchEvent(event)
     }
 
     private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
-        override fun onSingleTapUp(e: MotionEvent): Boolean = mListener.onSingleTapUp(e.x, e.y)
+        override fun onSingleTapUp(e: MotionEvent): Boolean = listener.onSingleTapUp(e.x, e.y)
 
-        override fun onSingleTapConfirmed(e: MotionEvent): Boolean = mListener.onSingleTapConfirmed(e.x, e.y)
+        override fun onSingleTapConfirmed(e: MotionEvent): Boolean = listener.onSingleTapConfirmed(e.x, e.y)
 
         override fun onDoubleTapEvent(e: MotionEvent): Boolean {
             return if (e.action == MotionEvent.ACTION_UP) {
-                mListener.onDoubleTapConfirmed(e.x, e.y)
+                listener.onDoubleTapConfirmed(e.x, e.y)
             } else {
                 true
             }
         }
 
-        override fun onDoubleTap(e: MotionEvent): Boolean = mListener.onDoubleTap(e.x, e.y)
+        override fun onDoubleTap(e: MotionEvent): Boolean = listener.onDoubleTap(e.x, e.y)
 
         override fun onLongPress(e: MotionEvent) {
-            mListener.onLongPress(e.x, e.y)
+            listener.onLongPress(e.x, e.y)
         }
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
-            return mListener.onScroll(dx, dy, e2.x - e1!!.x, e2.y - e1.y, e2.x, e2.y)
+            return listener.onScroll(dx, dy, e2.x - e1!!.x, e2.y - e1.y, e2.x, e2.y)
         }
 
         override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-            return mListener.onFling(e1, e2, velocityX, velocityY)
+            return listener.onFling(e1, e2, velocityX, velocityY)
         }
     }
 
     private inner class MyScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-            return mListener.onScaleBegin(detector.focusX, detector.focusY)
+            return listener.onScaleBegin(detector.focusX, detector.focusY)
         }
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            return mListener.onScale(detector.focusX, detector.focusY, detector.scaleFactor)
+            return listener.onScale(detector.focusX, detector.focusY, detector.scaleFactor)
         }
 
         override fun onScaleEnd(detector: ScaleGestureDetector) {
-            mListener.onScaleEnd()
+            listener.onScaleEnd()
         }
     }
 
     private inner class MyDownUpListener : DownUpDetector.DownUpListener {
         override fun onDown(e: MotionEvent) {
-            mListener.onDown(e.x, e.y)
+            listener.onDown(e.x, e.y)
         }
 
         override fun onUp(e: MotionEvent) {
-            mListener.onUp()
+            listener.onUp()
         }
 
         override fun onPointerDown(e: MotionEvent) {
-            mListener.onPointerDown(e.x, e.y)
+            listener.onPointerDown(e.x, e.y)
         }
 
         override fun onPointerUp(e: MotionEvent) {
-            mListener.onPointerUp()
+            listener.onPointerUp()
         }
     }
 }
