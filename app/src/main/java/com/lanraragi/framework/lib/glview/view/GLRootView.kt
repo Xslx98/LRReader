@@ -17,7 +17,6 @@
 @file:Suppress( // TODO(2.4-idiom)
     "ObjectLiteralToLambda",
     "UnusedParameter",
-    "UnsafeCallOnNullableType",
     "NestedBlockDepth",
     "ThrowsCount",
     "UseRequire",
@@ -287,7 +286,8 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
 
     private fun onDrawFrameLocked(gl: GL10) {
         if (DEBUG_FPS) outputFps()
-        val canvas = this.canvas!!
+        // onSurfaceCreated builds the canvas before the first frame.
+        val canvas = checkNotNull(this.canvas)
         // release the unbound textures and deleted buffers.
         canvas.deleteRecycledResources()
 
@@ -305,7 +305,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
         }
 
         canvas.save(GLCanvas.SAVE_FLAG_ALL)
-        rotateCanvas(-compensationDegrees)
+        rotateCanvas(canvas, -compensationDegrees)
         val contentView = this.contentView
         if (contentView != null) {
             contentView.render(canvas)
@@ -341,9 +341,8 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
         }
     }
 
-    private fun rotateCanvas(degrees: Int) {
+    private fun rotateCanvas(canvas: GLCanvas, degrees: Int) {
         if (degrees == 0) return
-        val canvas = this.canvas!!
         val w = width
         val h = height
         val cx = w / 2
@@ -510,7 +509,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             val gl = gl1 as GL11
             AssertUtils.assertTrue(gl11 === gl)
 
-            canvas!!.setSize(width, height)
+            checkNotNull(canvas).setSize(width, height)
         }
 
         override fun onDrawFrame(gl: GL10) {

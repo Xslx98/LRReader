@@ -17,7 +17,6 @@
 @file:Suppress( // TODO(2.4-idiom)
     "UseCheckOrError",
     "ThrowingExceptionsWithoutMessageOrCause",
-    "UnsafeCallOnNullableType",
     "LargeClass",
     "UseRequire",
     "ComplexCondition",
@@ -1102,7 +1101,8 @@ open class GLView : TouchOwner {
 
         @JvmStatic
         fun measureComponent(component: GLView, widthSpec: Int, heightSpec: Int) {
-            val lp = component.layoutParams!!
+            // addComponent always gives a component its layout params.
+            val lp = checkNotNull(component.layoutParams)
             val componentWidthSpec = getComponentSpec(widthSpec, lp.width)
             val componentHeightSpec = getComponentSpec(heightSpec, lp.height)
             component.measure(componentWidthSpec, componentHeightSpec)
