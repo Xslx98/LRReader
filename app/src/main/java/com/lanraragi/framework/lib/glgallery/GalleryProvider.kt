@@ -27,7 +27,6 @@ import com.lanraragi.framework.lib.glview.image.ImageTexture
 import com.lanraragi.framework.lib.glview.image.ImageWrapper
 import com.lanraragi.framework.lib.glview.view.GLRoot
 import com.lanraragi.framework.lib.image.Image
-// import com.lanraragi.framework.lib.image.Image1
 import com.lanraragi.reader.util.MemoryTrim
 import com.lanraragi.reader.util.MemoryTrimmable
 import com.lanraragi.reader.util.OSUtils
@@ -314,9 +313,6 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
             if (value.obtain()) {
                 put(key, value)
             }
-//            if (value.getFormat() != Image1.FORMAT_GIF && value.getFormat() == Image1.FORMAT_WEBP && value.obtain()) {
-//                put(key, value);
-//            }
         }
 
         override fun sizeOf(key: Int, value: ImageWrapper): Int {
