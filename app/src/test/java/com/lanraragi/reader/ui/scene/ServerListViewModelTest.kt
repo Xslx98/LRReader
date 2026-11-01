@@ -63,6 +63,11 @@ class ServerListViewModelTest {
     private lateinit var server: MockWebServer
     private lateinit var eventScope: CoroutineScope
 
+    /** Every view model a test made, so tearDown can let their work finish first. */
+    private val viewModels = mutableListOf<ServerListViewModel>()
+
+    private fun newVm(): ServerListViewModel = ServerListViewModel().also { viewModels += it }
+
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -114,6 +119,10 @@ class ServerListViewModelTest {
 
     @After
     fun tearDown() {
+        // A test may assert on an early step of a cascade (deleteProfile) and
+        // return while the rest still runs. Its Main-thread resume would then
+        // race resetMain below, which fails this test and the next one's setMain.
+        viewModels.forEach { awaitViewModelIdle(it) }
         eventScope.cancel()
         Dispatchers.resetMain()
         LRRAuthManager.clear()
@@ -152,7 +161,7 @@ class ServerListViewModelTest {
         // 401 = permanent failure, no retry.
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         // Explicit http:// scheme → single probe, no https ladder.
         vm.testAndAddProfile("X", server.url("").toString().removeSuffix("/"), "candidate-key", true)
@@ -172,7 +181,7 @@ class ServerListViewModelTest {
                 .setBody("""{"name":"New","version":"0.9.8","archives_per_page":100}""")
         )
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         val url = server.url("").toString().removeSuffix("/")
         vm.testAndAddProfile("New", url, "new-key", allowCleartext = false)
@@ -199,7 +208,7 @@ class ServerListViewModelTest {
                 .setBody("""{"name":"Mock","version":"0.9.8","archives_per_page":100}""")
         )
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         val url = server.url("").toString().removeSuffix("/") // http://127.0.0.1:port (LAN)
         vm.testAndAddProfile("Mock", url, "k", allowCleartext = false)
@@ -231,7 +240,7 @@ class ServerListViewModelTest {
             data = throwingDataModule(ProfileRepository(throwingDao))
         )
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndAddProfile("New", newUrl, "new-key", allowCleartext = true)
@@ -250,7 +259,7 @@ class ServerListViewModelTest {
             .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         vm.testAndAddProfile("New", server.url("").toString().removeSuffix("/"), "new-key", true)
 
@@ -277,7 +286,7 @@ class ServerListViewModelTest {
             .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
@@ -319,7 +328,7 @@ class ServerListViewModelTest {
             data = throwingDataModule(ProfileRepository(throwingDao))
         )
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
@@ -351,7 +360,7 @@ class ServerListViewModelTest {
             data = throwingDataModule(ProfileRepository(throwingDao))
         )
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/")
         vm.testAndSaveEditedProfile(profile, 0, "New Name", newUrl, "new-key", allowCleartext = true)
@@ -380,7 +389,7 @@ class ServerListViewModelTest {
                 .setBody("""{"name":"Mock","version":"0.9.8","archives_per_page":100}""")
         )
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         val newUrl = server.url("").toString().removeSuffix("/") // explicit http LAN, no fallback
         vm.testAndSaveEditedProfile(profile, 0, "New", newUrl, "k", allowCleartext = true)
@@ -401,7 +410,7 @@ class ServerListViewModelTest {
         insertProfile("Inactive", "https://inactive.com", isActive = false)
         insertProfile("Active", "https://active.com", isActive = true)
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         vm.loadProfiles()
 
         awaitUntil { vm.profiles.value.size == 2 }
@@ -418,7 +427,7 @@ class ServerListViewModelTest {
         val id2 = insertProfile("B", "https://b.com", isActive = false)
         val profileB = ServerProfile(id = id2, name = "B", url = "https://b.com", isActive = false)
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
 
         vm.activateProfile(profileB)
@@ -444,7 +453,7 @@ class ServerListViewModelTest {
         val profileB = ServerProfile(id = id2, name = "B", url = "https://b.com", isActive = false)
         val versionBefore = LRRAuthManager.serverConfigVersion
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
         vm.activateProfile(profileB)
         awaitUntil { events.any { it is ServerListViewModel.ServerListUiEvent.ProfileActivated } }
@@ -468,7 +477,7 @@ class ServerListViewModelTest {
         })
 
         // The scene's view is gone (Back / rotation) while the switch runs.
-        val vm = ServerListViewModel()
+        val vm = newVm()
         vm.activateProfile(profileB)
         awaitViewModelIdle(vm)
 
@@ -490,7 +499,7 @@ class ServerListViewModelTest {
         val historyRepo = SearchHistoryRepository(db.browsingDao(), db)
         runBlocking { historyRepo.recordSearch(id, "doomed query") }
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         vm.loadProfiles()
         awaitUntil { vm.profiles.value.size == 1 }
 
@@ -506,7 +515,7 @@ class ServerListViewModelTest {
         val toDelete = ServerProfile(id = id2, name = "Remove", url = "https://remove.com")
         LRRAuthManager.setApiKeyForProfile(id2, "key")
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         vm.loadProfiles()
         awaitUntil { vm.profiles.value.size == 2 }
 
@@ -533,7 +542,7 @@ class ServerListViewModelTest {
         LRRAuthManager.setApiKey("nas-key")
         LRRAuthManager.setActiveProfileId(id)
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         vm.deleteProfile(profile)
 
         awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.isEmpty() }
@@ -568,7 +577,7 @@ class ServerListViewModelTest {
             stats.insertDailyAggregateIfAbsent(DailyReadingAggregate(epochDay = 1, serverProfileId = kept, pagesRead = 7))
         }
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         vm.deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example"))
 
         awaitUntil { runBlocking { stats.getDailyAggregatesForProfile(gone) }.isEmpty() }
@@ -591,7 +600,7 @@ class ServerListViewModelTest {
         LRRAuthManager.setApiKey("home-key")
         LRRAuthManager.setActiveProfileId(activeId)
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         vm.deleteProfile(ServerProfile(id = otherId, name = "Other", url = "https://other.example"))
 
         awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.size == 1 }
@@ -606,7 +615,7 @@ class ServerListViewModelTest {
 
         LRRAuthManager.simulateStorageUnavailableForTesting()
 
-        val vm = ServerListViewModel()
+        val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteProfile(profile)
@@ -639,7 +648,7 @@ class ServerListViewModelTest {
             ArchiveProgressOutbox.markPending("https://gone.example", "arc", 3)
             ArchiveProgressOutbox.markPending("https://kept.example", "arc", 5)
 
-            ServerListViewModel().deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example/"))
+            newVm().deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example/"))
 
             awaitUntil { ArchiveProgressOutbox.entries().none { it.baseUrl == "https://gone.example" } }
             assertEquals(listOf("https://kept.example"), ArchiveProgressOutbox.entries().map { it.baseUrl })
@@ -667,7 +676,7 @@ class ServerListViewModelTest {
             LocalReadingProgress.profileId = { kept }
             LocalReadingProgress.save(ctx, "arc", 9, nowSeconds = 200)
 
-            ServerListViewModel().deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example"))
+            newVm().deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example"))
 
             awaitUntil { prefs.all.keys.none { it.startsWith("$gone:") } }
             assertEquals(
