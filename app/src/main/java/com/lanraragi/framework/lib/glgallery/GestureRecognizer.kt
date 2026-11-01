@@ -22,7 +22,6 @@ import android.content.Context
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
-import androidx.core.view.GestureDetectorCompat
 
 // This class aggregates three gesture detectors: GestureDetector,
 // ScaleGestureDetector, and DownUpDetector.
@@ -50,13 +49,13 @@ internal class GestureRecognizer(context: Context, private val mListener: Listen
         fun onPointerUp()
     }
 
-    private val mGestureDetector: GestureDetectorCompat
+    private val mGestureDetector: GestureDetector
     private val mScaleDetector: ScaleGestureDetector
     private val mDownUpDetector: DownUpDetector
 
     init {
         val gestureListener = MyGestureListener()
-        mGestureDetector = GestureDetectorCompat(context, gestureListener, null /* ignoreMultitouch */)
+        mGestureDetector = GestureDetector(context, gestureListener, null)
         mGestureDetector.setOnDoubleTapListener(gestureListener)
         mScaleDetector = ScaleGestureDetector(context, MyScaleListener())
         mDownUpDetector = DownUpDetector(MyDownUpListener())
