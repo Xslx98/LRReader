@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "LongMethod",
-    "CyclomaticComplexMethod",
-    "ComplexCondition",
-    "LargeClass",
-)
-
 package com.lanraragi.framework.lib.glgallery
 
 import android.content.Context
@@ -41,6 +34,7 @@ import com.lanraragi.reader.util.MathUtils
 import kotlin.math.abs
 import kotlin.math.max
 
+@Suppress("LargeClass") // the pages, drag offset and gesture flags are one state shared by fill, scroll and animations
 internal class PagerLayoutManager(
     context: Context,
     galleryView: GalleryView,
@@ -292,10 +286,6 @@ internal class PagerLayoutManager(
 
     override fun onFill() {
         val adapter = this.adapter ?: throw AssertionError(NOT_ATTACHED)
-        val galleryView = this.galleryView
-
-        val width = galleryView.width
-        val height = galleryView.height
         val size = adapter.size()
         val error = adapter.getError()
 
@@ -303,17 +293,7 @@ internal class PagerLayoutManager(
             // Remove error view and all pages
             removeErrorView()
             removeAllPages()
-
-            // Ensure progress
-            var progress = this.progress
-            if (progress == null) {
-                progress = galleryView.obtainProgress()
-                this.progress = progress
-                galleryView.addComponent(progress)
-            }
-
-            // Place progress center
-            placeCenter(progress)
+            showProgress()
         } else if (size <= GalleryProvider.STATE_ERROR || size == 0) { // Get error or empty, show error text
             // Ensure error is not null
             val errorStr: String = if (0 == size) {
@@ -325,99 +305,124 @@ internal class PagerLayoutManager(
             // Remove progress and all pages
             removeProgress()
             removeAllPages()
-
-            // Ensure error view
-            var errorView = this.errorView
-            if (errorView == null) {
-                errorView = galleryView.obtainErrorView()
-                this.errorView = errorView
-                galleryView.addComponent(errorView)
-            }
-
-            // Update error string
-            if (errorStr != this.errorStr) {
-                this.errorStr = errorStr
-                galleryView.bindErrorView(errorView, errorStr)
-            }
-
-            // Place error view center
-            placeCenter(errorView)
+            showError(errorStr)
         } else {
             // Remove progress and error view
             removeProgress()
             removeErrorView()
+            fillPages(adapter, size)
+        }
+    }
 
-            // Ensure index in range
-            var index = this.index
-            if (index < 0) {
-                index = 0
-                this.index = index
-                removeAllPages()
-                Log.e(TAG, "index < 0, index = $index")
-            } else if (index >= size) {
-                index = size - 1
-                this.index = index
-                removeAllPages()
-                Log.e(TAG, "index >= size, index = $index, size = $size")
-            }
+    private fun showProgress() {
+        // Ensure progress
+        var progress = this.progress
+        if (progress == null) {
+            progress = galleryView.obtainProgress()
+            this.progress = progress
+            galleryView.addComponent(progress)
+        }
 
-            // Ensure pages
-            var current = this.current
-            if (current == null) {
-                current = obtainPage()
-                this.current = current
-                galleryView.addComponent(current)
-                adapter.bind(current, index)
-            }
-            val previous = this.previous
-            if (previous == null && index > 0) {
-                val page = obtainPage()
-                this.previous = page
-                galleryView.addComponent(page)
-                adapter.bind(page, index - 1)
-            } else if (previous != null && index == 0) {
-                removePage(previous)
-                this.previous = null
-            }
-            val next = this.next
-            if (next == null && index < size - 1) {
-                val page = obtainPage()
-                this.next = page
-                galleryView.addComponent(page)
-                adapter.bind(page, index + 1)
-            } else if (next != null && index == size - 1) {
-                removePage(next)
-                this.next = null
-            }
+        // Place progress center
+        placeCenter(progress)
+    }
 
-            val leftPage = this.leftPage
-            val rightPage = this.rightPage
+    private fun showError(errorStr: String) {
+        // Ensure error view
+        var errorView = this.errorView
+        if (errorView == null) {
+            errorView = galleryView.obtainErrorView()
+            this.errorView = errorView
+            galleryView.addComponent(errorView)
+        }
 
-            // Fix offset
-            val min = if (rightPage == null) 0 else -width - interval + 1
-            val max = if (leftPage == null) 0 else width + interval - 1
-            this.offset = MathUtils.clamp(this.offset, min, max)
+        // Update error string
+        if (errorStr != this.errorStr) {
+            this.errorStr = errorStr
+            galleryView.bindErrorView(errorView, errorStr)
+        }
 
-            // Measure and layout pages
-            val offset = this.offset
-            val widthSpec = GLView.MeasureSpec.makeMeasureSpec(width, GLView.MeasureSpec.EXACTLY)
-            val heightSpec = GLView.MeasureSpec.makeMeasureSpec(height, GLView.MeasureSpec.EXACTLY)
+        // Place error view center
+        placeCenter(errorView)
+    }
+
+    // The page path of onFill: the current page and its neighbours, laid
+    // out around the drag offset.
+    private fun fillPages(adapter: GalleryView.Adapter, size: Int) {
+        val galleryView = this.galleryView
+        val width = galleryView.width
+        val height = galleryView.height
+
+        // Ensure index in range
+        var index = this.index
+        if (index < 0) {
+            index = 0
+            this.index = index
+            removeAllPages()
+            Log.e(TAG, "index < 0, index = $index")
+        } else if (index >= size) {
+            index = size - 1
+            this.index = index
+            removeAllPages()
+            Log.e(TAG, "index >= size, index = $index, size = $size")
+        }
+
+        // Ensure pages
+        var current = this.current
+        if (current == null) {
+            current = obtainPage()
+            this.current = current
+            galleryView.addComponent(current)
+            adapter.bind(current, index)
+        }
+        val previous = this.previous
+        if (previous == null && index > 0) {
+            val page = obtainPage()
+            this.previous = page
+            galleryView.addComponent(page)
+            adapter.bind(page, index - 1)
+        } else if (previous != null && index == 0) {
+            removePage(previous)
+            this.previous = null
+        }
+        val next = this.next
+        if (next == null && index < size - 1) {
+            val page = obtainPage()
+            this.next = page
+            galleryView.addComponent(page)
+            adapter.bind(page, index + 1)
+        } else if (next != null && index == size - 1) {
+            removePage(next)
+            this.next = null
+        }
+
+        val leftPage = this.leftPage
+        val rightPage = this.rightPage
+
+        // Fix offset
+        val min = if (rightPage == null) 0 else -width - interval + 1
+        val max = if (leftPage == null) 0 else width + interval - 1
+        this.offset = MathUtils.clamp(this.offset, min, max)
+
+        // Measure and layout pages
+        val offset = this.offset
+        val widthSpec = GLView.MeasureSpec.makeMeasureSpec(width, GLView.MeasureSpec.EXACTLY)
+        val heightSpec = GLView.MeasureSpec.makeMeasureSpec(height, GLView.MeasureSpec.EXACTLY)
+        layoutPage(
+            current, widthSpec, heightSpec,
+            offset, 0, width + offset, height,
+        )
+        if (leftPage != null) {
             layoutPage(
-                current, widthSpec, heightSpec,
-                offset, 0, width + offset, height,
+                leftPage, widthSpec, heightSpec,
+                -interval - width + offset, 0, -interval + offset, height,
             )
-            if (leftPage != null) {
-                layoutPage(
-                    leftPage, widthSpec, heightSpec,
-                    -interval - width + offset, 0, -interval + offset, height,
-                )
-            }
-            if (rightPage != null) {
-                layoutPage(
-                    rightPage, widthSpec, heightSpec,
-                    width + interval + offset, 0, width + interval + width + offset, height,
-                )
-            }
+        }
+        if (rightPage != null) {
+            layoutPage(
+                rightPage, widthSpec, heightSpec,
+                width + interval + offset, 0, width + interval + width + offset, height,
+            )
         }
     }
 
@@ -445,10 +450,12 @@ internal class PagerLayoutManager(
         // (horizontal-dominant gesture, set on first scroll) filters out
         // vertical-dominant drags whose last event drifts a few pixels
         // horizontally into the edge branch.
-        if (offset == 0 && next == null && canScrollBetweenPages &&
-            ((mode == MODE_LEFT_TO_RIGHT && deltaX > 0) ||
-                (mode == MODE_RIGHT_TO_LEFT && deltaX < 0))
-        ) {
+        val pullingForward = canScrollBetweenPages && when (mode) {
+            MODE_LEFT_TO_RIGHT -> deltaX > 0
+            MODE_RIGHT_TO_LEFT -> deltaX < 0
+            else -> false
+        }
+        if (offset == 0 && next == null && pullingForward) {
             galleryView.onTransferEnd()
         }
 
@@ -662,10 +669,7 @@ internal class PagerLayoutManager(
                 canImageScroll = false
                 deltaX = 0
                 deltaY = 0
-            } else if (remainX == 0 ||
-                (leftPage == null && offset == 0 && remainX < 0) ||
-                (rightPage == null && offset == 0 && remainX > 0)
-            ) {
+            } else if (isOnEdge(remainX)) {
                 // On edge
                 overScrollEdge(remainX, remainY, x, y)
                 remainX = 0
@@ -689,19 +693,25 @@ internal class PagerLayoutManager(
         }
     }
 
+    private fun isOnEdge(remainX: Int): Boolean =
+        remainX == 0 ||
+            (leftPage == null && offset == 0 && remainX < 0) ||
+            (rightPage == null && offset == 0 && remainX > 0)
+
     override fun onScroll(dx: Float, dy: Float, totalX: Float, totalY: Float, x: Float, y: Float) {
         scrollInternal(dx, dy, x, y)
     }
 
     override fun onFling(velocityX: Float, velocityY: Float) {
         val current = this.current
-        if (current == null || offset != 0 || !current.imageView.isLoaded ||
-            !current.imageView.canFling()
-        ) {
+        if (current == null || offset != 0) {
+            return
+        }
+        val image = current.imageView
+        if (!image.isLoaded || !image.canFling()) {
             return
         }
 
-        val image = current.imageView
         pageFling.startFling(
             velocityX.toInt(), image.getMinDx(), image.getMaxDx(),
             velocityY.toInt(), image.getMinDy(), image.getMaxDy(),
@@ -1029,14 +1039,14 @@ internal class PagerLayoutManager(
             val edgeView = galleryView.edgeView
             val imageView = current.imageView
             if (imageView.canFlingHorizontally()) {
-                if (velocityX > 0 && leftPage == null && imageView.getMaxDx() == 0 &&
-                    edgeView.isFinished(GLEdgeView.LEFT)
-                ) {
-                    edgeView.onAbsorb(velocityX, GLEdgeView.LEFT)
-                } else if (velocityX < 0 && rightPage == null && imageView.getMinDx() == 0 &&
-                    edgeView.isFinished(GLEdgeView.RIGHT)
-                ) {
-                    edgeView.onAbsorb(-velocityX, GLEdgeView.RIGHT)
+                if (velocityX > 0) {
+                    if (leftPage == null && imageView.getMaxDx() == 0 && edgeView.isFinished(GLEdgeView.LEFT)) {
+                        edgeView.onAbsorb(velocityX, GLEdgeView.LEFT)
+                    }
+                } else if (velocityX < 0) {
+                    if (rightPage == null && imageView.getMinDx() == 0 && edgeView.isFinished(GLEdgeView.RIGHT)) {
+                        edgeView.onAbsorb(-velocityX, GLEdgeView.RIGHT)
+                    }
                 }
             }
             if (imageView.canFlingVertically()) {
