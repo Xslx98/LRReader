@@ -22,12 +22,31 @@ import androidx.core.content.edit
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.reader.storage.StorageFile
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeoutOrNull
 
 abstract class GalleryProvider2 : GalleryProvider() {
+
+    private val galleryViewAttached = CompletableDeferred<GalleryView>()
 
     /** Optional reference to GalleryView for async page navigation. */
     @Volatile
     var galleryView: GalleryView? = null
+        set(value) {
+            field = value
+            if (value != null) galleryViewAttached.complete(value)
+        }
+
+    /**
+     * The [galleryView], waiting up to [timeoutMs] for the reader to attach
+     * it. GalleryActivity starts the provider before it builds the view, so a
+     * fast start (warm page cache, LAN server) reaches its start-position
+     * jump first; reading the field then skipped the jump and lost the saved
+     * page and scroll fraction.
+     */
+    @Suppress("RedundantSuspendModifier") // false positive: detekt does not resolve withTimeoutOrNull as suspend
+    protected suspend fun awaitGalleryView(timeoutMs: Long = GALLERY_VIEW_ATTACH_TIMEOUT_MS): GalleryView? =
+        galleryView ?: withTimeoutOrNull(timeoutMs) { galleryViewAttached.await() }
 
     /**
      * Explicit start page from the launch intent (KEY_PAGE, e.g. a
@@ -80,6 +99,9 @@ abstract class GalleryProvider2 : GalleryProvider() {
     abstract fun save(index: Int, dir: StorageFile, filename: String): StorageFile?
 
     companion object {
+        /** How long a start-position jump waits for the reader to attach its GalleryView. */
+        private const val GALLERY_VIEW_ATTACH_TIMEOUT_MS = 5_000L
+
         // Single source of truth for "is this a local page file", shared by
         // routing (DownloadDirResolver.hasImageFiles) and the reader's dir
         // lister (DirImageFiles). Keep it a subset

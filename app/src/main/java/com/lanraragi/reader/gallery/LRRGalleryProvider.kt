@@ -405,7 +405,7 @@ class LRRGalleryProvider(
                 // method queue, which is drained in order — no delay
                 // needed.
                 if (!userNavigated && (finalPage > 0 || finalFraction > 0f)) {
-                    val gv = galleryView
+                    val gv = awaitGalleryView()
                     Log.i(TAG, "[PROGRESS] GalleryView ref=${if (gv != null) "OK" else "NULL"}")
                     if (gv != null) {
                         providerScope?.launch {

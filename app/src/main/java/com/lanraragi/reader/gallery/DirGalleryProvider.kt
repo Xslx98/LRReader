@@ -484,7 +484,7 @@ class DirGalleryProvider : GalleryProvider2 {
                         // back to top" double-flicker on cold opens of
                         // downloaded long-strip archives.
                         if (!userNavigated && (resolvedPage > 0 || savedFraction > 0f)) {
-                            val gv = galleryView
+                            val gv = awaitGalleryView()
                             if (gv != null) {
                                 notifyDataChangedEnqueued.await()
                                 awaitGlIdleBarrier()
