@@ -2,7 +2,9 @@
 
 Endpoints: /api/info, /api/search, /api/categories, /api/archives/{id}/categories, /api/tankoubons,
 /api/archives/:id/{metadata,thumbnail,files,page}, progress PUT. MOCK_SEED=1 seeds
-categories and a tank (see below).
+categories and a tank (see below). MOCK_TRACK_PROGRESS=1 makes an archive's
+progress PUT stick like a real server's: metadata then reports that page and
+lastreadtime = the server's clock at the PUT.
 Pages are generated PNGs (800x1200, distinct colors) — big enough for the
 reader's tiny-image rejection. Logs every request line to stdout.
 """
@@ -190,6 +192,14 @@ class H(BaseHTTPRequestHandler):
     def do_PUT(self):
         u = urlparse(self.path)
         parts = [p for p in u.path.split("/") if p]
+        if (os.environ.get("MOCK_TRACK_PROGRESS") == "1" and len(parts) == 5
+                and parts[:2] == ["api", "archives"] and parts[3] == "progress"):
+            arc = next((a for a in ARCHIVES if a["arcid"] == parts[2]), None)
+            if arc is not None:
+                arc["progress"] = int(parts[4])
+                arc["lastreadtime"] = int(time.time())
+            self._json({"operation": "update_progress", "success": 1})
+            return
         if parts[:2] == ["api", "categories"]:
             if len(parts) == 2:
                 f = form_body(self)

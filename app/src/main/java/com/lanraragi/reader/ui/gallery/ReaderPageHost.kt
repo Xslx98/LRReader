@@ -11,6 +11,7 @@ import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.lib.image.PageFit
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.R
+import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.util.MemoryTrim
@@ -100,6 +101,8 @@ class ReaderPageHost(private val activity: Activity) {
         val gv = galleryView
         if (provider != null && gv != null && gv.layoutMode == GalleryView.LAYOUT_TOP_TO_BOTTOM) {
             provider.putScrollFraction(gv.currentScrollFraction)
+        } else {
+            DiagLog.i("Progress", "fraction not saved: view=${gv != null} mode=${gv?.layoutMode}")
         }
     }
 

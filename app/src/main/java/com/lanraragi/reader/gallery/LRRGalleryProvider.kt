@@ -7,6 +7,7 @@ import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
@@ -158,7 +159,7 @@ class LRRGalleryProvider(
 
     override fun start() {
         super.start()
-        userNavigated = false
+        userNavigated = openedOnOtherPage(startPageValue)
         startPageBaseline = startPageValue
 
         // Resolve the archive's source-profile base URL once, app-scoped so a
@@ -383,6 +384,11 @@ class LRRGalleryProvider(
                     TAG,
                     "[PROGRESS] Final resolved page=$finalPage fraction=$finalFraction"
                 )
+                DiagLog.i(
+                    DIAG_TAG,
+                    "lrr open ${arcId.take(8)} server=${metadata?.progress}@${metadata?.lastreadtime}" +
+                        " resolved=$finalPage fraction=$finalFraction navigated=$userNavigated",
+                )
 
                 // Try the cross-session decoded slot (filled by the
                 // detail-page warmup or the openHelper trigger). On a
@@ -405,8 +411,9 @@ class LRRGalleryProvider(
                 // method queue, which is drained in order — no delay
                 // needed.
                 if (!userNavigated && (finalPage > 0 || finalFraction > 0f)) {
-                    val gv = galleryView
+                    val gv = awaitGalleryView()
                     Log.i(TAG, "[PROGRESS] GalleryView ref=${if (gv != null) "OK" else "NULL"}")
+                    if (gv == null) DiagLog.i(DIAG_TAG, "lrr jump dropped: no view")
                     if (gv != null) {
                         providerScope?.launch {
                             if (stateRef.get().stopped) return@launch
@@ -422,6 +429,7 @@ class LRRGalleryProvider(
                                     } else {
                                         finalPage
                                     }
+                                    DiagLog.i(DIAG_TAG, "lrr jump page=$target fraction=$finalFraction")
                                     if (finalFraction > 0f) {
                                         gvRef.setCurrentPageScrollFraction(target, finalFraction)
                                         Log.i(
@@ -434,13 +442,15 @@ class LRRGalleryProvider(
                                         Log.i(TAG, "[PROGRESS] setCurrentPage($target) called")
                                     }
                                 } else {
+                                    DiagLog.i(DIAG_TAG, "lrr jump dropped: navigated=$userNavigated")
                                     Log.w(TAG, "[PROGRESS] skip jump (stopped or user navigated)")
                                 }
                             }
                         }
                     }
-                } else if (userNavigated) {
-                    Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
+                } else {
+                    DiagLog.i(DIAG_TAG, "lrr no jump: navigated=$userNavigated")
+                    if (userNavigated) Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
                 }
 
                 // Start preloading from resolved page
@@ -490,8 +500,13 @@ class LRRGalleryProvider(
     }
 
     override fun putStartPage(page: Int) {
-        if (page != startPageBaseline) {
-            userNavigated = true
+        if (page != startPageBaseline && !userNavigated) {
+            if (hasUserInteracted) {
+                DiagLog.i(DIAG_TAG, "lrr navigated page=$page baseline=$startPageBaseline")
+                userNavigated = true
+            } else {
+                DiagLog.i(DIAG_TAG, "lrr index $page without user input (baseline=$startPageBaseline)")
+            }
         }
         startPageValue = page
 
@@ -517,7 +532,11 @@ class LRRGalleryProvider(
         // exit — before the first fill publishes a real fraction, or before the
         // async restore applies — would otherwise clobber a previously saved
         // mid-page position back to the top.
-        if (clamped == 0f) return
+        if (clamped == 0f) {
+            DiagLog.i(DIAG_TAG, "lrr fraction 0 not saved")
+            return
+        }
+        DiagLog.i(DIAG_TAG, "lrr fraction save $clamped")
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 ServiceRegistry.dataModule.historyRepository

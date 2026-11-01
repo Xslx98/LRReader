@@ -118,7 +118,7 @@ class TankGalleryProvider(
 
     override fun start() {
         super.start()
-        userNavigated = false
+        userNavigated = openedOnOtherPage(startPageValue)
         startPageBaseline = startPageValue
         // A page saved while offline never reached the server: push it now.
         TankProgress.pendingPage0(appContext, seed.tankId).takeIf { it >= 0 }?.let(progressSyncer::submit)
@@ -210,7 +210,7 @@ class TankGalleryProvider(
     }
 
     override fun putStartPage(page: Int) {
-        if (page != startPageBaseline) userNavigated = true
+        if (page != startPageBaseline && hasUserInteracted) userNavigated = true
         startPageValue = page
         saveLocalProgressSoon(page)
         TankProgress.markPending(appContext, seed.tankId, page)
