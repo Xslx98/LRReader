@@ -273,9 +273,13 @@ class DirGalleryProvider : GalleryProvider2 {
 
     override fun putStartPage(page: Int) {
         readAnchor = page
-        if (page != startPageBaseline) {
-            if (!userNavigated) DiagLog.i(DIAG_TAG, "dir navigated page=$page baseline=$startPageBaseline")
-            userNavigated = true
+        if (page != startPageBaseline && !userNavigated) {
+            if (hasUserInteracted) {
+                DiagLog.i(DIAG_TAG, "dir navigated page=$page baseline=$startPageBaseline")
+                userNavigated = true
+            } else {
+                DiagLog.i(DIAG_TAG, "dir index $page without user input (baseline=$startPageBaseline)")
+            }
         }
         startPageValue = page
         saveLocalProgressSoon(page)
@@ -335,7 +339,7 @@ class DirGalleryProvider : GalleryProvider2 {
         // flipped it earlier; we want each fresh open to re-do the
         // initial restore window.
         initialRestoreCompleted.set(false)
-        userNavigated = false
+        userNavigated = openedOnOtherPage(startPageValue)
         startPageBaseline = startPageValue
         readAnchor = startPageValue
 

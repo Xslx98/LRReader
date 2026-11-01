@@ -67,6 +67,37 @@ abstract class GalleryProvider2 : GalleryProvider() {
     @Volatile
     var initialPageOverride: Int = -1
 
+    @Volatile
+    private var userInteracted = false
+
+    /**
+     * Whether the user has touched the reader or pressed a key since [start].
+     * Only then can a current-index change be their navigation: when the
+     * reader opens, the layout can settle through other pages first (a
+     * device reported page 0 for a moment before the saved page), and
+     * taking that echo for navigation cancelled the start-position restore
+     * and saved page 0 over the reading position.
+     */
+    protected val hasUserInteracted: Boolean get() = userInteracted
+
+    /** The reader reports every touch and key event here (Activity.onUserInteraction). */
+    fun onUserInteraction() {
+        userInteracted = true
+    }
+
+    /**
+     * Whether the reader opened on an explicit page (a thumbnail tap) other
+     * than [savedStartPage]: then the user chose where to be and the
+     * saved-position restore must not move them.
+     */
+    protected fun openedOnOtherPage(savedStartPage: Int): Boolean =
+        initialPageOverride >= 0 && initialPageOverride != savedStartPage
+
+    override fun start() {
+        super.start()
+        userInteracted = false
+    }
+
     open fun getStartPage(): Int = 0
 
     open fun putStartPage(page: Int) {}

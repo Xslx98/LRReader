@@ -159,7 +159,7 @@ class LRRGalleryProvider(
 
     override fun start() {
         super.start()
-        userNavigated = false
+        userNavigated = openedOnOtherPage(startPageValue)
         startPageBaseline = startPageValue
 
         // Resolve the archive's source-profile base URL once, app-scoped so a
@@ -500,9 +500,13 @@ class LRRGalleryProvider(
     }
 
     override fun putStartPage(page: Int) {
-        if (page != startPageBaseline) {
-            if (!userNavigated) DiagLog.i(DIAG_TAG, "lrr navigated page=$page baseline=$startPageBaseline")
-            userNavigated = true
+        if (page != startPageBaseline && !userNavigated) {
+            if (hasUserInteracted) {
+                DiagLog.i(DIAG_TAG, "lrr navigated page=$page baseline=$startPageBaseline")
+                userNavigated = true
+            } else {
+                DiagLog.i(DIAG_TAG, "lrr index $page without user input (baseline=$startPageBaseline)")
+            }
         }
         startPageValue = page
 

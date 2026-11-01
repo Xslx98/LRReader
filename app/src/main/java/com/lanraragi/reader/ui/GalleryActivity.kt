@@ -509,6 +509,11 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         return super.onKeyUp(keyCode, event)
     }
 
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        mGalleryProvider?.onUserInteraction()
+    }
+
     // ======== GalleryView.Listener (delegated to helpers) ========
 
     override fun onUpdateCurrentIndex(index: Int) {
