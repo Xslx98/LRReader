@@ -30,6 +30,15 @@ class TankPickerRowsTest {
     }
 
     @Test
+    fun `name order ignores letter case`() {
+        val tanks = listOf(tank("T1", "Beta"), tank("T2", "alpha"), tank("T3", "Gamma"))
+
+        val rows = TankPickerRows.build(tanks, selection = emptyList(), recentIds = emptyList(), query = "")
+
+        assertEquals(listOf("T2", "T1", "T3"), rows.ids())
+    }
+
+    @Test
     fun `recent ids no longer on the server are skipped`() {
         val rows = TankPickerRows.build(
             listOf(tank("T1", "A")), selection = emptyList(), recentIds = listOf("GONE", "T1"), query = ""

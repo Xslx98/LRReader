@@ -87,7 +87,13 @@ object TankPickerRows {
         }
     }
 
-    private fun byName(a: Tankoubon, b: Tankoubon): Int = TankTitleSortKey.compareNatural(a.name, b.name)
+    /** Natural, case-insensitive tank-name order ([TankTitleSortKey.compareNatural] alone is case-sensitive). */
+    fun compareNames(a: String, b: String): Int {
+        val c = TankTitleSortKey.compareNatural(a.lowercase(), b.lowercase())
+        return if (c != 0) c else TankTitleSortKey.compareNatural(a, b)
+    }
+
+    private fun byName(a: Tankoubon, b: Tankoubon): Int = compareNames(a.name, b.name)
 
     private const val RANK_PREFIX = 0
     private const val RANK_INFIX = 1
