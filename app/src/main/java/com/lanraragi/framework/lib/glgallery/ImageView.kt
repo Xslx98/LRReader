@@ -15,7 +15,6 @@
  */
 
 @file:Suppress( // TODO(2.4-idiom)
-    "UnsafeCallOnNullableType",
     "LongMethod",
     "ComplexCondition",
     "NestedBlockDepth",
@@ -28,7 +27,6 @@ import android.graphics.RectF
 import com.lanraragi.framework.lib.glview.anim.AlphaAnimation
 import com.lanraragi.framework.lib.glview.anim.AnimatorDurationScale
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
-import com.lanraragi.framework.lib.glview.glrenderer.Texture
 import com.lanraragi.framework.lib.glview.image.ImageTexture
 import com.lanraragi.framework.lib.glview.image.TileRegions
 import com.lanraragi.framework.lib.glview.view.GLView
@@ -516,11 +514,13 @@ internal class ImageView : GLView(), ImageTexture.Callback {
     fun scale(focusX: Float, focusY: Float, scale: Float) {
         // Only work after layout
         if (scaleOffsetDirty) {
-            setScaleOffset(this.scaleMode, startPosition, this.scaleValue)
+            setScaleOffset(scaleMode, startPosition, scaleValue)
         }
         if (scaleOffsetDirty) {
             return
         }
+        // A clean scale offset means setScaleOffset saw a texture.
+        val texture = imageTexture ?: return
 
         if ((this.scale == SCALE_MAX && scale >= 1.0f) || (this.scale == SCALE_MIN && scale < 1.0f)) {
             return
@@ -535,8 +535,8 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         dst.set(
             left,
             top,
-            (left + (imageTexture!!.getWidth() * newScale)),
-            (top + (imageTexture!!.getHeight() * newScale))
+            (left + (texture.getWidth() * newScale)),
+            (top + (texture.getHeight() * newScale))
         )
 
         // adjust position
@@ -546,9 +546,9 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         invalidate()
     }
 
-    private fun applyPositionInRoot() {
-        val width = imageTexture!!.getWidth()
-        val height = imageTexture!!.getHeight()
+    private fun applyPositionInRoot(texture: ImageTexture) {
+        val width = texture.getWidth()
+        val height = texture.getHeight()
         val dst = dstRect
         val dstActual = dstActualRect
         val srcActual = srcActualRect
@@ -601,20 +601,20 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         } else {
             screenInTexture.setEmpty()
         }
-        imageTexture!!.setScreenRegion(screenInTexture)
+        texture.setScreenRegion(screenInTexture)
 
         positionInRootDirty = false
     }
 
     override fun onRender(canvas: GLCanvas) {
-        val texture: Texture = imageTexture ?: return
+        val texture = imageTexture ?: return
 
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
         }
 
         if (positionInRootDirty) {
-            applyPositionInRoot()
+            applyPositionInRoot(texture)
         }
 
         if (!srcActualRect.isEmpty) {

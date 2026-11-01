@@ -16,7 +16,6 @@
 
 @file:Suppress( // TODO(2.4-idiom)
     "UseCheckOrError",
-    "UnsafeCallOnNullableType",
 )
 
 package com.lanraragi.framework.lib.glgallery
@@ -277,7 +276,8 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
                 }
                 TYPE_WAIT -> listener.onPageWait(index)
                 TYPE_PERCENT -> listener.onPagePercent(index, percent)
-                TYPE_SUCCEED -> listener.onPageSucceed(index, image!!)
+                // notifyPageSucceed always passes an image.
+                TYPE_SUCCEED -> image?.let { listener.onPageSucceed(index, it) }
                 TYPE_FAILED -> listener.onPageFailed(index, error)
             }
 

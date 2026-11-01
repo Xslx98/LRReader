@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnsafeCallOnNullableType") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.lib.glgallery
 
 import android.content.Context
@@ -87,7 +85,10 @@ internal class GestureRecognizer(context: Context, private val listener: Listene
         }
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
-            return listener.onScroll(dx, dy, e2.x - e1!!.x, e2.y - e1.y, e2.x, e2.y)
+            // No down event to measure the scroll from (the detector missed
+            // the gesture's start): leave the move unhandled.
+            if (e1 == null) return false
+            return listener.onScroll(dx, dy, e2.x - e1.x, e2.y - e1.y, e2.x, e2.y)
         }
 
         override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
