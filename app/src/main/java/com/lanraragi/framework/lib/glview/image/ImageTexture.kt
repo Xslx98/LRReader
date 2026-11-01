@@ -224,9 +224,7 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
         requestAnimation.lazySet(false)
     }
 
-    override fun isRunning(): Boolean {
-        return running.get()
-    }
+    override fun isRunning(): Boolean = running.get()
 
     /**
      * Where the screen is relative to this page, in texture coordinates
@@ -317,13 +315,9 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
         }
     }
 
-    override fun getWidth(): Int {
-        return imageWidth
-    }
+    override fun getWidth(): Int = imageWidth
 
-    override fun getHeight(): Int {
-        return imageHeight
-    }
+    override fun getHeight(): Int = imageHeight
 
     @RenderThread
     private fun syncFrame() {
@@ -380,9 +374,7 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
         }
     }
 
-    override fun isOpaque(): Boolean {
-        return opaque
-    }
+    override fun isOpaque(): Boolean = opaque
 
     /** Nothing left to upload ahead of time for the current screen position.  */
     val isReady: Boolean
@@ -512,14 +504,16 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
         fun setSize(@TileType tileType: Int, width: Int, height: Int) {
             this.tileType = tileType
             val tileSize: Int
-            if (tileType == TILE_SMALL) {
-                borderSize = SMALL_BORDER_SIZE
-                tileSize = SMALL_TILE_SIZE
-            } else if (tileType == TILE_LARGE) {
-                borderSize = LARGE_BORDER_SIZE
-                tileSize = LARGE_TILE_SIZE
-            } else {
-                error("Not support tile type: $tileType")
+            when (tileType) {
+                TILE_SMALL -> {
+                    borderSize = SMALL_BORDER_SIZE
+                    tileSize = SMALL_TILE_SIZE
+                }
+                TILE_LARGE -> {
+                    borderSize = LARGE_BORDER_SIZE
+                    tileSize = LARGE_TILE_SIZE
+                }
+                else -> error("Not support tile type: $tileType")
             }
             contentWidth = width
             contentHeight = height

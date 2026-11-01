@@ -81,13 +81,9 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
     val id: Int
         get() = mId
 
-    override fun getWidth(): Int {
-        return mWidth
-    }
+    override fun getWidth(): Int = mWidth
 
-    override fun getHeight(): Int {
-        return mHeight
-    }
+    override fun getHeight(): Int = mHeight
 
     // The width rounded to the next power of 2.
     val textureWidth: Int
@@ -108,9 +104,7 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
     //
     // Currently our background is black, so we can draw the thumbnails without
     // enabling blending.
-    fun hasBorder(): Boolean {
-        return border
-    }
+    fun hasBorder(): Boolean = border
 
     protected fun setBorder(hasBorder: Boolean) {
         border = hasBorder
@@ -191,9 +185,7 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         // This is for deciding if we can call Bitmap's recycle().
         // We cannot call Bitmap's recycle() in finalizer because at that point
         // the finalizer of Bitmap may already be called so recycle() will crash.
-        fun inFinalizer(): Boolean {
-            return finalizing.get() != null
-        }
+        fun inFinalizer(): Boolean = finalizing.get() != null
 
         @JvmStatic
         fun yieldAllTextures() {

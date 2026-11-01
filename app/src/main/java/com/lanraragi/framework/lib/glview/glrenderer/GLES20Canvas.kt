@@ -764,13 +764,9 @@ class GLES20Canvas : GLCanvas {
         GLUtils.texSubImage2D(target, 0, xOffset, yOffset, bitmap, format, type)
     }
 
-    override fun uploadBuffer(buffer: FloatBuffer): Int {
-        return uploadBuffer(buffer, FLOAT_SIZE)
-    }
+    override fun uploadBuffer(buffer: FloatBuffer): Int = uploadBuffer(buffer, FLOAT_SIZE)
 
-    override fun uploadBuffer(buffer: ByteBuffer): Int {
-        return uploadBuffer(buffer, 1)
-    }
+    override fun uploadBuffer(buffer: ByteBuffer): Int = uploadBuffer(buffer, 1)
 
     private fun uploadBuffer(buffer: Buffer, elementSize: Int): Int {
         glIdImpl.glGenBuffers(1, tempIntArray, 0)
@@ -805,9 +801,7 @@ class GLES20Canvas : GLCanvas {
         bounds.sort()
     }
 
-    override fun getGLId(): GLId {
-        return glIdImpl
-    }
+    override fun getGLId(): GLId = glIdImpl
 
     companion object {
         private val glIdImpl: GLId = GLES20IdImpl()

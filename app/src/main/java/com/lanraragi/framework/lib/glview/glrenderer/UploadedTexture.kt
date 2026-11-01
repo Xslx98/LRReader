@@ -216,17 +216,13 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
         return isContentValid
     }
 
-    override fun getTarget(): Int {
-        return GL11.GL_TEXTURE_2D
-    }
+    override fun getTarget(): Int = GL11.GL_TEXTURE_2D
 
     fun setOpaque(isOpaque: Boolean) {
         opaque = isOpaque
     }
 
-    override fun isOpaque(): Boolean {
-        return opaque
-    }
+    override fun isOpaque(): Boolean = opaque
 
     override fun recycle() {
         super.recycle()
@@ -265,8 +261,6 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
         }
 
         @JvmStatic
-        fun uploadLimitReached(): Boolean {
-            return uploadedCount > UPLOAD_LIMIT
-        }
+        fun uploadLimitReached(): Boolean = uploadedCount > UPLOAD_LIMIT
     }
 }

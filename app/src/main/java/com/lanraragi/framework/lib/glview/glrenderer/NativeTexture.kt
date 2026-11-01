@@ -87,17 +87,13 @@ abstract class NativeTexture : BasicTexture() {
         return isContentValid
     }
 
-    override fun getTarget(): Int {
-        return GL11.GL_TEXTURE_2D
-    }
+    override fun getTarget(): Int = GL11.GL_TEXTURE_2D
 
     fun setOpaque(isOpaque: Boolean) {
         opaque = isOpaque
     }
 
-    override fun isOpaque(): Boolean {
-        return opaque
-    }
+    override fun isOpaque(): Boolean = opaque
 
     // A private member (Java: an unused public static) so the upload path
     // calls it directly instead of through a companion object.

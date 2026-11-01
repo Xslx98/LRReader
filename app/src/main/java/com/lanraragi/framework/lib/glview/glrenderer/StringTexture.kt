@@ -53,9 +53,7 @@ class StringTexture private constructor(
         }
 
         @JvmStatic
-        fun newInstance(text: String, textSize: Float, color: Int): StringTexture {
-            return newInstance(text, getDefaultPaint(textSize, color))
-        }
+        fun newInstance(text: String, textSize: Float, color: Int): StringTexture = newInstance(text, getDefaultPaint(textSize, color))
 
         fun newInstance(
             text: String,
