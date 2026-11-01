@@ -351,7 +351,6 @@
     <string name="tank_member_more">+%1$d</string>
     <string name="tank_member_view_detail">ดูรายละเอียดของเล่มนี้</string>
     <string name="tank_page_divider">ตอนที่ %1$d · %2$s</string>
-    <string name="tank_view_detail">รายละเอียด</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_tag_sync_failed">รวมแท็กของ “%1$s” ไม่สำเร็จ</string>
     <string name="tank_category_sync_failed">อัปเดตหมวดหมู่ของ “%1$s” ไม่สำเร็จ</string>
@@ -378,7 +377,6 @@
     <string name="tank_undo">เลิกทำ</string>
     <string name="tank_sort_by_title">เรียงตามชื่อเรื่อง</string>
     <string name="tank_reverse_order">กลับลำดับ</string>
-    <string name="tank_auto_sort">จัดเรียงสมาชิกอัตโนมัติ</string>
     <string name="tank_move_top">บนสุด</string>
     <string name="tank_move_bottom">ล่างสุด</string>
     <string name="tank_move_to_position">ตำแหน่ง…</string>

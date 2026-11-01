@@ -40,6 +40,7 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.ui.scene.TankDialogs
@@ -266,6 +267,9 @@ open class GalleryListScene : BaseScene(),
                     mHelper?.refresh()
                 } catch (ce: CancellationException) {
                     throw ce
+                } catch (e: LRRHttpException) {
+                    // 423: the server is busy regenerating the tank.
+                    showTip(if (e.code == HTTP_LOCKED) getString(R.string.tank_locked) else friendlyError(context, e), LENGTH_SHORT)
                 } catch (e: Exception) {
                     showTip(friendlyError(context, e), LENGTH_SHORT)
                 }
@@ -712,6 +716,7 @@ open class GalleryListScene : BaseScene(),
         const val KEY_LIST_URL_BUILDER = "list_url_builder"
         const val KEY_HAS_FIRST_REFRESH = "has_first_refresh"
         const val KEY_STATE = "state"
+        private const val HTTP_LOCKED = 423
 
         // Keep for backward compat with references
         const val STATE_NORMAL = GalleryStateHelper.STATE_NORMAL

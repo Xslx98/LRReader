@@ -576,8 +576,7 @@ class TankoubonDetailViewModel : ViewModel() {
     /**
      * 423 (locked) gets a dedicated message — the server is busy regenerating
      * the tank; everything else goes through the shared [friendlyError] map.
-     * Deliberately duplicated from TankoubonsViewModel: the two ViewModels
-     * must stay independently evolvable.
+     * The gallery's tank mode maps it the same way ([com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene]).
      */
     private fun errorMessage(context: Context, e: Exception): String =
         if (e is LRRHttpException && e.code == HTTP_LOCKED) {

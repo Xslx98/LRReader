@@ -421,7 +421,6 @@
     <string name="tank_member_more">+%1$d</string>
     <string name="tank_member_view_detail">View archive details</string>
     <string name="tank_page_divider">Chapter %1$d · %2$s</string>
-    <string name="tank_view_detail">Details</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_tag_sync_failed">Tag merge failed for “%1$s”</string>
     <string name="tank_category_sync_failed">Category update failed for “%1$s”</string>
@@ -448,7 +447,6 @@
     <string name="tank_undo">Undo</string>
     <string name="tank_sort_by_title">Sort by title</string>
     <string name="tank_reverse_order">Reverse order</string>
-    <string name="tank_auto_sort">Auto-sort members</string>
     <string name="tank_move_top">Top</string>
     <string name="tank_move_bottom">Bottom</string>
     <string name="tank_move_to_position">Position…</string>
