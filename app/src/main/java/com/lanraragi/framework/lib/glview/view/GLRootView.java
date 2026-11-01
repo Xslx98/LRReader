@@ -16,12 +16,10 @@
 
 package com.lanraragi.framework.lib.glview.view;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
-import android.os.Build;
 import android.os.Parcelable;
 import android.os.Process;
 import android.os.SystemClock;
@@ -39,7 +37,6 @@ import com.lanraragi.framework.lib.glview.glrenderer.BasicTexture;
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
 import com.lanraragi.framework.lib.glview.glrenderer.GLES20Canvas;
 import com.lanraragi.framework.lib.glview.glrenderer.UploadedTexture;
-import com.lanraragi.framework.lib.glview.util.ApiHelper;
 import com.lanraragi.framework.lib.glview.util.GalleryUtils;
 import com.lanraragi.framework.lib.glview.util.MotionEventHelper;
 import com.lanraragi.reader.util.AssertUtils;
@@ -188,11 +185,7 @@ public class GLRootView extends GLSurfaceView
         }
         if (mRenderRequested) return;
         mRenderRequested = true;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            postOnAnimation(mRequestRenderOnAnimationFrame);
-        } else {
-            super.requestRender();
-        }
+        postOnAnimation(mRequestRenderOnAnimationFrame);
     }
 
     private final Runnable mRequestRenderOnAnimationFrame = new Runnable() {
@@ -438,16 +431,11 @@ public class GLRootView extends GLSurfaceView
     }
 
     @Override
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public void setLightsOutMode(boolean enabled) {
-        if (!ApiHelper.HAS_SET_SYSTEM_UI_VISIBILITY) return;
-
         int flags = 0;
         if (enabled) {
             flags = STATUS_BAR_HIDDEN;
-            if (ApiHelper.HAS_VIEW_SYSTEM_UI_FLAG_LAYOUT_STABLE) {
-                flags |= (SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_LAYOUT_STABLE);
-            }
+            flags |= (SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_LAYOUT_STABLE);
         }
         setSystemUiVisibility(flags);
     }
