@@ -52,7 +52,7 @@ class StageBackRoutingTest {
 
         override fun getThemeResId(theme: Int): Int = R.style.AppTheme_Main
 
-        override fun getContainerViewId(): Int = CONTAINER_ID
+        override val containerViewId: Int get() = CONTAINER_ID
 
         override fun getLaunchAnnouncer(): Announcer? = null
 
