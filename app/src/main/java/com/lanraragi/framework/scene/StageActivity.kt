@@ -16,7 +16,7 @@
 
 @file:Suppress(
     "ComplexCondition", "CyclomaticComplexMethod", "EmptyFunctionBlock", "LargeClass", "LongMethod",
-    "NestedBlockDepth", "ReturnCount", "TooGenericExceptionThrown", "UnsafeCallOnNullableType", "UseCheckOrError",
+    "NestedBlockDepth", "ReturnCount", "TooGenericExceptionThrown", "UseCheckOrError",
 ) // TODO(2.4-idiom)
 
 package com.lanraragi.framework.scene
@@ -357,9 +357,11 @@ abstract class StageActivity : BaseActivity() {
         }
 
         // Check LAUNCH_MODE_SINGLE_TASK
-        if (clazz.isInstance(currentScene) && launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TOP) {
+        if (currentScene != null && clazz.isInstance(currentScene) &&
+            launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TOP
+        ) {
             if (args != null) {
-                currentScene!!.onNewArguments(args)
+                currentScene.onNewArguments(args)
             }
             return
         }
@@ -491,7 +493,7 @@ abstract class StageActivity : BaseActivity() {
         postUpdateBackCallback()
 
         if (!createNewScene && args != null) {
-            scene!!.onNewArguments(args)
+            scene?.onNewArguments(args)
         }
     }
 
