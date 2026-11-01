@@ -3,7 +3,7 @@ LR Reader is a feature-rich Android client for LANraragi, a self-hosted manga/ar
 Features:
 • Full-featured search — keyword, category filter, sort, random, per-server search history
 • High-performance reader — GL rendering, on-demand decoding and smart preloading
-• Tankoubons — read a whole tankoubon as one book, with its own detail page, tags and one-tap download
+• Tankoubons — read a whole tankoubon as one book, with its own detail page, tags and one-tap download; browse, search and sort all of them like the library
 • Offline download — background archive download with resume, read while downloading
 • Progress sync — two-way reading progress with the server, kept per server
 • Backup & restore — servers (without API keys), history, favourites, progress and settings to a file
