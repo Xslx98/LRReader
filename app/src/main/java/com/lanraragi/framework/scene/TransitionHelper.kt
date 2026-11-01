@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.scene;
+package com.lanraragi.framework.scene
 
-import android.content.Context;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
+import android.content.Context
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentTransaction
 
-public interface TransitionHelper {
+interface TransitionHelper {
 
-    boolean onTransition(Context context, FragmentTransaction transaction, Fragment exit, Fragment enter);
+    fun onTransition(context: Context, transaction: FragmentTransaction, exit: Fragment, enter: Fragment): Boolean
 }
