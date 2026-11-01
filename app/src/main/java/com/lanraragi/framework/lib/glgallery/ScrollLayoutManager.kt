@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "LongMethod",
-    "CyclomaticComplexMethod",
-    "NestedBlockDepth",
-    "LoopWithTooManyJumpStatements",
-    "LargeClass",
-)
-
 package com.lanraragi.framework.lib.glgallery
 
 import android.content.Context
@@ -39,6 +31,7 @@ import com.lanraragi.reader.util.MathUtils
 import kotlin.math.max
 import kotlin.math.min
 
+@Suppress("LargeClass") // the page strip, offsets and keep-top anchors are one state shared by fill, scroll and animations
 internal class ScrollLayoutManager(
     context: Context,
     galleryView: GalleryView,
@@ -214,6 +207,12 @@ internal class ScrollLayoutManager(
     private val reservation: Float
         get() = max(RESERVATION, ((1 + 2 * RESERVATION) * scale - 1) / 2)
 
+    @Suppress(
+        "LongMethod",
+        "CyclomaticComplexMethod",
+        "NestedBlockDepth",
+        "LoopWithTooManyJumpStatements",
+    ) // per-fill layout pass whose steps hand each other the start index/offset and the strip edges
     private fun fillPages(startIndexArg: Int, startOffsetArg: Int) {
         var startIndex = startIndexArg
         var startOffset = startOffsetArg
@@ -410,7 +409,6 @@ internal class ScrollLayoutManager(
 
     override fun onFill() {
         val adapter = this.adapter ?: throw AssertionError(NOT_ATTACHED)
-        val galleryView = this.galleryView
 
         val size = adapter.size()
         val error = adapter.getError()
@@ -419,17 +417,7 @@ internal class ScrollLayoutManager(
             // Remove error view and all pages
             removeErrorView()
             removeAllPages()
-
-            // Ensure progress
-            var progress = this.progress
-            if (progress == null) {
-                progress = galleryView.obtainProgress()
-                this.progress = progress
-                galleryView.addComponent(progress)
-            }
-
-            // Place progress center
-            placeCenter(progress)
+            showProgress()
         } else if (size <= GalleryProvider.STATE_ERROR || size == 0) { // Get error or empty, show error text
             // Ensure error is not null
             val errorStr: String = if (0 == size) {
@@ -441,147 +429,169 @@ internal class ScrollLayoutManager(
             // Remove progress and all pages
             removeProgress()
             removeAllPages()
-
-            // Ensure error view
-            var errorView = this.errorView
-            if (errorView == null) {
-                errorView = galleryView.obtainErrorView()
-                this.errorView = errorView
-                galleryView.addComponent(errorView)
-            }
-
-            // Update error string
-            if (errorStr != this.errorStr) {
-                this.errorStr = errorStr
-                galleryView.bindErrorView(errorView, errorStr)
-            }
-
-            // Place error view center
-            placeCenter(errorView)
+            showError(errorStr)
         } else {
-            val pages = this.pages
-
             // Remove progress and error view
             removeProgress()
             removeErrorView()
+            fillFromAnchor(size)
+            updateFirstShownPage()
+            applyPendingStartFraction()
+        }
+    }
 
-            // Ensure index in range
-            var index = this.index
-            if (index < 0) {
-                Log.e(TAG, "index < 0, index = $index")
-                index = 0
-                this.index = index
-                removeAllPages()
-            } else if (index >= size) {
-                Log.e(TAG, "index >= size, index = $index, size = $size")
-                index = size - 1
-                this.index = index
-                removeAllPages()
-            }
+    private fun showProgress() {
+        // Ensure progress
+        var progress = this.progress
+        if (progress == null) {
+            progress = galleryView.obtainProgress()
+            this.progress = progress
+            galleryView.addComponent(progress)
+        }
 
-            // Find keep index and keep top
-            var keepTop = INVALID_TOP
-            val keepTopIndex: Int
-            if (GalleryPageView.INVALID_INDEX != keepTopPageIndex) {
-                keepTopIndex = keepTopPageIndex
-                keepTop = this.keepTop
-            } else if (GalleryPageView.INVALID_INDEX != firstShownPageIndex) {
-                keepTopIndex = firstShownPageIndex
-            } else {
-                keepTopIndex = GalleryPageView.INVALID_INDEX
-            }
-            if (GalleryPageView.INVALID_INDEX != keepTopIndex && INVALID_TOP == keepTop) {
-                keepTop = offsetY
-                for (page in pages) {
-                    // Check keep page
-                    if (keepTopIndex == page.index) {
-                        break
-                    }
-                    keepTop += page.height + interval
-                }
-            }
+        // Place progress center
+        placeCenter(progress)
+    }
 
-            val startIndex: Int
-            val startOffset: Int
-            if (GalleryPageView.INVALID_INDEX != keepTopIndex) {
-                startIndex = keepTopIndex
-                startOffset = keepTop
-            } else {
-                startIndex = this.index
-                startOffset = offsetY
-            }
-            fillPages(startIndex, startOffset)
+    private fun showError(errorStr: String) {
+        // Ensure error view
+        var errorView = this.errorView
+        if (errorView == null) {
+            errorView = galleryView.obtainErrorView()
+            this.errorView = errorView
+            galleryView.addComponent(errorView)
+        }
 
-            // Get first shown image
-            firstShownPageIndex = GalleryPageView.INVALID_INDEX
-            for (page in this.pages) {
-                // Check first shown loaded page
-                if ((scrollUp || flingUp) && !page.isLoaded) {
-                    continue
-                }
+        // Update error string
+        if (errorStr != this.errorStr) {
+            this.errorStr = errorStr
+            galleryView.bindErrorView(errorView, errorStr)
+        }
 
-                if (isInScreen(page)) {
-                    firstShownPageIndex = page.index
-                    keepTopPageIndex = page.index
+        // Place error view center
+        placeCenter(errorView)
+    }
+
+    // The page path of onFill: lays the strip out from the kept page (or
+    // the current index) at its kept top.
+    private fun fillFromAnchor(size: Int) {
+        // Ensure index in range
+        var index = this.index
+        if (index < 0) {
+            Log.e(TAG, "index < 0, index = $index")
+            index = 0
+            this.index = index
+            removeAllPages()
+        } else if (index >= size) {
+            Log.e(TAG, "index >= size, index = $index, size = $size")
+            index = size - 1
+            this.index = index
+            removeAllPages()
+        }
+
+        // Find keep index and keep top
+        var keepTop = INVALID_TOP
+        val keepTopIndex: Int
+        if (GalleryPageView.INVALID_INDEX != keepTopPageIndex) {
+            keepTopIndex = keepTopPageIndex
+            keepTop = this.keepTop
+        } else if (GalleryPageView.INVALID_INDEX != firstShownPageIndex) {
+            keepTopIndex = firstShownPageIndex
+        } else {
+            keepTopIndex = GalleryPageView.INVALID_INDEX
+        }
+        if (GalleryPageView.INVALID_INDEX != keepTopIndex && INVALID_TOP == keepTop) {
+            keepTop = offsetY
+            for (page in pages) {
+                // Check keep page
+                if (keepTopIndex == page.index) {
                     break
                 }
+                keepTop += page.height + interval
             }
+        }
 
-            // Apply pending intra-page restore via the keep-top
-            // anchors (keepTopPageIndex / keepTop) — the same
-            // mechanism setCurrentIndex / onScale already use to pin a
-            // page at a specific viewport Y across fills. This is the
-            // GL-side analogue of
-            // LinearLayoutManager.scrollToPositionWithOffset(position,
-            // offset): "place the top of [position] at [offset] from
-            // the viewport top".
-            //
-            // We can only finalize once the target page reports a
-            // real loaded height — fraction × placeholder-min-height
-            // would yield a tiny offset. Until then we leave the
-            // pending value alone and re-check on the next fill — the
-            // GalleryAdapter pipes a requestFill() through after every
-            // onPageSucceed so this branch gets a second chance when
-            // the target's image arrives. onScroll / onDown clear
-            // pending the moment the user interacts.
-            if (!pendingStartFraction.isNaN() &&
-                pendingStartFractionPageIndex != GalleryPageView.INVALID_INDEX
-            ) {
-                var target: GalleryPageView? = null
-                for (p in this.pages) {
-                    if (p.index == pendingStartFractionPageIndex) {
-                        target = p
-                        break
-                    }
-                }
-                if (target != null && target.isLoaded && target.height > 0) {
-                    val desiredTop = -Math.round(pendingStartFraction * target.height)
-                    Log.d(
-                        TAG,
-                        "[FRACTION] applying: page=" + pendingStartFractionPageIndex +
-                            " fraction=" + pendingStartFraction +
-                            " pageHeight=" + target.height +
-                            " desiredTop=" + desiredTop,
-                    )
-                    // Pin the target page at desiredTop via keep-top
-                    // anchors. fillPages reads (keepTopPageIndex,
-                    // keepTop) at the start of each fill (line 484)
-                    // and uses them as (startIndex, startOffset),
-                    // exactly what we want. The pin survives until
-                    // onScroll/onFling clear it on user input
-                    // (lines ~744, ~756).
-                    keepTopPageIndex = pendingStartFractionPageIndex
-                    this.keepTop = desiredTop
-                    pendingStartFraction = Float.NaN
-                    pendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
-                    // Force an immediate re-fill within this render
-                    // cycle so the new anchor lands on screen now;
-                    // galleryView.requestFill() would be a no-op
-                    // here since we're inside onFill
-                    // (GalleryView's requestFillEnabled == false).
-                    this.galleryView.forceFill()
-                }
+        val startIndex: Int
+        val startOffset: Int
+        if (GalleryPageView.INVALID_INDEX != keepTopIndex) {
+            startIndex = keepTopIndex
+            startOffset = keepTop
+        } else {
+            startIndex = this.index
+            startOffset = offsetY
+        }
+        fillPages(startIndex, startOffset)
+    }
+
+    // Get first shown image: while scrolling or flinging up, the first
+    // loaded page on screen.
+    private fun updateFirstShownPage() {
+        firstShownPageIndex = GalleryPageView.INVALID_INDEX
+        val loadedOnly = scrollUp || flingUp
+        for (page in pages) {
+            if ((!loadedOnly || page.isLoaded) && isInScreen(page)) {
+                firstShownPageIndex = page.index
+                keepTopPageIndex = page.index
+                break
             }
+        }
+    }
+
+    // Apply pending intra-page restore via the keep-top
+    // anchors (keepTopPageIndex / keepTop) — the same
+    // mechanism setCurrentIndex / onScale already use to pin a
+    // page at a specific viewport Y across fills. This is the
+    // GL-side analogue of
+    // LinearLayoutManager.scrollToPositionWithOffset(position,
+    // offset): "place the top of [position] at [offset] from
+    // the viewport top".
+    //
+    // We can only finalize once the target page reports a
+    // real loaded height — fraction × placeholder-min-height
+    // would yield a tiny offset. Until then we leave the
+    // pending value alone and re-check on the next fill — the
+    // GalleryAdapter pipes a requestFill() through after every
+    // onPageSucceed so this branch gets a second chance when
+    // the target's image arrives. onScroll / onDown clear
+    // pending the moment the user interacts.
+    private fun applyPendingStartFraction() {
+        if (pendingStartFraction.isNaN() ||
+            pendingStartFractionPageIndex == GalleryPageView.INVALID_INDEX
+        ) {
+            return
+        }
+        var target: GalleryPageView? = null
+        for (p in pages) {
+            if (p.index == pendingStartFractionPageIndex) {
+                target = p
+                break
+            }
+        }
+        if (target != null && target.isLoaded && target.height > 0) {
+            val desiredTop = -Math.round(pendingStartFraction * target.height)
+            Log.d(
+                TAG,
+                "[FRACTION] applying: page=" + pendingStartFractionPageIndex +
+                    " fraction=" + pendingStartFraction +
+                    " pageHeight=" + target.height +
+                    " desiredTop=" + desiredTop,
+            )
+            // Pin the target page at desiredTop via keep-top
+            // anchors. fillFromAnchor reads (keepTopPageIndex,
+            // keepTop) at the start of each fill
+            // and uses them as (startIndex, startOffset),
+            // exactly what we want. The pin survives until
+            // onScroll/onFling clear it on user input.
+            keepTopPageIndex = pendingStartFractionPageIndex
+            keepTop = desiredTop
+            pendingStartFraction = Float.NaN
+            pendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
+            // Force an immediate re-fill within this render
+            // cycle so the new anchor lands on screen now;
+            // galleryView.requestFill() would be a no-op
+            // here since we're inside onFill
+            // (GalleryView's requestFillEnabled == false).
+            galleryView.forceFill()
         }
     }
 
@@ -701,6 +711,7 @@ internal class ScrollLayoutManager(
     }
 
     // True for get top or bottom
+    @Suppress("LongMethod", "NestedBlockDepth") // per-frame scroll step; both edges update the delta and fill flags
     private fun scrollInternal(dx: Float, dy: Float, fling: Boolean, x: Float, y: Float): Boolean {
         if (pages.size <= 0) {
             return false
@@ -960,44 +971,45 @@ internal class ScrollLayoutManager(
         val galleryView = this.galleryView
         if (index == 0 && offsetY >= 0) {
             overScroller.overScroll(GLEdgeView.TOP)
-            this.galleryView.onTransferEnd()
-        } else {
-            // Cancel all animations
-            cancelAllAnimations()
-
-            // Get first shown page
-            var previousPage: GalleryPageView? = null
-            var firstShownPage: GalleryPageView? = null
-            for (p in pages) {
-                if (isInScreen(p)) {
-                    firstShownPage = p
-                    break
-                }
-                previousPage = p
-            }
-
-            val height = galleryView.height
-            val maxOffset = height - interval
-            if (null == firstShownPage) {
-                Log.e(TAG, "Can't find first shown page when paging left")
-                offsetY += height / 2
-            } else {
-                val firstShownTop = firstShownPage.bounds().top
-                if (firstShownTop >= 0) {
-                    if (null == previousPage) {
-                        Log.e(TAG, "Can't find previous page when paging left and offsetY == 0")
-                        offsetY += height / 2
-                    } else {
-                        offsetY += min(maxOffset, -previousPage.bounds().top)
-                    }
-                } else {
-                    offsetY += min(maxOffset, -firstShownTop)
-                }
-            }
-
-            // Request fill
-            this.galleryView.requestFill()
+            galleryView.onTransferEnd()
+            return
         }
+
+        // Cancel all animations
+        cancelAllAnimations()
+
+        // Get first shown page
+        var previousPage: GalleryPageView? = null
+        var firstShownPage: GalleryPageView? = null
+        for (p in pages) {
+            if (isInScreen(p)) {
+                firstShownPage = p
+                break
+            }
+            previousPage = p
+        }
+
+        val height = galleryView.height
+        val maxOffset = height - interval
+        if (null == firstShownPage) {
+            Log.e(TAG, "Can't find first shown page when paging left")
+            offsetY += height / 2
+        } else {
+            val firstShownTop = firstShownPage.bounds().top
+            if (firstShownTop >= 0) {
+                if (null == previousPage) {
+                    Log.e(TAG, "Can't find previous page when paging left and offsetY == 0")
+                    offsetY += height / 2
+                } else {
+                    offsetY += min(maxOffset, -previousPage.bounds().top)
+                }
+            } else {
+                offsetY += min(maxOffset, -firstShownTop)
+            }
+        }
+
+        // Request fill
+        this.galleryView.requestFill()
     }
 
     override fun onPageRight() {
@@ -1015,45 +1027,46 @@ internal class ScrollLayoutManager(
         val hasNext = bottomStateHasNext
         if (!hasNext && bottom <= galleryView.height) {
             overScroller.overScroll(GLEdgeView.BOTTOM)
-            this.galleryView.onTransferEnd()
-        } else {
-            // Cancel all animations
-            cancelAllAnimations()
-
-            // Get first shown page
-            var lastShownPage: GalleryPageView? = null
-            var nextPage: GalleryPageView? = null
-            for (p in pages) {
-                if (isInScreen(p)) {
-                    lastShownPage = p
-                } else if (null != lastShownPage) {
-                    nextPage = p
-                    break
-                }
-            }
-
-            val height = galleryView.height
-            val maxOffset = height - interval
-            if (null == lastShownPage) {
-                Log.e(TAG, "Can't find last shown page when paging left")
-                offsetY -= height / 2
-            } else {
-                val lastShownBottom = lastShownPage.bounds().bottom
-                if (lastShownBottom <= height) {
-                    if (null == nextPage) {
-                        Log.e(TAG, "Can't find previous page when paging left and offsetY == 0")
-                        offsetY -= height / 2
-                    } else {
-                        offsetY -= min(maxOffset, nextPage.bounds().bottom - height)
-                    }
-                } else {
-                    offsetY -= min(maxOffset, lastShownBottom - height)
-                }
-            }
-
-            // Request fill
-            this.galleryView.requestFill()
+            galleryView.onTransferEnd()
+            return
         }
+
+        // Cancel all animations
+        cancelAllAnimations()
+
+        // Get first shown page
+        var lastShownPage: GalleryPageView? = null
+        var nextPage: GalleryPageView? = null
+        for (p in pages) {
+            if (isInScreen(p)) {
+                lastShownPage = p
+            } else if (null != lastShownPage) {
+                nextPage = p
+                break
+            }
+        }
+
+        val height = galleryView.height
+        val maxOffset = height - interval
+        if (null == lastShownPage) {
+            Log.e(TAG, "Can't find last shown page when paging left")
+            offsetY -= height / 2
+        } else {
+            val lastShownBottom = lastShownPage.bounds().bottom
+            if (lastShownBottom <= height) {
+                if (null == nextPage) {
+                    Log.e(TAG, "Can't find previous page when paging left and offsetY == 0")
+                    offsetY -= height / 2
+                } else {
+                    offsetY -= min(maxOffset, nextPage.bounds().bottom - height)
+                }
+            } else {
+                offsetY -= min(maxOffset, lastShownBottom - height)
+            }
+        }
+
+        // Request fill
+        this.galleryView.requestFill()
     }
 
     override val isTapOrPressEnable: Boolean
