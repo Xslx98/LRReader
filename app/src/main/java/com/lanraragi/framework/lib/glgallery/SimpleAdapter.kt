@@ -51,7 +51,7 @@ open class SimpleAdapter(
     override fun size(): Int = provider.size()
 
     override fun onDataChanged() {
-        mGalleryView.onDataChanged()
+        galleryView?.onDataChanged()
     }
 
     override fun onPageWait(index: Int) {
@@ -128,7 +128,8 @@ open class SimpleAdapter(
             if (error == null) {
                 page.clearError()
             } else {
-                page.setError(error, mGalleryView)
+                // The page was found through the gallery view, so it is set.
+                galleryView?.let { page.setError(error, it) }
             }
         }
     }
@@ -140,5 +141,5 @@ open class SimpleAdapter(
         }
     }
 
-    private fun findPageByIndex(index: Int): GalleryPageView? = mGalleryView?.findPageByIndex(index)
+    private fun findPageByIndex(index: Int): GalleryPageView? = galleryView?.findPageByIndex(index)
 }
