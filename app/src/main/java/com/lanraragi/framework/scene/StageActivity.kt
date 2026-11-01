@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress(
-    "ComplexCondition", "CyclomaticComplexMethod", "EmptyFunctionBlock", "LargeClass", "LongMethod",
-    "NestedBlockDepth", "ReturnCount", "TooGenericExceptionThrown", "UseCheckOrError",
-) // TODO(2.4-idiom)
-
 package com.lanraragi.framework.scene
 
 import android.animation.Animator
@@ -34,6 +29,7 @@ import android.view.View
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentTransaction
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.BackDispatch
 import com.lanraragi.reader.ui.BaseActivity
@@ -44,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 import kotlin.math.min
 
+@Suppress("LargeClass") // scene stack, back routing and predictive back share one tag list; splitting is a redesign
 abstract class StageActivity : BaseActivity() {
 
     private val sceneTagList = ArrayList<String>()
@@ -126,28 +123,30 @@ abstract class StageActivity : BaseActivity() {
             return false
         }
 
-        val clazz: Class<*>
-        try {
-            clazz = Class.forName(clazzStr)
-        } catch (e: ClassNotFoundException) {
-            Log.e(TAG, "Can't find class $clazzStr", e)
-            return false
-        }
+        val clazz = findSceneClass(clazzStr) ?: return false
 
         val args = intent.getBundleExtra(KEY_SCENE_ARGS)
 
         val announcer = onStartSceneFromIntent(clazz, args) ?: return false
 
-        try {
+        return try {
             startScene(announcer)
+            true
         } catch (e: RuntimeException) {
             // An unstartable scene (e.g. not registered) must never crash
             // the app from an intent.
             Log.e(TAG, "Can't start scene from intent", e)
-            return false
+            false
         }
-        return true
     }
+
+    private fun findSceneClass(name: String): Class<*>? =
+        try {
+            Class.forName(name)
+        } catch (e: ClassNotFoundException) {
+            Log.e(TAG, "Can't find class $name", e)
+            null
+        }
 
     /**
      * Whether a `start_scene` intent naming `clazzName` may be
@@ -182,7 +181,9 @@ abstract class StageActivity : BaseActivity() {
      * Can't recognize intent in first time `onCreate` and `onNewIntent`,
      * null included.
      */
-    protected open fun onUnrecognizedIntent(intent: Intent?) {}
+    protected open fun onUnrecognizedIntent(intent: Intent?) {
+        // Optional hook for subclasses.
+    }
 
     /**
      * Call `setContentView` here. Do **NOT** call `startScene` here
@@ -213,25 +214,26 @@ abstract class StageActivity : BaseActivity() {
         onCreate2(savedInstanceState)
 
         val intent: Intent? = intent
-        if (savedInstanceState == null) {
-            if (intent != null) {
-                val action = intent.action
-                if (Intent.ACTION_MAIN == action) {
-                    val announcer = getLaunchAnnouncer()
-                    if (announcer != null) {
-                        startScene(announcer)
-                        return
-                    }
-                } else if (ACTION_START_SCENE == action) {
-                    if (startSceneFromIntent(intent)) {
-                        return
-                    }
-                }
-            }
-
+        if (savedInstanceState == null && !startSceneFromLaunchIntent(intent)) {
             // Can't recognize intent
             onUnrecognizedIntent(intent)
         }
+    }
+
+    /**
+     * @return `true` when the intent that created the stage started a scene
+     */
+    private fun startSceneFromLaunchIntent(intent: Intent?): Boolean {
+        if (intent == null) {
+            return false
+        }
+        val action = intent.action
+        if (Intent.ACTION_MAIN == action) {
+            val announcer = getLaunchAnnouncer() ?: return false
+            startScene(announcer)
+            return true
+        }
+        return ACTION_START_SCENE == action && startSceneFromIntent(intent)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -247,9 +249,11 @@ abstract class StageActivity : BaseActivity() {
     }
 
     open fun onSceneViewCreated(scene: SceneFragment, savedInstanceState: Bundle?) {
+        // Optional hook for subclasses.
     }
 
     open fun onSceneViewDestroyed(scene: SceneFragment) {
+        // Optional hook for subclasses.
     }
 
     @JvmName("onSceneDestroyed")
@@ -265,18 +269,15 @@ abstract class StageActivity : BaseActivity() {
         stageId = id
     }
 
-    @JvmName("onUnregister")
-    internal fun onUnregister() {
-    }
-
     protected open fun onTransactScene() {
+        // Optional hook for subclasses.
     }
 
     val sceneCount: Int
         get() = sceneTagList.size
 
     fun getSceneLaunchMode(clazz: Class<*>): Int =
-        launchModes[clazz] ?: throw RuntimeException("Not register " + clazz.name)
+        launchModes[clazz] ?: error("Not register " + clazz.name)
 
     private fun newSceneInstance(clazz: Class<*>): SceneFragment = SceneFactory.create(clazz.name)
 
@@ -284,77 +285,15 @@ abstract class StageActivity : BaseActivity() {
         val clazz = announcer.clazz
         val args = announcer.args
         val tranHelper = announcer.tranHelper
-        val fragmentManager = supportFragmentManager
         val launchMode = getSceneLaunchMode(clazz)
 
         // Check LAUNCH_MODE_SINGLE_TASK
-        if (launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TASK) {
-            val n = sceneTagList.size
-            for (i in 0 until n) {
-                val tag = sceneTagList[i]
-                val fragment = fragmentManager.findFragmentByTag(tag)
-                if (fragment == null) {
-                    Log.e(TAG, "Can't find fragment with tag: $tag")
-                    continue
-                }
-
-                if (clazz.isInstance(fragment)) { // Get it
-                    val transaction = fragmentManager.beginTransaction()
-
-                    // Use default animation
-                    transaction.setCustomAnimations(R.anim.scene_open_enter, R.anim.scene_open_exit)
-
-                    // Remove top fragments
-                    for (j in i + 1 until n) {
-                        val topTag = sceneTagList[j]
-                        val topFragment = fragmentManager.findFragmentByTag(topTag)
-                        if (null == topFragment) {
-                            Log.e(TAG, "Can't find fragment with tag: $topTag")
-                            continue
-                        }
-                        // Clear shared element
-                        topFragment.sharedElementEnterTransition = null
-                        topFragment.sharedElementReturnTransition = null
-                        topFragment.enterTransition = null
-                        topFragment.exitTransition = null
-                        // Remove it
-                        transaction.remove(topFragment)
-                    }
-
-                    // Remove tag from index i+1
-                    sceneTagList.subList(i + 1, sceneTagList.size).clear()
-
-                    // Attach fragment
-                    if (fragment.isDetached) {
-                        transaction.attach(fragment)
-                    }
-
-                    // Commit
-                    transaction.commitAllowingStateLoss()
-                    onTransactScene()
-                    postUpdateBackCallback()
-
-                    // New arguments
-                    if (args != null && fragment is SceneFragment) {
-                        fragment.onNewArguments(args)
-                    }
-
-                    return
-                }
-            }
+        if (launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TASK && returnToScene(clazz, args)) {
+            return
         }
 
         // Get current fragment
-        var currentScene: SceneFragment? = null
-        if (sceneTagList.size > 0) {
-            // Get last tag
-            val tag = sceneTagList[sceneTagList.size - 1]
-            val fragment = fragmentManager.findFragmentByTag(tag)
-            if (fragment != null) {
-                AssertUtils.assertTrue(SceneFragment::class.java.isInstance(fragment))
-                currentScene = fragment as SceneFragment
-            }
-        }
+        val currentScene = findCurrentScene()
 
         // Check LAUNCH_MODE_SINGLE_TASK
         if (currentScene != null && clazz.isInstance(currentScene) &&
@@ -377,7 +316,7 @@ abstract class StageActivity : BaseActivity() {
         sceneTagList.add(newTag)
         delaySceneTagList.add(newTag)
 
-        val transaction = fragmentManager.beginTransaction()
+        val transaction = supportFragmentManager.beginTransaction()
         // Animation
         if (currentScene != null) {
             if (tranHelper == null || !tranHelper.onTransition(
@@ -385,14 +324,8 @@ abstract class StageActivity : BaseActivity() {
                 )
             ) {
                 // Clear shared item
-                currentScene.sharedElementEnterTransition = null
-                currentScene.sharedElementReturnTransition = null
-                currentScene.enterTransition = null
-                currentScene.exitTransition = null
-                newScene.sharedElementEnterTransition = null
-                newScene.sharedElementReturnTransition = null
-                newScene.enterTransition = null
-                newScene.exitTransition = null
+                currentScene.clearTransitions()
+                newScene.clearTransitions()
                 // Set default animation
                 transaction.setCustomAnimations(R.anim.scene_open_enter, R.anim.scene_open_exit)
             }
@@ -417,6 +350,82 @@ abstract class StageActivity : BaseActivity() {
         if (requestFrom != null) {
             newScene.addRequest(requestFrom.tag, announcer.requestCode)
         }
+    }
+
+    /**
+     * LAUNCH_MODE_SINGLE_TASK: when the stack holds a [clazz] scene, removes
+     * every scene above it and shows it again.
+     *
+     * @return `true` when such a scene was found
+     */
+    private fun returnToScene(clazz: Class<*>, args: Bundle?): Boolean {
+        val fragmentManager = supportFragmentManager
+        val n = sceneTagList.size
+        for (i in 0 until n) {
+            val tag = sceneTagList[i]
+            val fragment = fragmentManager.findFragmentByTag(tag)
+            if (fragment == null) {
+                Log.e(TAG, "Can't find fragment with tag: $tag")
+            } else if (clazz.isInstance(fragment)) { // Get it
+                val transaction = fragmentManager.beginTransaction()
+
+                // Use default animation
+                transaction.setCustomAnimations(R.anim.scene_open_enter, R.anim.scene_open_exit)
+
+                // Remove top fragments
+                removeScenes(transaction, i + 1, n)
+
+                // Remove tag from index i+1
+                sceneTagList.subList(i + 1, sceneTagList.size).clear()
+
+                // Attach fragment
+                if (fragment.isDetached) {
+                    transaction.attach(fragment)
+                }
+
+                // Commit
+                transaction.commitAllowingStateLoss()
+                onTransactScene()
+                postUpdateBackCallback()
+
+                // New arguments
+                if (args != null && fragment is SceneFragment) {
+                    fragment.onNewArguments(args)
+                }
+
+                return true
+            }
+        }
+        return false
+    }
+
+    /** Adds the removal of the scenes tagged at `sceneTagList[from until to]` to [transaction]. */
+    private fun removeScenes(transaction: FragmentTransaction, from: Int, to: Int) {
+        val fragmentManager = supportFragmentManager
+        for (j in from until to) {
+            val topTag = sceneTagList[j]
+            val topFragment = fragmentManager.findFragmentByTag(topTag)
+            if (null == topFragment) {
+                Log.e(TAG, "Can't find fragment with tag: $topTag")
+                continue
+            }
+            // Clear shared element
+            topFragment.clearTransitions()
+            // Remove it
+            transaction.remove(topFragment)
+        }
+    }
+
+    /** The scene of the last tag, or null when the stack is empty or that scene is gone. */
+    private fun findCurrentScene(): SceneFragment? {
+        if (sceneTagList.isEmpty()) {
+            return null
+        }
+        // Get last tag
+        val tag = sceneTagList[sceneTagList.size - 1]
+        val fragment = supportFragmentManager.findFragmentByTag(tag) ?: return null
+        AssertUtils.assertTrue(SceneFragment::class.java.isInstance(fragment))
+        return fragment as SceneFragment
     }
 
     fun startSceneFirstly(announcer: Announcer) {
@@ -444,15 +453,10 @@ abstract class StageActivity : BaseActivity() {
             }
 
             // Clear shared element
-            fragment.sharedElementEnterTransition = null
-            fragment.sharedElementReturnTransition = null
-            fragment.enterTransition = null
-            fragment.exitTransition = null
+            fragment.clearTransitions()
 
             // Check is target scene
-            if (!forceNewScene && !findScene && clazz.isInstance(fragment) &&
-                (launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TASK || !fragment.isDetached)
-            ) {
+            if (!forceNewScene && !findScene && isReusable(fragment, clazz, launchMode)) {
                 scene = fragment as SceneFragment
                 findScene = true
                 createNewScene = false
@@ -495,6 +499,18 @@ abstract class StageActivity : BaseActivity() {
         if (!createNewScene && args != null) {
             scene?.onNewArguments(args)
         }
+    }
+
+    /** A [clazz] scene that startSceneFirstly may keep instead of creating one. */
+    private fun isReusable(fragment: Fragment, clazz: Class<*>, launchMode: Int): Boolean =
+        clazz.isInstance(fragment) && (launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TASK || !fragment.isDetached)
+
+    /** Clears shared-element and enter/exit transitions, so the default scene animations apply. */
+    private fun Fragment.clearTransitions() {
+        sharedElementEnterTransition = null
+        sharedElementReturnTransition = null
+        enterTransition = null
+        exitTransition = null
     }
 
     @JvmName("sortSceneViews")
@@ -547,14 +563,8 @@ abstract class StageActivity : BaseActivity() {
                 )
             ) {
                 // Clear shared item
-                scene.sharedElementEnterTransition = null
-                scene.sharedElementReturnTransition = null
-                scene.enterTransition = null
-                scene.exitTransition = null
-                next.sharedElementEnterTransition = null
-                next.sharedElementReturnTransition = null
-                next.enterTransition = null
-                next.exitTransition = null
+                scene.clearTransitions()
+                next.clearTransitions()
                 // Do not show animate if it is not the first fragment. A
                 // predictive back has already animated both scenes.
                 if (!skipCloseAnimation) {
@@ -864,11 +874,11 @@ abstract class StageActivity : BaseActivity() {
         val below = predictBelow
         resetPredictiveViews()
         val fragmentManager = supportFragmentManager
-        if (below != null && predictAttachedBelow && !below.isDetached &&
-            !fragmentManager.isStateSaved
-        ) {
-            // Still predictBelow here, so its view-destroyed hook is skipped too.
-            fragmentManager.beginTransaction().detach(below).commitNow()
+        if (below != null && predictAttachedBelow && !below.isDetached) {
+            if (!fragmentManager.isStateSaved) {
+                // Still predictBelow here, so its view-destroyed hook is skipped too.
+                fragmentManager.beginTransaction().detach(below).commitNow()
+            }
         }
         predictTop = null
         predictBelow = null
@@ -901,6 +911,7 @@ abstract class StageActivity : BaseActivity() {
      * subclasses re-apply the top scene's here.
      */
     protected open fun onPredictiveBackCancelled(top: SceneFragment) {
+        // Optional hook for subclasses.
     }
 
     /** From SceneFragment.onViewCreated: the revealed scene's hook waits for the commit. */
@@ -991,12 +1002,11 @@ abstract class StageActivity : BaseActivity() {
 
         @JvmStatic
         fun registerLaunchMode(clazz: Class<*>, @SceneFragment.LaunchMode launchMode: Int) {
-            if (launchMode != SceneFragment.LAUNCH_MODE_STANDARD &&
-                launchMode != SceneFragment.LAUNCH_MODE_SINGLE_TOP &&
-                launchMode != SceneFragment.LAUNCH_MODE_SINGLE_TASK
-            ) {
-                throw IllegalStateException("Invalid launch mode: $launchMode")
-            }
+            check(
+                launchMode == SceneFragment.LAUNCH_MODE_STANDARD ||
+                    launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TOP ||
+                    launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TASK
+            ) { "Invalid launch mode: $launchMode" }
             launchModes[clazz] = launchMode
         }
 

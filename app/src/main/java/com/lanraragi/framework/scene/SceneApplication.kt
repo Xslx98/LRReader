@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnnecessaryAbstractClass", "UseCheckOrError") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.scene
 
 import android.app.Application
 import android.util.SparseArray
 import com.lanraragi.reader.util.IntIdGenerator
 
-abstract class SceneApplication : Application() {
+open class SceneApplication : Application() {
 
     private val idGenerator = IntIdGenerator()
     private val stageMap = SparseArray<StageActivity>()
@@ -36,9 +34,7 @@ abstract class SceneApplication : Application() {
 
     @JvmName("registerStageActivity")
     internal fun registerStageActivity(stage: StageActivity, id: Int) {
-        if (stageMap.indexOfKey(id) >= 0) {
-            throw IllegalStateException("The id exists: $id")
-        }
+        check(stageMap.indexOfKey(id) < 0) { "The id exists: $id" }
 
         stageMap.put(id, stage)
         stage.onRegister(id)
@@ -47,9 +43,7 @@ abstract class SceneApplication : Application() {
     internal fun unregisterStageActivity(id: Int) {
         val index = stageMap.indexOfKey(id)
         if (index >= 0) {
-            val stage = stageMap.valueAt(index)
             stageMap.remove(id)
-            stage.onUnregister()
         }
     }
 

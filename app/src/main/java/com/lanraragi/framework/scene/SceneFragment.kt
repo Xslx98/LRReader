@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("EmptyFunctionBlock") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.scene
 
 import android.os.Bundle
@@ -39,7 +37,9 @@ open class SceneFragment : Fragment() {
     private val requestSceneTagList: MutableList<String?> = ArrayList(0)
     private val requestCodeList = IntList(0)
 
-    open fun onNewArguments(args: Bundle) {}
+    open fun onNewArguments(args: Bundle) {
+        // Optional hook for subclasses.
+    }
 
     fun startScene(announcer: Announcer) {
         val activity = activity
@@ -134,6 +134,7 @@ open class SceneFragment : Fragment() {
     }
 
     protected open fun onSceneResult(requestCode: Int, resultCode: Int, data: Bundle?) {
+        // Optional hook for subclasses.
     }
 
     fun setResult(resultCode: Int, result: Bundle?) {

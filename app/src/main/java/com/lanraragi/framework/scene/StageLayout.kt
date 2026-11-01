@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-@file:Suppress("PrintStackTrace") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.scene
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -47,7 +46,7 @@ open class StageLayout : FrameLayout {
             disappearingChildrenField = field
             field.isAccessible = true
         } catch (e: NoSuchFieldException) {
-            e.printStackTrace()
+            Log.w(TAG, "No ViewGroup.mDisappearingChildren, scenes draw in child order", e)
         }
 
         if (disappearingChildrenField != null) {
@@ -67,7 +66,7 @@ open class StageLayout : FrameLayout {
         try {
             superDisappearingChildren = field.get(this) as ArrayList<View>?
         } catch (e: IllegalAccessException) {
-            e.printStackTrace()
+            Log.w(TAG, "Can't read ViewGroup.mDisappearingChildren", e)
         }
     }
 
@@ -137,5 +136,9 @@ open class StageLayout : FrameLayout {
         }
 
         return super.drawChild(canvas, child, drawingTime)
+    }
+
+    private companion object {
+        const val TAG = "StageLayout"
     }
 }
