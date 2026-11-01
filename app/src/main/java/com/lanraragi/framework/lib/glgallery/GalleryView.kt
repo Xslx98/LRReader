@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "CyclomaticComplexMethod",
-    "ComplexCondition",
-    "LargeClass",
-    "EmptyFunctionBlock",
-    "UnusedParameter",
-)
-
 package com.lanraragi.framework.lib.glgallery
 
 import android.content.Context
@@ -48,6 +40,7 @@ import com.lanraragi.framework.lib.glview.widget.GLTextureView
 import com.lanraragi.reader.util.MathUtils
 import java.util.Collections
 
+@Suppress("LargeClass") // the gesture queue, fill gate and layout-manager switch share one render-thread state
 class GalleryView private constructor(build: Builder) : GLView(), GestureRecognizer.Listener {
 
     @IntDef(LAYOUT_LEFT_TO_RIGHT, LAYOUT_RIGHT_TO_LEFT, LAYOUT_TOP_TO_BOTTOM)
@@ -518,7 +511,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     override fun onSingleTapUp(x: Float, y: Float): Boolean {
-        postMethod(METHOD_ON_SINGLE_TAP_UP, x, y)
+        postMethod(METHOD_ON_SINGLE_TAP_UP)
         return true
     }
 
@@ -528,7 +521,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     override fun onDoubleTap(x: Float, y: Float): Boolean {
-        postMethod(METHOD_ON_DOUBLE_TAP, x, y)
+        postMethod(METHOD_ON_DOUBLE_TAP)
         return true
     }
 
@@ -571,7 +564,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     override fun onDown(x: Float, y: Float) {
-        postMethod(METHOD_ON_DOWN, x, y)
+        postMethod(METHOD_ON_DOWN)
     }
 
     override fun onUp() {
@@ -579,7 +572,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     override fun onPointerDown(x: Float, y: Float) {
-        postMethod(METHOD_ON_POINTER_DOWN, x, y)
+        postMethod(METHOD_ON_POINTER_DOWN)
     }
 
     override fun onPointerUp() {
@@ -633,9 +626,6 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         }
     }
 
-    private fun onSingleTapUpInternal(x: Float, y: Float) {
-    }
-
     private fun findPageUnder(x: Float, y: Float): GalleryPageView? {
         for (i in 0 until componentCount) {
             val view = getComponent(i)
@@ -645,6 +635,11 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         }
         return null
     }
+
+    private fun isErrorTextTap(page: GalleryPageView, x: Float, y: Float): Boolean =
+        page.index != GalleryPageView.INVALID_INDEX &&
+            page.isError &&
+            page.isUnderInfo(x - page.bounds().left, y - page.bounds().top)
 
     private fun onSingleTapConfirmedInternal(x: Float, y: Float) {
         val layoutManager = this.layoutManager
@@ -660,11 +655,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         )
 
         val page = findPageUnder(x, y)
-        if (page != null &&
-            page.index != GalleryPageView.INVALID_INDEX &&
-            page.isError &&
-            page.isUnderInfo(x - page.bounds().left, y - page.bounds().top)
-        ) {
+        if (page != null && isErrorTextTap(page, x, y)) {
             if (listener != null) {
                 listener.onTapErrorText(page.index)
             }
@@ -681,9 +672,6 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         } else if (rightArea.contains(x.toInt(), y.toInt())) {
             layoutManager.onPageRight()
         }
-    }
-
-    private fun onDoubleTapInternal(x: Float, y: Float) {
     }
 
     private fun onDoubleTapConfirmedInternal(x: Float, y: Float) {
@@ -749,10 +737,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         }
     }
 
-    private fun onScaleEndInternal() {
-    }
-
-    private fun onDownInternal(x: Float, y: Float) {
+    private fun onDownInternal() {
         scaling = false
         scrolling = false
         firstScroll = true
@@ -769,14 +754,11 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         }
     }
 
-    private fun onPointerDownInternal(x: Float, y: Float) {
+    private fun onPointerDownInternal() {
         val layoutManager = this.layoutManager
         if (!scrolling && (layoutManager != null && layoutManager.canScale())) {
             scaling = true
         }
-    }
-
-    private fun onPointerUpInternal() {
     }
 
     private fun setLayoutModeInternal(layoutMode: Int) {
@@ -922,6 +904,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         return value
     }
 
+    @Suppress("CyclomaticComplexMethod") // one branch per posted method id; a table would need a lambda each
     private fun dispatchMethod() {
         val methodListTemp = this.methodListTemp
         val argsListTemp = this.argsListTemp
@@ -942,9 +925,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
             val args = argsListTemp[i]
 
             when (method) {
-                METHOD_ON_SINGLE_TAP_UP -> onSingleTapUpInternal(args.floatAt(0), args.floatAt(1))
                 METHOD_ON_SINGLE_TAP_CONFIRMED -> onSingleTapConfirmedInternal(args.floatAt(0), args.floatAt(1))
-                METHOD_ON_DOUBLE_TAP -> onDoubleTapInternal(args.floatAt(0), args.floatAt(1))
                 METHOD_ON_DOUBLE_TAP_CONFIRMED -> onDoubleTapConfirmedInternal(args.floatAt(0), args.floatAt(1))
                 METHOD_ON_LONG_PRESS -> onLongPressInternal(args.floatAt(0), args.floatAt(1))
                 METHOD_ON_SCROLL -> onScrollInternal(
@@ -954,11 +935,12 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                 METHOD_ON_FLING -> onFlingInternal(args.floatAt(0), args.floatAt(1))
                 METHOD_ON_SCALE_BEGIN -> onScaleBeginInternal(args.floatAt(0), args.floatAt(1))
                 METHOD_ON_SCALE -> onScaleInternal(args.floatAt(0), args.floatAt(1), args.floatAt(2))
-                METHOD_ON_SCALE_END -> onScaleEndInternal()
-                METHOD_ON_DOWN -> onDownInternal(args.floatAt(0), args.floatAt(1))
+                METHOD_ON_DOWN -> onDownInternal()
                 METHOD_ON_UP -> onUpInternal()
-                METHOD_ON_POINTER_DOWN -> onPointerDownInternal(args.floatAt(0), args.floatAt(1))
-                METHOD_ON_POINTER_UP -> onPointerUpInternal()
+                METHOD_ON_POINTER_DOWN -> onPointerDownInternal()
+                // Posted only for the render they request: single tap up, double
+                // tap (acted on when confirmed), scale end and pointer up.
+                METHOD_ON_SINGLE_TAP_UP, METHOD_ON_DOUBLE_TAP, METHOD_ON_SCALE_END, METHOD_ON_POINTER_UP -> Unit
                 METHOD_SET_LAYOUT_MODE -> setLayoutModeInternal(args.intAt(0))
                 METHOD_SET_CURRENT_PAGE -> setCurrentPageInternal(args.intAt(0))
                 METHOD_SET_CURRENT_PAGE_WITH_FRACTION ->
@@ -1383,45 +1365,24 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
         @LayoutMode
         @JvmStatic
-        fun sanitizeLayoutMode(layoutMode: Int): Int {
-            if (layoutMode != LAYOUT_LEFT_TO_RIGHT &&
-                layoutMode != LAYOUT_RIGHT_TO_LEFT &&
-                layoutMode != LAYOUT_TOP_TO_BOTTOM
-            ) {
-                return LAYOUT_LEFT_TO_RIGHT
-            } else {
-                return layoutMode
-            }
+        fun sanitizeLayoutMode(layoutMode: Int): Int = when (layoutMode) {
+            LAYOUT_LEFT_TO_RIGHT, LAYOUT_RIGHT_TO_LEFT, LAYOUT_TOP_TO_BOTTOM -> layoutMode
+            else -> LAYOUT_LEFT_TO_RIGHT
         }
 
         @ScaleMode
         @JvmStatic
-        fun sanitizeScaleMode(scaleMode: Int): Int {
-            if (scaleMode != SCALE_ORIGIN &&
-                scaleMode != SCALE_FIT_WIDTH &&
-                scaleMode != SCALE_FIT_HEIGHT &&
-                scaleMode != SCALE_FIT &&
-                scaleMode != SCALE_FIXED
-            ) {
-                return SCALE_FIT
-            } else {
-                return scaleMode
-            }
+        fun sanitizeScaleMode(scaleMode: Int): Int = when (scaleMode) {
+            SCALE_ORIGIN, SCALE_FIT_WIDTH, SCALE_FIT_HEIGHT, SCALE_FIT, SCALE_FIXED -> scaleMode
+            else -> SCALE_FIT
         }
 
         @StartPosition
         @JvmStatic
-        fun sanitizeStartPosition(startPosition: Int): Int {
-            if (startPosition != START_POSITION_TOP_LEFT &&
-                startPosition != START_POSITION_TOP_RIGHT &&
-                startPosition != START_POSITION_BOTTOM_LEFT &&
-                startPosition != START_POSITION_BOTTOM_RIGHT &&
-                startPosition != START_POSITION_CENTER
-            ) {
-                return START_POSITION_TOP_LEFT
-            } else {
-                return startPosition
-            }
+        fun sanitizeStartPosition(startPosition: Int): Int = when (startPosition) {
+            START_POSITION_TOP_LEFT, START_POSITION_TOP_RIGHT, START_POSITION_BOTTOM_LEFT,
+            START_POSITION_BOTTOM_RIGHT, START_POSITION_CENTER -> startPosition
+            else -> START_POSITION_TOP_LEFT
         }
     }
 }
