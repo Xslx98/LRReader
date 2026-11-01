@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.view;
+package com.lanraragi.framework.lib.glview.view
 
-public interface OrientationSource {
-    int getDisplayRotation();
-    int getCompensation();
+interface OrientationSource {
+    fun getDisplayRotation(): Int
+    fun getCompensation(): Int
 }
