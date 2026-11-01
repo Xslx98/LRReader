@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "LongMethod",
-    "ComplexCondition",
-    "NestedBlockDepth",
-)
-
 package com.lanraragi.framework.lib.glgallery
 
 import android.graphics.Rect
@@ -129,38 +123,39 @@ internal class ImageView : GLView(), ImageTexture.Callback {
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
         if (imageTexture == null) {
             super.onMeasure(widthSpec, heightSpec)
-        } else {
-            val ratio = textureWidth.toFloat() / textureHeight
-            val widthSize = MeasureSpec.getSize(widthSpec)
-            val heightSize = MeasureSpec.getSize(heightSpec)
-            val widthMode = MeasureSpec.getMode(widthSpec)
-            val heightMode = MeasureSpec.getMode(heightSpec)
-            var measureWidth = -1
-            var measureHeight = -1
+            return
+        }
 
-            if (widthMode == MeasureSpec.EXACTLY) {
-                measureWidth = widthSize
-                if (heightMode == MeasureSpec.EXACTLY) {
-                    measureHeight = heightSize
-                } else {
-                    measureHeight = (widthSize / ratio).toInt()
-                    if (heightMode == MeasureSpec.AT_MOST) {
-                        measureHeight = min(measureHeight, heightSize)
-                    }
-                }
-            } else if (heightMode == MeasureSpec.EXACTLY) {
+        val ratio = textureWidth.toFloat() / textureHeight
+        val widthSize = MeasureSpec.getSize(widthSpec)
+        val heightSize = MeasureSpec.getSize(heightSpec)
+        val widthMode = MeasureSpec.getMode(widthSpec)
+        val heightMode = MeasureSpec.getMode(heightSpec)
+        var measureWidth = -1
+        var measureHeight = -1
+
+        if (widthMode == MeasureSpec.EXACTLY) {
+            measureWidth = widthSize
+            if (heightMode == MeasureSpec.EXACTLY) {
                 measureHeight = heightSize
-                measureWidth = (heightSize * ratio).toInt()
-                if (widthMode == MeasureSpec.AT_MOST) {
-                    measureWidth = min(measureWidth, widthSize)
+            } else {
+                measureHeight = (widthSize / ratio).toInt()
+                if (heightMode == MeasureSpec.AT_MOST) {
+                    measureHeight = min(measureHeight, heightSize)
                 }
             }
-
-            if (measureWidth == -1 || measureHeight == -1) {
-                super.onMeasure(widthSpec, heightSpec)
-            } else {
-                setMeasuredSize(measureWidth, measureHeight)
+        } else if (heightMode == MeasureSpec.EXACTLY) {
+            measureHeight = heightSize
+            measureWidth = (heightSize * ratio).toInt()
+            if (widthMode == MeasureSpec.AT_MOST) {
+                measureWidth = min(measureWidth, widthSize)
             }
+        }
+
+        if (measureWidth == -1 || measureHeight == -1) {
+            super.onMeasure(widthSpec, heightSpec)
+        } else {
+            setMeasuredSize(measureWidth, measureHeight)
         }
     }
 
@@ -406,6 +401,17 @@ internal class ImageView : GLView(), ImageTexture.Callback {
             targetHeight = texHeight * SCALE_MAX
         }
 
+        placeAt(startPosition, screenWidth, screenHeight, targetWidth, targetHeight)
+
+        // adjust position
+        adjustPosition()
+
+        scaleOffsetDirty = false
+        positionInRootDirty = true
+    }
+
+    /** Puts dstRect, targetWidth x targetHeight, at [startPosition] in the view. */
+    private fun placeAt(startPosition: Int, screenWidth: Int, screenHeight: Int, targetWidth: Float, targetHeight: Float) {
         // Set dstRect.left and dstRect.top
         val dst = dstRect
         when (startPosition) {
@@ -435,12 +441,6 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         // Set dstRect.right and dstRect.bottom
         dst.right = dst.left + targetWidth
         dst.bottom = dst.top + targetHeight
-
-        // adjust position
-        adjustPosition()
-
-        scaleOffsetDirty = false
-        positionInRootDirty = true
     }
 
     fun scroll(dx: Int, dy: Int, remain: IntArray) {
@@ -522,7 +522,11 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         // A clean scale offset means setScaleOffset saw a texture.
         val texture = imageTexture ?: return
 
-        if ((this.scale == SCALE_MAX && scale >= 1.0f) || (this.scale == SCALE_MIN && scale < 1.0f)) {
+        // Already at a limit and asked to go further past it.
+        if (this.scale == SCALE_MAX && scale >= 1.0f) {
+            return
+        }
+        if (this.scale == SCALE_MIN && scale < 1.0f) {
             return
         }
 

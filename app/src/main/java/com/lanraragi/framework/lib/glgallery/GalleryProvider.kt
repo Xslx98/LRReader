@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "UseCheckOrError",
-)
-
 package com.lanraragi.framework.lib.glgallery
 
 import android.util.LruCache
@@ -69,9 +65,7 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     open fun start() {
         OSUtils.checkMainLoop()
 
-        if (started) {
-            throw IllegalStateException("Can't start it twice")
-        }
+        check(!started) { "Can't start it twice" }
         started = true
         MemoryTrim.register(this)
     }
