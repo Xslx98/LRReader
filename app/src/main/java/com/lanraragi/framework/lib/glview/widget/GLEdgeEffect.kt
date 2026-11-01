@@ -33,29 +33,33 @@ import kotlin.math.sqrt
  */
 class GLEdgeEffect(color: Int) {
 
-    private var mGlowAlpha = 0f
-    private var mGlowScaleY = 0f
+    private var glowAlpha = 0f
+    private var glowScaleY = 0f
 
-    private var mGlowAlphaStart = 0f
-    private var mGlowAlphaFinish = 0f
-    private var mGlowScaleYStart = 0f
-    private var mGlowScaleYFinish = 0f
+    private var glowAlphaStart = 0f
+    private var glowAlphaFinish = 0f
+    private var glowScaleYStart = 0f
+    private var glowScaleYFinish = 0f
 
-    private var mStartTime = 0L
-    private var mDuration = 0f
+    private var startTime = 0L
+    private var duration = 0f
 
-    private val mInterpolator: Interpolator = DecelerateInterpolator()
+    private val interpolator: Interpolator = DecelerateInterpolator()
 
-    private var mState = STATE_IDLE
+    private var state = STATE_IDLE
 
-    private var mPullDistance = 0f
+    private var pullDistance = 0f
 
-    private val mBounds = Rect()
-    private var mColor = color
-    private var mRadius = 0f
-    private var mBaseGlowScale = 0f
-    private var mDisplacement = 0.5f
-    private var mTargetDisplacement = 0.5f
+    private val bounds = Rect()
+
+    /**
+     * The color of this edge effect in argb.
+     */
+    var color = color
+    private var radius = 0f
+    private var baseGlowScale = 0f
+    private var displacement = 0.5f
+    private var targetDisplacement = 0.5f
 
     /**
      * Set the size of this edge effect in pixels.
@@ -71,10 +75,10 @@ class GLEdgeEffect(color: Int) {
         val oy = COS * oRadius
         val oh = oRadius - oy
 
-        mRadius = r
-        mBaseGlowScale = if (h > 0) min(oh / h, 1f) else 1f
+        radius = r
+        baseGlowScale = if (h > 0) min(oh / h, 1f) else 1f
 
-        mBounds.set(mBounds.left, mBounds.top, width, min(height.toFloat(), h).toInt())
+        bounds.set(bounds.left, bounds.top, width, min(height.toFloat(), h).toInt())
     }
 
     /**
@@ -84,14 +88,15 @@ class GLEdgeEffect(color: Int) {
      *
      * @return true if animation is finished, false if drawing should continue on the next frame.
      */
-    fun isFinished(): Boolean = mState == STATE_IDLE
+    val isFinished: Boolean
+        get() = state == STATE_IDLE
 
     /**
      * Immediately finish the current animation.
      * After this call [isFinished] will return true.
      */
     fun finish() {
-        mState = STATE_IDLE
+        state = STATE_IDLE
     }
 
     /**
@@ -126,41 +131,41 @@ class GLEdgeEffect(color: Int) {
      */
     fun onPull(deltaDistance: Float, displacement: Float) {
         val now = AnimationUtils.currentAnimationTimeMillis()
-        mTargetDisplacement = displacement
-        if (mState == STATE_PULL_DECAY && (now - mStartTime).toFloat() < mDuration) {
+        targetDisplacement = displacement
+        if (state == STATE_PULL_DECAY && (now - startTime).toFloat() < duration) {
             return
         }
-        if (mState != STATE_PULL) {
-            mGlowScaleY = max(PULL_GLOW_BEGIN, mGlowScaleY)
+        if (state != STATE_PULL) {
+            glowScaleY = max(PULL_GLOW_BEGIN, glowScaleY)
         }
-        mState = STATE_PULL
+        state = STATE_PULL
 
-        mStartTime = now
-        mDuration = PULL_TIME.toFloat()
+        startTime = now
+        duration = PULL_TIME.toFloat()
 
-        mPullDistance += deltaDistance
+        pullDistance += deltaDistance
 
         val absdd = abs(deltaDistance)
-        val glowAlpha = min(MAX_ALPHA, mGlowAlpha + (absdd * PULL_DISTANCE_ALPHA_GLOW_FACTOR))
-        mGlowAlphaStart = glowAlpha
-        mGlowAlpha = glowAlpha
+        val newGlowAlpha = min(MAX_ALPHA, glowAlpha + (absdd * PULL_DISTANCE_ALPHA_GLOW_FACTOR))
+        glowAlphaStart = newGlowAlpha
+        glowAlpha = newGlowAlpha
 
-        if (mPullDistance == 0f) {
-            mGlowScaleYStart = 0f
-            mGlowScaleY = 0f
+        if (pullDistance == 0f) {
+            glowScaleYStart = 0f
+            glowScaleY = 0f
         } else {
             val scale = max(
                 0f,
                 1 - 1 /
-                    sqrt((abs(mPullDistance) * mBounds.height()).toDouble()).toFloat() - 0.3f
+                    sqrt((abs(pullDistance) * bounds.height()).toDouble()).toFloat() - 0.3f
             ) / 0.7f
 
-            mGlowScaleYStart = scale
-            mGlowScaleY = scale
+            glowScaleYStart = scale
+            glowScaleY = scale
         }
 
-        mGlowAlphaFinish = mGlowAlpha
-        mGlowScaleYFinish = mGlowScaleY
+        glowAlphaFinish = glowAlpha
+        glowScaleYFinish = glowScaleY
     }
 
     /**
@@ -170,21 +175,21 @@ class GLEdgeEffect(color: Int) {
      * draw the results accordingly.
      */
     fun onRelease() {
-        mPullDistance = 0f
+        pullDistance = 0f
 
-        if (mState != STATE_PULL && mState != STATE_PULL_DECAY) {
+        if (state != STATE_PULL && state != STATE_PULL_DECAY) {
             return
         }
 
-        mState = STATE_RECEDE
-        mGlowAlphaStart = mGlowAlpha
-        mGlowScaleYStart = mGlowScaleY
+        state = STATE_RECEDE
+        glowAlphaStart = glowAlpha
+        glowScaleYStart = glowScaleY
 
-        mGlowAlphaFinish = 0f
-        mGlowScaleYFinish = 0f
+        glowAlphaFinish = 0f
+        glowScaleYFinish = 0f
 
-        mStartTime = AnimationUtils.currentAnimationTimeMillis()
-        mDuration = RECEDE_TIME.toFloat()
+        startTime = AnimationUtils.currentAnimationTimeMillis()
+        duration = RECEDE_TIME.toFloat()
     }
 
     /**
@@ -198,44 +203,29 @@ class GLEdgeEffect(color: Int) {
      * @param velocity Velocity at impact in pixels per second.
      */
     fun onAbsorb(velocity: Int) {
-        mState = STATE_ABSORB
+        state = STATE_ABSORB
         val clampedVelocity = min(max(MIN_VELOCITY, abs(velocity)), MAX_VELOCITY)
 
-        mStartTime = AnimationUtils.currentAnimationTimeMillis()
-        mDuration = 0.15f + (clampedVelocity * 0.02f)
+        startTime = AnimationUtils.currentAnimationTimeMillis()
+        duration = 0.15f + (clampedVelocity * 0.02f)
 
         // The glow depends more on the velocity, and therefore starts out
         // nearly invisible.
-        mGlowAlphaStart = 0.3f
-        mGlowScaleYStart = max(mGlowScaleY, 0f)
+        glowAlphaStart = 0.3f
+        glowScaleYStart = max(glowScaleY, 0f)
 
         // Growth for the size of the glow should be quadratic to properly
         // respond
         // to a user's scrolling speed. The faster the scrolling speed, the more
         // intense the effect should be for both the size and the saturation.
-        mGlowScaleYFinish = min(0.025f + (clampedVelocity * (clampedVelocity / 100) * 0.00015f) / 2, 1f)
+        glowScaleYFinish = min(0.025f + (clampedVelocity * (clampedVelocity / 100) * 0.00015f) / 2, 1f)
         // Alpha should change for the glow as well as size.
-        mGlowAlphaFinish = max(
-            mGlowAlphaStart,
+        glowAlphaFinish = max(
+            glowAlphaStart,
             min(clampedVelocity * VELOCITY_GLOW_FACTOR * .00001f, MAX_ALPHA)
         )
-        mTargetDisplacement = 0.5f
+        targetDisplacement = 0.5f
     }
-
-    /**
-     * Set the color of this edge effect in argb.
-     *
-     * @param color Color in argb
-     */
-    fun setColor(color: Int) {
-        mColor = color
-    }
-
-    /**
-     * Return the color of this edge effect in argb.
-     * @return The color of this edge effect in argb
-     */
-    fun getColor(): Int = mColor
 
     /**
      * Draw into the provided canvas. Assumes that the canvas has been rotated
@@ -252,27 +242,27 @@ class GLEdgeEffect(color: Int) {
 
         canvas.save()
 
-        val centerX = mBounds.centerX().toFloat()
-        val centerY = mBounds.height() - mRadius
+        val centerX = bounds.centerX().toFloat()
+        val centerY = bounds.height() - radius
 
         canvas.translate(-centerX, 0f)
-        canvas.scale(1f, min(mGlowScaleY, 1f) * mBaseGlowScale, 0f)
+        canvas.scale(1f, min(glowScaleY, 1f) * baseGlowScale, 0f)
         canvas.translate(centerX, 0f)
 
-        val displacement = max(0f, min(mDisplacement, 1f)) - 0.5f
-        val translateX = mBounds.width() * displacement / 2
+        val displacement = max(0f, min(displacement, 1f)) - 0.5f
+        val translateX = bounds.width() * displacement / 2
 
         canvas.translate(translateX, 0f)
-        canvas.fillOval(centerX, centerY, mRadius, mRadius, mColor)
+        canvas.fillOval(centerX, centerY, radius, radius, color)
         canvas.restore()
 
         var oneLastFrame = false
-        if (mState == STATE_RECEDE && mGlowScaleY == 0f) {
-            mState = STATE_IDLE
+        if (state == STATE_RECEDE && glowScaleY == 0f) {
+            state = STATE_IDLE
             oneLastFrame = true
         }
 
-        return mState != STATE_IDLE || oneLastFrame
+        return state != STATE_IDLE || oneLastFrame
     }
 
     /**
@@ -280,48 +270,49 @@ class GLEdgeEffect(color: Int) {
      * [input size][setSize].
      * @return The maximum height of the edge effect
      */
-    fun getMaxHeight(): Int = (mBounds.height() * MAX_GLOW_SCALE + 0.5f).toInt()
+    val maxHeight: Int
+        get() = (bounds.height() * MAX_GLOW_SCALE + 0.5f).toInt()
 
     private fun update() {
         val time = AnimationUtils.currentAnimationTimeMillis()
-        val t = min((time - mStartTime).toFloat() / mDuration, 1f)
+        val t = min((time - startTime).toFloat() / duration, 1f)
 
-        val interp = mInterpolator.getInterpolation(t)
+        val interp = interpolator.getInterpolation(t)
 
-        mGlowAlpha = mGlowAlphaStart + (mGlowAlphaFinish - mGlowAlphaStart) * interp
-        mGlowScaleY = mGlowScaleYStart + (mGlowScaleYFinish - mGlowScaleYStart) * interp
-        mDisplacement = (mDisplacement + mTargetDisplacement) / 2
+        glowAlpha = glowAlphaStart + (glowAlphaFinish - glowAlphaStart) * interp
+        glowScaleY = glowScaleYStart + (glowScaleYFinish - glowScaleYStart) * interp
+        displacement = (displacement + targetDisplacement) / 2
 
         if (t >= 1f - EPSILON) {
-            when (mState) {
+            when (state) {
                 STATE_ABSORB -> {
-                    mState = STATE_RECEDE
-                    mStartTime = AnimationUtils.currentAnimationTimeMillis()
-                    mDuration = RECEDE_TIME.toFloat()
+                    state = STATE_RECEDE
+                    startTime = AnimationUtils.currentAnimationTimeMillis()
+                    duration = RECEDE_TIME.toFloat()
 
-                    mGlowAlphaStart = mGlowAlpha
-                    mGlowScaleYStart = mGlowScaleY
+                    glowAlphaStart = glowAlpha
+                    glowScaleYStart = glowScaleY
 
                     // After absorb, the glow should fade to nothing.
-                    mGlowAlphaFinish = 0f
-                    mGlowScaleYFinish = 0f
+                    glowAlphaFinish = 0f
+                    glowScaleYFinish = 0f
                 }
 
                 STATE_PULL -> {
-                    mState = STATE_PULL_DECAY
-                    mStartTime = AnimationUtils.currentAnimationTimeMillis()
-                    mDuration = PULL_DECAY_TIME.toFloat()
+                    state = STATE_PULL_DECAY
+                    startTime = AnimationUtils.currentAnimationTimeMillis()
+                    duration = PULL_DECAY_TIME.toFloat()
 
-                    mGlowAlphaStart = mGlowAlpha
-                    mGlowScaleYStart = mGlowScaleY
+                    glowAlphaStart = glowAlpha
+                    glowScaleYStart = glowScaleY
 
                     // After pull, the glow should fade to nothing.
-                    mGlowAlphaFinish = 0f
-                    mGlowScaleYFinish = 0f
+                    glowAlphaFinish = 0f
+                    glowScaleYFinish = 0f
                 }
 
-                STATE_PULL_DECAY -> mState = STATE_RECEDE
-                STATE_RECEDE -> mState = STATE_IDLE
+                STATE_PULL_DECAY -> state = STATE_RECEDE
+                STATE_RECEDE -> state = STATE_IDLE
             }
         }
     }

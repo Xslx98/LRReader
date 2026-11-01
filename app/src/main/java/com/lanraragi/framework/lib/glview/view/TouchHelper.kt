@@ -25,18 +25,18 @@ import android.view.MotionEvent
 import android.view.ViewConfiguration
 import com.lanraragi.reader.util.ViewUtils
 
-class TouchHelper(private val mOwner: TouchOwner) {
+class TouchHelper(private val owner: TouchOwner) {
 
-    private var mPrePressed = false
-    private var mHasPerformedLongPress = false
+    private var prePressed = false
+    private var hasPerformedLongPress = false
 
-    private var mPendingCheckForLongPress: CheckForLongPress? = null
-    private var mPendingCheckForTap: CheckForTap? = null
-    private var mPerformClick: PerformClick? = null
-    private var mUnsetPressedState: UnsetPressedState? = null
+    private var pendingCheckForLongPress: CheckForLongPress? = null
+    private var pendingCheckForTap: CheckForTap? = null
+    private var performClickRunnable: PerformClick? = null
+    private var unsetPressedStateRunnable: UnsetPressedState? = null
 
     fun onTouch(event: MotionEvent): Boolean {
-        val owner = mOwner
+        val owner = this.owner
         val x = event.x
         val y = event.y
 
@@ -57,8 +57,8 @@ class TouchHelper(private val mOwner: TouchOwner) {
 
         if (owner.isClickable || owner.isLongClickable) {
             when (event.action) {
-                MotionEvent.ACTION_UP -> if (owner.isPressed || mPrePressed) {
-                    if (mPrePressed) {
+                MotionEvent.ACTION_UP -> if (owner.isPressed || prePressed) {
+                    if (prePressed) {
                         // The button is being released before we actually
                         // showed it as pressed.  Make it show the pressed
                         // state now (before scheduling the click) to ensure
@@ -66,30 +66,30 @@ class TouchHelper(private val mOwner: TouchOwner) {
                         setPressed(true, x, y)
                     }
 
-                    if (!mHasPerformedLongPress) {
+                    if (!hasPerformedLongPress) {
                         // This is a tap, so remove the longpress check
                         removeLongPressCallback()
 
                         // Use a Runnable and post this rather than calling
                         // performClick directly. This lets other visual state
                         // of the view update before click actions start.
-                        var performClick = mPerformClick
+                        var performClick = performClickRunnable
                         if (performClick == null) {
                             performClick = PerformClick()
-                            mPerformClick = performClick
+                            performClickRunnable = performClick
                         }
                         if (!MAIN_HANDLER.post(performClick)) {
                             owner.performClick()
                         }
                     }
 
-                    var unsetPressedState = mUnsetPressedState
+                    var unsetPressedState = unsetPressedStateRunnable
                     if (unsetPressedState == null) {
                         unsetPressedState = UnsetPressedState()
-                        mUnsetPressedState = unsetPressedState
+                        unsetPressedStateRunnable = unsetPressedState
                     }
 
-                    if (mPrePressed) {
+                    if (prePressed) {
                         MAIN_HANDLER.postDelayed(
                             unsetPressedState,
                             ViewConfiguration.getPressedStateDuration().toLong()
@@ -103,13 +103,13 @@ class TouchHelper(private val mOwner: TouchOwner) {
                 }
 
                 MotionEvent.ACTION_DOWN -> {
-                    mHasPerformedLongPress = false
+                    hasPerformedLongPress = false
 
-                    mPrePressed = true
-                    var checkForTap = mPendingCheckForTap
+                    prePressed = true
+                    var checkForTap = pendingCheckForTap
                     if (checkForTap == null) {
                         checkForTap = CheckForTap()
-                        mPendingCheckForTap = checkForTap
+                        pendingCheckForTap = checkForTap
                     }
                     checkForTap.x = event.x
                     checkForTap.y = event.y
@@ -126,7 +126,7 @@ class TouchHelper(private val mOwner: TouchOwner) {
                     owner.setHotspot(x, y)
 
                     // Be lenient about moving outside of buttons
-                    if (!pointInView(x, y, sTouchSlop.toFloat())) {
+                    if (!pointInView(x, y, touchSlop.toFloat())) {
                         // Outside button
                         removeTapCallback()
                         if (owner.isPressed) {
@@ -146,9 +146,9 @@ class TouchHelper(private val mOwner: TouchOwner) {
     }
 
     private fun setPressed(pressed: Boolean, x: Float, y: Float) {
-        mOwner.isPressed = pressed
+        owner.isPressed = pressed
         if (pressed) {
-            mOwner.setHotspot(x, y)
+            owner.setHotspot(x, y)
         }
     }
 
@@ -159,14 +159,14 @@ class TouchHelper(private val mOwner: TouchOwner) {
      * is still within the view.
      */
     fun pointInView(localX: Float, localY: Float, slop: Float): Boolean =
-        localX >= -slop && localY >= -slop && localX < (mOwner.width + slop) &&
-            localY < (mOwner.height + slop)
+        localX >= -slop && localY >= -slop && localX < (owner.width + slop) &&
+            localY < (owner.height + slop)
 
     /**
      * Remove the longpress detection timer.
      */
     private fun removeLongPressCallback() {
-        val checkForLongPress = mPendingCheckForLongPress
+        val checkForLongPress = pendingCheckForLongPress
         if (checkForLongPress != null) {
             MAIN_HANDLER.removeCallbacks(checkForLongPress)
         }
@@ -176,21 +176,21 @@ class TouchHelper(private val mOwner: TouchOwner) {
      * Remove the tap detection timer.
      */
     private fun removeTapCallback() {
-        val checkForTap = mPendingCheckForTap
+        val checkForTap = pendingCheckForTap
         if (checkForTap != null) {
-            mPrePressed = false
+            prePressed = false
             MAIN_HANDLER.removeCallbacks(checkForTap)
         }
     }
 
     private fun checkForLongClick(delayOffset: Int) {
-        if (mOwner.isLongClickable) {
-            mHasPerformedLongPress = false
+        if (owner.isLongClickable) {
+            hasPerformedLongPress = false
 
-            var checkForLongPress = mPendingCheckForLongPress
+            var checkForLongPress = pendingCheckForLongPress
             if (checkForLongPress == null) {
                 checkForLongPress = CheckForLongPress()
-                mPendingCheckForLongPress = checkForLongPress
+                pendingCheckForLongPress = checkForLongPress
             }
             MAIN_HANDLER.postDelayed(
                 checkForLongPress,
@@ -202,9 +202,9 @@ class TouchHelper(private val mOwner: TouchOwner) {
     private inner class CheckForLongPress : Runnable {
 
         override fun run() {
-            if (mOwner.isPressed) {
-                if (mOwner.performLongClick()) {
-                    mHasPerformedLongPress = true
+            if (owner.isPressed) {
+                if (owner.performLongClick()) {
+                    hasPerformedLongPress = true
                 }
             }
         }
@@ -218,7 +218,7 @@ class TouchHelper(private val mOwner: TouchOwner) {
         var y = 0f
 
         override fun run() {
-            mPrePressed = false
+            prePressed = false
             setPressed(true, x, y)
             checkForLongClick(ViewConfiguration.getTapTimeout())
         }
@@ -227,14 +227,14 @@ class TouchHelper(private val mOwner: TouchOwner) {
     private inner class PerformClick : Runnable {
 
         override fun run() {
-            mOwner.performClick()
+            owner.performClick()
         }
     }
 
     private inner class UnsetPressedState : Runnable {
 
         override fun run() {
-            mOwner.isPressed = false
+            owner.isPressed = false
         }
     }
 
@@ -245,11 +245,11 @@ class TouchHelper(private val mOwner: TouchOwner) {
         /**
          * Cache the touch slop from the context that created the view.
          */
-        private var sTouchSlop = 8
+        private var touchSlop = 8
 
         @JvmStatic
         fun initialize(context: Context) {
-            sTouchSlop = ViewUtils.dp2pix(context, 8f) // 8dp
+            touchSlop = ViewUtils.dp2pix(context, 8f) // 8dp
         }
     }
 }

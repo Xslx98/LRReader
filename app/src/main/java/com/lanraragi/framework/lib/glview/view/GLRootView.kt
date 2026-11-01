@@ -69,44 +69,56 @@ import javax.microedition.khronos.opengles.GL11
 // (3) The overridden methods in GLRootView.
 class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context, attrs), GLRoot {
 
-    private var mFrameCount = 0
-    private var mFrameCountingStart = 0L
+    private var frameCount = 0
+    private var frameCountingStart = 0L
 
-    private var mInvalidateColor = 0
+    private var invalidateColor = 0
 
-    private var mGL: GL11? = null
-    private var mCanvas: GLCanvas? = null
-    private var mContentView: GLView? = null
+    private var gl11: GL11? = null
+    private var canvas: GLCanvas? = null
+    private var contentView: GLView? = null
 
-    private var mOrientationSource: OrientationSource? = null
+    private var orientationSource: OrientationSource? = null
 
-    // mCompensation is the difference between the UI orientation on GLCanvas
+    // compensationDegrees is the difference between the UI orientation on GLCanvas
     // and the framework orientation. See OrientationManager for details.
-    private var mCompensation = 0
+    // Private fields behind the GLRoot properties: the frame and touch paths
+    // read them directly, not through the interface getters.
+    private var compensationDegrees = 0
 
-    // mCompensationMatrix maps the coordinates of touch events. It is kept sync
-    // with mCompensation.
-    private val mCompensationMatrix = Matrix()
-    private var mDisplayRotation = 0
+    // touchCompensation maps the coordinates of touch events. It is kept sync
+    // with compensationDegrees.
+    private val touchCompensation = Matrix()
 
-    private var mFlags = FLAG_NEED_LAYOUT
+    private var currentDisplayRotation = 0
+
+    override val displayRotation: Int
+        get() = currentDisplayRotation
+
+    override val compensation: Int
+        get() = compensationDegrees
+
+    override val compensationMatrix: Matrix
+        get() = touchCompensation
+
+    private var flags = FLAG_NEED_LAYOUT
 
     @Volatile
-    private var mRenderRequested = false
+    private var renderRequested = false
 
-    private val mAnimations = ArrayList<CanvasAnimation>()
+    private val animations = ArrayList<CanvasAnimation>()
 
-    private val mIdleListeners = ArrayDeque<OnGLIdleListener>()
+    private val idleListeners = ArrayDeque<OnGLIdleListener>()
 
-    private val mIdleRunner = IdleRunner()
+    private val idleRunner = IdleRunner()
 
-    private val mRenderLock = ReentrantLock()
-    private val mFreezeCondition: Condition = mRenderLock.newCondition()
-    private var mFreeze = false
+    private val renderLock = ReentrantLock()
+    private val freezeCondition: Condition = renderLock.newCondition()
+    private var frozen = false
 
-    private var mInDownState = false
+    private var inDownState = false
 
-    private val mRequestRenderOnAnimationFrame = object : Runnable {
+    private val requestRenderOnAnimationFrame = object : Runnable {
         override fun run() {
             superRequestRender()
         }
@@ -115,7 +127,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
     constructor(context: Context) : this(context, null)
 
     init {
-        mFlags = mFlags or FLAG_INITIALIZED
+        flags = flags or FLAG_INITIALIZED
         @Suppress("DEPRECATION")
         setBackgroundDrawable(null)
 
@@ -134,36 +146,36 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
         // time more precisely. (Usually, it takes much longer for first
         // rendering, so we set the animation start time as the time we
         // complete rendering)
-        mAnimations.add(animation)
+        animations.add(animation)
     }
 
     override fun addOnGLIdleListener(listener: OnGLIdleListener) {
-        synchronized(mIdleListeners) {
-            mIdleListeners.addLast(listener)
-            if (mCanvas != null) {
+        synchronized(idleListeners) {
+            idleListeners.addLast(listener)
+            if (canvas != null) {
                 // Wait for onSurfaceCreated
-                mIdleRunner.enable()
+                idleRunner.enable()
             }
         }
     }
 
     override fun setContentPane(content: GLView?) {
-        if (mContentView === content) return
-        val oldContentView = mContentView
+        if (contentView === content) return
+        val oldContentView = contentView
         if (oldContentView != null) {
-            if (mInDownState) {
+            if (inDownState) {
                 val now = SystemClock.uptimeMillis()
                 val cancelEvent = MotionEvent.obtain(
                     now, now, MotionEvent.ACTION_CANCEL, 0f, 0f, 0
                 )
                 oldContentView.dispatchTouchEvent(cancelEvent)
                 cancelEvent.recycle()
-                mInDownState = false
+                inDownState = false
             }
             oldContentView.detachFromRoot()
             BasicTexture.yieldAllTextures()
         }
-        mContentView = content
+        contentView = content
         if (content != null) {
             content.attachToRoot(this)
             requestLayoutContentPane()
@@ -180,9 +192,9 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             val caller = e.fileName + ":" + e.lineNumber + " "
             Log.d(TAG, "invalidate: $caller")
         }
-        if (mRenderRequested) return
-        mRenderRequested = true
-        postOnAnimation(mRequestRenderOnAnimationFrame)
+        if (renderRequested) return
+        renderRequested = true
+        postOnAnimation(requestRenderOnAnimationFrame)
     }
 
     private fun superRequestRender() {
@@ -190,61 +202,61 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
     }
 
     override fun requestLayoutContentPane() {
-        mRenderLock.lock()
+        renderLock.lock()
         try {
-            if (mContentView == null || (mFlags and FLAG_NEED_LAYOUT) != 0) return
+            if (contentView == null || (flags and FLAG_NEED_LAYOUT) != 0) return
 
             // "View" system will invoke onLayout() for initialization(bug ?), we
             // have to ignore it since the GLThread is not ready yet.
-            if ((mFlags and FLAG_INITIALIZED) == 0) return
+            if ((flags and FLAG_INITIALIZED) == 0) return
 
-            mFlags = mFlags or FLAG_NEED_LAYOUT
+            flags = flags or FLAG_NEED_LAYOUT
             requestRender()
         } finally {
-            mRenderLock.unlock()
+            renderLock.unlock()
         }
     }
 
     private fun layoutContentPane() {
-        mFlags = mFlags and FLAG_NEED_LAYOUT.inv()
+        flags = flags and FLAG_NEED_LAYOUT.inv()
 
         var w = width
         var h = height
-        val displayRotation: Int
-        val compensation: Int
+        val newDisplayRotation: Int
+        val newCompensation: Int
 
         // Get the new orientation values
-        val orientationSource = mOrientationSource
+        val orientationSource = this.orientationSource
         if (orientationSource != null) {
-            displayRotation = orientationSource.displayRotation
-            compensation = orientationSource.compensation
+            newDisplayRotation = orientationSource.displayRotation
+            newCompensation = orientationSource.compensation
         } else {
-            displayRotation = 0
-            compensation = 0
+            newDisplayRotation = 0
+            newCompensation = 0
         }
 
-        if (mCompensation != compensation) {
-            mCompensation = compensation
-            if (mCompensation % 180 != 0) {
-                mCompensationMatrix.setRotate(mCompensation.toFloat())
+        if (compensationDegrees != newCompensation) {
+            compensationDegrees = newCompensation
+            if (compensationDegrees % 180 != 0) {
+                touchCompensation.setRotate(compensationDegrees.toFloat())
                 // move center to origin before rotation
-                mCompensationMatrix.preTranslate((-w / 2).toFloat(), (-h / 2).toFloat())
+                touchCompensation.preTranslate((-w / 2).toFloat(), (-h / 2).toFloat())
                 // align with the new origin after rotation
-                mCompensationMatrix.postTranslate((h / 2).toFloat(), (w / 2).toFloat())
+                touchCompensation.postTranslate((h / 2).toFloat(), (w / 2).toFloat())
             } else {
-                mCompensationMatrix.setRotate(mCompensation.toFloat(), (w / 2).toFloat(), (h / 2).toFloat())
+                touchCompensation.setRotate(compensationDegrees.toFloat(), (w / 2).toFloat(), (h / 2).toFloat())
             }
         }
-        mDisplayRotation = displayRotation
+        currentDisplayRotation = newDisplayRotation
 
         // Do the actual layout.
-        if (mCompensation % 180 != 0) {
+        if (compensationDegrees % 180 != 0) {
             val tmp = w
             w = h
             h = tmp
         }
-        Log.i(TAG, "layout content pane " + w + "x" + h + " (compensation " + mCompensation + ")")
-        val contentView = mContentView
+        Log.i(TAG, "layout content pane " + w + "x" + h + " (compensation " + compensationDegrees + ")")
+        val contentView = this.contentView
         if (contentView != null && w != 0 && h != 0) {
             contentView.measure(
                 GLView.MeasureSpec.makeMeasureSpec(w, GLView.MeasureSpec.EXACTLY),
@@ -253,7 +265,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             contentView.layout(0, 0, w, h)
         }
         // Uncomment this to dump the view hierarchy.
-        // mContentView.dumpTree("");
+        // contentView.dumpTree("");
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
@@ -262,41 +274,41 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
 
     private fun outputFps() {
         val now = System.nanoTime()
-        if (mFrameCountingStart == 0L) {
-            mFrameCountingStart = now
-        } else if ((now - mFrameCountingStart) > 1000000000) {
+        if (frameCountingStart == 0L) {
+            frameCountingStart = now
+        } else if ((now - frameCountingStart) > 1000000000) {
             Log.d(
                 TAG,
-                "fps: " + mFrameCount.toDouble() * 1000000000 / (now - mFrameCountingStart)
+                "fps: " + frameCount.toDouble() * 1000000000 / (now - frameCountingStart)
             )
-            mFrameCountingStart = now
-            mFrameCount = 0
+            frameCountingStart = now
+            frameCount = 0
         }
-        ++mFrameCount
+        ++frameCount
     }
 
     private fun onDrawFrameLocked(gl: GL10) {
         if (DEBUG_FPS) outputFps()
-        val canvas = mCanvas!!
+        val canvas = this.canvas!!
         // release the unbound textures and deleted buffers.
         canvas.deleteRecycledResources()
 
         // reset texture upload limit
         UploadedTexture.resetUploadLimit()
 
-        mRenderRequested = false
+        renderRequested = false
 
-        val orientationSource = mOrientationSource
+        val orientationSource = this.orientationSource
         if ((orientationSource != null &&
-                mDisplayRotation != orientationSource.displayRotation) ||
-            (mFlags and FLAG_NEED_LAYOUT) != 0
+                currentDisplayRotation != orientationSource.displayRotation) ||
+            (flags and FLAG_NEED_LAYOUT) != 0
         ) {
             layoutContentPane()
         }
 
         canvas.save(GLCanvas.SAVE_FLAG_ALL)
-        rotateCanvas(-mCompensation)
-        val contentView = mContentView
+        rotateCanvas(-compensationDegrees)
+        val contentView = this.contentView
         if (contentView != null) {
             contentView.render(canvas)
         } else {
@@ -305,25 +317,25 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
         }
         canvas.restore()
 
-        if (!mAnimations.isEmpty()) {
+        if (!animations.isEmpty()) {
             val now = AnimationTime.get()
-            for (i in 0 until mAnimations.size) {
-                mAnimations[i].setStartTime(now)
+            for (i in 0 until animations.size) {
+                animations[i].setStartTime(now)
             }
-            mAnimations.clear()
+            animations.clear()
         }
 
         if (UploadedTexture.uploadLimitReached()) {
             requestRender()
         }
 
-        synchronized(mIdleListeners) {
-            if (!mIdleListeners.isEmpty()) mIdleRunner.enable()
+        synchronized(idleListeners) {
+            if (!idleListeners.isEmpty()) idleRunner.enable()
         }
 
         if (DEBUG_INVALIDATE) {
-            canvas.fillRect(10f, 10f, 5f, 5f, mInvalidateColor)
-            mInvalidateColor = mInvalidateColor.inv()
+            canvas.fillRect(10f, 10f, 5f, 5f, invalidateColor)
+            invalidateColor = invalidateColor.inv()
         }
 
         if (DEBUG_DRAWING_STAT) {
@@ -333,7 +345,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
 
     private fun rotateCanvas(degrees: Int) {
         if (degrees == 0) return
-        val canvas = mCanvas!!
+        val canvas = this.canvas!!
         val w = width
         val h = height
         val cx = w / 2
@@ -354,37 +366,37 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
         if (action == MotionEvent.ACTION_CANCEL ||
             action == MotionEvent.ACTION_UP
         ) {
-            mInDownState = false
-        } else if (!mInDownState && action != MotionEvent.ACTION_DOWN) {
+            inDownState = false
+        } else if (!inDownState && action != MotionEvent.ACTION_DOWN) {
             return false
         }
 
         var transformedEvent = event
-        if (mCompensation != 0) {
-            transformedEvent = MotionEventHelper.transformEvent(event, mCompensationMatrix)
+        if (compensationDegrees != 0) {
+            transformedEvent = MotionEventHelper.transformEvent(event, touchCompensation)
         }
 
-        mRenderLock.lock()
+        renderLock.lock()
         try {
             // If this has been detached from root, we don't need to handle event
-            val contentView = mContentView
+            val contentView = this.contentView
             val handled = contentView != null &&
                 contentView.dispatchTouchEvent(transformedEvent)
             if (action == MotionEvent.ACTION_DOWN && handled) {
-                mInDownState = true
+                inDownState = true
             }
             return handled
         } finally {
-            mRenderLock.unlock()
+            renderLock.unlock()
         }
     }
 
     override fun lockRenderThread() {
-        mRenderLock.lock()
+        renderLock.lock()
     }
 
     override fun unlockRenderThread() {
-        mRenderLock.unlock()
+        renderLock.unlock()
     }
 
     override fun onPause() {
@@ -393,39 +405,30 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
     }
 
     override fun setOrientationSource(source: OrientationSource?) {
-        mOrientationSource = source
+        orientationSource = source
     }
 
-    override val displayRotation: Int
-        get() = mDisplayRotation
-
-    override val compensation: Int
-        get() = mCompensation
-
-    override val compensationMatrix: Matrix
-        get() = mCompensationMatrix
-
     override fun freeze() {
-        mRenderLock.lock()
-        mFreeze = true
-        mRenderLock.unlock()
+        renderLock.lock()
+        frozen = true
+        renderLock.unlock()
     }
 
     override fun unfreeze() {
-        mRenderLock.lock()
-        mFreeze = false
-        mFreezeCondition.signalAll()
-        mRenderLock.unlock()
+        renderLock.lock()
+        frozen = false
+        freezeCondition.signalAll()
+        renderLock.unlock()
     }
 
     @Suppress("DEPRECATION")
     override fun setLightsOutMode(enabled: Boolean) {
-        var flags = 0
+        var uiFlags = 0
         if (enabled) {
-            flags = View.STATUS_BAR_HIDDEN
-            flags = flags or (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+            uiFlags = View.STATUS_BAR_HIDDEN
+            uiFlags = uiFlags or (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
         }
-        systemUiVisibility = flags
+        systemUiVisibility = uiFlags
     }
 
     // We need to unfreeze in the following methods and in onPause().
@@ -454,12 +457,12 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
 
     override fun dispatchSaveInstanceState(container: SparseArray<Parcelable>) {
         super.dispatchSaveInstanceState(container)
-        mContentView?.saveHierarchyState(container)
+        contentView?.saveHierarchyState(container)
     }
 
     override fun dispatchRestoreInstanceState(container: SparseArray<Parcelable>) {
         super.dispatchRestoreInstanceState(container)
-        mContentView?.restoreHierarchyState(container)
+        contentView?.restoreHierarchyState(container)
     }
 
     @Throws(Throwable::class)
@@ -478,17 +481,17 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
          */
         override fun onSurfaceCreated(gl1: GL10, config: EGLConfig) {
             val gl = gl1 as GL11
-            if (mGL != null) {
+            if (gl11 != null) {
                 // The GL Object has changed
-                Log.i(TAG, "GLObject has changed from $mGL to $gl")
+                Log.i(TAG, "GLObject has changed from $gl11 to $gl")
             }
-            mRenderLock.lock()
+            renderLock.lock()
             try {
-                mGL = gl
-                mCanvas = GLES20Canvas()
+                gl11 = gl
+                canvas = GLES20Canvas()
                 BasicTexture.invalidateAllTextures()
             } finally {
-                mRenderLock.unlock()
+                renderLock.unlock()
             }
 
             if (DEBUG_FPS) {
@@ -507,9 +510,9 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY)
             GalleryUtils.setRenderThread()
             val gl = gl1 as GL11
-            AssertUtils.assertTrue(mGL === gl)
+            AssertUtils.assertTrue(gl11 === gl)
 
-            mCanvas!!.setSize(width, height)
+            canvas!!.setSize(width, height)
         }
 
         override fun onDrawFrame(gl: GL10) {
@@ -517,10 +520,10 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
 
             val t0 = System.nanoTime()
 
-            mRenderLock.lock()
+            renderLock.lock()
 
-            while (mFreeze) {
-                mFreezeCondition.awaitUninterruptibly()
+            while (frozen) {
+                freezeCondition.awaitUninterruptibly()
             }
 
             // Perf trace section: GLSurfaceView frames never reach HWUI's
@@ -530,7 +533,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
                 onDrawFrameLocked(gl)
             } finally {
                 Trace.endSection()
-                mRenderLock.unlock()
+                renderLock.unlock()
             }
 
             val t = System.nanoTime()
@@ -544,31 +547,31 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
 
     private inner class IdleRunner : Runnable {
         // true if the idle runner is in the queue
-        private var mActive = false
+        private var active = false
 
         override fun run() {
             val listener: OnGLIdleListener
-            synchronized(mIdleListeners) {
-                mActive = false
-                if (mIdleListeners.isEmpty()) return
-                listener = mIdleListeners.removeFirst()
+            synchronized(idleListeners) {
+                active = false
+                if (idleListeners.isEmpty()) return
+                listener = idleListeners.removeFirst()
             }
-            mRenderLock.lock()
+            renderLock.lock()
             val keepInQueue = try {
-                listener.onGLIdle(mCanvas, mRenderRequested)
+                listener.onGLIdle(canvas, renderRequested)
             } finally {
-                mRenderLock.unlock()
+                renderLock.unlock()
             }
-            synchronized(mIdleListeners) {
-                if (keepInQueue) mIdleListeners.addLast(listener)
-                if (!mRenderRequested && !mIdleListeners.isEmpty()) enable()
+            synchronized(idleListeners) {
+                if (keepInQueue) idleListeners.addLast(listener)
+                if (!renderRequested && !idleListeners.isEmpty()) enable()
             }
         }
 
         fun enable() {
             // Who gets the flag can add it to the queue
-            if (mActive) return
-            mActive = true
+            if (active) return
+            active = true
             queueEvent(this)
         }
     }
@@ -576,7 +579,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
     // Always chose a config
     private class ConfigChooser : EGLConfigChooser {
 
-        private val mValue = IntArray(1)
+        private val value = IntArray(1)
 
         override fun chooseConfig(egl: EGL10, display: EGLDisplay?): EGLConfig {
             // Check if display is valid
@@ -754,8 +757,8 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             config: EGLConfig?,
             attribute: Int
         ): Int {
-            if (egl.eglGetConfigAttrib(display, config, attribute, mValue)) {
-                return mValue[0]
+            if (egl.eglGetConfigAttrib(display, config, attribute, value)) {
+                return value[0]
             }
             return 0
         }

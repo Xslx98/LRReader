@@ -79,24 +79,24 @@ open class GLView : TouchOwner {
     /**
      * Position in root
      */
-    private val mPositionInRoot = IntArray(2)
+    private val positionInRoot = IntArray(2)
 
     @JvmField
     protected val mPaddings = Rect()
 
-    private val mTempRect = Rect()
+    private val tempRect = Rect()
 
-    private var mRoot: GLRoot? = null
+    private var root: GLRoot? = null
 
     @JvmField
     protected var mParent: GLView? = null
 
-    private var mComponents: ArrayList<GLView>? = null
-    private var mMotionTarget: GLView? = null
+    private var components: ArrayList<GLView>? = null
+    private var motionTarget: GLView? = null
 
-    private var mAnimation: CanvasAnimation? = null
+    private var animation: CanvasAnimation? = null
 
-    private var mViewFlags = 0
+    private var viewFlags = 0
 
     @JvmField
     protected var mMeasuredWidth = 0
@@ -104,8 +104,8 @@ open class GLView : TouchOwner {
     @JvmField
     protected var mMeasuredHeight = 0
 
-    private var mLastWidthSpec = -1
-    private var mLastHeightSpec = -1
+    private var lastWidthSpec = -1
+    private var lastHeightSpec = -1
 
     @JvmField
     protected var mScrollY = 0
@@ -120,42 +120,68 @@ open class GLView : TouchOwner {
     protected var mScrollWidth = 0
 
     /**
-     * The GlView's identifier.
-     *
-     * @see setId
-     * @see getId
+     * The GlView's identifier. The identifier does not have to be unique in
+     * this GlView's hierarchy. The identifier should be a positive number, or
+     * [NO_ID] if the view has no ID.
      */
-    private var mID = NO_ID
+    var id = NO_ID
 
     /**
      * The minimum height of the view. We'll try our best to have the height
-     * of this view to at least this amount.
+     * of this view to at least this amount. It is not guaranteed the view will
+     * be able to achieve this minimum height (for example, if its parent layout
+     * constrains it with less available height).
      */
-    private var mMinHeight = 0
+    var minimumHeight = 0
+        set(minHeight) {
+            field = minHeight
+            requestLayout()
+        }
 
     /**
      * The minimum width of the view. We'll try our best to have the width
-     * of this view to at least this amount.
+     * of this view to at least this amount. It is not guaranteed the view will
+     * be able to achieve this minimum width (for example, if its parent layout
+     * constrains it with less available width).
      */
-    private var mMinWidth = 0
+    var minimumWidth = 0
+        set(minWidth) {
+            field = minWidth
+            requestLayout()
+        }
 
-    private var mLayoutParams: LayoutParams? = null
+    /**
+     * Setting null takes the parent's default layout params; a view without a
+     * parent cannot drop its params.
+     */
+    var layoutParams: LayoutParams? = null
+        set(params) {
+            var validParams = params
+            if (validParams == null) {
+                val parent = mParent ?: throw NullPointerException("Layout parameters cannot be null")
+                validParams = parent.generateDefaultLayoutParams()
+            }
+            field = validParams
+            requestLayout()
+        }
 
-    private var mBackgroundColor = Color.TRANSPARENT
+    var backgroundColor = Color.TRANSPARENT
 
-    private var mTouchHelper: TouchHelper? = null
+    private var touchHelper: TouchHelper? = null
 
-    private var mHotspotX = 0f
-    private var mHotspotY = 0f
+    var hotspotX = 0f
+        private set
+    var hotspotY = 0f
+        private set
 
-    private var mPressed = false
+    override var isPressed = false
 
-    private var mOnClickListener: OnClickListener? = null
-    private var mOnLongClickListener: OnLongClickListener? = null
+    var onClickListener: OnClickListener? = null
+    var onLongClickListener: OnLongClickListener? = null
 
     fun startAnimation(animation: CanvasAnimation?, atOnce: Boolean) {
         val root = getGLRoot() ?: throw IllegalStateException()
-        mAnimation = animation
+        this.animation = animation
         if (animation != null) {
             animation.start()
             if (atOnce) {
@@ -168,59 +194,52 @@ open class GLView : TouchOwner {
     }
 
     /**
-     * Set the enabled state of this view.
-     *
-     * @param visibility One of [VISIBLE], [INVISIBLE], or [GONE].
+     * The visibility status of this view: one of [VISIBLE], [INVISIBLE], or [GONE].
      */
-    fun setVisibility(@Visibility visibility: Int) {
-        @Visibility
-        val oldVisibility = getVisibility()
-        if (visibility == oldVisibility) {
-            return
+    @get:Visibility
+    @get:SuppressLint("WrongConstant") // masked flags are VISIBLE, INVISIBLE or GONE once INVALID is mapped below
+    var visibility: Int
+        get() {
+            var visibility = viewFlags and FLAG_INVISIBLE
+
+            if (visibility == VISIBILITY_INVALID) {
+                visibility = VISIBLE
+                viewFlags = viewFlags and FLAG_INVISIBLE.inv()
+                viewFlags = viewFlags or visibility
+            }
+
+            return visibility
         }
+        set(@Visibility visibility) {
+            @Visibility
+            val oldVisibility = this.visibility
+            if (visibility == oldVisibility) {
+                return
+            }
 
-        mViewFlags = mViewFlags and FLAG_INVISIBLE.inv()
-        mViewFlags = mViewFlags or visibility
+            viewFlags = viewFlags and FLAG_INVISIBLE.inv()
+            viewFlags = viewFlags or visibility
 
-        onVisibilityChanged(this, visibility)
+            onVisibilityChanged(this, visibility)
 
-        if (oldVisibility == GONE || visibility == GONE) {
-            requestLayout()
-        } else {
-            invalidate()
+            if (oldVisibility == GONE || visibility == GONE) {
+                requestLayout()
+            } else {
+                invalidate()
+            }
         }
-    }
-
-    /**
-     * Returns the visibility status for this view.
-     *
-     * @return One of [VISIBLE], [INVISIBLE], or [GONE].
-     */
-    @Visibility
-    @SuppressLint("WrongConstant") // masked flags are VISIBLE, INVISIBLE or GONE once INVALID is mapped below
-    fun getVisibility(): Int {
-        var visibility = mViewFlags and FLAG_INVISIBLE
-
-        if (visibility == VISIBILITY_INVALID) {
-            visibility = VISIBLE
-            mViewFlags = mViewFlags and FLAG_INVISIBLE.inv()
-            mViewFlags = mViewFlags or visibility
-        }
-
-        return visibility
-    }
 
     // This should only be called on the content pane (the topmost GLView).
     @JvmName("attachToRoot")
     internal fun attachToRoot(root: GLRoot) {
-        AssertUtils.assertTrue(mParent == null && mRoot == null)
+        AssertUtils.assertTrue(mParent == null && this.root == null)
         onAttachToRoot(root)
     }
 
     // This should only be called on the content pane (the topmost GLView).
     @JvmName("detachFromRoot")
     internal fun detachFromRoot() {
-        AssertUtils.assertTrue(mParent == null && mRoot != null)
+        AssertUtils.assertTrue(mParent == null && root != null)
         onDetachFromRoot()
     }
 
@@ -236,15 +255,16 @@ open class GLView : TouchOwner {
         onResume()
     }
 
-    fun isAttachedToRoot(): Boolean = mRoot != null
+    val isAttachedToRoot: Boolean
+        get() = root != null
 
     // Returns the number of children of the GLView.
     val componentCount: Int
-        get() = mComponents?.size ?: 0
+        get() = components?.size ?: 0
 
     // Returns the children for the given index.
     fun getComponent(index: Int): GLView {
-        val components = mComponents
+        val components = this.components
         if (components == null) throw ArrayIndexOutOfBoundsException(index)
         return components[index]
     }
@@ -283,18 +303,18 @@ open class GLView : TouchOwner {
         }
 
         // Build parent-child links
-        var components = mComponents
+        var components = this.components
         if (components == null) {
             components = ArrayList()
-            mComponents = components
+            this.components = components
         }
 
         components.add(validIndex, component)
         component.mParent = this
-        component.setLayoutParams(validParams)
+        component.layoutParams = validParams
 
         // If this is added after we have a root, tell the component.
-        val root = mRoot
+        val root = this.root
         if (root != null) {
             component.onAttachToRoot(root)
         }
@@ -302,7 +322,7 @@ open class GLView : TouchOwner {
 
     // Removes a child from this GLView.
     fun removeComponent(component: GLView): Boolean {
-        val components = mComponents
+        val components = this.components
         if (components == null) return false
         if (components.remove(component)) {
             removeOneComponent(component)
@@ -312,7 +332,7 @@ open class GLView : TouchOwner {
     }
 
     fun removeComponentAt(index: Int): Boolean {
-        val components = mComponents
+        val components = this.components
         if (components == null) {
             return false
         }
@@ -327,7 +347,7 @@ open class GLView : TouchOwner {
 
     // Removes all children of this GLView.
     fun removeAllComponents() {
-        val components = mComponents!!
+        val components = this.components!!
         for (i in 0 until components.size) {
             removeOneComponent(components[i])
         }
@@ -335,7 +355,7 @@ open class GLView : TouchOwner {
     }
 
     private fun removeOneComponent(component: GLView) {
-        if (mMotionTarget === component) {
+        if (motionTarget === component) {
             val now = SystemClock.uptimeMillis()
             val cancelEvent = MotionEvent.obtain(
                 now, now, MotionEvent.ACTION_CANCEL, 0f, 0f, 0
@@ -347,53 +367,24 @@ open class GLView : TouchOwner {
         component.mParent = null
     }
 
-    /**
-     * Sets the identifier for this GlView. The identifier does not have to be
-     * unique in this GlView's hierarchy. The identifier should be a positive
-     * number.
-     *
-     * @param id a number used to identify the view
-     */
-    fun setId(id: Int) {
-        mID = id
-    }
-
-    /**
-     * Returns this GlView's identifier.
-     *
-     * @return a positive integer used to identify the view or [NO_ID]
-     * if the view has no ID
-     */
-    fun getId(): Int = mID
-
     fun bounds(): Rect = mBounds
 
     override fun setHotspot(x: Float, y: Float) {
-        mHotspotX = x
-        mHotspotY = y
+        hotspotX = x
+        hotspotY = y
     }
-
-    fun getHotspotX(): Float = mHotspotX
-
-    fun getHotspotY(): Float = mHotspotY
 
     override val isEnabled: Boolean
         get() = true // dispatchTouchEvent: always consumed by GLView hierarchy
 
-    override var isPressed: Boolean
-        get() = mPressed
-        set(pressed) {
-            mPressed = pressed
-        }
-
     override val isClickable: Boolean
-        get() = mOnClickListener != null
+        get() = onClickListener != null
 
     override val isLongClickable: Boolean
-        get() = mOnLongClickListener != null
+        get() = onLongClickListener != null
 
     override fun performClick(): Boolean {
-        val listener = mOnClickListener
+        val listener = onClickListener
         if (listener != null) {
             return listener.onClick(this)
         } else {
@@ -402,20 +393,12 @@ open class GLView : TouchOwner {
     }
 
     override fun performLongClick(): Boolean {
-        val listener = mOnLongClickListener
+        val listener = onLongClickListener
         if (listener != null) {
             return listener.onLongClick(this)
         } else {
             return false
         }
-    }
-
-    fun setOnClickListener(listener: OnClickListener?) {
-        mOnClickListener = listener
-    }
-
-    fun setOnLongClickListener(listener: OnLongClickListener?) {
-        mOnLongClickListener = listener
     }
 
     override val width: Int
@@ -450,7 +433,7 @@ open class GLView : TouchOwner {
         }
     }
 
-    fun getGLRoot(): GLRoot? = mRoot
+    fun getGLRoot(): GLRoot? = root
 
     // Request re-rendering of the view hierarchy.
     // This is used for animation or when the contents changed.
@@ -461,9 +444,9 @@ open class GLView : TouchOwner {
 
     // Request re-layout of the view hierarchy.
     open fun requestLayout() {
-        mViewFlags = mViewFlags or FLAG_LAYOUT_REQUESTED
-        mLastWidthSpec = -1
-        mLastHeightSpec = -1
+        viewFlags = viewFlags or FLAG_LAYOUT_REQUESTED
+        lastWidthSpec = -1
+        lastHeightSpec = -1
         val parent = mParent
         if (parent != null) {
             parent.requestLayout()
@@ -476,8 +459,8 @@ open class GLView : TouchOwner {
 
     open fun render(canvas: GLCanvas) {
         // render background color
-        if (Color.alpha(mBackgroundColor) != 0) {
-            canvas.fillRect(0f, 0f, width.toFloat(), height.toFloat(), mBackgroundColor)
+        if (Color.alpha(backgroundColor) != 0) {
+            canvas.fillRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundColor)
         }
 
         // render content
@@ -499,17 +482,13 @@ open class GLView : TouchOwner {
     open fun onRender(canvas: GLCanvas) {
     }
 
-    fun setBackgroundColor(color: Int) {
-        mBackgroundColor = color
-    }
-
     protected open fun renderChild(canvas: GLCanvas, component: GLView) {
-        if (component.getVisibility() != VISIBLE) {
+        if (component.visibility != VISIBLE) {
             return
         }
 
-        getValidRect(mTempRect)
-        if (mTempRect.isEmpty) {
+        getValidRect(tempRect)
+        if (tempRect.isEmpty) {
             return
         }
 
@@ -518,13 +497,13 @@ open class GLView : TouchOwner {
 
         canvas.translate(xOffset.toFloat(), yOffset.toFloat())
 
-        val anim = component.mAnimation
+        val anim = component.animation
         if (anim != null) {
             canvas.save(anim.canvasSaveFlags)
             if (anim.calculate(AnimationTime.get())) {
                 invalidate()
             } else {
-                component.mAnimation = null
+                component.animation = null
             }
             anim.apply(canvas)
         }
@@ -534,10 +513,10 @@ open class GLView : TouchOwner {
     }
 
     protected open fun onTouch(event: MotionEvent): Boolean {
-        var touchHelper = mTouchHelper
+        var touchHelper = this.touchHelper
         if (touchHelper == null) {
             touchHelper = TouchHelper(this)
-            mTouchHelper = touchHelper
+            this.touchHelper = touchHelper
         }
         return touchHelper.onTouch(event)
     }
@@ -569,19 +548,19 @@ open class GLView : TouchOwner {
         val x = event.x.toInt()
         val y = event.y.toInt()
         val action = event.action
-        val motionTarget = mMotionTarget
+        val motionTarget = this.motionTarget
         if (motionTarget != null) {
             if (action == MotionEvent.ACTION_DOWN) {
                 val cancel = MotionEvent.obtain(event)
                 cancel.action = MotionEvent.ACTION_CANCEL
                 dispatchTouchEvent(cancel, x, y, motionTarget, false)
-                mMotionTarget = null
+                this.motionTarget = null
             } else {
                 dispatchTouchEvent(event, x, y, motionTarget, false)
                 if (action == MotionEvent.ACTION_CANCEL ||
                     action == MotionEvent.ACTION_UP
                 ) {
-                    mMotionTarget = null
+                    this.motionTarget = null
                 }
                 return true
             }
@@ -590,9 +569,9 @@ open class GLView : TouchOwner {
             // in the reverse rendering order
             for (i in componentCount - 1 downTo 0) {
                 val component = getComponent(i)
-                if (component.getVisibility() != VISIBLE) continue
+                if (component.visibility != VISIBLE) continue
                 if (dispatchTouchEvent(event, x, y, component, true)) {
-                    mMotionTarget = component
+                    this.motionTarget = component
                     return true
                 }
             }
@@ -611,10 +590,10 @@ open class GLView : TouchOwner {
     }
 
     protected open fun dispatchSaveInstanceState(container: SparseArray<Parcelable>) {
-        if (mID != NO_ID) {
+        if (id != NO_ID) {
             val state = onSaveInstanceState()
             if (state != null) {
-                container.put(mID, state)
+                container.put(id, state)
             }
         }
         for (i in 0 until componentCount) {
@@ -635,8 +614,8 @@ open class GLView : TouchOwner {
     }
 
     protected open fun dispatchRestoreInstanceState(container: SparseArray<Parcelable>) {
-        if (mID != NO_ID) {
-            val state = container.get(mID)
+        if (id != NO_ID) {
+            val state = container.get(id)
             if (state != null) {
                 onRestoreInstanceState(state)
             }
@@ -672,7 +651,8 @@ open class GLView : TouchOwner {
         mPaddings.bottom = paddingBottom
     }
 
-    fun getPaddings(): Rect = mPaddings
+    val paddings: Rect
+        get() = mPaddings
 
     // There is a little different between GLView.layout() and View.layout().
     // onMeasure() is not called in GLView.layout().
@@ -681,14 +661,14 @@ open class GLView : TouchOwner {
     // So it is OK.
     fun layout(left: Int, top: Int, right: Int, bottom: Int) {
         val sizeChanged = setBounds(left, top, right, bottom)
-        val forceLayout = (mViewFlags and FLAG_LAYOUT_REQUESTED) == FLAG_LAYOUT_REQUESTED
+        val forceLayout = (viewFlags and FLAG_LAYOUT_REQUESTED) == FLAG_LAYOUT_REQUESTED
         if (sizeChanged || forceLayout) {
             notifyPositionInRoot()
             onLayout(sizeChanged, left, top, right, bottom)
         } else {
             dispatchNotifyPositionInRoot()
         }
-        mViewFlags = mViewFlags and FLAG_LAYOUT_REQUESTED.inv()
+        viewFlags = viewFlags and FLAG_LAYOUT_REQUESTED.inv()
     }
 
     fun dispatchNotifyPositionInRoot() {
@@ -701,7 +681,7 @@ open class GLView : TouchOwner {
 
     fun notifyPositionInRoot(): Boolean {
         // Update position in root
-        val position = mPositionInRoot
+        val position = positionInRoot
         val oldX = position[0]
         val oldY = position[1]
         val parent = mParent
@@ -749,8 +729,8 @@ open class GLView : TouchOwner {
 
     fun getPositionInRoot(position: IntArray) {
         AssertUtils.assertEquals("position should be 2 length int array", position.size, 2)
-        position[0] = mPositionInRoot[0]
-        position[1] = mPositionInRoot[1]
+        position[0] = positionInRoot[0]
+        position[1] = positionInRoot[1]
     }
 
     /**
@@ -758,14 +738,14 @@ open class GLView : TouchOwner {
      * @param rect the result
      */
     fun getValidRect(rect: Rect) {
-        val root = mRoot
+        val root = this.root
         if (root == null) {
             rect.setEmpty()
             return
         }
 
-        val x = mPositionInRoot[0]
-        val y = mPositionInRoot[1]
+        val x = positionInRoot[0]
+        val y = positionInRoot[1]
         rect.set(x, y, x + width, y + height)
         if (!rect.intersect(0, 0, root.getWidth(), root.getHeight())) {
             rect.setEmpty()
@@ -776,21 +756,21 @@ open class GLView : TouchOwner {
     }
 
     fun measure(widthSpec: Int, heightSpec: Int) {
-        val forceLayout = (mViewFlags and FLAG_LAYOUT_REQUESTED) == FLAG_LAYOUT_REQUESTED
+        val forceLayout = (viewFlags and FLAG_LAYOUT_REQUESTED) == FLAG_LAYOUT_REQUESTED
         val isExactly = MeasureSpec.getMode(widthSpec) == MeasureSpec.EXACTLY &&
             MeasureSpec.getMode(heightSpec) == MeasureSpec.EXACTLY
         val matchingSize = isExactly &&
-            getMeasuredWidth() == MeasureSpec.getSize(widthSpec) &&
-            getMeasuredHeight() == MeasureSpec.getSize(heightSpec)
+            measuredWidth == MeasureSpec.getSize(widthSpec) &&
+            measuredHeight == MeasureSpec.getSize(heightSpec)
         if (forceLayout || !matchingSize &&
-            (widthSpec != mLastWidthSpec || heightSpec != mLastHeightSpec)
+            (widthSpec != lastWidthSpec || heightSpec != lastHeightSpec)
         ) {
-            mLastWidthSpec = widthSpec
-            mLastHeightSpec = heightSpec
+            lastWidthSpec = widthSpec
+            lastHeightSpec = heightSpec
 
-            mViewFlags = mViewFlags and FLAG_SET_MEASURED_SIZE.inv()
+            viewFlags = viewFlags and FLAG_SET_MEASURED_SIZE.inv()
             onMeasure(widthSpec, heightSpec)
-            if ((mViewFlags and FLAG_SET_MEASURED_SIZE) == 0) {
+            if ((viewFlags and FLAG_SET_MEASURED_SIZE) == 0) {
                 throw IllegalStateException(
                     javaClass.name + " should call setMeasuredSize() in onMeasure()"
                 )
@@ -806,66 +786,22 @@ open class GLView : TouchOwner {
     }
 
     protected open fun getSuggestedMinimumHeight(): Int =
-        getMinimumHeight() + mPaddings.top + mPaddings.bottom
+        minimumHeight + mPaddings.top + mPaddings.bottom
 
     protected open fun getSuggestedMinimumWidth(): Int =
-        getMinimumWidth() + mPaddings.left + mPaddings.right
-
-    /**
-     * Returns the minimum height of the view.
-     *
-     * @return the minimum height the view will try to be.
-     *
-     * @see setMinimumHeight
-     */
-    fun getMinimumHeight(): Int = mMinHeight
-
-    /**
-     * Sets the minimum height of the view. It is not guaranteed the view will
-     * be able to achieve this minimum height (for example, if its parent layout
-     * constrains it with less available height).
-     *
-     * @param minHeight The minimum height the view will try to be.
-     *
-     * @see getMinimumHeight
-     */
-    fun setMinimumHeight(minHeight: Int) {
-        mMinHeight = minHeight
-        requestLayout()
-    }
-
-    /**
-     * Returns the minimum width of the view.
-     *
-     * @return the minimum width the view will try to be.
-     *
-     * @see setMinimumWidth
-     */
-    fun getMinimumWidth(): Int = mMinWidth
-
-    /**
-     * Sets the minimum width of the view. It is not guaranteed the view will
-     * be able to achieve this minimum width (for example, if its parent layout
-     * constrains it with less available width).
-     *
-     * @param minWidth The minimum width the view will try to be.
-     *
-     * @see getMinimumWidth
-     */
-    fun setMinimumWidth(minWidth: Int) {
-        mMinWidth = minWidth
-        requestLayout()
-    }
+        minimumWidth + mPaddings.left + mPaddings.right
 
     protected fun setMeasuredSize(width: Int, height: Int) {
-        mViewFlags = mViewFlags or FLAG_SET_MEASURED_SIZE
+        viewFlags = viewFlags or FLAG_SET_MEASURED_SIZE
         mMeasuredWidth = width
         mMeasuredHeight = height
     }
 
-    fun getMeasuredWidth(): Int = mMeasuredWidth
+    val measuredWidth: Int
+        get() = mMeasuredWidth
 
-    fun getMeasuredHeight(): Int = mMeasuredHeight
+    val measuredHeight: Int
+        get() = mMeasuredHeight
 
     protected open fun onLayout(
         changeSize: Boolean,
@@ -874,18 +810,6 @@ open class GLView : TouchOwner {
         right: Int,
         bottom: Int
     ) {
-    }
-
-    fun getLayoutParams(): LayoutParams? = mLayoutParams
-
-    fun setLayoutParams(params: LayoutParams?) {
-        var validParams = params
-        if (validParams == null) {
-            val parent = mParent ?: throw NullPointerException("Layout parameters cannot be null")
-            validParams = parent.generateDefaultLayoutParams()
-        }
-        mLayoutParams = validParams
-        requestLayout()
     }
 
     protected open fun checkLayoutParams(p: LayoutParams?): Boolean = p != null
@@ -925,7 +849,7 @@ open class GLView : TouchOwner {
     }
 
     open fun onAttachToRoot(root: GLRoot) {
-        mRoot = root
+        this.root = root
         for (i in 0 until componentCount) {
             getComponent(i).onAttachToRoot(root)
         }
@@ -935,7 +859,7 @@ open class GLView : TouchOwner {
         for (i in 0 until componentCount) {
             getComponent(i).onDetachFromRoot()
         }
-        mRoot = null
+        root = null
     }
 
     open fun onPause() {
@@ -951,11 +875,11 @@ open class GLView : TouchOwner {
     }
 
     fun lockRendering() {
-        mRoot?.lockRenderThread()
+        root?.lockRenderThread()
     }
 
     fun unlockRendering() {
-        mRoot?.unlockRenderThread()
+        root?.unlockRenderThread()
     }
 
     // This is for debugging only.
@@ -1323,7 +1247,7 @@ open class GLView : TouchOwner {
 
         @JvmStatic
         fun measureComponent(component: GLView, widthSpec: Int, heightSpec: Int) {
-            val lp = component.getLayoutParams()!!
+            val lp = component.layoutParams!!
             val componentWidthSpec = getComponentSpec(widthSpec, lp.width)
             val componentHeightSpec = getComponentSpec(heightSpec, lp.height)
             component.measure(componentWidthSpec, componentHeightSpec)
@@ -1333,7 +1257,7 @@ open class GLView : TouchOwner {
         fun measureAllComponents(parent: GLView, widthSpec: Int, heightSpec: Int) {
             for (i in 0 until parent.componentCount) {
                 val component = parent.getComponent(i)
-                if (component.getVisibility() == GONE) {
+                if (component.visibility == GONE) {
                     continue
                 }
                 measureComponent(component, widthSpec, heightSpec)

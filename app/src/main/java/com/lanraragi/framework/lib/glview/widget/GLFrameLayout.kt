@@ -27,12 +27,12 @@ open class GLFrameLayout : GLView() {
         var maxHeight = 0
         for (i in 0 until componentCount) {
             val component = getComponent(i)
-            if (component.getVisibility() == GONE) {
+            if (component.visibility == GONE) {
                 continue
             }
             measureComponent(component, widthSpec, heightSpec)
-            maxWidth = max(maxWidth, component.getMeasuredWidth())
-            maxHeight = max(maxHeight, component.getMeasuredHeight())
+            maxWidth = max(maxWidth, component.measuredWidth)
+            maxHeight = max(maxHeight, component.measuredHeight)
         }
 
         // Consider min
@@ -60,20 +60,20 @@ open class GLFrameLayout : GLView() {
     }
 
     override fun onLayout(changeSize: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        val width = width
-        val height = height
+        val width = this.width
+        val height = this.height
 
         for (i in 0 until componentCount) {
             val component = getComponent(i)
-            if (component.getVisibility() == GONE) {
+            if (component.visibility == GONE) {
                 continue
             }
-            val measureWidth = component.getMeasuredWidth()
-            val measureHeight = component.getMeasuredHeight()
+            val measureWidth = component.measuredWidth
+            val measureHeight = component.measuredHeight
             val componentLeft: Int
             val componentTop: Int
 
-            val lp = component.getLayoutParams() as GravityLayoutParams
+            val lp = component.layoutParams as GravityLayoutParams
             val gravity = lp.gravity
             if (Gravity.centerHorizontal(gravity)) {
                 componentLeft = (width / 2) - (measureWidth / 2)

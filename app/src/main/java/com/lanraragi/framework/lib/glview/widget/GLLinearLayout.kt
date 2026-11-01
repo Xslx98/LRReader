@@ -29,29 +29,28 @@ class GLLinearLayout : GLView() {
     @Retention(AnnotationRetention.SOURCE)
     annotation class OrientationMode
 
-    private var mInterval = 0
-    private var mOrientation = VERTICAL
-
-    private val mTempList: MutableList<GLView> = ArrayList()
-
-    fun setInterval(interval: Int) {
-        if (mInterval != interval) {
-            mInterval = interval
-            requestLayout()
+    var interval = 0
+        set(interval) {
+            if (field != interval) {
+                field = interval
+                requestLayout()
+            }
         }
-    }
 
     /**
-     * Should the layout be a column or a row.
-     * @param orientation Pass [HORIZONTAL] or [VERTICAL]. Default
-     * value is [HORIZONTAL].
+     * Should the layout be a column or a row: [HORIZONTAL] or [VERTICAL].
+     * Default value is [VERTICAL].
      */
-    fun setOrientation(@OrientationMode orientation: Int) {
-        if (mOrientation != orientation) {
-            mOrientation = orientation
-            requestLayout()
+    @get:OrientationMode
+    var orientation = VERTICAL
+        set(@OrientationMode orientation) {
+            if (field != orientation) {
+                field = orientation
+                requestLayout()
+            }
         }
-    }
+
+    private val tempList: MutableList<GLView> = ArrayList()
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
         val layoutWidthSpec = MeasureSpec.makeMeasureSpec(
@@ -63,28 +62,28 @@ class GLLinearLayout : GLView() {
             MeasureSpec.getMode(heightSpec)
         )
 
-        if (mOrientation == HORIZONTAL && MeasureSpec.getMode(widthSpec) == MeasureSpec.EXACTLY) {
+        if (orientation == HORIZONTAL && MeasureSpec.getMode(widthSpec) == MeasureSpec.EXACTLY) {
             var width = MeasureSpec.getSize(layoutWidthSpec)
             var sumWeight = 0.0f
 
             for (i in 0 until componentCount) {
                 val component = getComponent(i)
-                if (component.getVisibility() == GONE) {
+                if (component.visibility == GONE) {
                     continue
                 }
-                val lp = component.getLayoutParams() as LayoutParams
+                val lp = component.layoutParams as LayoutParams
 
                 if (lp.weight > 0.0f) {
                     sumWeight += lp.weight
-                    mTempList.add(component)
+                    tempList.add(component)
                 } else {
                     measureComponent(component, layoutWidthSpec, layoutHeightSpec)
-                    width -= component.getMeasuredWidth()
+                    width -= component.measuredWidth
                 }
             }
 
-            for (component in mTempList) {
-                val lp = component.getLayoutParams() as LayoutParams
+            for (component in tempList) {
+                val lp = component.layoutParams as LayoutParams
                 val componentWidthSpec = MeasureSpec.makeMeasureSpec(
                     (width * lp.weight / sumWeight).toInt(), MeasureSpec.EXACTLY
                 )
@@ -92,29 +91,29 @@ class GLLinearLayout : GLView() {
                 component.measure(componentWidthSpec, componentHeightSpec)
             }
 
-            mTempList.clear()
-        } else if (mOrientation == VERTICAL && MeasureSpec.getMode(heightSpec) == MeasureSpec.EXACTLY) {
+            tempList.clear()
+        } else if (orientation == VERTICAL && MeasureSpec.getMode(heightSpec) == MeasureSpec.EXACTLY) {
             var height = MeasureSpec.getSize(layoutHeightSpec)
             var sumWeight = 0.0f
 
             for (i in 0 until componentCount) {
                 val component = getComponent(i)
-                if (component.getVisibility() == GONE) {
+                if (component.visibility == GONE) {
                     continue
                 }
-                val lp = component.getLayoutParams() as LayoutParams
+                val lp = component.layoutParams as LayoutParams
 
                 if (lp.weight > 0.0f) {
                     sumWeight += lp.weight
-                    mTempList.add(component)
+                    tempList.add(component)
                 } else {
                     measureComponent(component, layoutWidthSpec, layoutHeightSpec)
-                    height -= component.getMeasuredHeight()
+                    height -= component.measuredHeight
                 }
             }
 
-            for (component in mTempList) {
-                val lp = component.getLayoutParams() as LayoutParams
+            for (component in tempList) {
+                val lp = component.layoutParams as LayoutParams
                 val componentWidthSpec = getComponentSpec(layoutWidthSpec, lp.width)
                 val componentHeightSpec = MeasureSpec.makeMeasureSpec(
                     (height * lp.weight / sumWeight).toInt(), MeasureSpec.EXACTLY
@@ -122,7 +121,7 @@ class GLLinearLayout : GLView() {
                 component.measure(componentWidthSpec, componentHeightSpec)
             }
 
-            mTempList.clear()
+            tempList.clear()
         } else {
             measureAllComponents(this, layoutWidthSpec, layoutHeightSpec)
         }
@@ -131,26 +130,26 @@ class GLLinearLayout : GLView() {
         var maxHeight = 0
         for (i in 0 until componentCount) {
             val component = getComponent(i)
-            if (component.getVisibility() == GONE) {
+            if (component.visibility == GONE) {
                 continue
             }
 
-            if (mOrientation == VERTICAL) {
-                maxWidth = max(maxWidth, component.getMeasuredWidth())
+            if (orientation == VERTICAL) {
+                maxWidth = max(maxWidth, component.measuredWidth)
                 if (i != 0) {
-                    maxHeight += mInterval
+                    maxHeight += interval
                 }
-                maxHeight += component.getMeasuredHeight()
-            } else if (mOrientation == HORIZONTAL) {
-                maxHeight = max(maxHeight, component.getMeasuredHeight())
+                maxHeight += component.measuredHeight
+            } else if (orientation == HORIZONTAL) {
+                maxHeight = max(maxHeight, component.measuredHeight)
                 if (i != 0) {
-                    maxWidth += mInterval
+                    maxWidth += interval
                 }
-                maxWidth += component.getMeasuredWidth()
+                maxWidth += component.measuredWidth
             }
         }
 
-        val paddings = getPaddings()
+        val paddings = mPaddings
         maxWidth = maxWidth + paddings.left + paddings.right
         maxHeight = maxHeight + paddings.top + paddings.bottom
 
@@ -158,24 +157,24 @@ class GLLinearLayout : GLView() {
     }
 
     override fun onLayout(changeSize: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        val width = width
-        val height = height
-        val paddings = getPaddings()
+        val width = this.width
+        val height = this.height
+        val paddings = mPaddings
         var componentLeft: Int
         var componentTop: Int
 
-        if (mOrientation == VERTICAL) {
+        if (orientation == VERTICAL) {
             componentTop = paddings.top
 
             for (i in 0 until componentCount) {
                 val component = getComponent(i)
-                if (component.getVisibility() == GONE) {
+                if (component.visibility == GONE) {
                     continue
                 }
-                val measureWidth = component.getMeasuredWidth()
-                val measureHeight = component.getMeasuredHeight()
+                val measureWidth = component.measuredWidth
+                val measureHeight = component.measuredHeight
 
-                val lp = component.getLayoutParams() as LayoutParams
+                val lp = component.layoutParams as LayoutParams
                 componentLeft = getDefaultBegin(
                     width, measureWidth, paddings.left, paddings.right,
                     Gravity.getPosition(lp.gravity, Gravity.HORIZONTAL)
@@ -185,20 +184,20 @@ class GLLinearLayout : GLView() {
                     componentLeft + measureWidth, componentTop + measureHeight
                 )
 
-                componentTop += measureHeight + mInterval
+                componentTop += measureHeight + interval
             }
-        } else if (mOrientation == HORIZONTAL) {
+        } else if (orientation == HORIZONTAL) {
             componentLeft = paddings.left
 
             for (i in 0 until componentCount) {
                 val component = getComponent(i)
-                if (component.getVisibility() == GONE) {
+                if (component.visibility == GONE) {
                     continue
                 }
-                val measureWidth = component.getMeasuredWidth()
-                val measureHeight = component.getMeasuredHeight()
+                val measureWidth = component.measuredWidth
+                val measureHeight = component.measuredHeight
 
-                val lp = component.getLayoutParams() as LayoutParams
+                val lp = component.layoutParams as LayoutParams
                 componentTop = getDefaultBegin(
                     height, measureHeight, paddings.top, paddings.bottom,
                     Gravity.getPosition(lp.gravity, Gravity.VERTICAL)
@@ -208,7 +207,7 @@ class GLLinearLayout : GLView() {
                     componentLeft + measureWidth, componentTop + measureHeight
                 )
 
-                componentLeft += measureWidth + mInterval
+                componentLeft += measureWidth + interval
             }
         }
     }

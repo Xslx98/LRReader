@@ -27,12 +27,12 @@ class GLEdgeView(color: Int) : GLView() {
     @Retention(AnnotationRetention.SOURCE)
     private annotation class Direction
 
-    private val mEffect = Array(4) { GLEdgeEffect(color) }
-    private val mMatrix = FloatArray(4 * 16)
+    private val effects = Array(4) { GLEdgeEffect(color) }
+    private val matrix = FloatArray(4 * 16)
 
     fun setColor(color: Int) {
         for (i in 0 until 4) {
-            mEffect[i].setColor(color)
+            effects[i].color = color
         }
     }
 
@@ -49,9 +49,9 @@ class GLEdgeView(color: Int) : GLView() {
         val h = bottom - top
         for (i in 0 until 4) {
             if ((i and 1) == 0) { // top or bottom
-                mEffect[i].setSize(w, h)
+                effects[i].setSize(w, h)
             } else { // left or right
-                mEffect[i].setSize(h, w)
+                effects[i].setSize(h, w)
             }
         }
 
@@ -59,27 +59,27 @@ class GLEdgeView(color: Int) : GLView() {
         // EdgeEffect draws the TOP edge from (0, 0) to (w, Y * h) where Y
         // is some factor < 1. For other edges we need to move, rotate, and
         // flip the effects into proper places.
-        Matrix.setIdentityM(mMatrix, TOP_M)
-        Matrix.setIdentityM(mMatrix, LEFT_M)
-        Matrix.setIdentityM(mMatrix, BOTTOM_M)
-        Matrix.setIdentityM(mMatrix, RIGHT_M)
+        Matrix.setIdentityM(matrix, TOP_M)
+        Matrix.setIdentityM(matrix, LEFT_M)
+        Matrix.setIdentityM(matrix, BOTTOM_M)
+        Matrix.setIdentityM(matrix, RIGHT_M)
 
-        Matrix.rotateM(mMatrix, LEFT_M, 90f, 0f, 0f, 1f)
-        Matrix.scaleM(mMatrix, LEFT_M, 1f, -1f, 1f)
+        Matrix.rotateM(matrix, LEFT_M, 90f, 0f, 0f, 1f)
+        Matrix.scaleM(matrix, LEFT_M, 1f, -1f, 1f)
 
-        Matrix.translateM(mMatrix, BOTTOM_M, 0f, h.toFloat(), 0f)
-        Matrix.scaleM(mMatrix, BOTTOM_M, 1f, -1f, 1f)
+        Matrix.translateM(matrix, BOTTOM_M, 0f, h.toFloat(), 0f)
+        Matrix.scaleM(matrix, BOTTOM_M, 1f, -1f, 1f)
 
-        Matrix.translateM(mMatrix, RIGHT_M, w.toFloat(), 0f, 0f)
-        Matrix.rotateM(mMatrix, RIGHT_M, 90f, 0f, 0f, 1f)
+        Matrix.translateM(matrix, RIGHT_M, w.toFloat(), 0f, 0f)
+        Matrix.rotateM(matrix, RIGHT_M, 90f, 0f, 0f, 1f)
     }
 
     override fun render(canvas: GLCanvas) {
         var more = false
         for (i in 0 until 4) {
             canvas.save(GLCanvas.SAVE_FLAG_MATRIX)
-            canvas.multiplyMatrix(mMatrix, i * 16)
-            more = more or mEffect[i].draw(canvas)
+            canvas.multiplyMatrix(matrix, i * 16)
+            more = more or effects[i].draw(canvas)
             canvas.restore()
         }
         if (more) {
@@ -91,8 +91,8 @@ class GLEdgeView(color: Int) : GLView() {
     // offset is in pixels. direction is one of {TOP, LEFT, BOTTOM, RIGHT}.
     fun onPull(offset: Float, @Direction direction: Int) {
         val fullLength = if ((direction and 1) == 0) width else height
-        mEffect[direction].onPull(offset / fullLength)
-        if (!mEffect[direction].isFinished()) {
+        effects[direction].onPull(offset / fullLength)
+        if (!effects[direction].isFinished) {
             invalidate()
         }
     }
@@ -100,8 +100,8 @@ class GLEdgeView(color: Int) : GLView() {
     fun onPull(offset: Float, position: Float, @Direction direction: Int) {
         val fullLength = if ((direction and 1) == 0) height else width
         val fullPosition = if ((direction and 1) == 0) width else height
-        mEffect[direction].onPull(offset / fullLength, position / fullPosition)
-        if (!mEffect[direction].isFinished()) {
+        effects[direction].onPull(offset / fullLength, position / fullPosition)
+        if (!effects[direction].isFinished) {
             invalidate()
         }
     }
@@ -110,8 +110,8 @@ class GLEdgeView(color: Int) : GLView() {
     fun onRelease() {
         var more = false
         for (i in 0 until 4) {
-            mEffect[i].onRelease()
-            more = more or !mEffect[i].isFinished()
+            effects[i].onRelease()
+            more = more or !effects[i].isFinished
         }
         if (more) {
             invalidate()
@@ -119,9 +119,9 @@ class GLEdgeView(color: Int) : GLView() {
     }
 
     fun onRelease(@Direction direction: Int) {
-        val edgeEffect = mEffect[direction]
+        val edgeEffect = effects[direction]
         edgeEffect.onRelease()
-        if (!edgeEffect.isFinished()) {
+        if (!edgeEffect.isFinished) {
             invalidate()
         }
     }
@@ -130,13 +130,13 @@ class GLEdgeView(color: Int) : GLView() {
     // Used when a fling reaches the scroll boundary. velocity is in pixels
     // per second. direction is one of {TOP, LEFT, BOTTOM, RIGHT}.
     fun onAbsorb(velocity: Int, direction: Int) {
-        mEffect[direction].onAbsorb(velocity)
-        if (!mEffect[direction].isFinished()) {
+        effects[direction].onAbsorb(velocity)
+        if (!effects[direction].isFinished) {
             invalidate()
         }
     }
 
-    fun isFinished(direction: Int): Boolean = mEffect[direction].isFinished()
+    fun isFinished(direction: Int): Boolean = effects[direction].isFinished
 
     companion object {
         const val TOP = 0

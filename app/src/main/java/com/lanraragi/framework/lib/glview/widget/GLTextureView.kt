@@ -23,50 +23,47 @@ import com.lanraragi.framework.lib.glview.view.GLView
 
 class GLTextureView : GLView() {
 
-    private val mSrc = RectF()
-    private val mDst = RectF()
+    private val src = RectF()
+    private val dst = RectF()
 
-    private var mTexture: Texture? = null
-
-    fun setTexture(texture: Texture?) {
-        mTexture = texture
-        if (texture != null) {
-            mSrc.set(0.0f, 0.0f, texture.getWidth().toFloat(), texture.getHeight().toFloat())
-        } else {
-            mSrc.setEmpty()
+    var texture: Texture? = null
+        set(texture) {
+            field = texture
+            if (texture != null) {
+                src.set(0.0f, 0.0f, texture.getWidth().toFloat(), texture.getHeight().toFloat())
+            } else {
+                src.setEmpty()
+            }
+            invalidate()
         }
-        invalidate()
-    }
-
-    fun getTexture(): Texture? = mTexture
 
     override fun getSuggestedMinimumWidth(): Int {
-        val texture = mTexture
+        val texture = this.texture
         return if (texture == null) super.getSuggestedMinimumWidth() else texture.getWidth() + mPaddings.width()
     }
 
     // Falls back to the minimum width without a texture, as it always has.
     override fun getSuggestedMinimumHeight(): Int {
-        val texture = mTexture
+        val texture = this.texture
         return if (texture == null) super.getSuggestedMinimumWidth() else texture.getHeight() + mPaddings.height()
     }
 
     override fun onRender(canvas: GLCanvas) {
-        val texture = mTexture
-        if (texture == null || mSrc.isEmpty) {
+        val texture = this.texture
+        if (texture == null || src.isEmpty) {
             return
         }
 
-        mDst.set(
+        dst.set(
             mPaddings.left.toFloat(),
             mPaddings.top.toFloat(),
             (width - mPaddings.right).toFloat(),
             (height - mPaddings.bottom).toFloat()
         )
-        if (mDst.isEmpty) {
+        if (dst.isEmpty) {
             return
         }
 
-        texture.draw(canvas, mSrc, mDst)
+        texture.draw(canvas, src, dst)
     }
 }
