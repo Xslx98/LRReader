@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.glrenderer;
+package com.lanraragi.framework.lib.glview.glrenderer
 
-import javax.microedition.khronos.opengles.GL11;
-import javax.microedition.khronos.opengles.GL11ExtensionPack;
+import javax.microedition.khronos.opengles.GL11
+import javax.microedition.khronos.opengles.GL11ExtensionPack
 
 // This mimics corresponding GL functions.
-public interface GLId {
-    int generateTexture();
+interface GLId {
+    fun generateTexture(): Int
 
-    void glGenBuffers(int n, int[] buffers, int offset);
+    fun glGenBuffers(n: Int, buffers: IntArray, offset: Int)
 
-    void glDeleteTextures(GL11 gl, int n, int[] textures, int offset);
+    fun glDeleteTextures(gl: GL11?, n: Int, textures: IntArray, offset: Int)
 
-    void glDeleteBuffers(GL11 gl, int n, int[] buffers, int offset);
+    fun glDeleteBuffers(gl: GL11?, n: Int, buffers: IntArray, offset: Int)
 
-    void glDeleteFramebuffers(GL11ExtensionPack gl11ep, int n, int[] buffers, int offset);
+    fun glDeleteFramebuffers(gl11ep: GL11ExtensionPack?, n: Int, buffers: IntArray, offset: Int)
 }
