@@ -31,7 +31,6 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -179,10 +178,6 @@ public class GLES20Canvas implements GLCanvas {
     // Projection matrix
     private final float[] mProjectionMatrix = new float[MATRIX_SIZE];
 
-    // Screen size for when we aren't bound to a texture
-    private int mScreenWidth;
-    private int mScreenHeight;
-
     // GL programs
     private final int mDrawProgram;
     private final int mTextureProgram;
@@ -278,13 +273,6 @@ public class GLES20Canvas implements GLCanvas {
     private int mCountFillRect = 0;
     private int mCountDrawLine = 0;
 
-    // Buffer for framebuffer IDs -- we keep track so we can switch the attached
-    // texture.
-    private final int[] mFrameBuffer = new int[1];
-
-    // Bound textures.
-    private final ArrayList<RawTexture> mTargetTextures = new ArrayList<>();
-
     // Temporary variables used within calculations
     private final float[] mTempMatrix = new float[32];
     private final float[] mTempColor = new float[4];
@@ -299,7 +287,6 @@ public class GLES20Canvas implements GLCanvas {
         Matrix.setIdentityM(mTempTextureMatrix, 0);
         Matrix.setIdentityM(mMatrices, mCurrentMatrixIndex);
         mAlphas[mCurrentAlphaIndex] = 1f;
-        mTargetTextures.add(null);
 
         FloatBuffer boxBuffer = createBuffer(BOX_COORDINATES);
         mBoxCoordinates = uploadBuffer(boxBuffer);
@@ -379,12 +366,8 @@ public class GLES20Canvas implements GLCanvas {
         checkError();
         Matrix.setIdentityM(mMatrices, mCurrentMatrixIndex);
         Matrix.orthoM(mProjectionMatrix, 0, 0, width, 0, height, -1, 1);
-        if (getTargetTexture() == null) {
-            mScreenWidth = width;
-            mScreenHeight = height;
-            Matrix.translateM(mMatrices, mCurrentMatrixIndex, 0, height, 0);
-            Matrix.scaleM(mMatrices, mCurrentMatrixIndex, 1, -1, 1);
-        }
+        Matrix.translateM(mMatrices, mCurrentMatrixIndex, 0, height, 0);
+        Matrix.scaleM(mMatrices, mCurrentMatrixIndex, 1, -1, 1);
     }
 
     @Override
@@ -893,78 +876,6 @@ public class GLES20Canvas implements GLCanvas {
         mCountFillRect = 0;
         mCountDrawLine = 0;
         Log.d(TAG, line);
-    }
-
-    @Override
-    public void endRenderTarget() {
-        RawTexture oldTexture = mTargetTextures.remove(mTargetTextures.size() - 1);
-        RawTexture texture = getTargetTexture();
-        setRenderTarget(oldTexture, texture);
-        restore(); // restore matrix and alpha
-    }
-
-    @Override
-    public void beginRenderTarget(RawTexture texture) {
-        save(); // save matrix and alpha and blending
-        RawTexture oldTexture = getTargetTexture();
-        mTargetTextures.add(texture);
-        setRenderTarget(oldTexture, texture);
-    }
-
-    private RawTexture getTargetTexture() {
-        return mTargetTextures.get(mTargetTextures.size() - 1);
-    }
-
-    private void setRenderTarget(BasicTexture oldTexture, RawTexture texture) {
-        if (oldTexture == null && texture != null) {
-            GLES20.glGenFramebuffers(1, mFrameBuffer, 0);
-            checkError();
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBuffer[0]);
-            checkError();
-        } else if (oldTexture != null && texture == null) {
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-            checkError();
-            GLES20.glDeleteFramebuffers(1, mFrameBuffer, 0);
-            checkError();
-        }
-
-        if (texture == null) {
-            setSize(mScreenWidth, mScreenHeight);
-        } else {
-            setSize(texture.getWidth(), texture.getHeight());
-
-            if (!texture.isLoaded()) {
-                texture.prepare(this);
-            }
-
-            GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
-                    texture.getTarget(), texture.getId(), 0);
-            checkError();
-
-            checkFramebufferStatus();
-        }
-    }
-
-    private static void checkFramebufferStatus() {
-        int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-        if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-            String msg = "";
-            switch (status) {
-                case GLES20.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-                    msg = "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
-                    break;
-                case GLES20.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-                    msg = "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS";
-                    break;
-                case GLES20.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-                    msg = "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
-                    break;
-                case GLES20.GL_FRAMEBUFFER_UNSUPPORTED:
-                    msg = "GL_FRAMEBUFFER_UNSUPPORTED";
-                    break;
-            }
-            throw new RuntimeException(msg + ":" + Integer.toHexString(status));
-        }
     }
 
     @Override

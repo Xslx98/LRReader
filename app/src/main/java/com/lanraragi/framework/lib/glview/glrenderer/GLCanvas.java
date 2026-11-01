@@ -142,10 +142,6 @@ public interface GLCanvas {
     // Dump statistics information and clear the counters. For debug only.
     void dumpStatisticsAndClear();
 
-    void beginRenderTarget(RawTexture texture);
-
-    void endRenderTarget();
-
     /**
      * Sets texture parameters to use GL_CLAMP_TO_EDGE for both
      * GL_TEXTURE_WRAP_S and GL_TEXTURE_WRAP_T. Sets texture parameters to be

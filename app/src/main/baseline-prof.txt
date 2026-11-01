@@ -7016,7 +7016,6 @@ PLcom/lanraragi/framework/lib/glview/glrenderer/GLES20Canvas;->fillSector(FFFFFI
 PLcom/lanraragi/framework/lib/glview/glrenderer/GLES20Canvas;->getAlpha()F
 PLcom/lanraragi/framework/lib/glview/glrenderer/GLES20Canvas;->getColor(I)[F
 PLcom/lanraragi/framework/lib/glview/glrenderer/GLES20Canvas;->getGLId()Lcom/lanraragi/framework/lib/glview/glrenderer/GLId;
-PLcom/lanraragi/framework/lib/glview/glrenderer/GLES20Canvas;->getTargetTexture()Lcom/lanraragi/framework/lib/glview/glrenderer/RawTexture;
 PLcom/lanraragi/framework/lib/glview/glrenderer/GLES20Canvas;->loadShader(ILjava/lang/String;)I
 PLcom/lanraragi/framework/lib/glview/glrenderer/GLES20Canvas;->multiplyAlpha(F)V
 PLcom/lanraragi/framework/lib/glview/glrenderer/GLES20Canvas;->multiplyMatrix([FI)V
