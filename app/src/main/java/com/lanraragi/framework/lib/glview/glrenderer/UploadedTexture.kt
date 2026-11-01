@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("UseCheckOrError", "UnsafeCallOnNullableType") // TODO(2.4-idiom)
+@file:Suppress("UseCheckOrError") // TODO(2.4-idiom)
 
 package com.lanraragi.framework.lib.glview.glrenderer
 
@@ -183,7 +183,9 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
             } else {
                 val format = GLUtils.getInternalFormat(bitmap)
                 val type = GLUtils.getType(bitmap)
-                val config = bitmap.config
+                // Java failed in the border-line cache on a null config;
+                // CanvasTexture's bitmaps are always ARGB_8888.
+                val config = checkNotNull(bitmap.config) { "bitmap without a config" }
 
                 canvas.initializeTextureSize(this, format, type)
                 canvas.texSubImage2D(this, borderWidth, borderWidth, bitmap, format, type)
@@ -250,7 +252,7 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
         private var uploadedCount = 0
         private const val UPLOAD_LIMIT = 100
 
-        private fun getBorderLine(vertical: Boolean, config: Bitmap.Config?, length: Int): Bitmap {
+        private fun getBorderLine(vertical: Boolean, config: Bitmap.Config, length: Int): Bitmap {
             val key = borderKey
             key.vertical = vertical
             key.config = config
@@ -258,9 +260,9 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
             var bitmap = borderLines[key]
             if (bitmap == null) {
                 bitmap = if (vertical) {
-                    Bitmap.createBitmap(1, length, config!!)
+                    Bitmap.createBitmap(1, length, config)
                 } else {
-                    Bitmap.createBitmap(length, 1, config!!)
+                    Bitmap.createBitmap(length, 1, config)
                 }
                 borderLines[key.clone()] = bitmap
             }
