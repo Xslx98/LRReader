@@ -41,21 +41,21 @@ object GalleryUtils {
     // works most of the time, but that's ok because it's for debugging only.
 
     @Volatile
-    private var sCurrentThread: Thread? = null
+    private var currentThread: Thread? = null
 
     @JvmStatic
     fun setRenderThread() {
-        sCurrentThread = Thread.currentThread()
+        currentThread = Thread.currentThread()
     }
 
     @JvmStatic
     fun isRenderThread(): Boolean {
-        return sCurrentThread === Thread.currentThread()
+        return currentThread === Thread.currentThread()
     }
 
     @JvmStatic
     fun assertInRenderThread() {
-        if (sCurrentThread !== Thread.currentThread()) {
+        if (currentThread !== Thread.currentThread()) {
             throw AssertionError("Should not do this in render thread")
         }
     }

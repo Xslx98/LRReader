@@ -46,44 +46,27 @@ import com.lanraragi.reader.util.MathUtils
 // The start() method can be called again to restart the Animation.
 //
 abstract class Animation {
-    private var mStartTime = NO_ANIMATION
-    private var mDuration: Long = 0
-    private var mInterpolator: Interpolator? = null
-    private var mRepeatCount = 0
-    private var mRepeatMode = 0
+    private var startTime = NO_ANIMATION
+    private var runnedCount = 0
 
-    private var mRunnedCount = 0
-    private var mLastFrameTime: Long = 0
+    var interpolator: Interpolator? = null
+    var duration: Long = 0
+    var repeatCount = 0
 
-    fun setInterpolator(interpolator: Interpolator?) {
-        mInterpolator = interpolator
-    }
+    // Stored but not acted on, see calculate().
+    var repeatMode = 0
 
-    fun setDuration(duration: Long) {
-        mDuration = duration
-    }
+    val isRunning: Boolean
+        get() = startTime > 0 || startTime == ANIMATION_START
 
-    fun setRepeatCount(repeatCount: Int) {
-        mRepeatCount = repeatCount
-    }
-
-    fun setRepeatMode(repeatMode: Int) {
-        mRepeatMode = repeatMode
-    }
-
-    fun isRunning(): Boolean {
-        return mStartTime > 0 || mStartTime == ANIMATION_START
-    }
-
-    fun getLastFrameTime(): Long {
-        return mLastFrameTime
-    }
+    var lastFrameTime: Long = 0
+        private set
 
     fun start() {
-        if (mStartTime == NO_ANIMATION) {
-            mStartTime = ANIMATION_START
-            mRunnedCount = 0
-            mLastFrameTime = 0
+        if (startTime == NO_ANIMATION) {
+            startTime = ANIMATION_START
+            runnedCount = 0
+            lastFrameTime = 0
         }
     }
 
@@ -98,47 +81,47 @@ abstract class Animation {
     }
 
     fun setStartTime(time: Long) {
-        mStartTime = time
+        startTime = time
     }
 
     fun cancel() {
-        mStartTime = NO_ANIMATION
+        startTime = NO_ANIMATION
     }
 
     fun reset() {
-        mStartTime = ANIMATION_START
-        mRunnedCount = 0
-        mLastFrameTime = 0
+        startTime = ANIMATION_START
+        runnedCount = 0
+        lastFrameTime = 0
     }
 
     // UPSTREAM-LEGACY (Gallery2/AOSP): repeat mode not implemented
     fun calculate(currentTimeMillis: Long): Boolean {
-        if (mStartTime == NO_ANIMATION) {
+        if (startTime == NO_ANIMATION) {
             return false
         }
-        if (mStartTime == ANIMATION_START) {
-            mStartTime = currentTimeMillis
+        if (startTime == ANIMATION_START) {
+            startTime = currentTimeMillis
         }
-        mLastFrameTime = currentTimeMillis
+        lastFrameTime = currentTimeMillis
 
-        val elapse = currentTimeMillis - mStartTime
+        val elapse = currentTimeMillis - startTime
         // Avoid NaN: a zero duration (e.g. animator duration scale 0) finishes at once
-        val x = MathUtils.clamp(if (mDuration == 0L) 1.0f else elapse.toFloat() / mDuration.toFloat(), 0.0f, 1.0f)
-        val i = mInterpolator
+        val x = MathUtils.clamp(if (duration == 0L) 1.0f else elapse.toFloat() / duration.toFloat(), 0.0f, 1.0f)
+        val i = interpolator
         onCalculate(if (i != null) i.getInterpolation(x) else x)
 
         // It is ok to call cancel() in onCalculate()
-        if (mStartTime != NO_ANIMATION && elapse >= mDuration) {
-            mRunnedCount++
-            if (mRunnedCount >= mRepeatCount && mRepeatCount != INFINITE) {
+        if (startTime != NO_ANIMATION && elapse >= duration) {
+            runnedCount++
+            if (runnedCount >= repeatCount && repeatCount != INFINITE) {
                 onFinish()
-                mStartTime = NO_ANIMATION
+                startTime = NO_ANIMATION
             } else {
-                mStartTime += elapse
+                startTime += elapse
             }
         }
 
-        return mStartTime != NO_ANIMATION
+        return startTime != NO_ANIMATION
     }
 
     protected abstract fun onCalculate(progress: Float)
@@ -163,7 +146,7 @@ abstract class Animation {
         const val REVERSE = 2
 
         /**
-         * This value used used with the [setRepeatCount] property to repeat
+         * This value used used with the [repeatCount] property to repeat
          * the animation indefinitely.
          */
         const val INFINITE = -1

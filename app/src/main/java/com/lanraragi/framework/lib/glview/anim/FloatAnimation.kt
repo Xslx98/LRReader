@@ -20,20 +20,20 @@ import com.lanraragi.reader.util.MathUtils
 
 open class FloatAnimation : Animation() {
 
-    private var mFrom = 0f
-    private var mTo = 0f
-    private var mCurrent = 0f
+    private var from = 0f
+    private var to = 0f
+    private var current = 0f
 
     fun setRange(from: Float, to: Float) {
-        mFrom = from
-        mTo = to
+        this.from = from
+        this.to = to
     }
 
     override fun onCalculate(progress: Float) {
-        mCurrent = MathUtils.lerp(mFrom, mTo, progress)
+        current = MathUtils.lerp(from, to, progress)
     }
 
     fun get(): Float {
-        return mCurrent
+        return current
     }
 }

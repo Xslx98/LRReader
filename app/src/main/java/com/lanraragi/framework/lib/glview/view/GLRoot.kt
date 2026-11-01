@@ -43,9 +43,9 @@ interface GLRoot {
     // null detaches the current content pane.
     fun setContentPane(content: GLView?)
     fun setOrientationSource(source: OrientationSource?)
-    fun getDisplayRotation(): Int
-    fun getCompensation(): Int
-    fun getCompensationMatrix(): Matrix
+    val displayRotation: Int
+    val compensation: Int
+    val compensationMatrix: Matrix
     fun freeze()
     fun unfreeze()
     fun setLightsOutMode(enabled: Boolean)

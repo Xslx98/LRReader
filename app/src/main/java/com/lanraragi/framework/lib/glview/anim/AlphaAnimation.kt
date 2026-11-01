@@ -19,23 +19,20 @@ package com.lanraragi.framework.lib.glview.anim
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 import com.lanraragi.reader.util.MathUtils
 
-class AlphaAnimation(from: Float, to: Float) : CanvasAnimation() {
-    private val mStartAlpha: Float = from
-    private val mEndAlpha: Float = to
-    private var mCurrentAlpha: Float = from
+class AlphaAnimation(
+    private val startAlpha: Float,
+    private val endAlpha: Float
+) : CanvasAnimation() {
+    private var currentAlpha: Float = startAlpha
+
+    override val canvasSaveFlags: Int
+        get() = GLCanvas.SAVE_FLAG_ALPHA
 
     override fun apply(canvas: GLCanvas) {
-        canvas.multiplyAlpha(mCurrentAlpha)
-    }
-
-    override fun getCanvasSaveFlags(): Int {
-        return GLCanvas.SAVE_FLAG_ALPHA
+        canvas.multiplyAlpha(currentAlpha)
     }
 
     override fun onCalculate(progress: Float) {
-        mCurrentAlpha = MathUtils.clamp(
-            mStartAlpha +
-                (mEndAlpha - mStartAlpha) * progress, 0f, 1f
-        )
+        currentAlpha = MathUtils.clamp(startAlpha + (endAlpha - startAlpha) * progress, 0f, 1f)
     }
 }

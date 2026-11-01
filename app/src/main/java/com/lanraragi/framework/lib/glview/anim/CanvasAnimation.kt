@@ -20,7 +20,7 @@ import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 
 abstract class CanvasAnimation : Animation() {
 
-    abstract fun getCanvasSaveFlags(): Int
+    abstract val canvasSaveFlags: Int
 
     abstract fun apply(canvas: GLCanvas)
 }

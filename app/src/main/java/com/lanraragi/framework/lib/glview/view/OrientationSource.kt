@@ -17,6 +17,6 @@
 package com.lanraragi.framework.lib.glview.view
 
 interface OrientationSource {
-    fun getDisplayRotation(): Int
-    fun getCompensation(): Int
+    val displayRotation: Int
+    val compensation: Int
 }

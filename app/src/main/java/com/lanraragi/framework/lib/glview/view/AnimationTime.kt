@@ -26,23 +26,23 @@ import android.os.SystemClock
 //
 object AnimationTime {
     @Volatile
-    private var sTime: Long = 0
+    private var time: Long = 0
 
     // Sets current time as the animation time.
     @JvmStatic
     fun update() {
-        sTime = SystemClock.uptimeMillis()
+        time = SystemClock.uptimeMillis()
     }
 
     // Returns the animation time.
     @JvmStatic
     fun get(): Long {
-        return sTime
+        return time
     }
 
     @JvmStatic
     fun startTime(): Long {
-        sTime = SystemClock.uptimeMillis()
-        return sTime
+        time = SystemClock.uptimeMillis()
+        return time
     }
 }
