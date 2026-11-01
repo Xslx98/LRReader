@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.glrenderer;
+package com.lanraragi.framework.lib.glview.glrenderer
 
-
-import android.graphics.RectF;
+import android.graphics.RectF
 
 // Texture is a rectangular image which can be drawn on GLCanvas.
 // The isOpaque() function gives a hint about whether the texture is opaque,
@@ -31,11 +30,11 @@ import android.graphics.RectF;
 //       -- CanvasTexture
 //          -- StringTexture
 //
-public interface Texture {
-    int getWidth();
-    int getHeight();
-    void draw(GLCanvas canvas, int x, int y);
-    void draw(GLCanvas canvas, int x, int y, int w, int h);
-    void draw(GLCanvas canvas, RectF source, RectF target);
-    boolean isOpaque();
+interface Texture {
+    fun getWidth(): Int
+    fun getHeight(): Int
+    fun draw(canvas: GLCanvas, x: Int, y: Int)
+    fun draw(canvas: GLCanvas, x: Int, y: Int, w: Int, h: Int)
+    fun draw(canvas: GLCanvas, source: RectF, target: RectF)
+    fun isOpaque(): Boolean
 }
