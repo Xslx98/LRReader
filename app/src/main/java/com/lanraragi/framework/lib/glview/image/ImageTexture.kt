@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "LongParameterList",
-    "ComplexCondition",
-    "LoopWithTooManyJumpStatements",
-    "UseCheckOrError",
-)
-
 package com.lanraragi.framework.lib.glview.image
 
 import android.graphics.RectF
@@ -165,6 +158,7 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
     //      Texture                        +---------------+
     //                                          Canvas
     // A member, not a companion function: it runs for every tile drawn.
+    @Suppress("LongParameterList") // per-tile draw step: a parameter object would be allocated or shared scratch
     private fun mapRect(
         output: RectF,
         src: RectF,
@@ -281,14 +275,15 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
         for (t in tiles) {
             if (t.image == null || t.preloaded) continue
             if (!hasRegions) return t
-            if (!overlaps(uploadRegion, t)) continue
-            val gap = TileRegions.gap(
-                screenRegion, t.offsetX.toFloat(), t.offsetY.toFloat(),
-                (t.offsetX + t.contentWidth).toFloat(), (t.offsetY + t.contentHeight).toFloat()
-            )
-            if (gap < bestGap) {
-                best = t
-                bestGap = gap
+            if (overlaps(uploadRegion, t)) {
+                val gap = TileRegions.gap(
+                    screenRegion, t.offsetX.toFloat(), t.offsetY.toFloat(),
+                    (t.offsetX + t.contentWidth).toFloat(), (t.offsetY + t.contentHeight).toFloat()
+                )
+                if (gap < bestGap) {
+                    best = t
+                    bestGap = gap
+                }
             }
         }
         return best
@@ -524,7 +519,7 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
                 borderSize = LARGE_BORDER_SIZE
                 tileSize = LARGE_TILE_SIZE
             } else {
-                throw IllegalStateException("Not support tile type: $tileType")
+                error("Not support tile type: $tileType")
             }
             contentWidth = width
             contentHeight = height
@@ -562,12 +557,16 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
             when (tileType) {
                 TILE_SMALL -> freeTile(smallFreeTiles)
                 TILE_LARGE -> freeTile(largeFreeTiles)
-                else -> throw IllegalStateException("Not support tile type: $tileType")
+                else -> error("Not support tile type: $tileType")
             }
         }
     }
 
     private inner class AnimateRunnable : Runnable {
+
+        // Released, recycled, busy or about to be released. Call it holding the image lock.
+        private fun isGoneOrBusy(): Boolean =
+            released.get() || image.isImageRecycled || imageBusy || needRelease.get()
 
         fun doRun() {
             var lastTime = System.nanoTime()
@@ -575,7 +574,7 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
 
             synchronized(image) {
                 // Check released, image busy, Need release
-                if (released.get() || image.isImageRecycled || imageBusy || needRelease.get()) {
+                if (isGoneOrBusy()) {
                     animateRunnable = null
                     return
                 }
@@ -601,9 +600,7 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
                 // Obtain
                 synchronized(image) {
                     // Check released, image busy, Need release, not running
-                    if (released.get() || image.isImageRecycled || imageBusy || needRelease.get() ||
-                        !running.get()
-                    ) {
+                    if (isGoneOrBusy() || !running.get()) {
                         animateRunnable = null
                         return
                     }
@@ -644,13 +641,8 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
             while (needRelease.get()) {
                 // Obtain
                 synchronized(image) {
-                    // Check released
-                    if (released.get() || image.isImageRecycled) {
-                        break
-                    }
-                    // Check image busy
-                    if (imageBusy) {
-                        // Image is busy, means it is recycling
+                    // Check released, and image busy, which means it is recycling
+                    if (released.get() || image.isImageRecycled || imageBusy) {
                         break
                     }
                     // Obtain image
