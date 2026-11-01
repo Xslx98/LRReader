@@ -23,7 +23,7 @@ import javax.microedition.khronos.opengles.GL11
 // UploadedTextures use a Bitmap for the content of the texture.
 //
 // Subclasses should implement onGetBitmap() to provide the Bitmap and
-// implement onFreeBitmap(mBitmap) which will be called when the Bitmap
+// implement onFreeBitmap(bitmap) which will be called when the Bitmap
 // is not needed anymore.
 //
 // isContentValid is meaningful only when isLoaded is true.
@@ -45,8 +45,7 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     private var opaque = true
     private var throttled = false
 
-    @JvmField
-    protected var mBitmap: Bitmap? = null
+    private var bitmap: Bitmap? = null
     private var borderWidth = 0
 
     init {
@@ -59,13 +58,8 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     protected constructor() : this(false)
 
     private class BorderKey : Cloneable {
-        @JvmField
         var vertical = false
-
-        @JvmField
         var config: Bitmap.Config? = null
-
-        @JvmField
         var length = 0
 
         override fun hashCode(): Int {
@@ -93,23 +87,23 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     }
 
     private fun getBitmap(): Bitmap {
-        var bitmap = mBitmap
-        if (bitmap == null) {
-            bitmap = onGetBitmap()
-            mBitmap = bitmap
+        var current = bitmap
+        if (current == null) {
+            current = onGetBitmap()
+            bitmap = current
             if (mWidth == UNSPECIFIED) {
-                val w = bitmap.width + borderWidth * 2
-                val h = bitmap.height + borderWidth * 2
+                val w = current.width + borderWidth * 2
+                val h = current.height + borderWidth * 2
                 setSize(w, h)
             }
         }
-        return bitmap
+        return current
     }
 
     private fun freeBitmap() {
-        val bitmap = mBitmap ?: throw IllegalArgumentException("null == mBitmap")
-        onFreeBitmap(bitmap)
-        mBitmap = null
+        val current = bitmap ?: throw IllegalArgumentException("null == bitmap")
+        onFreeBitmap(current)
+        bitmap = null
     }
 
     override fun getWidth(): Int {
@@ -127,7 +121,7 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     protected abstract fun onFreeBitmap(bitmap: Bitmap)
 
     fun invalidateContent() {
-        if (mBitmap != null) freeBitmap()
+        if (bitmap != null) freeBitmap()
         contentValid = false
         mWidth = UNSPECIFIED
         mHeight = UNSPECIFIED
@@ -236,7 +230,7 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
 
     override fun recycle() {
         super.recycle()
-        if (mBitmap != null) freeBitmap()
+        if (bitmap != null) freeBitmap()
     }
 
     companion object {

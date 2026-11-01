@@ -43,7 +43,6 @@ class StringTexture private constructor(
     }
 
     companion object {
-        @JvmStatic
         fun getDefaultPaint(textSize: Float, color: Int): TextPaint {
             val paint = TextPaint()
             paint.textSize = textSize
@@ -58,7 +57,6 @@ class StringTexture private constructor(
             return newInstance(text, getDefaultPaint(textSize, color))
         }
 
-        @JvmStatic
         fun newInstance(
             text: String,
             textSize: Float,

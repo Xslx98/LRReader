@@ -9,27 +9,27 @@ class GLES20IdImpl : GLId {
 
     override fun generateTexture(): Int {
         GLES20.glGenTextures(1, tempIntArray, 0)
-        GLES20Canvas.checkError()
+        checkGlError()
         return tempIntArray[0]
     }
 
     override fun glGenBuffers(n: Int, buffers: IntArray, offset: Int) {
         GLES20.glGenBuffers(n, buffers, offset)
-        GLES20Canvas.checkError()
+        checkGlError()
     }
 
     override fun glDeleteTextures(gl: GL11?, n: Int, textures: IntArray, offset: Int) {
         GLES20.glDeleteTextures(n, textures, offset)
-        GLES20Canvas.checkError()
+        checkGlError()
     }
 
     override fun glDeleteBuffers(gl: GL11?, n: Int, buffers: IntArray, offset: Int) {
         GLES20.glDeleteBuffers(n, buffers, offset)
-        GLES20Canvas.checkError()
+        checkGlError()
     }
 
     override fun glDeleteFramebuffers(gl11ep: GL11ExtensionPack?, n: Int, buffers: IntArray, offset: Int) {
         GLES20.glDeleteFramebuffers(n, buffers, offset)
-        GLES20Canvas.checkError()
+        checkGlError()
     }
 }

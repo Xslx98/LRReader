@@ -46,8 +46,7 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
 
     private var border = false
 
-    @JvmField
-    protected var mCanvasRef: GLCanvas? = null
+    private var canvasRef: GLCanvas? = null
 
     init {
         setAssociatedCanvas(canvas)
@@ -61,7 +60,7 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
     protected constructor() : this(null, 0, STATE_UNLOADED)
 
     protected fun setAssociatedCanvas(canvas: GLCanvas?) {
-        mCanvasRef = canvas
+        canvasRef = canvas
     }
 
     /**
@@ -158,7 +157,7 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
     }
 
     private fun freeResource() {
-        val canvas = mCanvasRef
+        val canvas = canvasRef
         if (canvas != null && mId != -1) {
             canvas.unloadTexture(this)
             mId = -1 // Don't free it again.
@@ -192,7 +191,6 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         // This is for deciding if we can call Bitmap's recycle().
         // We cannot call Bitmap's recycle() in finalizer because at that point
         // the finalizer of Bitmap may already be called so recycle() will crash.
-        @JvmStatic
         fun inFinalizer(): Boolean {
             return finalizing.get() != null
         }

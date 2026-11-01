@@ -811,11 +811,6 @@ class GLES20Canvas : GLCanvas {
 
     companion object {
         private val glIdImpl: GLId = GLES20IdImpl()
-
-        @JvmStatic
-        fun checkError() {
-            checkGlError()
-        }
     }
 }
 
