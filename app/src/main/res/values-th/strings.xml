@@ -351,7 +351,6 @@
     <string name="tank_member_more">+%1$d</string>
     <string name="tank_member_view_detail">ดูรายละเอียดของเล่มนี้</string>
     <string name="tank_page_divider">ตอนที่ %1$d · %2$s</string>
-    <string name="tank_view_detail">รายละเอียด</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_tag_sync_failed">รวมแท็กของ “%1$s” ไม่สำเร็จ</string>
     <string name="tank_category_sync_failed">อัปเดตหมวดหมู่ของ “%1$s” ไม่สำเร็จ</string>
@@ -378,7 +377,6 @@
     <string name="tank_undo">เลิกทำ</string>
     <string name="tank_sort_by_title">เรียงตามชื่อเรื่อง</string>
     <string name="tank_reverse_order">กลับลำดับ</string>
-    <string name="tank_auto_sort">จัดเรียงสมาชิกอัตโนมัติ</string>
     <string name="tank_move_top">บนสุด</string>
     <string name="tank_move_bottom">ล่างสุด</string>
     <string name="tank_move_to_position">ตำแหน่ง…</string>
@@ -426,6 +424,10 @@
     <string name="tank_picker_section_all">ทังโคบงทั้งหมด</string>
     <string name="tank_picker_apply">ใช้</string>
     <string name="tank_picker_empty">ไม่มีทังโคบงที่ตรงกัน</string>
+    <string name="tank_sort">เรียงลำดับ</string>
+    <string name="tank_sort_name">ตามชื่อ</string>
+    <string name="tank_sort_members">ตามจำนวนไฟล์</string>
+    <string name="tank_sort_recent_read">อ่านล่าสุด</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
     <!-- List multi-select batch operations -->
@@ -459,6 +461,27 @@
     <string name="batch_tank_added_some_members">เพิ่มลงทังโคบงแล้ว %1$d รายการ, %2$d รายการมีอยู่แล้ว</string>
     <plurals name="batch_tank_all_members">
         <item quantity="other">ทั้ง %d รายการมีอยู่ในทังโคบงแล้ว</item>
+    </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="other">เพิ่มทังโคบง %d รายการลงคิวดาวน์โหลดแล้ว</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="other">เรียงสมาชิกของทังโคบง %d รายการแล้ว</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="other">ลบทังโคบง %d รายการแล้ว</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="other">เพิ่มทังโคบง %d รายการลงคิวไม่สำเร็จ</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="other">เรียงทังโคบง %d รายการไม่สำเร็จ</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="other">ลบทังโคบง %d รายการไม่สำเร็จ</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="other">ลบทังโคบง %d รายการ? ไฟล์ข้างในจะไม่ถูกลบ แต่สรุป แท็กเพิ่มเติม และความคืบหน้าการอ่านของทังโคบงจะหายไป</item>
     </plurals>
     <string name="download_already_local">ดาวน์โหลดไว้แล้ว</string>
     <plurals name="batch_done_category">

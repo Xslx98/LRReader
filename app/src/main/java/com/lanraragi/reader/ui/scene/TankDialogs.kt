@@ -12,8 +12,8 @@ import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.R
 
 /**
- * Shared dialog scaffolding for the tankoubon scenes ([TankoubonsScene] /
- * [TankoubonDetailScene]). Pure UI: builds the dialog, validates trivial
+ * Shared dialog scaffolding for the tankoubon screens (the gallery's tank
+ * mode, [TankoubonDetailScene], the picker sheet). Pure UI: builds the dialog, validates trivial
  * input (blank name), and hands the result to the caller — no ViewModel
  * knowledge.
  */

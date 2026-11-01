@@ -292,7 +292,7 @@ abstract class StageActivity : BaseActivity() {
         val currentScene = findCurrentScene()
 
         // Check LAUNCH_MODE_SINGLE_TASK
-        if (currentScene != null && clazz.isInstance(currentScene) &&
+        if (currentScene != null && currentScene.javaClass == clazz &&
             launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TOP
         ) {
             if (args != null) {
@@ -362,7 +362,7 @@ abstract class StageActivity : BaseActivity() {
             val fragment = fragmentManager.findFragmentByTag(tag)
             if (fragment == null) {
                 Log.e(TAG, "Can't find fragment with tag: $tag")
-            } else if (clazz.isInstance(fragment)) { // Get it
+            } else if (fragment.javaClass == clazz) { // Get it
                 val transaction = fragmentManager.beginTransaction()
 
                 // Use default animation
@@ -497,8 +497,12 @@ abstract class StageActivity : BaseActivity() {
     }
 
     /** A [clazz] scene that startSceneFirstly may keep instead of creating one. */
+    /**
+     * Launch modes match the announced class EXACTLY: a subclass scene (the
+     * gallery's tank mode) is never reused for its parent class.
+     */
     private fun isReusable(fragment: Fragment, clazz: Class<*>, launchMode: Int): Boolean =
-        clazz.isInstance(fragment) && (launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TASK || !fragment.isDetached)
+        fragment.javaClass == clazz && (launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TASK || !fragment.isDetached)
 
     /** Clears shared-element and enter/exit transitions, so the default scene animations apply. */
     private fun Fragment.clearTransitions() {

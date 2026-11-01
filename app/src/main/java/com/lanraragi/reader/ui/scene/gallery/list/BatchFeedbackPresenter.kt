@@ -78,6 +78,9 @@ object BatchFeedbackPresenter {
         is BatchOp.AddToTankoubon -> R.plurals.batch_done_tankoubon
         BatchOp.ClearNew -> R.plurals.batch_done_clear_new
         BatchOp.DeleteArchives -> R.plurals.batch_done_delete
+        BatchOp.DownloadTanks -> R.plurals.batch_done_tank_download
+        BatchOp.SortTanks -> R.plurals.batch_done_tank_sort
+        BatchOp.DeleteTanks -> R.plurals.batch_done_tank_delete
     }
 
     @PluralsRes
@@ -86,6 +89,9 @@ object BatchFeedbackPresenter {
         is BatchOp.AddToTankoubon -> R.plurals.batch_fail_title_tankoubon
         BatchOp.ClearNew -> R.plurals.batch_fail_title_clear_new
         BatchOp.DeleteArchives -> R.plurals.batch_fail_title_delete
+        BatchOp.DownloadTanks -> R.plurals.batch_fail_title_tank_download
+        BatchOp.SortTanks -> R.plurals.batch_fail_title_tank_sort
+        BatchOp.DeleteTanks -> R.plurals.batch_fail_title_tank_delete
         // Download queueing is synchronous and infallible; a Download result
         // can never carry failures.
         BatchOp.Download -> error("download batches cannot fail")

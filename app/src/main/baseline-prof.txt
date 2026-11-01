@@ -10765,7 +10765,6 @@ Lcom/lanraragi/reader/ui/scene/SolidScene$Companion;
 HSPLcom/lanraragi/reader/ui/scene/SolidScene$Companion;-><init>()V
 HSPLcom/lanraragi/reader/ui/scene/SolidScene$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 Lcom/lanraragi/reader/ui/scene/TankoubonDetailScene;
-Lcom/lanraragi/reader/ui/scene/TankoubonsScene;
 Lcom/lanraragi/reader/ui/scene/ToolbarScene;
 PLcom/lanraragi/reader/ui/scene/TransitionNameFactory;-><clinit>()V
 PLcom/lanraragi/reader/ui/scene/TransitionNameFactory;-><init>()V

@@ -8,6 +8,7 @@ import androidx.core.content.edit
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.LRRUtils
+import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import java.util.Locale
 
@@ -169,6 +170,18 @@ object AppearanceSettings {
 
     @JvmStatic
     fun putGroupTanks(value: Boolean) = Settings.putBoolean(KEY_GROUP_TANKS, value)
+
+    // --- Tanks-only list sort (local; the server cannot sort tanks) ---
+    const val KEY_TANK_LIST_SORT = "tank_list_sort"
+
+    @JvmStatic
+    fun getTankListSort(): TankBrowse.Sort {
+        val raw = Settings.getString(KEY_TANK_LIST_SORT, null)
+        return TankBrowse.Sort.entries.firstOrNull { it.name == raw } ?: TankBrowse.Sort.NAME
+    }
+
+    @JvmStatic
+    fun putTankListSort(value: TankBrowse.Sort) = Settings.putString(KEY_TANK_LIST_SORT, value.name)
 
     // --- Hide completed archives in browse/search (LANraragi hidecompleted, 0.9.8+) ---
     const val KEY_HIDE_COMPLETED = "search_hide_completed"

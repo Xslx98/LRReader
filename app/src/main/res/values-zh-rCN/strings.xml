@@ -347,7 +347,6 @@
     <string name="tank_member_more">+%1$d</string>
     <string name="tank_member_view_detail">查看单本详情</string>
     <string name="tank_page_divider">第 %1$d 章 · %2$s</string>
-    <string name="tank_view_detail">详情</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_tag_sync_failed">「%1$s」标签归并失败</string>
     <string name="tank_category_sync_failed">「%1$s」分类同步失败</string>
@@ -374,7 +373,6 @@
     <string name="tank_undo">撤销</string>
     <string name="tank_sort_by_title">按标题排序</string>
     <string name="tank_reverse_order">反转顺序</string>
-    <string name="tank_auto_sort">自动排序成员</string>
     <string name="tank_move_top">置顶</string>
     <string name="tank_move_bottom">置底</string>
     <string name="tank_move_to_position">移到第 N 位…</string>
@@ -422,6 +420,10 @@
     <string name="tank_picker_section_all">全部合订本</string>
     <string name="tank_picker_apply">应用</string>
     <string name="tank_picker_empty">没有匹配的合订本</string>
+    <string name="tank_sort">排序</string>
+    <string name="tank_sort_name">按名称</string>
+    <string name="tank_sort_members">按成员数</string>
+    <string name="tank_sort_recent_read">最近阅读</string>
     <string name="batch_add_to_tankoubon">合订本</string>
 
     <!-- List multi-select batch operations -->
@@ -455,6 +457,27 @@
     <string name="batch_tank_added_some_members">已加入合订本（%1$d 项），%2$d 项已在其中</string>
     <plurals name="batch_tank_all_members">
         <item quantity="other">所选 %d 项已全部在合订本中</item>
+    </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="other">已加入下载队列（%d 个合订本）</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="other">已排序 %d 个合订本的成员</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="other">已删除 %d 个合订本</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="other">%d 个合订本无法加入下载</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="other">%d 个合订本排序失败</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="other">%d 个合订本删除失败</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="other">删除 %d 个合订本？其中的档案不会被删除，但合订本自身的简介、附加标签和阅读进度将一并丢失。</item>
     </plurals>
     <string name="download_already_local">已下载，无需重新下载</string>
     <plurals name="batch_done_category">

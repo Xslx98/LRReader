@@ -55,8 +55,7 @@ import org.robolectric.annotation.Config
  * Members have 10 pages each, so global page = memberIndex * 10 + page0 + 1.
  *
  * The mock server keeps a mutable member order so the rollback reload
- * returns whatever the server currently holds. Harness mirrors
- * [TankoubonsViewModelTest].
+ * returns whatever the server currently holds.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)

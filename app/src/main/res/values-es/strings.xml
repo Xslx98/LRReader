@@ -357,7 +357,6 @@
     <string name="tank_member_more">+%1$d</string>
     <string name="tank_member_view_detail">Ver detalles del archivo</string>
     <string name="tank_page_divider">Capítulo %1$d · %2$s</string>
-    <string name="tank_view_detail">Detalles</string>
     <string name="tank_detail_pages">%1$d/%2$dP</string>
     <string name="tank_tag_sync_failed">Error al fusionar etiquetas de “%1$s”</string>
     <string name="tank_category_sync_failed">Error al actualizar las categorías de “%1$s”</string>
@@ -384,7 +383,6 @@
     <string name="tank_undo">Deshacer</string>
     <string name="tank_sort_by_title">Ordenar por título</string>
     <string name="tank_reverse_order">Invertir orden</string>
-    <string name="tank_auto_sort">Ordenar miembros automáticamente</string>
     <string name="tank_move_top">Arriba</string>
     <string name="tank_move_bottom">Abajo</string>
     <string name="tank_move_to_position">Posición…</string>
@@ -432,6 +430,10 @@
     <string name="tank_picker_section_all">Todos los tankoubons</string>
     <string name="tank_picker_apply">Aplicar</string>
     <string name="tank_picker_empty">Ningún tankoubon coincide</string>
+    <string name="tank_sort">Ordenar</string>
+    <string name="tank_sort_name">Por nombre</string>
+    <string name="tank_sort_members">Por número de archivos</string>
+    <string name="tank_sort_recent_read">Leídos recientemente</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
     <!-- List multi-select batch operations -->
@@ -478,6 +480,34 @@
     <plurals name="batch_tank_all_members">
         <item quantity="one">%d elemento ya está en el tankoubon</item>
         <item quantity="other">Los %d elementos ya están en el tankoubon</item>
+    </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="one">%d tankoubon añadido a descargas</item>
+        <item quantity="other">%d tankoubons añadidos a descargas</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="one">Miembros de %d tankoubon ordenados</item>
+        <item quantity="other">Miembros de %d tankoubons ordenados</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="one">%d tankoubon eliminado</item>
+        <item quantity="other">%d tankoubons eliminados</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="one">No se pudo añadir %d tankoubon</item>
+        <item quantity="other">No se pudieron añadir %d tankoubons</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="one">No se pudo ordenar %d tankoubon</item>
+        <item quantity="other">No se pudieron ordenar %d tankoubons</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="one">No se pudo eliminar %d tankoubon</item>
+        <item quantity="other">No se pudieron eliminar %d tankoubons</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="one">¿Eliminar %d tankoubon? Los archivos se conservan, pero se pierden su resumen, etiquetas adicionales y progreso de lectura.</item>
+        <item quantity="other">¿Eliminar %d tankoubons? Los archivos se conservan, pero se pierden sus resúmenes, etiquetas adicionales y progreso de lectura.</item>
     </plurals>
     <string name="download_already_local">Ya descargado</string>
     <plurals name="batch_done_category">

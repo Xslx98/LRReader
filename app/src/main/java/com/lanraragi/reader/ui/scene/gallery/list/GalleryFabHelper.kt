@@ -20,9 +20,12 @@ internal class GalleryFabHelper(
     private val filterHelper: () -> GalleryFilterHelper?,
     private val itemActionHelper: () -> GalleryItemActionHelper?,
     private val uploadHelper: () -> GalleryUploadHelper?,
+    /** Tank mode's create-only FAB; @return handled (no menu to toggle) */
+    private val createTank: () -> Boolean = { false },
 ) : FabLayout.OnClickFabListener, FabLayout.OnExpandListener {
 
     override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?) {
+        if (createTank()) return
         if ((stateHelper()?.state
                 ?: GalleryStateHelper.STATE_NORMAL) == GalleryStateHelper.STATE_NORMAL
         ) {

@@ -96,6 +96,17 @@ class BatchFeedbackPresenterTest {
     }
 
     @Test
+    fun tankModeOps_mapToTankTipsAndFailTitles() {
+        assertEquals(R.plurals.batch_done_tank_download, pluralTipFor(result(BatchOp.DownloadTanks, 2, 0)).textRes)
+        assertEquals(R.plurals.batch_done_tank_sort, pluralTipFor(result(BatchOp.SortTanks, 2, 0)).textRes)
+        assertEquals(R.plurals.batch_done_tank_delete, pluralTipFor(result(BatchOp.DeleteTanks, 2, 0)).textRes)
+        assertEquals(
+            R.plurals.batch_fail_title_tank_delete,
+            BatchFeedbackPresenter.dialogFor(result(BatchOp.DeleteTanks, 0, 1))!!.titleRes,
+        )
+    }
+
+    @Test
     fun failures_suppressTip_andMapToOpSpecificDialog() {
         val r = result(BatchOp.AddToCategory("c1"), succeeded = 10, failed = 2)
         assertNull(BatchFeedbackPresenter.tipFor(r))

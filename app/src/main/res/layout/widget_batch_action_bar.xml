@@ -118,6 +118,13 @@
                 android:text="@string/batch_clear_new" />
 
             <TextView
+                android:id="@+id/batch_tank_sort"
+                style="@style/BatchActionButton"
+                app:drawableTopCompat="@drawable/ic_sort_filter"
+                android:text="@string/tank_sort"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/batch_delete"
                 style="@style/BatchActionButton"
                 app:drawableTint="@color/destructive_action"

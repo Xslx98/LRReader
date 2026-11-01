@@ -33,6 +33,12 @@ class GalleryStateHelper(private val callback: Callback) {
         fun getLeftDrawable(): DrawerArrowDrawable?
         fun getRightDrawable(): AddDeleteDrawable?
         fun setDrawerLockMode(mode: Int, gravity: Int)
+
+        /**
+         * The search bar's right icon now belongs to the normal state ([normal])
+         * or to a search state (clear text). Tank mode swaps its sort icon in.
+         */
+        fun onRightIconNormal(normal: Boolean) {}
     }
 
     var state = STATE_NORMAL
@@ -257,6 +263,7 @@ class GalleryStateHelper(private val callback: Callback) {
                 rightDrawable.setDelete(if (animation) ANIMATE_TIME else 0)
                 callback.getSearchBar()?.setLeftIconContentDescription(R.string.cd_back)
                 callback.getSearchBar()?.setRightIconContentDescription(R.string.cd_clear_search)
+                callback.onRightIconNormal(false)
             }
             SearchBar.STATE_SEARCH -> {
                 if (newState == SearchBar.STATE_NORMAL) {
@@ -264,6 +271,7 @@ class GalleryStateHelper(private val callback: Callback) {
                     rightDrawable.setAdd(if (animation) ANIMATE_TIME else 0)
                     callback.getSearchBar()?.setLeftIconContentDescription(R.string.cd_menu)
                     callback.getSearchBar()?.setRightIconContentDescription(R.string.search)
+                    callback.onRightIconNormal(true)
                 }
             }
             SearchBar.STATE_SEARCH_LIST -> {
@@ -272,6 +280,7 @@ class GalleryStateHelper(private val callback: Callback) {
                     rightDrawable.setAdd(if (animation) ANIMATE_TIME else 0)
                     callback.getSearchBar()?.setLeftIconContentDescription(R.string.cd_menu)
                     callback.getSearchBar()?.setRightIconContentDescription(R.string.search)
+                    callback.onRightIconNormal(true)
                 }
             }
         }
