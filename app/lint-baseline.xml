@@ -295,17 +295,6 @@
     </issue>
 
     <issue
-        id="UseRequiresApi"
-        message="Use `@RequiresApi(ApiHelper.VERSION_CODES.HONEYCOMB) instead of `@TargetApi` to propagate the requirement to callers of `transformEventNew`"
-        errorLine1="    @TargetApi(ApiHelper.VERSION_CODES.HONEYCOMB)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/glview/util/MotionEventHelper.java"
-            line="36"
-            column="5"/>
-    </issue>
-
-    <issue
         id="UseCompatLoadingForDrawables"
         message="Use `ResourcesCompat.getDrawable()`"
         errorLine1="                context.resources.getDrawable(R.drawable.shadow_8dp) as NinePatchDrawable"
@@ -952,17 +941,6 @@
             file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
             line="262"
             column="17"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 11"
-        errorLine1="    @TargetApi(ApiHelper.VERSION_CODES.HONEYCOMB)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/glview/util/MotionEventHelper.java"
-            line="36"
-            column="5"/>
     </issue>
 
     <issue
