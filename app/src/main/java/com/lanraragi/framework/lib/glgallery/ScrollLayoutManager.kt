@@ -43,132 +43,132 @@ import kotlin.math.min
 internal class ScrollLayoutManager(
     context: Context,
     galleryView: GalleryView,
-    private var mInterval: Int,
+    private var interval: Int,
 ) : GalleryView.LayoutManager(galleryView) {
 
-    private var mAdapter: GalleryView.Adapter? = null
+    private var adapter: GalleryView.Adapter? = null
 
-    private var mProgress: GLProgressView? = null
-    private var mErrorStr: String? = null
-    private var mErrorView: GLTextureView? = null
-    private val mPages = ArrayDeque<GalleryPageView>()
-    private val mTempPages = ArrayDeque<GalleryPageView>()
+    private var progress: GLProgressView? = null
+    private var errorStr: String? = null
+    private var errorView: GLTextureView? = null
+    private val pages = ArrayDeque<GalleryPageView>()
+    private val tempPages = ArrayDeque<GalleryPageView>()
 
-    private var mScale = 0.5f
-    private var mOffsetX = 0
-    private var mOffsetY = 0
-    private var mDeltaX = 0
-    private var mDeltaY = 0
-    private var mKeepTopPageIndex = GalleryPageView.INVALID_INDEX
-    private var mKeepTop = INVALID_TOP
-    private var mFirstShownPageIndex = GalleryPageView.INVALID_INDEX
-    private var mScrollUp = false
-    private var mFlingUp = false
-    private var mStopAnimationFinger = false
+    private var scale = 0.5f
+    private var offsetX = 0
+    private var offsetY = 0
+    private var deltaX = 0
+    private var deltaY = 0
+    private var keepTopPageIndex = GalleryPageView.INVALID_INDEX
+    private var keepTop = INVALID_TOP
+    private var firstShownPageIndex = GalleryPageView.INVALID_INDEX
+    private var scrollUp = false
+    private var flingUp = false
+    private var stopAnimationFinger = false
 
-    private val mPageFling: PageFling = PageFling(context)
-    private val mSmoothScaler: SmoothScaler = SmoothScaler()
-    private val mOverScroller: OverScroller = OverScroller()
+    private val pageFling: PageFling = PageFling(context)
+    private val smoothScaler: SmoothScaler = SmoothScaler()
+    private val overScroller: OverScroller = OverScroller()
 
     // Current index
-    private var mIndex = 0
+    private var index = 0
 
-    private var mBottomStateBottom = 0
-    private var mBottomStateHasNext = false
+    private var bottomStateBottom = 0
+    private var bottomStateHasNext = false
 
     // Pending intra-page scroll fraction to apply on the first fill
     // where the target page is laid out and loaded. NaN = nothing
     // pending. Cleared on user scroll/fling/touch so we don't fight
     // the user. See setStartScrollFraction / onFill / onDown.
-    private var mPendingStartFraction = Float.NaN
-    private var mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
+    private var pendingStartFraction = Float.NaN
+    private var pendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
 
     fun setInterval(interval: Int) {
-        if (mInterval == interval) {
+        if (this.interval == interval) {
             return
         }
 
-        if (mAdapter != null) {
-            val index = getInternalCurrentIndex()
+        if (this.adapter != null) {
+            val index = internalCurrentIndex
             val adapter = onDetach()
-            mInterval = interval
+            this.interval = interval
             onAttach(adapter)
             setCurrentIndex(index)
-            mGalleryView.requestFill()
+            galleryView.requestFill()
         } else {
-            mInterval = interval
+            this.interval = interval
         }
     }
 
     private fun resetParameters() {
-        mScale = 1.0f
-        mOffsetX = 0
-        mOffsetY = 0
-        mDeltaX = 0
-        mDeltaY = 0
-        mKeepTopPageIndex = GalleryPageView.INVALID_INDEX
-        mKeepTop = INVALID_TOP
-        mFirstShownPageIndex = GalleryPageView.INVALID_INDEX
-        mScrollUp = false
-        mFlingUp = false
-        mStopAnimationFinger = false
-        mPendingStartFraction = Float.NaN
-        mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
+        scale = 1.0f
+        offsetX = 0
+        offsetY = 0
+        deltaX = 0
+        deltaY = 0
+        keepTopPageIndex = GalleryPageView.INVALID_INDEX
+        keepTop = INVALID_TOP
+        firstShownPageIndex = GalleryPageView.INVALID_INDEX
+        scrollUp = false
+        flingUp = false
+        stopAnimationFinger = false
+        pendingStartFraction = Float.NaN
+        pendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
     }
 
     // Return true for animations are running
     private fun cancelAllAnimations(): Boolean {
-        val running = mPageFling.isRunning ||
-            mSmoothScaler.isRunning ||
-            mOverScroller.isRunning
-        mPageFling.cancel()
-        mSmoothScaler.cancel()
-        mOverScroller.cancel()
+        val running = pageFling.isRunning ||
+            smoothScaler.isRunning ||
+            overScroller.isRunning
+        pageFling.cancel()
+        smoothScaler.cancel()
+        overScroller.cancel()
         return running
     }
 
     override fun onAttach(adapter: GalleryView.Adapter?) {
-        AssertUtils.assertNull("The ScrollLayoutManager is attached", mAdapter)
+        AssertUtils.assertNull("The ScrollLayoutManager is attached", this.adapter)
         AssertUtils.assertNotNull("The iterator is null", adapter)
-        mAdapter = adapter
+        this.adapter = adapter
         // Reset parameters
         resetParameters()
     }
 
     private fun removeProgress() {
-        val progress = mProgress
+        val progress = this.progress
         if (progress != null) {
-            mGalleryView.removeComponent(progress)
-            mGalleryView.releaseProgress(progress)
-            mProgress = null
+            galleryView.removeComponent(progress)
+            galleryView.releaseProgress(progress)
+            this.progress = null
         }
     }
 
     private fun removeErrorView() {
-        val errorView = mErrorView
+        val errorView = this.errorView
         if (errorView != null) {
-            mGalleryView.removeComponent(errorView)
-            mGalleryView.releaseErrorView(errorView)
-            mErrorView = null
-            mErrorStr = null
+            galleryView.removeComponent(errorView)
+            galleryView.releaseErrorView(errorView)
+            this.errorView = null
+            errorStr = null
         }
     }
 
     private fun removePage(page: GalleryPageView) {
-        mGalleryView.removeComponent(page)
-        mAdapter!!.unbind(page)
-        mGalleryView.releasePage(page)
+        galleryView.removeComponent(page)
+        adapter!!.unbind(page)
+        galleryView.releasePage(page)
     }
 
     private fun removeAllPages() {
-        for (page in mPages) {
+        for (page in pages) {
             removePage(page)
         }
-        mPages.clear()
+        pages.clear()
     }
 
     override fun onDetach(): GalleryView.Adapter? {
-        AssertUtils.assertNotNull("The PagerLayoutManager is not attached", mAdapter)
+        AssertUtils.assertNotNull("The PagerLayoutManager is not attached", adapter)
 
         // Cancel all animations
         cancelAllAnimations()
@@ -179,14 +179,14 @@ internal class ScrollLayoutManager(
         removeAllPages()
 
         // Clear iterator
-        val iterator = mAdapter
-        mAdapter = null
+        val iterator = adapter
+        adapter = null
 
         return iterator
     }
 
     private fun obtainPage(): GalleryPageView {
-        val page = mGalleryView.obtainPage()
+        val page = galleryView.obtainPage()
         page.imageView.setScaleOffset(ImageView.SCALE_FIT, ImageView.START_POSITION_TOP_RIGHT, 1.0f)
         return page
     }
@@ -206,7 +206,7 @@ internal class ScrollLayoutManager(
     }
 
     private fun isInScreen(page: GalleryPageView): Boolean {
-        val height = mGalleryView.height
+        val height = galleryView.height
         val bound = page.bounds()
         val pageTop = bound.top
         val pageBottom = bound.bottom
@@ -214,21 +214,22 @@ internal class ScrollLayoutManager(
             (pageTop < 0 && pageBottom > height)
     }
 
-    private fun getReservation(): Float = max(RESERVATION, ((1 + 2 * RESERVATION) * mScale - 1) / 2)
+    private val reservation: Float
+        get() = max(RESERVATION, ((1 + 2 * RESERVATION) * scale - 1) / 2)
 
     private fun fillPages(startIndexArg: Int, startOffsetArg: Int) {
         var startIndex = startIndexArg
         var startOffset = startOffsetArg
-        val adapter = mAdapter!!
-        val galleryView = mGalleryView
-        val pages = mPages
-        val tempPages = mTempPages
+        val adapter = this.adapter!!
+        val galleryView = this.galleryView
+        val pages = this.pages
+        val tempPages = this.tempPages
         val width = galleryView.width
         val height = galleryView.height
-        val pageWidth = (width * mScale).toInt()
+        val pageWidth = (width * scale).toInt()
         val size = adapter.size()
-        val interval = mInterval
-        val reservation = getReservation()
+        val interval = this.interval
+        val reservation = this.reservation
         val minY = (-height * reservation).toInt()
         val maxY = (height * (1 + reservation)).toInt()
         val widthSpec = GLView.MeasureSpec.makeMeasureSpec(pageWidth, GLView.MeasureSpec.EXACTLY)
@@ -298,9 +299,9 @@ internal class ScrollLayoutManager(
         // Sanitize offsetX
         val margin = pageWidth - width
         if (margin >= 0) {
-            mOffsetX = MathUtils.clamp(mOffsetX, -margin, 0)
+            offsetX = MathUtils.clamp(offsetX, -margin, 0)
         } else {
-            mOffsetX = -margin / 2
+            offsetX = -margin / 2
         }
 
         // Layout start page
@@ -312,7 +313,7 @@ internal class ScrollLayoutManager(
         }
         pages.add(page)
         page.measure(widthSpec, heightSpec)
-        page.layout(mOffsetX, startOffset, mOffsetX + pageWidth, startOffset + page.measuredHeight)
+        page.layout(offsetX, startOffset, offsetX + pageWidth, startOffset + page.measuredHeight)
 
         // Prepare for check up and down
         var bottomOffset = startOffset - interval
@@ -329,7 +330,7 @@ internal class ScrollLayoutManager(
             }
             pages.addFirst(page)
             page.measure(widthSpec, heightSpec)
-            page.layout(mOffsetX, bottomOffset - page.measuredHeight, mOffsetX + pageWidth, bottomOffset)
+            page.layout(offsetX, bottomOffset - page.measuredHeight, offsetX + pageWidth, bottomOffset)
             // Update
             bottomOffset -= page.measuredHeight + interval
             index--
@@ -356,7 +357,7 @@ internal class ScrollLayoutManager(
             }
             pages.addLast(page)
             page.measure(widthSpec, heightSpec)
-            page.layout(mOffsetX, topOffset, mOffsetX + pageWidth, topOffset + page.measuredHeight)
+            page.layout(offsetX, topOffset, offsetX + pageWidth, topOffset + page.measuredHeight)
             // Update
             topOffset += page.measuredHeight + interval
             index++
@@ -392,7 +393,7 @@ internal class ScrollLayoutManager(
                     p.offsetTopAndBottom(offset)
                 }
                 val bottom = pagesTop - interval + offset
-                page.layout(mOffsetX, bottom - page.measuredHeight, mOffsetX + pageWidth, bottom)
+                page.layout(offsetX, bottom - page.measuredHeight, offsetX + pageWidth, bottom)
             }
         }
 
@@ -405,14 +406,14 @@ internal class ScrollLayoutManager(
         // Update state
         if (!pages.isEmpty()) {
             page = pages.first()
-            mIndex = page.index
-            mOffsetY = page.bounds().top
+            this.index = page.index
+            offsetY = page.bounds().top
         }
     }
 
     override fun onFill() {
-        val adapter = mAdapter
-        val galleryView = mGalleryView
+        val adapter = this.adapter
+        val galleryView = this.galleryView
         AssertUtils.assertNotNull("The PagerLayoutManager is not attached", adapter)
 
         val size = adapter!!.size()
@@ -424,10 +425,10 @@ internal class ScrollLayoutManager(
             removeAllPages()
 
             // Ensure progress
-            var progress = mProgress
+            var progress = this.progress
             if (progress == null) {
                 progress = galleryView.obtainProgress()
-                mProgress = progress
+                this.progress = progress
                 galleryView.addComponent(progress)
             }
 
@@ -436,9 +437,9 @@ internal class ScrollLayoutManager(
         } else if (size <= GalleryProvider.STATE_ERROR || size == 0) { // Get error or empty, show error text
             // Ensure error is not null
             val errorStr: String = if (0 == size) {
-                galleryView.getEmptyStr()
+                galleryView.emptyStr
             } else {
-                error ?: galleryView.getDefaultErrorStr()
+                error ?: galleryView.defaultErrorStr
             }
 
             // Remove progress and all pages
@@ -446,61 +447,61 @@ internal class ScrollLayoutManager(
             removeAllPages()
 
             // Ensure error view
-            var errorView = mErrorView
+            var errorView = this.errorView
             if (errorView == null) {
                 errorView = galleryView.obtainErrorView()
-                mErrorView = errorView
+                this.errorView = errorView
                 galleryView.addComponent(errorView)
             }
 
             // Update error string
-            if (errorStr != mErrorStr) {
-                mErrorStr = errorStr
+            if (errorStr != this.errorStr) {
+                this.errorStr = errorStr
                 galleryView.bindErrorView(errorView, errorStr)
             }
 
             // Place error view center
             placeCenter(errorView)
         } else {
-            val pages = mPages
+            val pages = this.pages
 
             // Remove progress and error view
             removeProgress()
             removeErrorView()
 
             // Ensure index in range
-            var index = mIndex
+            var index = this.index
             if (index < 0) {
                 Log.e(TAG, "index < 0, index = $index")
                 index = 0
-                mIndex = index
+                this.index = index
                 removeAllPages()
             } else if (index >= size) {
                 Log.e(TAG, "index >= size, index = $index, size = $size")
                 index = size - 1
-                mIndex = index
+                this.index = index
                 removeAllPages()
             }
 
             // Find keep index and keep top
             var keepTop = INVALID_TOP
             val keepTopIndex: Int
-            if (GalleryPageView.INVALID_INDEX != mKeepTopPageIndex) {
-                keepTopIndex = mKeepTopPageIndex
-                keepTop = mKeepTop
-            } else if (GalleryPageView.INVALID_INDEX != mFirstShownPageIndex) {
-                keepTopIndex = mFirstShownPageIndex
+            if (GalleryPageView.INVALID_INDEX != keepTopPageIndex) {
+                keepTopIndex = keepTopPageIndex
+                keepTop = this.keepTop
+            } else if (GalleryPageView.INVALID_INDEX != firstShownPageIndex) {
+                keepTopIndex = firstShownPageIndex
             } else {
                 keepTopIndex = GalleryPageView.INVALID_INDEX
             }
             if (GalleryPageView.INVALID_INDEX != keepTopIndex && INVALID_TOP == keepTop) {
-                keepTop = mOffsetY
+                keepTop = offsetY
                 for (page in pages) {
                     // Check keep page
                     if (keepTopIndex == page.index) {
                         break
                     }
-                    keepTop += page.height + mInterval
+                    keepTop += page.height + interval
                 }
             }
 
@@ -510,28 +511,28 @@ internal class ScrollLayoutManager(
                 startIndex = keepTopIndex
                 startOffset = keepTop
             } else {
-                startIndex = mIndex
-                startOffset = mOffsetY
+                startIndex = this.index
+                startOffset = offsetY
             }
             fillPages(startIndex, startOffset)
 
             // Get first shown image
-            mFirstShownPageIndex = GalleryPageView.INVALID_INDEX
-            for (page in mPages) {
+            firstShownPageIndex = GalleryPageView.INVALID_INDEX
+            for (page in this.pages) {
                 // Check first shown loaded page
-                if ((mScrollUp || mFlingUp) && !page.isLoaded) {
+                if ((scrollUp || flingUp) && !page.isLoaded) {
                     continue
                 }
 
                 if (isInScreen(page)) {
-                    mFirstShownPageIndex = page.index
-                    mKeepTopPageIndex = page.index
+                    firstShownPageIndex = page.index
+                    keepTopPageIndex = page.index
                     break
                 }
             }
 
             // Apply pending intra-page restore via the keep-top
-            // anchors (mKeepTopPageIndex / mKeepTop) — the same
+            // anchors (keepTopPageIndex / keepTop) — the same
             // mechanism setCurrentIndex / onScale already use to pin a
             // page at a specific viewport Y across fills. This is the
             // GL-side analogue of
@@ -547,70 +548,70 @@ internal class ScrollLayoutManager(
             // onPageSucceed so this branch gets a second chance when
             // the target's image arrives. onScroll / onDown clear
             // pending the moment the user interacts.
-            if (!mPendingStartFraction.isNaN() &&
-                mPendingStartFractionPageIndex != GalleryPageView.INVALID_INDEX
+            if (!pendingStartFraction.isNaN() &&
+                pendingStartFractionPageIndex != GalleryPageView.INVALID_INDEX
             ) {
                 var target: GalleryPageView? = null
-                for (p in mPages) {
-                    if (p.index == mPendingStartFractionPageIndex) {
+                for (p in this.pages) {
+                    if (p.index == pendingStartFractionPageIndex) {
                         target = p
                         break
                     }
                 }
                 if (target != null && target.isLoaded && target.height > 0) {
-                    val desiredTop = -Math.round(mPendingStartFraction * target.height)
+                    val desiredTop = -Math.round(pendingStartFraction * target.height)
                     Log.d(
                         TAG,
-                        "[FRACTION] applying: page=" + mPendingStartFractionPageIndex +
-                            " fraction=" + mPendingStartFraction +
+                        "[FRACTION] applying: page=" + pendingStartFractionPageIndex +
+                            " fraction=" + pendingStartFraction +
                             " pageHeight=" + target.height +
                             " desiredTop=" + desiredTop,
                     )
                     // Pin the target page at desiredTop via keep-top
-                    // anchors. fillPages reads (mKeepTopPageIndex,
-                    // mKeepTop) at the start of each fill (line 484)
+                    // anchors. fillPages reads (keepTopPageIndex,
+                    // keepTop) at the start of each fill (line 484)
                     // and uses them as (startIndex, startOffset),
                     // exactly what we want. The pin survives until
                     // onScroll/onFling clear it on user input
                     // (lines ~744, ~756).
-                    mKeepTopPageIndex = mPendingStartFractionPageIndex
-                    mKeepTop = desiredTop
-                    mPendingStartFraction = Float.NaN
-                    mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
+                    keepTopPageIndex = pendingStartFractionPageIndex
+                    this.keepTop = desiredTop
+                    pendingStartFraction = Float.NaN
+                    pendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
                     // Force an immediate re-fill within this render
                     // cycle so the new anchor lands on screen now;
-                    // mGalleryView.requestFill() would be a no-op
+                    // galleryView.requestFill() would be a no-op
                     // here since we're inside onFill
-                    // (mEnableRequestFill == false).
-                    mGalleryView.forceFill()
+                    // (GalleryView's requestFillEnabled == false).
+                    this.galleryView.forceFill()
                 }
             }
         }
     }
 
     override fun onDown() {
-        mDeltaX = 0
-        mDeltaY = 0
-        mScrollUp = false
-        mStopAnimationFinger = cancelAllAnimations()
+        deltaX = 0
+        deltaY = 0
+        scrollUp = false
+        stopAnimationFinger = cancelAllAnimations()
         // User touch wins: drop any pending start-fraction restore so we
         // don't snap the page out from under the finger if the target
         // page's image happens to load mid-gesture.
-        mPendingStartFraction = Float.NaN
-        mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
+        pendingStartFraction = Float.NaN
+        pendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
     }
 
     override fun onUp() {
-        mScrollUp = false
-        mGalleryView.getEdgeView().onRelease()
+        scrollUp = false
+        galleryView.edgeView.onRelease()
     }
 
     override fun onDoubleTapConfirmed(x: Float, y: Float) {
-        if (mPages.size <= 0) {
+        if (pages.size <= 0) {
             return
         }
 
-        val startScale = mScale
+        val startScale = scale
         val endScale: Float
         if (startScale < MAX_SCALE - SCALE_ERROR) {
             endScale = MAX_SCALE
@@ -619,37 +620,37 @@ internal class ScrollLayoutManager(
         }
 
         // Follows the system animator scale; at 0 the zoom is instant.
-        mSmoothScaler.startSmoothScaler(
+        smoothScaler.startSmoothScaler(
             x, y, startScale, endScale,
             AnimatorDurationScale.scale(DOUBLE_TAP_SCALE_DURATION).toInt(),
         )
     }
 
     fun overScrollEdge(dx: Int, dy: Int, x: Float, y: Float) {
-        val edgeView = mGalleryView.getEdgeView()
+        val edgeView = galleryView.edgeView
 
-        mDeltaX += dx
-        mDeltaY += dy
+        deltaX += dx
+        deltaY += dy
 
-        if (mDeltaX < 0) {
-            edgeView.onPull((-mDeltaX).toFloat(), y, GLEdgeView.LEFT)
+        if (deltaX < 0) {
+            edgeView.onPull((-deltaX).toFloat(), y, GLEdgeView.LEFT)
             if (!edgeView.isFinished(GLEdgeView.RIGHT)) {
                 edgeView.onRelease(GLEdgeView.RIGHT)
             }
-        } else if (mDeltaX > 0) {
-            edgeView.onPull(mDeltaX.toFloat(), y, GLEdgeView.RIGHT)
+        } else if (deltaX > 0) {
+            edgeView.onPull(deltaX.toFloat(), y, GLEdgeView.RIGHT)
             if (!edgeView.isFinished(GLEdgeView.LEFT)) {
                 edgeView.onRelease(GLEdgeView.LEFT)
             }
         }
 
-        if (mDeltaY < 0) {
-            edgeView.onPull((-mDeltaY).toFloat(), x, GLEdgeView.TOP)
+        if (deltaY < 0) {
+            edgeView.onPull((-deltaY).toFloat(), x, GLEdgeView.TOP)
             if (!edgeView.isFinished(GLEdgeView.BOTTOM)) {
                 edgeView.onRelease(GLEdgeView.BOTTOM)
             }
-        } else if (mDeltaY > 0) {
-            edgeView.onPull(mDeltaY.toFloat(), x, GLEdgeView.BOTTOM)
+        } else if (deltaY > 0) {
+            edgeView.onPull(deltaY.toFloat(), x, GLEdgeView.BOTTOM)
             if (!edgeView.isFinished(GLEdgeView.TOP)) {
                 edgeView.onRelease(GLEdgeView.TOP)
             }
@@ -657,29 +658,29 @@ internal class ScrollLayoutManager(
     }
 
     private fun getBottomState() {
-        val pages: List<GalleryPageView> = mPages
-        var bottom = mOffsetY
+        val pages: List<GalleryPageView> = this.pages
+        var bottom = offsetY
         var i = 0
         for (page in pages) {
             if (i != 0) {
-                bottom += mInterval
+                bottom += interval
             }
             bottom += page.height
             i++
         }
-        val hasNext = mIndex + pages.size < mAdapter!!.size()
+        val hasNext = index + pages.size < adapter!!.size()
 
-        mBottomStateBottom = bottom
-        mBottomStateHasNext = hasNext
+        bottomStateBottom = bottom
+        bottomStateHasNext = hasNext
     }
 
     /**
      * Whether the strip is scrolled to (or past) the bottom edge of the
      * last page — the exact condition that gates the BOTTOM over-scroll
      * branch in [onPageRight]. Reusing [getBottomState]
-     * out-of-band is safe: it only writes the mBottomState* scratch
+     * out-of-band is safe: it only writes the bottomState* scratch
      * fields, and every other caller recomputes them immediately before
-     * reading. It does dereference mAdapter unconditionally though, so
+     * reading. It does dereference adapter unconditionally though, so
      * guard the detached/empty cases first.
      *
      * Known acceptable edge: a strip that fully fits on one screen
@@ -687,46 +688,47 @@ internal class ScrollLayoutManager(
      * page's bottom is always within the viewport then. Tolerable — the
      * whole archive is visible, so "at the end" is still accurate.
      */
-    override fun isReachEnd(): Boolean {
-        if (mAdapter == null || mPages.isEmpty() || mAdapter!!.size() <= 0) {
-            return false
+    override val isReachEnd: Boolean
+        get() {
+            if (adapter == null || pages.isEmpty() || adapter!!.size() <= 0) {
+                return false
+            }
+            getBottomState()
+            return !bottomStateHasNext && bottomStateBottom <= galleryView.height
         }
-        getBottomState()
-        return !mBottomStateHasNext && mBottomStateBottom <= mGalleryView.height
-    }
 
     override fun collectPageTransforms(out: MutableList<PageTransform>) {
-        for (page in mPages) {
+        for (page in pages) {
             collectPageTransform(out, page)
         }
     }
 
     // True for get top or bottom
     private fun scrollInternal(dx: Float, dy: Float, fling: Boolean, x: Float, y: Float): Boolean {
-        if (mPages.size <= 0) {
+        if (pages.size <= 0) {
             return false
         }
 
-        val galleryView = mGalleryView
+        val galleryView = this.galleryView
         val width = galleryView.width
         val height = galleryView.height
-        val pageWidth = (width * mScale).toInt()
-        val reservation = getReservation()
+        val pageWidth = (width * scale).toInt()
+        val reservation = this.reservation
         var requestFill = false
         var result = false
 
         val margin = pageWidth - width
         val dxInt = dx.toInt()
         if (margin > 0 && 0 != dxInt) {
-            val oldOffsetX = mOffsetX
+            val oldOffsetX = offsetX
             val exceptOffsetX = oldOffsetX - dxInt
-            mOffsetX = MathUtils.clamp(exceptOffsetX, -margin, 0)
-            if (mOffsetX != oldOffsetX) {
+            offsetX = MathUtils.clamp(exceptOffsetX, -margin, 0)
+            if (offsetX != oldOffsetX) {
                 requestFill = true
             }
             // Do not show over scroll effect for left and right
             /*
-            int extraOffsetX = mOffsetX - exceptOffsetX;
+            int extraOffsetX = offsetX - exceptOffsetX;
             if (0 != extraOffsetX) {
                 overScrollEdge(extraOffsetX, 0, x, y);
             }
@@ -737,36 +739,36 @@ internal class ScrollLayoutManager(
         while (remainY != 0) {
             if (remainY < 0) { // Try to show top
                 val limit: Int
-                if (mIndex > 0) {
-                    limit = (-height * reservation).toInt() + mInterval
+                if (index > 0) {
+                    limit = (-height * reservation).toInt() + interval
                 } else {
                     limit = 0
                 }
 
-                if (mOffsetY - remainY <= limit) {
-                    mOffsetY -= remainY
+                if (offsetY - remainY <= limit) {
+                    offsetY -= remainY
                     remainY = 0
                     requestFill = true
-                    mDeltaX = 0
-                    mDeltaY = 0
+                    deltaX = 0
+                    deltaY = 0
                 } else {
-                    if (mIndex > 0) {
-                        mOffsetY = limit
-                        remainY = remainY + limit - mOffsetY
+                    if (index > 0) {
+                        offsetY = limit
+                        remainY = remainY + limit - offsetY
                         // Offset one pixel to avoid infinite loop
-                        ++mOffsetY
+                        ++offsetY
                         ++remainY
                         galleryView.forceFill()
                         requestFill = false
-                        mDeltaX = 0
-                        mDeltaY = 0
+                        deltaX = 0
+                        deltaY = 0
                     } else {
-                        if (mOffsetY != limit) {
-                            mOffsetY = limit
+                        if (offsetY != limit) {
+                            offsetY = limit
                             requestFill = true
                         }
                         if (!fling) {
-                            overScrollEdge(0, remainY + limit - mOffsetY, x, y)
+                            overScrollEdge(0, remainY + limit - offsetY, x, y)
                         }
                         remainY = 0
                         result = true
@@ -774,12 +776,12 @@ internal class ScrollLayoutManager(
                 }
             } else { // Try to show bottom
                 getBottomState()
-                val bottom = mBottomStateBottom
-                val hasNext = mBottomStateHasNext
+                val bottom = bottomStateBottom
+                val hasNext = bottomStateHasNext
 
                 var limit: Int
                 if (hasNext) {
-                    limit = (height * (1 + reservation)).toInt() - mInterval
+                    limit = (height * (1 + reservation)).toInt() - interval
                 } else {
                     limit = height
                 }
@@ -787,25 +789,25 @@ internal class ScrollLayoutManager(
                 limit = min(bottom, limit)
 
                 if (bottom - remainY >= limit) {
-                    mOffsetY -= remainY
+                    offsetY -= remainY
                     remainY = 0
                     requestFill = true
-                    mDeltaX = 0
-                    mDeltaY = 0
+                    deltaX = 0
+                    deltaY = 0
                 } else {
                     if (hasNext) {
-                        mOffsetY -= bottom - limit
+                        offsetY -= bottom - limit
                         remainY = remainY + limit - bottom
                         // Offset one pixel to avoid infinite loop
-                        --mOffsetY
+                        --offsetY
                         --remainY
                         galleryView.forceFill()
                         requestFill = false
-                        mDeltaX = 0
-                        mDeltaY = 0
+                        deltaX = 0
+                        deltaY = 0
                     } else {
-                        if (mOffsetY != limit) {
-                            mOffsetY -= bottom - limit
+                        if (offsetY != limit) {
+                            offsetY -= bottom - limit
                             requestFill = true
                         }
                         if (!fling) {
@@ -819,79 +821,79 @@ internal class ScrollLayoutManager(
         }
 
         if (requestFill) {
-            mGalleryView.requestFill()
+            this.galleryView.requestFill()
         }
 
         return result
     }
 
     override fun onScroll(dx: Float, dy: Float, totalX: Float, totalY: Float, x: Float, y: Float) {
-        mKeepTopPageIndex = GalleryPageView.INVALID_INDEX
-        mKeepTop = INVALID_TOP
-        mScrollUp = dy < 0
+        keepTopPageIndex = GalleryPageView.INVALID_INDEX
+        keepTop = INVALID_TOP
+        scrollUp = dy < 0
         scrollInternal(dx, dy, false, x, y)
     }
 
     override fun onFling(velocityX: Float, velocityY: Float) {
-        if (mPages.size <= 0) {
+        if (pages.size <= 0) {
             return
         }
 
-        mKeepTopPageIndex = GalleryPageView.INVALID_INDEX
-        mKeepTop = INVALID_TOP
-        mFlingUp = velocityY > 0
+        keepTopPageIndex = GalleryPageView.INVALID_INDEX
+        keepTop = INVALID_TOP
+        flingUp = velocityY > 0
 
         val maxX: Int
         val minX: Int
-        val width = mGalleryView.width
-        val pageWidth = (width * mScale).toInt()
+        val width = galleryView.width
+        val pageWidth = (width * scale).toInt()
         val margin = pageWidth - width
         if (margin > 0) {
-            maxX = -mOffsetX
-            minX = -margin + mOffsetX
+            maxX = -offsetX
+            minX = -margin + offsetX
         } else {
             maxX = 0
             minX = 0
         }
 
         val maxY: Int
-        if (mIndex > 0) {
+        if (index > 0) {
             maxY = Int.MAX_VALUE
         } else {
-            maxY = -mOffsetY
+            maxY = -offsetY
         }
 
         getBottomState()
-        val bottom = mBottomStateBottom
-        val hasNext = mBottomStateHasNext
+        val bottom = bottomStateBottom
+        val hasNext = bottomStateHasNext
         val minY: Int
         if (hasNext) {
             minY = Int.MIN_VALUE
         } else {
-            minY = mGalleryView.height - bottom
+            minY = galleryView.height - bottom
         }
 
-        mPageFling.startFling(
+        pageFling.startFling(
             velocityX.toInt(), minX, maxX,
             velocityY.toInt(), minY, maxY,
         )
     }
 
-    override fun canScale(): Boolean = mPages.size > 0
+    override fun canScale(): Boolean = pages.size > 0
 
     override fun onScale(focusX: Float, focusY: Float, scale: Float) {
-        if (mPages.isEmpty()) {
+        if (pages.isEmpty()) {
             return
         }
 
-        val oldScale = mScale
-        mScale = MathUtils.clamp(oldScale * scale, MIN_SCALE, MAX_SCALE)
-        val appliedScale = mScale / oldScale
+        val oldScale = this.scale
+        this.scale = MathUtils.clamp(oldScale * scale, MIN_SCALE, MAX_SCALE)
+        val appliedScale = this.scale / oldScale
 
-        if (oldScale != mScale) {
+        if (oldScale != this.scale) {
             var page: GalleryPageView? = null
             // Keep scale page origin position
-            for (p in mPages) {
+            for (p in pages) {
                 if (p.bounds().top < focusY) {
                     page = p
                 } else {
@@ -900,15 +902,15 @@ internal class ScrollLayoutManager(
             }
 
             if (null != page) {
-                mKeepTopPageIndex = page.index
-                mKeepTop = page.bounds().top
+                keepTopPageIndex = page.index
+                keepTop = page.bounds().top
 
-                mGalleryView.forceFill()
-                val oldKeepTop = mKeepTop
-                mKeepTop = INVALID_TOP
+                galleryView.forceFill()
+                val oldKeepTop = keepTop
+                keepTop = INVALID_TOP
 
                 // Apply scroll
-                val newOffsetX = (focusX - ((focusX - mOffsetX) * appliedScale)).toInt()
+                val newOffsetX = (focusX - ((focusX - offsetX) * appliedScale)).toInt()
                 val newKeepTop: Int
                 if (page.isLoaded) {
                     newKeepTop = (focusY - ((focusY - oldKeepTop) * appliedScale)).toInt()
@@ -916,27 +918,27 @@ internal class ScrollLayoutManager(
                     newKeepTop = oldKeepTop
                 }
                 scrollInternal(
-                    (mOffsetX - newOffsetX).toFloat(), (oldKeepTop - newKeepTop).toFloat(),
+                    (offsetX - newOffsetX).toFloat(), (oldKeepTop - newKeepTop).toFloat(),
                     false, focusX, focusY,
                 )
             } else {
                 Log.e(TAG, "Can't find target page")
-                mKeepTopPageIndex = GalleryPageView.INVALID_INDEX
-                mKeepTop = INVALID_TOP
-                mGalleryView.forceFill()
+                keepTopPageIndex = GalleryPageView.INVALID_INDEX
+                keepTop = INVALID_TOP
+                galleryView.forceFill()
             }
         }
     }
 
     override fun onUpdateAnimation(time: Long): Boolean {
-        var invalidate = mPageFling.calculate(time)
-        invalidate = invalidate or mSmoothScaler.calculate(time)
-        invalidate = invalidate or mOverScroller.calculate(time)
+        var invalidate = pageFling.calculate(time)
+        invalidate = invalidate or smoothScaler.calculate(time)
+        invalidate = invalidate or overScroller.calculate(time)
         return invalidate
     }
 
     override fun onDataChanged() {
-        AssertUtils.assertNotNull("The PagerLayoutManager is not attached", mAdapter)
+        AssertUtils.assertNotNull("The PagerLayoutManager is not attached", adapter)
 
         // Cancel all animations
         cancelAllAnimations()
@@ -946,22 +948,22 @@ internal class ScrollLayoutManager(
         removeAllPages()
         // Reset parameters
         resetParameters()
-        mGalleryView.requestFill()
+        galleryView.requestFill()
     }
 
     override fun onPageLeft() {
-        val size = mAdapter!!.size()
-        if (size <= 0 || mPages.isEmpty()) {
+        val size = adapter!!.size()
+        if (size <= 0 || pages.isEmpty()) {
             return
         }
 
         ///////
         // UP
         ///////
-        val galleryView = mGalleryView
-        if (mIndex == 0 && mOffsetY >= 0) {
-            mOverScroller.overScroll(GLEdgeView.TOP)
-            mGalleryView.onTransferEnd()
+        val galleryView = this.galleryView
+        if (index == 0 && offsetY >= 0) {
+            overScroller.overScroll(GLEdgeView.TOP)
+            this.galleryView.onTransferEnd()
         } else {
             // Cancel all animations
             cancelAllAnimations()
@@ -969,7 +971,7 @@ internal class ScrollLayoutManager(
             // Get first shown page
             var previousPage: GalleryPageView? = null
             var firstShownPage: GalleryPageView? = null
-            for (p in mPages) {
+            for (p in pages) {
                 if (isInScreen(p)) {
                     firstShownPage = p
                     break
@@ -978,45 +980,45 @@ internal class ScrollLayoutManager(
             }
 
             val height = galleryView.height
-            val maxOffset = height - mInterval
+            val maxOffset = height - interval
             if (null == firstShownPage) {
                 Log.e(TAG, "Can't find first shown page when paging left")
-                mOffsetY += height / 2
+                offsetY += height / 2
             } else {
                 val firstShownTop = firstShownPage.bounds().top
                 if (firstShownTop >= 0) {
                     if (null == previousPage) {
                         Log.e(TAG, "Can't find previous page when paging left and offsetY == 0")
-                        mOffsetY += height / 2
+                        offsetY += height / 2
                     } else {
-                        mOffsetY += min(maxOffset, -previousPage.bounds().top)
+                        offsetY += min(maxOffset, -previousPage.bounds().top)
                     }
                 } else {
-                    mOffsetY += min(maxOffset, -firstShownTop)
+                    offsetY += min(maxOffset, -firstShownTop)
                 }
             }
 
             // Request fill
-            mGalleryView.requestFill()
+            this.galleryView.requestFill()
         }
     }
 
     override fun onPageRight() {
-        val size = mAdapter!!.size()
-        if (size <= 0 || mPages.isEmpty()) {
+        val size = adapter!!.size()
+        if (size <= 0 || pages.isEmpty()) {
             return
         }
 
         /////////
         // DOWN
         /////////
-        val galleryView = mGalleryView
+        val galleryView = this.galleryView
         getBottomState()
-        val bottom = mBottomStateBottom
-        val hasNext = mBottomStateHasNext
+        val bottom = bottomStateBottom
+        val hasNext = bottomStateHasNext
         if (!hasNext && bottom <= galleryView.height) {
-            mOverScroller.overScroll(GLEdgeView.BOTTOM)
-            mGalleryView.onTransferEnd()
+            overScroller.overScroll(GLEdgeView.BOTTOM)
+            this.galleryView.onTransferEnd()
         } else {
             // Cancel all animations
             cancelAllAnimations()
@@ -1024,7 +1026,7 @@ internal class ScrollLayoutManager(
             // Get first shown page
             var lastShownPage: GalleryPageView? = null
             var nextPage: GalleryPageView? = null
-            for (p in mPages) {
+            for (p in pages) {
                 if (isInScreen(p)) {
                     lastShownPage = p
                 } else if (null != lastShownPage) {
@@ -1034,33 +1036,34 @@ internal class ScrollLayoutManager(
             }
 
             val height = galleryView.height
-            val maxOffset = height - mInterval
+            val maxOffset = height - interval
             if (null == lastShownPage) {
                 Log.e(TAG, "Can't find last shown page when paging left")
-                mOffsetY -= height / 2
+                offsetY -= height / 2
             } else {
                 val lastShownBottom = lastShownPage.bounds().bottom
                 if (lastShownBottom <= height) {
                     if (null == nextPage) {
                         Log.e(TAG, "Can't find previous page when paging left and offsetY == 0")
-                        mOffsetY -= height / 2
+                        offsetY -= height / 2
                     } else {
-                        mOffsetY -= min(maxOffset, nextPage.bounds().bottom - height)
+                        offsetY -= min(maxOffset, nextPage.bounds().bottom - height)
                     }
                 } else {
-                    mOffsetY -= min(maxOffset, lastShownBottom - height)
+                    offsetY -= min(maxOffset, lastShownBottom - height)
                 }
             }
 
             // Request fill
-            mGalleryView.requestFill()
+            this.galleryView.requestFill()
         }
     }
 
-    override fun isTapOrPressEnable(): Boolean = !mStopAnimationFinger
+    override val isTapOrPressEnable: Boolean
+        get() = !stopAnimationFinger
 
     override fun findPageByIndex(index: Int): GalleryPageView? {
-        for (page in mPages) {
+        for (page in pages) {
             if (page.index == index) {
                 return page
             }
@@ -1069,7 +1072,7 @@ internal class ScrollLayoutManager(
     }
 
     override fun getCurrentIndex(): Int {
-        for (page in mPages) {
+        for (page in pages) {
             if (isInScreen(page)) {
                 return page.index
             }
@@ -1088,8 +1091,8 @@ internal class ScrollLayoutManager(
      */
     override fun setStartScrollFraction(pageIndex: Int, fraction: Float) {
         if (fraction.isNaN() || pageIndex < 0) {
-            mPendingStartFraction = Float.NaN
-            mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
+            pendingStartFraction = Float.NaN
+            pendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
             Log.d(
                 TAG,
                 "[FRACTION] setStartScrollFraction cleared pending (pageIndex=" +
@@ -1099,15 +1102,15 @@ internal class ScrollLayoutManager(
         }
         val clamped = MathUtils.clamp(fraction, 0f, 1f)
         if (clamped <= 0f) {
-            mPendingStartFraction = Float.NaN
-            mPendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
+            pendingStartFraction = Float.NaN
+            pendingStartFractionPageIndex = GalleryPageView.INVALID_INDEX
             Log.d(TAG, "[FRACTION] setStartScrollFraction <= 0 -> cleared pending")
             return
         }
-        mPendingStartFraction = clamped
-        mPendingStartFractionPageIndex = pageIndex
+        pendingStartFraction = clamped
+        pendingStartFractionPageIndex = pageIndex
         Log.d(TAG, "[FRACTION] setStartScrollFraction page=" + pageIndex + " fraction=" + clamped)
-        mGalleryView.requestFill()
+        galleryView.requestFill()
     }
 
     /**
@@ -1115,25 +1118,26 @@ internal class ScrollLayoutManager(
      * currently the "first visible" one. Pages that haven't been
      * measured yet, or empty layouts, return 0.
      */
-    override fun getCurrentScrollFraction(): Float {
-        if (mPages.isEmpty()) {
-            return 0f
+    override val currentScrollFraction: Float
+        get() {
+            if (pages.isEmpty()) {
+                return 0f
+            }
+            val currentIdx = getCurrentIndex()
+            if (currentIdx == GalleryPageView.INVALID_INDEX) {
+                return 0f
+            }
+            val page = findPageByIndex(currentIdx) ?: return 0f
+            val height = page.height
+            if (height <= 0) {
+                return 0f
+            }
+            val fraction = (-page.bounds().top).toFloat() / height.toFloat()
+            return MathUtils.clamp(fraction, 0f, 1f)
         }
-        val currentIdx = getCurrentIndex()
-        if (currentIdx == GalleryPageView.INVALID_INDEX) {
-            return 0f
-        }
-        val page = findPageByIndex(currentIdx) ?: return 0f
-        val height = page.height
-        if (height <= 0) {
-            return 0f
-        }
-        val fraction = (-page.bounds().top).toFloat() / height.toFloat()
-        return MathUtils.clamp(fraction, 0f, 1f)
-    }
 
     override fun setCurrentIndex(index: Int) {
-        var size = mAdapter!!.size()
+        var size = adapter!!.size()
         if (size <= 0) {
             // Can't get size now, assume size is MAX
             size = Int.MAX_VALUE
@@ -1142,15 +1146,15 @@ internal class ScrollLayoutManager(
             return
         }
 
-        mKeepTopPageIndex = index
-        mKeepTop = INVALID_TOP
+        keepTopPageIndex = index
+        keepTop = INVALID_TOP
 
-        if (mPages.isEmpty()) {
-            mIndex = index
+        if (pages.isEmpty()) {
+            this.index = index
         } else {
             // Fix the index page
             var targetPage: GalleryPageView? = null
-            for (page in mPages) {
+            for (page in pages) {
                 if (page.index == index) {
                     targetPage = page
                     break
@@ -1160,12 +1164,12 @@ internal class ScrollLayoutManager(
             if (targetPage != null) {
                 // Cancel all animations
                 cancelAllAnimations()
-                mOffsetY -= targetPage.bounds().top
+                offsetY -= targetPage.bounds().top
                 // Request fill
-                mGalleryView.requestFill()
+                galleryView.requestFill()
             } else {
-                mIndex = index
-                mOffsetY = 0
+                this.index = index
+                offsetY = 0
                 // Cancel all animations
                 cancelAllAnimations()
                 // Remove all view
@@ -1173,18 +1177,18 @@ internal class ScrollLayoutManager(
                 removeErrorView()
                 removeAllPages()
                 // Request fill
-                mGalleryView.requestFill()
+                galleryView.requestFill()
             }
         }
     }
 
     override fun getIndexUnder(x: Float, y: Float): Int {
-        if (mPages.isEmpty()) {
+        if (pages.isEmpty()) {
             return GalleryPageView.INVALID_INDEX
         } else {
             val intX = x.toInt()
             val intY = y.toInt()
-            for (page in mPages) {
+            for (page in pages) {
                 if (page.bounds().contains(intX, intY)) {
                     return page.index
                 }
@@ -1193,22 +1197,23 @@ internal class ScrollLayoutManager(
         }
     }
 
-    override fun getInternalCurrentIndex(): Int {
-        var currentIndex = getCurrentIndex()
-        if (currentIndex == GalleryPageView.INVALID_INDEX) {
-            currentIndex = mIndex
+    override val internalCurrentIndex: Int
+        get() {
+            var currentIndex = getCurrentIndex()
+            if (currentIndex == GalleryPageView.INVALID_INDEX) {
+                currentIndex = index
+            }
+            return currentIndex
         }
-        return currentIndex
-    }
 
     private inner class PageFling(context: Context) : Fling(context) {
 
-        private var mVelocityX = 0
-        private var mVelocityY = 0
-        private var mDx = 0
-        private var mDy = 0
-        private var mLastX = 0
-        private var mLastY = 0
+        private var velocityX = 0
+        private var velocityY = 0
+        private var dx = 0
+        private var dy = 0
+        private var lastX = 0
+        private var lastY = 0
 
         fun startFling(
             velocityX: Int,
@@ -1218,86 +1223,86 @@ internal class ScrollLayoutManager(
             minY: Int,
             maxY: Int,
         ) {
-            mVelocityX = velocityX
-            mVelocityY = velocityY
-            mDx = (getSplineFlingDistance(velocityX) * Math.signum(velocityX.toFloat())).toInt()
-            mDy = (getSplineFlingDistance(velocityY) * Math.signum(velocityY.toFloat())).toInt()
-            mLastX = 0
-            mLastY = 0
+            this.velocityX = velocityX
+            this.velocityY = velocityY
+            dx = (getSplineFlingDistance(velocityX) * Math.signum(velocityX.toFloat())).toInt()
+            dy = (getSplineFlingDistance(velocityY) * Math.signum(velocityY.toFloat())).toInt()
+            lastX = 0
+            lastY = 0
             var durationX = getSplineFlingDuration(velocityX)
             var durationY = getSplineFlingDuration(velocityY)
 
-            if (mDx < minX) {
-                durationX = adjustDuration(0, mDx, minX, durationX)
-                mDx = minX
+            if (dx < minX) {
+                durationX = adjustDuration(0, dx, minX, durationX)
+                dx = minX
             }
-            if (mDx > maxX) {
-                durationX = adjustDuration(0, mDx, maxX, durationX)
-                mDx = maxX
+            if (dx > maxX) {
+                durationX = adjustDuration(0, dx, maxX, durationX)
+                dx = maxX
             }
-            if (mDy < minY) {
-                durationY = adjustDuration(0, mDy, minY, durationY)
-                mDy = minY
+            if (dy < minY) {
+                durationY = adjustDuration(0, dy, minY, durationY)
+                dy = minY
             }
-            if (mDy > maxY) {
-                durationY = adjustDuration(0, mDy, maxY, durationY)
-                mDy = maxY
+            if (dy > maxY) {
+                durationY = adjustDuration(0, dy, maxY, durationY)
+                dy = maxY
             }
 
-            if (mDx == 0 && mDy == 0) {
+            if (dx == 0 && dy == 0) {
                 return
             }
 
             duration = max(durationX, durationY).toLong()
             start()
-            mGalleryView.invalidate()
+            galleryView.invalidate()
         }
 
         override fun onCalculate(progress: Float) {
-            val x = (mDx * progress).toInt()
-            val y = (mDy * progress).toInt()
-            val offsetX = x - mLastX
-            val offsetY = y - mLastY
+            val x = (dx * progress).toInt()
+            val y = (dy * progress).toInt()
+            val offsetX = x - lastX
+            val offsetY = y - lastY
             if (scrollInternal((-offsetX).toFloat(), (-offsetY).toFloat(), true, 0f, 0f)) {
                 cancel()
                 onFinish()
             }
-            mLastX = x
-            mLastY = y
+            lastX = x
+            lastY = y
         }
 
         override fun onFinish() {
-            mFlingUp = false
+            flingUp = false
 
-            val index = mIndex
+            val index = this@ScrollLayoutManager.index
 
-            val topEdge = index <= 0 && mOffsetY >= 0
+            val topEdge = index <= 0 && offsetY >= 0
 
             getBottomState()
-            val bottom = mBottomStateBottom
-            val hasNext = mBottomStateHasNext
-            val bottomEdge = !hasNext && bottom <= mGalleryView.height
+            val bottom = bottomStateBottom
+            val hasNext = bottomStateHasNext
+            val bottomEdge = !hasNext && bottom <= galleryView.height
 
             if (topEdge && bottomEdge) {
                 return
             }
 
-            val edgeView = mGalleryView.getEdgeView()
+            val edgeView = galleryView.edgeView
             if (topEdge && edgeView.isFinished(GLEdgeView.TOP)) {
-                edgeView.onAbsorb(mVelocityY, GLEdgeView.TOP)
+                edgeView.onAbsorb(velocityY, GLEdgeView.TOP)
             } else if (bottomEdge && edgeView.isFinished(GLEdgeView.BOTTOM)) {
-                edgeView.onAbsorb(-mVelocityY, GLEdgeView.BOTTOM)
+                edgeView.onAbsorb(-velocityY, GLEdgeView.BOTTOM)
             }
         }
     }
 
     private inner class SmoothScaler : Animation() {
 
-        private var mFocusX = 0f
-        private var mFocusY = 0f
-        private var mStartScale = 0f
-        private var mEndScale = 0f
-        private var mLastScale = 0f
+        private var focusX = 0f
+        private var focusY = 0f
+        private var startScale = 0f
+        private var endScale = 0f
+        private var lastScale = 0f
 
         init {
             interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
@@ -1310,62 +1315,62 @@ internal class ScrollLayoutManager(
             endScale: Float,
             duration: Int,
         ) {
-            mFocusX = focusX
-            mFocusY = focusY
-            mStartScale = startScale
-            mEndScale = endScale
-            mLastScale = startScale
+            this.focusX = focusX
+            this.focusY = focusY
+            this.startScale = startScale
+            this.endScale = endScale
+            lastScale = startScale
             this.duration = duration.toLong()
             start()
-            mGalleryView.invalidate()
+            galleryView.invalidate()
         }
 
         override fun onCalculate(progress: Float) {
-            if (mPages.size <= 0) {
+            if (pages.size <= 0) {
                 return
             }
 
-            val scale = MathUtils.lerp(mStartScale, mEndScale, progress)
-            onScale(mFocusX, mFocusY, scale / mLastScale)
-            mLastScale = scale
+            val scale = MathUtils.lerp(startScale, endScale, progress)
+            onScale(focusX, focusY, scale / lastScale)
+            lastScale = scale
         }
     }
 
     private inner class OverScroller : FloatAnimation() {
 
-        private var mDirection = 0
-        private var mPosition = 0
+        private var direction = 0
+        private var position = 0
 
         init {
             duration = 300L
         }
 
         fun overScroll(direction: Int) {
-            mDirection = direction
+            this.direction = direction
             val range: Int
-            when (mDirection) {
+            when (this.direction) {
                 GLEdgeView.LEFT, GLEdgeView.RIGHT -> {
-                    range = mGalleryView.width / 7
-                    mPosition = mGalleryView.height / 2
+                    range = galleryView.width / 7
+                    position = galleryView.height / 2
                 }
                 GLEdgeView.TOP, GLEdgeView.BOTTOM -> {
-                    range = mGalleryView.height / 7
-                    mPosition = mGalleryView.width / 2
+                    range = galleryView.height / 7
+                    position = galleryView.width / 2
                 }
                 else -> return
             }
             setRange(0f, range.toFloat())
             start()
-            mGalleryView.invalidate()
+            galleryView.invalidate()
         }
 
         override fun onCalculate(progress: Float) {
             super.onCalculate(progress)
-            mGalleryView.getEdgeView().onPull(get(), mPosition.toFloat(), mDirection)
+            galleryView.edgeView.onPull(get(), position.toFloat(), direction)
         }
 
         override fun onFinish() {
-            mGalleryView.getEdgeView().onRelease(mDirection)
+            galleryView.edgeView.onRelease(direction)
         }
     }
 

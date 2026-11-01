@@ -65,232 +65,244 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     @Retention(AnnotationRetention.SOURCE)
     annotation class StartPosition
 
-    private val mContext: Context = build.mContext
-    private var mAdapter: Adapter? = build.mAdapter
-    private val mGestureRecognizer: GestureRecognizer
-    private val mListener: Listener? = build.mListener
+    private val context: Context = build.context
+    private var adapter: Adapter? = build.adapter
+    private val gestureRecognizer: GestureRecognizer
+    private val listener: Listener? = build.listener
 
-    private var mPageTextTexture: ImageMovableTextTexture? = null
+    private var pageTextTexture: ImageMovableTextTexture? = null
 
-    private var mPagerLayoutManager: PagerLayoutManager? = null
-    private var mScrollLayoutManager: ScrollLayoutManager? = null
-    private var mLayoutManager: LayoutManager? = null
+    private var pagerLayoutManager: PagerLayoutManager? = null
+    private var scrollLayoutManager: ScrollLayoutManager? = null
+    private var layoutManager: LayoutManager? = null
 
-    private val mTransformScratch: MutableList<PageTransform> = ArrayList()
+    private val transformScratch: MutableList<PageTransform> = ArrayList()
 
+    /**
+     * Main-thread-safe snapshot of the visible pages' image rects
+     * (GalleryView-local coordinates). Updated after each render pass;
+     * change notifications arrive via Listener.onPageTransformsChanged().
+     */
     @Volatile
-    private var mPageTransforms: List<PageTransform> = Collections.emptyList()
+    var pageTransforms: List<PageTransform> = Collections.emptyList()
+        private set
 
     // Off by default: matches the stamps overlay's hidden default; see
     // setPageTransformCollectionEnabled(boolean).
     @Volatile
-    private var mPageTransformCollectionEnabled = false
+    private var pageTransformCollectionEnabled = false
 
-    private val mEdgeView: GLEdgeView
-    private val mGalleryPageViewPool = Pools.SimplePool<GalleryPageView>(5)
-    private var mProgressCache: GLProgressView? = null
-    private var mErrorViewCache: GLTextureView? = null
+    @get:JvmName("getEdgeView")
+    internal val edgeView: GLEdgeView
+    private val galleryPageViewPool = Pools.SimplePool<GalleryPageView>(5)
+    private var progressCache: GLProgressView? = null
+    private var errorViewCache: GLTextureView? = null
 
-    private val mBackgroundColor: Int = build.mBackgroundColor
-    private var mPagerInterval: Int = build.mPagerInterval
-    private var mScrollInterval: Int = build.mScrollInterval
-    private val mPageMinHeight: Int = build.mPageMinHeight
-    private val mPageInfoInterval: Int = build.mPageInfoInterval
-    private val mProgressColor: Int = build.mProgressColor
-    private val mProgressSize: Int = build.mProgressSize
-    private val mPageTextColor: Int = build.mPageTextColor
-    private val mPageTextSize: Int = build.mPageTextSize
-    private val mPageTextTypeface: Typeface = build.mPageTextTypeface
-    private val mErrorTextSize: Int = build.mErrorTextSize
-    private val mErrorTextColor: Int = build.mErrorTextColor
+    private val pageBackgroundColor: Int = build.backgroundColor
+    private var pagerInterval: Int = build.pagerInterval
+    private var scrollInterval: Int = build.scrollInterval
+    private val pageMinHeight: Int = build.pageMinHeight
+    private val pageInfoInterval: Int = build.pageInfoInterval
+    private val progressColor: Int = build.progressColor
+    private val progressSize: Int = build.progressSize
+    private val pageTextColor: Int = build.pageTextColor
+    private val pageTextSize: Int = build.pageTextSize
+    private val pageTextTypeface: Typeface = build.pageTextTypeface
+    private val errorTextSize: Int = build.errorTextSize
+    private val errorTextColor: Int = build.errorTextColor
 
-    private val mDefaultErrorString: String = build.mDefaultErrorString
-    private val mEmptyString: String = build.mEmptyString
+    @get:JvmName("getDefaultErrorStr")
+    internal val defaultErrorStr: String = build.defaultErrorString
 
-    private var mEnableRequestFill = true
-    private var mRequestFill = false
-    private var mWillFill = false
+    @get:JvmName("getEmptyStr")
+    internal val emptyStr: String = build.emptyString
 
-    private var mScale = false
-    private var mScroll = false
-    private var mFirstScroll = false
+    private var requestFillEnabled = true
+    private var fillRequested = false
+    private var willFill = false
 
-    private val mLeftArea = Rect()
-    private val mRightArea = Rect()
-    private val mMenuArea = Rect()
-    private val mSliderArea = Rect()
+    private var scaling = false
+    private var scrolling = false
+    private var firstScroll = false
 
-    private var mLayoutMode: Int = build.mLayoutMode
-    private var mScaleMode: Int = build.mScaleMode
-    private var mStartPosition: Int = build.mStartPosition
-    private var mIndex: Int = MathUtils.clamp(build.mStartPage, 0, Int.MAX_VALUE)
+    private val leftArea = Rect()
+    private val rightArea = Rect()
+    private val menuArea = Rect()
+    private val sliderArea = Rect()
 
-    private val mMethodList: MutableList<Int> = ArrayList(5)
-    private val mArgsList: MutableList<Array<out Any>> = ArrayList(5)
-    private val mMethodListTemp: MutableList<Int> = ArrayList(5)
-    private val mArgsListTemp: MutableList<Array<out Any>> = ArrayList(5)
+    private var currentLayoutMode: Int = build.layoutMode
+    private var scaleMode: Int = build.scaleMode
+    private var startPosition: Int = build.startPosition
+    private var index: Int = MathUtils.clamp(build.startPage, 0, Int.MAX_VALUE)
+
+    private val methodList: MutableList<Int> = ArrayList(5)
+    private val argsList: MutableList<Array<out Any>> = ArrayList(5)
+    private val methodListTemp: MutableList<Int> = ArrayList(5)
+    private val argsListTemp: MutableList<Array<out Any>> = ArrayList(5)
 
     // Render-thread only: the last index reported to onUpdateCurrentIndex.
-    private var mCurrentIndex = GalleryPageView.INVALID_INDEX
+    private var currentIndex = GalleryPageView.INVALID_INDEX
 
-    // Latest intra-page scroll fraction published from the render
-    // thread (after each fill). Read by UI-thread callers via
-    // getCurrentScrollFraction() to persist a precise resume point
-    // on exit. Always 0 for pager modes.
+    /**
+     * Latest intra-page scroll fraction, published from the render
+     * thread after each fill. Read by UI-thread callers to persist a
+     * precise resume point on exit; safe to read from any thread (a
+     * single volatile load). Always 0 for pager modes.
+     */
     @Volatile
-    private var mCurrentScrollFraction = 0f
+    var currentScrollFraction = 0f
+        private set
 
     init {
-        build.mAdapter.setGalleryView(this)
-        mGestureRecognizer = GestureRecognizer(mContext, this)
-        mEdgeView = GLEdgeView(build.mEdgeColor)
+        build.adapter.setGalleryView(this)
+        gestureRecognizer = GestureRecognizer(context, this)
+        edgeView = GLEdgeView(build.edgeColor)
 
-        backgroundColor = mBackgroundColor
+        backgroundColor = pageBackgroundColor
     }
 
-    class Builder(context: Context, adapter: Adapter) {
+    class Builder(
+        @JvmField internal val context: Context,
+        @JvmField internal val adapter: Adapter,
+    ) {
 
-        @JvmField internal val mContext: Context = context
+        @JvmField internal var listener: Listener? = null
 
-        @JvmField internal val mAdapter: Adapter = adapter
+        @JvmField internal var layoutMode = LAYOUT_LEFT_TO_RIGHT
 
-        @JvmField internal var mListener: Listener? = null
+        @JvmField internal var scaleMode = SCALE_FIT
 
-        @JvmField internal var mLayoutMode = LAYOUT_LEFT_TO_RIGHT
+        @JvmField internal var startPosition = START_POSITION_TOP_LEFT
 
-        @JvmField internal var mScaleMode = SCALE_FIT
+        @JvmField internal var startPage = 0
 
-        @JvmField internal var mStartPosition = START_POSITION_TOP_LEFT
+        @JvmField internal var backgroundColor = Color.BLACK
 
-        @JvmField internal var mStartPage = 0
+        @JvmField internal var edgeColor = Color.WHITE
 
-        @JvmField internal var mBackgroundColor = Color.BLACK
+        @JvmField internal var pagerInterval = 48
 
-        @JvmField internal var mEdgeColor = Color.WHITE
+        @JvmField internal var scrollInterval = 24
 
-        @JvmField internal var mPagerInterval = 48
+        @JvmField internal var pageMinHeight = 256
 
-        @JvmField internal var mScrollInterval = 24
+        @JvmField internal var pageInfoInterval = 24
 
-        @JvmField internal var mPageMinHeight = 256
+        @JvmField internal var progressColor = Color.WHITE
 
-        @JvmField internal var mPageInfoInterval = 24
+        @JvmField internal var progressSize = 56
 
-        @JvmField internal var mProgressColor = Color.WHITE
+        @JvmField internal var pageTextColor = Color.WHITE
 
-        @JvmField internal var mProgressSize = 56
+        @JvmField internal var pageTextSize = 56
 
-        @JvmField internal var mPageTextColor = Color.WHITE
+        @JvmField internal var pageTextTypeface: Typeface = Typeface.DEFAULT
 
-        @JvmField internal var mPageTextSize = 56
+        @JvmField internal var errorTextColor = Color.RED
 
-        @JvmField internal var mPageTextTypeface: Typeface = Typeface.DEFAULT
+        @JvmField internal var errorTextSize = 24
 
-        @JvmField internal var mErrorTextColor = Color.RED
+        @JvmField internal var defaultErrorString = "Error"
 
-        @JvmField internal var mErrorTextSize = 24
-
-        @JvmField internal var mDefaultErrorString = "Error"
-
-        @JvmField internal var mEmptyString = "Empty"
+        @JvmField internal var emptyString = "Empty"
 
         fun setListener(listener: Listener?): Builder {
-            mListener = listener
+            this.listener = listener
             return this
         }
 
         fun setLayoutMode(@LayoutMode layoutMode: Int): Builder {
-            mLayoutMode = layoutMode
+            this.layoutMode = layoutMode
             return this
         }
 
         fun setScaleMode(@ScaleMode scaleMode: Int): Builder {
-            mScaleMode = scaleMode
+            this.scaleMode = scaleMode
             return this
         }
 
         fun setStartPosition(@StartPosition startPosition: Int): Builder {
-            mStartPosition = startPosition
+            this.startPosition = startPosition
             return this
         }
 
         fun setStartPage(startPage: Int): Builder {
-            mStartPage = startPage
+            this.startPage = startPage
             return this
         }
 
         fun setBackgroundColor(backgroundColor: Int): Builder {
-            mBackgroundColor = backgroundColor
+            this.backgroundColor = backgroundColor
             return this
         }
 
         fun setEdgeColor(edgeColor: Int): Builder {
-            mEdgeColor = edgeColor
+            this.edgeColor = edgeColor
             return this
         }
 
         fun setPagerInterval(pagerInterval: Int): Builder {
-            mPagerInterval = pagerInterval
+            this.pagerInterval = pagerInterval
             return this
         }
 
         fun setScrollInterval(scrollInterval: Int): Builder {
-            mScrollInterval = scrollInterval
+            this.scrollInterval = scrollInterval
             return this
         }
 
         fun setPageMinHeight(pageMinHeight: Int): Builder {
-            mPageMinHeight = pageMinHeight
+            this.pageMinHeight = pageMinHeight
             return this
         }
 
         fun setPageInfoInterval(pageInfoInterval: Int): Builder {
-            mPageInfoInterval = pageInfoInterval
+            this.pageInfoInterval = pageInfoInterval
             return this
         }
 
         fun setProgressColor(progressColor: Int): Builder {
-            mProgressColor = progressColor
+            this.progressColor = progressColor
             return this
         }
 
         fun setProgressSize(progressSize: Int): Builder {
-            mProgressSize = progressSize
+            this.progressSize = progressSize
             return this
         }
 
         fun setPageTextColor(pageTextColor: Int): Builder {
-            mPageTextColor = pageTextColor
+            this.pageTextColor = pageTextColor
             return this
         }
 
         fun setPageTextSize(pageTextSize: Int): Builder {
-            mPageTextSize = pageTextSize
+            this.pageTextSize = pageTextSize
             return this
         }
 
         fun setPageTextTypeface(pageTextTypeface: Typeface): Builder {
-            mPageTextTypeface = pageTextTypeface
+            this.pageTextTypeface = pageTextTypeface
             return this
         }
 
         fun setErrorTextColor(errorTextColor: Int): Builder {
-            mErrorTextColor = errorTextColor
+            this.errorTextColor = errorTextColor
             return this
         }
 
         fun setErrorTextSize(errorTextSize: Int): Builder {
-            mErrorTextSize = errorTextSize
+            this.errorTextSize = errorTextSize
             return this
         }
 
         fun setDefaultErrorString(defaultErrorString: String): Builder {
-            mDefaultErrorString = defaultErrorString
+            this.defaultErrorString = defaultErrorString
             return this
         }
 
         fun setEmptyString(emptyString: String): Builder {
-            mEmptyString = emptyString
+            this.emptyString = emptyString
             return this
         }
 
@@ -298,54 +310,54 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun ensurePagerLayoutManager(): PagerLayoutManager {
-        var pagerLayoutManager = mPagerLayoutManager
+        var pagerLayoutManager = this.pagerLayoutManager
         if (pagerLayoutManager == null) {
             pagerLayoutManager = PagerLayoutManager(
-                mContext, this,
-                mScaleMode, mStartPosition, 1.0f, mPagerInterval,
+                context, this,
+                scaleMode, startPosition, 1.0f, pagerInterval,
             )
-            mPagerLayoutManager = pagerLayoutManager
+            this.pagerLayoutManager = pagerLayoutManager
         }
         return pagerLayoutManager
     }
 
     private fun ensureScrollLayoutManager(): ScrollLayoutManager {
-        var scrollLayoutManager = mScrollLayoutManager
+        var scrollLayoutManager = this.scrollLayoutManager
         if (scrollLayoutManager == null) {
-            scrollLayoutManager = ScrollLayoutManager(mContext, this, mScrollInterval)
-            mScrollLayoutManager = scrollLayoutManager
+            scrollLayoutManager = ScrollLayoutManager(context, this, scrollInterval)
+            this.scrollLayoutManager = scrollLayoutManager
         }
         return scrollLayoutManager
     }
 
     private fun attachLayoutManager() {
-        if (null != mLayoutManager) {
+        if (null != layoutManager) {
             return
         }
 
-        when (mLayoutMode) {
+        when (currentLayoutMode) {
             LAYOUT_LEFT_TO_RIGHT -> {
                 val pagerLayoutManager = ensurePagerLayoutManager()
                 pagerLayoutManager.setMode(PagerLayoutManager.MODE_LEFT_TO_RIGHT)
-                pagerLayoutManager.onAttach(mAdapter)
-                pagerLayoutManager.setCurrentIndex(mIndex)
-                mAdapter = null
-                mLayoutManager = pagerLayoutManager
+                pagerLayoutManager.onAttach(adapter)
+                pagerLayoutManager.setCurrentIndex(index)
+                adapter = null
+                layoutManager = pagerLayoutManager
             }
             LAYOUT_RIGHT_TO_LEFT -> {
                 val pagerLayoutManager = ensurePagerLayoutManager()
                 pagerLayoutManager.setMode(PagerLayoutManager.MODE_RIGHT_TO_LEFT)
-                pagerLayoutManager.onAttach(mAdapter)
-                pagerLayoutManager.setCurrentIndex(mIndex)
-                mAdapter = null
-                mLayoutManager = pagerLayoutManager
+                pagerLayoutManager.onAttach(adapter)
+                pagerLayoutManager.setCurrentIndex(index)
+                adapter = null
+                layoutManager = pagerLayoutManager
             }
             LAYOUT_TOP_TO_BOTTOM -> {
                 val scrollLayoutManager = ensureScrollLayoutManager()
-                scrollLayoutManager.onAttach(mAdapter)
-                scrollLayoutManager.setCurrentIndex(mIndex)
-                mAdapter = null
-                mLayoutManager = scrollLayoutManager
+                scrollLayoutManager.onAttach(adapter)
+                scrollLayoutManager.setCurrentIndex(index)
+                adapter = null
+                layoutManager = scrollLayoutManager
             }
         }
 
@@ -353,20 +365,20 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun detachLayoutManager() {
-        val layoutManager = mLayoutManager ?: return
+        val layoutManager = this.layoutManager ?: return
 
-        mIndex = layoutManager.getInternalCurrentIndex()
-        mAdapter = layoutManager.onDetach()
-        mLayoutManager = null
+        index = layoutManager.internalCurrentIndex
+        adapter = layoutManager.onDetach()
+        this.layoutManager = null
     }
 
     // Internal for GalleryViewResizeTest (no GLRoot in a JVM test).
     @JvmName("onAttachToRootInternal")
     internal fun onAttachToRootInternal() {
-        if (null == mPageTextTexture) {
-            mPageTextTexture = ImageMovableTextTexture.create(
-                mPageTextTypeface,
-                mPageTextSize, mPageTextColor,
+        if (null == pageTextTexture) {
+            pageTextTexture = ImageMovableTextTexture.create(
+                pageTextTypeface,
+                pageTextSize, pageTextColor,
                 charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
             )
         }
@@ -374,16 +386,16 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun setPagerIntervalInternal(interval: Int) {
-        mPagerInterval = interval
-        val pagerLayoutManager = mPagerLayoutManager
+        pagerInterval = interval
+        val pagerLayoutManager = this.pagerLayoutManager
         if (pagerLayoutManager != null) {
             pagerLayoutManager.setInterval(interval)
         }
     }
 
     private fun setScrollIntervalInternal(interval: Int) {
-        mScrollInterval = interval
-        val scrollLayoutManager = mScrollLayoutManager
+        scrollInterval = interval
+        val scrollLayoutManager = this.scrollLayoutManager
         if (scrollLayoutManager != null) {
             scrollLayoutManager.setInterval(interval)
         }
@@ -391,25 +403,25 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     override fun onAttachToRoot(root: GLRoot) {
         super.onAttachToRoot(root)
-        mEdgeView.onAttachToRoot(root)
+        edgeView.onAttachToRoot(root)
         postMethod(METHOD_ON_ATTACH_TO_ROOT)
     }
 
     override fun onDetachFromRoot() {
         // When detached, render() will not be called. So do it here
         detachLayoutManager()
-        val pageTextTexture = mPageTextTexture
+        val pageTextTexture = this.pageTextTexture
         if (null != pageTextTexture) {
             pageTextTexture.recycle()
-            mPageTextTexture = null
+            this.pageTextTexture = null
         }
 
         super.onDetachFromRoot()
-        mEdgeView.onDetachFromRoot()
+        edgeView.onDetachFromRoot()
     }
 
     var layoutMode: Int
-        get() = mLayoutMode
+        get() = currentLayoutMode
         set(@LayoutMode layoutMode) {
             postMethod(METHOD_SET_LAYOUT_MODE, layoutMode)
         }
@@ -422,8 +434,8 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
      */
     val isReachEnd: Boolean
         get() {
-            val layoutManager = mLayoutManager
-            return layoutManager != null && layoutManager.isReachEnd()
+            val layoutManager = this.layoutManager
+            return layoutManager != null && layoutManager.isReachEnd
         }
 
     override fun requestLayout() {
@@ -433,9 +445,9 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     fun requestFill() {
-        if (mEnableRequestFill) {
-            mRequestFill = true
-            if (!mWillFill) {
+        if (requestFillEnabled) {
+            fillRequested = true
+            if (!willFill) {
                 invalidate()
             }
         }
@@ -443,31 +455,22 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         // Do not pass event to component, so handle event here
-        mGestureRecognizer.onTouchEvent(event)
+        gestureRecognizer.onTouchEvent(event)
         return true
     }
 
-    @JvmName("getEdgeView")
-    internal fun getEdgeView(): GLEdgeView = mEdgeView
-
-    @JvmName("getDefaultErrorStr")
-    internal fun getDefaultErrorStr(): String = mDefaultErrorString
-
-    @JvmName("getEmptyStr")
-    internal fun getEmptyStr(): String = mEmptyString
-
     @JvmName("isFirstScroll")
     internal fun isFirstScroll(): Boolean {
-        val firstScroll = mFirstScroll
-        mFirstScroll = false
+        val firstScroll = this.firstScroll
+        this.firstScroll = false
         return firstScroll
     }
 
     // Make sure method run in render thread to ensure thread safe
     private fun postMethod(method: Int, vararg args: Any) {
         synchronized(this) {
-            mMethodList.add(method)
-            mArgsList.add(args)
+            methodList.add(method)
+            argsList.add(args)
         }
 
         invalidate()
@@ -487,14 +490,6 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     fun setCurrentPageScrollFraction(page: Int, fraction: Float) {
         postMethod(METHOD_SET_CURRENT_PAGE_WITH_FRACTION, page, fraction)
     }
-
-    /**
-     * Latest intra-page scroll fraction, published from the render
-     * thread after each fill. Safe to call from any thread; the
-     * read is single-volatile-load.
-     */
-    val currentScrollFraction: Float
-        get() = mCurrentScrollFraction
 
     fun pageLeft() {
         postMethod(METHOD_PAGE_LEFT)
@@ -541,8 +536,8 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     override fun onLongPress(x: Float, y: Float) {
-        val layoutManager = mLayoutManager
-        if (layoutManager != null && !layoutManager.isTapOrPressEnable()) {
+        val layoutManager = this.layoutManager
+        if (layoutManager != null && !layoutManager.isTapOrPressEnable) {
             return
         }
 
@@ -590,33 +585,33 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     override fun onLayout(changeSize: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        mEdgeView.layout(left, top, right, bottom)
+        edgeView.layout(left, top, right, bottom)
 
         // fill() is a no-op unless a fill was requested, and nothing else
         // requests one on a resize: the layout managers would keep every
         // page at the old width (a rotation handled in place left the
         // pages in their portrait geometry, audit PERF-02).
         if (changeSize) {
-            mRequestFill = true
+            fillRequested = true
         }
         fill()
 
         if (changeSize) {
             val width = right - left
             val height = bottom - top
-            mLeftArea.set(
+            leftArea.set(
                 (LEFT_AREA[0] * width).toInt(), (LEFT_AREA[1] * height).toInt(),
                 (LEFT_AREA[2] * width).toInt(), (LEFT_AREA[3] * height).toInt(),
             )
-            mRightArea.set(
+            rightArea.set(
                 (RIGHT_AREA[0] * width).toInt(), (RIGHT_AREA[1] * height).toInt(),
                 (RIGHT_AREA[2] * width).toInt(), (RIGHT_AREA[3] * height).toInt(),
             )
-            mMenuArea.set(
+            menuArea.set(
                 (MENU_AREA[0] * width).toInt(), (MENU_AREA[1] * height).toInt(),
                 (MENU_AREA[2] * width).toInt(), (MENU_AREA[3] * height).toInt(),
             )
-            mSliderArea.set(
+            sliderArea.set(
                 (SLIDER_AREA[0] * width).toInt(), (SLIDER_AREA[1] * height).toInt(),
                 (SLIDER_AREA[2] * width).toInt(), (SLIDER_AREA[3] * height).toInt(),
             )
@@ -627,7 +622,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     fun onDataChanged() {
         try {
             GalleryUtils.assertInRenderThread()
-            val layoutManager = mLayoutManager
+            val layoutManager = this.layoutManager
             if (layoutManager != null) {
                 layoutManager.onDataChanged()
             }
@@ -650,15 +645,15 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun onSingleTapConfirmedInternal(x: Float, y: Float) {
-        val layoutManager = mLayoutManager
-        if (layoutManager == null || !layoutManager.isTapOrPressEnable()) {
+        val layoutManager = this.layoutManager
+        if (layoutManager == null || !layoutManager.isTapOrPressEnable) {
             return
         }
 
         Log.d(
             "GalleryView",
             "tap: x=" + x + " y=" + y +
-                " menuArea=" + mMenuArea + " sliderArea=" + mSliderArea +
+                " menuArea=" + menuArea + " sliderArea=" + sliderArea +
                 " viewSize=" + width + "x" + height,
         )
 
@@ -668,20 +663,20 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
             page.isError &&
             page.isUnderInfo(x - page.bounds().left, y - page.bounds().top)
         ) {
-            if (mListener != null) {
-                mListener.onTapErrorText(page.index)
+            if (listener != null) {
+                listener.onTapErrorText(page.index)
             }
-        } else if (mSliderArea.contains(x.toInt(), y.toInt())) {
-            if (mListener != null) {
-                mListener.onTapSliderArea()
+        } else if (sliderArea.contains(x.toInt(), y.toInt())) {
+            if (listener != null) {
+                listener.onTapSliderArea()
             }
-        } else if (mMenuArea.contains(x.toInt(), y.toInt())) {
-            if (mListener != null) {
-                mListener.onTapMenuArea()
+        } else if (menuArea.contains(x.toInt(), y.toInt())) {
+            if (listener != null) {
+                listener.onTapMenuArea()
             }
-        } else if (mLeftArea.contains(x.toInt(), y.toInt())) {
+        } else if (leftArea.contains(x.toInt(), y.toInt())) {
             layoutManager.onPageLeft()
-        } else if (mRightArea.contains(x.toInt(), y.toInt())) {
+        } else if (rightArea.contains(x.toInt(), y.toInt())) {
             layoutManager.onPageRight()
         }
     }
@@ -690,47 +685,47 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun onDoubleTapConfirmedInternal(x: Float, y: Float) {
-        if (mScale) {
+        if (scaling) {
             return
         }
 
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.onDoubleTapConfirmed(x, y)
         }
     }
 
     private fun onLongPressInternal(x: Float, y: Float) {
-        if (mScale) {
+        if (scaling) {
             return
         }
 
-        val layoutManager = mLayoutManager ?: return
+        val layoutManager = this.layoutManager ?: return
 
         val index = layoutManager.getIndexUnder(x, y)
         if (index == GalleryPageView.INVALID_INDEX) {
             return
         }
 
-        if (mListener != null) {
-            mListener.onLongPressPage(index)
+        if (listener != null) {
+            listener.onLongPressPage(index)
         }
     }
 
     private fun onScrollInternal(dx: Float, dy: Float, totalX: Float, totalY: Float, x: Float, y: Float) {
-        if (mScale) {
+        if (scaling) {
             return
         }
-        mScroll = true
+        scrolling = true
 
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.onScroll(dx, dy, totalX, totalY, x, y)
         }
     }
 
     private fun onFlingInternal(velocityX: Float, velocityY: Float) {
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.onFling(velocityX, velocityY)
         }
@@ -741,11 +736,11 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun onScaleInternal(focusX: Float, focusY: Float, scale: Float) {
-        val layoutManager = mLayoutManager
-        if (mScroll || (layoutManager != null && !layoutManager.canScale())) {
+        val layoutManager = this.layoutManager
+        if (scrolling || (layoutManager != null && !layoutManager.canScale())) {
             return
         }
-        mScale = true
+        scaling = true
 
         if (layoutManager != null) {
             layoutManager.onScale(focusX, focusY, scale)
@@ -756,26 +751,26 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun onDownInternal(x: Float, y: Float) {
-        mScale = false
-        mScroll = false
-        mFirstScroll = true
-        val layoutManager = mLayoutManager
+        scaling = false
+        scrolling = false
+        firstScroll = true
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.onDown()
         }
     }
 
     private fun onUpInternal() {
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.onUp()
         }
     }
 
     private fun onPointerDownInternal(x: Float, y: Float) {
-        val layoutManager = mLayoutManager
-        if (!mScroll && (layoutManager != null && layoutManager.canScale())) {
-            mScale = true
+        val layoutManager = this.layoutManager
+        if (!scrolling && (layoutManager != null && layoutManager.canScale())) {
+            scaling = true
         }
     }
 
@@ -783,48 +778,48 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun setLayoutModeInternal(layoutMode: Int) {
-        if (mLayoutMode == layoutMode) {
+        if (currentLayoutMode == layoutMode) {
             return
         }
-        mLayoutMode = layoutMode
+        currentLayoutMode = layoutMode
 
-        val layoutManager = mLayoutManager ?: return
+        val layoutManager = this.layoutManager ?: return
 
-        when (mLayoutMode) {
+        when (currentLayoutMode) {
             LAYOUT_LEFT_TO_RIGHT -> {
-                val attached = mPagerLayoutManager
+                val attached = this.pagerLayoutManager
                 if (attached != null && layoutManager === attached) {
-                    // mPagerLayoutManager already attached, just change mode
+                    // pagerLayoutManager already attached, just change mode
                     attached.setMode(PagerLayoutManager.MODE_LEFT_TO_RIGHT)
                 } else {
                     val pagerLayoutManager = ensurePagerLayoutManager()
                     pagerLayoutManager.setMode(PagerLayoutManager.MODE_LEFT_TO_RIGHT)
-                    val index = layoutManager.getInternalCurrentIndex()
+                    val index = layoutManager.internalCurrentIndex
                     pagerLayoutManager.onAttach(layoutManager.onDetach())
                     pagerLayoutManager.setCurrentIndex(index)
-                    mLayoutManager = pagerLayoutManager
+                    this.layoutManager = pagerLayoutManager
                 }
             }
             LAYOUT_RIGHT_TO_LEFT -> {
-                val attached = mPagerLayoutManager
+                val attached = this.pagerLayoutManager
                 if (attached != null && layoutManager === attached) {
-                    // mPagerLayoutManager already attached, just change mode
+                    // pagerLayoutManager already attached, just change mode
                     attached.setMode(PagerLayoutManager.MODE_RIGHT_TO_LEFT)
                 } else {
                     val pagerLayoutManager = ensurePagerLayoutManager()
                     pagerLayoutManager.setMode(PagerLayoutManager.MODE_RIGHT_TO_LEFT)
-                    val index = layoutManager.getInternalCurrentIndex()
+                    val index = layoutManager.internalCurrentIndex
                     pagerLayoutManager.onAttach(layoutManager.onDetach())
                     pagerLayoutManager.setCurrentIndex(index)
-                    mLayoutManager = pagerLayoutManager
+                    this.layoutManager = pagerLayoutManager
                 }
             }
             LAYOUT_TOP_TO_BOTTOM -> {
                 val scrollLayoutManager = ensureScrollLayoutManager()
-                val index = layoutManager.getInternalCurrentIndex()
+                val index = layoutManager.internalCurrentIndex
                 scrollLayoutManager.onAttach(layoutManager.onDetach())
                 scrollLayoutManager.setCurrentIndex(index)
-                mLayoutManager = scrollLayoutManager
+                this.layoutManager = scrollLayoutManager
             }
         }
 
@@ -832,21 +827,21 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun setCurrentPageInternal(page: Int) {
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.setCurrentIndex(page)
         } else {
-            mIndex = page
+            index = page
         }
     }
 
     private fun setCurrentPageWithFractionInternal(page: Int, fraction: Float) {
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.setCurrentIndex(page)
             layoutManager.setStartScrollFraction(page, fraction)
         } else {
-            mIndex = page
+            index = page
             // No layout manager yet — fraction can't be applied. The
             // caller is responsible for invoking us again once a
             // layout manager exists (typically after onAttachToRoot).
@@ -854,30 +849,30 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun pageLeftInternal() {
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.onPageLeft()
         }
     }
 
     private fun pageRightInternal() {
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.onPageRight()
         }
     }
 
     private fun setScaleModeInternal(scaleMode: Int) {
-        mScaleMode = scaleMode
-        val pagerLayoutManager = mPagerLayoutManager
+        this.scaleMode = scaleMode
+        val pagerLayoutManager = this.pagerLayoutManager
         if (pagerLayoutManager != null) {
             pagerLayoutManager.setScaleMode(scaleMode)
         }
     }
 
     private fun setStartPositionInternal(startPosition: Int) {
-        mStartPosition = startPosition
-        val pagerLayoutManager = mPagerLayoutManager
+        this.startPosition = startPosition
+        val pagerLayoutManager = this.pagerLayoutManager
         if (pagerLayoutManager != null) {
             pagerLayoutManager.setStartPosition(startPosition)
         }
@@ -886,7 +881,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     @RenderThread
     @JvmName("forceFill")
     internal fun forceFill() {
-        mRequestFill = true
+        fillRequested = true
         fill()
     }
 
@@ -894,18 +889,18 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     private fun fill() {
         GalleryUtils.assertInRenderThread()
 
-        if (!mRequestFill) {
+        if (!fillRequested) {
             return
         }
 
         // Disable request layout
-        mEnableRequestFill = false
-        val layoutManager = mLayoutManager
+        requestFillEnabled = false
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             layoutManager.onFill()
         }
-        mEnableRequestFill = true
-        mRequestFill = false
+        requestFillEnabled = true
+        fillRequested = false
     }
 
     // Java's (Float) / (Integer) casts of the posted arguments. The smart
@@ -926,18 +921,18 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun dispatchMethod() {
-        val methodListTemp = mMethodListTemp
-        val argsListTemp = mArgsListTemp
+        val methodListTemp = this.methodListTemp
+        val argsListTemp = this.argsListTemp
 
         synchronized(this) {
-            if (mMethodList.isEmpty()) {
+            if (methodList.isEmpty()) {
                 return
             }
 
-            methodListTemp.addAll(mMethodList)
-            argsListTemp.addAll(mArgsList)
-            mMethodList.clear()
-            mArgsList.clear()
+            methodListTemp.addAll(methodList)
+            argsListTemp.addAll(argsList)
+            methodList.clear()
+            argsList.clear()
         }
 
         for (i in 0 until methodListTemp.size) {
@@ -981,48 +976,41 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     override fun render(canvas: GLCanvas) {
-        mWillFill = true
-        val oldCurrentIndex = mCurrentIndex
+        willFill = true
+        val oldCurrentIndex = currentIndex
 
         // Dispatch method
         dispatchMethod()
 
         val time = AnimationTime.get()
-        val animatingLayoutManager = mLayoutManager
+        val animatingLayoutManager = this.layoutManager
         if (animatingLayoutManager != null && animatingLayoutManager.onUpdateAnimation(time)) {
             invalidate()
         }
 
         fill()
-        mWillFill = false
+        willFill = false
 
         super.render(canvas)
-        mEdgeView.render(canvas)
+        edgeView.render(canvas)
 
         val newCurrentIndex: Int
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             newCurrentIndex = layoutManager.getCurrentIndex()
-            mCurrentScrollFraction = layoutManager.getCurrentScrollFraction()
+            currentScrollFraction = layoutManager.currentScrollFraction
         } else {
             newCurrentIndex = GalleryPageView.INVALID_INDEX
-            mCurrentScrollFraction = 0f
+            currentScrollFraction = 0f
         }
-        mCurrentIndex = newCurrentIndex
+        currentIndex = newCurrentIndex
 
-        if (oldCurrentIndex != newCurrentIndex && mListener != null) {
-            mListener.onUpdateCurrentIndex(newCurrentIndex)
+        if (oldCurrentIndex != newCurrentIndex && listener != null) {
+            listener.onUpdateCurrentIndex(newCurrentIndex)
         }
 
         updatePageTransforms()
     }
-
-    /**
-     * Main-thread-safe snapshot of the visible pages' image rects
-     * (GalleryView-local coordinates). Updated after each render pass;
-     * change notifications arrive via Listener.onPageTransformsChanged().
-     */
-    fun getPageTransforms(): List<PageTransform> = mPageTransforms
 
     /**
      * Enable/disable the per-frame page-transform collection. Its only
@@ -1033,10 +1021,10 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
      * without waiting for the next user scroll. Callable from any thread.
      */
     fun setPageTransformCollectionEnabled(enabled: Boolean) {
-        if (mPageTransformCollectionEnabled == enabled) {
+        if (pageTransformCollectionEnabled == enabled) {
             return
         }
-        mPageTransformCollectionEnabled = enabled
+        pageTransformCollectionEnabled = enabled
         if (enabled) {
             invalidate()
         }
@@ -1044,20 +1032,20 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     @RenderThread
     private fun updatePageTransforms() {
-        if (!mPageTransformCollectionEnabled) {
+        if (!pageTransformCollectionEnabled) {
             return
         }
-        val layoutManager = mLayoutManager
-        mTransformScratch.clear()
+        val layoutManager = this.layoutManager
+        transformScratch.clear()
         if (layoutManager != null) {
-            layoutManager.collectPageTransforms(mTransformScratch)
+            layoutManager.collectPageTransforms(transformScratch)
         }
         // List.equals directly, as Java did (no Intrinsics.areEqual step).
-        if (mTransformScratch.equals(mPageTransforms)) {
+        if (transformScratch.equals(pageTransforms)) {
             return
         }
-        mPageTransforms = Collections.unmodifiableList(ArrayList(mTransformScratch))
-        val listener = mListener
+        pageTransforms = Collections.unmodifiableList(ArrayList(transformScratch))
+        val listener = this.listener
         if (listener != null) {
             listener.onPageTransformsChanged()
         }
@@ -1065,7 +1053,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     @RenderThread
     fun findPageByIndex(id: Int): GalleryPageView? {
-        val layoutManager = mLayoutManager
+        val layoutManager = this.layoutManager
         if (layoutManager != null) {
             return layoutManager.findPageByIndex(id)
         } else {
@@ -1075,12 +1063,12 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     @JvmName("obtainPage")
     internal fun obtainPage(): GalleryPageView {
-        var page = mGalleryPageViewPool.acquire()
+        var page = galleryPageViewPool.acquire()
         if (page == null) {
             page = GalleryPageView(
-                mPageTextTexture,
-                mProgressColor, mBackgroundColor, mProgressSize,
-                mPageMinHeight, mPageInfoInterval,
+                pageTextTexture,
+                progressColor, pageBackgroundColor, progressSize,
+                pageMinHeight, pageInfoInterval,
             )
         }
         return page
@@ -1088,7 +1076,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     @JvmName("releasePage")
     internal fun releasePage(page: GalleryPageView) {
-        mGalleryPageViewPool.release(page)
+        galleryPageViewPool.release(page)
     }
 
     /**
@@ -1097,17 +1085,17 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     @JvmName("obtainProgress")
     internal fun obtainProgress(): GLProgressView {
         val progress: GLProgressView
-        val progressCache = mProgressCache
+        val progressCache = this.progressCache
         if (progressCache != null) {
             progress = progressCache
-            mProgressCache = null
+            this.progressCache = null
         } else {
             progress = GLProgressView()
-            progress.setColor(mProgressColor)
-            progress.setBgColor(mBackgroundColor)
+            progress.setColor(progressColor)
+            progress.setBgColor(pageBackgroundColor)
             progress.isIndeterminate = true
-            progress.minimumWidth = mProgressSize
-            progress.minimumHeight = mProgressSize
+            progress.minimumWidth = progressSize
+            progress.minimumHeight = progressSize
         }
         return progress
     }
@@ -1117,16 +1105,16 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
      */
     @JvmName("releaseProgress")
     internal fun releaseProgress(progress: GLProgressView) {
-        mProgressCache = progress
+        progressCache = progress
     }
 
     @JvmName("obtainErrorView")
     internal fun obtainErrorView(): GLTextureView {
         val errorView: GLTextureView
-        val errorViewCache = mErrorViewCache
+        val errorViewCache = this.errorViewCache
         if (errorViewCache != null) {
             errorView = errorViewCache
-            mErrorViewCache = null
+            this.errorViewCache = null
         } else {
             errorView = GLTextureView()
         }
@@ -1148,31 +1136,31 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     internal fun bindErrorView(errorView: GLTextureView, error: String) {
         unbindErrorView(errorView)
 
-        val texture = StringTexture.newInstance(error, mErrorTextSize.toFloat(), mErrorTextColor)
+        val texture = StringTexture.newInstance(error, errorTextSize.toFloat(), errorTextColor)
         errorView.texture = texture
     }
 
     @JvmName("releaseErrorView")
     internal fun releaseErrorView(errorView: GLTextureView) {
         unbindErrorView(errorView)
-        mErrorViewCache = errorView
+        errorViewCache = errorView
     }
 
     fun onTransferEnd() {
-        if (mListener == null) {
+        if (listener == null) {
             return
         }
-        mListener.onAutoTransferDone()
+        listener.onAutoTransferDone()
     }
 
     abstract class Adapter {
 
         @JvmField
-        protected var mGalleryView: GalleryView? = null
+        protected var galleryView: GalleryView? = null
 
         @JvmName("setGalleryView")
         internal fun setGalleryView(galleryView: GalleryView) {
-            mGalleryView = galleryView
+            this.galleryView = galleryView
         }
 
         fun bind(view: GalleryPageView, index: Int) {
@@ -1197,7 +1185,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         abstract fun size(): Int
     }
 
-    abstract class LayoutManager(@JvmField protected val mGalleryView: GalleryView) {
+    abstract class LayoutManager(@JvmField protected val galleryView: GalleryView) {
 
         abstract fun onAttach(adapter: Adapter?)
 
@@ -1233,7 +1221,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
          * strip is scrolled to (or past) the bottom of the last page.
          * Called on the render thread.
          */
-        abstract fun isReachEnd(): Boolean
+        abstract val isReachEnd: Boolean
 
         /**
          * Collects current visible pages' image screen rects. Called on the
@@ -1242,7 +1230,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
          */
         abstract fun collectPageTransforms(out: MutableList<PageTransform>)
 
-        abstract fun isTapOrPressEnable(): Boolean
+        abstract val isTapOrPressEnable: Boolean
 
         abstract fun findPageByIndex(index: Int): GalleryPageView?
 
@@ -1255,15 +1243,15 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
         abstract fun getIndexUnder(x: Float, y: Float): Int
 
-        internal abstract fun getInternalCurrentIndex(): Int
+        internal abstract val internalCurrentIndex: Int
 
         /**
          * Set a pending intra-page scroll fraction (0.0 ~ 1.0) on
          * the given target page, to apply on the next successful
          * fill where that page is laid out and loaded. The page
          * index is passed explicitly because the layout manager's
-         * internal mIndex can drift away from the caller's intent
-         * (fillPages sets mIndex to the first page in mPages, which
+         * internal index can drift away from the caller's intent
+         * (fillPages sets index to the first page in pages, which
          * for backward-extended layouts is not the requested page).
          * Default no-op for layout managers that don't support
          * intra-page scrolling (e.g. pager mode).
@@ -1277,7 +1265,8 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
          * 1.0) of the visible page's height. Default 0 for layout
          * managers without continuous scroll.
          */
-        open fun getCurrentScrollFraction(): Float = 0f
+        open val currentScrollFraction: Float
+            get() = 0f
 
         protected fun placeCenter(view: GLView) {
             val spec = GLView.MeasureSpec.makeMeasureSpec(
@@ -1287,8 +1276,8 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
             view.measure(spec, spec)
             val viewWidth = view.measuredWidth
             val viewHeight = view.measuredHeight
-            val viewLeft = mGalleryView.width / 2 - viewWidth / 2
-            val viewTop = mGalleryView.height / 2 - viewHeight / 2
+            val viewLeft = galleryView.width / 2 - viewWidth / 2
+            val viewTop = galleryView.height / 2 - viewHeight / 2
             view.layout(viewLeft, viewTop, viewLeft + viewWidth, viewTop + viewHeight)
         }
 
@@ -1307,7 +1296,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                 return
             }
             val imageBounds = Rect()
-            if (!mGalleryView.getBoundsOf(image, imageBounds)) {
+            if (!galleryView.getBoundsOf(image, imageBounds)) {
                 return
             }
             dst.offset(imageBounds.left.toFloat(), imageBounds.top.toFloat())

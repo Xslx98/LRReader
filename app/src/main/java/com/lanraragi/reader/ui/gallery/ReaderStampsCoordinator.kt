@@ -102,7 +102,7 @@ class ReaderStampsCoordinator(
 
     private fun pumpTransforms() {
         val overlay = overlay ?: return
-        val transforms = galleryView()?.getPageTransforms().orEmpty()
+        val transforms = galleryView()?.pageTransforms.orEmpty()
         overlay.transforms = transforms
         stamps?.ensureVisiblePagesLoaded(transforms.map { it.index })
     }
