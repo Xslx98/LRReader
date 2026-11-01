@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lanraragi.framework.lib.glview.util;
 
-import android.graphics.Matrix;
-import android.view.MotionEvent;
+package com.lanraragi.framework.lib.glview.util
 
-public final class MotionEventHelper {
-    private MotionEventHelper() {}
+import android.graphics.Matrix
+import android.view.MotionEvent
 
-    public static MotionEvent transformEvent(MotionEvent e, Matrix m) {
-        MotionEvent newEvent = MotionEvent.obtain(e);
-        newEvent.transform(m);
-        return newEvent;
+object MotionEventHelper {
+
+    @JvmStatic
+    fun transformEvent(e: MotionEvent, m: Matrix): MotionEvent {
+        val newEvent = MotionEvent.obtain(e)
+        newEvent.transform(m)
+        return newEvent
     }
 }
