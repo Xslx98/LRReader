@@ -147,10 +147,13 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
 
     // onBind is called before GLCanvas binds this texture.
     // It should make sure the data is uploaded to GL memory.
-    protected abstract fun onBind(canvas: GLCanvas): Boolean
+    // Public: GLES20Canvas calls it, and Kotlin's protected (unlike Java's) does
+    // not reach the rest of the package.
+    abstract fun onBind(canvas: GLCanvas): Boolean
 
     // Returns the GL texture target for this texture (e.g. GL_TEXTURE_2D).
-    protected abstract fun getTarget(): Int
+    // Public for GLES20Canvas, see onBind.
+    abstract fun getTarget(): Int
 
     fun isLoaded(): Boolean {
         return mState == STATE_LOADED
