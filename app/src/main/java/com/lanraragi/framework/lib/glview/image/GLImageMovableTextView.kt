@@ -96,7 +96,7 @@ class GLImageMovableTextView : GLView() {
         // indexes is never null in Kotlin, so only the texture is checked.
         val texture = textTexture ?: return
 
-        val paddings = getPaddings()
+        val paddings = mPaddings
         val x = getDefaultBegin(
             width, texture.getTextWidth(indexes).toInt(),
             paddings.left, paddings.right, Gravity.getPosition(gravity, Gravity.HORIZONTAL)

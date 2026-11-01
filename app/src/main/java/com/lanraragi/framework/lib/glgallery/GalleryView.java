@@ -526,7 +526,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     }
 
     @Override
-    protected boolean dispatchTouchEvent(MotionEvent event) {
+    public boolean dispatchTouchEvent(MotionEvent event) {
         // Do not pass event to component, so handle event here
         mGestureRecognizer.onTouchEvent(event);
         return true;
