@@ -14,14 +14,8 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.annotation;
+package com.lanraragi.framework.lib.glview.annotation
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
-public @interface RenderThread {
-}
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CONSTRUCTOR, AnnotationTarget.CLASS)
+annotation class RenderThread
