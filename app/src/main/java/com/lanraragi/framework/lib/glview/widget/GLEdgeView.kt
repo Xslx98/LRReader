@@ -30,12 +30,6 @@ class GLEdgeView(color: Int) : GLView() {
     private val effects = Array(4) { GLEdgeEffect(color) }
     private val matrix = FloatArray(4 * 16)
 
-    fun setColor(color: Int) {
-        for (i in 0 until 4) {
-            effects[i].color = color
-        }
-    }
-
     override fun onLayout(
         changeSize: Boolean,
         left: Int,
@@ -88,15 +82,7 @@ class GLEdgeView(color: Int) : GLView() {
     }
 
     // Called when the content is pulled away from the edge.
-    // offset is in pixels. direction is one of {TOP, LEFT, BOTTOM, RIGHT}.
-    fun onPull(offset: Float, @Direction direction: Int) {
-        val fullLength = if ((direction and 1) == 0) width else height
-        effects[direction].onPull(offset / fullLength)
-        if (!effects[direction].isFinished) {
-            invalidate()
-        }
-    }
-
+    // offset and position are in pixels. direction is one of {TOP, LEFT, BOTTOM, RIGHT}.
     fun onPull(offset: Float, position: Float, @Direction direction: Int) {
         val fullLength = if ((direction and 1) == 0) height else width
         val fullPosition = if ((direction and 1) == 0) width else height

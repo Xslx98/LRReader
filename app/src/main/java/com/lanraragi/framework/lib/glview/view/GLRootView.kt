@@ -264,8 +264,6 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             )
             contentView.layout(0, 0, w, h)
         }
-        // Uncomment this to dump the view hierarchy.
-        // contentView.dumpTree("");
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {

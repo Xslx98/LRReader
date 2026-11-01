@@ -30,7 +30,6 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.os.Parcelable
 import android.os.SystemClock
-import android.util.Log
 import android.util.SparseArray
 import android.view.MotionEvent
 import androidx.annotation.IntDef
@@ -106,18 +105,6 @@ open class GLView : TouchOwner {
 
     private var lastWidthSpec = -1
     private var lastHeightSpec = -1
-
-    @JvmField
-    protected var mScrollY = 0
-
-    @JvmField
-    protected var mScrollX = 0
-
-    @JvmField
-    protected var mScrollHeight = 0
-
-    @JvmField
-    protected var mScrollWidth = 0
 
     /**
      * The GlView's identifier. The identifier does not have to be unique in
@@ -243,21 +230,6 @@ open class GLView : TouchOwner {
         onDetachFromRoot()
     }
 
-    // This should only be called on the content pane (the topmost GLView).
-    @JvmName("pause")
-    internal fun pause() {
-        onPause()
-    }
-
-    // This should only be called on the content pane (the topmost GLView).
-    @JvmName("resume")
-    internal fun resume() {
-        onResume()
-    }
-
-    val isAttachedToRoot: Boolean
-        get() = root != null
-
     // Returns the number of children of the GLView.
     val componentCount: Int
         get() = components?.size ?: 0
@@ -331,29 +303,6 @@ open class GLView : TouchOwner {
         return false
     }
 
-    fun removeComponentAt(index: Int): Boolean {
-        val components = this.components
-        if (components == null) {
-            return false
-        }
-        if (index >= 0 && index < componentCount) {
-            val component = components.removeAt(index)
-            removeOneComponent(component)
-            return true
-        } else {
-            return false
-        }
-    }
-
-    // Removes all children of this GLView.
-    fun removeAllComponents() {
-        val components = this.components!!
-        for (i in 0 until components.size) {
-            removeOneComponent(components[i])
-        }
-        components.clear()
-    }
-
     private fun removeOneComponent(component: GLView) {
         if (motionTarget === component) {
             val now = SystemClock.uptimeMillis()
@@ -420,19 +369,6 @@ open class GLView : TouchOwner {
         }
     }
 
-    /**
-     * Offset this GLView's horizontal location by the specified amount of pixels.
-     *
-     * @param offset the number of pixels to offset the view by
-     */
-    fun offsetLeftAndRight(offset: Int) {
-        if (offset != 0) {
-            mBounds.offset(offset, 0)
-            dispatchNotifyPositionInRoot()
-            invalidate()
-        }
-    }
-
     fun getGLRoot(): GLRoot? = root
 
     // Request re-rendering of the view hierarchy.
@@ -492,8 +428,8 @@ open class GLView : TouchOwner {
             return
         }
 
-        val xOffset = component.mBounds.left - mScrollX
-        val yOffset = component.mBounds.top - mScrollY
+        val xOffset = component.mBounds.left
+        val yOffset = component.mBounds.top
 
         canvas.translate(xOffset.toFloat(), yOffset.toFloat())
 
@@ -862,34 +798,12 @@ open class GLView : TouchOwner {
         root = null
     }
 
-    open fun onPause() {
-        for (i in 0 until componentCount) {
-            getComponent(i).onPause()
-        }
-    }
-
-    open fun onResume() {
-        for (i in 0 until componentCount) {
-            getComponent(i).onResume()
-        }
-    }
-
     fun lockRendering() {
         root?.lockRenderThread()
     }
 
     fun unlockRendering() {
         root?.unlockRenderThread()
-    }
-
-    // This is for debugging only.
-    // Dump the view hierarchy into log.
-    @JvmName("dumpTree")
-    internal fun dumpTree(prefix: String) {
-        Log.d(TAG, prefix + javaClass.simpleName)
-        for (i in 0 until componentCount) {
-            getComponent(i).dumpTree("$prefix....")
-        }
     }
 
     /**
@@ -933,11 +847,6 @@ open class GLView : TouchOwner {
         const val AT_MOST = 2 shl MODE_SHIFT
 
         /**
-         * The max size allowed
-         */
-        const val MAX_SIZE = MODE_MASK.inv()
-
-        /**
          * Creates a measure specification based on the supplied size and mode.
          *
          * The mode must always be one of [UNSPECIFIED], [EXACTLY] or [AT_MOST].
@@ -967,34 +876,6 @@ open class GLView : TouchOwner {
          */
         @JvmStatic
         fun getSize(measureSpec: Int): Int = measureSpec and MODE_MASK.inv()
-
-        /**
-         * Returns a String representation of the specified measure
-         * specification.
-         *
-         * @param measureSpec the measure specification to convert to a String
-         * @return a String with the following format: "MeasureSpec: MODE SIZE"
-         */
-        @JvmStatic
-        fun toString(measureSpec: Int): String {
-            val mode = getMode(measureSpec)
-            val size = getSize(measureSpec)
-
-            val sb = StringBuilder("MeasureSpec: ")
-
-            if (mode == UNSPECIFIED) {
-                sb.append("UNSPECIFIED ")
-            } else if (mode == EXACTLY) {
-                sb.append("EXACTLY ")
-            } else if (mode == AT_MOST) {
-                sb.append("AT_MOST ")
-            } else {
-                sb.append(mode).append(" ")
-            }
-
-            sb.append(size)
-            return sb.toString()
-        }
     }
 
     /**
@@ -1076,8 +957,6 @@ open class GLView : TouchOwner {
     }
 
     companion object {
-        private const val TAG = "GLView"
-
         private const val DEBUG_DRAW_BOUNDS = false
 
         const val VISIBLE = 0b00000000
@@ -1154,30 +1033,6 @@ open class GLView : TouchOwner {
                 MeasureSpec.UNSPECIFIED -> result = size
                 MeasureSpec.EXACTLY -> result = specSize
                 MeasureSpec.AT_MOST -> return if (size == 0) specSize else min(size, specSize)
-            }
-            return result
-        }
-
-        /**
-         * Utility to return a max size. Uses the supplied size if the
-         * MeasureSpec imposed no constraints. Will get larger if allowed
-         * by the MeasureSpec.
-         *
-         * It works the same as [android.view.View.getDefaultSize].
-         *
-         * @param size Default size for this view
-         * @param measureSpec Constraints imposed by the parent
-         * @return The size this view should be.
-         */
-        @JvmStatic
-        fun getMaxSize(size: Int, measureSpec: Int): Int {
-            var result = size
-            val specMode = MeasureSpec.getMode(measureSpec)
-            val specSize = MeasureSpec.getSize(measureSpec)
-
-            when (specMode) {
-                MeasureSpec.UNSPECIFIED -> result = size
-                MeasureSpec.EXACTLY, MeasureSpec.AT_MOST -> result = specSize
             }
             return result
         }

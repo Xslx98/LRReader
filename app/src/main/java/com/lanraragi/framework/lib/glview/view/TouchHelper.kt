@@ -18,12 +18,10 @@
 
 package com.lanraragi.framework.lib.glview.view
 
-import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.view.MotionEvent
 import android.view.ViewConfiguration
-import com.lanraragi.reader.util.ViewUtils
 
 class TouchHelper(private val owner: TouchOwner) {
 
@@ -126,7 +124,7 @@ class TouchHelper(private val owner: TouchOwner) {
                     owner.setHotspot(x, y)
 
                     // Be lenient about moving outside of buttons
-                    if (!pointInView(x, y, touchSlop.toFloat())) {
+                    if (!pointInView(x, y, TOUCH_SLOP)) {
                         // Outside button
                         removeTapCallback()
                         if (owner.isPressed) {
@@ -158,7 +156,7 @@ class TouchHelper(private val owner: TouchOwner) {
      * This method is called while processing touch-move events to determine if the event
      * is still within the view.
      */
-    fun pointInView(localX: Float, localY: Float, slop: Float): Boolean =
+    private fun pointInView(localX: Float, localY: Float, slop: Float): Boolean =
         localX >= -slop && localY >= -slop && localX < (owner.width + slop) &&
             localY < (owner.height + slop)
 
@@ -243,13 +241,9 @@ class TouchHelper(private val owner: TouchOwner) {
         private val MAIN_HANDLER = Handler(Looper.getMainLooper())
 
         /**
-         * Cache the touch slop from the context that created the view.
+         * The touch slop in pixels. initialize(Context), which scaled it to
+         * 8dp, never had a caller, so it always was 8px.
          */
-        private var touchSlop = 8
-
-        @JvmStatic
-        fun initialize(context: Context) {
-            touchSlop = ViewUtils.dp2pix(context, 8f) // 8dp
-        }
+        private const val TOUCH_SLOP = 8f
     }
 }

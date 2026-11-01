@@ -52,10 +52,8 @@ class GLEdgeEffect(color: Int) {
 
     private val bounds = Rect()
 
-    /**
-     * The color of this edge effect in argb.
-     */
-    var color = color
+    // The color of this edge effect in argb.
+    private val color = color
     private var radius = 0f
     private var baseGlowScale = 0f
     private var displacement = 0.5f
@@ -90,31 +88,6 @@ class GLEdgeEffect(color: Int) {
      */
     val isFinished: Boolean
         get() = state == STATE_IDLE
-
-    /**
-     * Immediately finish the current animation.
-     * After this call [isFinished] will return true.
-     */
-    fun finish() {
-        state = STATE_IDLE
-    }
-
-    /**
-     * A view should call this when content is pulled away from an edge by the user.
-     * This will update the state of the current visual effect and its associated animation.
-     * The host view should always [android.view.View.invalidate] after this
-     * and draw the results accordingly.
-     *
-     * Views using EdgeEffect should favor [onPull] with a displacement when the
-     * displacement of the pull point is known.
-     *
-     * @param deltaDistance Change in distance since the last call. Values may be 0 (no change) to
-     * 1.f (full length of the view) or negative values to express change
-     * back toward the edge reached to initiate the effect.
-     */
-    fun onPull(deltaDistance: Float) {
-        onPull(deltaDistance, 0.5f)
-    }
 
     /**
      * A view should call this when content is pulled away from an edge by the user.
@@ -265,14 +238,6 @@ class GLEdgeEffect(color: Int) {
         return state != STATE_IDLE || oneLastFrame
     }
 
-    /**
-     * Return the maximum height that the edge effect will be drawn at given the original
-     * [input size][setSize].
-     * @return The maximum height of the edge effect
-     */
-    val maxHeight: Int
-        get() = (bounds.height() * MAX_GLOW_SCALE + 0.5f).toInt()
-
     private fun update() {
         val time = AnimationUtils.currentAnimationTimeMillis()
         val t = min((time - startTime).toFloat() / duration, 1f)
@@ -328,8 +293,6 @@ class GLEdgeEffect(color: Int) {
         private const val PULL_DECAY_TIME = 2000
 
         private const val MAX_ALPHA = 0.5f
-
-        private const val MAX_GLOW_SCALE = 2f
 
         private const val PULL_GLOW_BEGIN = 0f
 

@@ -68,7 +68,7 @@ class GLProgressView : GLView() {
         setupAnimations()
     }
 
-    fun setupAnimations() {
+    private fun setupAnimations() {
         val trimStartAnimation = object : FloatAnimation() {
             override fun onCalculate(progress: Float) {
                 super.onCalculate(progress)
