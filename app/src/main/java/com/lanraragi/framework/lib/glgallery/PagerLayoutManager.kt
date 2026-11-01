@@ -611,7 +611,7 @@ internal class PagerLayoutManager(
         return remain
     }
 
-    fun overScrollEdge(dx: Int, dy: Int, x: Float, y: Float) {
+    private fun overScrollEdge(dx: Int, dy: Int, x: Float, y: Float) {
         val edgeView = galleryView.edgeView
 
         deltaX += dx
@@ -645,7 +645,7 @@ internal class PagerLayoutManager(
         }
     }
 
-    fun scrollInternal(dx: Float, dy: Float, x: Float, y: Float) {
+    private fun scrollInternal(dx: Float, dy: Float, x: Float, y: Float) {
         if (current == null) {
             return
         }

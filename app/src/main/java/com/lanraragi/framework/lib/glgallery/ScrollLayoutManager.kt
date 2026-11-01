@@ -632,7 +632,7 @@ internal class ScrollLayoutManager(
         )
     }
 
-    fun overScrollEdge(dx: Int, dy: Int, x: Float, y: Float) {
+    private fun overScrollEdge(dx: Int, dy: Int, x: Float, y: Float) {
         val edgeView = galleryView.edgeView
 
         deltaX += dx

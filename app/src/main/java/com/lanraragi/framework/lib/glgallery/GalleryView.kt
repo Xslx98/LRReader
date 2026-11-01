@@ -1055,8 +1055,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         return errorView
     }
 
-    @JvmName("unbindErrorView")
-    internal fun unbindErrorView(errorView: GLTextureView) {
+    private fun unbindErrorView(errorView: GLTextureView) {
         val texture = errorView.texture
         if (texture != null) {
             errorView.texture = null
