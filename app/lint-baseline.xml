@@ -57,17 +57,6 @@
     </issue>
 
     <issue
-        id="DiscouragedPrivateApi"
-        message="Reflective access to mDisappearingChildren, which is not part of the public SDK and therefore likely to change in future Android releases"
-        errorLine1="            mDisappearingChildrenField = ViewGroup.class.getDeclaredField(&quot;mDisappearingChildren&quot;);"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/scene/StageLayout.java"
-            line="56"
-            column="42"/>
-    </issue>
-
-    <issue
         id="AndroidGradlePluginVersion"
         message="A newer version of com.android.application than 8.13.2 is available: 9.4.0"
         errorLine1="agp = &quot;8.13.2&quot;"
