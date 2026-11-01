@@ -46,19 +46,11 @@ import kotlin.math.min
 // from main thread (like a Handler) in your GLView, you need to call
 // lockRendering() if the rendering thread should not run at the same time.
 //
-open class GLView : TouchOwner {
+open class GLView {
 
     @IntDef(GLView.VISIBLE, GLView.INVISIBLE, GLView.GONE)
     @Retention(AnnotationRetention.SOURCE)
     annotation class Visibility
-
-    fun interface OnClickListener {
-        fun onClick(v: GLView): Boolean
-    }
-
-    fun interface OnLongClickListener {
-        fun onLongClick(v: GLView): Boolean
-    }
 
     /**
      * Position in parent, just like left, top, right, bottom in [android.view.View]
@@ -142,18 +134,6 @@ open class GLView : TouchOwner {
         }
 
     var backgroundColor = Color.TRANSPARENT
-
-    private var touchHelper: TouchHelper? = null
-
-    var hotspotX = 0f
-        private set
-    var hotspotY = 0f
-        private set
-
-    override var isPressed = false
-
-    var onClickListener: OnClickListener? = null
-    var onLongClickListener: OnLongClickListener? = null
 
     fun startAnimation(animation: CanvasAnimation?, atOnce: Boolean) {
         val root = checkNotNull(getGLRoot()) { "startAnimation needs a view attached to a GLRoot" }
@@ -303,34 +283,10 @@ open class GLView : TouchOwner {
 
     fun bounds(): Rect = boundsRect
 
-    override fun setHotspot(x: Float, y: Float) {
-        hotspotX = x
-        hotspotY = y
-    }
-
-    override val isEnabled: Boolean
-        get() = true // dispatchTouchEvent: always consumed by GLView hierarchy
-
-    override val isClickable: Boolean
-        get() = onClickListener != null
-
-    override val isLongClickable: Boolean
-        get() = onLongClickListener != null
-
-    override fun performClick(): Boolean {
-        val listener = onClickListener
-        return listener != null && listener.onClick(this)
-    }
-
-    override fun performLongClick(): Boolean {
-        val listener = onLongClickListener
-        return listener != null && listener.onLongClick(this)
-    }
-
-    override val width: Int
+    val width: Int
         get() = boundsRect.right - boundsRect.left
 
-    override val height: Int
+    val height: Int
         get() = boundsRect.bottom - boundsRect.top
 
     /**
@@ -425,14 +381,8 @@ open class GLView : TouchOwner {
         canvas.translate((-xOffset).toFloat(), (-yOffset).toFloat())
     }
 
-    protected open fun onTouch(event: MotionEvent): Boolean {
-        var touchHelper = this.touchHelper
-        if (touchHelper == null) {
-            touchHelper = TouchHelper(this)
-            this.touchHelper = touchHelper
-        }
-        return touchHelper.onTouch(event)
-    }
+    // Handles an event no component took; the base view consumes nothing.
+    protected open fun onTouch(event: MotionEvent): Boolean = false
 
     protected open fun dispatchTouchEvent(
         event: MotionEvent,

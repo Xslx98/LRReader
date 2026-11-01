@@ -7249,7 +7249,6 @@ PLcom/lanraragi/framework/lib/glview/view/Gravity;->centerHorizontal(I)Z
 PLcom/lanraragi/framework/lib/glview/view/Gravity;->centerVertical(I)Z
 PLcom/lanraragi/framework/lib/glview/view/Gravity;->getPosition(II)I
 PLcom/lanraragi/framework/lib/glview/view/Gravity;->right(I)Z
-Lcom/lanraragi/framework/lib/glview/view/TouchOwner;
 PLcom/lanraragi/framework/lib/glview/widget/GLEdgeEffect;-><clinit>()V
 PLcom/lanraragi/framework/lib/glview/widget/GLEdgeEffect;-><init>(I)V
 PLcom/lanraragi/framework/lib/glview/widget/GLEdgeEffect;->draw(Lcom/lanraragi/framework/lib/glview/glrenderer/GLCanvas;)Z
