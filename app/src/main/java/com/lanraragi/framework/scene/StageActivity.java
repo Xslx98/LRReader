@@ -561,14 +561,6 @@ public abstract class StageActivity extends BaseActivity {
         }
     }
 
-    int getSceneIndex(SceneFragment scene) {
-        return getTagIndex(scene.getTag());
-    }
-
-    int getTagIndex(String tag) {
-        return mSceneTagList.indexOf(tag);
-    }
-
     void sortSceneViews(List<View> views) {
         Collections.sort(views, mSceneViewComparator);
     }

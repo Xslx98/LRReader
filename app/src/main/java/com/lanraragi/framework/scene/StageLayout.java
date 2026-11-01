@@ -36,16 +36,6 @@ public class StageLayout extends FrameLayout {
     private View mDumpView;
     private boolean mDoTrick;
 
-    public StageLayout(Context context) {
-        super(context);
-        init(context);
-    }
-
-    public StageLayout(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init(context);
-    }
-
     public StageLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);

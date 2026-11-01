@@ -72,25 +72,6 @@ public class SceneFragment extends Fragment {
         }
     }
 
-    public void finishStage() {
-        FragmentActivity activity = getActivity();
-        if (activity != null) {
-            activity.finish();
-        }
-    }
-
-    /**
-     * @return negative for error
-     */
-    public int getStackIndex() {
-        FragmentActivity activity = getActivity();
-        if (activity instanceof StageActivity) {
-            return ((StageActivity) activity).getSceneIndex(this);
-        } else {
-            return -1;
-        }
-    }
-
     public void onBackPressed() {
         finish();
     }
