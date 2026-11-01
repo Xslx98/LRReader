@@ -14,44 +14,49 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.util;
+package com.lanraragi.framework.lib.glview.util
 
-import android.graphics.Color;
+import android.graphics.Color
 
+object GalleryUtils {
 
-public class GalleryUtils {
-
-    private static final String TAG = "GalleryUtils";
-
-    public static float[] intColorToFloatARGBArray(int from) {
-        return new float[] {
+    @JvmStatic
+    fun intColorToFloatARGBArray(from: Int): FloatArray {
+        return floatArrayOf(
             Color.alpha(from) / 255f,
             Color.red(from) / 255f,
             Color.green(from) / 255f,
             Color.blue(from) / 255f
-        };
+        )
     }
 
-    public static int floatARGBArrayTointColor(float[] from) {
-        return Color.argb((int) (from[0] * 255), (int) (from[1] * 255), (int) (from[2] * 255), (int) (from[3] * 255));
+    @JvmStatic
+    fun floatARGBArrayTointColor(from: FloatArray): Int {
+        return Color.argb(
+            (from[0] * 255).toInt(), (from[1] * 255).toInt(), (from[2] * 255).toInt(), (from[3] * 255).toInt()
+        )
     }
 
     // Below are used the detect using database in the render thread. It only
     // works most of the time, but that's ok because it's for debugging only.
 
-    private static volatile Thread sCurrentThread;
+    @Volatile
+    private var sCurrentThread: Thread? = null
 
-    public static void setRenderThread() {
-        sCurrentThread = Thread.currentThread();
+    @JvmStatic
+    fun setRenderThread() {
+        sCurrentThread = Thread.currentThread()
     }
 
-    public static boolean isRenderThread() {
-        return sCurrentThread == Thread.currentThread();
+    @JvmStatic
+    fun isRenderThread(): Boolean {
+        return sCurrentThread === Thread.currentThread()
     }
 
-    public static void assertInRenderThread() {
-        if (sCurrentThread != Thread.currentThread()) {
-            throw new AssertionError("Should not do this in render thread");
+    @JvmStatic
+    fun assertInRenderThread() {
+        if (sCurrentThread !== Thread.currentThread()) {
+            throw AssertionError("Should not do this in render thread")
         }
     }
 }
