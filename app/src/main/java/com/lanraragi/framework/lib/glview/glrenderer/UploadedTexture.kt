@@ -18,6 +18,7 @@ package com.lanraragi.framework.lib.glview.glrenderer
 
 import android.graphics.Bitmap
 import android.opengl.GLUtils
+import androidx.core.graphics.createBitmap
 import javax.microedition.khronos.opengles.GL11
 
 // UploadedTextures use a Bitmap for the content of the texture.
@@ -246,9 +247,9 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
             var bitmap = borderLines[key]
             if (bitmap == null) {
                 bitmap = if (vertical) {
-                    Bitmap.createBitmap(1, length, config)
+                    createBitmap(1, length, config)
                 } else {
-                    Bitmap.createBitmap(length, 1, config)
+                    createBitmap(length, 1, config)
                 }
                 borderLines[key.clone()] = bitmap
             }

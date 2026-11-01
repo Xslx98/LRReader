@@ -20,6 +20,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.core.graphics.createBitmap
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 import com.lanraragi.framework.lib.image.Image
 import java.util.Arrays
@@ -156,7 +157,7 @@ class ImageMovableTextTexture(
                 hCount--
             }
 
-            val bitmap = Bitmap.createBitmap(
+            val bitmap = createBitmap(
                 ceil((hCount * maxWidth).toDouble()).toInt(),
                 ceil((vCount * height).toDouble()).toInt(), Bitmap.Config.ARGB_8888
             )

@@ -18,6 +18,7 @@ package com.lanraragi.framework.lib.glview.glrenderer
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.core.graphics.createBitmap
 
 // CanvasTexture is a texture whose content is the drawing on a Canvas.
 // The subclasses should override onDraw() to draw on the bitmap.
@@ -33,7 +34,7 @@ abstract class CanvasTexture(width: Int, height: Int) : UploadedTexture() {
     }
 
     override fun onGetBitmap(): Bitmap {
-        val bitmap = Bitmap.createBitmap(mWidth, mHeight, config)
+        val bitmap = createBitmap(mWidth, mHeight, config)
         val canvas = Canvas(bitmap)
         onDraw(canvas, bitmap)
         return bitmap
