@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.anim;
+package com.lanraragi.framework.lib.glview.anim
 
-import com.lanraragi.reader.util.MathUtils;
+import com.lanraragi.reader.util.MathUtils
 
-public class FloatAnimation extends Animation {
+open class FloatAnimation : Animation() {
 
-    private float mFrom;
-    private float mTo;
-    private float mCurrent;
+    private var from = 0f
+    private var to = 0f
+    private var current = 0f
 
-    public void setRange(float from, float to) {
-        mFrom = from;
-        mTo = to;
+    fun setRange(from: Float, to: Float) {
+        this.from = from
+        this.to = to
     }
 
-    @Override
-    protected void onCalculate(float progress) {
-        mCurrent = MathUtils.lerp(mFrom, mTo, progress);
+    override fun onCalculate(progress: Float) {
+        current = MathUtils.lerp(from, to, progress)
     }
 
-    public float get() {
-        return mCurrent;
-    }
+    fun get(): Float = current
 }

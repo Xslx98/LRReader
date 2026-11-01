@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2012 The Android Open Source Project
  *
@@ -15,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.view;
+package com.lanraragi.framework.lib.glview.view
 
-import android.os.SystemClock;
+import android.os.SystemClock
 
 //
 // The animation time should ideally be the vsync time the frame will be
@@ -25,21 +24,23 @@ import android.os.SystemClock;
 // time just after eglSwapBuffers (when GLSurfaceView.onDrawFrame is called)
 // as a approximation.
 //
-public class AnimationTime {
-    private static volatile long sTime;
+object AnimationTime {
+    @Volatile
+    private var time: Long = 0
 
     // Sets current time as the animation time.
-    public static void update() {
-        sTime = SystemClock.uptimeMillis();
+    @JvmStatic
+    fun update() {
+        time = SystemClock.uptimeMillis()
     }
 
     // Returns the animation time.
-    public static long get() {
-        return sTime;
-    }
+    @JvmStatic
+    fun get(): Long = time
 
-    public static long startTime() {
-        sTime = SystemClock.uptimeMillis();
-        return sTime;
+    @JvmStatic
+    fun startTime(): Long {
+        time = SystemClock.uptimeMillis()
+        return time
     }
 }

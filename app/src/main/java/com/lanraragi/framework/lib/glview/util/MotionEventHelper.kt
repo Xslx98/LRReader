@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.anim;
+package com.lanraragi.framework.lib.glview.util
 
-import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
+import android.graphics.Matrix
+import android.view.MotionEvent
 
-public abstract class CanvasAnimation extends Animation {
+object MotionEventHelper {
 
-    public abstract int getCanvasSaveFlags();
-    public abstract void apply(GLCanvas canvas);
+    @JvmStatic
+    fun transformEvent(e: MotionEvent, m: Matrix): MotionEvent {
+        val newEvent = MotionEvent.obtain(e)
+        newEvent.transform(m)
+        return newEvent
+    }
 }

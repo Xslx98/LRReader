@@ -14,27 +14,25 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.view;
+package com.lanraragi.framework.lib.glview.view
 
-public interface TouchOwner {
+interface TouchOwner {
 
-    void setHotspot(float x, float y);
+    val isEnabled: Boolean
 
-    boolean isEnabled();
+    var isPressed: Boolean
 
-    boolean isPressed();
+    val isClickable: Boolean
 
-    void setPressed(boolean pressed);
+    val isLongClickable: Boolean
 
-    boolean isClickable();
+    val width: Int
 
-    boolean isLongClickable();
+    val height: Int
 
-    boolean performClick();
+    fun setHotspot(x: Float, y: Float)
 
-    boolean performLongClick();
+    fun performClick(): Boolean
 
-    int getWidth();
-
-    int getHeight();
+    fun performLongClick(): Boolean
 }

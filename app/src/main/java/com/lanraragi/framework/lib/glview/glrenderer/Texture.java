@@ -26,14 +26,8 @@ import android.graphics.RectF;
 // This is the current texture hierarchy:
 //
 // Texture
-// -- ColorTexture
-// -- FadeInTexture
 // -- BasicTexture
 //    -- UploadedTexture
-//       -- BitmapTexture
-//       -- Tile
-//       -- ResourceTexture
-//          -- NinePatchTexture
 //       -- CanvasTexture
 //          -- StringTexture
 //

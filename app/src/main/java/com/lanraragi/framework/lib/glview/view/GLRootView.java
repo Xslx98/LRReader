@@ -16,12 +16,10 @@
 
 package com.lanraragi.framework.lib.glview.view;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
-import android.os.Build;
 import android.os.Parcelable;
 import android.os.Process;
 import android.os.SystemClock;
@@ -37,10 +35,8 @@ import androidx.annotation.NonNull;
 import com.lanraragi.framework.lib.glview.anim.CanvasAnimation;
 import com.lanraragi.framework.lib.glview.glrenderer.BasicTexture;
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
-import com.lanraragi.framework.lib.glview.glrenderer.GLES11Canvas;
 import com.lanraragi.framework.lib.glview.glrenderer.GLES20Canvas;
 import com.lanraragi.framework.lib.glview.glrenderer.UploadedTexture;
-import com.lanraragi.framework.lib.glview.util.ApiHelper;
 import com.lanraragi.framework.lib.glview.util.GalleryUtils;
 import com.lanraragi.framework.lib.glview.util.MotionEventHelper;
 import com.lanraragi.reader.util.AssertUtils;
@@ -112,7 +108,6 @@ public class GLRootView extends GLSurfaceView
     private boolean mFreeze;
 
     private boolean mInDownState = false;
-    private int mEGLContextClientVersion;
 
     public GLRootView(Context context) {
         this(context, null);
@@ -190,11 +185,7 @@ public class GLRootView extends GLSurfaceView
         }
         if (mRenderRequested) return;
         mRenderRequested = true;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            postOnAnimation(mRequestRenderOnAnimationFrame);
-        } else {
-            super.requestRender();
-        }
+        postOnAnimation(mRequestRenderOnAnimationFrame);
     }
 
     private final Runnable mRequestRenderOnAnimationFrame = new Runnable() {
@@ -440,16 +431,11 @@ public class GLRootView extends GLSurfaceView
     }
 
     @Override
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public void setLightsOutMode(boolean enabled) {
-        if (!ApiHelper.HAS_SET_SYSTEM_UI_VISIBILITY) return;
-
         int flags = 0;
         if (enabled) {
             flags = STATUS_BAR_HIDDEN;
-            if (ApiHelper.HAS_VIEW_SYSTEM_UI_FLAG_LAYOUT_STABLE) {
-                flags |= (SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_LAYOUT_STABLE);
-            }
+            flags |= (SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_LAYOUT_STABLE);
         }
         setSystemUiVisibility(flags);
     }
@@ -528,7 +514,7 @@ public class GLRootView extends GLSurfaceView
             mRenderLock.lock();
             try {
                 mGL = gl;
-                mCanvas = mEGLContextClientVersion == 2 ? new GLES20Canvas() : new GLES11Canvas(gl);
+                mCanvas = new GLES20Canvas();
                 BasicTexture.invalidateAllTextures();
             } finally {
                 mRenderLock.unlock();
@@ -646,14 +632,7 @@ public class GLRootView extends GLSurfaceView
                 }
 
                 try {
-                    EGLConfig config = chooseConfigInternal(egl, display);
-                    int renderableType = findConfigAttrib(egl, display, config, EGL10.EGL_RENDERABLE_TYPE);
-                    if ((renderableType & EGL_OPENGL_ES2_BIT) == EGL_OPENGL_ES2_BIT) {
-                        mEGLContextClientVersion = 2;
-                    } else {
-                        mEGLContextClientVersion = 1;
-                    }
-                    return config;
+                    return chooseConfigInternal(egl, display);
                 } catch (IllegalArgumentException e) {
                     int error = egl.eglGetError();
                     if (attempt == 0 && error == EGL_NOT_INITIALIZED) {
