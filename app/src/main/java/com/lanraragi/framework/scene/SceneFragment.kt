@@ -81,12 +81,11 @@ open class SceneFragment : Fragment() {
         }
     }
 
-    @Suppress("DEPRECATION") // TODO(2.4-idiom)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         view.setTag(R.id.fragment_tag, tag)
-        view.setBackgroundDrawable(requireContext().attrDrawable(android.R.attr.windowBackground))
+        view.background = requireContext().attrDrawable(android.R.attr.windowBackground)
 
         // Notify
         val activity = activity
