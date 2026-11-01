@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-@file:Suppress("UseRequire") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.lib.glview.glrenderer
 
 class GLPaint {
     var lineWidth = 1f
         set(width) {
-            if (width < 0) {
-                throw IllegalArgumentException("width < 0")
-            }
+            require(width >= 0) { "width < 0" }
             field = width
         }
 

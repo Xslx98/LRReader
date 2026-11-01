@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("UseCheckOrError") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.lib.glview.glrenderer
 
 import android.graphics.Bitmap
@@ -171,9 +169,7 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
             val texWidth = textureWidth
             val texHeight = textureHeight
 
-            if (bWidth > texWidth || bHeight > texHeight) {
-                throw IllegalStateException("bWidth > texWidth || bHeight > texHeight")
-            }
+            check(bWidth <= texWidth && bHeight <= texHeight) { "bWidth > texWidth || bHeight > texHeight" }
             // Upload the bitmap to a new texture.
             mId = canvas.getGLId().generateTexture()
             canvas.setTextureParameters(this)

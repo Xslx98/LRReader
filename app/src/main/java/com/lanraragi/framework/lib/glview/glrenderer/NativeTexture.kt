@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("ThrowingExceptionsWithoutMessageOrCause") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.lib.glview.glrenderer
 
 import android.opengl.GLES20
@@ -106,8 +104,8 @@ abstract class NativeTexture : BasicTexture() {
     private fun checkError() {
         val error = GLES20.glGetError()
         if (error != 0) {
-            val t = Throwable()
-            Log.e(TAG, "GL error: $error", t)
+            val message = "GL error: $error"
+            Log.e(TAG, message, Throwable(message))
         }
     }
 

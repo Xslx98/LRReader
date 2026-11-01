@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "ThrowingExceptionsWithoutMessageOrCause",
-    "FunctionNaming",
-    "ImplicitDefaultLocale",
-    "FunctionOnlyReturningConstant",
-)
-
 package com.lanraragi.framework.lib.glview.glrenderer
 
 import android.graphics.RectF
@@ -81,15 +74,9 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         mTextureWidth = if (width > 0) MathUtils.nextPowerOf2(width) else 0
         mTextureHeight = if (height > 0) MathUtils.nextPowerOf2(height) else 0
         if (mTextureWidth > MAX_TEXTURE_SIZE || mTextureHeight > MAX_TEXTURE_SIZE) {
-            Log.w(
-                TAG, String.format("texture is too large: %d x %d", mTextureWidth, mTextureHeight),
-                Exception()
-            )
+            val message = "texture is too large: $mTextureWidth x $mTextureHeight"
+            Log.w(TAG, message, Exception(message))
         }
-    }
-
-    fun isFlippedVertically(): Boolean {
-        return false
     }
 
     val id: Int
@@ -161,12 +148,12 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         freeResource()
     }
 
-    // yield() is called when the texture will not be used temporarily,
+    // yieldResources() is called when the texture will not be used temporarily,
     // so it can free some resources.
     // The default implementation unloads the texture from GL memory, so
     // the subclass should make sure it can reload the texture to GL memory
     // later, or it will have to override this method.
-    open fun `yield`() {
+    open fun yieldResources() {
         freeResource()
     }
 
@@ -214,7 +201,7 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         fun yieldAllTextures() {
             synchronized(allTextures) {
                 for (t in allTextures.keys) {
-                    t.`yield`()
+                    t.yieldResources()
                 }
             }
         }

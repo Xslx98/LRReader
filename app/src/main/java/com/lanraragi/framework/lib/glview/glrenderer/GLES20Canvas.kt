@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "LongParameterList",
-    "LargeClass",
-    "TooGenericExceptionThrown",
-    "ThrowingExceptionsWithoutMessageOrCause",
-)
-
 package com.lanraragi.framework.lib.glview.glrenderer
 
 import android.graphics.Bitmap
@@ -43,6 +36,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 
+@Suppress("LargeClass") // the whole GLCanvas over one GL state; splitting it would put the draw path behind another object
 class GLES20Canvas : GLCanvas {
 
     // Keep track of restore state
@@ -180,7 +174,7 @@ class GLES20Canvas : GLCanvas {
         var program = GLES20.glCreateProgram()
         checkGlError()
         if (program == 0) {
-            throw RuntimeException("Cannot create GL program: " + GLES20.glGetError())
+            error("Cannot create GL program: " + GLES20.glGetError())
         }
         GLES20.glAttachShader(program, vertexShader)
         checkGlError()
@@ -330,15 +324,14 @@ class GLES20Canvas : GLCanvas {
     }
 
     override fun drawLine(x1: Float, y1: Float, x2: Float, y2: Float, paint: GLPaint) {
-        draw(
-            GLES20.GL_LINE_STRIP, OFFSET_DRAW_LINE, COUNT_LINE_VERTEX, x1, y1, x2 - x1, y2 - y1,
-            paint
-        )
+        prepareDraw(OFFSET_DRAW_LINE, paint.color, paint.lineWidth)
+        draw(drawParameters, GLES20.GL_LINE_STRIP, COUNT_LINE_VERTEX, x1, y1, x2 - x1, y2 - y1)
         countDrawLine++
     }
 
     override fun drawRect(x: Float, y: Float, width: Float, height: Float, paint: GLPaint) {
-        draw(GLES20.GL_LINE_LOOP, OFFSET_DRAW_RECT, COUNT_RECT_VERTEX, x, y, width, height, paint)
+        prepareDraw(OFFSET_DRAW_RECT, paint.color, paint.lineWidth)
+        draw(drawParameters, GLES20.GL_LINE_LOOP, COUNT_RECT_VERTEX, x, y, width, height)
         countDrawLine++
     }
 
@@ -361,34 +354,8 @@ class GLES20Canvas : GLCanvas {
         fillOval(cx, cy, radiusX - halfLineWidth, radiusY - halfLineWidth, paint.backgroundColor)
     }
 
-    private fun draw(
-        type: Int,
-        offset: Int,
-        count: Int,
-        x: Float,
-        y: Float,
-        width: Float,
-        height: Float,
-        paint: GLPaint,
-    ) {
-        draw(type, offset, count, x, y, width, height, paint.color, paint.lineWidth)
-    }
-
-    private fun draw(
-        type: Int,
-        offset: Int,
-        count: Int,
-        x: Float,
-        y: Float,
-        width: Float,
-        height: Float,
-        color: Int,
-        lineWidth: Float,
-    ) {
-        prepareDraw(offset, color, lineWidth)
-        draw(drawParameters, type, count, x, y, width, height)
-    }
-
+    // Each primitive is prepareDraw(offset, color, lineWidth) followed by
+    // draw(drawParameters, ...), called directly from the public methods.
     private fun prepareDraw(offset: Int, color: Int, lineWidth: Float) {
         GLES20.glUseProgram(drawProgram)
         checkGlError()
@@ -470,17 +437,16 @@ class GLES20Canvas : GLCanvas {
     }
 
     override fun fillRect(x: Float, y: Float, width: Float, height: Float, color: Int) {
-        draw(
-            GLES20.GL_TRIANGLE_STRIP, OFFSET_FILL_RECT, COUNT_FILL_VERTEX, x, y, width, height,
-            color, 0f
-        )
+        prepareDraw(OFFSET_FILL_RECT, color, 0f)
+        draw(drawParameters, GLES20.GL_TRIANGLE_STRIP, COUNT_FILL_VERTEX, x, y, width, height)
         countFillRect++
     }
 
     override fun fillOval(cx: Float, cy: Float, radiusX: Float, radiusY: Float, color: Int) {
+        prepareDraw(OFFSET_FILL_CIRCLE, color, 0f)
         draw(
-            GLES20.GL_TRIANGLE_FAN, OFFSET_FILL_CIRCLE, OFFSET_LAST - OFFSET_FILL_CIRCLE,
-            cx - radiusX, cy - radiusY, radiusX * 2, radiusY * 2, color, 0f
+            drawParameters, GLES20.GL_TRIANGLE_FAN, OFFSET_LAST - OFFSET_FILL_CIRCLE,
+            cx - radiusX, cy - radiusY, radiusX * 2, radiusY * 2
         )
         countFillRect++
     }
@@ -492,9 +458,10 @@ class GLES20Canvas : GLCanvas {
             // It is a circle
             fillOval(cx, cy, radiusX, radiusY, color)
         } else if (conjugateCount < COUNT_CIRCLE_VERTEX) {
+            prepareDraw(OFFSET_FILL_CIRCLE, color, 0f)
             draw(
-                GLES20.GL_TRIANGLE_FAN, OFFSET_FILL_CIRCLE, OFFSET_LAST - OFFSET_FILL_CIRCLE - conjugateCount,
-                cx - radiusX, cy - radiusY, radiusX * 2, radiusY * 2, color, 0f
+                drawParameters, GLES20.GL_TRIANGLE_FAN, OFFSET_LAST - OFFSET_FILL_CIRCLE - conjugateCount,
+                cx - radiusX, cy - radiusY, radiusX * 2, radiusY * 2
             )
             countFillRect++
         }
@@ -597,19 +564,10 @@ class GLES20Canvas : GLCanvas {
         setPosition(params, OFFSET_FILL_RECT)
         GLES20.glUniformMatrix4fv(params[INDEX_TEXTURE_MATRIX].handle, 1, false, textureMatrix, 0)
         checkGlError()
-        if (texture.isFlippedVertically()) {
-            save(GLCanvas.SAVE_FLAG_MATRIX)
-            translate(0f, target.centerY())
-            scale(1f, -1f, 1f)
-            translate(0f, -target.centerY())
-        }
         draw(
             params, GLES20.GL_TRIANGLE_STRIP, COUNT_FILL_VERTEX, target.left, target.top,
             target.width(), target.height()
         )
-        if (texture.isFlippedVertically()) {
-            restore()
-        }
         countTextureRect++
     }
 
@@ -852,161 +810,6 @@ class GLES20Canvas : GLCanvas {
     }
 
     companion object {
-        // ************** Constants **********************
-        private const val FLOAT_SIZE = java.lang.Float.SIZE / java.lang.Byte.SIZE
-        private const val OPAQUE_ALPHA = 0.95f
-
-        private const val COORDS_PER_VERTEX = 2
-        private const val VERTEX_STRIDE = COORDS_PER_VERTEX * FLOAT_SIZE
-
-        private const val COUNT_FILL_VERTEX = 4
-        private const val COUNT_LINE_VERTEX = 2
-        private const val COUNT_RECT_VERTEX = 4
-        private const val COUNT_CIRCLE_VERTEX = 120 // multiple of 4
-        private const val OFFSET_FILL_RECT = 0
-        private const val OFFSET_DRAW_LINE = OFFSET_FILL_RECT + COUNT_FILL_VERTEX
-        private const val OFFSET_DRAW_RECT = OFFSET_DRAW_LINE + COUNT_LINE_VERTEX
-        private const val OFFSET_FILL_CIRCLE = OFFSET_DRAW_RECT + COUNT_RECT_VERTEX
-        private const val OFFSET_DRAW_CIRCLE = OFFSET_FILL_CIRCLE + 1
-        private const val OFFSET_LAST = OFFSET_DRAW_CIRCLE + COUNT_CIRCLE_VERTEX + 1
-
-        private val BOX_COORDINATES = FloatArray(OFFSET_LAST * 2)
-
-        init {
-            val temp = floatArrayOf(
-                0f, 0f, // Fill rectangle
-                1f, 0f,
-                0f, 1f,
-                1f, 1f,
-                0f, 0f, // Draw line
-                1f, 1f,
-                0f, 0f, // Draw rectangle outline
-                0f, 1f,
-                1f, 1f,
-                1f, 0f,
-                0.5f, 0.5f, // Fill circle
-            )
-            System.arraycopy(temp, 0, BOX_COORDINATES, 0, temp.size)
-
-            // Draw circle
-            val arrayOffset = OFFSET_DRAW_CIRCLE * 2
-            val n = COUNT_CIRCLE_VERTEX / 4
-            for (i in 0..n) {
-                val value = sin(MathUtils.radians(90f / n * i).toDouble()).toFloat() / 2
-                val positive = value + 0.5f
-                val negative = -value + 0.5f
-                BOX_COORDINATES[arrayOffset + n * 0 + i * 2 + 1] = positive
-                BOX_COORDINATES[arrayOffset + n * 2 - i * 2 + 0] = positive
-                BOX_COORDINATES[arrayOffset + n * 2 + i * 2 + 0] = negative
-                BOX_COORDINATES[arrayOffset + n * 4 - i * 2 + 1] = positive
-                BOX_COORDINATES[arrayOffset + n * 4 + i * 2 + 1] = negative
-                BOX_COORDINATES[arrayOffset + n * 6 - i * 2 + 0] = negative
-                BOX_COORDINATES[arrayOffset + n * 6 + i * 2 + 0] = positive
-                BOX_COORDINATES[arrayOffset + n * 8 - i * 2 + 1] = negative
-            }
-        }
-
-        private val BOUNDS_COORDINATES = floatArrayOf(
-            0f, 0f, 0f, 1f,
-            1f, 1f, 0f, 1f,
-        )
-
-        private const val POSITION_ATTRIBUTE = "aPosition"
-        private const val COLOR_UNIFORM = "uColor"
-        private const val MATRIX_UNIFORM = "uMatrix"
-        private const val TEXTURE_MATRIX_UNIFORM = "uTextureMatrix"
-        private const val TEXTURE_SAMPLER_UNIFORM = "uTextureSampler"
-        private const val ALPHA_UNIFORM = "uAlpha"
-        private const val TEXTURE_COORD_ATTRIBUTE = "aTextureCoordinate"
-
-        private const val DRAW_VERTEX_SHADER = (
-            "" +
-                "uniform mat4 " + MATRIX_UNIFORM + ";\n" +
-                "attribute vec2 " + POSITION_ATTRIBUTE + ";\n" +
-                "void main() {\n" +
-                "  vec4 pos = vec4(" + POSITION_ATTRIBUTE + ", 0.0, 1.0);\n" +
-                "  gl_Position = " + MATRIX_UNIFORM + " * pos;\n" +
-                "}\n"
-            )
-
-        private const val DRAW_FRAGMENT_SHADER = (
-            "" +
-                "precision mediump float;\n" +
-                "uniform vec4 " + COLOR_UNIFORM + ";\n" +
-                "void main() {\n" +
-                "  gl_FragColor = " + COLOR_UNIFORM + ";\n" +
-                "}\n"
-            )
-
-        private const val TEXTURE_VERTEX_SHADER = (
-            "" +
-                "uniform mat4 " + MATRIX_UNIFORM + ";\n" +
-                "uniform mat4 " + TEXTURE_MATRIX_UNIFORM + ";\n" +
-                "attribute vec2 " + POSITION_ATTRIBUTE + ";\n" +
-                "varying vec2 vTextureCoord;\n" +
-                "void main() {\n" +
-                "  vec4 pos = vec4(" + POSITION_ATTRIBUTE + ", 0.0, 1.0);\n" +
-                "  gl_Position = " + MATRIX_UNIFORM + " * pos;\n" +
-                "  vTextureCoord = (" + TEXTURE_MATRIX_UNIFORM + " * pos).xy;\n" +
-                "}\n"
-            )
-
-        private const val MESH_VERTEX_SHADER = (
-            "" +
-                "uniform mat4 " + MATRIX_UNIFORM + ";\n" +
-                "attribute vec2 " + POSITION_ATTRIBUTE + ";\n" +
-                "attribute vec2 " + TEXTURE_COORD_ATTRIBUTE + ";\n" +
-                "varying vec2 vTextureCoord;\n" +
-                "void main() {\n" +
-                "  vec4 pos = vec4(" + POSITION_ATTRIBUTE + ", 0.0, 1.0);\n" +
-                "  gl_Position = " + MATRIX_UNIFORM + " * pos;\n" +
-                "  vTextureCoord = " + TEXTURE_COORD_ATTRIBUTE + ";\n" +
-                "}\n"
-            )
-
-        private const val TEXTURE_FRAGMENT_SHADER = (
-            "" +
-                "precision mediump float;\n" +
-                "varying vec2 vTextureCoord;\n" +
-                "uniform float " + ALPHA_UNIFORM + ";\n" +
-                "uniform sampler2D " + TEXTURE_SAMPLER_UNIFORM + ";\n" +
-                "void main() {\n" +
-                "  gl_FragColor = texture2D(" + TEXTURE_SAMPLER_UNIFORM + ", vTextureCoord);\n" +
-                "  gl_FragColor *= " + ALPHA_UNIFORM + ";\n" +
-                "}\n"
-            )
-
-        private const val OES_TEXTURE_FRAGMENT_SHADER = (
-            "" +
-                "#extension GL_OES_EGL_image_external : require\n" +
-                "precision mediump float;\n" +
-                "varying vec2 vTextureCoord;\n" +
-                "uniform float " + ALPHA_UNIFORM + ";\n" +
-                "uniform samplerExternalOES " + TEXTURE_SAMPLER_UNIFORM + ";\n" +
-                "void main() {\n" +
-                "  gl_FragColor = texture2D(" + TEXTURE_SAMPLER_UNIFORM + ", vTextureCoord);\n" +
-                "  gl_FragColor *= " + ALPHA_UNIFORM + ";\n" +
-                "}\n"
-            )
-
-        private const val INITIAL_RESTORE_STATE_SIZE = 8
-        private const val MATRIX_SIZE = 16
-
-        // Handle indices -- common
-        private const val INDEX_POSITION = 0
-        private const val INDEX_MATRIX = 1
-
-        // Handle indices -- draw
-        private const val INDEX_COLOR = 2
-
-        // Handle indices -- texture
-        private const val INDEX_TEXTURE_MATRIX = 2
-        private const val INDEX_TEXTURE_SAMPLER = 3
-        private const val INDEX_ALPHA = 4
-
-        // Handle indices -- mesh
-        private const val INDEX_TEXTURE_COORD = 2
-
         private val glIdImpl: GLId = GLES20IdImpl()
 
         @JvmStatic
@@ -1023,7 +826,166 @@ private val TAG: String = GLES20Canvas::class.java.simpleName
 internal fun checkGlError() {
     val error = GLES20.glGetError()
     if (error != 0) {
-        val t = Throwable()
-        Log.e(TAG, "GL error: $error", t)
+        val message = "GL error: $error"
+        Log.e(TAG, message, Throwable(message))
     }
 }
+
+// ************** Constants **********************
+// Top-level and private: the constants are inlined, and the tables and shader
+// sources are only read outside the draw paths.
+private const val FLOAT_SIZE = java.lang.Float.SIZE / java.lang.Byte.SIZE
+private const val OPAQUE_ALPHA = 0.95f
+
+private const val COORDS_PER_VERTEX = 2
+private const val VERTEX_STRIDE = COORDS_PER_VERTEX * FLOAT_SIZE
+
+private const val COUNT_FILL_VERTEX = 4
+private const val COUNT_LINE_VERTEX = 2
+private const val COUNT_RECT_VERTEX = 4
+private const val COUNT_CIRCLE_VERTEX = 120 // multiple of 4
+private const val OFFSET_FILL_RECT = 0
+private const val OFFSET_DRAW_LINE = OFFSET_FILL_RECT + COUNT_FILL_VERTEX
+private const val OFFSET_DRAW_RECT = OFFSET_DRAW_LINE + COUNT_LINE_VERTEX
+private const val OFFSET_FILL_CIRCLE = OFFSET_DRAW_RECT + COUNT_RECT_VERTEX
+private const val OFFSET_DRAW_CIRCLE = OFFSET_FILL_CIRCLE + 1
+private const val OFFSET_LAST = OFFSET_DRAW_CIRCLE + COUNT_CIRCLE_VERTEX + 1
+
+private val BOX_COORDINATES: FloatArray = createBoxCoordinates()
+
+private fun createBoxCoordinates(): FloatArray {
+    val boxCoordinates = FloatArray(OFFSET_LAST * 2)
+    val temp = floatArrayOf(
+        0f, 0f, // Fill rectangle
+        1f, 0f,
+        0f, 1f,
+        1f, 1f,
+        0f, 0f, // Draw line
+        1f, 1f,
+        0f, 0f, // Draw rectangle outline
+        0f, 1f,
+        1f, 1f,
+        1f, 0f,
+        0.5f, 0.5f, // Fill circle
+    )
+    System.arraycopy(temp, 0, boxCoordinates, 0, temp.size)
+
+    // Draw circle
+    val arrayOffset = OFFSET_DRAW_CIRCLE * 2
+    val n = COUNT_CIRCLE_VERTEX / 4
+    for (i in 0..n) {
+        val value = sin(MathUtils.radians(90f / n * i).toDouble()).toFloat() / 2
+        val positive = value + 0.5f
+        val negative = -value + 0.5f
+        boxCoordinates[arrayOffset + n * 0 + i * 2 + 1] = positive
+        boxCoordinates[arrayOffset + n * 2 - i * 2 + 0] = positive
+        boxCoordinates[arrayOffset + n * 2 + i * 2 + 0] = negative
+        boxCoordinates[arrayOffset + n * 4 - i * 2 + 1] = positive
+        boxCoordinates[arrayOffset + n * 4 + i * 2 + 1] = negative
+        boxCoordinates[arrayOffset + n * 6 - i * 2 + 0] = negative
+        boxCoordinates[arrayOffset + n * 6 + i * 2 + 0] = positive
+        boxCoordinates[arrayOffset + n * 8 - i * 2 + 1] = negative
+    }
+    return boxCoordinates
+}
+
+private val BOUNDS_COORDINATES = floatArrayOf(
+    0f, 0f, 0f, 1f,
+    1f, 1f, 0f, 1f,
+)
+
+private const val POSITION_ATTRIBUTE = "aPosition"
+private const val COLOR_UNIFORM = "uColor"
+private const val MATRIX_UNIFORM = "uMatrix"
+private const val TEXTURE_MATRIX_UNIFORM = "uTextureMatrix"
+private const val TEXTURE_SAMPLER_UNIFORM = "uTextureSampler"
+private const val ALPHA_UNIFORM = "uAlpha"
+private const val TEXTURE_COORD_ATTRIBUTE = "aTextureCoordinate"
+
+private const val DRAW_VERTEX_SHADER = (
+    "" +
+        "uniform mat4 " + MATRIX_UNIFORM + ";\n" +
+        "attribute vec2 " + POSITION_ATTRIBUTE + ";\n" +
+        "void main() {\n" +
+        "  vec4 pos = vec4(" + POSITION_ATTRIBUTE + ", 0.0, 1.0);\n" +
+        "  gl_Position = " + MATRIX_UNIFORM + " * pos;\n" +
+        "}\n"
+    )
+
+private const val DRAW_FRAGMENT_SHADER = (
+    "" +
+        "precision mediump float;\n" +
+        "uniform vec4 " + COLOR_UNIFORM + ";\n" +
+        "void main() {\n" +
+        "  gl_FragColor = " + COLOR_UNIFORM + ";\n" +
+        "}\n"
+    )
+
+private const val TEXTURE_VERTEX_SHADER = (
+    "" +
+        "uniform mat4 " + MATRIX_UNIFORM + ";\n" +
+        "uniform mat4 " + TEXTURE_MATRIX_UNIFORM + ";\n" +
+        "attribute vec2 " + POSITION_ATTRIBUTE + ";\n" +
+        "varying vec2 vTextureCoord;\n" +
+        "void main() {\n" +
+        "  vec4 pos = vec4(" + POSITION_ATTRIBUTE + ", 0.0, 1.0);\n" +
+        "  gl_Position = " + MATRIX_UNIFORM + " * pos;\n" +
+        "  vTextureCoord = (" + TEXTURE_MATRIX_UNIFORM + " * pos).xy;\n" +
+        "}\n"
+    )
+
+private const val MESH_VERTEX_SHADER = (
+    "" +
+        "uniform mat4 " + MATRIX_UNIFORM + ";\n" +
+        "attribute vec2 " + POSITION_ATTRIBUTE + ";\n" +
+        "attribute vec2 " + TEXTURE_COORD_ATTRIBUTE + ";\n" +
+        "varying vec2 vTextureCoord;\n" +
+        "void main() {\n" +
+        "  vec4 pos = vec4(" + POSITION_ATTRIBUTE + ", 0.0, 1.0);\n" +
+        "  gl_Position = " + MATRIX_UNIFORM + " * pos;\n" +
+        "  vTextureCoord = " + TEXTURE_COORD_ATTRIBUTE + ";\n" +
+        "}\n"
+    )
+
+private const val TEXTURE_FRAGMENT_SHADER = (
+    "" +
+        "precision mediump float;\n" +
+        "varying vec2 vTextureCoord;\n" +
+        "uniform float " + ALPHA_UNIFORM + ";\n" +
+        "uniform sampler2D " + TEXTURE_SAMPLER_UNIFORM + ";\n" +
+        "void main() {\n" +
+        "  gl_FragColor = texture2D(" + TEXTURE_SAMPLER_UNIFORM + ", vTextureCoord);\n" +
+        "  gl_FragColor *= " + ALPHA_UNIFORM + ";\n" +
+        "}\n"
+    )
+
+private const val OES_TEXTURE_FRAGMENT_SHADER = (
+    "" +
+        "#extension GL_OES_EGL_image_external : require\n" +
+        "precision mediump float;\n" +
+        "varying vec2 vTextureCoord;\n" +
+        "uniform float " + ALPHA_UNIFORM + ";\n" +
+        "uniform samplerExternalOES " + TEXTURE_SAMPLER_UNIFORM + ";\n" +
+        "void main() {\n" +
+        "  gl_FragColor = texture2D(" + TEXTURE_SAMPLER_UNIFORM + ", vTextureCoord);\n" +
+        "  gl_FragColor *= " + ALPHA_UNIFORM + ";\n" +
+        "}\n"
+    )
+
+private const val INITIAL_RESTORE_STATE_SIZE = 8
+private const val MATRIX_SIZE = 16
+
+// Handle indices -- common
+private const val INDEX_POSITION = 0
+private const val INDEX_MATRIX = 1
+
+// Handle indices -- draw
+private const val INDEX_COLOR = 2
+
+// Handle indices -- texture
+private const val INDEX_TEXTURE_MATRIX = 2
+private const val INDEX_TEXTURE_SAMPLER = 3
+private const val INDEX_ALPHA = 4
+
+// Handle indices -- mesh
+private const val INDEX_TEXTURE_COORD = 2

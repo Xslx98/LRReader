@@ -255,7 +255,7 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
             synchronized(tiles) {
                 for (t in tiles) {
                     if (t.image != null && t.isLoaded && !overlaps(keepRegion, t)) {
-                        t.`yield`()
+                        t.yieldResources()
                         t.preloaded = false
                     }
                 }
