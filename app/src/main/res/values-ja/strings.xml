@@ -404,6 +404,10 @@
     </plurals>
     <string name="batch_move_tank_unsupported">単行本カードはラベルに移動できません</string>
     <string name="batch_download_queued_some_local">%1$d 件をダウンロード待ちに追加、%2$d 件はダウンロード済みです</string>
+    <string name="batch_tank_added_some_members">単行本に %1$d 件追加しました（%2$d 件は追加済み）</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="other">選択した %d 件はすべて単行本に含まれています</item>
+    </plurals>
     <string name="download_already_local">ダウンロード済みです</string>
     <plurals name="batch_done_category">
         <item quantity="other">%d 件をカテゴリに追加しました</item>

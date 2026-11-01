@@ -524,6 +524,11 @@
     </plurals>
     <string name="batch_move_tank_unsupported">Tankoubon cards can\'t be moved to a label</string>
     <string name="batch_download_queued_some_local" tools:ignore="PluralsCandidate">Queued %1$d for download, %2$d already downloaded</string>
+    <string name="batch_tank_added_some_members" tools:ignore="PluralsCandidate">Added %1$d to the tank, %2$d already in it</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="one">%d item is already in the tank</item>
+        <item quantity="other">All %d items are already in the tank</item>
+    </plurals>
     <string name="download_already_local">Already downloaded</string>
     <plurals name="batch_done_category">
         <item quantity="one">Added %d item to the category</item>

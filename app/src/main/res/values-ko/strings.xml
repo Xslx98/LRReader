@@ -450,6 +450,10 @@
     </plurals>
     <string name="batch_move_tank_unsupported">단행본 카드는 라벨로 이동할 수 없습니다</string>
     <string name="batch_download_queued_some_local">%1$d개를 다운로드 대기열에 추가했습니다. %2$d개는 이미 다운로드되어 있습니다</string>
+    <string name="batch_tank_added_some_members">단행본에 %1$d개 추가됨, %2$d개는 이미 포함됨</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="other">선택한 %d개가 모두 이미 단행본에 있습니다</item>
+    </plurals>
     <string name="download_already_local">이미 다운로드되어 있습니다</string>
     <plurals name="batch_done_category">
         <item quantity="other">%d개를 카테고리에 추가했습니다</item>

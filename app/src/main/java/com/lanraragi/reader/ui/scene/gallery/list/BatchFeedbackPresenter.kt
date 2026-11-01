@@ -24,6 +24,12 @@ object BatchFeedbackPresenter {
          * %2$d already downloaded).
          */
         data class QueuedWithLocal(val queued: Int, val alreadyLocal: Int) : Tip
+
+        /**
+         * Tank add that skipped archives already in the tank
+         * (R.string.batch_tank_added_some_members: %1$d added, %2$d already in it).
+         */
+        data class AddedWithExisting(val added: Int, val alreadyMembers: Int) : Tip
     }
 
     /** Failure dialog spec: quantified title plus per-item failure lines. */
@@ -36,6 +42,14 @@ object BatchFeedbackPresenter {
 
     fun tipFor(result: BatchResult): Tip? {
         if (result.failed.isNotEmpty()) return null
+        val members = result.alreadyMembers.size
+        if (members > 0) {
+            return if (result.succeeded.isEmpty()) {
+                Tip.Plural(R.plurals.batch_tank_all_members, members)
+            } else {
+                Tip.AddedWithExisting(added = result.succeeded.size, alreadyMembers = members)
+            }
+        }
         val local = result.alreadyLocal.size
         return when {
             // Only download batches populate alreadyLocal (DownloadEntryGate).

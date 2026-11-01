@@ -442,6 +442,10 @@
     </plurals>
     <string name="batch_move_tank_unsupported">合订本卡片不支持移动到标签</string>
     <string name="batch_download_queued_some_local">已加入下载队列（%1$d 项），%2$d 项已在本地</string>
+    <string name="batch_tank_added_some_members">已加入合订本（%1$d 项），%2$d 项已在其中</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="other">所选 %d 项已全部在合订本中</item>
+    </plurals>
     <string name="download_already_local">已下载，无需重新下载</string>
     <plurals name="batch_done_category">
         <item quantity="other">已加入分类（%d 项）</item>

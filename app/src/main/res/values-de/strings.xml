@@ -398,6 +398,11 @@
     </plurals>
     <string name="batch_move_tank_unsupported">Tankoubon-Karten können keinem Label zugewiesen werden</string>
     <string name="batch_download_queued_some_local">%1$d in die Warteschlange eingereiht, %2$d bereits heruntergeladen</string>
+    <string name="batch_tank_added_some_members">%1$d zum Tankoubon hinzugefügt, %2$d bereits enthalten</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="one">%d Element ist bereits im Tankoubon</item>
+        <item quantity="other">Alle %d Elemente sind bereits im Tankoubon</item>
+    </plurals>
     <string name="download_already_local">Bereits heruntergeladen</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d Element zur Kategorie hinzugefügt</item>
