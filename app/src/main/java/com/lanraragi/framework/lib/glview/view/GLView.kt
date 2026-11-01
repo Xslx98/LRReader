@@ -563,7 +563,9 @@ open class GLView : TouchOwner {
         return false
     }
 
-    protected open fun dispatchTouchEvent(event: MotionEvent): Boolean {
+    // Public, not protected: GLRootView dispatches into its content pane, and
+    // Kotlin has no package-private access.
+    open fun dispatchTouchEvent(event: MotionEvent): Boolean {
         val x = event.x.toInt()
         val y = event.y.toInt()
         val action = event.action
