@@ -1313,21 +1313,18 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         private const val METHOD_SET_CURRENT_PAGE_WITH_FRACTION = 23
 
         @LayoutMode
-        @JvmStatic
         fun sanitizeLayoutMode(layoutMode: Int): Int = when (layoutMode) {
             LAYOUT_LEFT_TO_RIGHT, LAYOUT_RIGHT_TO_LEFT, LAYOUT_TOP_TO_BOTTOM -> layoutMode
             else -> LAYOUT_LEFT_TO_RIGHT
         }
 
         @ScaleMode
-        @JvmStatic
         fun sanitizeScaleMode(scaleMode: Int): Int = when (scaleMode) {
             SCALE_ORIGIN, SCALE_FIT_WIDTH, SCALE_FIT_HEIGHT, SCALE_FIT, SCALE_FIXED -> scaleMode
             else -> SCALE_FIT
         }
 
         @StartPosition
-        @JvmStatic
         fun sanitizeStartPosition(startPosition: Int): Int = when (startPosition) {
             START_POSITION_TOP_LEFT, START_POSITION_TOP_RIGHT, START_POSITION_BOTTOM_LEFT,
             START_POSITION_BOTTOM_RIGHT, START_POSITION_CENTER -> startPosition
