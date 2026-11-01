@@ -42,10 +42,7 @@ open class SceneFragment : Fragment() {
     }
 
     fun startScene(announcer: Announcer) {
-        val activity = activity
-        if (activity is StageActivity) {
-            activity.startScene(announcer)
-        }
+        (activity as? StageActivity)?.startScene(announcer)
     }
 
     fun finish() {
@@ -53,10 +50,7 @@ open class SceneFragment : Fragment() {
     }
 
     fun finish(transitionHelper: TransitionHelper?) {
-        val activity = activity
-        if (activity is StageActivity) {
-            activity.finishScene(this, transitionHelper)
-        }
+        (activity as? StageActivity)?.finishScene(this, transitionHelper)
     }
 
     open fun onBackPressed() {
@@ -75,10 +69,7 @@ open class SceneFragment : Fragment() {
 
     /** Tells the stage that [hasInSceneBack] may have changed. */
     fun invalidateBack() {
-        val activity = activity
-        if (activity is StageActivity) {
-            activity.updateBackCallback()
-        }
+        (activity as? StageActivity)?.updateBackCallback()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -88,29 +79,20 @@ open class SceneFragment : Fragment() {
         view.background = requireContext().attrDrawable(android.R.attr.windowBackground)
 
         // Notify
-        val activity = activity
-        if (activity is StageActivity) {
-            activity.dispatchSceneViewCreated(this, savedInstanceState)
-        }
+        (activity as? StageActivity)?.dispatchSceneViewCreated(this, savedInstanceState)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
 
         // Notify
-        val activity = activity
-        if (activity is StageActivity) {
-            activity.dispatchSceneViewDestroyed(this)
-        }
+        (activity as? StageActivity)?.dispatchSceneViewDestroyed(this)
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        val activity = activity
-        if (activity is StageActivity) {
-            activity.onSceneDestroyed(this)
-        }
+        (activity as? StageActivity)?.onSceneDestroyed(this)
     }
 
     @JvmName("addRequest")
@@ -125,8 +107,7 @@ open class SceneFragment : Fragment() {
         for (i in 0 until size) {
             val tag = requestSceneTagList[i]
             val code = requestCodeList.get(i)
-            val scene = stage.findSceneByTag(tag)
-            scene?.onSceneResult(code, resultCode, result)
+            stage.findSceneByTag(tag)?.onSceneResult(code, resultCode, result)
         }
         requestSceneTagList.clear()
         requestCodeList.clear()

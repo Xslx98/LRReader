@@ -35,7 +35,6 @@ import com.lanraragi.reader.ui.BackDispatch
 import com.lanraragi.reader.ui.BaseActivity
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.IntIdGenerator
-import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 import kotlin.math.min
@@ -258,10 +257,7 @@ abstract class StageActivity : BaseActivity() {
 
     @JvmName("onSceneDestroyed")
     internal fun onSceneDestroyed(scene: SceneFragment) {
-        val tag = scene.tag
-        if (tag != null) {
-            delaySceneTagList.remove(tag)
-        }
+        scene.tag?.let { delaySceneTagList.remove(it) }
     }
 
     @JvmName("onRegister")
@@ -422,8 +418,7 @@ abstract class StageActivity : BaseActivity() {
             return null
         }
         // Get last tag
-        val tag = sceneTagList[sceneTagList.size - 1]
-        val fragment = supportFragmentManager.findFragmentByTag(tag) ?: return null
+        val fragment = supportFragmentManager.findFragmentByTag(sceneTagList.last()) ?: return null
         AssertUtils.assertTrue(SceneFragment::class.java.isInstance(fragment))
         return fragment as SceneFragment
     }
@@ -514,8 +509,8 @@ abstract class StageActivity : BaseActivity() {
     }
 
     @JvmName("sortSceneViews")
-    internal fun sortSceneViews(views: List<View>) {
-        Collections.sort(views, sceneViewComparator)
+    internal fun sortSceneViews(views: MutableList<View>) {
+        views.sortWith(sceneViewComparator)
     }
 
     fun finishScene(scene: SceneFragment) {
@@ -943,26 +938,11 @@ abstract class StageActivity : BaseActivity() {
         super.onPause()
     }
 
-    fun findSceneByTag(tag: String?): SceneFragment? {
-        val fragmentManager = supportFragmentManager
-        val fragment = fragmentManager.findFragmentByTag(tag)
-        return if (fragment != null) {
-            fragment as SceneFragment
-        } else {
-            null
-        }
-    }
+    fun findSceneByTag(tag: String?): SceneFragment? =
+        supportFragmentManager.findFragmentByTag(tag) as SceneFragment?
 
     val topSceneClass: Class<*>?
-        get() {
-            val index = sceneTagList.size - 1
-            if (index < 0) {
-                return null
-            }
-            val tag = sceneTagList[index]
-            val fragment = supportFragmentManager.findFragmentByTag(tag) ?: return null
-            return fragment.javaClass
-        }
+        get() = sceneTagList.lastOrNull()?.let { supportFragmentManager.findFragmentByTag(it) }?.javaClass
 
     override fun applyOverrideConfiguration(overrideConfiguration: Configuration?) {
         if (overrideConfiguration != null) {
