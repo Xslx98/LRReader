@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("CyclomaticComplexMethod", "LongMethod") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.lib.glview.widget
 
 import androidx.annotation.IntDef
@@ -63,65 +61,9 @@ class GLLinearLayout : GLView() {
         )
 
         if (orientation == HORIZONTAL && MeasureSpec.getMode(widthSpec) == MeasureSpec.EXACTLY) {
-            var width = MeasureSpec.getSize(layoutWidthSpec)
-            var sumWeight = 0.0f
-
-            for (i in 0 until componentCount) {
-                val component = getComponent(i)
-                if (component.visibility == GONE) {
-                    continue
-                }
-                val lp = component.layoutParams as LayoutParams
-
-                if (lp.weight > 0.0f) {
-                    sumWeight += lp.weight
-                    tempList.add(component)
-                } else {
-                    measureComponent(component, layoutWidthSpec, layoutHeightSpec)
-                    width -= component.measuredWidth
-                }
-            }
-
-            for (component in tempList) {
-                val lp = component.layoutParams as LayoutParams
-                val componentWidthSpec = MeasureSpec.makeMeasureSpec(
-                    (width * lp.weight / sumWeight).toInt(), MeasureSpec.EXACTLY
-                )
-                val componentHeightSpec = getComponentSpec(layoutHeightSpec, lp.height)
-                component.measure(componentWidthSpec, componentHeightSpec)
-            }
-
-            tempList.clear()
+            measureWeightedRow(layoutWidthSpec, layoutHeightSpec)
         } else if (orientation == VERTICAL && MeasureSpec.getMode(heightSpec) == MeasureSpec.EXACTLY) {
-            var height = MeasureSpec.getSize(layoutHeightSpec)
-            var sumWeight = 0.0f
-
-            for (i in 0 until componentCount) {
-                val component = getComponent(i)
-                if (component.visibility == GONE) {
-                    continue
-                }
-                val lp = component.layoutParams as LayoutParams
-
-                if (lp.weight > 0.0f) {
-                    sumWeight += lp.weight
-                    tempList.add(component)
-                } else {
-                    measureComponent(component, layoutWidthSpec, layoutHeightSpec)
-                    height -= component.measuredHeight
-                }
-            }
-
-            for (component in tempList) {
-                val lp = component.layoutParams as LayoutParams
-                val componentWidthSpec = getComponentSpec(layoutWidthSpec, lp.width)
-                val componentHeightSpec = MeasureSpec.makeMeasureSpec(
-                    (height * lp.weight / sumWeight).toInt(), MeasureSpec.EXACTLY
-                )
-                component.measure(componentWidthSpec, componentHeightSpec)
-            }
-
-            tempList.clear()
+            measureWeightedColumn(layoutWidthSpec, layoutHeightSpec)
         } else {
             measureAllComponents(this, layoutWidthSpec, layoutHeightSpec)
         }
@@ -154,6 +96,74 @@ class GLLinearLayout : GLView() {
         maxHeight = maxHeight + paddings.top + paddings.bottom
 
         setMeasuredSize(getDefaultSize(maxWidth, widthSpec), getDefaultSize(maxHeight, heightSpec))
+    }
+
+    // EXACTLY-wide row: the unweighted components are measured first, the
+    // weighted ones share the remaining width.
+    private fun measureWeightedRow(layoutWidthSpec: Int, layoutHeightSpec: Int) {
+        var width = MeasureSpec.getSize(layoutWidthSpec)
+        var sumWeight = 0.0f
+
+        for (i in 0 until componentCount) {
+            val component = getComponent(i)
+            if (component.visibility == GONE) {
+                continue
+            }
+            val lp = component.layoutParams as LayoutParams
+
+            if (lp.weight > 0.0f) {
+                sumWeight += lp.weight
+                tempList.add(component)
+            } else {
+                measureComponent(component, layoutWidthSpec, layoutHeightSpec)
+                width -= component.measuredWidth
+            }
+        }
+
+        for (component in tempList) {
+            val lp = component.layoutParams as LayoutParams
+            val componentWidthSpec = MeasureSpec.makeMeasureSpec(
+                (width * lp.weight / sumWeight).toInt(), MeasureSpec.EXACTLY
+            )
+            val componentHeightSpec = getComponentSpec(layoutHeightSpec, lp.height)
+            component.measure(componentWidthSpec, componentHeightSpec)
+        }
+
+        tempList.clear()
+    }
+
+    // EXACTLY-tall column: the unweighted components are measured first, the
+    // weighted ones share the remaining height.
+    private fun measureWeightedColumn(layoutWidthSpec: Int, layoutHeightSpec: Int) {
+        var height = MeasureSpec.getSize(layoutHeightSpec)
+        var sumWeight = 0.0f
+
+        for (i in 0 until componentCount) {
+            val component = getComponent(i)
+            if (component.visibility == GONE) {
+                continue
+            }
+            val lp = component.layoutParams as LayoutParams
+
+            if (lp.weight > 0.0f) {
+                sumWeight += lp.weight
+                tempList.add(component)
+            } else {
+                measureComponent(component, layoutWidthSpec, layoutHeightSpec)
+                height -= component.measuredHeight
+            }
+        }
+
+        for (component in tempList) {
+            val lp = component.layoutParams as LayoutParams
+            val componentWidthSpec = getComponentSpec(layoutWidthSpec, lp.width)
+            val componentHeightSpec = MeasureSpec.makeMeasureSpec(
+                (height * lp.weight / sumWeight).toInt(), MeasureSpec.EXACTLY
+            )
+            component.measure(componentWidthSpec, componentHeightSpec)
+        }
+
+        tempList.clear()
     }
 
     override fun onLayout(changeSize: Boolean, left: Int, top: Int, right: Int, bottom: Int) {

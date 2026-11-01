@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("CyclomaticComplexMethod", "NestedBlockDepth") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.lib.glview.view
 
 import android.os.Handler
@@ -56,48 +54,7 @@ class TouchHelper(private val owner: TouchOwner) {
         if (owner.isClickable || owner.isLongClickable) {
             when (event.action) {
                 MotionEvent.ACTION_UP -> if (owner.isPressed || prePressed) {
-                    if (prePressed) {
-                        // The button is being released before we actually
-                        // showed it as pressed.  Make it show the pressed
-                        // state now (before scheduling the click) to ensure
-                        // the user sees it.
-                        setPressed(true, x, y)
-                    }
-
-                    if (!hasPerformedLongPress) {
-                        // This is a tap, so remove the longpress check
-                        removeLongPressCallback()
-
-                        // Use a Runnable and post this rather than calling
-                        // performClick directly. This lets other visual state
-                        // of the view update before click actions start.
-                        var performClick = performClickRunnable
-                        if (performClick == null) {
-                            performClick = PerformClick()
-                            performClickRunnable = performClick
-                        }
-                        if (!MAIN_HANDLER.post(performClick)) {
-                            owner.performClick()
-                        }
-                    }
-
-                    var unsetPressedState = unsetPressedStateRunnable
-                    if (unsetPressedState == null) {
-                        unsetPressedState = UnsetPressedState()
-                        unsetPressedStateRunnable = unsetPressedState
-                    }
-
-                    if (prePressed) {
-                        MAIN_HANDLER.postDelayed(
-                            unsetPressedState,
-                            ViewConfiguration.getPressedStateDuration().toLong()
-                        )
-                    } else if (!MAIN_HANDLER.post(unsetPressedState)) {
-                        // If the post failed, unpress right now
-                        unsetPressedState.run()
-                    }
-
-                    removeTapCallback()
+                    onPressedUp(x, y)
                 }
 
                 MotionEvent.ACTION_DOWN -> {
@@ -120,27 +77,76 @@ class TouchHelper(private val owner: TouchOwner) {
                     removeLongPressCallback()
                 }
 
-                MotionEvent.ACTION_MOVE -> {
-                    owner.setHotspot(x, y)
-
-                    // Be lenient about moving outside of buttons
-                    if (!pointInView(x, y, TOUCH_SLOP)) {
-                        // Outside button
-                        removeTapCallback()
-                        if (owner.isPressed) {
-                            // Remove any future long press/tap checks
-                            removeLongPressCallback()
-
-                            owner.isPressed = false
-                        }
-                    }
-                }
+                MotionEvent.ACTION_MOVE -> onMove(x, y)
             }
 
             return true
         }
 
         return false
+    }
+
+    // ACTION_UP on a pressed (or pre-pressed) clickable owner.
+    private fun onPressedUp(x: Float, y: Float) {
+        if (prePressed) {
+            // The button is being released before we actually
+            // showed it as pressed.  Make it show the pressed
+            // state now (before scheduling the click) to ensure
+            // the user sees it.
+            setPressed(true, x, y)
+        }
+
+        if (!hasPerformedLongPress) {
+            // This is a tap, so remove the longpress check
+            removeLongPressCallback()
+
+            // Use a Runnable and post this rather than calling
+            // performClick directly. This lets other visual state
+            // of the view update before click actions start.
+            var performClick = performClickRunnable
+            if (performClick == null) {
+                performClick = PerformClick()
+                performClickRunnable = performClick
+            }
+            if (!MAIN_HANDLER.post(performClick)) {
+                owner.performClick()
+            }
+        }
+
+        var unsetPressedState = unsetPressedStateRunnable
+        if (unsetPressedState == null) {
+            unsetPressedState = UnsetPressedState()
+            unsetPressedStateRunnable = unsetPressedState
+        }
+
+        if (prePressed) {
+            MAIN_HANDLER.postDelayed(
+                unsetPressedState,
+                ViewConfiguration.getPressedStateDuration().toLong()
+            )
+        } else if (!MAIN_HANDLER.post(unsetPressedState)) {
+            // If the post failed, unpress right now
+            unsetPressedState.run()
+        }
+
+        removeTapCallback()
+    }
+
+    // ACTION_MOVE on a clickable owner.
+    private fun onMove(x: Float, y: Float) {
+        owner.setHotspot(x, y)
+
+        // Be lenient about moving outside of buttons
+        if (!pointInView(x, y, TOUCH_SLOP)) {
+            // Outside button
+            removeTapCallback()
+            if (owner.isPressed) {
+                // Remove any future long press/tap checks
+                removeLongPressCallback()
+
+                owner.isPressed = false
+            }
+        }
     }
 
     private fun setPressed(pressed: Boolean, x: Float, y: Float) {
