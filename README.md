@@ -147,12 +147,12 @@ The Debug APK lands in `app/build/outputs/apk/appRelease/debug/`. A signed relea
 
 | 层 / Layer | 技术 / Technology |
 |---|---|
-| **语言 / Language** | Kotlin (业务代码 100%) + Java (GLView / widget 遗留框架) / Kotlin (all business code) + Java (legacy GLView / widget framework) |
+| **语言 / Language** | Kotlin（应用代码 100%，含阅读器 GL 渲染框架）/ Kotlin (all app code, including the reader's GL rendering framework) |
 | **网络 / Network** | OkHttp 4.12 + Kotlin Coroutines |
 | **API 序列化 / Serialization** | kotlinx-serialization (all JSON) |
 | **列表分页 / Paging** | Jetpack Paging 3 |
 | **数据库 / Database** | Room 2.8 + KSP (schema v31, 多服务器复合主键 / composite key for multi-server state) |
-| **图像解码 / Image Decoding** | Android ImageDecoder（按目标尺寸采样）+ 轻量 JNI 辅助 / Platform ImageDecoder with target-size sampling + minimal JNI helpers |
+| **图像加载 / Image Loading** | 封面与缩略图：Coil 3；阅读器页面：Android ImageDecoder（按目标尺寸采样）+ 轻量 JNI 辅助 / Covers and thumbnails: Coil 3; reader pages: platform ImageDecoder with target-size sampling + minimal JNI helpers |
 | **安全 / Security** | Android Keystore + AES-GCM（API Key、图案锁 / API keys, pattern lock） |
 | **构建 / Build** | Gradle + R8 |
 | **质量门禁 / Quality Gates** | 单元测试（JUnit + Robolectric）、Android Lint、detekt、JaCoCo 覆盖率下限、Room schema 漂移检查、模拟器 Release 冒烟 / Unit tests (JUnit + Robolectric), Android Lint, detekt, JaCoCo coverage floor, Room schema drift check, emulator release smoke |
@@ -177,7 +177,7 @@ LRReader/
 │   │   │   ├── stats/                  # Reading statistics + daily aggregate
 │   │   │   ├── ui/                     # Activities, Scenes, ViewModels
 │   │   │   └── ServiceRegistry.kt      # Module registry (network / data / coroutine …)
-│   │   └── com/lanraragi/framework/    # Legacy GLView / Conaco / widget framework (Java)
+│   │   └── com/lanraragi/framework/    # Reader GL view system, scene stack, widgets (Kotlin, from EhViewer)
 │   ├── cpp/                            # Minimal JNI helper (GL texture upload)
 │   ├── res/                            # Resources (10 languages)
 │   └── assets/                         # Open-source license page
@@ -206,6 +206,7 @@ This project is built upon the following open-source projects:
 
 - [AndroidX](https://developer.android.com/jetpack/androidx) (AppCompat, Room, Paging, RecyclerView, Biometric)
 - [OkHttp](https://github.com/square/okhttp) - HTTP client
+- [Coil](https://github.com/coil-kt/coil) - Cover and thumbnail loading
 - [kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization) - JSON serialization
 - [kotlinx-coroutines](https://github.com/Kotlin/kotlinx.coroutines) - Async programming
 

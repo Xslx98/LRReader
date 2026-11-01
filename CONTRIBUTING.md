@@ -56,8 +56,10 @@ One Gradle module, `app/`:
   - `dao/` — Room entities, DAOs and migrations (`AppDatabase` is the only database).
   - `download/` — the download service; other packages use the `DownloadManager` facade only.
   - `ui/scene/` — screens (scenes) and their ViewModels.
-- `com.lanraragi.framework.*` — the reader/rendering framework inherited from
-  EhViewer, kept in Java. Leave it in Java; new code anywhere is Kotlin.
+- `com.lanraragi.framework.*` — the reader's OpenGL ES view system and page
+  gallery (`lib/glview`, `lib/glgallery`), the scene stack (`scene`) and a few
+  widgets, inherited from EhViewer and converted to Kotlin. Its render, layout
+  and touch paths run every frame: no allocations, boxing or lambdas there.
 - `app/schemas/` — exported Room schemas; CI fails when they drift.
 
 ## Code conventions
