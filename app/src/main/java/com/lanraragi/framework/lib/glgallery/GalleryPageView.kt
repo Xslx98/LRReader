@@ -84,16 +84,10 @@ class GalleryPageView(
         info.addComponent(progressView, lp)
     }
 
-    override fun getSuggestedMinimumHeight(): Int {
-        // The height of the actual image may be smaller than minHeight.
-        // Set min height as 0 when the image is visible.
-        // For PageLayoutManager, min height is useless.
-        return if (imageView.visibility == VISIBLE) {
-            0
-        } else {
-            minHeight
-        }
-    }
+    // The height of the actual image may be smaller than minHeight.
+    // Set min height as 0 when the image is visible.
+    // For PageLayoutManager, min height is useless.
+    override fun getSuggestedMinimumHeight(): Int = if (imageView.visibility == VISIBLE) 0 else minHeight
 
     fun showImage() {
         imageView.visibility = VISIBLE
@@ -127,15 +121,17 @@ class GalleryPageView(
     }
 
     fun setProgress(progress: Float) {
-        if (progress == PROGRESS_GONE) {
-            progressView.visibility = GONE
-        } else if (progress == PROGRESS_INDETERMINATE) {
-            progressView.visibility = VISIBLE
-            progressView.isIndeterminate = true
-        } else {
-            progressView.visibility = VISIBLE
-            progressView.isIndeterminate = false
-            progressView.setProgress(progress)
+        when (progress) {
+            PROGRESS_GONE -> progressView.visibility = GONE
+            PROGRESS_INDETERMINATE -> {
+                progressView.visibility = VISIBLE
+                progressView.isIndeterminate = true
+            }
+            else -> {
+                progressView.visibility = VISIBLE
+                progressView.isIndeterminate = false
+                progressView.setProgress(progress)
+            }
         }
     }
 

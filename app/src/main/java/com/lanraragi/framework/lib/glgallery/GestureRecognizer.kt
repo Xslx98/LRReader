@@ -70,13 +70,8 @@ internal class GestureRecognizer(context: Context, private val listener: Listene
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean = listener.onSingleTapConfirmed(e.x, e.y)
 
-        override fun onDoubleTapEvent(e: MotionEvent): Boolean {
-            return if (e.action == MotionEvent.ACTION_UP) {
-                listener.onDoubleTapConfirmed(e.x, e.y)
-            } else {
-                true
-            }
-        }
+        override fun onDoubleTapEvent(e: MotionEvent): Boolean =
+            if (e.action == MotionEvent.ACTION_UP) listener.onDoubleTapConfirmed(e.x, e.y) else true
 
         override fun onDoubleTap(e: MotionEvent): Boolean = listener.onDoubleTap(e.x, e.y)
 
@@ -91,19 +86,16 @@ internal class GestureRecognizer(context: Context, private val listener: Listene
             return listener.onScroll(dx, dy, e2.x - e1.x, e2.y - e1.y, e2.x, e2.y)
         }
 
-        override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-            return listener.onFling(e1, e2, velocityX, velocityY)
-        }
+        override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean =
+            listener.onFling(e1, e2, velocityX, velocityY)
     }
 
     private inner class MyScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-            return listener.onScaleBegin(detector.focusX, detector.focusY)
-        }
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean =
+            listener.onScaleBegin(detector.focusX, detector.focusY)
 
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            return listener.onScale(detector.focusX, detector.focusY, detector.scaleFactor)
-        }
+        override fun onScale(detector: ScaleGestureDetector): Boolean =
+            listener.onScale(detector.focusX, detector.focusY, detector.scaleFactor)
 
         override fun onScaleEnd(detector: ScaleGestureDetector) {
             listener.onScaleEnd()

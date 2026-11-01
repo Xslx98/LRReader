@@ -38,9 +38,8 @@ internal abstract class Fling(context: Context) : Animation() {
         interpolator = FLING_INTERPOLATOR
     }
 
-    private fun getSplineDeceleration(velocity: Int): Double {
-        return ln((INFLEXION * abs(velocity) / (FLING_FRICTION * physicalCoeff)).toDouble())
-    }
+    private fun getSplineDeceleration(velocity: Int): Double =
+        ln((INFLEXION * abs(velocity) / (FLING_FRICTION * physicalCoeff)).toDouble())
 
     /* Returns the duration, expressed in milliseconds */
     protected fun getSplineFlingDuration(velocity: Int): Int {

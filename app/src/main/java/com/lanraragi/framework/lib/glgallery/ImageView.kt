@@ -106,19 +106,11 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         alphaAnimation.interpolator = AnimationUtils.FAST_SLOW_INTERPOLATOR
     }
 
-    override fun getSuggestedMinimumWidth(): Int {
-        return max(
-            super.getSuggestedMinimumWidth(),
-            if (imageTexture == null) 0 else textureWidth
-        )
-    }
+    override fun getSuggestedMinimumWidth(): Int =
+        max(super.getSuggestedMinimumWidth(), if (imageTexture == null) 0 else textureWidth)
 
-    override fun getSuggestedMinimumHeight(): Int {
-        return max(
-            super.getSuggestedMinimumHeight(),
-            if (imageTexture == null) 0 else textureHeight
-        )
-    }
+    override fun getSuggestedMinimumHeight(): Int =
+        max(super.getSuggestedMinimumHeight(), if (imageTexture == null) 0 else textureHeight)
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
         if (imageTexture == null) {

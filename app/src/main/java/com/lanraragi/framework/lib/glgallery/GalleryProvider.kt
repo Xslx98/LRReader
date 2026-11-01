@@ -89,10 +89,10 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     @UiThread
     override fun onTrimMemory(action: MemoryTrim.Action) {
         ImageTexture.trimFreeTiles()
-        if (action == MemoryTrim.Action.CLEAR) {
-            imageCache.evictAll()
-        } else if (action == MemoryTrim.Action.TRIM) {
-            imageCache.trimToSize(imageCache.maxSize() / 4)
+        when (action) {
+            MemoryTrim.Action.CLEAR -> imageCache.evictAll()
+            MemoryTrim.Action.TRIM -> imageCache.trimToSize(imageCache.maxSize() / 4)
+            MemoryTrim.Action.NONE -> Unit
         }
     }
 
