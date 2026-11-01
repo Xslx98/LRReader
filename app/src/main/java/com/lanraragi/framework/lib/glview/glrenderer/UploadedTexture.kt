@@ -28,7 +28,7 @@ import javax.microedition.khronos.opengles.GL11
 // implement onFreeBitmap(mBitmap) which will be called when the Bitmap
 // is not needed anymore.
 //
-// isContentValid() is meaningful only when the isLoaded() returns true.
+// isContentValid is meaningful only when isLoaded is true.
 // It means whether the content needs to be updated.
 //
 // The user of this class should call recycle() when the texture is not
@@ -39,33 +39,26 @@ import javax.microedition.khronos.opengles.GL11
 abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     BasicTexture(null, 0, STATE_UNLOADED) {
 
-    private var mContentValid = true
+    private var contentValid = true
 
     // indicate this textures is being uploaded in background
-    private var mIsUploading = false
-    private var mOpaque = true
-    private var mThrottled = false
+    var isUploading = false
+        protected set
+    private var opaque = true
+    private var throttled = false
 
     @JvmField
     protected var mBitmap: Bitmap? = null
-    private var mBorder = 0
+    private var borderWidth = 0
 
     init {
         if (hasBorder) {
             setBorder(true)
-            mBorder = 1
+            borderWidth = 1
         }
     }
 
     protected constructor() : this(false)
-
-    protected fun setIsUploading(uploading: Boolean) {
-        mIsUploading = uploading
-    }
-
-    fun isUploading(): Boolean {
-        return mIsUploading
-    }
 
     private class BorderKey : Cloneable {
         @JvmField
@@ -98,7 +91,7 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     }
 
     protected fun setThrottled(throttled: Boolean) {
-        mThrottled = throttled
+        this.throttled = throttled
     }
 
     private fun getBitmap(): Bitmap {
@@ -107,8 +100,8 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
             bitmap = onGetBitmap()
             mBitmap = bitmap
             if (mWidth == UNSPECIFIED) {
-                val w = bitmap.width + mBorder * 2
-                val h = bitmap.height + mBorder * 2
+                val w = bitmap.width + borderWidth * 2
+                val h = bitmap.height + borderWidth * 2
                 setSize(w, h)
             }
         }
@@ -137,7 +130,7 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
 
     fun invalidateContent() {
         if (mBitmap != null) freeBitmap()
-        mContentValid = false
+        contentValid = false
         mWidth = UNSPECIFIED
         mHeight = UNSPECIFIED
     }
@@ -145,27 +138,26 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     /**
      * Whether the content on GPU is valid.
      */
-    fun isContentValid(): Boolean {
-        return isLoaded() && mContentValid
-    }
+    val isContentValid: Boolean
+        get() = isLoaded && contentValid
 
     /**
      * Updates the content on GPU's memory.
      * @param canvas
      */
     fun updateContent(canvas: GLCanvas) {
-        if (!isLoaded()) {
-            if (mThrottled && ++sUploadedCount > UPLOAD_LIMIT) {
+        if (!isLoaded) {
+            if (throttled && ++uploadedCount > UPLOAD_LIMIT) {
                 return
             }
             uploadToCanvas(canvas)
-        } else if (!mContentValid) {
+        } else if (!contentValid) {
             val bitmap = getBitmap()
             val format = GLUtils.getInternalFormat(bitmap)
             val type = GLUtils.getType(bitmap)
-            canvas.texSubImage2D(this, mBorder, mBorder, bitmap, format, type)
+            canvas.texSubImage2D(this, borderWidth, borderWidth, bitmap, format, type)
             freeBitmap()
-            mContentValid = true
+            contentValid = true
         }
     }
 
@@ -176,8 +168,8 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
         try {
             val bWidth = bitmap.width
             val bHeight = bitmap.height
-            val texWidth = getTextureWidth()
-            val texHeight = getTextureHeight()
+            val texWidth = textureWidth
+            val texHeight = textureHeight
 
             if (bWidth > texWidth || bHeight > texHeight) {
                 throw IllegalStateException("bWidth > texWidth || bHeight > texHeight")
@@ -194,9 +186,9 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
                 val config = bitmap.config
 
                 canvas.initializeTextureSize(this, format, type)
-                canvas.texSubImage2D(this, mBorder, mBorder, bitmap, format, type)
+                canvas.texSubImage2D(this, borderWidth, borderWidth, bitmap, format, type)
 
-                if (mBorder > 0) {
+                if (borderWidth > 0) {
                     // Left border
                     var line = getBorderLine(true, config, texHeight)
                     canvas.texSubImage2D(this, 0, 0, line, format, type)
@@ -207,15 +199,15 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
                 }
 
                 // Right border
-                if (mBorder + bWidth < texWidth) {
+                if (borderWidth + bWidth < texWidth) {
                     val line = getBorderLine(true, config, texHeight)
-                    canvas.texSubImage2D(this, mBorder + bWidth, 0, line, format, type)
+                    canvas.texSubImage2D(this, borderWidth + bWidth, 0, line, format, type)
                 }
 
                 // Bottom border
-                if (mBorder + bHeight < texHeight) {
+                if (borderWidth + bHeight < texHeight) {
                     val line = getBorderLine(false, config, texWidth)
-                    canvas.texSubImage2D(this, 0, mBorder + bHeight, line, format, type)
+                    canvas.texSubImage2D(this, 0, borderWidth + bHeight, line, format, type)
                 }
             }
         } finally {
@@ -224,12 +216,12 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
         // Update texture state.
         setAssociatedCanvas(canvas)
         mState = STATE_LOADED
-        mContentValid = true
+        contentValid = true
     }
 
     override fun onBind(canvas: GLCanvas): Boolean {
         updateContent(canvas)
-        return isContentValid()
+        return isContentValid
     }
 
     override fun getTarget(): Int {
@@ -237,11 +229,11 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     }
 
     fun setOpaque(isOpaque: Boolean) {
-        mOpaque = isOpaque
+        opaque = isOpaque
     }
 
     override fun isOpaque(): Boolean {
-        return mOpaque
+        return opaque
     }
 
     override fun recycle() {
@@ -252,37 +244,37 @@ abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     companion object {
         // To prevent keeping allocation the borders, we store those used borders here.
         // Since the length will be power of two, it won't use too much memory.
-        private val sBorderLines = HashMap<BorderKey, Bitmap>()
-        private val sBorderKey = BorderKey()
+        private val borderLines = HashMap<BorderKey, Bitmap>()
+        private val borderKey = BorderKey()
 
-        private var sUploadedCount = 0
+        private var uploadedCount = 0
         private const val UPLOAD_LIMIT = 100
 
         private fun getBorderLine(vertical: Boolean, config: Bitmap.Config?, length: Int): Bitmap {
-            val key = sBorderKey
+            val key = borderKey
             key.vertical = vertical
             key.config = config
             key.length = length
-            var bitmap = sBorderLines[key]
+            var bitmap = borderLines[key]
             if (bitmap == null) {
                 bitmap = if (vertical) {
                     Bitmap.createBitmap(1, length, config!!)
                 } else {
                     Bitmap.createBitmap(length, 1, config!!)
                 }
-                sBorderLines[key.clone()] = bitmap
+                borderLines[key.clone()] = bitmap
             }
             return bitmap
         }
 
         @JvmStatic
         fun resetUploadLimit() {
-            sUploadedCount = 0
+            uploadedCount = 0
         }
 
         @JvmStatic
         fun uploadLimitReached(): Boolean {
-            return sUploadedCount > UPLOAD_LIMIT
+            return uploadedCount > UPLOAD_LIMIT
         }
     }
 }

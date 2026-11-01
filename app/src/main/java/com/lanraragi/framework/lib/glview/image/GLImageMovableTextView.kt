@@ -24,27 +24,27 @@ import kotlin.math.max
 
 class GLImageMovableTextView : GLView() {
 
-    private var mTextTexture: ImageMovableTextTexture? = null
+    private var textTexture: ImageMovableTextTexture? = null
 
-    private var mText = ""
-    private var mIndexes = EMPTY_INDEXES
+    private var text = ""
+    private var indexes = EMPTY_INDEXES
 
-    private var mGravity = Gravity.NO_GRAVITY
+    private var gravity = Gravity.NO_GRAVITY
 
     private fun generateIndexes() {
-        val textTexture = mTextTexture
-        if (textTexture == null || TextUtils.isEmpty(mText)) {
-            mIndexes = EMPTY_INDEXES
+        val texture = textTexture
+        if (texture == null || TextUtils.isEmpty(text)) {
+            indexes = EMPTY_INDEXES
         } else {
-            mIndexes = textTexture.getTextIndexes(mText)
+            indexes = texture.getTextIndexes(text)
         }
     }
 
     fun setTextTexture(textTexture: ImageMovableTextTexture?) {
-        if (mTextTexture === textTexture) {
+        if (this.textTexture === textTexture) {
             return
         }
-        mTextTexture = textTexture
+        this.textTexture = textTexture
 
         generateIndexes()
         requestLayout()
@@ -52,60 +52,60 @@ class GLImageMovableTextView : GLView() {
 
     fun setText(text: String?) {
         val newText = text.orEmpty()
-        if (newText == mText) {
+        if (newText == this.text) {
             return
         }
-        mText = newText
+        this.text = newText
 
         generateIndexes()
         requestLayout()
     }
 
     fun setGravity(gravity: Int) {
-        if (mGravity != gravity) {
-            mGravity = gravity
+        if (this.gravity != gravity) {
+            this.gravity = gravity
             invalidate()
         }
     }
 
     override fun getSuggestedMinimumWidth(): Int {
-        val textTexture = mTextTexture
-        if (textTexture == null) {
+        val texture = textTexture
+        if (texture == null) {
             return super.getSuggestedMinimumWidth()
         } else {
             return max(
-                textTexture.getTextWidth(mIndexes).toInt() + mPaddings.left + mPaddings.right,
+                texture.getTextWidth(indexes).toInt() + mPaddings.left + mPaddings.right,
                 super.getSuggestedMinimumWidth()
             )
         }
     }
 
     override fun getSuggestedMinimumHeight(): Int {
-        val textTexture = mTextTexture
-        if (textTexture == null) {
+        val texture = textTexture
+        if (texture == null) {
             return super.getSuggestedMinimumHeight()
         } else {
             return max(
-                textTexture.getTextHeight().toInt() + mPaddings.top + mPaddings.bottom,
+                texture.textHeight.toInt() + mPaddings.top + mPaddings.bottom,
                 super.getSuggestedMinimumHeight()
             )
         }
     }
 
     override fun onRender(canvas: GLCanvas) {
-        // mIndexes is never null in Kotlin, so only the texture is checked.
-        val textTexture = mTextTexture ?: return
+        // indexes is never null in Kotlin, so only the texture is checked.
+        val texture = textTexture ?: return
 
         val paddings = getPaddings()
         val x = getDefaultBegin(
-            width, textTexture.getTextWidth(mIndexes).toInt(),
-            paddings.left, paddings.right, Gravity.getPosition(mGravity, Gravity.HORIZONTAL)
+            width, texture.getTextWidth(indexes).toInt(),
+            paddings.left, paddings.right, Gravity.getPosition(gravity, Gravity.HORIZONTAL)
         )
         val y = getDefaultBegin(
-            height, textTexture.getTextHeight().toInt(),
-            paddings.top, paddings.bottom, Gravity.getPosition(mGravity, Gravity.VERTICAL)
+            height, texture.textHeight.toInt(),
+            paddings.top, paddings.bottom, Gravity.getPosition(gravity, Gravity.VERTICAL)
         )
-        textTexture.drawText(canvas, mIndexes, x, y)
+        texture.drawText(canvas, indexes, x, y)
     }
 
     companion object {

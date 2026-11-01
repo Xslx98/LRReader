@@ -30,19 +30,16 @@ import kotlin.math.ceil
 // To create a StringTexture, use the newInstance() method and specify
 // the String, the font size, and the color.
 class StringTexture private constructor(
-    text: String,
-    paint: TextPaint,
-    metrics: FontMetricsInt,
+    private val text: String,
+    private val paint: TextPaint,
+    private val metrics: FontMetricsInt,
     width: Int,
     height: Int,
 ) : CanvasTexture(width, height) {
-    private val mText: String = text
-    private val mPaint: TextPaint = paint
-    private val mMetrics: FontMetricsInt = metrics
 
     override fun onDraw(canvas: Canvas, backing: Bitmap) {
-        canvas.translate(0f, (-mMetrics.ascent).toFloat())
-        canvas.drawText(mText, 0f, 0f, mPaint)
+        canvas.translate(0f, (-metrics.ascent).toFloat())
+        canvas.drawText(text, 0f, 0f, paint)
     }
 
     companion object {

@@ -51,7 +51,7 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
     @JvmField
     protected var mTextureHeight = 0
 
-    private var mHasBorder = false
+    private var border = false
 
     @JvmField
     protected var mCanvasRef: GLCanvas? = null
@@ -60,8 +60,8 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         setAssociatedCanvas(canvas)
         mId = id
         mState = state
-        synchronized(sAllTextures) {
-            sAllTextures.put(this, null)
+        synchronized(allTextures) {
+            allTextures.put(this, null)
         }
     }
 
@@ -92,9 +92,8 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         return false
     }
 
-    fun getId(): Int {
-        return mId
-    }
+    val id: Int
+        get() = mId
 
     override fun getWidth(): Int {
         return mWidth
@@ -104,15 +103,13 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         return mHeight
     }
 
-    // Returns the width rounded to the next power of 2.
-    fun getTextureWidth(): Int {
-        return mTextureWidth
-    }
+    // The width rounded to the next power of 2.
+    val textureWidth: Int
+        get() = mTextureWidth
 
-    // Returns the height rounded to the next power of 2.
-    fun getTextureHeight(): Int {
-        return mTextureHeight
-    }
+    // The height rounded to the next power of 2.
+    val textureHeight: Int
+        get() = mTextureHeight
 
     // Returns true if the texture has one pixel transparent border around the
     // actual content. This is used to avoid jigged edges.
@@ -126,11 +123,11 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
     // Currently our background is black, so we can draw the thumbnails without
     // enabling blending.
     fun hasBorder(): Boolean {
-        return mHasBorder
+        return border
     }
 
     protected fun setBorder(hasBorder: Boolean) {
-        mHasBorder = hasBorder
+        border = hasBorder
     }
 
     override fun draw(canvas: GLCanvas, x: Int, y: Int) {
@@ -155,9 +152,8 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
     // Public for GLES20Canvas, see onBind.
     abstract fun getTarget(): Int
 
-    fun isLoaded(): Boolean {
-        return mState == STATE_LOADED
-    }
+    val isLoaded: Boolean
+        get() = mState == STATE_LOADED
 
     // recycle() is called when the texture will never be used again,
     // so it can free all resources.
@@ -187,9 +183,9 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
     // Object.finalize() does nothing, so there is no super call to keep.
     @Throws(Throwable::class)
     protected fun finalize() {
-        sInFinalizer.set(BasicTexture::class.java)
+        finalizing.set(BasicTexture::class.java)
         recycle()
-        sInFinalizer.set(null)
+        finalizing.set(null)
     }
 
     companion object {
@@ -203,21 +199,21 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
         // Log a warning if a texture is larger along a dimension
         private const val MAX_TEXTURE_SIZE = 4096
 
-        private val sAllTextures = WeakHashMap<BasicTexture, Any?>()
-        private val sInFinalizer = ThreadLocal<Class<*>?>()
+        private val allTextures = WeakHashMap<BasicTexture, Any?>()
+        private val finalizing = ThreadLocal<Class<*>?>()
 
         // This is for deciding if we can call Bitmap's recycle().
         // We cannot call Bitmap's recycle() in finalizer because at that point
         // the finalizer of Bitmap may already be called so recycle() will crash.
         @JvmStatic
         fun inFinalizer(): Boolean {
-            return sInFinalizer.get() != null
+            return finalizing.get() != null
         }
 
         @JvmStatic
         fun yieldAllTextures() {
-            synchronized(sAllTextures) {
-                for (t in sAllTextures.keys) {
+            synchronized(allTextures) {
+                for (t in allTextures.keys) {
                     t.`yield`()
                 }
             }
@@ -225,8 +221,8 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
 
         @JvmStatic
         fun invalidateAllTextures() {
-            synchronized(sAllTextures) {
-                for (t in sAllTextures.keys) {
+            synchronized(allTextures) {
+                for (t in allTextures.keys) {
                     t.mState = STATE_UNLOADED
                     t.setAssociatedCanvas(null)
                 }

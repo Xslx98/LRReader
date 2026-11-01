@@ -46,30 +46,30 @@ import kotlin.math.sin
 class GLES20Canvas : GLCanvas {
 
     // Keep track of restore state
-    private var mMatrices = FloatArray(INITIAL_RESTORE_STATE_SIZE * MATRIX_SIZE)
-    private var mAlphas = FloatArray(INITIAL_RESTORE_STATE_SIZE)
-    private val mSaveFlags = IntList()
+    private var matrices = FloatArray(INITIAL_RESTORE_STATE_SIZE * MATRIX_SIZE)
+    private var alphas = FloatArray(INITIAL_RESTORE_STATE_SIZE)
+    private val saveFlagStack = IntList()
 
-    private var mCurrentAlphaIndex = 0
-    private var mCurrentMatrixIndex = 0
+    private var currentAlphaIndex = 0
+    private var currentMatrixIndex = 0
 
     // Viewport size
-    private var mWidth = 0
-    private var mHeight = 0
+    private var viewportWidth = 0
+    private var viewportHeight = 0
 
     // Projection matrix
-    private val mProjectionMatrix = FloatArray(MATRIX_SIZE)
+    private val projectionMatrix = FloatArray(MATRIX_SIZE)
 
     // GL programs
-    private val mDrawProgram: Int
-    private val mTextureProgram: Int
-    private val mOesTextureProgram: Int
-    private val mMeshProgram: Int
+    private val drawProgram: Int
+    private val textureProgram: Int
+    private val oesTextureProgram: Int
+    private val meshProgram: Int
 
     // GL buffer containing BOX_COORDINATES
-    private val mBoxCoordinates: Int
+    private val boxCoordinates: Int
 
-    private abstract class ShaderParameter(protected val mName: String) {
+    private abstract class ShaderParameter(protected val name: String) {
         @JvmField
         var handle = 0
 
@@ -78,38 +78,38 @@ class GLES20Canvas : GLCanvas {
 
     private class UniformShaderParameter(name: String) : ShaderParameter(name) {
         override fun loadHandle(program: Int) {
-            handle = GLES20.glGetUniformLocation(program, mName)
+            handle = GLES20.glGetUniformLocation(program, name)
             checkGlError()
         }
     }
 
     private class AttributeShaderParameter(name: String) : ShaderParameter(name) {
         override fun loadHandle(program: Int) {
-            handle = GLES20.glGetAttribLocation(program, mName)
+            handle = GLES20.glGetAttribLocation(program, name)
             checkGlError()
         }
     }
 
-    private val mDrawParameters = arrayOf<ShaderParameter>(
+    private val drawParameters = arrayOf<ShaderParameter>(
         AttributeShaderParameter(POSITION_ATTRIBUTE), // INDEX_POSITION
         UniformShaderParameter(MATRIX_UNIFORM), // INDEX_MATRIX
         UniformShaderParameter(COLOR_UNIFORM), // INDEX_COLOR
     )
-    private val mTextureParameters = arrayOf<ShaderParameter>(
+    private val textureParameters = arrayOf<ShaderParameter>(
         AttributeShaderParameter(POSITION_ATTRIBUTE), // INDEX_POSITION
         UniformShaderParameter(MATRIX_UNIFORM), // INDEX_MATRIX
         UniformShaderParameter(TEXTURE_MATRIX_UNIFORM), // INDEX_TEXTURE_MATRIX
         UniformShaderParameter(TEXTURE_SAMPLER_UNIFORM), // INDEX_TEXTURE_SAMPLER
         UniformShaderParameter(ALPHA_UNIFORM), // INDEX_ALPHA
     )
-    private val mOesTextureParameters = arrayOf<ShaderParameter>(
+    private val oesTextureParameters = arrayOf<ShaderParameter>(
         AttributeShaderParameter(POSITION_ATTRIBUTE), // INDEX_POSITION
         UniformShaderParameter(MATRIX_UNIFORM), // INDEX_MATRIX
         UniformShaderParameter(TEXTURE_MATRIX_UNIFORM), // INDEX_TEXTURE_MATRIX
         UniformShaderParameter(TEXTURE_SAMPLER_UNIFORM), // INDEX_TEXTURE_SAMPLER
         UniformShaderParameter(ALPHA_UNIFORM), // INDEX_ALPHA
     )
-    private val mMeshParameters = arrayOf<ShaderParameter>(
+    private val meshParameters = arrayOf<ShaderParameter>(
         AttributeShaderParameter(POSITION_ATTRIBUTE), // INDEX_POSITION
         UniformShaderParameter(MATRIX_UNIFORM), // INDEX_MATRIX
         AttributeShaderParameter(TEXTURE_COORD_ATTRIBUTE), // INDEX_TEXTURE_COORD
@@ -117,31 +117,31 @@ class GLES20Canvas : GLCanvas {
         UniformShaderParameter(ALPHA_UNIFORM), // INDEX_ALPHA
     )
 
-    private val mUnboundTextures = IntList()
-    private val mDeleteBuffers = IntList()
+    private val unboundTextures = IntList()
+    private val buffersToDelete = IntList()
 
     // Keep track of statistics for debugging
-    private var mCountDrawMesh = 0
-    private var mCountTextureRect = 0
-    private var mCountFillRect = 0
-    private var mCountDrawLine = 0
+    private var countDrawMesh = 0
+    private var countTextureRect = 0
+    private var countFillRect = 0
+    private var countDrawLine = 0
 
     // Temporary variables used within calculations
-    private val mTempMatrix = FloatArray(32)
-    private val mTempColor = FloatArray(4)
-    private val mTempSourceRect = RectF()
-    private val mTempTargetRect = RectF()
-    private val mTempTextureMatrix = FloatArray(MATRIX_SIZE)
-    private val mTempIntArray = IntArray(1)
+    private val tempMatrix = FloatArray(32)
+    private val tempColor = FloatArray(4)
+    private val tempSourceRect = RectF()
+    private val tempTargetRect = RectF()
+    private val tempTextureMatrix = FloatArray(MATRIX_SIZE)
+    private val tempIntArray = IntArray(1)
 
     // After every field above: the Java constructor ran after all field initializers.
     init {
-        Matrix.setIdentityM(mTempTextureMatrix, 0)
-        Matrix.setIdentityM(mMatrices, mCurrentMatrixIndex)
-        mAlphas[mCurrentAlphaIndex] = 1f
+        Matrix.setIdentityM(tempTextureMatrix, 0)
+        Matrix.setIdentityM(matrices, currentMatrixIndex)
+        alphas[currentAlphaIndex] = 1f
 
         val boxBuffer = createBuffer(BOX_COORDINATES)
-        mBoxCoordinates = uploadBuffer(boxBuffer)
+        boxCoordinates = uploadBuffer(boxBuffer)
 
         val drawVertexShader = loadShader(GLES20.GL_VERTEX_SHADER, DRAW_VERTEX_SHADER)
         val textureVertexShader = loadShader(GLES20.GL_VERTEX_SHADER, TEXTURE_VERTEX_SHADER)
@@ -153,16 +153,16 @@ class GLES20Canvas : GLCanvas {
             OES_TEXTURE_FRAGMENT_SHADER
         )
 
-        mDrawProgram = assembleProgram(drawVertexShader, drawFragmentShader, mDrawParameters)
-        mTextureProgram = assembleProgram(
+        drawProgram = assembleProgram(drawVertexShader, drawFragmentShader, drawParameters)
+        textureProgram = assembleProgram(
             textureVertexShader, textureFragmentShader,
-            mTextureParameters
+            textureParameters
         )
-        mOesTextureProgram = assembleProgram(
+        oesTextureProgram = assembleProgram(
             textureVertexShader, oesTextureFragmentShader,
-            mOesTextureParameters
+            oesTextureParameters
         )
-        mMeshProgram = assembleProgram(meshVertexShader, textureFragmentShader, mMeshParameters)
+        meshProgram = assembleProgram(meshVertexShader, textureFragmentShader, meshParameters)
         GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA)
         checkGlError()
     }
@@ -188,9 +188,9 @@ class GLES20Canvas : GLCanvas {
         checkGlError()
         GLES20.glLinkProgram(program)
         checkGlError()
-        val mLinkStatus = mTempIntArray
-        GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, mLinkStatus, 0)
-        if (mLinkStatus[0] != GLES20.GL_TRUE) {
+        val linkStatus = tempIntArray
+        GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0)
+        if (linkStatus[0] != GLES20.GL_TRUE) {
             Log.e(TAG, "Could not link program: ")
             Log.e(TAG, GLES20.glGetProgramInfoLog(program))
             GLES20.glDeleteProgram(program)
@@ -217,14 +217,14 @@ class GLES20Canvas : GLCanvas {
     }
 
     override fun setSize(width: Int, height: Int) {
-        mWidth = width
-        mHeight = height
-        GLES20.glViewport(0, 0, mWidth, mHeight)
+        viewportWidth = width
+        viewportHeight = height
+        GLES20.glViewport(0, 0, viewportWidth, viewportHeight)
         checkGlError()
-        Matrix.setIdentityM(mMatrices, mCurrentMatrixIndex)
-        Matrix.orthoM(mProjectionMatrix, 0, 0f, width.toFloat(), 0f, height.toFloat(), -1f, 1f)
-        Matrix.translateM(mMatrices, mCurrentMatrixIndex, 0f, height.toFloat(), 0f)
-        Matrix.scaleM(mMatrices, mCurrentMatrixIndex, 1f, -1f, 1f)
+        Matrix.setIdentityM(matrices, currentMatrixIndex)
+        Matrix.orthoM(projectionMatrix, 0, 0f, width.toFloat(), 0f, height.toFloat(), -1f, 1f)
+        Matrix.translateM(matrices, currentMatrixIndex, 0f, height.toFloat(), 0f)
+        Matrix.scaleM(matrices, currentMatrixIndex, 1f, -1f, 1f)
     }
 
     override fun clearBuffer() {
@@ -241,28 +241,26 @@ class GLES20Canvas : GLCanvas {
         checkGlError()
     }
 
-    override fun getAlpha(): Float {
-        return mAlphas[mCurrentAlphaIndex]
-    }
-
-    override fun setAlpha(alpha: Float) {
-        mAlphas[mCurrentAlphaIndex] = alpha
-    }
+    override var alpha: Float
+        get() = alphas[currentAlphaIndex]
+        set(alpha) {
+            alphas[currentAlphaIndex] = alpha
+        }
 
     override fun multiplyAlpha(alpha: Float) {
-        setAlpha(getAlpha() * alpha)
+        this.alpha = this.alpha * alpha
     }
 
     override fun translate(x: Float, y: Float, z: Float) {
-        Matrix.translateM(mMatrices, mCurrentMatrixIndex, x, y, z)
+        Matrix.translateM(matrices, currentMatrixIndex, x, y, z)
     }
 
     // This is a faster version of translate(x, y, z) because
     // (1) we knows z = 0, (2) we inline the Matrix.translateM call,
     // (3) we unroll the loop
     override fun translate(x: Float, y: Float) {
-        val index = mCurrentMatrixIndex
-        val m = mMatrices
+        val index = currentMatrixIndex
+        val m = matrices
         m[index + 12] += m[index + 0] * x + m[index + 4] * y
         m[index + 13] += m[index + 1] * x + m[index + 5] * y
         m[index + 14] += m[index + 2] * x + m[index + 6] * y
@@ -270,25 +268,25 @@ class GLES20Canvas : GLCanvas {
     }
 
     override fun scale(sx: Float, sy: Float, sz: Float) {
-        Matrix.scaleM(mMatrices, mCurrentMatrixIndex, sx, sy, sz)
+        Matrix.scaleM(matrices, currentMatrixIndex, sx, sy, sz)
     }
 
     override fun rotate(angle: Float, x: Float, y: Float, z: Float) {
         if (angle == 0f) {
             return
         }
-        val temp = mTempMatrix
+        val temp = tempMatrix
         Matrix.setRotateM(temp, 0, angle, x, y, z)
-        val matrix = mMatrices
-        val index = mCurrentMatrixIndex
+        val matrix = matrices
+        val index = currentMatrixIndex
         Matrix.multiplyMM(temp, MATRIX_SIZE, matrix, index, temp, 0)
         System.arraycopy(temp, MATRIX_SIZE, matrix, index, MATRIX_SIZE)
     }
 
     override fun multiplyMatrix(matrix: FloatArray, offset: Int) {
-        val temp = mTempMatrix
-        val currentMatrix = mMatrices
-        val index = mCurrentMatrixIndex
+        val temp = tempMatrix
+        val currentMatrix = matrices
+        val index = currentMatrixIndex
         Matrix.multiplyMM(temp, 0, currentMatrix, index, matrix, offset)
         System.arraycopy(temp, 0, currentMatrix, index, 16)
     }
@@ -300,34 +298,34 @@ class GLES20Canvas : GLCanvas {
     override fun save(saveFlags: Int) {
         val saveAlpha = (saveFlags and GLCanvas.SAVE_FLAG_ALPHA) == GLCanvas.SAVE_FLAG_ALPHA
         if (saveAlpha) {
-            val currentAlpha = getAlpha()
-            mCurrentAlphaIndex++
-            if (mAlphas.size <= mCurrentAlphaIndex) {
-                mAlphas = mAlphas.copyOf(mAlphas.size * 2)
+            val currentAlpha = alpha
+            currentAlphaIndex++
+            if (alphas.size <= currentAlphaIndex) {
+                alphas = alphas.copyOf(alphas.size * 2)
             }
-            mAlphas[mCurrentAlphaIndex] = currentAlpha
+            alphas[currentAlphaIndex] = currentAlpha
         }
         val saveMatrix = (saveFlags and GLCanvas.SAVE_FLAG_MATRIX) == GLCanvas.SAVE_FLAG_MATRIX
         if (saveMatrix) {
-            val currentIndex = mCurrentMatrixIndex
-            mCurrentMatrixIndex += MATRIX_SIZE
-            if (mMatrices.size <= mCurrentMatrixIndex) {
-                mMatrices = mMatrices.copyOf(mMatrices.size * 2)
+            val currentIndex = currentMatrixIndex
+            currentMatrixIndex += MATRIX_SIZE
+            if (matrices.size <= currentMatrixIndex) {
+                matrices = matrices.copyOf(matrices.size * 2)
             }
-            System.arraycopy(mMatrices, currentIndex, mMatrices, mCurrentMatrixIndex, MATRIX_SIZE)
+            System.arraycopy(matrices, currentIndex, matrices, currentMatrixIndex, MATRIX_SIZE)
         }
-        mSaveFlags.add(saveFlags)
+        saveFlagStack.add(saveFlags)
     }
 
     override fun restore() {
-        val restoreFlags = mSaveFlags.removeAt(mSaveFlags.size() - 1)
+        val restoreFlags = saveFlagStack.removeAt(saveFlagStack.size() - 1)
         val restoreAlpha = (restoreFlags and GLCanvas.SAVE_FLAG_ALPHA) == GLCanvas.SAVE_FLAG_ALPHA
         if (restoreAlpha) {
-            mCurrentAlphaIndex--
+            currentAlphaIndex--
         }
         val restoreMatrix = (restoreFlags and GLCanvas.SAVE_FLAG_MATRIX) == GLCanvas.SAVE_FLAG_MATRIX
         if (restoreMatrix) {
-            mCurrentMatrixIndex -= MATRIX_SIZE
+            currentMatrixIndex -= MATRIX_SIZE
         }
     }
 
@@ -336,18 +334,18 @@ class GLES20Canvas : GLCanvas {
             GLES20.GL_LINE_STRIP, OFFSET_DRAW_LINE, COUNT_LINE_VERTEX, x1, y1, x2 - x1, y2 - y1,
             paint
         )
-        mCountDrawLine++
+        countDrawLine++
     }
 
     override fun drawRect(x: Float, y: Float, width: Float, height: Float, paint: GLPaint) {
         draw(GLES20.GL_LINE_LOOP, OFFSET_DRAW_RECT, COUNT_RECT_VERTEX, x, y, width, height, paint)
-        mCountDrawLine++
+        countDrawLine++
     }
 
     override fun drawOval(cx: Float, cy: Float, radiusX: Float, radiusY: Float, paint: GLPaint) {
-        val halfLineWidth = paint.getLineWidth() / 2
-        fillOval(cx, cy, radiusX + halfLineWidth, radiusY + halfLineWidth, paint.getColor())
-        fillOval(cx, cy, radiusX - halfLineWidth, radiusY - halfLineWidth, paint.getBackgroundColor())
+        val halfLineWidth = paint.lineWidth / 2
+        fillOval(cx, cy, radiusX + halfLineWidth, radiusY + halfLineWidth, paint.color)
+        fillOval(cx, cy, radiusX - halfLineWidth, radiusY - halfLineWidth, paint.backgroundColor)
     }
 
     override fun drawArc(
@@ -358,9 +356,9 @@ class GLES20Canvas : GLCanvas {
         sweepAngle: Float,
         paint: GLPaint,
     ) {
-        val halfLineWidth = paint.getLineWidth() / 2
-        fillSector(cx, cy, radiusX + halfLineWidth, radiusY + halfLineWidth, sweepAngle, paint.getColor())
-        fillOval(cx, cy, radiusX - halfLineWidth, radiusY - halfLineWidth, paint.getBackgroundColor())
+        val halfLineWidth = paint.lineWidth / 2
+        fillSector(cx, cy, radiusX + halfLineWidth, radiusY + halfLineWidth, sweepAngle, paint.color)
+        fillOval(cx, cy, radiusX - halfLineWidth, radiusY - halfLineWidth, paint.backgroundColor)
     }
 
     private fun draw(
@@ -373,7 +371,7 @@ class GLES20Canvas : GLCanvas {
         height: Float,
         paint: GLPaint,
     ) {
-        draw(type, offset, count, x, y, width, height, paint.getColor(), paint.getLineWidth())
+        draw(type, offset, count, x, y, width, height, paint.color, paint.lineWidth)
     }
 
     private fun draw(
@@ -388,11 +386,11 @@ class GLES20Canvas : GLCanvas {
         lineWidth: Float,
     ) {
         prepareDraw(offset, color, lineWidth)
-        draw(mDrawParameters, type, count, x, y, width, height)
+        draw(drawParameters, type, count, x, y, width, height)
     }
 
     private fun prepareDraw(offset: Int, color: Int, lineWidth: Float) {
-        GLES20.glUseProgram(mDrawProgram)
+        GLES20.glUseProgram(drawProgram)
         checkGlError()
         if (lineWidth > 0) {
             GLES20.glLineWidth(lineWidth)
@@ -405,21 +403,21 @@ class GLES20Canvas : GLCanvas {
             GLES20.glBlendColor(colorArray[0], colorArray[1], colorArray[2], colorArray[3])
             checkGlError()
         }
-        GLES20.glUniform4fv(mDrawParameters[INDEX_COLOR].handle, 1, colorArray, 0)
-        setPosition(mDrawParameters, offset)
+        GLES20.glUniform4fv(drawParameters[INDEX_COLOR].handle, 1, colorArray, 0)
+        setPosition(drawParameters, offset)
         checkGlError()
     }
 
     private fun getColor(color: Int): FloatArray {
-        val alpha = ((color ushr 24) and 0xFF) / 255f * getAlpha()
+        val alpha = ((color ushr 24) and 0xFF) / 255f * this.alpha
         val red = ((color ushr 16) and 0xFF) / 255f * alpha
         val green = ((color ushr 8) and 0xFF) / 255f * alpha
         val blue = (color and 0xFF) / 255f * alpha
-        mTempColor[0] = red
-        mTempColor[1] = green
-        mTempColor[2] = blue
-        mTempColor[3] = alpha
-        return mTempColor
+        tempColor[0] = red
+        tempColor[1] = green
+        tempColor[2] = blue
+        tempColor[3] = alpha
+        return tempColor
     }
 
     private fun enableBlending(enableBlending: Boolean) {
@@ -433,7 +431,7 @@ class GLES20Canvas : GLCanvas {
     }
 
     private fun setPosition(params: Array<ShaderParameter>, offset: Int) {
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBoxCoordinates)
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, boxCoordinates)
         checkGlError()
         GLES20.glVertexAttribPointer(
             params[INDEX_POSITION].handle, COORDS_PER_VERTEX,
@@ -464,10 +462,10 @@ class GLES20Canvas : GLCanvas {
     }
 
     private fun setMatrix(params: Array<ShaderParameter>, x: Float, y: Float, width: Float, height: Float) {
-        Matrix.translateM(mTempMatrix, 0, mMatrices, mCurrentMatrixIndex, x, y, 0f)
-        Matrix.scaleM(mTempMatrix, 0, width, height, 1f)
-        Matrix.multiplyMM(mTempMatrix, MATRIX_SIZE, mProjectionMatrix, 0, mTempMatrix, 0)
-        GLES20.glUniformMatrix4fv(params[INDEX_MATRIX].handle, 1, false, mTempMatrix, MATRIX_SIZE)
+        Matrix.translateM(tempMatrix, 0, matrices, currentMatrixIndex, x, y, 0f)
+        Matrix.scaleM(tempMatrix, 0, width, height, 1f)
+        Matrix.multiplyMM(tempMatrix, MATRIX_SIZE, projectionMatrix, 0, tempMatrix, 0)
+        GLES20.glUniformMatrix4fv(params[INDEX_MATRIX].handle, 1, false, tempMatrix, MATRIX_SIZE)
         checkGlError()
     }
 
@@ -476,7 +474,7 @@ class GLES20Canvas : GLCanvas {
             GLES20.GL_TRIANGLE_STRIP, OFFSET_FILL_RECT, COUNT_FILL_VERTEX, x, y, width, height,
             color, 0f
         )
-        mCountFillRect++
+        countFillRect++
     }
 
     override fun fillOval(cx: Float, cy: Float, radiusX: Float, radiusY: Float, color: Int) {
@@ -484,7 +482,7 @@ class GLES20Canvas : GLCanvas {
             GLES20.GL_TRIANGLE_FAN, OFFSET_FILL_CIRCLE, OFFSET_LAST - OFFSET_FILL_CIRCLE,
             cx - radiusX, cy - radiusY, radiusX * 2, radiusY * 2, color, 0f
         )
-        mCountFillRect++
+        countFillRect++
     }
 
     override fun fillSector(cx: Float, cy: Float, radiusX: Float, radiusY: Float, sweepAngle: Float, color: Int) {
@@ -498,7 +496,7 @@ class GLES20Canvas : GLCanvas {
                 GLES20.GL_TRIANGLE_FAN, OFFSET_FILL_CIRCLE, OFFSET_LAST - OFFSET_FILL_CIRCLE - conjugateCount,
                 cx - radiusX, cy - radiusY, radiusX * 2, radiusY * 2, color, 0f
             )
-            mCountFillRect++
+            countFillRect++
         }
     }
 
@@ -506,10 +504,10 @@ class GLES20Canvas : GLCanvas {
         if (width <= 0 || height <= 0) {
             return
         }
-        copyTextureCoordinates(texture, mTempSourceRect)
-        mTempTargetRect.set(x.toFloat(), y.toFloat(), (x + width).toFloat(), (y + height).toFloat())
-        convertCoordinate(mTempSourceRect, mTempTargetRect, texture)
-        drawTextureRect(texture, mTempSourceRect, mTempTargetRect)
+        copyTextureCoordinates(texture, tempSourceRect)
+        tempTargetRect.set(x.toFloat(), y.toFloat(), (x + width).toFloat(), (y + height).toFloat())
+        convertCoordinate(tempSourceRect, tempTargetRect, texture)
+        drawTextureRect(texture, tempSourceRect, tempTargetRect)
     }
 
     // A member, not a static: called on every texture draw, it should not go
@@ -532,11 +530,11 @@ class GLES20Canvas : GLCanvas {
         if (target.width() <= 0 || target.height() <= 0) {
             return
         }
-        mTempSourceRect.set(source)
-        mTempTargetRect.set(target)
+        tempSourceRect.set(source)
+        tempTargetRect.set(target)
 
-        convertCoordinate(mTempSourceRect, mTempTargetRect, texture)
-        drawTextureRect(texture, mTempSourceRect, mTempTargetRect)
+        convertCoordinate(tempSourceRect, tempTargetRect, texture)
+        drawTextureRect(texture, tempSourceRect, tempTargetRect)
     }
 
     override fun drawTexture(
@@ -550,20 +548,20 @@ class GLES20Canvas : GLCanvas {
         if (w <= 0 || h <= 0) {
             return
         }
-        mTempTargetRect.set(x.toFloat(), y.toFloat(), (x + w).toFloat(), (y + h).toFloat())
-        drawTextureRect(texture, textureTransform, mTempTargetRect)
+        tempTargetRect.set(x.toFloat(), y.toFloat(), (x + w).toFloat(), (y + h).toFloat())
+        drawTextureRect(texture, textureTransform, tempTargetRect)
     }
 
     private fun drawTextureRect(texture: BasicTexture, source: RectF, target: RectF) {
         setTextureMatrix(source)
-        drawTextureRect(texture, mTempTextureMatrix, target)
+        drawTextureRect(texture, tempTextureMatrix, target)
     }
 
     private fun setTextureMatrix(source: RectF) {
-        mTempTextureMatrix[0] = source.width()
-        mTempTextureMatrix[5] = source.height()
-        mTempTextureMatrix[12] = source.left
-        mTempTextureMatrix[13] = source.top
+        tempTextureMatrix[0] = source.width()
+        tempTextureMatrix[5] = source.height()
+        tempTextureMatrix[12] = source.left
+        tempTextureMatrix[13] = source.top
     }
 
     // This function changes the source coordinate to the texture coordinates.
@@ -573,8 +571,8 @@ class GLES20Canvas : GLCanvas {
     private fun convertCoordinate(source: RectF, target: RectF, texture: BasicTexture) {
         val width = texture.getWidth()
         val height = texture.getHeight()
-        val texWidth = texture.getTextureWidth()
-        val texHeight = texture.getTextureHeight()
+        val texWidth = texture.textureWidth
+        val texHeight = texture.textureHeight
         // Convert to texture coordinates
         source.left /= texWidth
         source.right /= texWidth
@@ -612,18 +610,18 @@ class GLES20Canvas : GLCanvas {
         if (texture.isFlippedVertically()) {
             restore()
         }
-        mCountTextureRect++
+        countTextureRect++
     }
 
     private fun prepareTexture(texture: BasicTexture): Array<ShaderParameter> {
         val params: Array<ShaderParameter>
         val program: Int
         if (texture.getTarget() == GLES20.GL_TEXTURE_2D) {
-            params = mTextureParameters
-            program = mTextureProgram
+            params = textureParameters
+            program = textureProgram
         } else {
-            params = mOesTextureParameters
-            program = mOesTextureProgram
+            params = oesTextureParameters
+            program = oesTextureProgram
         }
         prepareTexture(texture, program, params)
         return params
@@ -632,15 +630,15 @@ class GLES20Canvas : GLCanvas {
     private fun prepareTexture(texture: BasicTexture, program: Int, params: Array<ShaderParameter>) {
         GLES20.glUseProgram(program)
         checkGlError()
-        enableBlending(!texture.isOpaque() || getAlpha() < OPAQUE_ALPHA)
+        enableBlending(!texture.isOpaque() || alpha < OPAQUE_ALPHA)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         checkGlError()
         texture.onBind(this)
-        GLES20.glBindTexture(texture.getTarget(), texture.getId())
+        GLES20.glBindTexture(texture.getTarget(), texture.id)
         checkGlError()
         GLES20.glUniform1i(params[INDEX_TEXTURE_SAMPLER].handle, 0)
         checkGlError()
-        GLES20.glUniform1f(params[INDEX_ALPHA].handle, getAlpha())
+        GLES20.glUniform1f(params[INDEX_ALPHA].handle, alpha)
         checkGlError()
     }
 
@@ -653,14 +651,14 @@ class GLES20Canvas : GLCanvas {
         indexBuffer: Int,
         indexCount: Int,
     ) {
-        prepareTexture(texture, mMeshProgram, mMeshParameters)
+        prepareTexture(texture, meshProgram, meshParameters)
 
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, indexBuffer)
         checkGlError()
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, xyBuffer)
         checkGlError()
-        val positionHandle = mMeshParameters[INDEX_POSITION].handle
+        val positionHandle = meshParameters[INDEX_POSITION].handle
         GLES20.glVertexAttribPointer(
             positionHandle, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false,
             VERTEX_STRIDE, 0
@@ -669,7 +667,7 @@ class GLES20Canvas : GLCanvas {
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, uvBuffer)
         checkGlError()
-        val texCoordHandle = mMeshParameters[INDEX_TEXTURE_COORD].handle
+        val texCoordHandle = meshParameters[INDEX_TEXTURE_COORD].handle
         GLES20.glVertexAttribPointer(
             texCoordHandle, COORDS_PER_VERTEX, GLES20.GL_FLOAT,
             false, VERTEX_STRIDE, 0
@@ -683,7 +681,7 @@ class GLES20Canvas : GLCanvas {
         GLES20.glEnableVertexAttribArray(texCoordHandle)
         checkGlError()
 
-        setMatrix(mMeshParameters, x.toFloat(), y.toFloat(), 1f, 1f)
+        setMatrix(meshParameters, x.toFloat(), y.toFloat(), 1f, 1f)
         GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, indexCount, GLES20.GL_UNSIGNED_BYTE, 0)
         checkGlError()
 
@@ -693,13 +691,13 @@ class GLES20Canvas : GLCanvas {
         checkGlError()
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0)
         checkGlError()
-        mCountDrawMesh++
+        countDrawMesh++
     }
 
     override fun drawMixed(texture: BasicTexture, toColor: Int, ratio: Float, x: Int, y: Int, w: Int, h: Int) {
-        copyTextureCoordinates(texture, mTempSourceRect)
-        mTempTargetRect.set(x.toFloat(), y.toFloat(), (x + w).toFloat(), (y + h).toFloat())
-        drawMixed(texture, toColor, ratio, mTempSourceRect, mTempTargetRect)
+        copyTextureCoordinates(texture, tempSourceRect)
+        tempTargetRect.set(x.toFloat(), y.toFloat(), (x + w).toFloat(), (y + h).toFloat())
+        drawMixed(texture, toColor, ratio, tempSourceRect, tempTargetRect)
     }
 
     override fun drawMixed(texture: BasicTexture, toColor: Int, ratio: Float, source: RectF, target: RectF) {
@@ -708,16 +706,16 @@ class GLES20Canvas : GLCanvas {
         }
         save(GLCanvas.SAVE_FLAG_ALPHA)
 
-        val currentAlpha = getAlpha()
+        val currentAlpha = alpha
         val cappedRatio = min(1f, max(0f, ratio))
 
         val textureAlpha = (1f - cappedRatio) * currentAlpha
-        setAlpha(textureAlpha)
+        alpha = textureAlpha
         drawTexture(texture, source, target)
 
         if (0 != Color.alpha(toColor)) {
             val colorAlpha = cappedRatio * currentAlpha
-            setAlpha(colorAlpha)
+            alpha = colorAlpha
             fillRect(target.left, target.top, target.width(), target.height(), toColor)
         }
 
@@ -725,32 +723,32 @@ class GLES20Canvas : GLCanvas {
     }
 
     override fun unloadTexture(texture: BasicTexture): Boolean {
-        val unload = texture.isLoaded()
+        val unload = texture.isLoaded
         if (unload) {
-            synchronized(mUnboundTextures) {
-                mUnboundTextures.add(texture.getId())
+            synchronized(unboundTextures) {
+                unboundTextures.add(texture.id)
             }
         }
         return unload
     }
 
     override fun deleteBuffer(bufferId: Int) {
-        synchronized(mUnboundTextures) {
-            mDeleteBuffers.add(bufferId)
+        synchronized(unboundTextures) {
+            buffersToDelete.add(bufferId)
         }
     }
 
     override fun deleteRecycledResources() {
-        synchronized(mUnboundTextures) {
-            var ids = mUnboundTextures
-            if (mUnboundTextures.size() > 0) {
-                mGLId.glDeleteTextures(null, ids.size(), ids.getInternalArray(), 0)
+        synchronized(unboundTextures) {
+            var ids = unboundTextures
+            if (unboundTextures.size() > 0) {
+                glIdImpl.glDeleteTextures(null, ids.size(), ids.getInternalArray(), 0)
                 ids.clear()
             }
 
-            ids = mDeleteBuffers
+            ids = buffersToDelete
             if (ids.size() > 0) {
-                mGLId.glDeleteBuffers(null, ids.size(), ids.getInternalArray(), 0)
+                glIdImpl.glDeleteBuffers(null, ids.size(), ids.getInternalArray(), 0)
                 ids.clear()
             }
         }
@@ -758,19 +756,19 @@ class GLES20Canvas : GLCanvas {
 
     override fun dumpStatisticsAndClear() {
         val line = String.format(
-            Locale.US, "MESH:%d, TEX_RECT:%d, FILL_RECT:%d, LINE:%d", mCountDrawMesh,
-            mCountTextureRect, mCountFillRect, mCountDrawLine
+            Locale.US, "MESH:%d, TEX_RECT:%d, FILL_RECT:%d, LINE:%d", countDrawMesh,
+            countTextureRect, countFillRect, countDrawLine
         )
-        mCountDrawMesh = 0
-        mCountTextureRect = 0
-        mCountFillRect = 0
-        mCountDrawLine = 0
+        countDrawMesh = 0
+        countTextureRect = 0
+        countFillRect = 0
+        countDrawLine = 0
         Log.d(TAG, line)
     }
 
     override fun setTextureParameters(texture: BasicTexture) {
         val target = texture.getTarget()
-        GLES20.glBindTexture(target, texture.getId())
+        GLES20.glBindTexture(target, texture.id)
         checkGlError()
         GLES20.glTexParameteri(target, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
         GLES20.glTexParameteri(target, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
@@ -780,16 +778,16 @@ class GLES20Canvas : GLCanvas {
 
     override fun initializeTextureSize(texture: BasicTexture, format: Int, type: Int) {
         val target = texture.getTarget()
-        GLES20.glBindTexture(target, texture.getId())
+        GLES20.glBindTexture(target, texture.id)
         checkGlError()
-        val width = texture.getTextureWidth()
-        val height = texture.getTextureHeight()
+        val width = texture.textureWidth
+        val height = texture.textureHeight
         GLES20.glTexImage2D(target, 0, format, width, height, 0, format, type, null)
     }
 
     override fun initializeTexture(texture: BasicTexture, bitmap: Bitmap) {
         val target = texture.getTarget()
-        GLES20.glBindTexture(target, texture.getId())
+        GLES20.glBindTexture(target, texture.id)
         checkGlError()
         GLUtils.texImage2D(target, 0, bitmap, 0)
     }
@@ -803,7 +801,7 @@ class GLES20Canvas : GLCanvas {
         type: Int,
     ) {
         val target = texture.getTarget()
-        GLES20.glBindTexture(target, texture.getId())
+        GLES20.glBindTexture(target, texture.id)
         checkGlError()
         GLUtils.texSubImage2D(target, 0, xOffset, yOffset, bitmap, format, type)
     }
@@ -817,9 +815,9 @@ class GLES20Canvas : GLCanvas {
     }
 
     private fun uploadBuffer(buffer: Buffer, elementSize: Int): Int {
-        mGLId.glGenBuffers(1, mTempIntArray, 0)
+        glIdImpl.glGenBuffers(1, tempIntArray, 0)
         checkGlError()
-        val bufferId = mTempIntArray[0]
+        val bufferId = tempIntArray[0]
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, bufferId)
         checkGlError()
         GLES20.glBufferData(
@@ -831,26 +829,26 @@ class GLES20Canvas : GLCanvas {
     }
 
     override fun recoverFromLightCycle() {
-        GLES20.glViewport(0, 0, mWidth, mHeight)
+        GLES20.glViewport(0, 0, viewportWidth, viewportHeight)
         GLES20.glDisable(GLES20.GL_DEPTH_TEST)
         GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA)
         checkGlError()
     }
 
     override fun getBounds(bounds: Rect, x: Int, y: Int, width: Int, height: Int) {
-        Matrix.translateM(mTempMatrix, 0, mMatrices, mCurrentMatrixIndex, x.toFloat(), y.toFloat(), 0f)
-        Matrix.scaleM(mTempMatrix, 0, width.toFloat(), height.toFloat(), 1f)
-        Matrix.multiplyMV(mTempMatrix, MATRIX_SIZE, mTempMatrix, 0, BOUNDS_COORDINATES, 0)
-        Matrix.multiplyMV(mTempMatrix, MATRIX_SIZE + 4, mTempMatrix, 0, BOUNDS_COORDINATES, 4)
-        bounds.left = Math.round(mTempMatrix[MATRIX_SIZE])
-        bounds.right = Math.round(mTempMatrix[MATRIX_SIZE + 4])
-        bounds.top = Math.round(mTempMatrix[MATRIX_SIZE + 1])
-        bounds.bottom = Math.round(mTempMatrix[MATRIX_SIZE + 5])
+        Matrix.translateM(tempMatrix, 0, matrices, currentMatrixIndex, x.toFloat(), y.toFloat(), 0f)
+        Matrix.scaleM(tempMatrix, 0, width.toFloat(), height.toFloat(), 1f)
+        Matrix.multiplyMV(tempMatrix, MATRIX_SIZE, tempMatrix, 0, BOUNDS_COORDINATES, 0)
+        Matrix.multiplyMV(tempMatrix, MATRIX_SIZE + 4, tempMatrix, 0, BOUNDS_COORDINATES, 4)
+        bounds.left = Math.round(tempMatrix[MATRIX_SIZE])
+        bounds.right = Math.round(tempMatrix[MATRIX_SIZE + 4])
+        bounds.top = Math.round(tempMatrix[MATRIX_SIZE + 1])
+        bounds.bottom = Math.round(tempMatrix[MATRIX_SIZE + 5])
         bounds.sort()
     }
 
     override fun getGLId(): GLId {
-        return mGLId
+        return glIdImpl
     }
 
     companion object {
@@ -1009,7 +1007,7 @@ class GLES20Canvas : GLCanvas {
         // Handle indices -- mesh
         private const val INDEX_TEXTURE_COORD = 2
 
-        private val mGLId: GLId = GLES20IdImpl()
+        private val glIdImpl: GLId = GLES20IdImpl()
 
         @JvmStatic
         fun checkError() {

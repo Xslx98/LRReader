@@ -25,7 +25,7 @@ import android.graphics.Canvas
 // Public (Java had it package-private): Kotlin has no package visibility and
 // the public StringTexture extends it.
 abstract class CanvasTexture(width: Int, height: Int) : UploadedTexture() {
-    private val mConfig: Bitmap.Config = Bitmap.Config.ARGB_8888
+    private val config: Bitmap.Config = Bitmap.Config.ARGB_8888
 
     init {
         setSize(width, height)
@@ -33,7 +33,7 @@ abstract class CanvasTexture(width: Int, height: Int) : UploadedTexture() {
     }
 
     override fun onGetBitmap(): Bitmap {
-        val bitmap = Bitmap.createBitmap(mWidth, mHeight, mConfig)
+        val bitmap = Bitmap.createBitmap(mWidth, mHeight, config)
         val canvas = Canvas(bitmap)
         onDraw(canvas, bitmap)
         return bitmap

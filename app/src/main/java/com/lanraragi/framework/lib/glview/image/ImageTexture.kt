@@ -48,46 +48,45 @@ import kotlin.math.min
 /**
  * Call [ImageWrapper.obtain] first
  */
-open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
+open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
 
-    private val mImage: ImageWrapper = image
-    private val mTiles: Array<Tile> // Can be modified in different threads.
-    private val mWidth: Int
+    private val tiles: Array<Tile> // Can be modified in different threads.
+    private val imageWidth: Int
 
     // Should be protected by "synchronized."
-    private val mHeight: Int
-    private val mOpaque: Boolean
-    private val mSrcRect = RectF()
-    private val mDestRect = RectF()
-    private val mRunning = AtomicBoolean()
-    private val mRequestAnimation = AtomicBoolean()
-    private val mFrameDirty = AtomicBoolean()
-    private val mNeedRelease = AtomicBoolean()
-    private val mReleased = AtomicBoolean()
+    private val imageHeight: Int
+    private val opaque: Boolean
+    private val srcRect = RectF()
+    private val destRect = RectF()
+    private val running = AtomicBoolean()
+    private val requestAnimation = AtomicBoolean()
+    private val frameDirty = AtomicBoolean()
+    private val needRelease = AtomicBoolean()
+    private val released = AtomicBoolean()
 
     // Viewport-relative tile regions in texture coordinates (render thread only).
     // Until the view reports where the page sits, every tile counts as near.
-    private val mScreenRegion = RectF()
-    private val mUploadRegion = RectF()
-    private val mKeepRegion = RectF()
-    private var mHasRegions = false
+    private val screenRegion = RectF()
+    private val uploadRegion = RectF()
+    private val keepRegion = RectF()
+    private var hasRegions = false
 
     @Volatile
-    private var mRecycled = false
-    private var mUploader: Uploader? = null
-    private var mImageBusy = false
-    private var mAnimateRunnable: Runnable? = null
+    private var recycled = false
+    private var uploader: Uploader? = null
+    private var imageBusy = false
+    private var animateRunnable: Runnable? = null
 
-    private var mCallback: WeakReference<Callback>? = null
+    private var callbackRef: WeakReference<Callback>? = null
 
     // After every field above: the Java constructor ran after all field initializers.
     init {
-        val width = image.getWidth()
-        mWidth = width
-        val height = image.getHeight()
-        mHeight = height
-        val opaque = image.isOpaque()
-        mOpaque = opaque
+        val width = image.width
+        imageWidth = width
+        val height = image.height
+        imageHeight = height
+        val opaque = image.isOpaque
+        this.opaque = opaque
         val list = ArrayList<Tile>()
 
         var x = 0
@@ -149,7 +148,7 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
             x += LARGE_CONTENT_SIZE
         }
 
-        mTiles = list.toTypedArray()
+        tiles = list.toTypedArray()
     }
 
     // We want to draw the "source" on the "target".
@@ -184,62 +183,55 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         )
     }
 
-    fun getCallback(): Callback? {
-        val callback = mCallback
-        if (callback != null) {
-            return callback.get()
+    var callback: Callback?
+        get() = callbackRef?.get()
+        set(cb) {
+            callbackRef = WeakReference(cb)
         }
-        return null
-    }
-
-    fun setCallback(cb: Callback?) {
-        mCallback = WeakReference(cb)
-    }
 
     fun invalidateSelf() {
-        val callback = getCallback()
         callback?.invalidateImageTexture(this)
     }
 
     override fun start() {
-        synchronized(mImage) {
-            if (!mImageBusy) {
-                mImageBusy = true
+        synchronized(image) {
+            if (!imageBusy) {
+                imageBusy = true
             } else {
-                mRequestAnimation.lazySet(true)
+                requestAnimation.lazySet(true)
                 return
             }
         }
 
-        val end = mReleased.get() || mImage.isImageRecycled || mNeedRelease.get() ||
-            (!mImage.getAnimated()) || mRunning.get()
+        val end = released.get() || image.isImageRecycled || needRelease.get() ||
+            (!image.animated) || running.get()
 
-        synchronized(mImage) {
-            mImageBusy = false
+        synchronized(image) {
+            imageBusy = false
         }
 
         if (end) {
             return
         }
 
-        mRunning.lazySet(true)
+        running.lazySet(true)
 
-        synchronized(mImage) {
-            if (mAnimateRunnable == null) {
+        synchronized(image) {
+            if (animateRunnable == null) {
                 val runnable: Runnable = AnimateRunnable()
-                mAnimateRunnable = runnable
-                sThreadExecutor.execute(runnable)
+                animateRunnable = runnable
+                threadExecutor.execute(runnable)
             }
         }
     }
 
     override fun stop() {
-        mRunning.lazySet(false)
-        mRequestAnimation.lazySet(false)
+        running.lazySet(false)
+        requestAnimation.lazySet(false)
     }
 
     override fun isRunning(): Boolean {
-        return mRunning.get()
+        return running.get()
     }
 
     /**
@@ -252,24 +244,24 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
      */
     @RenderThread
     fun setScreenRegion(screen: RectF) {
-        if (mRecycled) return
+        if (recycled) return
         if (screen.isEmpty) {
-            mHasRegions = false
+            hasRegions = false
         } else {
-            mScreenRegion.set(screen)
-            TileRegions.band(mUploadRegion, screen, TileRegions.UPLOAD_MARGIN_SCREENS)
-            TileRegions.band(mKeepRegion, screen, TileRegions.KEEP_MARGIN_SCREENS)
-            mHasRegions = true
-            synchronized(mTiles) {
-                for (t in mTiles) {
-                    if (t.image != null && t.isLoaded() && !overlaps(mKeepRegion, t)) {
+            screenRegion.set(screen)
+            TileRegions.band(uploadRegion, screen, TileRegions.UPLOAD_MARGIN_SCREENS)
+            TileRegions.band(keepRegion, screen, TileRegions.KEEP_MARGIN_SCREENS)
+            hasRegions = true
+            synchronized(tiles) {
+                for (t in tiles) {
+                    if (t.image != null && t.isLoaded && !overlaps(keepRegion, t)) {
                         t.`yield`()
                         t.preloaded = false
                     }
                 }
             }
         }
-        val uploader = mUploader
+        val uploader = uploader
         uploader?.addTexture(this)
     }
 
@@ -283,15 +275,15 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
 
     /** The not-yet-preloaded tile nearest the screen within the upload band, or null.  */
     private fun nextTileToUpload(): Tile? {
-        if (mRecycled) return null
+        if (recycled) return null
         var best: Tile? = null
         var bestGap = Float.MAX_VALUE
-        for (t in mTiles) {
+        for (t in tiles) {
             if (t.image == null || t.preloaded) continue
-            if (!mHasRegions) return t
-            if (!overlaps(mUploadRegion, t)) continue
+            if (!hasRegions) return t
+            if (!overlaps(uploadRegion, t)) continue
             val gap = TileRegions.gap(
-                mScreenRegion, t.offsetX.toFloat(), t.offsetY.toFloat(),
+                screenRegion, t.offsetX.toFloat(), t.offsetY.toFloat(),
                 (t.offsetX + t.contentWidth).toFloat(), (t.offsetY + t.contentHeight).toFloat()
             )
             if (gap < bestGap) {
@@ -313,54 +305,54 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
     }
 
     private fun uploadNextTileTraced(canvas: GLCanvas): Boolean {
-        synchronized(mTiles) {
+        synchronized(tiles) {
             val next = nextTileToUpload() ?: return true
             // One attempt per tile: a failed upload is retried by the draw-time
             // bind, and retrying here would spin the idle uploader every frame.
             next.preloaded = true
-            val hasBeenLoad = next.isLoaded()
+            val hasBeenLoad = next.isLoaded
             next.updateContent(canvas)
 
             // It will take some time for a texture to be drawn for the first
             // time. When scrolling, we need to draw several tiles on the screen
             // at the same time. It may cause a UI jank even these textures has
             // been uploaded.
-            if (!hasBeenLoad && next.isLoaded()) next.draw(canvas, 0, 0)
+            if (!hasBeenLoad && next.isLoaded) next.draw(canvas, 0, 0)
             return nextTileToUpload() == null
         }
     }
 
     override fun getWidth(): Int {
-        return mWidth
+        return imageWidth
     }
 
     override fun getHeight(): Int {
-        return mHeight
+        return imageHeight
     }
 
     @RenderThread
     private fun syncFrame() {
-        if (mFrameDirty.getAndSet(false)) {
+        if (frameDirty.getAndSet(false)) {
             // invalid tiles
-            for (tile in mTiles) {
+            for (tile in tiles) {
                 tile.invalidateContent()
             }
         }
     }
 
     override fun draw(canvas: GLCanvas, x: Int, y: Int) {
-        draw(canvas, x, y, mWidth, mHeight)
+        draw(canvas, x, y, imageWidth, imageHeight)
     }
 
     // Draws the texture on to the specified rectangle.
     override fun draw(canvas: GLCanvas, x: Int, y: Int, w: Int, h: Int) {
-        val src = mSrcRect
-        val dest = mDestRect
-        val scaleX = w.toFloat() / mWidth
-        val scaleY = h.toFloat() / mHeight
+        val src = srcRect
+        val dest = destRect
+        val scaleX = w.toFloat() / imageWidth
+        val scaleY = h.toFloat() / imageHeight
 
         syncFrame()
-        for (t in mTiles) {
+        for (t in tiles) {
             src.set(0f, 0f, t.contentWidth.toFloat(), t.contentHeight.toFloat())
             src.offset(t.offsetX.toFloat(), t.offsetY.toFloat())
             mapRect(dest, src, 0f, 0f, x.toFloat(), y.toFloat(), scaleX, scaleY)
@@ -371,8 +363,8 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
 
     // Draws a sub region of this texture on to the specified rectangle.
     override fun draw(canvas: GLCanvas, source: RectF, target: RectF) {
-        val src = mSrcRect
-        val dest = mDestRect
+        val src = srcRect
+        val dest = destRect
         val x0 = source.left
         val y0 = source.top
         val x = target.left
@@ -381,7 +373,7 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         val scaleY = target.height() / source.height()
 
         syncFrame()
-        for (t in mTiles) {
+        for (t in tiles) {
             src.set(0f, 0f, t.contentWidth.toFloat(), t.contentHeight.toFloat())
             src.offset(t.offsetX.toFloat(), t.offsetY.toFloat())
             if (!src.intersect(source)) {
@@ -404,13 +396,13 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         width: Int,
         height: Int,
     ) {
-        val src = mSrcRect
-        val dest = mDestRect
-        val scaleX = width.toFloat() / mWidth
-        val scaleY = height.toFloat() / mHeight
+        val src = srcRect
+        val dest = destRect
+        val scaleX = width.toFloat() / imageWidth
+        val scaleY = height.toFloat() / imageHeight
 
         syncFrame()
-        for (t in mTiles) {
+        for (t in tiles) {
             src.set(0f, 0f, t.contentWidth.toFloat(), t.contentHeight.toFloat())
             src.offset(t.offsetX.toFloat(), t.offsetY.toFloat())
             mapRect(dest, src, 0f, 0f, x.toFloat(), y.toFloat(), scaleX, scaleY)
@@ -420,8 +412,8 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
     }
 
     fun drawMixed(canvas: GLCanvas, color: Int, ratio: Float, source: RectF, target: RectF) {
-        val src = mSrcRect
-        val dest = mDestRect
+        val src = srcRect
+        val dest = destRect
         val x0 = source.left
         val y0 = source.top
         val x = target.left
@@ -430,7 +422,7 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         val scaleY = target.height() / source.height()
 
         syncFrame()
-        for (t in mTiles) {
+        for (t in tiles) {
             src.set(0f, 0f, t.contentWidth.toFloat(), t.contentHeight.toFloat())
             src.offset(t.offsetX.toFloat(), t.offsetY.toFloat())
             if (!src.intersect(source)) {
@@ -443,41 +435,42 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
     }
 
     override fun isOpaque(): Boolean {
-        return mOpaque
+        return opaque
     }
 
     /** Nothing left to upload ahead of time for the current screen position.  */
-    fun isReady(): Boolean {
-        synchronized(mTiles) {
-            return nextTileToUpload() == null
+    val isReady: Boolean
+        get() {
+            synchronized(tiles) {
+                return nextTileToUpload() == null
+            }
         }
-    }
 
     fun recycle() {
-        mRecycled = true
-        mRunning.lazySet(false)
+        recycled = true
+        running.lazySet(false)
 
-        for (mTile in mTiles) {
-            mTile.free()
+        for (tile in tiles) {
+            tile.free()
         }
 
-        val releaseNow = synchronized(mImage) {
-            if (!mImageBusy) {
-                mImageBusy = true
+        val releaseNow = synchronized(image) {
+            if (!imageBusy) {
+                imageBusy = true
                 true
             } else {
-                mNeedRelease.lazySet(true)
+                needRelease.lazySet(true)
                 false
             }
         }
 
         if (releaseNow) {
-            if (!mReleased.get()) {
-                mImage.release()
-                mReleased.lazySet(true)
+            if (!released.get()) {
+                image.release()
+                released.lazySet(true)
             }
-            synchronized(mImage) {
-                mImageBusy = false
+            synchronized(image) {
+                imageBusy = false
             }
         }
     }
@@ -490,33 +483,32 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         fun invalidateImageTexture(who: ImageTexture)
     }
 
-    class Uploader(glRoot: GLRoot) : GLRoot.OnGLIdleListener {
-        private val mTextures = ArrayDeque<ImageTexture>(INIT_CAPACITY)
+    class Uploader(private val glRoot: GLRoot) : GLRoot.OnGLIdleListener {
+        private val textures = ArrayDeque<ImageTexture>(INIT_CAPACITY)
 
-        private val mGlRoot: GLRoot = glRoot
-        private var mIsQueued = false
+        private var isQueued = false
 
         @Synchronized
         fun clear() {
-            mTextures.clear()
+            textures.clear()
         }
 
         @Synchronized
         fun addTexture(t: ImageTexture) {
             // Remembered so a later screen move can queue the texture again.
-            t.mUploader = this
-            if (t.isReady() || mTextures.contains(t)) return
-            mTextures.addLast(t)
+            t.uploader = this
+            if (t.isReady || textures.contains(t)) return
+            textures.addLast(t)
 
-            if (mIsQueued) return
-            mIsQueued = true
-            mGlRoot.addOnGLIdleListener(this)
+            if (isQueued) return
+            isQueued = true
+            glRoot.addOnGLIdleListener(this)
         }
 
         override fun onGLIdle(canvas: GLCanvas?, renderRequested: Boolean): Boolean {
             // GLRootView only runs idle listeners once its canvas exists.
             val glCanvas = checkNotNull(canvas)
-            val deque = mTextures
+            val deque = textures
             synchronized(this) {
                 var now = SystemClock.uptimeMillis()
                 val dueTime = now + UPLOAD_TILE_LIMIT
@@ -524,14 +516,14 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
                     val t = deque.peekFirst()
                     if (t.uploadNextTile(glCanvas)) {
                         deque.removeFirst()
-                        mGlRoot.requestRender()
+                        glRoot.requestRender()
                     }
                     now = SystemClock.uptimeMillis()
                 }
-                mIsQueued = !mTextures.isEmpty()
+                isQueued = !textures.isEmpty()
 
                 // return true to keep this listener in the queue
-                return mIsQueued
+                return isQueued
             }
         }
     }
@@ -561,7 +553,7 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         var preloaded = false
 
         @TileType
-        private var mTileType = 0
+        private var tileType = 0
 
         private fun freeTile(pool: BoundedFreeList<Tile>) {
             invalidate()
@@ -572,7 +564,7 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         }
 
         fun setSize(@TileType tileType: Int, width: Int, height: Int) {
-            mTileType = tileType
+            this.tileType = tileType
             val tileSize: Int
             if (tileType == TILE_SMALL) {
                 borderSize = SMALL_BORDER_SIZE
@@ -595,7 +587,7 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         override fun texImage(init: Boolean) {
             // Capture to local to avoid race with invalidate() setting image = null
             val localImage = image
-            if (localImage != null && !localImage.isRecycled()) {
+            if (localImage != null && !localImage.isRecycled) {
                 val w: Int
                 val h: Int
                 if (init) {
@@ -616,10 +608,10 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         }
 
         fun free() {
-            when (mTileType) {
-                TILE_SMALL -> freeTile(sSmallFreeTiles)
-                TILE_LARGE -> freeTile(sLargeFreeTiles)
-                else -> throw IllegalStateException("Not support tile type: $mTileType")
+            when (tileType) {
+                TILE_SMALL -> freeTile(smallFreeTiles)
+                TILE_LARGE -> freeTile(largeFreeTiles)
+                else -> throw IllegalStateException("Not support tile type: $tileType")
             }
         }
     }
@@ -630,59 +622,59 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
             var lastTime = System.nanoTime()
             var lastDelay = -1L
 
-            synchronized(mImage) {
+            synchronized(image) {
                 // Check released, image busy, Need release
-                if (mReleased.get() || mImage.isImageRecycled || mImageBusy || mNeedRelease.get()) {
-                    mAnimateRunnable = null
+                if (released.get() || image.isImageRecycled || imageBusy || needRelease.get()) {
+                    animateRunnable = null
                     return
                 }
                 // Obtain image
-                mImageBusy = true
+                imageBusy = true
             }
 
-            synchronized(mImage) {
+            synchronized(image) {
                 // Release image
-                mImageBusy = false
+                imageBusy = false
                 // Check need release, frameCount <= 1
-                if (mNeedRelease.get() || !mImage.getAnimated()) {
-                    mAnimateRunnable = null
+                if (needRelease.get() || !image.animated) {
+                    animateRunnable = null
                     return
                 }
             }
 
-            if (mRequestAnimation.get()) {
-                mRunning.lazySet(true)
+            if (requestAnimation.get()) {
+                running.lazySet(true)
             }
 
             while (true) {
                 // Obtain
-                synchronized(mImage) {
+                synchronized(image) {
                     // Check released, image busy, Need release, not running
-                    if (mReleased.get() || mImage.isImageRecycled || mImageBusy || mNeedRelease.get() ||
-                        !mRunning.get()
+                    if (released.get() || image.isImageRecycled || imageBusy || needRelease.get() ||
+                        !running.get()
                     ) {
-                        mAnimateRunnable = null
+                        animateRunnable = null
                         return
                     }
                     // Obtain image
-                    mImageBusy = true
+                    imageBusy = true
                 }
 
-                mImage.start()
-                var delay = mImage.getDelay().toLong()
+                image.start()
+                var delay = image.delay.toLong()
                 val time = System.nanoTime()
                 if (-1L != lastDelay) {
                     delay -= (time - lastTime) / 1000000 - lastDelay
                 }
                 lastTime = time
                 lastDelay = delay
-                mImage.advanceFrame()
-                mFrameDirty.lazySet(true)
+                image.advanceFrame()
+                frameDirty.lazySet(true)
                 invalidateSelf()
 
-                synchronized(mImage) {
+                synchronized(image) {
                     // Release image
-                    mImageBusy = false
+                    imageBusy = false
                 }
 
                 if (delay > 0) {
@@ -698,30 +690,30 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         override fun run() {
             doRun()
 
-            while (mNeedRelease.get()) {
+            while (needRelease.get()) {
                 // Obtain
-                synchronized(mImage) {
+                synchronized(image) {
                     // Check released
-                    if (mReleased.get() || mImage.isImageRecycled) {
+                    if (released.get() || image.isImageRecycled) {
                         break
                     }
                     // Check image busy
-                    if (mImageBusy) {
+                    if (imageBusy) {
                         // Image is busy, means it is recycling
                         break
                     }
                     // Obtain image
-                    mImageBusy = true
+                    imageBusy = true
                 }
 
-                if (!mReleased.get()) {
-                    mImage.release()
-                    mReleased.lazySet(true)
+                if (!released.get()) {
+                    image.release()
+                    released.lazySet(true)
                 }
 
-                synchronized(mImage) {
+                synchronized(image) {
                     // Release image
-                    mImageBusy = false
+                    imageBusy = false
                 }
             }
         }
@@ -741,7 +733,7 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         // We are targeting at 60fps, so we have 16ms for each frame.
         // In this 16ms, we use about 4~8 ms to upload tiles.
         private const val UPLOAD_TILE_LIMIT: Long = 4 // ms
-        private val sThreadExecutor: Executor
+        private val threadExecutor: Executor
 
         // Freed tiles keep their GL texture for reuse. The pools are capped (about
         // 8 MB small + 16 MB large of RGBA texture) so the tiles of one tall page do
@@ -749,8 +741,8 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
         // them on memory pressure and reader exit (audit 2026-10-13 PERF-02).
         private const val MAX_FREE_SMALL_TILES = 32
         private const val MAX_FREE_LARGE_TILES = 16
-        private val sSmallFreeTiles = BoundedFreeList<Tile>(MAX_FREE_SMALL_TILES)
-        private val sLargeFreeTiles = BoundedFreeList<Tile>(MAX_FREE_LARGE_TILES)
+        private val smallFreeTiles = BoundedFreeList<Tile>(MAX_FREE_SMALL_TILES)
+        private val largeFreeTiles = BoundedFreeList<Tile>(MAX_FREE_LARGE_TILES)
 
         init {
             // Up to 32 background-priority animation threads; idle ones exit after 10 s.
@@ -768,16 +760,16 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
                 )
             }
             executor.allowCoreThreadTimeOut(true)
-            sThreadExecutor = executor
+            threadExecutor = executor
         }
 
         private fun obtainSmallTile(): Tile {
-            val result = sSmallFreeTiles.poll()
+            val result = smallFreeTiles.poll()
             return result ?: Tile()
         }
 
         private fun obtainLargeTile(): Tile {
-            val result = sLargeFreeTiles.poll()
+            val result = largeFreeTiles.poll()
             return result ?: Tile()
         }
 
@@ -787,10 +779,10 @@ open class ImageTexture(image: ImageWrapper) : Texture, Animatable {
          */
         @JvmStatic
         fun trimFreeTiles() {
-            for (tile in sSmallFreeTiles.drain()) {
+            for (tile in smallFreeTiles.drain()) {
                 tile.recycle()
             }
-            for (tile in sLargeFreeTiles.drain()) {
+            for (tile in largeFreeTiles.drain()) {
                 tile.recycle()
             }
         }

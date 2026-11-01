@@ -44,10 +44,8 @@ interface GLCanvas {
 
     fun clearBuffer(argb: FloatArray)
 
-    // Sets and gets the current alpha, alpha must be in [0, 1].
-    fun setAlpha(alpha: Float)
-
-    fun getAlpha(): Float
+    // The current alpha, must be in [0, 1].
+    var alpha: Float
 
     // (current alpha) = (current alpha) * alpha
     fun multiplyAlpha(alpha: Float)

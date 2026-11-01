@@ -19,34 +19,15 @@
 package com.lanraragi.framework.lib.glview.glrenderer
 
 class GLPaint {
-    private var mLineWidth = 1f
-    private var mColor = 0
-    private var mBackgroundColor = 0
-
-    fun setColor(color: Int) {
-        mColor = color
-    }
-
-    fun getColor(): Int {
-        return mColor
-    }
-
-    fun setBackgroundColor(backgroundColor: Int) {
-        mBackgroundColor = backgroundColor
-    }
-
-    fun getBackgroundColor(): Int {
-        return mBackgroundColor
-    }
-
-    fun setLineWidth(width: Float) {
-        if (width < 0) {
-            throw IllegalArgumentException("width < 0")
+    var lineWidth = 1f
+        set(width) {
+            if (width < 0) {
+                throw IllegalArgumentException("width < 0")
+            }
+            field = width
         }
-        mLineWidth = width
-    }
 
-    fun getLineWidth(): Float {
-        return mLineWidth
-    }
+    var color = 0
+
+    var backgroundColor = 0
 }

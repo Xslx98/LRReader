@@ -24,12 +24,12 @@ import javax.microedition.khronos.opengles.GL11
 
 abstract class NativeTexture : BasicTexture() {
 
-    private var mContentValid = true
+    private var contentValid = true
 
-    private var mOpaque = true
+    private var opaque = true
 
     fun invalidateContent() {
-        mContentValid = false
+        contentValid = false
     }
 
     protected abstract fun texImage(init: Boolean)
@@ -51,7 +51,7 @@ abstract class NativeTexture : BasicTexture() {
         if (error == 0) {
             setAssociatedCanvas(canvas)
             mState = STATE_LOADED
-            mContentValid = true
+            contentValid = true
         } else {
             Log.e(TAG, "texImage failed with GL error: $error, will retry")
             // Delete the texture so it can be re-created on next attempt
@@ -61,9 +61,9 @@ abstract class NativeTexture : BasicTexture() {
     }
 
     fun updateContent(canvas: GLCanvas) {
-        if (!isLoaded()) {
+        if (!isLoaded) {
             uploadToCanvas(canvas)
-        } else if (!mContentValid) {
+        } else if (!contentValid) {
             // Call glTexSubImage2D
             GLES20.glBindTexture(getTarget(), mId)
             checkError()
@@ -71,7 +71,7 @@ abstract class NativeTexture : BasicTexture() {
             // Only mark valid if no GL error
             val error = GLES20.glGetError()
             if (error == 0) {
-                mContentValid = true
+                contentValid = true
             } else {
                 Log.e(TAG, "texSubImage failed with GL error: $error")
             }
@@ -81,13 +81,12 @@ abstract class NativeTexture : BasicTexture() {
     /**
      * Whether the content on GPU is valid.
      */
-    fun isContentValid(): Boolean {
-        return isLoaded() && mContentValid
-    }
+    val isContentValid: Boolean
+        get() = isLoaded && contentValid
 
     override fun onBind(canvas: GLCanvas): Boolean {
         updateContent(canvas)
-        return isContentValid()
+        return isContentValid
     }
 
     override fun getTarget(): Int {
@@ -95,11 +94,11 @@ abstract class NativeTexture : BasicTexture() {
     }
 
     fun setOpaque(isOpaque: Boolean) {
-        mOpaque = isOpaque
+        opaque = isOpaque
     }
 
     override fun isOpaque(): Boolean {
-        return mOpaque
+        return opaque
     }
 
     // A private member (Java: an unused public static) so the upload path

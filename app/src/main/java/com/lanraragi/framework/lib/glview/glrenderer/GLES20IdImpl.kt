@@ -5,12 +5,12 @@ import javax.microedition.khronos.opengles.GL11
 import javax.microedition.khronos.opengles.GL11ExtensionPack
 
 class GLES20IdImpl : GLId {
-    private val mTempIntArray = IntArray(1)
+    private val tempIntArray = IntArray(1)
 
     override fun generateTexture(): Int {
-        GLES20.glGenTextures(1, mTempIntArray, 0)
+        GLES20.glGenTextures(1, tempIntArray, 0)
         GLES20Canvas.checkError()
-        return mTempIntArray[0]
+        return tempIntArray[0]
     }
 
     override fun glGenBuffers(n: Int, buffers: IntArray, offset: Int) {

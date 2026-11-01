@@ -23,37 +23,33 @@ import com.lanraragi.framework.lib.image.Image
 /**
  * A wrapper for [Image]. It is useful for multi-usage.
  * It handles image recycle automatically.
+ *
+ * @param image the image should not be obtained or recycled.
  */
-class ImageWrapper(
-    /**
-     * the image should not be obtained or recycled.
-     */
-    image: Image,
-) {
+class ImageWrapper(private val image: Image) {
 
-    private val mImage: Image = image
-    private val mCut: Rect = Rect(0, 0, image.width, image.height)
-    private var mReferences = 0
+    private val cut: Rect = Rect(0, 0, image.width, image.height)
+    private var references = 0
 
     // Set when the provider's cache refused the page (bigger than its whole
     // budget). Such a wrapper starts with no owner, like an animated page.
     @Volatile
-    private var mCacheBypassed = false
+    private var cacheBypassed = false
 
     /**
      * Cuts this image to a specified region.
      * If the region is out of the image size, clamp the region.
      */
     fun setCutRect(left: Int, top: Int, right: Int, bottom: Int) {
-        mCut.left = Math.max(0, left)
-        mCut.top = Math.max(0, top)
-        mCut.right = Math.min(mImage.width, right)
-        mCut.bottom = Math.min(mImage.height, bottom)
+        cut.left = Math.max(0, left)
+        cut.top = Math.max(0, top)
+        cut.right = Math.min(image.width, right)
+        cut.bottom = Math.min(image.height, bottom)
 
-        if (mCut.isEmpty) {
-            // Empty mCut has unspecified behavior
+        if (cut.isEmpty) {
+            // Empty cut has unspecified behavior
             Log.e(LOG_TAG, "Cut rect is empty")
-            mCut.set(0, 0, mImage.width, mImage.height)
+            cut.set(0, 0, image.width, image.height)
         }
     }
 
@@ -64,8 +60,8 @@ class ImageWrapper(
      */
     fun setCutPercent(left: Float, top: Float, right: Float, bottom: Float) {
         setCutRect(
-            (getWidth() * left).toInt(), (getHeight() * top).toInt(),
-            (getWidth() * right).toInt(), (getHeight() * bottom).toInt()
+            (width * left).toInt(), (height * top).toInt(),
+            (width * right).toInt(), (height * bottom).toInt()
         )
     }
 
@@ -76,10 +72,10 @@ class ImageWrapper(
      */
     @Synchronized
     fun obtain(): Boolean {
-        if (mImage.isRecycled) {
+        if (image.isRecycled) {
             return false
         } else {
-            ++mReferences
+            ++references
             return true
         }
     }
@@ -89,9 +85,9 @@ class ImageWrapper(
      */
     @Synchronized
     fun release() {
-        --mReferences
-        if (mReferences <= 0 && !mImage.isRecycled) {
-            mImage.recycle()
+        --references
+        if (references <= 0 && !image.isRecycled) {
+            image.recycle()
         }
     }
 
@@ -99,91 +95,82 @@ class ImageWrapper(
      * Marks this wrapper as not held by the provider's memory cache.
      */
     fun markCacheBypassed() {
-        mCacheBypassed = true
+        cacheBypassed = true
     }
 
     /**
-     * @return true when no cache holds a reference to this wrapper (animated
+     * True when no cache holds a reference to this wrapper (animated
      * pages and pages bigger than the cache budget). Whoever drops such a
      * wrapper without showing it must [release] it.
      */
-    // Properties, not functions: Kotlin callers (GalleryProviderOversizedPageTest)
-    // read the Java getters with property syntax.
     val isUncached: Boolean
-        get() = mCacheBypassed || getAnimated()
+        get() = cacheBypassed || animated
 
     val isImageRecycled: Boolean
-        get() = mImage.isRecycled
+        get() = image.isRecycled
 
     /**
      * @see Image.animated
      */
-    fun getAnimated(): Boolean {
-        return mImage.animated
-    }
+    val animated: Boolean
+        get() = image.animated
 
     /**
-     * @see Image.width
+     * The width of the cut region.
      */
-    fun getWidth(): Int {
-        return mCut.width()
-    }
+    val width: Int
+        get() = cut.width()
 
     /**
-     * @see Image.height
+     * The height of the cut region.
      */
-    fun getHeight(): Int {
-        return mCut.height()
-    }
+    val height: Int
+        get() = cut.height()
 
     /**
      * @see Image.byteCount
      */
-    fun getByteCount(): Int {
-        return mImage.byteCount
-    }
+    val byteCount: Int
+        get() = image.byteCount
 
     /**
      * @see Image.texImage
      */
     fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int) {
-        mImage.texImage(init, offsetX + mCut.left, offsetY + mCut.top, width, height)
+        image.texImage(init, offsetX + cut.left, offsetY + cut.top, width, height)
     }
 
     /**
      * @see Image.start
      */
     fun start() {
-        mImage.start()
+        image.start()
     }
 
     /**
      * @see Image.advanceFrame
      */
     fun advanceFrame() {
-        mImage.advanceFrame()
+        image.advanceFrame()
     }
 
     /**
      * @see Image.delay
      */
-    fun getDelay(): Int {
-        return mImage.delay
-    }
+    val delay: Int
+        get() = image.delay
 
     /**
      * @see Image.isOpaque
      */
-    fun isOpaque(): Boolean {
-        return mImage.isOpaque
-    }
+    val isOpaque: Boolean
+        get() = image.isOpaque
 
     /**
      * @see Image.isRecycled
      */
-    fun isRecycled(): Boolean {
-        return mImage.isRecycled
-    }
+    val isRecycled: Boolean
+        get() = image.isRecycled
 
     companion object {
         private const val LOG_TAG = "ImageWrapper"

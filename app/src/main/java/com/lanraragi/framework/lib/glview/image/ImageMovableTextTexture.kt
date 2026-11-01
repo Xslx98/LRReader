@@ -31,20 +31,13 @@ class ImageMovableTextTexture(
     image: ImageWrapper,
     count: Int,
     rects: IntArray,
-    characters: CharArray,
-    widths: FloatArray,
-    height: Float,
-    maxWidth: Float,
+    private val characters: CharArray,
+    private val widths: FloatArray,
+    val textHeight: Float,
+    val maxWidth: Float,
 ) : ImageSpriteTexture(image, count, rects) {
 
-    private val mCharacters: CharArray = characters
-    private val mWidths: FloatArray = widths
-    private val mHeight: Float = height
-    private val mMaxWidth: Float = maxWidth
-
     fun getTextIndexes(text: String): IntArray {
-        val characters = mCharacters
-
         val length = text.length
         val indexes = IntArray(length)
         for (i in 0 until length) {
@@ -56,8 +49,6 @@ class ImageMovableTextTexture(
     }
 
     fun getTextWidth(text: String): Float {
-        val characters = mCharacters
-        val widths = mWidths
         var width = 0.0f
 
         var i = 0
@@ -68,7 +59,7 @@ class ImageMovableTextTexture(
             if (index >= 0) {
                 width += widths[index]
             } else {
-                width += mMaxWidth
+                width += maxWidth
             }
             i++
         }
@@ -77,7 +68,6 @@ class ImageMovableTextTexture(
     }
 
     fun getTextWidth(indexes: IntArray): Float {
-        val widths = mWidths
         var width = 0.0f
         val length = indexes.size
         for (i in 0 until length) {
@@ -85,24 +75,14 @@ class ImageMovableTextTexture(
             if (index >= 0) {
                 width += widths[index]
             } else {
-                width += mMaxWidth
+                width += maxWidth
             }
         }
 
         return width
     }
 
-    fun getMaxWidth(): Float {
-        return mMaxWidth
-    }
-
-    fun getTextHeight(): Float {
-        return mHeight
-    }
-
     fun drawText(canvas: GLCanvas, text: String, x: Int, y: Int) {
-        val characters = mCharacters
-        val widths = mWidths
         var drawX = x
 
         var i = 0
@@ -114,14 +94,13 @@ class ImageMovableTextTexture(
                 drawSprite(canvas, index, drawX, y)
                 drawX = (drawX + widths[index]).toInt()
             } else {
-                drawX = (drawX + mMaxWidth).toInt()
+                drawX = (drawX + maxWidth).toInt()
             }
             i++
         }
     }
 
     fun drawText(canvas: GLCanvas, indexes: IntArray, x: Int, y: Int) {
-        val widths = mWidths
         var drawX = x
 
         var i = 0
@@ -132,7 +111,7 @@ class ImageMovableTextTexture(
                 drawSprite(canvas, index, drawX, y)
                 drawX = (drawX + widths[index]).toInt()
             } else {
-                drawX = (drawX + mMaxWidth).toInt()
+                drawX = (drawX + maxWidth).toInt()
             }
             i++
         }
