@@ -37,7 +37,6 @@ import androidx.annotation.NonNull;
 import com.lanraragi.framework.lib.glview.anim.CanvasAnimation;
 import com.lanraragi.framework.lib.glview.glrenderer.BasicTexture;
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
-import com.lanraragi.framework.lib.glview.glrenderer.GLES11Canvas;
 import com.lanraragi.framework.lib.glview.glrenderer.GLES20Canvas;
 import com.lanraragi.framework.lib.glview.glrenderer.UploadedTexture;
 import com.lanraragi.framework.lib.glview.util.ApiHelper;
@@ -112,7 +111,6 @@ public class GLRootView extends GLSurfaceView
     private boolean mFreeze;
 
     private boolean mInDownState = false;
-    private int mEGLContextClientVersion;
 
     public GLRootView(Context context) {
         this(context, null);
@@ -528,7 +526,7 @@ public class GLRootView extends GLSurfaceView
             mRenderLock.lock();
             try {
                 mGL = gl;
-                mCanvas = mEGLContextClientVersion == 2 ? new GLES20Canvas() : new GLES11Canvas(gl);
+                mCanvas = new GLES20Canvas();
                 BasicTexture.invalidateAllTextures();
             } finally {
                 mRenderLock.unlock();
@@ -646,14 +644,7 @@ public class GLRootView extends GLSurfaceView
                 }
 
                 try {
-                    EGLConfig config = chooseConfigInternal(egl, display);
-                    int renderableType = findConfigAttrib(egl, display, config, EGL10.EGL_RENDERABLE_TYPE);
-                    if ((renderableType & EGL_OPENGL_ES2_BIT) == EGL_OPENGL_ES2_BIT) {
-                        mEGLContextClientVersion = 2;
-                    } else {
-                        mEGLContextClientVersion = 1;
-                    }
-                    return config;
+                    return chooseConfigInternal(egl, display);
                 } catch (IllegalArgumentException e) {
                     int error = egl.eglGetError();
                     if (attempt == 0 && error == EGL_NOT_INITIALIZED) {

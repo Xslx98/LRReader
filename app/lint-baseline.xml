@@ -57,17 +57,6 @@
     </issue>
 
     <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="        String line = String.format("
-        errorLine2="                      ^">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/glview/glrenderer/GLES11Canvas.java"
-            line="813"
-            column="23"/>
-    </issue>
-
-    <issue
         id="DiscouragedPrivateApi"
         message="Reflective access to mDisappearingChildren, which is not part of the public SDK and therefore likely to change in future Android releases"
         errorLine1="            mDisappearingChildrenField = ViewGroup.class.getDeclaredField(&quot;mDisappearingChildren&quot;);"
