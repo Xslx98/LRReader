@@ -18,6 +18,7 @@ package com.lanraragi.reader.gallery
 import android.content.Context
 import android.util.Log
 import com.lanraragi.reader.BuildConfig
+import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
@@ -255,6 +256,11 @@ class DirGalleryProvider : GalleryProvider2 {
             // Pre-unification rows may carry milliseconds — see normalizeEpochSeconds.
             ReadingProgressReconciler.normalizeEpochSeconds(lastreadSnapshot),
         )
+        DiagLog.i(
+            DIAG_TAG,
+            "dir open ${arcid.take(8)} local=$pristineLocalPage0@$pristineLocalTs" +
+                " snapshot=$progressSnapshot@$lastreadSnapshot seed=$startPageValue",
+        )
     }
 
     override fun getStartPage(): Int = startPageValue
@@ -268,6 +274,7 @@ class DirGalleryProvider : GalleryProvider2 {
     override fun putStartPage(page: Int) {
         readAnchor = page
         if (page != startPageBaseline) {
+            if (!userNavigated) DiagLog.i(DIAG_TAG, "dir navigated page=$page baseline=$startPageBaseline")
             userNavigated = true
         }
         startPageValue = page
@@ -307,8 +314,10 @@ class DirGalleryProvider : GalleryProvider2 {
         // Long-strip "I'm at the top of page N" is not a meaningful save
         // state — it's the indistinguishable-from-cold-open state.
         if (clamped == 0f) {
+            DiagLog.i(DIAG_TAG, "dir fraction 0 not saved")
             return
         }
+        DiagLog.i(DIAG_TAG, "dir fraction save $clamped")
         ServiceRegistry.coroutineModule.ioScope.launch {
             try {
                 ServiceRegistry.dataModule.historyRepository
@@ -428,6 +437,11 @@ class DirGalleryProvider : GalleryProvider2 {
                     val serverTs = metadata?.lastreadtime ?: 0L
                     Log.i(TAG, "[PROGRESS] Server metadata: progress=$serverProgress" +
                             " lastreadtime=$serverTs savedFraction=$savedFraction")
+                    DiagLog.i(
+                        DIAG_TAG,
+                        "dir restore server=$serverProgress@$serverTs fraction=$savedFraction" +
+                            " seed=$startPageValue navigated=$userNavigated",
+                    )
                     if (serverProgress > 0 || savedFraction > 0f) {
                         // Reconcile fresh server metadata against the PRISTINE
                         // local (page, ts) captured at construction — see the
@@ -443,6 +457,7 @@ class DirGalleryProvider : GalleryProvider2 {
                         } else {
                             startPageValue
                         }
+                        DiagLog.i(DIAG_TAG, "dir resolved page=$resolvedPage")
                         Log.i(
                             TAG,
                             "[PROGRESS] resolved page=$resolvedPage" +
@@ -500,6 +515,7 @@ class DirGalleryProvider : GalleryProvider2 {
                                         } else {
                                             resolvedPage
                                         }
+                                        DiagLog.i(DIAG_TAG, "dir jump page=$target fraction=$savedFraction")
                                         try {
                                             if (savedFraction > 0f) {
                                                 gvNow.setCurrentPageScrollFraction(target, savedFraction)
@@ -518,15 +534,18 @@ class DirGalleryProvider : GalleryProvider2 {
                                             initialRestoreCompleted.set(true)
                                         }
                                     } else {
+                                        DiagLog.i(DIAG_TAG, "dir jump dropped: view=${gvNow != null} navigated=$userNavigated")
                                         initialRestoreCompleted.set(true)
                                     }
                                 }
                             } else {
+                                DiagLog.i(DIAG_TAG, "dir jump dropped: no view")
                                 initialRestoreCompleted.set(true)
                             }
                         } else {
                             // Nothing to restore, or the user already navigated —
                             // open the save gate and leave them where they are.
+                            DiagLog.i(DIAG_TAG, "dir no jump: resolved=$resolvedPage navigated=$userNavigated")
                             if (userNavigated) {
                                 Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
                             }
@@ -535,6 +554,7 @@ class DirGalleryProvider : GalleryProvider2 {
                     } else {
                         // No saved fraction and no server progress — open
                         // the gate immediately.
+                        DiagLog.i(DIAG_TAG, "dir no jump: nothing saved")
                         initialRestoreCompleted.set(true)
                     }
                 } catch (e: CancellationException) {

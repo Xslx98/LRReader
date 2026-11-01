@@ -21,9 +21,17 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
+import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
+
+/**
+ * DiagLog tag of the reading-position trace (open, resolve, jump, saves). It
+ * lands in "Share diagnostics", so a position that does not come back on a
+ * user's device can be followed without a debug build.
+ */
+internal const val DIAG_TAG = "Progress"
 
 abstract class GalleryProvider2 : GalleryProvider() {
 
@@ -70,7 +78,10 @@ abstract class GalleryProvider2 : GalleryProvider() {
      */
     open fun putScrollFraction(fraction: Float) {}
 
-    private val deferredLocalSave = DeferredProgressSave { page -> writeLocalProgress(page) }
+    private val deferredLocalSave = DeferredProgressSave { page ->
+        DiagLog.i(DIAG_TAG, "save page=$page")
+        writeLocalProgress(page)
+    }
 
     /** Writes the local reading position [page]; [saveLocalProgressSoon] calls it at most once a second. */
     protected open fun writeLocalProgress(page: Int) {}
