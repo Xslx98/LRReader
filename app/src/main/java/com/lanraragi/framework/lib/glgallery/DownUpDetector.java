@@ -60,8 +60,4 @@ class DownUpDetector {
                 break;
         }
     }
-
-    public boolean isDown() {
-        return mStillDown;
-    }
 }

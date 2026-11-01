@@ -78,30 +78,6 @@ class ImageView extends GLView implements ImageTexture.Callback {
         mAlphaAnimation.setInterpolator(AnimationUtils.FAST_SLOW_INTERPOLATOR);
     }
 
-    public static int sanitizeScaleMode(int scaleMode) {
-        if (scaleMode != SCALE_ORIGIN &&
-                scaleMode != SCALE_FIT_WIDTH &&
-                scaleMode != SCALE_FIT_HEIGHT &&
-                scaleMode != SCALE_FIT &&
-                scaleMode != SCALE_FIXED) {
-            return SCALE_FIT;
-        } else {
-            return scaleMode;
-        }
-    }
-
-    public static int sanitizeStartPosition(int startPosition) {
-        if (startPosition != START_POSITION_TOP_LEFT &&
-                startPosition != START_POSITION_TOP_RIGHT &&
-                startPosition != START_POSITION_BOTTOM_LEFT &&
-                startPosition != START_POSITION_BOTTOM_RIGHT &&
-                startPosition != START_POSITION_CENTER) {
-            return START_POSITION_TOP_RIGHT;
-        } else {
-            return startPosition;
-        }
-    }
-
     @Override
     protected int getSuggestedMinimumWidth() {
         return Math.max(super.getSuggestedMinimumWidth(),

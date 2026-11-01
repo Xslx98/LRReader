@@ -17,7 +17,6 @@
 package com.lanraragi.framework.lib.glgallery;
 
 import android.content.Context;
-import android.os.SystemClock;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -27,8 +26,6 @@ import androidx.core.view.GestureDetectorCompat;
 // This class aggregates three gesture detectors: GestureDetector,
 // ScaleGestureDetector, and DownUpDetector.
 class GestureRecognizer {
-    @SuppressWarnings("unused")
-    private static final String TAG = "GestureRecognizer";
 
     public interface Listener {
         boolean onSingleTapUp(float x, float y);
@@ -72,18 +69,6 @@ class GestureRecognizer {
         mScaleDetector.onTouchEvent(event);
         mGestureDetector.onTouchEvent(event);
         mDownUpDetector.onTouchEvent(event);
-    }
-
-    public boolean isDown() {
-        return mDownUpDetector.isDown();
-    }
-
-    public void cancelScale() {
-        long now = SystemClock.uptimeMillis();
-        MotionEvent cancelEvent = MotionEvent.obtain(
-                now, now, MotionEvent.ACTION_CANCEL, 0, 0, 0);
-        mScaleDetector.onTouchEvent(cancelEvent);
-        cancelEvent.recycle();
     }
 
     private class MyGestureListener
