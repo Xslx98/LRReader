@@ -385,55 +385,6 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
         }
     }
 
-    // Draws a mixed color of this texture and a specified color onto the
-    // a rectangle. The used color is: from * (1 - ratio) + to * ratio.
-    fun drawMixed(
-        canvas: GLCanvas,
-        color: Int,
-        ratio: Float,
-        x: Int,
-        y: Int,
-        width: Int,
-        height: Int,
-    ) {
-        val src = srcRect
-        val dest = destRect
-        val scaleX = width.toFloat() / imageWidth
-        val scaleY = height.toFloat() / imageHeight
-
-        syncFrame()
-        for (t in tiles) {
-            src.set(0f, 0f, t.contentWidth.toFloat(), t.contentHeight.toFloat())
-            src.offset(t.offsetX.toFloat(), t.offsetY.toFloat())
-            mapRect(dest, src, 0f, 0f, x.toFloat(), y.toFloat(), scaleX, scaleY)
-            src.offset((t.borderSize - t.offsetX).toFloat(), (t.borderSize - t.offsetY).toFloat())
-            canvas.drawMixed(t, color, ratio, src, dest)
-        }
-    }
-
-    fun drawMixed(canvas: GLCanvas, color: Int, ratio: Float, source: RectF, target: RectF) {
-        val src = srcRect
-        val dest = destRect
-        val x0 = source.left
-        val y0 = source.top
-        val x = target.left
-        val y = target.top
-        val scaleX = target.width() / source.width()
-        val scaleY = target.height() / source.height()
-
-        syncFrame()
-        for (t in tiles) {
-            src.set(0f, 0f, t.contentWidth.toFloat(), t.contentHeight.toFloat())
-            src.offset(t.offsetX.toFloat(), t.offsetY.toFloat())
-            if (!src.intersect(source)) {
-                continue
-            }
-            mapRect(dest, src, x0, y0, x, y, scaleX, scaleY)
-            src.offset((t.borderSize - t.offsetX).toFloat(), (t.borderSize - t.offsetY).toFloat())
-            canvas.drawMixed(t, color, ratio, src, dest)
-        }
-    }
-
     override fun isOpaque(): Boolean {
         return opaque
     }
