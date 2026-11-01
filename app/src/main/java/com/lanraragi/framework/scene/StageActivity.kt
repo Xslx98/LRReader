@@ -260,11 +260,13 @@ abstract class StageActivity : BaseActivity() {
         }
     }
 
-    protected open fun onRegister(id: Int) {
+    @JvmName("onRegister")
+    internal fun onRegister(id: Int) {
         mStageId = id
     }
 
-    protected open fun onUnregister() {
+    @JvmName("onUnregister")
+    internal fun onUnregister() {
     }
 
     protected open fun onTransactScene() {
