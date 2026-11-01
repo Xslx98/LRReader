@@ -426,6 +426,16 @@
     <string name="detail_tankoubons_edit">編輯</string>
     <string name="detail_tankoubons_none">未加入任何合訂本</string>
     <string name="tank_add_to">加入合訂本</string>
+    <string name="tank_picker_search_hint">搜尋合訂本</string>
+    <string name="tank_picker_new_named">新增合訂本「%s」</string>
+    <string name="tank_picker_name_exists">已有同名合訂本</string>
+    <string name="tank_picker_contains">已含 %1$d/%2$d</string>
+    <string name="tank_picker_contains_all">已全部包含</string>
+    <string name="tank_picker_section_member">已加入</string>
+    <string name="tank_picker_section_recent">最近使用</string>
+    <string name="tank_picker_section_all">全部合訂本</string>
+    <string name="tank_picker_apply">套用</string>
+    <string name="tank_picker_empty">沒有符合的合訂本</string>
     <string name="batch_add_to_tankoubon">合訂本</string>
 
     <!-- List multi-select batch operations -->

@@ -421,6 +421,16 @@
     <string name="detail_tankoubons_edit">Modifier</string>
     <string name="detail_tankoubons_none">Dans aucun tankoubon</string>
     <string name="tank_add_to">Ajouter au tankoubon</string>
+    <string name="tank_picker_search_hint">Rechercher des tankoubons</string>
+    <string name="tank_picker_new_named">Nouveau tankoubon « %s »</string>
+    <string name="tank_picker_name_exists">Un tankoubon porte déjà ce nom</string>
+    <string name="tank_picker_contains">%1$d/%2$d déjà présents</string>
+    <string name="tank_picker_contains_all">Contient déjà tout</string>
+    <string name="tank_picker_section_member">Déjà présent</string>
+    <string name="tank_picker_section_recent">Récents</string>
+    <string name="tank_picker_section_all">Tous les tankoubons</string>
+    <string name="tank_picker_apply">Appliquer</string>
+    <string name="tank_picker_empty">Aucun tankoubon correspondant</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
     <!-- List multi-select batch operations -->

@@ -374,6 +374,16 @@
     <string name="detail_tankoubons_edit">編集</string>
     <string name="detail_tankoubons_none">どの単行本にも含まれていません</string>
     <string name="tank_add_to">単行本に追加</string>
+    <string name="tank_picker_search_hint">単行本を検索</string>
+    <string name="tank_picker_new_named">新しい単行本「%s」</string>
+    <string name="tank_picker_name_exists">同じ名前の単行本があります</string>
+    <string name="tank_picker_contains">%1$d/%2$d 件追加済み</string>
+    <string name="tank_picker_contains_all">すべて追加済み</string>
+    <string name="tank_picker_section_member">追加済み</string>
+    <string name="tank_picker_section_recent">最近使用</string>
+    <string name="tank_picker_section_all">すべての単行本</string>
+    <string name="tank_picker_apply">適用</string>
+    <string name="tank_picker_empty">一致する単行本がありません</string>
     <string name="batch_add_to_tankoubon">単行本</string>
 
     <!-- List multi-select batch operations -->
