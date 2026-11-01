@@ -460,6 +460,27 @@
     <plurals name="batch_tank_all_members">
         <item quantity="other">所选 %d 项已全部在合订本中</item>
     </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="other">已加入下载队列（%d 个合订本）</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="other">已排序 %d 个合订本的成员</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="other">已删除 %d 个合订本</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="other">%d 个合订本无法加入下载</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="other">%d 个合订本排序失败</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="other">%d 个合订本删除失败</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="other">删除 %d 个合订本？其中的档案不会被删除，但合订本自身的简介、附加标签和阅读进度将一并丢失。</item>
+    </plurals>
     <string name="download_already_local">已下载，无需重新下载</string>
     <plurals name="batch_done_category">
         <item quantity="other">已加入分类（%d 项）</item>

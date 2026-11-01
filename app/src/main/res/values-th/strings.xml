@@ -464,6 +464,27 @@
     <plurals name="batch_tank_all_members">
         <item quantity="other">ทั้ง %d รายการมีอยู่ในทังโคบงแล้ว</item>
     </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="other">เพิ่มทังโคบง %d รายการลงคิวดาวน์โหลดแล้ว</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="other">เรียงสมาชิกของทังโคบง %d รายการแล้ว</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="other">ลบทังโคบง %d รายการแล้ว</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="other">เพิ่มทังโคบง %d รายการลงคิวไม่สำเร็จ</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="other">เรียงทังโคบง %d รายการไม่สำเร็จ</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="other">ลบทังโคบง %d รายการไม่สำเร็จ</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="other">ลบทังโคบง %d รายการ? ไฟล์ข้างในจะไม่ถูกลบ แต่สรุป แท็กเพิ่มเติม และความคืบหน้าการอ่านของทังโคบงจะหายไป</item>
+    </plurals>
     <string name="download_already_local">ดาวน์โหลดไว้แล้ว</string>
     <plurals name="batch_done_category">
         <item quantity="other">เพิ่ม %d รายการลงหมวดหมู่แล้ว</item>

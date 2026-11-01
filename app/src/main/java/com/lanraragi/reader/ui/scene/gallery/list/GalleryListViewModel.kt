@@ -4,7 +4,9 @@ import android.os.Parcelable
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.client.api.LRRArchiveApi
@@ -41,6 +43,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.parcelize.Parcelize
 
@@ -267,6 +270,17 @@ class GalleryListViewModel : ViewModel() {
         ) : BatchOp
         data object ClearNew : BatchOp
         data object DeleteArchives : BatchOp
+
+        // Tank mode (rows are TANK_ entries): docs/plan-2.4.0-tank-ux.md PR-B.
+
+        /** Queue every member of each tank for download as a tank group. */
+        data object DownloadTanks : BatchOp
+
+        /** Auto-sort each tank's members by title; previous orders land in [BatchResult.tankUndoOrders]. */
+        data object SortTanks : BatchOp
+
+        /** Delete the tanks (never their archives). */
+        data object DeleteTanks : BatchOp
     }
 
     /** One archive that failed within a batch, with a display-ready reason. */
@@ -296,6 +310,8 @@ class GalleryListViewModel : ViewModel() {
          * in the tank ([BatchOp.AddToTankoubon.knownMembers]).
          */
         val alreadyMembers: List<String> = emptyList(),
+        /** [BatchOp.SortTanks] only: tankId → member order before the sort, for undo. */
+        val tankUndoOrders: Map<String, List<String>> = emptyMap(),
     )
 
     private val _batchProgress = MutableStateFlow<Pair<Int, Int>?>(null)
@@ -366,6 +382,7 @@ class GalleryListViewModel : ViewModel() {
         // Published synchronously (before the launch) so the guard above is
         // effective for back-to-back calls within the same frame.
         _batchProgress.value = 0 to archives.size
+        val undoOrders = ConcurrentHashMap<String, List<String>>()
         viewModelScope.launch {
             val semaphore = Semaphore(BATCH_CONCURRENCY)
             val done = AtomicInteger(0)
@@ -374,7 +391,7 @@ class GalleryListViewModel : ViewModel() {
                     async(Dispatchers.IO) {
                         semaphore.withPermit {
                             val outcome = try {
-                                executeOne(op, archive)
+                                executeOne(op, archive, undoOrders)
                                 null // success
                             } catch (ce: CancellationException) {
                                 throw ce
@@ -401,6 +418,7 @@ class GalleryListViewModel : ViewModel() {
                         succeeded = outcomes.filter { it.second == null }.map { it.first },
                         failed = outcomes.mapNotNull { it.second },
                         owner = owner,
+                        tankUndoOrders = undoOrders.toMap(),
                     )
                 )
             } finally {
@@ -525,7 +543,29 @@ class GalleryListViewModel : ViewModel() {
         }
     }
 
-    private suspend fun executeOne(op: BatchOp, archive: Archive) {
+    private val tankService by lazy { TankListService(viewModelScope) }
+
+    /** Undo of a [BatchOp.SortTanks] run: PUT each previous order back (best-effort per tank). */
+    fun restoreTankOrders(orders: Map<String, List<String>>, profileId: Long) {
+        viewModelScope.launch {
+            val baseUrl = baseUrlResolver(profileId)
+            for ((tankId, order) in orders) {
+                try {
+                    tankService.restoreOrder(baseUrl, tankId, order)
+                } catch (ce: CancellationException) {
+                    throw ce
+                } catch (ignored: Exception) {
+                    Log.w(TAG, "tank order restore failed")
+                }
+            }
+        }
+    }
+
+    private suspend fun executeOne(
+        op: BatchOp,
+        archive: Archive,
+        undoOrders: MutableMap<String, List<String>> = mutableMapOf(),
+    ) {
         val baseUrl = baseUrlResolver(archive.serverProfileId)
         val client = LRRClientProvider.getClient()
         when (op) {
@@ -538,6 +578,22 @@ class GalleryListViewModel : ViewModel() {
                 LRRArchiveApi.deleteArchive(client, baseUrl, archive.arcid)
                 AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(archive.arcid))
             }
+            BatchOp.DownloadTanks -> {
+                // Resolve the members, then fire the fill on the main thread
+                // (download-manager state lookups are main-thread only).
+                val m = tankService.members(baseUrl, archive.serverProfileId, archive.arcid)
+                val context = ServiceRegistry.appModule.getContext()
+                if (m.members.isEmpty()) throw IOException(context.getString(R.string.error_empty))
+                withContext(Dispatchers.Main) {
+                    val plan = TankFillDispatcher.plan(m.members) { downloadManager.getDownloadState(it) }
+                    TankFillDispatcher.dispatch(
+                        context, downloadManager, plan, m.tankId, m.name, archive.serverProfileId, m.memberIdsInOrder,
+                    )
+                }
+            }
+            BatchOp.SortTanks ->
+                tankService.autoSort(baseUrl, archive.arcid)?.let { undoOrders[archive.arcid] = it }
+            BatchOp.DeleteTanks -> tankService.delete(baseUrl, archive.arcid)
             BatchOp.Download -> error("use runBatchDownload")
         }
     }

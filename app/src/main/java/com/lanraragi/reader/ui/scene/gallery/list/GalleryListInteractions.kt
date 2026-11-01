@@ -26,10 +26,10 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
         val archive = scene.mHelper?.getDataAtEx(position)
         // In multi-select mode a click toggles the row instead of navigating —
         // the library does not toggle on click by itself (mirrors downloads).
-        // Tank pseudo-entries are NOT selectable (batch ops don't apply).
+        // Tank pseudo-entries are NOT selectable outside tank mode (batch ops don't apply).
         scene.multiSelectHelper?.let {
             if (it.isActive) {
-                if (archive != null && isTankoubonId(archive.arcid)) return true
+                if (archive != null && !GalleryListSelection.isSelectable(scene, archive)) return true
                 return it.toggleChecked(position)
             }
         }
@@ -71,10 +71,10 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
         )
     }
 
-    /** Long-press enters multi-select — except on tank pseudo-entries. */
+    /** Long-press enters multi-select — except on rows that cannot be selected (tank rows outside tank mode). */
     fun onItemLongClick(position: Int): Boolean {
         val archive = scene.mHelper?.getDataAtEx(position)
-        if (archive != null && isTankoubonId(archive.arcid)) return true // swallow: no menu, no selection
+        if (archive != null && !GalleryListSelection.isSelectable(scene, archive)) return true // swallow
         return scene.multiSelectHelper?.enterAndCheck(position) ?: false
     }
 

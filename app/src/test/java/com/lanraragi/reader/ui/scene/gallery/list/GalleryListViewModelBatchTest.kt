@@ -348,6 +348,53 @@ class GalleryListViewModelBatchTest {
         assertTrue("no append for the existing member, got: $paths", paths.none { it.endsWith("/$ARC_A") })
     }
 
+    // ─── tank mode (rows are TANK_ entries) ───────────────────────────────
+
+    /** /full answers with members [order] titled so that ARC_A < ARC_B < ARC_C by title. */
+    private fun tankFullDispatcher(paths: CopyOnWriteArrayList<String>, order: List<String>) =
+        recordingDispatcher(paths) { request ->
+            if (request.method == "GET" && request.path!!.contains("/full")) {
+                val ids = order.joinToString(",") { "\"$it\"" }
+                val data = order.joinToString(",") { id ->
+                    val title = mapOf(ARC_A to "Vol 1", ARC_B to "Vol 2", ARC_C to "Vol 3").getValue(id)
+                    """{"arcid":"$id","title":"$title","tags":"","isnew":"false","extension":"zip","pagecount":1,"progress":0,"lastreadtime":0}"""
+                }
+                jsonResponse(200, """{"result":{"id":"$TANK_ID","name":"T","archives":[$ids],"full_data":[$data]},"total":3,"filtered":3}""")
+            } else {
+                jsonResponse(200, """{"success":1}""")
+            }
+        }
+
+    @Test
+    fun `sortTanks puts the episode order and reports the previous order for undo`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = tankFullDispatcher(paths, listOf(ARC_C, ARC_A, ARC_B))
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(GalleryListViewModel.BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
+        }
+
+        assertEquals(listOf(TANK_ID), result.succeeded)
+        assertEquals(mapOf(TANK_ID to listOf(ARC_C, ARC_A, ARC_B)), result.tankUndoOrders)
+        assertTrue("one order PUT expected, got: $paths", paths.contains("PUT /api/tankoubons/$TANK_ID"))
+    }
+
+    @Test
+    fun `sortTanks on an already sorted tank writes nothing and offers no undo`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = tankFullDispatcher(paths, listOf(ARC_A, ARC_B, ARC_C))
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(GalleryListViewModel.BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
+        }
+
+        assertEquals(listOf(TANK_ID), result.succeeded)
+        assertTrue(result.tankUndoOrders.isEmpty())
+        assertTrue("no PUT expected, got: $paths", paths.none { it.startsWith("PUT") })
+    }
+
     @Test
     fun `addToTankoubon batch on a non-empty tank never touches the cover`() = runTest {
         val paths = CopyOnWriteArrayList<String>()

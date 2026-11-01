@@ -544,6 +544,34 @@
         <item quantity="one">%d item is already in the tank</item>
         <item quantity="other">All %d items are already in the tank</item>
     </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="one">Queued %d tankoubon for download</item>
+        <item quantity="other">Queued %d tankoubons for download</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="one">Sorted the members of %d tankoubon</item>
+        <item quantity="other">Sorted the members of %d tankoubons</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="one">Deleted %d tankoubon</item>
+        <item quantity="other">Deleted %d tankoubons</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="one">%d tankoubon could not be queued</item>
+        <item quantity="other">%d tankoubons could not be queued</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="one">%d tankoubon could not be sorted</item>
+        <item quantity="other">%d tankoubons could not be sorted</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="one">%d tankoubon could not be deleted</item>
+        <item quantity="other">%d tankoubons could not be deleted</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="one">Delete %d tankoubon? The archives inside are kept, but its summary, extra tags and reading progress are lost.</item>
+        <item quantity="other">Delete %d tankoubons? The archives inside are kept, but their summaries, extra tags and reading progress are lost.</item>
+    </plurals>
     <string name="download_already_local">Already downloaded</string>
     <plurals name="batch_done_category">
         <item quantity="one">Added %d item to the category</item>

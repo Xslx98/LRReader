@@ -483,6 +483,34 @@
         <item quantity="one">%d elemento ya está en el tankoubon</item>
         <item quantity="other">Los %d elementos ya están en el tankoubon</item>
     </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="one">%d tankoubon añadido a descargas</item>
+        <item quantity="other">%d tankoubons añadidos a descargas</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="one">Miembros de %d tankoubon ordenados</item>
+        <item quantity="other">Miembros de %d tankoubons ordenados</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="one">%d tankoubon eliminado</item>
+        <item quantity="other">%d tankoubons eliminados</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="one">No se pudo añadir %d tankoubon</item>
+        <item quantity="other">No se pudieron añadir %d tankoubons</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="one">No se pudo ordenar %d tankoubon</item>
+        <item quantity="other">No se pudieron ordenar %d tankoubons</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="one">No se pudo eliminar %d tankoubon</item>
+        <item quantity="other">No se pudieron eliminar %d tankoubons</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="one">¿Eliminar %d tankoubon? Los archivos se conservan, pero se pierden su resumen, etiquetas adicionales y progreso de lectura.</item>
+        <item quantity="other">¿Eliminar %d tankoubons? Los archivos se conservan, pero se pierden sus resúmenes, etiquetas adicionales y progreso de lectura.</item>
+    </plurals>
     <string name="download_already_local">Ya descargado</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d elemento añadido a la categoría</item>

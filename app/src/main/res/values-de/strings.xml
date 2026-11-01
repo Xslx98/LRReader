@@ -417,6 +417,34 @@
         <item quantity="one">%d Element ist bereits im Tankoubon</item>
         <item quantity="other">Alle %d Elemente sind bereits im Tankoubon</item>
     </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="one">%d Tankoubon zum Download hinzugefügt</item>
+        <item quantity="other">%d Tankoubons zum Download hinzugefügt</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="one">Mitglieder von %d Tankoubon sortiert</item>
+        <item quantity="other">Mitglieder von %d Tankoubons sortiert</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="one">%d Tankoubon gelöscht</item>
+        <item quantity="other">%d Tankoubons gelöscht</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="one">%d Tankoubon konnte nicht hinzugefügt werden</item>
+        <item quantity="other">%d Tankoubons konnten nicht hinzugefügt werden</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="one">%d Tankoubon konnte nicht sortiert werden</item>
+        <item quantity="other">%d Tankoubons konnten nicht sortiert werden</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="one">%d Tankoubon konnte nicht gelöscht werden</item>
+        <item quantity="other">%d Tankoubons konnten nicht gelöscht werden</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="one">%d Tankoubon löschen? Die enthaltenen Archive bleiben erhalten, Zusammenfassung, zusätzliche Tags und Lesefortschritt gehen verloren.</item>
+        <item quantity="other">%d Tankoubons löschen? Die enthaltenen Archive bleiben erhalten, Zusammenfassungen, zusätzliche Tags und Lesefortschritt gehen verloren.</item>
+    </plurals>
     <string name="download_already_local">Bereits heruntergeladen</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d Element zur Kategorie hinzugefügt</item>

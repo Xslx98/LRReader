@@ -422,6 +422,27 @@
     <plurals name="batch_tank_all_members">
         <item quantity="other">選択した %d 件はすべて単行本に含まれています</item>
     </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="other">%d 冊の単行本をダウンロードに追加しました</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="other">%d 冊の単行本のメンバーを並べ替えました</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="other">%d 冊の単行本を削除しました</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="other">%d 冊の単行本をダウンロードに追加できませんでした</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="other">%d 冊の単行本を並べ替えできませんでした</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="other">%d 冊の単行本を削除できませんでした</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="other">%d 冊の単行本を削除しますか？中のアーカイブは削除されませんが、単行本の概要・追加タグ・読書進捗は失われます。</item>
+    </plurals>
     <string name="download_already_local">ダウンロード済みです</string>
     <plurals name="batch_done_category">
         <item quantity="other">%d 件をカテゴリに追加しました</item>

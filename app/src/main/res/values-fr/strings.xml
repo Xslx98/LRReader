@@ -482,6 +482,34 @@
         <item quantity="one">%d élément est déjà dans le tankoubon</item>
         <item quantity="other">Les %d éléments sont déjà dans le tankoubon</item>
     </plurals>
+    <plurals name="batch_done_tank_download">
+        <item quantity="one">%d tankoubon ajouté aux téléchargements</item>
+        <item quantity="other">%d tankoubons ajoutés aux téléchargements</item>
+    </plurals>
+    <plurals name="batch_done_tank_sort">
+        <item quantity="one">Membres de %d tankoubon triés</item>
+        <item quantity="other">Membres de %d tankoubons triés</item>
+    </plurals>
+    <plurals name="batch_done_tank_delete">
+        <item quantity="one">%d tankoubon supprimé</item>
+        <item quantity="other">%d tankoubons supprimés</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_download">
+        <item quantity="one">%d tankoubon n\'a pas pu être ajouté</item>
+        <item quantity="other">%d tankoubons n\'ont pas pu être ajoutés</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_sort">
+        <item quantity="one">%d tankoubon n\'a pas pu être trié</item>
+        <item quantity="other">%d tankoubons n\'ont pas pu être triés</item>
+    </plurals>
+    <plurals name="batch_fail_title_tank_delete">
+        <item quantity="one">%d tankoubon n\'a pas pu être supprimé</item>
+        <item quantity="other">%d tankoubons n\'ont pas pu être supprimés</item>
+    </plurals>
+    <plurals name="batch_tank_delete_confirm_message">
+        <item quantity="one">Supprimer %d tankoubon ? Les archives sont conservées, mais son résumé, ses tags supplémentaires et sa progression de lecture sont perdus.</item>
+        <item quantity="other">Supprimer %d tankoubons ? Les archives sont conservées, mais leurs résumés, tags supplémentaires et progression de lecture sont perdus.</item>
+    </plurals>
     <string name="download_already_local">Déjà téléchargé</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d élément ajouté à la catégorie</item>

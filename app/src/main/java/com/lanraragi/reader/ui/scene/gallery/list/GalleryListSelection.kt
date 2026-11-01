@@ -15,9 +15,13 @@ import com.lanraragi.reader.ui.scene.ListMultiSelectHelper
 /**
  * Multi-select on the gallery list: the thumb tap that toggles a row, the
  * batch action bar and the multi-select / drag-select helper. Tank rows are
- * never checked.
+ * never checked — except in tank mode, where they are the only rows.
  */
 object GalleryListSelection {
+
+    /** A row can be checked: tank rows in tank mode, archive rows otherwise. */
+    fun isSelectable(scene: GalleryListScene, archive: Archive): Boolean =
+        isTankoubonId(archive.arcid) == scene.isTankMode
 
     /** Wires selection for the list view just created in onCreateView2. */
     fun bind(scene: GalleryListScene, adapter: GalleryAdapterNew, mainLayout: View) {
@@ -28,7 +32,7 @@ object GalleryListSelection {
                 // must toggle the row instead of opening the tag-chip popup.
                 // Tank rows stay untoggleable here too.
                 if (scene.multiSelectHelper?.isActive == true &&
-                    archive != null && isTankoubonId(archive.arcid)
+                    archive != null && !isSelectable(scene, archive)
                 ) {
                     return
                 }
@@ -50,7 +54,7 @@ object GalleryListSelection {
                     .orEmpty()
                     // select-all can still visually check tank rows; they must
                     // never reach a batch op
-                    .filterNot { isTankoubonId(it.arcid) }
+                    .filter { isSelectable(scene, it) }
 
             override fun activeProfileId(): Long = LRRAuthManager.getActiveProfileId()
             override fun isSelectionActive(): Boolean = scene.multiSelectHelper?.isActive == true
@@ -74,6 +78,7 @@ object GalleryListSelection {
                 scene.tankMerge.openTankoubonDetail(tankId, tankName)
             }
             override fun batchOwnerToken(): Any = scene.batchOwnerToken
+            override fun isTankMode(): Boolean = scene.isTankMode
         })
         val multiSelect = ListMultiSelectHelper(
             recyclerView = { if (scene.isListViewCreated) scene.recyclerView else null },
@@ -87,9 +92,9 @@ object GalleryListSelection {
         // both calls below are required before the mode can be entered.
         recyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
         recyclerView.setCustomCheckedListener(multiSelect.choiceListener)
-        // Tank pseudo-rows are passed over by a drag, never checked.
+        // Unselectable rows are passed over by a drag, never checked.
         multiSelect.attachDragSelect(recyclerView) { position ->
-            scene.mHelper?.getDataAtEx(position)?.let { !isTankoubonId(it.arcid) } ?: false
+            scene.mHelper?.getDataAtEx(position)?.let { isSelectable(scene, it) } ?: false
         }
     }
 }

@@ -72,6 +72,9 @@ internal class GalleryBatchOpsHelper(
          * this scene alone (see [GalleryListViewModel.BatchResult.owner]).
          */
         fun batchOwnerToken(): Any
+
+        /** The list shows tanks only: Download / Sort / Delete act on tanks. */
+        fun isTankMode(): Boolean = false
     }
 
     private val countView: TextView = bar.findViewById(R.id.batch_count)
@@ -83,6 +86,7 @@ internal class GalleryBatchOpsHelper(
     private val tankoubonButton: TextView = bar.findViewById(R.id.batch_tankoubon)
     private val clearNewButton: TextView = bar.findViewById(R.id.batch_clear_new)
     private val deleteButton: TextView = bar.findViewById(R.id.batch_delete)
+    private val tankSortButton: TextView = bar.findViewById(R.id.batch_tank_sort)
 
     /** Last count reported by the selection helper; restored after a run ends. */
     private var selectedCount = 0
@@ -97,11 +101,19 @@ internal class GalleryBatchOpsHelper(
         tankoubonButton.setOnClickListener { onTankoubonClick() }
         clearNewButton.setOnClickListener { onClearNewClick() }
         deleteButton.setOnClickListener { onDeleteClick() }
-        // Hidden entirely on servers already proven pre-0.9.8; UNKNOWN keeps
-        // it visible and the first failed call flips the gate + toasts.
-        tankoubonButton.visibility =
-            if (TankoubonSupportGate.isUnsupported(LRRClientProvider.getBaseUrl())) View.GONE
-            else View.VISIBLE
+        tankSortButton.setOnClickListener { onTankSortClick() }
+        if (callback.isTankMode()) {
+            for (archiveOnly in listOf(categoryButton, tankoubonButton, clearNewButton)) {
+                archiveOnly.visibility = View.GONE
+            }
+            tankSortButton.visibility = View.VISIBLE
+        } else {
+            // Hidden entirely on servers already proven pre-0.9.8; UNKNOWN keeps
+            // it visible and the first failed call flips the gate + toasts.
+            tankoubonButton.visibility =
+                if (TankoubonSupportGate.isUnsupported(LRRClientProvider.getBaseUrl())) View.GONE
+                else View.VISIBLE
+        }
     }
 
     // ─── ListMultiSelectHelper callbacks ─────────────────────────────────
@@ -181,6 +193,11 @@ internal class GalleryBatchOpsHelper(
                 callback.showTipWithAction(text, activity.getString(R.string.tank_merge_open)) {
                     callback.openTankoubon(op.tankId, op.tankName)
                 }
+            } else if (op == GalleryListViewModel.BatchOp.SortTanks && result.tankUndoOrders.isNotEmpty()) {
+                val profileId = callback.activeProfileId()
+                callback.showTipWithAction(text, activity.getString(R.string.tank_undo)) {
+                    callback.viewModel.restoreTankOrders(result.tankUndoOrders, profileId)
+                }
             } else {
                 callback.showTip(text)
             }
@@ -188,7 +205,9 @@ internal class GalleryBatchOpsHelper(
             BatchFeedbackPresenter.dialogFor(result)?.let { showFailureDialog(activity, it) }
         }
 
-        if (result.op == GalleryListViewModel.BatchOp.ClearNew) {
+        if (result.op == GalleryListViewModel.BatchOp.ClearNew ||
+            result.op == GalleryListViewModel.BatchOp.DeleteTanks
+        ) {
             // NEW badges render from server data; reload so they disappear.
             callback.refreshList()
         }
@@ -224,6 +243,10 @@ internal class GalleryBatchOpsHelper(
 
     private fun onDownloadClick() {
         val selected = takeSelection() ?: return
+        if (callback.isTankMode()) {
+            runAndExit(GalleryListViewModel.BatchOp.DownloadTanks, selected)
+            return
+        }
         callback.viewModel.runBatchDownload(
             selected, callback.downloadManager, owner = callback.batchOwnerToken()
         )
@@ -268,6 +291,16 @@ internal class GalleryBatchOpsHelper(
         }
     }
 
+    private fun onTankSortClick() {
+        val selected = takeSelection() ?: return
+        runAndExit(GalleryListViewModel.BatchOp.SortTanks, selected)
+    }
+
+    private fun runAndExit(op: GalleryListViewModel.BatchOp, selected: List<Archive>) {
+        callback.viewModel.runBatch(op, selected, owner = callback.batchOwnerToken())
+        callback.exitSelection()
+    }
+
     private fun onClearNewClick() {
         val selected = takeSelection() ?: return
         callback.viewModel.runBatch(
@@ -292,13 +325,12 @@ internal class GalleryBatchOpsHelper(
      * activity and firing on a detached button.
      */
     private fun showDeleteConfirmDialog(activity: Activity, selected: List<Archive>) {
+        val tanks = callback.isTankMode()
+        val messageRes = if (tanks) R.plurals.batch_tank_delete_confirm_message else R.plurals.batch_delete_confirm_message
+        val op = if (tanks) GalleryListViewModel.BatchOp.DeleteTanks else GalleryListViewModel.BatchOp.DeleteArchives
         val dialog = AlertDialog.Builder(activity)
-            .setTitle(R.string.lrr_delete_confirm_title)
-            .setMessage(
-                activity.resources.getQuantityString(
-                    R.plurals.batch_delete_confirm_message, selected.size, selected.size
-                )
-            )
+            .setTitle(if (tanks) R.string.tank_delete else R.string.lrr_delete_confirm_title)
+            .setMessage(activity.resources.getQuantityString(messageRes, selected.size, selected.size))
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.lrr_delete_confirm_button, null)
             .create()
@@ -334,10 +366,7 @@ internal class GalleryBatchOpsHelper(
             positiveButton.setOnClickListener {
                 countdownTimer?.cancel()
                 dialog.dismiss()
-                callback.viewModel.runBatch(
-                    GalleryListViewModel.BatchOp.DeleteArchives, selected,
-                    owner = callback.batchOwnerToken()
-                )
+                callback.viewModel.runBatch(op, selected, owner = callback.batchOwnerToken())
                 callback.exitSelection()
             }
         }
@@ -362,7 +391,7 @@ internal class GalleryBatchOpsHelper(
 
     private fun setOpButtonsEnabled(enabled: Boolean) {
         val alpha = if (enabled) 1f else DISABLED_ALPHA
-        listOf(downloadButton, categoryButton, tankoubonButton, clearNewButton, deleteButton)
+        listOf(downloadButton, categoryButton, tankoubonButton, clearNewButton, deleteButton, tankSortButton)
             .forEach {
                 it.isEnabled = enabled
                 it.alpha = alpha
