@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnsafeCallOnNullableType") // TODO(2.4-idiom)
-
 package com.lanraragi.framework.lib.glgallery
 
 import com.lanraragi.framework.lib.glview.glrenderer.BasicTexture
@@ -151,14 +149,15 @@ class GalleryPageView(
         }
     }
 
-    fun setError(error: String?, galleryView: GalleryView?) {
+    fun clearError() {
         unbindError()
-        if (error == null) {
-            errorView.visibility = GONE
-        } else {
-            errorView.visibility = VISIBLE
-            galleryView!!.bindErrorView(errorView, error)
-        }
+        errorView.visibility = GONE
+    }
+
+    fun setError(error: String, galleryView: GalleryView) {
+        unbindError()
+        errorView.visibility = VISIBLE
+        galleryView.bindErrorView(errorView, error)
     }
 
     @get:JvmName("isLoaded")

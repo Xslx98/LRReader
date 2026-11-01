@@ -37,13 +37,13 @@ open class SimpleAdapter(
         view.setImage(null)
         view.setPage(index + 1)
         view.setProgress(GalleryPageView.PROGRESS_INDETERMINATE)
-        view.setError(null, null)
+        view.clearError()
     }
 
     override fun onUnbind(view: GalleryPageView, index: Int) {
         provider.cancelRequest(index)
         view.setImage(null)
-        view.setError(null, null)
+        view.clearError()
     }
 
     override fun getError(): String? = provider.getError()
@@ -71,7 +71,7 @@ open class SimpleAdapter(
             page.setImage(null)
             page.setPage(index + 1)
             page.setProgress(GalleryPageView.PROGRESS_INDETERMINATE)
-            page.setError(null, null)
+            page.clearError()
         }
     }
 
@@ -87,7 +87,7 @@ open class SimpleAdapter(
             page.setImage(null)
             page.setPage(index + 1)
             page.setProgress(percent)
-            page.setError(null, null)
+            page.clearError()
         }
     }
 
@@ -101,7 +101,7 @@ open class SimpleAdapter(
                 page.setImage(imageTexture)
                 page.setPage(index + 1)
                 page.setProgress(GalleryPageView.PROGRESS_GONE)
-                page.setError(null, null)
+                page.clearError()
             } else {
                 // The image is recycled, request again.
                 // UPSTREAM-LEGACY: potential infinite request loop if adapter keeps returning RESULT_ERROR
@@ -125,7 +125,11 @@ open class SimpleAdapter(
             page.setImage(null)
             page.setPage(index + 1)
             page.setProgress(GalleryPageView.PROGRESS_GONE)
-            page.setError(error, mGalleryView)
+            if (error == null) {
+                page.clearError()
+            } else {
+                page.setError(error, mGalleryView)
+            }
         }
     }
 
