@@ -71,7 +71,10 @@ open class GLView {
 
     private var parent: GLView? = null
 
-    private var components: ArrayList<GLView>? = null
+    // Typed as the Kotlin list: its get() is non-null, so the render and
+    // touch loops read children without a platform-type null check. An
+    // empty ArrayList shares the empty backing array until the first add.
+    private val components: MutableList<GLView> = ArrayList()
     private var motionTarget: GLView? = null
 
     private var animation: CanvasAnimation? = null
@@ -199,14 +202,10 @@ open class GLView {
 
     // Returns the number of children of the GLView.
     val componentCount: Int
-        get() = components?.size ?: 0
+        get() = components.size
 
     // Returns the children for the given index.
-    fun getComponent(index: Int): GLView {
-        val components = this.components
-        if (components == null) throw ArrayIndexOutOfBoundsException(index)
-        return components[index]
-    }
+    fun getComponent(index: Int): GLView = components[index]
 
     // Adds a child to this GLView.
     fun addComponent(component: GLView) {
@@ -240,12 +239,6 @@ open class GLView {
         }
 
         // Build parent-child links
-        var components = this.components
-        if (components == null) {
-            components = ArrayList()
-            this.components = components
-        }
-
         components.add(validIndex, component)
         component.parent = this
         component.layoutParams = validParams
@@ -259,8 +252,6 @@ open class GLView {
 
     // Removes a child from this GLView.
     fun removeComponent(component: GLView): Boolean {
-        val components = this.components
-        if (components == null) return false
         if (components.remove(component)) {
             removeOneComponent(component)
             return true
