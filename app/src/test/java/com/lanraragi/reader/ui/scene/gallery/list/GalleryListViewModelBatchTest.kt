@@ -331,6 +331,24 @@ class GalleryListViewModelBatchTest {
     }
 
     @Test
+    fun `addToTankoubon skips archives the picker saw as members and reports them`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = recordingDispatcher(paths)
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(
+                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, knownMembers = setOf(ARC_A)),
+                listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
+            )
+        }
+
+        assertEquals(listOf(ARC_B), result.succeeded)
+        assertEquals(listOf(ARC_A), result.alreadyMembers)
+        assertTrue("no append for the existing member, got: $paths", paths.none { it.endsWith("/$ARC_A") })
+    }
+
+    @Test
     fun `addToTankoubon batch on a non-empty tank never touches the cover`() = runTest {
         val paths = CopyOnWriteArrayList<String>()
         server.dispatcher = recordingDispatcher(paths)

@@ -422,6 +422,16 @@
     <string name="detail_tankoubons_edit">Editar</string>
     <string name="detail_tankoubons_none">No está en ningún tankoubon</string>
     <string name="tank_add_to">Añadir a tankoubon</string>
+    <string name="tank_picker_search_hint">Buscar tankoubons</string>
+    <string name="tank_picker_new_named">Nuevo tankoubon «%s»</string>
+    <string name="tank_picker_name_exists">Ya existe un tankoubon con este nombre</string>
+    <string name="tank_picker_contains">%1$d/%2$d ya incluidos</string>
+    <string name="tank_picker_contains_all">Ya los contiene todos</string>
+    <string name="tank_picker_section_member">Ya incluido</string>
+    <string name="tank_picker_section_recent">Recientes</string>
+    <string name="tank_picker_section_all">Todos los tankoubons</string>
+    <string name="tank_picker_apply">Aplicar</string>
+    <string name="tank_picker_empty">Ningún tankoubon coincide</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
     <!-- List multi-select batch operations -->
@@ -464,6 +474,11 @@
     </plurals>
     <string name="batch_move_tank_unsupported">Las tarjetas de tankoubon no se pueden mover a una etiqueta</string>
     <string name="batch_download_queued_some_local">%1$d en cola de descarga, %2$d ya descargados</string>
+    <string name="batch_tank_added_some_members">%1$d añadidos al tankoubon, %2$d ya estaban</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="one">%d elemento ya está en el tankoubon</item>
+        <item quantity="other">Los %d elementos ya están en el tankoubon</item>
+    </plurals>
     <string name="download_already_local">Ya descargado</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d elemento añadido a la categoría</item>

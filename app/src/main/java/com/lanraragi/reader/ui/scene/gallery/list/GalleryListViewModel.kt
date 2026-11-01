@@ -255,11 +255,15 @@ class GalleryListViewModel : ViewModel() {
          * @param tankName display name as the picker saw it (or as typed for a
          *   just-created tank); carried on the op so the list can build the
          *   provisional tank row and the Snackbar without another fetch.
+         * @param knownMembers the tank's member ids as the picker saw them;
+         *   selected archives among them are skipped (no append) and reported
+         *   in [BatchResult.alreadyMembers].
          */
         data class AddToTankoubon(
             val tankId: String,
             val wasEmpty: Boolean = false,
             val tankName: String = "",
+            val knownMembers: Set<String> = emptySet(),
         ) : BatchOp
         data object ClearNew : BatchOp
         data object DeleteArchives : BatchOp
@@ -287,6 +291,11 @@ class GalleryListViewModel : ViewModel() {
          * Not queued, not failed — surfaced as "already downloaded" feedback.
          */
         val alreadyLocal: List<String> = emptyList(),
+        /**
+         * Tank adds only: arcids skipped because the picker saw them already
+         * in the tank ([BatchOp.AddToTankoubon.knownMembers]).
+         */
+        val alreadyMembers: List<String> = emptyList(),
     )
 
     private val _batchProgress = MutableStateFlow<Pair<Int, Int>?>(null)
@@ -409,8 +418,10 @@ class GalleryListViewModel : ViewModel() {
      * re-entrancy guard, progress publication and result emission; append
      * order is the LIST DISPLAY order of the selection, not tap order.
      */
-    private fun runBatchSequential(op: BatchOp, archives: List<Archive>, owner: Any? = null) {
+    private fun runBatchSequential(op: BatchOp, selected: List<Archive>, owner: Any? = null) {
         if (_batchProgress.value != null) return
+        val known = (op as? BatchOp.AddToTankoubon)?.knownMembers.orEmpty()
+        val (alreadyMembers, archives) = selected.partition { it.arcid in known }
         _batchProgress.value = 0 to archives.size
         viewModelScope.launch {
             val failed = mutableListOf<BatchFailure>()
@@ -432,7 +443,10 @@ class GalleryListViewModel : ViewModel() {
                     syncTankTagsAfterAdd(op, succeeded, archives)
                 }
                 _batchResultEvent.tryEmit(
-                    BatchResult(op = op, succeeded = succeeded, failed = failed, owner = owner)
+                    BatchResult(
+                        op = op, succeeded = succeeded, failed = failed, owner = owner,
+                        alreadyMembers = alreadyMembers.map { it.arcid },
+                    )
                 )
             } finally {
                 _batchProgress.value = null

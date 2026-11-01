@@ -4,13 +4,8 @@ import com.lanraragi.reader.tankoubon.TankListCache
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
-import android.widget.CheckBox
-import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
@@ -21,6 +16,7 @@ import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankNameSuggester
+import com.lanraragi.reader.tankoubon.TankRecentStore
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
@@ -31,8 +27,7 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
 /**
- * Tankoubon membership dialogs (structural clone of [CategoryDialogHelper]
- * with the API swapped). Routes every call by the archive's SOURCE profile
+ * Tankoubon pickers, both on [TankPickerSheet] (docs/plan-2.4.0-tank-ux.md). Routes every call by the archive's SOURCE profile
  * via resolveSourceBaseUrl — never the active server. A definite 404 marks
  * the server pre-0.9.8 through [TankoubonSupportGate] and surfaces the
  * unsupported toast; 423 means the tank is locked server-side.
@@ -40,11 +35,13 @@ import okhttp3.OkHttpClient
 object TankoubonDialogHelper {
 
     /**
-     * Membership editor: checkbox per tank on the archive's source server
-     * (checked = [arcid] currently in it, from the reverse lookup), OK
-     * applies diffs via add/removeFromTankoubon SEQUENTIALLY (server order
-     * is append order), then [onChanged] gets the new membership ids.
-     * Neutral button creates a tank, then reopens this dialog.
+     * Membership editor: the sheet in membership mode over the archive's
+     * source server (checked = [arcid] currently in it, from the reverse
+     * lookup; those tanks are pinned first). Apply writes the diffs via
+     * add/removeFromTankoubon SEQUENTIALLY (server order is append order),
+     * then [onChanged] gets the new membership ids. Creating a tank reopens
+     * the sheet with the new tank checked and the pending ticks kept
+     * ([pendingChecked]).
      */
     @JvmStatic
     fun showMembershipDialog(
@@ -52,24 +49,48 @@ object TankoubonDialogHelper {
         arcid: String?,
         serverProfileId: Long,
         archiveTitle: String? = null,
+        pendingChecked: Set<String>? = null,
         onChanged: (List<String>) -> Unit,
     ) {
         if (activity == null || arcid.isNullOrEmpty()) return
 
         loadTanksAndMembership(activity, serverProfileId, arcid) { tanks, memberIds, serverUrl ->
-            val checked = BooleanArray(tanks.size) { i -> tanks[i].id in memberIds }
-            showMembershipCheckboxDialog(
-                activity, tanks, checked, checked.clone(),
-                arcid, serverProfileId, serverUrl, archiveTitle, onChanged
+            val mode = TankPickerSheet.Mode.Membership(
+                arcid,
+                checked = (pendingChecked ?: memberIds).toMutableSet(),
+                onApply = { checkedIds ->
+                    applyMembershipChanges(
+                        activity, tanks,
+                        checked = BooleanArray(tanks.size) { tanks[it].id in checkedIds },
+                        originalChecked = BooleanArray(tanks.size) { tanks[it].id in memberIds },
+                        arcid, serverProfileId, serverUrl, onChanged,
+                    )
+                },
             )
+            TankPickerSheet(
+                activity, serverUrl, tanks,
+                recentIds = TankRecentStore.default.get(serverProfileId),
+                suggestedName = TankNameSuggester.suggest(listOfNotNull(archiveTitle)),
+                mode = mode,
+            ) { name ->
+                createTank(activity, serverUrl, name) { newId, _ ->
+                    // Recent puts the new, pre-checked tank at the top of the reopened sheet.
+                    TankRecentStore.default.touch(serverProfileId, newId)
+                    showMembershipDialog(
+                        activity, arcid, serverProfileId, archiveTitle,
+                        pendingChecked = mode.checked + newId, onChanged = onChanged,
+                    )
+                }
+            }.show()
         }
     }
 
     /**
-     * Simple picker for batch ops: single-choice list of the server's tanks
-     * with a leading "create" row (inline create then pick). A server with
-     * no tankoubon yet skips the list and goes straight to the create
-     * prompt (spec 2026-09-21 §6). [onPicked] receives the picked
+     * Picker for batch ops: the sheet in pick mode over the server's tanks,
+     * with "contains x/y" marks computed from [selectedArcids]. A server with
+     * no tankoubon yet skips the sheet and goes straight to the create
+     * prompt (spec 2026-09-21 §6). A pick or create also bumps the tank in
+     * [TankRecentStore]. [onPicked] receives the picked
      * [LRRTankoubonApi.Tankoubon] as the picker saw it: `archives` empty
      * means the tank had zero members at pick time (a just-created tank
      * always does) so the batch can seed the tank cover after its first
@@ -80,35 +101,32 @@ object TankoubonDialogHelper {
     fun pickTankoubon(
         activity: Activity?,
         serverProfileId: Long,
+        selectedArcids: List<String>,
         selectedTitles: List<String> = emptyList(),
         onPicked: (tank: LRRTankoubonApi.Tankoubon) -> Unit,
     ) {
         if (activity == null) return
         // Spec 2026-09-22 §9: "New tankoubon" pre-fills a name extracted from the selection.
         val suggested = TankNameSuggester.suggest(selectedTitles)
+        val picked: (LRRTankoubonApi.Tankoubon) -> Unit = { tank ->
+            TankRecentStore.default.touch(serverProfileId, tank.id)
+            onPicked(tank)
+        }
+        val created: (String, String) -> Unit = { newId, name ->
+            picked(LRRTankoubonApi.Tankoubon(id = newId, name = name))
+        }
 
         loadTanksAndMembership(activity, serverProfileId, arcid = null) { tanks, _, serverUrl ->
             if (tanks.isEmpty()) {
-                promptCreate(activity, serverUrl, suggested) { newId, name ->
-                    onPicked(LRRTankoubonApi.Tankoubon(id = newId, name = name))
-                }
+                promptCreate(activity, serverUrl, suggested, created)
                 return@loadTanksAndMembership
             }
-            val items = arrayOf(activity.getString(R.string.tank_create)) +
-                tankDisplayNames(tanks)
-            AlertDialog.Builder(activity)
-                .setTitle(R.string.tank_add_to)
-                .setItems(items) { _, which ->
-                    if (which == 0) {
-                        promptCreate(activity, serverUrl, suggested) { newId, name ->
-                            onPicked(LRRTankoubonApi.Tankoubon(id = newId, name = name))
-                        }
-                    } else {
-                        onPicked(tanks[which - 1])
-                    }
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
+            TankPickerSheet(
+                activity, serverUrl, tanks,
+                recentIds = TankRecentStore.default.get(serverProfileId),
+                suggestedName = suggested,
+                mode = TankPickerSheet.Mode.Pick(selectedArcids, picked),
+            ) { name -> createTank(activity, serverUrl, name, created) }.show()
         }
     }
 
@@ -160,63 +178,6 @@ object TankoubonDialogHelper {
         }
     }
 
-    private fun tankDisplayNames(tanks: List<LRRTankoubonApi.Tankoubon>): Array<String> =
-        Array(tanks.size) { i -> "${tanks[i].name} (${tanks[i].archives.size})" }
-
-    @Suppress("LongParameterList") // mirrors CategoryDialogHelper's checkbox-dialog signature
-    private fun showMembershipCheckboxDialog(
-        activity: Activity,
-        tanks: List<LRRTankoubonApi.Tankoubon>,
-        checked: BooleanArray,
-        originalChecked: BooleanArray,
-        arcid: String,
-        serverProfileId: Long,
-        serverUrl: String,
-        archiveTitle: String?,
-        onChanged: (List<String>) -> Unit,
-    ) {
-        val container = LinearLayout(activity)
-        container.orientation = LinearLayout.VERTICAL
-        val pad = (16 * activity.resources.displayMetrics.density).toInt()
-        container.setPadding(pad, pad / 2, pad, pad / 2)
-
-        val names = tankDisplayNames(tanks)
-        for (i in tanks.indices) {
-            val cb = CheckBox(activity)
-            cb.text = names[i]
-            cb.isChecked = checked[i]
-            val idx = i
-            cb.setOnCheckedChangeListener { _, isChecked -> checked[idx] = isChecked }
-            container.addView(cb)
-        }
-
-        val scrollView = ScrollView(activity)
-        scrollView.addView(container)
-        val screenH = activity.resources.displayMetrics.heightPixels
-        scrollView.layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            minOf(FrameLayout.LayoutParams.WRAP_CONTENT, (screenH * 0.6).toInt())
-        )
-
-        AlertDialog.Builder(activity)
-            .setTitle(R.string.tank_add_to)
-            .setView(scrollView)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                applyMembershipChanges(
-                    activity, tanks, checked, originalChecked,
-                    arcid, serverUrl, onChanged
-                )
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setNeutralButton(R.string.tank_create) { _, _ ->
-                promptCreate(activity, serverUrl, TankNameSuggester.suggest(listOfNotNull(archiveTitle))) { _, _ ->
-                    // Reopen so the fresh tank shows up in the checkbox list.
-                    showMembershipDialog(activity, arcid, serverProfileId, archiveTitle, onChanged)
-                }
-            }
-            .show()
-    }
-
     @Suppress("LongParameterList") // mirrors CategoryDialogHelper's apply-changes signature
     private fun applyMembershipChanges(
         activity: Activity,
@@ -224,6 +185,7 @@ object TankoubonDialogHelper {
         checked: BooleanArray,
         originalChecked: BooleanArray,
         arcid: String,
+        serverProfileId: Long,
         serverUrl: String,
         onChanged: (List<String>) -> Unit,
     ) {
@@ -271,6 +233,7 @@ object TankoubonDialogHelper {
                     TankCategorySyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
                 }
                 TankListCache.invalidate(serverUrl)
+                for (tank in joined.asReversed()) TankRecentStore.default.touch(serverProfileId, tank.id)
                 val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(appContext, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
@@ -320,22 +283,30 @@ object TankoubonDialogHelper {
     ) {
         TankDialogs.showNameInputDialog(
             activity, R.string.tank_create, suggestedName.orEmpty(), selectInitial = true,
-        ) { name ->
-            // App-scoped so a rotation cannot cut the create off (see
-            // applyMembershipChanges); the follow-up needs a live Activity.
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                try {
-                    val client = ServiceRegistry.networkModule.okHttpClient
-                    val newId = LRRTankoubonApi.createTankoubon(client, serverUrl, name)
-                    TankListCache.invalidate(serverUrl)
-                    Handler(Looper.getMainLooper()).post {
-                        if (!activity.isDestroyed) onCreated(newId, name)
-                    }
-                } catch (ce: CancellationException) {
-                    throw ce
-                } catch (e: Exception) {
-                    postErrorToast(activity, serverUrl, e)
+        ) { name -> createTank(activity, serverUrl, name, onCreated) }
+    }
+
+    /** createTankoubon → [onCreated] with the new tank id and [name]. */
+    private fun createTank(
+        activity: Activity,
+        serverUrl: String,
+        name: String,
+        onCreated: (tankId: String, name: String) -> Unit,
+    ) {
+        // App-scoped so a rotation cannot cut the create off (see
+        // applyMembershipChanges); the follow-up needs a live Activity.
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                val client = ServiceRegistry.networkModule.okHttpClient
+                val newId = LRRTankoubonApi.createTankoubon(client, serverUrl, name)
+                TankListCache.invalidate(serverUrl)
+                Handler(Looper.getMainLooper()).post {
+                    if (!activity.isDestroyed) onCreated(newId, name)
                 }
+            } catch (ce: CancellationException) {
+                throw ce
+            } catch (e: Exception) {
+                postErrorToast(activity, serverUrl, e)
             }
         }
     }

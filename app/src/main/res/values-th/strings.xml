@@ -416,6 +416,16 @@
     <string name="detail_tankoubons_edit">แก้ไข</string>
     <string name="detail_tankoubons_none">ไม่อยู่ในรวมเล่มใด</string>
     <string name="tank_add_to">เพิ่มลงทังโคบง</string>
+    <string name="tank_picker_search_hint">ค้นหาทังโคบง</string>
+    <string name="tank_picker_new_named">ทังโคบงใหม่ “%s”</string>
+    <string name="tank_picker_name_exists">มีทังโคบงชื่อนี้อยู่แล้ว</string>
+    <string name="tank_picker_contains">มีอยู่แล้ว %1$d/%2$d</string>
+    <string name="tank_picker_contains_all">มีครบทั้งหมดแล้ว</string>
+    <string name="tank_picker_section_member">อยู่ในทังโคบง</string>
+    <string name="tank_picker_section_recent">ใช้ล่าสุด</string>
+    <string name="tank_picker_section_all">ทังโคบงทั้งหมด</string>
+    <string name="tank_picker_apply">ใช้</string>
+    <string name="tank_picker_empty">ไม่มีทังโคบงที่ตรงกัน</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
     <!-- List multi-select batch operations -->
@@ -446,6 +456,10 @@
     </plurals>
     <string name="batch_move_tank_unsupported">การ์ดรวมเล่มไม่สามารถย้ายไปยังป้ายกำกับได้</string>
     <string name="batch_download_queued_some_local">เพิ่ม %1$d รายการลงคิวดาวน์โหลดแล้ว อีก %2$d รายการดาวน์โหลดไว้แล้ว</string>
+    <string name="batch_tank_added_some_members">เพิ่มลงทังโคบงแล้ว %1$d รายการ, %2$d รายการมีอยู่แล้ว</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="other">ทั้ง %d รายการมีอยู่ในทังโคบงแล้ว</item>
+    </plurals>
     <string name="download_already_local">ดาวน์โหลดไว้แล้ว</string>
     <plurals name="batch_done_category">
         <item quantity="other">เพิ่ม %d รายการลงหมวดหมู่แล้ว</item>

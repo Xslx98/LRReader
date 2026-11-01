@@ -10,6 +10,7 @@ import com.lanraragi.reader.ui.ContinueReadingShortcut
 import com.lanraragi.reader.gallery.ArchiveProgressOutbox
 import com.lanraragi.reader.gallery.LocalReadingProgress
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
+import com.lanraragi.reader.tankoubon.TankRecentStore
 import com.lanraragi.reader.tankoubon.TankTagOutbox
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
@@ -503,6 +504,7 @@ class ServerListViewModel : ViewModel() {
         ArchiveProgressOutbox.dropServer(baseUrl)
         TankTagOutbox.dropServer(baseUrl)
         TankCoverChoiceStore.default.removeProfile(profile.id)
+        TankRecentStore.default.removeProfile(profile.id)
         LocalReadingProgress.removeProfile(ServiceRegistry.appModule.getContext(), profile.id)
     }
 

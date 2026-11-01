@@ -420,6 +420,16 @@
     <string name="detail_tankoubons_edit">편집</string>
     <string name="detail_tankoubons_none">단행본에 포함되지 않음</string>
     <string name="tank_add_to">단행본에 추가</string>
+    <string name="tank_picker_search_hint">단행본 검색</string>
+    <string name="tank_picker_new_named">새 단행본 “%s”</string>
+    <string name="tank_picker_name_exists">같은 이름의 단행본이 이미 있습니다</string>
+    <string name="tank_picker_contains">%1$d/%2$d개 포함됨</string>
+    <string name="tank_picker_contains_all">모두 포함됨</string>
+    <string name="tank_picker_section_member">포함된 단행본</string>
+    <string name="tank_picker_section_recent">최근 사용</string>
+    <string name="tank_picker_section_all">모든 단행본</string>
+    <string name="tank_picker_apply">적용</string>
+    <string name="tank_picker_empty">일치하는 단행본이 없습니다</string>
     <string name="batch_add_to_tankoubon">단행본</string>
 
     <!-- List multi-select batch operations -->
@@ -450,6 +460,10 @@
     </plurals>
     <string name="batch_move_tank_unsupported">단행본 카드는 라벨로 이동할 수 없습니다</string>
     <string name="batch_download_queued_some_local">%1$d개를 다운로드 대기열에 추가했습니다. %2$d개는 이미 다운로드되어 있습니다</string>
+    <string name="batch_tank_added_some_members">단행본에 %1$d개 추가됨, %2$d개는 이미 포함됨</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="other">선택한 %d개가 모두 이미 단행본에 있습니다</item>
+    </plurals>
     <string name="download_already_local">이미 다운로드되어 있습니다</string>
     <plurals name="batch_done_category">
         <item quantity="other">%d개를 카테고리에 추가했습니다</item>

@@ -172,6 +172,9 @@ internal class GalleryBatchOpsHelper(
                 is BatchFeedbackPresenter.Tip.QueuedWithLocal -> activity.getString(
                     R.string.batch_download_queued_some_local, tip.queued, tip.alreadyLocal
                 )
+                is BatchFeedbackPresenter.Tip.AddedWithExisting -> activity.getString(
+                    R.string.batch_tank_added_some_members, tip.added, tip.alreadyMembers
+                )
             }
             val op = result.op
             if (op is GalleryListViewModel.BatchOp.AddToTankoubon) {
@@ -249,13 +252,14 @@ internal class GalleryBatchOpsHelper(
         // exited only once a tank is actually picked.
         val selected = takeSelection() ?: return
         TankoubonDialogHelper.pickTankoubon(
-            callback.activity, callback.activeProfileId(), selected.map { it.title }
+            callback.activity, callback.activeProfileId(), selected.map { it.arcid }, selected.map { it.title }
         ) { tank ->
             callback.viewModel.runBatch(
                 GalleryListViewModel.BatchOp.AddToTankoubon(
                     tankId = tank.id,
                     wasEmpty = tank.archives.isEmpty(),
                     tankName = tank.name,
+                    knownMembers = tank.archives.toSet(),
                 ),
                 selected,
                 owner = callback.batchOwnerToken()

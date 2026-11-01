@@ -421,6 +421,16 @@
     <string name="detail_tankoubons_edit">Modifier</string>
     <string name="detail_tankoubons_none">Dans aucun tankoubon</string>
     <string name="tank_add_to">Ajouter au tankoubon</string>
+    <string name="tank_picker_search_hint">Rechercher des tankoubons</string>
+    <string name="tank_picker_new_named">Nouveau tankoubon « %s »</string>
+    <string name="tank_picker_name_exists">Un tankoubon porte déjà ce nom</string>
+    <string name="tank_picker_contains">%1$d/%2$d déjà présents</string>
+    <string name="tank_picker_contains_all">Contient déjà tout</string>
+    <string name="tank_picker_section_member">Déjà présent</string>
+    <string name="tank_picker_section_recent">Récents</string>
+    <string name="tank_picker_section_all">Tous les tankoubons</string>
+    <string name="tank_picker_apply">Appliquer</string>
+    <string name="tank_picker_empty">Aucun tankoubon correspondant</string>
     <string name="batch_add_to_tankoubon">Tank</string>
 
     <!-- List multi-select batch operations -->
@@ -463,6 +473,11 @@
     </plurals>
     <string name="batch_move_tank_unsupported">Les cartes de tankoubon ne peuvent pas être déplacées vers un libellé</string>
     <string name="batch_download_queued_some_local">%1$d mis en file d\'attente, %2$d déjà téléchargés</string>
+    <string name="batch_tank_added_some_members">%1$d ajoutés au tankoubon, %2$d déjà présents</string>
+    <plurals name="batch_tank_all_members">
+        <item quantity="one">%d élément est déjà dans le tankoubon</item>
+        <item quantity="other">Les %d éléments sont déjà dans le tankoubon</item>
+    </plurals>
     <string name="download_already_local">Déjà téléchargé</string>
     <plurals name="batch_done_category">
         <item quantity="one">%d élément ajouté à la catégorie</item>

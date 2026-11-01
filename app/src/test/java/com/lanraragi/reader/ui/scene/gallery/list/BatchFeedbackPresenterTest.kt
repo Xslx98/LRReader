@@ -10,11 +10,18 @@ import org.junit.Test
 
 class BatchFeedbackPresenterTest {
 
-    private fun result(op: BatchOp, succeeded: Int, failed: Int, alreadyLocal: Int = 0) = BatchResult(
+    private fun result(
+        op: BatchOp,
+        succeeded: Int,
+        failed: Int,
+        alreadyLocal: Int = 0,
+        alreadyMembers: Int = 0,
+    ) = BatchResult(
         op = op,
         succeeded = List(succeeded) { "ok-$it" },
         failed = List(failed) { BatchFailure("bad-$it", "title-$it", "reason-$it") },
         alreadyLocal = List(alreadyLocal) { "local-$it" },
+        alreadyMembers = List(alreadyMembers) { "member-$it" },
     )
 
     private fun pluralTipFor(r: BatchResult) =
@@ -48,6 +55,24 @@ class BatchFeedbackPresenterTest {
             BatchFeedbackPresenter.tipFor(r),
         )
         assertNull(BatchFeedbackPresenter.dialogFor(r))
+    }
+
+    @Test
+    fun tankAddWithSomeAlreadyMembers_mapsToTwoCountTip() {
+        val r = result(BatchOp.AddToTankoubon("t1"), succeeded = 3, failed = 0, alreadyMembers = 2)
+        assertEquals(
+            BatchFeedbackPresenter.Tip.AddedWithExisting(added = 3, alreadyMembers = 2),
+            BatchFeedbackPresenter.tipFor(r),
+        )
+    }
+
+    @Test
+    fun tankAddWithEveryItemAlreadyAMember_mapsToAllMembersTip() {
+        val r = result(BatchOp.AddToTankoubon("t1"), succeeded = 0, failed = 0, alreadyMembers = 2)
+        assertEquals(
+            BatchFeedbackPresenter.Tip.Plural(R.plurals.batch_tank_all_members, 2),
+            BatchFeedbackPresenter.tipFor(r),
+        )
     }
 
     @Test
