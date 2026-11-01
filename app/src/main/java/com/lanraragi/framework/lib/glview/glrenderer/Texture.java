@@ -28,7 +28,6 @@ import android.graphics.RectF;
 // Texture
 // -- BasicTexture
 //    -- UploadedTexture
-//       -- BitmapTexture
 //       -- CanvasTexture
 //          -- StringTexture
 //
