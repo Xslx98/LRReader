@@ -21,21 +21,17 @@ import android.graphics.Color
 object GalleryUtils {
 
     @JvmStatic
-    fun intColorToFloatARGBArray(from: Int): FloatArray {
-        return floatArrayOf(
-            Color.alpha(from) / 255f,
-            Color.red(from) / 255f,
-            Color.green(from) / 255f,
-            Color.blue(from) / 255f
-        )
-    }
+    fun intColorToFloatARGBArray(from: Int): FloatArray = floatArrayOf(
+        Color.alpha(from) / 255f,
+        Color.red(from) / 255f,
+        Color.green(from) / 255f,
+        Color.blue(from) / 255f
+    )
 
     @JvmStatic
-    fun floatARGBArrayTointColor(from: FloatArray): Int {
-        return Color.argb(
-            (from[0] * 255).toInt(), (from[1] * 255).toInt(), (from[2] * 255).toInt(), (from[3] * 255).toInt()
-        )
-    }
+    fun floatARGBArrayTointColor(from: FloatArray): Int = Color.argb(
+        (from[0] * 255).toInt(), (from[1] * 255).toInt(), (from[2] * 255).toInt(), (from[3] * 255).toInt()
+    )
 
     // Below are used the detect using database in the render thread. It only
     // works most of the time, but that's ok because it's for debugging only.
@@ -49,9 +45,7 @@ object GalleryUtils {
     }
 
     @JvmStatic
-    fun isRenderThread(): Boolean {
-        return currentThread === Thread.currentThread()
-    }
+    fun isRenderThread(): Boolean = currentThread === Thread.currentThread()
 
     @JvmStatic
     fun assertInRenderThread() {

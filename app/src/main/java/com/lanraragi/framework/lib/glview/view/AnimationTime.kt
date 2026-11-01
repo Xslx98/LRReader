@@ -36,9 +36,7 @@ object AnimationTime {
 
     // Returns the animation time.
     @JvmStatic
-    fun get(): Long {
-        return time
-    }
+    fun get(): Long = time
 
     @JvmStatic
     fun startTime(): Long {

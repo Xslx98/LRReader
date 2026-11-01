@@ -33,7 +33,5 @@ open class FloatAnimation : Animation() {
         current = MathUtils.lerp(from, to, progress)
     }
 
-    fun get(): Float {
-        return current
-    }
+    fun get(): Float = current
 }

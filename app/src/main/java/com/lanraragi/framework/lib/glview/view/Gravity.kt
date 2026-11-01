@@ -53,23 +53,17 @@ object Gravity {
 
     @JvmStatic
     @PositionMode
-    fun getPosition(gravity: Int, @DirectionMode direction: Int): Int {
-        return if (direction == HORIZONTAL) {
-            if (right(gravity)) {
-                POSITION_FINISH
-            } else if (centerHorizontal(gravity)) {
-                POSITION_CENTER
-            } else {
-                POSITION_BEGIN
-            }
-        } else {
-            if (bottom(gravity)) {
-                POSITION_FINISH
-            } else if (centerVertical(gravity)) {
-                POSITION_CENTER
-            } else {
-                POSITION_BEGIN
-            }
+    fun getPosition(gravity: Int, @DirectionMode direction: Int): Int = if (direction == HORIZONTAL) {
+        when {
+            right(gravity) -> POSITION_FINISH
+            centerHorizontal(gravity) -> POSITION_CENTER
+            else -> POSITION_BEGIN
+        }
+    } else {
+        when {
+            bottom(gravity) -> POSITION_FINISH
+            centerVertical(gravity) -> POSITION_CENTER
+            else -> POSITION_BEGIN
         }
     }
 }

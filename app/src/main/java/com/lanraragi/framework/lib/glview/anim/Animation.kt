@@ -126,8 +126,7 @@ abstract class Animation {
 
     protected abstract fun onCalculate(progress: Float)
 
-    protected open fun onFinish() {
-    }
+    protected open fun onFinish() = Unit
 
     companion object {
         private const val ANIMATION_START = -1L
