@@ -625,8 +625,6 @@ internal class ScrollLayoutManager(
         )
     }
 
-    override fun onLongPress(x: Float, y: Float) = Unit
-
     fun overScrollEdge(dx: Int, dy: Int, x: Float, y: Float) {
         val edgeView = mGalleryView.getEdgeView()
 

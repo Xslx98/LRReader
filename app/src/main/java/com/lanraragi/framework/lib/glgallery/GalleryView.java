@@ -48,7 +48,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class GalleryView extends GLView implements GestureRecognizer.Listener {
 
@@ -174,7 +173,8 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     private final List<Integer> mMethodListTemp = new ArrayList<>(5);
     private final List<Object[]> mArgsListTemp = new ArrayList<>(5);
 
-    private final AtomicInteger mCurrentIndex = new AtomicInteger(GalleryPageView.INVALID_INDEX);
+    // Render-thread only: the last index reported to onUpdateCurrentIndex.
+    private int mCurrentIndex = GalleryPageView.INVALID_INDEX;
 
     // Latest intra-page scroll fraction published from the render
     // thread (after each fill). Read by UI-thread callers via
@@ -492,10 +492,6 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
 
     public int getLayoutMode() {
         return mLayoutMode;
-    }
-
-    public int getCurrentIndex() {
-        return mCurrentIndex.get();
     }
 
     /**
@@ -1090,7 +1086,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
     @Override
     public void render(GLCanvas canvas) {
         mWillFill = true;
-        int oldCurrentIndex = mCurrentIndex.get();
+        int oldCurrentIndex = mCurrentIndex;
 
         // Dispatch method
         dispatchMethod();
@@ -1114,7 +1110,7 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
             newCurrentIndex = GalleryPageView.INVALID_INDEX;
             mCurrentScrollFraction = 0f;
         }
-        mCurrentIndex.lazySet(newCurrentIndex);
+        mCurrentIndex = newCurrentIndex;
 
         if (oldCurrentIndex != newCurrentIndex && mListener != null) {
             mListener.onUpdateCurrentIndex(newCurrentIndex);
@@ -1308,8 +1304,6 @@ public final class GalleryView extends GLView implements GestureRecognizer.Liste
         public abstract void onUp();
 
         public abstract void onDoubleTapConfirmed(float x, float y);
-
-        public abstract void onLongPress(float x, float y);
 
         public abstract void onScroll(float dx, float dy, float totalX, float totalY, float x, float y);
 

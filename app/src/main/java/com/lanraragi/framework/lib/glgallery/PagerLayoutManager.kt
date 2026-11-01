@@ -497,8 +497,6 @@ internal class PagerLayoutManager(
         )
     }
 
-    override fun onLongPress(x: Float, y: Float) = Unit
-
     private fun pagePrevious() {
         if (mIndex <= 0) {
             return
