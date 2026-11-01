@@ -15,7 +15,6 @@
  */
 
 @file:Suppress( // TODO(2.4-idiom)
-    "UnsafeCallOnNullableType",
     "LongMethod",
     "CyclomaticComplexMethod",
     "NestedBlockDepth",
@@ -127,9 +126,8 @@ internal class ScrollLayoutManager(
         return running
     }
 
-    override fun onAttach(adapter: GalleryView.Adapter?) {
+    override fun onAttach(adapter: GalleryView.Adapter) {
         AssertUtils.assertNull("The ScrollLayoutManager is attached", this.adapter)
-        AssertUtils.assertNotNull("The iterator is null", adapter)
         this.adapter = adapter
         // Reset parameters
         resetParameters()
@@ -156,7 +154,7 @@ internal class ScrollLayoutManager(
 
     private fun removePage(page: GalleryPageView) {
         galleryView.removeComponent(page)
-        adapter!!.unbind(page)
+        (adapter ?: throw AssertionError(NOT_ATTACHED)).unbind(page)
         galleryView.releasePage(page)
     }
 
@@ -167,8 +165,8 @@ internal class ScrollLayoutManager(
         pages.clear()
     }
 
-    override fun onDetach(): GalleryView.Adapter? {
-        AssertUtils.assertNotNull("The PagerLayoutManager is not attached", adapter)
+    override fun onDetach(): GalleryView.Adapter {
+        val iterator = adapter ?: throw AssertionError(NOT_ATTACHED)
 
         // Cancel all animations
         cancelAllAnimations()
@@ -179,7 +177,6 @@ internal class ScrollLayoutManager(
         removeAllPages()
 
         // Clear iterator
-        val iterator = adapter
         adapter = null
 
         return iterator
@@ -220,7 +217,7 @@ internal class ScrollLayoutManager(
     private fun fillPages(startIndexArg: Int, startOffsetArg: Int) {
         var startIndex = startIndexArg
         var startOffset = startOffsetArg
-        val adapter = this.adapter!!
+        val adapter = this.adapter ?: throw AssertionError(NOT_ATTACHED)
         val galleryView = this.galleryView
         val pages = this.pages
         val tempPages = this.tempPages
@@ -412,11 +409,10 @@ internal class ScrollLayoutManager(
     }
 
     override fun onFill() {
-        val adapter = this.adapter
+        val adapter = this.adapter ?: throw AssertionError(NOT_ATTACHED)
         val galleryView = this.galleryView
-        AssertUtils.assertNotNull("The PagerLayoutManager is not attached", adapter)
 
-        val size = adapter!!.size()
+        val size = adapter.size()
         val error = adapter.getError()
 
         if (size == GalleryProvider.STATE_WAIT) { // Wait here, show progress bar
@@ -668,7 +664,7 @@ internal class ScrollLayoutManager(
             bottom += page.height
             i++
         }
-        val hasNext = index + pages.size < adapter!!.size()
+        val hasNext = index + pages.size < (adapter ?: throw AssertionError(NOT_ATTACHED)).size()
 
         bottomStateBottom = bottom
         bottomStateHasNext = hasNext
@@ -690,7 +686,8 @@ internal class ScrollLayoutManager(
      */
     override val isReachEnd: Boolean
         get() {
-            if (adapter == null || pages.isEmpty() || adapter!!.size() <= 0) {
+            val adapter = this.adapter
+            if (adapter == null || pages.isEmpty() || adapter.size() <= 0) {
                 return false
             }
             getBottomState()
@@ -938,7 +935,7 @@ internal class ScrollLayoutManager(
     }
 
     override fun onDataChanged() {
-        AssertUtils.assertNotNull("The PagerLayoutManager is not attached", adapter)
+        AssertUtils.assertNotNull(NOT_ATTACHED, adapter)
 
         // Cancel all animations
         cancelAllAnimations()
@@ -952,7 +949,7 @@ internal class ScrollLayoutManager(
     }
 
     override fun onPageLeft() {
-        val size = adapter!!.size()
+        val size = (adapter ?: throw AssertionError(NOT_ATTACHED)).size()
         if (size <= 0 || pages.isEmpty()) {
             return
         }
@@ -1004,7 +1001,7 @@ internal class ScrollLayoutManager(
     }
 
     override fun onPageRight() {
-        val size = adapter!!.size()
+        val size = (adapter ?: throw AssertionError(NOT_ATTACHED)).size()
         if (size <= 0 || pages.isEmpty()) {
             return
         }
@@ -1137,7 +1134,7 @@ internal class ScrollLayoutManager(
         }
 
     override fun setCurrentIndex(index: Int) {
-        var size = adapter!!.size()
+        var size = (adapter ?: throw AssertionError(NOT_ATTACHED)).size()
         if (size <= 0) {
             // Can't get size now, assume size is MAX
             size = Int.MAX_VALUE
@@ -1386,5 +1383,8 @@ internal class ScrollLayoutManager(
         private const val INVALID_TOP = Int.MAX_VALUE
 
         private const val DOUBLE_TAP_SCALE_DURATION = 300L
+
+        // Java's copy of the pager's message, kept word for word.
+        private const val NOT_ATTACHED = "The PagerLayoutManager is not attached"
     }
 }

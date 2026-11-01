@@ -334,6 +334,8 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         if (null != layoutManager) {
             return
         }
+        // Without a layout manager, GalleryView holds the adapter.
+        val adapter = this.adapter ?: throw AssertionError("The adapter is null")
 
         when (currentLayoutMode) {
             LAYOUT_LEFT_TO_RIGHT -> {
@@ -341,7 +343,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                 pagerLayoutManager.setMode(PagerLayoutManager.MODE_LEFT_TO_RIGHT)
                 pagerLayoutManager.onAttach(adapter)
                 pagerLayoutManager.setCurrentIndex(index)
-                adapter = null
+                this.adapter = null
                 layoutManager = pagerLayoutManager
             }
             LAYOUT_RIGHT_TO_LEFT -> {
@@ -349,14 +351,14 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                 pagerLayoutManager.setMode(PagerLayoutManager.MODE_RIGHT_TO_LEFT)
                 pagerLayoutManager.onAttach(adapter)
                 pagerLayoutManager.setCurrentIndex(index)
-                adapter = null
+                this.adapter = null
                 layoutManager = pagerLayoutManager
             }
             LAYOUT_TOP_TO_BOTTOM -> {
                 val scrollLayoutManager = ensureScrollLayoutManager()
                 scrollLayoutManager.onAttach(adapter)
                 scrollLayoutManager.setCurrentIndex(index)
-                adapter = null
+                this.adapter = null
                 layoutManager = scrollLayoutManager
             }
         }
@@ -1187,9 +1189,9 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     abstract class LayoutManager(@JvmField protected val galleryView: GalleryView) {
 
-        abstract fun onAttach(adapter: Adapter?)
+        abstract fun onAttach(adapter: Adapter)
 
-        abstract fun onDetach(): Adapter?
+        abstract fun onDetach(): Adapter
 
         abstract fun onFill()
 
