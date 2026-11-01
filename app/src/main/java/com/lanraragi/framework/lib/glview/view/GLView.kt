@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "UseCheckOrError",
-    "ThrowingExceptionsWithoutMessageOrCause",
-    "LargeClass",
-    "UseRequire",
-    "ComplexCondition",
-)
-
 package com.lanraragi.framework.lib.glview.view
 
 import android.annotation.SuppressLint
@@ -166,7 +158,7 @@ open class GLView : TouchOwner {
     var onLongClickListener: OnLongClickListener? = null
 
     fun startAnimation(animation: CanvasAnimation?, atOnce: Boolean) {
-        val root = getGLRoot() ?: throw IllegalStateException()
+        val root = checkNotNull(getGLRoot()) { "startAnimation needs a view attached to a GLRoot" }
         this.animation = animation
         if (animation != null) {
             animation.start()
@@ -255,10 +247,8 @@ open class GLView : TouchOwner {
 
     fun addComponent(component: GLView, index: Int, params: LayoutParams?) {
         // Make sure the component doesn't have a parent currently.
-        if (component.mParent != null) {
-            throw IllegalStateException(
-                "Component $this being added, but it already has a parent"
-            )
+        check(component.mParent == null) {
+            "Component $this being added, but it already has a parent"
         }
 
         // Ensure index is valid
@@ -561,9 +551,7 @@ open class GLView : TouchOwner {
     }
 
     protected open fun onRestoreInstanceState(state: Parcelable?) {
-        if (state != null) {
-            throw IllegalArgumentException("Please override onRestoreInstanceState")
-        }
+        require(state == null) { "Please override onRestoreInstanceState" }
     }
 
     fun setPaddings(paddingLeft: Int, paddingTop: Int, paddingRight: Int, paddingBottom: Int) {
@@ -697,18 +685,15 @@ open class GLView : TouchOwner {
         val matchingSize = isExactly &&
             measuredWidth == MeasureSpec.getSize(widthSpec) &&
             measuredHeight == MeasureSpec.getSize(heightSpec)
-        if (forceLayout || !matchingSize &&
-            (widthSpec != lastWidthSpec || heightSpec != lastHeightSpec)
-        ) {
+        val specsChanged = widthSpec != lastWidthSpec || heightSpec != lastHeightSpec
+        if (forceLayout || !matchingSize && specsChanged) {
             lastWidthSpec = widthSpec
             lastHeightSpec = heightSpec
 
             viewFlags = viewFlags and FLAG_SET_MEASURED_SIZE.inv()
             onMeasure(widthSpec, heightSpec)
-            if ((viewFlags and FLAG_SET_MEASURED_SIZE) == 0) {
-                throw IllegalStateException(
-                    javaClass.name + " should call setMeasuredSize() in onMeasure()"
-                )
+            check((viewFlags and FLAG_SET_MEASURED_SIZE) != 0) {
+                javaClass.name + " should call setMeasuredSize() in onMeasure()"
             }
         }
     }
