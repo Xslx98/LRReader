@@ -487,11 +487,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
                 renderLock.unlock()
             }
 
-            if (DEBUG_FPS) {
-                renderMode = RENDERMODE_CONTINUOUSLY
-            } else {
-                renderMode = RENDERMODE_WHEN_DIRTY
-            }
+            renderMode = if (DEBUG_FPS) RENDERMODE_CONTINUOUSLY else RENDERMODE_WHEN_DIRTY
         }
 
         /**
@@ -717,12 +713,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             display: EGLDisplay,
             config: EGLConfig?,
             attribute: Int
-        ): Int {
-            if (egl.eglGetConfigAttrib(display, config, attribute, value)) {
-                return value[0]
-            }
-            return 0
-        }
+        ): Int = if (egl.eglGetConfigAttrib(display, config, attribute, value)) value[0] else 0
 
         companion object {
             private const val EGL_OPENGL_ES2_BIT = 0x0004

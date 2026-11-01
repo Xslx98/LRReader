@@ -70,24 +70,17 @@ open class GLFrameLayout : GLView() {
             }
             val measureWidth = component.measuredWidth
             val measureHeight = component.measuredHeight
-            val componentLeft: Int
-            val componentTop: Int
-
             val lp = component.layoutParams as GravityLayoutParams
             val gravity = lp.gravity
-            if (Gravity.centerHorizontal(gravity)) {
-                componentLeft = (width / 2) - (measureWidth / 2)
-            } else if (Gravity.right(gravity)) {
-                componentLeft = width - measureWidth
-            } else {
-                componentLeft = 0
+            val componentLeft = when {
+                Gravity.centerHorizontal(gravity) -> (width / 2) - (measureWidth / 2)
+                Gravity.right(gravity) -> width - measureWidth
+                else -> 0
             }
-            if (Gravity.centerVertical(gravity)) {
-                componentTop = (height / 2) - (measureHeight / 2)
-            } else if (Gravity.bottom(gravity)) {
-                componentTop = height - measureHeight
-            } else {
-                componentTop = 0
+            val componentTop = when {
+                Gravity.centerVertical(gravity) -> (height / 2) - (measureHeight / 2)
+                Gravity.bottom(gravity) -> height - measureHeight
+                else -> 0
             }
 
             component.layout(

@@ -319,20 +319,12 @@ open class GLView : TouchOwner {
 
     override fun performClick(): Boolean {
         val listener = onClickListener
-        if (listener != null) {
-            return listener.onClick(this)
-        } else {
-            return false
-        }
+        return listener != null && listener.onClick(this)
     }
 
     override fun performLongClick(): Boolean {
         val listener = onLongClickListener
-        if (listener != null) {
-            return listener.onLongClick(this)
-        } else {
-            return false
-        }
+        return listener != null && listener.onLongClick(this)
     }
 
     override val width: Int
@@ -615,12 +607,11 @@ open class GLView : TouchOwner {
         }
         val x = position[0]
         val y = position[1]
-        if (x != oldX || y != oldY) {
+        val changed = x != oldX || y != oldY
+        if (changed) {
             onPositionInRootChanged(x, y, oldX, oldY)
-            return true
-        } else {
-            return false
         }
+        return changed
     }
 
     private fun setBounds(left: Int, top: Int, right: Int, bottom: Int): Boolean {
@@ -973,14 +964,10 @@ open class GLView : TouchOwner {
             paddingBeign: Int,
             paddingFinish: Int,
             @Gravity.PositionMode position: Int
-        ): Int {
-            if (position == Gravity.POSITION_FINISH) {
-                return size - paddingFinish - specSize
-            } else if (position == Gravity.POSITION_CENTER) {
-                return ((size - paddingBeign - paddingFinish) / 2) - (specSize / 2) + paddingBeign
-            } else {
-                return paddingBeign
-            }
+        ): Int = when (position) {
+            Gravity.POSITION_FINISH -> size - paddingFinish - specSize
+            Gravity.POSITION_CENTER -> ((size - paddingBeign - paddingFinish) / 2) - (specSize / 2) + paddingBeign
+            else -> paddingBeign
         }
 
         /**
@@ -998,16 +985,12 @@ open class GLView : TouchOwner {
          * @return The size this view should be.
          */
         fun getDefaultSize(size: Int, measureSpec: Int): Int {
-            var result = size
-            val specMode = MeasureSpec.getMode(measureSpec)
             val specSize = MeasureSpec.getSize(measureSpec)
-
-            when (specMode) {
-                MeasureSpec.UNSPECIFIED -> result = size
-                MeasureSpec.EXACTLY -> result = specSize
-                MeasureSpec.AT_MOST -> return if (size == 0) specSize else min(size, specSize)
+            return when (MeasureSpec.getMode(measureSpec)) {
+                MeasureSpec.EXACTLY -> specSize
+                MeasureSpec.AT_MOST -> if (size == 0) specSize else min(size, specSize)
+                else -> size
             }
-            return result
         }
 
         fun getComponentSpec(spec: Int, childSize: Int): Int {
