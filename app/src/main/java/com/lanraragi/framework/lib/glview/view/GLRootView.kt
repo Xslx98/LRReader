@@ -14,14 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress( // TODO(2.4-idiom)
-    "ObjectLiteralToLambda",
-    "UnusedParameter",
-    "NestedBlockDepth",
-    "ThrowsCount",
-    "UseRequire",
-)
-
 package com.lanraragi.framework.lib.glview.view
 
 import android.content.Context
@@ -117,11 +109,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
 
     private var inDownState = false
 
-    private val requestRenderOnAnimationFrame = object : Runnable {
-        override fun run() {
-            superRequestRender()
-        }
-    }
+    private val requestRenderOnAnimationFrame = RequestRenderRunnable()
 
     constructor(context: Context) : this(context, null)
 
@@ -284,7 +272,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
         ++frameCount
     }
 
-    private fun onDrawFrameLocked(gl: GL10) {
+    private fun onDrawFrameLocked() {
         if (DEBUG_FPS) outputFps()
         // onSurfaceCreated builds the canvas before the first frame.
         val canvas = checkNotNull(this.canvas)
@@ -471,6 +459,14 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
         }
     }
 
+    // Posted on the next animation frame by requestRender(); a named class
+    // rather than a lambda so the baseline profile can name it.
+    private inner class RequestRenderRunnable : Runnable {
+        override fun run() {
+            superRequestRender()
+        }
+    }
+
     private inner class GLRootRenderer : Renderer {
 
         /**
@@ -527,7 +523,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             // frame stats (see com.lanraragi.reader.util.TraceSections).
             Trace.beginSection(TraceSections.READER_GL_FRAME)
             try {
-                onDrawFrameLocked(gl)
+                onDrawFrameLocked()
             } finally {
                 Trace.endSection()
                 renderLock.unlock()
@@ -600,18 +596,23 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
                 try {
                     return chooseConfigInternal(egl, display)
                 } catch (e: IllegalArgumentException) {
-                    val error = egl.eglGetError()
-                    if (attempt == 0 && error == EGL_NOT_INITIALIZED) {
-                        Log.w(TAG, "eglChooseConfig hit EGL_NOT_INITIALIZED, retrying eglInitialize once")
-                        if (tryInitializeDisplay(egl, display)) {
-                            continue
-                        }
-                    }
-                    throw e
+                    if (!reinitializeForRetry(egl, display, attempt)) throw e
                 }
             }
 
             throw IllegalArgumentException("eglChooseConfig failed after reinitialize retry")
+        }
+
+        // After the first failed attempt, if eglChooseConfig reported
+        // EGL_NOT_INITIALIZED: initializes the display again and returns
+        // whether the attempt can be retried.
+        private fun reinitializeForRetry(egl: EGL10, display: EGLDisplay, attempt: Int): Boolean {
+            val error = egl.eglGetError()
+            if (attempt == 0 && error == EGL_NOT_INITIALIZED) {
+                Log.w(TAG, "eglChooseConfig hit EGL_NOT_INITIALIZED, retrying eglInitialize once")
+                return tryInitializeDisplay(egl, display)
+            }
+            return false
         }
 
         private fun ensureDisplayInitialized(egl: EGL10, display: EGLDisplay): Boolean {
@@ -639,85 +640,48 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
 
         private fun chooseConfigInternal(egl: EGL10, display: EGLDisplay): EGLConfig {
             val numConfig = IntArray(1)
-            var configSpec: IntArray
-            var error: Int
-
-            // First try: basic config without RENDERABLE_TYPE (most compatible)
-            configSpec = intArrayOf(
-                EGL10.EGL_RED_SIZE, 8,
-                EGL10.EGL_GREEN_SIZE, 8,
-                EGL10.EGL_BLUE_SIZE, 8,
-                EGL10.EGL_ALPHA_SIZE, 8,
-                EGL10.EGL_NONE
-            )
-
-            // On success the basic config is used.
-            if (!(egl.eglChooseConfig(display, configSpec, null, 0, numConfig) && numConfig[0] > 0)) {
-                error = egl.eglGetError()
-                Log.w(TAG, "eglChooseConfig (basic) failed with error: 0x" + Integer.toHexString(error))
-
-                // Second try: OpenGL ES 2.0 compatible config
-                // Use EGL_OPENGL_ES2_BIT constant (0x0004) but only if supported
-                configSpec = intArrayOf(
-                    EGL10.EGL_RED_SIZE, 8,
-                    EGL10.EGL_GREEN_SIZE, 8,
-                    EGL10.EGL_BLUE_SIZE, 8,
-                    EGL10.EGL_ALPHA_SIZE, 8,
-                    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-                    EGL10.EGL_NONE
-                )
-
-                // On success the ES 2.0 config is used.
-                if (!(egl.eglChooseConfig(display, configSpec, null, 0, numConfig) && numConfig[0] > 0)) {
-                    error = egl.eglGetError()
-                    Log.w(TAG, "eglChooseConfig (ES2) failed with error: 0x" + Integer.toHexString(error))
-
-                    // Third try: minimal config without RENDERABLE_TYPE
-                    configSpec = intArrayOf(
-                        EGL10.EGL_RED_SIZE, 5,
-                        EGL10.EGL_GREEN_SIZE, 6,
-                        EGL10.EGL_BLUE_SIZE, 5,
-                        EGL10.EGL_ALPHA_SIZE, 0,
-                        EGL10.EGL_NONE
-                    )
-
-                    // On success the minimal config is used.
-                    if (!(egl.eglChooseConfig(display, configSpec, null, 0, numConfig) && numConfig[0] > 0)) {
-                        error = egl.eglGetError()
-                        Log.w(TAG, "eglChooseConfig (minimal) failed with error: 0x" + Integer.toHexString(error))
-
-                        // Last resort: try with EGL_NONE only (let system choose)
-                        configSpec = intArrayOf(EGL10.EGL_NONE)
-                        if (!egl.eglChooseConfig(display, configSpec, null, 0, numConfig)) {
-                            error = egl.eglGetError()
-                            throw IllegalArgumentException(
-                                "eglChooseConfig failed with error: 0x" + Integer.toHexString(error)
-                            )
-                        }
-                    }
-                }
-            }
+            val configSpec = findConfigSpec(egl, display, numConfig)
 
             val numConfigs = numConfig[0]
 
-            if (numConfigs <= 0) {
-                throw IllegalArgumentException(
-                    "No configs match configSpec"
-                )
-            }
+            require(numConfigs > 0) { "No configs match configSpec" }
 
             val configs = arrayOfNulls<EGLConfig>(numConfigs)
             if (!egl.eglChooseConfig(display, configSpec, configs, numConfigs, numConfig)) {
-                error = egl.eglGetError()
+                val error = egl.eglGetError()
                 throw IllegalArgumentException(
                     "eglChooseConfig#2 failed with error: 0x" + Integer.toHexString(error)
                 )
             }
-            val config = chooseConfig(egl, display, configs)
-            if (config == null) {
-                throw IllegalArgumentException("No config chosen")
+            return requireNotNull(chooseConfig(egl, display, configs)) { "No config chosen" }
+        }
+
+        // Tries the specs from the most compatible on and returns the first one
+        // eglChooseConfig matches (numConfig holds its count). The last resort,
+        // EGL_NONE only, lets the system choose; it only has to succeed, the
+        // caller rejects a zero count.
+        private fun findConfigSpec(egl: EGL10, display: EGLDisplay, numConfig: IntArray): IntArray {
+            for (i in CONFIG_SPECS.indices) {
+                val configSpec = CONFIG_SPECS[i]
+                if (egl.eglChooseConfig(display, configSpec, null, 0, numConfig) && numConfig[0] > 0) {
+                    return configSpec
+                }
+                val error = egl.eglGetError()
+                Log.w(
+                    TAG,
+                    "eglChooseConfig (" + CONFIG_SPEC_NAMES[i] + ") failed with error: 0x" +
+                        Integer.toHexString(error)
+                )
             }
-            return config
+
+            val configSpec = intArrayOf(EGL10.EGL_NONE)
+            if (!egl.eglChooseConfig(display, configSpec, null, 0, numConfig)) {
+                val error = egl.eglGetError()
+                throw IllegalArgumentException(
+                    "eglChooseConfig failed with error: 0x" + Integer.toHexString(error)
+                )
+            }
+            return configSpec
         }
 
         private fun chooseConfig(egl: EGL10, display: EGLDisplay, configs: Array<EGLConfig?>): EGLConfig? {
@@ -763,6 +727,37 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
         companion object {
             private const val EGL_OPENGL_ES2_BIT = 0x0004
             private const val EGL_NOT_INITIALIZED = 0x3001
+
+            private val CONFIG_SPECS = arrayOf(
+                // First try: basic config without RENDERABLE_TYPE (most compatible)
+                intArrayOf(
+                    EGL10.EGL_RED_SIZE, 8,
+                    EGL10.EGL_GREEN_SIZE, 8,
+                    EGL10.EGL_BLUE_SIZE, 8,
+                    EGL10.EGL_ALPHA_SIZE, 8,
+                    EGL10.EGL_NONE
+                ),
+                // Second try: OpenGL ES 2.0 compatible config
+                intArrayOf(
+                    EGL10.EGL_RED_SIZE, 8,
+                    EGL10.EGL_GREEN_SIZE, 8,
+                    EGL10.EGL_BLUE_SIZE, 8,
+                    EGL10.EGL_ALPHA_SIZE, 8,
+                    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+                    EGL10.EGL_NONE
+                ),
+                // Third try: minimal config without RENDERABLE_TYPE
+                intArrayOf(
+                    EGL10.EGL_RED_SIZE, 5,
+                    EGL10.EGL_GREEN_SIZE, 6,
+                    EGL10.EGL_BLUE_SIZE, 5,
+                    EGL10.EGL_ALPHA_SIZE, 0,
+                    EGL10.EGL_NONE
+                ),
+            )
+
+            // Log names of CONFIG_SPECS, in the same order.
+            private val CONFIG_SPEC_NAMES = arrayOf("basic", "ES2", "minimal")
         }
     }
 
