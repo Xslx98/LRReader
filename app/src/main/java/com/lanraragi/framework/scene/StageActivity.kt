@@ -46,22 +46,22 @@ import kotlin.math.min
 
 abstract class StageActivity : BaseActivity() {
 
-    private val mSceneTagList = ArrayList<String>()
-    private val mDelaySceneTagList = ArrayList<String>()
-    private val mIdGenerator = AtomicInteger()
+    private val sceneTagList = ArrayList<String>()
+    private val delaySceneTagList = ArrayList<String>()
+    private val idGenerator = AtomicInteger()
 
-    private var mStageId = IntIdGenerator.INVALID_ID
+    private var stageId = IntIdGenerator.INVALID_ID
 
     // Enabled only while the app has a use for back (see handlesBack()):
     // otherwise the system takes it and shows its back-to-home preview.
     // Subclasses hook in through hasInterceptBack() / onInterceptBack().
-    private val mBackCallback: OnBackPressedCallback = object : OnBackPressedCallback(true) {
+    private val backCallback: OnBackPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackStarted(backEvent: BackEventCompat) {
             startPredictiveBack()
         }
 
         override fun handleOnBackProgressed(backEvent: BackEventCompat) {
-            if (mPredictTop != null) {
+            if (predictTop != null) {
                 applyPredictiveBack(backEvent.progress, 0f)
             }
         }
@@ -71,7 +71,7 @@ abstract class StageActivity : BaseActivity() {
         }
 
         override fun handleOnBackPressed() {
-            if (mPredictTop != null) {
+            if (predictTop != null) {
                 commitPredictiveBack()
             } else {
                 dispatchBack()
@@ -81,29 +81,29 @@ abstract class StageActivity : BaseActivity() {
 
     // Predictive back between scenes: the scene being dragged away, the one
     // revealed under it, and the settle animation after the gesture ends.
-    private var mPredictTop: SceneFragment? = null
-    private var mPredictBelow: Fragment? = null
-    private var mPredictProgress = 0f
-    private var mPredictAttachedBelow = false
-    private var mPredictBelowViewPending = false
-    private var mPredictAnimator: ValueAnimator? = null
+    private var predictTop: SceneFragment? = null
+    private var predictBelow: Fragment? = null
+    private var predictProgress = 0f
+    private var predictAttachedBelow = false
+    private var predictBelowViewPending = false
+    private var predictAnimator: ValueAnimator? = null
 
-    private val mUpdateBackCallback = Runnable { updateBackCallback() }
+    private val updateBackCallbackTask = Runnable { updateBackCallback() }
 
     /** Set by findTopScene(true) when it dropped a tag without a scene. */
-    private var mDroppedStaleTag = false
+    private var droppedStaleTag = false
 
     /** finishScene without the close animation (a predictive back already played one). */
-    private var mSkipCloseAnimation = false
+    private var skipCloseAnimation = false
 
-    private val mSceneViewComparator = SceneViewComparator()
+    private val sceneViewComparator = SceneViewComparator()
 
     private inner class SceneViewComparator : Comparator<View> {
 
         private fun getIndex(view: View): Int {
             val o = view.getTag(R.id.fragment_tag)
             return if (o is String) {
-                mDelaySceneTagList.indexOf(o)
+                delaySceneTagList.indexOf(o)
             } else {
                 -1
             }
@@ -112,7 +112,7 @@ abstract class StageActivity : BaseActivity() {
         override fun compare(lhs: View, rhs: View): Int = getIndex(lhs) - getIndex(rhs)
     }
 
-    abstract fun getContainerViewId(): Int
+    abstract val containerViewId: Int
 
     /**
      * @return `true` for start scene
@@ -191,22 +191,22 @@ abstract class StageActivity : BaseActivity() {
 
     final override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        onBackPressedDispatcher.addCallback(this, mBackCallback)
+        onBackPressedDispatcher.addCallback(this, backCallback)
 
         if (savedInstanceState != null) {
-            mStageId = savedInstanceState.getInt(KEY_STAGE_ID, IntIdGenerator.INVALID_ID)
+            stageId = savedInstanceState.getInt(KEY_STAGE_ID, IntIdGenerator.INVALID_ID)
             val list = savedInstanceState.getStringArrayList(KEY_SCENE_TAG_LIST)
             if (list != null) {
-                mSceneTagList.addAll(list)
-                mDelaySceneTagList.addAll(list)
+                sceneTagList.addAll(list)
+                delaySceneTagList.addAll(list)
             }
-            mIdGenerator.lazySet(savedInstanceState.getInt(KEY_NEXT_ID))
+            idGenerator.lazySet(savedInstanceState.getInt(KEY_NEXT_ID))
         }
 
-        if (mStageId == IntIdGenerator.INVALID_ID) {
+        if (stageId == IntIdGenerator.INVALID_ID) {
             (applicationContext as SceneApplication).registerStageActivity(this)
         } else {
-            (applicationContext as SceneApplication).registerStageActivity(this, mStageId)
+            (applicationContext as SceneApplication).registerStageActivity(this, stageId)
         }
 
         // Create layout
@@ -236,14 +236,14 @@ abstract class StageActivity : BaseActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(KEY_STAGE_ID, mStageId)
-        outState.putStringArrayList(KEY_SCENE_TAG_LIST, mSceneTagList)
-        outState.putInt(KEY_NEXT_ID, mIdGenerator.getAndIncrement())
+        outState.putInt(KEY_STAGE_ID, stageId)
+        outState.putStringArrayList(KEY_SCENE_TAG_LIST, sceneTagList)
+        outState.putInt(KEY_NEXT_ID, idGenerator.getAndIncrement())
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        (applicationContext as SceneApplication).unregisterStageActivity(mStageId)
+        (applicationContext as SceneApplication).unregisterStageActivity(stageId)
     }
 
     open fun onSceneViewCreated(scene: SceneFragment, savedInstanceState: Bundle?) {
@@ -256,13 +256,13 @@ abstract class StageActivity : BaseActivity() {
     internal fun onSceneDestroyed(scene: SceneFragment) {
         val tag = scene.tag
         if (tag != null) {
-            mDelaySceneTagList.remove(tag)
+            delaySceneTagList.remove(tag)
         }
     }
 
     @JvmName("onRegister")
     internal fun onRegister(id: Int) {
-        mStageId = id
+        stageId = id
     }
 
     @JvmName("onUnregister")
@@ -273,10 +273,10 @@ abstract class StageActivity : BaseActivity() {
     }
 
     val sceneCount: Int
-        get() = mSceneTagList.size
+        get() = sceneTagList.size
 
     fun getSceneLaunchMode(clazz: Class<*>): Int =
-        sLaunchModeMap[clazz] ?: throw RuntimeException("Not register " + clazz.name)
+        launchModes[clazz] ?: throw RuntimeException("Not register " + clazz.name)
 
     private fun newSceneInstance(clazz: Class<*>): SceneFragment = SceneFactory.create(clazz.name)
 
@@ -289,9 +289,9 @@ abstract class StageActivity : BaseActivity() {
 
         // Check LAUNCH_MODE_SINGLE_TASK
         if (launchMode == SceneFragment.LAUNCH_MODE_SINGLE_TASK) {
-            val n = mSceneTagList.size
+            val n = sceneTagList.size
             for (i in 0 until n) {
-                val tag = mSceneTagList[i]
+                val tag = sceneTagList[i]
                 val fragment = fragmentManager.findFragmentByTag(tag)
                 if (fragment == null) {
                     Log.e(TAG, "Can't find fragment with tag: $tag")
@@ -306,7 +306,7 @@ abstract class StageActivity : BaseActivity() {
 
                     // Remove top fragments
                     for (j in i + 1 until n) {
-                        val topTag = mSceneTagList[j]
+                        val topTag = sceneTagList[j]
                         val topFragment = fragmentManager.findFragmentByTag(topTag)
                         if (null == topFragment) {
                             Log.e(TAG, "Can't find fragment with tag: $topTag")
@@ -322,7 +322,7 @@ abstract class StageActivity : BaseActivity() {
                     }
 
                     // Remove tag from index i+1
-                    mSceneTagList.subList(i + 1, mSceneTagList.size).clear()
+                    sceneTagList.subList(i + 1, sceneTagList.size).clear()
 
                     // Attach fragment
                     if (fragment.isDetached) {
@@ -346,9 +346,9 @@ abstract class StageActivity : BaseActivity() {
 
         // Get current fragment
         var currentScene: SceneFragment? = null
-        if (mSceneTagList.size > 0) {
+        if (sceneTagList.size > 0) {
             // Get last tag
-            val tag = mSceneTagList[mSceneTagList.size - 1]
+            val tag = sceneTagList[sceneTagList.size - 1]
             val fragment = fragmentManager.findFragmentByTag(tag)
             if (fragment != null) {
                 AssertUtils.assertTrue(SceneFragment::class.java.isInstance(fragment))
@@ -371,11 +371,11 @@ abstract class StageActivity : BaseActivity() {
         newScene.arguments = args
 
         // Create new scene tag
-        val newTag = mIdGenerator.getAndIncrement().toString()
+        val newTag = idGenerator.getAndIncrement().toString()
 
         // Add new tag to list
-        mSceneTagList.add(newTag)
-        mDelaySceneTagList.add(newTag)
+        sceneTagList.add(newTag)
+        delaySceneTagList.add(newTag)
 
         val transaction = fragmentManager.beginTransaction()
         // Animation
@@ -405,7 +405,7 @@ abstract class StageActivity : BaseActivity() {
         }
 
         // Add new scene
-        transaction.add(getContainerViewId(), newScene, newTag)
+        transaction.add(containerViewId, newScene, newTag)
 
         // Commit
         transaction.commitAllowingStateLoss()
@@ -435,8 +435,8 @@ abstract class StageActivity : BaseActivity() {
         transaction.setCustomAnimations(R.anim.scene_open_enter, R.anim.scene_open_exit)
 
         var findSceneTag: String? = null
-        for (i in 0 until mSceneTagList.size) {
-            val tag = mSceneTagList[i]
+        for (i in 0 until sceneTagList.size) {
+            val tag = sceneTagList[i]
             val fragment = fragmentManager.findFragmentByTag(tag)
             if (fragment == null) {
                 Log.e(TAG, "Can't find fragment with tag: $tag")
@@ -467,9 +467,9 @@ abstract class StageActivity : BaseActivity() {
         }
 
         // Handle tag list
-        mSceneTagList.clear()
+        sceneTagList.clear()
         if (null != findSceneTag) {
-            mSceneTagList.add(findSceneTag)
+            sceneTagList.add(findSceneTag)
         }
 
         if (createNewScene) {
@@ -477,14 +477,14 @@ abstract class StageActivity : BaseActivity() {
             scene.arguments = args
 
             // Create scene tag
-            val tag = mIdGenerator.getAndIncrement().toString()
+            val tag = idGenerator.getAndIncrement().toString()
 
             // Add tag to list
-            mSceneTagList.add(tag)
-            mDelaySceneTagList.add(tag)
+            sceneTagList.add(tag)
+            delaySceneTagList.add(tag)
 
             // Add scene
-            transaction.add(getContainerViewId(), scene, tag)
+            transaction.add(containerViewId, scene, tag)
         }
 
         // Commit
@@ -499,7 +499,7 @@ abstract class StageActivity : BaseActivity() {
 
     @JvmName("sortSceneViews")
     internal fun sortSceneViews(views: List<View>) {
-        Collections.sort(views, mSceneViewComparator)
+        Collections.sort(views, sceneViewComparator)
     }
 
     fun finishScene(scene: SceneFragment) {
@@ -521,13 +521,13 @@ abstract class StageActivity : BaseActivity() {
         }
 
         // Get scene index
-        val index = mSceneTagList.indexOf(tag)
+        val index = sceneTagList.indexOf(tag)
         if (index < 0) {
             Log.e(TAG, "finishScene: Can't find the tag in tag list: $tag")
             return
         }
 
-        if (mSceneTagList.size == 1) {
+        if (sceneTagList.size == 1) {
             // It is the last fragment, finish Activity now
             Log.i(TAG, "finishScene: It is the last scene, finish activity now")
             finish()
@@ -535,9 +535,9 @@ abstract class StageActivity : BaseActivity() {
         }
 
         var next: Fragment? = null
-        if (index == mSceneTagList.size - 1) {
+        if (index == sceneTagList.size - 1) {
             // It is first fragment, show the next one
-            next = fragmentManager.findFragmentByTag(mSceneTagList[index - 1])
+            next = fragmentManager.findFragmentByTag(sceneTagList[index - 1])
         }
 
         val transaction = fragmentManager.beginTransaction()
@@ -557,7 +557,7 @@ abstract class StageActivity : BaseActivity() {
                 next.exitTransition = null
                 // Do not show animate if it is not the first fragment. A
                 // predictive back has already animated both scenes.
-                if (!mSkipCloseAnimation) {
+                if (!skipCloseAnimation) {
                     transaction.setCustomAnimations(R.anim.scene_close_enter, R.anim.scene_close_exit)
                 }
             }
@@ -570,7 +570,7 @@ abstract class StageActivity : BaseActivity() {
         postUpdateBackCallback()
 
         // Remove tag
-        mSceneTagList.removeAt(index)
+        sceneTagList.removeAt(index)
 
         // Return result
         if (scene is SceneFragment) {
@@ -579,11 +579,11 @@ abstract class StageActivity : BaseActivity() {
     }
 
     fun refreshTopScene() {
-        val index = mSceneTagList.size - 1
+        val index = sceneTagList.size - 1
         if (index < 0) {
             return
         }
-        val tag = mSceneTagList[index]
+        val tag = sceneTagList[index]
 
         val fragmentManager = supportFragmentManager
         val fragment = fragmentManager.findFragmentByTag(tag)
@@ -621,7 +621,7 @@ abstract class StageActivity : BaseActivity() {
         if (hasInterceptBack()) {
             return true
         }
-        if (mSceneTagList.size > 1) {
+        if (sceneTagList.size > 1) {
             return true
         }
         val top = findTopScene(false)
@@ -634,7 +634,7 @@ abstract class StageActivity : BaseActivity() {
      * handlers have run) and from [SceneFragment.invalidateBack].
      */
     fun updateBackCallback() {
-        mBackCallback.isEnabled = handlesBack()
+        backCallback.isEnabled = handlesBack()
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -656,8 +656,8 @@ abstract class StageActivity : BaseActivity() {
 
     private fun postUpdateBackCallback() {
         val decor = window.decorView
-        decor.removeCallbacks(mUpdateBackCallback)
-        decor.post(mUpdateBackCallback)
+        decor.removeCallbacks(updateBackCallbackTask)
+        decor.post(updateBackCallbackTask)
     }
 
     override fun onResume() {
@@ -678,8 +678,8 @@ abstract class StageActivity : BaseActivity() {
         if (canRepair) {
             fragmentManager.executePendingTransactions()
         }
-        for (i in mSceneTagList.size - 1 downTo 0) {
-            val tag = mSceneTagList[i]
+        for (i in sceneTagList.size - 1 downTo 0) {
+            val tag = sceneTagList[i]
             val fragment = fragmentManager.findFragmentByTag(tag)
             if (fragment is SceneFragment) {
                 return fragment
@@ -688,9 +688,9 @@ abstract class StageActivity : BaseActivity() {
                 return null
             }
             Log.e(TAG, "Dropping scene tag without a scene: $tag")
-            mSceneTagList.removeAt(i)
-            mDelaySceneTagList.remove(tag)
-            mDroppedStaleTag = true
+            sceneTagList.removeAt(i)
+            delaySceneTagList.remove(tag)
+            droppedStaleTag = true
         }
         return null
     }
@@ -705,9 +705,9 @@ abstract class StageActivity : BaseActivity() {
             updateBackCallback()
             return
         }
-        mDroppedStaleTag = false
+        droppedStaleTag = false
         val scene = findTopScene(true)
-        if (scene != null && mDroppedStaleTag) {
+        if (scene != null && droppedStaleTag) {
             // The scene this back was meant to leave was already gone, so the
             // screen showed nothing: bring back the one below and stop here.
             if (scene.isDetached) {
@@ -716,10 +716,10 @@ abstract class StageActivity : BaseActivity() {
             postUpdateBackCallback()
             return
         }
-        if (scene == null || (mSceneTagList.size == 1 && !scene.hasInSceneBack())) {
+        if (scene == null || (sceneTagList.size == 1 && !scene.hasInSceneBack())) {
             // Nothing of ours to go back to (also the URL-error finish path
             // with an empty stack): the system's back, i.e. home.
-            BackDispatch.passThrough(onBackPressedDispatcher, mBackCallback)
+            BackDispatch.passThrough(onBackPressedDispatcher, backCallback)
             updateBackCallback()
             return
         }
@@ -736,7 +736,7 @@ abstract class StageActivity : BaseActivity() {
      */
     private fun startPredictiveBack() {
         endPredictAnimator()
-        if (hasInterceptBack() || mSceneTagList.size < 2) {
+        if (hasInterceptBack() || sceneTagList.size < 2) {
             return
         }
         val fragmentManager = supportFragmentManager
@@ -748,14 +748,14 @@ abstract class StageActivity : BaseActivity() {
         if (top == null || top.hasInSceneBack() || top.view == null) {
             return
         }
-        val belowTag = mSceneTagList[mSceneTagList.size - 2]
+        val belowTag = sceneTagList[sceneTagList.size - 2]
         val below = fragmentManager.findFragmentByTag(belowTag) ?: return
-        mPredictTop = top
-        mPredictBelow = below
+        predictTop = top
+        predictBelow = below
         if (below.isDetached) {
             // Its view is created now but the stage's view hooks (the right
             // drawer belongs to the top scene meanwhile) wait for the commit.
-            mPredictAttachedBelow = true
+            predictAttachedBelow = true
             fragmentManager.beginTransaction().attach(below).commitNow()
         }
         val topView = top.view
@@ -770,9 +770,9 @@ abstract class StageActivity : BaseActivity() {
      * moves on to where the close animation would have left it.
      */
     private fun applyPredictiveBack(progress: Float, exit: Float) {
-        mPredictProgress = progress
-        val top = mPredictTop
-        val below = mPredictBelow
+        predictProgress = progress
+        val top = predictTop
+        val below = predictBelow
         val topView = top?.view
         val belowView = below?.view
         if (topView != null) {
@@ -789,8 +789,8 @@ abstract class StageActivity : BaseActivity() {
 
     /** The gesture was released past the threshold: finish the slide, then pop. */
     private fun commitPredictiveBack() {
-        val top = mPredictTop
-        val from = mPredictProgress
+        val top = predictTop
+        val from = predictProgress
         endPredictAnimator()
         val animator = ValueAnimator.ofFloat(0f, 1f)
         animator.duration = settleDuration(1f - from)
@@ -800,35 +800,35 @@ abstract class StageActivity : BaseActivity() {
         }
         animator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
-                mPredictAnimator = null
+                predictAnimator = null
                 finishPredictiveBack(top)
             }
         })
-        mPredictAnimator = animator
+        predictAnimator = animator
         animator.start()
     }
 
     /** Pops `top` without the close animation and hands the revealed scene its view hooks. */
     private fun finishPredictiveBack(top: SceneFragment?) {
-        val below = mPredictBelow
-        val belowViewPending = mPredictBelowViewPending
+        val below = predictBelow
+        val belowViewPending = predictBelowViewPending
         resetPredictiveViews()
-        mPredictTop = null
-        mPredictBelow = null
-        mPredictAttachedBelow = false
-        mPredictBelowViewPending = false
-        if (top == null || mSceneTagList.isEmpty() ||
-            top.tag != mSceneTagList[mSceneTagList.size - 1]
+        predictTop = null
+        predictBelow = null
+        predictAttachedBelow = false
+        predictBelowViewPending = false
+        if (top == null || sceneTagList.isEmpty() ||
+            top.tag != sceneTagList[sceneTagList.size - 1]
         ) {
             // The stack moved under the gesture; leave it as it is.
             updateBackCallback()
             return
         }
-        mSkipCloseAnimation = true
+        skipCloseAnimation = true
         try {
             finishScene(top)
         } finally {
-            mSkipCloseAnimation = false
+            skipCloseAnimation = false
         }
         val fragmentManager = supportFragmentManager
         if (!fragmentManager.isStateSaved) {
@@ -841,39 +841,39 @@ abstract class StageActivity : BaseActivity() {
 
     /** The gesture was abandoned: slide back, then hide the revealed scene again. */
     private fun cancelPredictiveBack() {
-        if (mPredictTop == null) {
+        if (predictTop == null) {
             return
         }
-        val from = mPredictProgress
+        val from = predictProgress
         endPredictAnimator()
         val animator = ValueAnimator.ofFloat(from, 0f)
         animator.duration = settleDuration(from)
         animator.addUpdateListener { a -> applyPredictiveBack(a.animatedValue as Float, 0f) }
         animator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
-                mPredictAnimator = null
+                predictAnimator = null
                 restoreAfterPredictiveBack()
             }
         })
-        mPredictAnimator = animator
+        predictAnimator = animator
         animator.start()
     }
 
     private fun restoreAfterPredictiveBack() {
-        val top = mPredictTop
-        val below = mPredictBelow
+        val top = predictTop
+        val below = predictBelow
         resetPredictiveViews()
         val fragmentManager = supportFragmentManager
-        if (below != null && mPredictAttachedBelow && !below.isDetached &&
+        if (below != null && predictAttachedBelow && !below.isDetached &&
             !fragmentManager.isStateSaved
         ) {
-            // Still mPredictBelow here, so its view-destroyed hook is skipped too.
+            // Still predictBelow here, so its view-destroyed hook is skipped too.
             fragmentManager.beginTransaction().detach(below).commitNow()
         }
-        mPredictTop = null
-        mPredictBelow = null
-        mPredictAttachedBelow = false
-        mPredictBelowViewPending = false
+        predictTop = null
+        predictBelow = null
+        predictAttachedBelow = false
+        predictBelowViewPending = false
         if (top != null) {
             onPredictiveBackCancelled(top)
         }
@@ -882,11 +882,11 @@ abstract class StageActivity : BaseActivity() {
 
     /** Runs a pending settle to its end at once (a new gesture, or the stage going away). */
     private fun endPredictAnimator() {
-        mPredictAnimator?.end()
+        predictAnimator?.end()
     }
 
     private fun resetPredictiveViews() {
-        for (fragment in arrayOf<Fragment?>(mPredictTop, mPredictBelow)) {
+        for (fragment in arrayOf<Fragment?>(predictTop, predictBelow)) {
             val view = fragment?.view
             if (view != null) {
                 view.translationX = 0f
@@ -906,8 +906,8 @@ abstract class StageActivity : BaseActivity() {
     /** From SceneFragment.onViewCreated: the revealed scene's hook waits for the commit. */
     @JvmName("dispatchSceneViewCreated")
     internal fun dispatchSceneViewCreated(scene: SceneFragment, savedInstanceState: Bundle?) {
-        if (scene === mPredictBelow) {
-            mPredictBelowViewPending = true
+        if (scene === predictBelow) {
+            predictBelowViewPending = true
             return
         }
         onSceneViewCreated(scene, savedInstanceState)
@@ -916,8 +916,8 @@ abstract class StageActivity : BaseActivity() {
     /** From SceneFragment.onDestroyView: skips a revealed view the stage was never told about. */
     @JvmName("dispatchSceneViewDestroyed")
     internal fun dispatchSceneViewDestroyed(scene: SceneFragment) {
-        if (scene === mPredictBelow && mPredictBelowViewPending) {
-            mPredictBelowViewPending = false
+        if (scene === predictBelow && predictBelowViewPending) {
+            predictBelowViewPending = false
             return
         }
         onSceneViewDestroyed(scene)
@@ -926,7 +926,7 @@ abstract class StageActivity : BaseActivity() {
     override fun onPause() {
         // The gesture cannot outlive the screen: settle it now.
         endPredictAnimator()
-        if (mPredictTop != null) {
+        if (predictTop != null) {
             restoreAfterPredictiveBack()
         }
         super.onPause()
@@ -944,11 +944,11 @@ abstract class StageActivity : BaseActivity() {
 
     val topSceneClass: Class<*>?
         get() {
-            val index = mSceneTagList.size - 1
+            val index = sceneTagList.size - 1
             if (index < 0) {
                 return null
             }
-            val tag = mSceneTagList[index]
+            val tag = sceneTagList[index]
             val fragment = supportFragmentManager.findFragmentByTag(tag) ?: return null
             return fragment.javaClass
         }
@@ -987,7 +987,7 @@ abstract class StageActivity : BaseActivity() {
         private const val PREDICT_SETTLE_MIN_MS = 100L
         private const val PREDICT_SETTLE_MAX_MS = 250L
 
-        private val sLaunchModeMap: MutableMap<Class<*>, Int> = HashMap()
+        private val launchModes: MutableMap<Class<*>, Int> = HashMap()
 
         @JvmStatic
         fun registerLaunchMode(clazz: Class<*>, @SceneFragment.LaunchMode launchMode: Int) {
@@ -997,7 +997,7 @@ abstract class StageActivity : BaseActivity() {
             ) {
                 throw IllegalStateException("Invalid launch mode: $launchMode")
             }
-            sLaunchModeMap[clazz] = launchMode
+            launchModes[clazz] = launchMode
         }
 
         private fun settleDuration(remaining: Float): Long =

@@ -36,8 +36,8 @@ open class SceneFragment : Fragment() {
     private var resultCode = RESULT_CANCELED
     private var result: Bundle? = null
 
-    private val mRequestSceneTagList: MutableList<String?> = ArrayList(0)
-    private val mRequestCodeList = IntList(0)
+    private val requestSceneTagList: MutableList<String?> = ArrayList(0)
+    private val requestCodeList = IntList(0)
 
     open fun onNewArguments(args: Bundle) {}
 
@@ -116,21 +116,21 @@ open class SceneFragment : Fragment() {
 
     @JvmName("addRequest")
     internal fun addRequest(requestSceneTag: String?, requestCode: Int) {
-        mRequestSceneTagList.add(requestSceneTag)
-        mRequestCodeList.add(requestCode)
+        requestSceneTagList.add(requestSceneTag)
+        requestCodeList.add(requestCode)
     }
 
     @JvmName("returnResult")
     internal fun returnResult(stage: StageActivity) {
-        val size = min(mRequestSceneTagList.size, mRequestCodeList.size())
+        val size = min(requestSceneTagList.size, requestCodeList.size())
         for (i in 0 until size) {
-            val tag = mRequestSceneTagList[i]
-            val code = mRequestCodeList.get(i)
+            val tag = requestSceneTagList[i]
+            val code = requestCodeList.get(i)
             val scene = stage.findSceneByTag(tag)
             scene?.onSceneResult(code, resultCode, result)
         }
-        mRequestSceneTagList.clear()
-        mRequestCodeList.clear()
+        requestSceneTagList.clear()
+        requestCodeList.clear()
     }
 
     protected open fun onSceneResult(requestCode: Int, resultCode: Int, data: Bundle?) {

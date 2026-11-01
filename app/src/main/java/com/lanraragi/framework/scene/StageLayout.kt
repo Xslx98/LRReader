@@ -30,11 +30,11 @@ import java.lang.reflect.Field
 
 open class StageLayout : FrameLayout {
 
-    private var mDisappearingChildrenField: Field? = null
-    private var mSuperDisappearingChildren: ArrayList<View>? = null
-    private var mSortedScenes: ArrayList<View>? = null
-    private var mDumpView: View? = null
-    private var mDoTrick = false
+    private var disappearingChildrenField: Field? = null
+    private var superDisappearingChildren: ArrayList<View>? = null
+    private var sortedScenes: ArrayList<View>? = null
+    private var dumpView: View? = null
+    private var doTrick = false
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         init(context)
@@ -44,28 +44,28 @@ open class StageLayout : FrameLayout {
     private fun init(context: Context) {
         try {
             val field = ViewGroup::class.java.getDeclaredField("mDisappearingChildren")
-            mDisappearingChildrenField = field
+            disappearingChildrenField = field
             field.isAccessible = true
         } catch (e: NoSuchFieldException) {
             e.printStackTrace()
         }
 
-        if (mDisappearingChildrenField != null) {
-            val dumpView = View(context)
-            mDumpView = dumpView
-            addView(dumpView, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        if (disappearingChildrenField != null) {
+            val view = View(context)
+            dumpView = view
+            addView(view, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         }
     }
 
     @Suppress("UNCHECKED_CAST") // ViewGroup.mDisappearingChildren is an ArrayList<View>
     private fun getSuperDisappearingChildren() {
-        val field = mDisappearingChildrenField
-        if (field == null || mSuperDisappearingChildren != null) {
+        val field = disappearingChildrenField
+        if (field == null || superDisappearingChildren != null) {
             return
         }
 
         try {
-            mSuperDisappearingChildren = field.get(this) as ArrayList<View>?
+            superDisappearingChildren = field.get(this) as ArrayList<View>?
         } catch (e: IllegalAccessException) {
             e.printStackTrace()
         }
@@ -74,7 +74,7 @@ open class StageLayout : FrameLayout {
     private fun beforeDispatchDraw(): Boolean {
         getSuperDisappearingChildren()
 
-        val disappearingChildren = mSuperDisappearingChildren
+        val disappearingChildren = superDisappearingChildren
         if (disappearingChildren == null ||
             disappearingChildren.size <= 0 || childCount <= 1 // only dump view
         ) {
@@ -84,53 +84,53 @@ open class StageLayout : FrameLayout {
         // Get stage
         val stage = context as? StageActivity ?: return false
 
-        var sortedScenes = mSortedScenes
-        if (null == sortedScenes) {
-            sortedScenes = ArrayList()
-            mSortedScenes = sortedScenes
+        var scenes = sortedScenes
+        if (null == scenes) {
+            scenes = ArrayList()
+            sortedScenes = scenes
         }
 
-        // Add all scene view to mSortedScenes
+        // Add all scene view to sortedScenes
         for (i in 1 until childCount) { // Skip dump view
             val view = getChildAt(i)
             if (null != view.getTag(R.id.fragment_tag)) {
-                sortedScenes.add(view)
+                scenes.add(view)
             }
         }
         for (i in 0 until disappearingChildren.size) {
             val view = disappearingChildren[i]
             if (null != view.getTag(R.id.fragment_tag)) {
-                sortedScenes.add(view)
+                scenes.add(view)
             }
         }
 
-        stage.sortSceneViews(sortedScenes)
+        stage.sortSceneViews(scenes)
 
         return true
     }
 
     private fun afterDispatchDraw() {
-        mSortedScenes?.clear()
+        sortedScenes?.clear()
     }
 
     override fun dispatchDraw(canvas: Canvas) {
-        mDoTrick = beforeDispatchDraw()
+        doTrick = beforeDispatchDraw()
         super.dispatchDraw(canvas)
         afterDispatchDraw()
-        mDoTrick = false
+        doTrick = false
     }
 
     override fun drawChild(canvas: Canvas, child: View, drawingTime: Long): Boolean {
-        val sortedScenes = mSortedScenes
-        // mDoTrick is only set once mSortedScenes exists.
-        if (mDoTrick && sortedScenes != null) {
-            if (child === mDumpView) {
+        val scenes = sortedScenes
+        // doTrick is only set once sortedScenes exists.
+        if (doTrick && scenes != null) {
+            if (child === dumpView) {
                 var more = false
-                for (i in 0 until sortedScenes.size) {
-                    more = more or super.drawChild(canvas, sortedScenes[i], drawingTime)
+                for (i in 0 until scenes.size) {
+                    more = more or super.drawChild(canvas, scenes[i], drawingTime)
                 }
                 return more
-            } else if (sortedScenes.contains(child)) {
+            } else if (scenes.contains(child)) {
                 // Skip
                 return false
             }

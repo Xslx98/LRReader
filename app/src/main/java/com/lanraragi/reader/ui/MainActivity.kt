@@ -155,7 +155,7 @@ class MainActivity : StageActivity(),
         else -> R.style.AppTheme_Main
     }
 
-    override fun getContainerViewId(): Int = R.id.fragment_container
+    override val containerViewId: Int get() = R.id.fragment_container
 
     override fun getLaunchAnnouncer(): Announcer {
         return if (SecuritySettings.isLockEnabled()) {

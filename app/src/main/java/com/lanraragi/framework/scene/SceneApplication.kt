@@ -24,34 +24,34 @@ import com.lanraragi.reader.util.IntIdGenerator
 
 abstract class SceneApplication : Application() {
 
-    private val mIdGenerator = IntIdGenerator()
-    private val mStageMap = SparseArray<StageActivity>()
+    private val idGenerator = IntIdGenerator()
+    private val stageMap = SparseArray<StageActivity>()
 
     @JvmName("registerStageActivity")
     internal fun registerStageActivity(stage: StageActivity) {
-        val id = mIdGenerator.nextId()
-        mStageMap.put(id, stage)
+        val id = idGenerator.nextId()
+        stageMap.put(id, stage)
         stage.onRegister(id)
     }
 
     @JvmName("registerStageActivity")
     internal fun registerStageActivity(stage: StageActivity, id: Int) {
-        if (mStageMap.indexOfKey(id) >= 0) {
+        if (stageMap.indexOfKey(id) >= 0) {
             throw IllegalStateException("The id exists: $id")
         }
 
-        mStageMap.put(id, stage)
+        stageMap.put(id, stage)
         stage.onRegister(id)
     }
 
     internal fun unregisterStageActivity(id: Int) {
-        val index = mStageMap.indexOfKey(id)
+        val index = stageMap.indexOfKey(id)
         if (index >= 0) {
-            val stage = mStageMap.valueAt(index)
-            mStageMap.remove(id)
+            val stage = stageMap.valueAt(index)
+            stageMap.remove(id)
             stage.onUnregister()
         }
     }
 
-    fun findStageActivityById(id: Int): StageActivity? = mStageMap.get(id)
+    fun findStageActivityById(id: Int): StageActivity? = stageMap.get(id)
 }

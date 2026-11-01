@@ -18,31 +18,24 @@ package com.lanraragi.framework.scene
 
 import android.os.Bundle
 
-class Announcer(clazz: Class<*>) {
+class Announcer(val clazz: Class<*>) {
 
-    @JvmField
-    internal var clazz: Class<*> = clazz
+    var args: Bundle? = null
+        private set
 
-    @JvmField
-    internal var args: Bundle? = null
-
-    @JvmField
     internal var tranHelper: TransitionHelper? = null
+        private set
 
-    @JvmField
     internal var requestFrom: SceneFragment? = null
+        private set
 
-    @JvmField
     internal var requestCode: Int = 0
-
-    fun getClazz(): Class<*> = clazz
+        private set
 
     fun setArgs(args: Bundle?): Announcer {
         this.args = args
         return this
     }
-
-    fun getArgs(): Bundle? = args
 
     fun setTranHelper(tranHelper: TransitionHelper?): Announcer {
         this.tranHelper = tranHelper
