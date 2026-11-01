@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.lib.glview.anim;
+package com.lanraragi.framework.lib.glview.anim
 
-import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas;
+import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 
-public abstract class CanvasAnimation extends Animation {
+abstract class CanvasAnimation : Animation() {
 
-    public abstract int getCanvasSaveFlags();
-    public abstract void apply(GLCanvas canvas);
+    abstract fun getCanvasSaveFlags(): Int
+
+    abstract fun apply(canvas: GLCanvas)
 }
