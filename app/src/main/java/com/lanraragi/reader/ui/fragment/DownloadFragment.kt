@@ -37,8 +37,8 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.CommonOperations
-import com.lanraragi.reader.util.readDownloadCsv
-import com.lanraragi.reader.util.toCSV
+import com.lanraragi.reader.backup.readDownloadCsv
+import com.lanraragi.reader.backup.toCSV
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.ExceptionUtils
 import kotlinx.coroutines.CancellationException
@@ -152,7 +152,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
                     file.openOutputStream().use { os ->
                         os.write(DownloadManager.DOWNLOAD_INFO_HEADER.toByteArray(StandardCharsets.UTF_8))
                         for (gi in list) {
-                            // 20-column wire format defined in EntitySerializer; kept stable so
+                            // 20-column wire format defined in DownloadListCsv; kept stable so
                             // CSV files exported by older versions still import via archiveFromCsvLine().
                             os.write(gi.toCSV().toByteArray(StandardCharsets.UTF_8))
                         }
