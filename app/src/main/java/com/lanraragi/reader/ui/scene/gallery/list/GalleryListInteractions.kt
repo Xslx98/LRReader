@@ -7,8 +7,8 @@ import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.ReadingContext
-import com.lanraragi.reader.gallery.ReadingContextStore
+import com.lanraragi.reader.reading.ReadingContext
+import com.lanraragi.reader.reading.ReadingContextStore
 import com.lanraragi.reader.settings.AppearanceSettings
 
 /**

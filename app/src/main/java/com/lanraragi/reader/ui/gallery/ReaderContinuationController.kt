@@ -7,8 +7,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.lanraragi.reader.R
-import com.lanraragi.reader.gallery.NextArchiveResolver
-import com.lanraragi.reader.gallery.ReadingContextStore
+import com.lanraragi.reader.reading.NextArchiveResolver
+import com.lanraragi.reader.reading.ReadingContextStore
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.launch

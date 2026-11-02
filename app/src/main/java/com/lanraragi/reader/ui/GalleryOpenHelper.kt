@@ -5,9 +5,9 @@ import android.content.Intent
 import android.util.Log
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.gallery.DownloadDirResolver
-import com.lanraragi.reader.gallery.ReaderPageCache
-import com.lanraragi.reader.gallery.ReadingProgressReconciler
+import com.lanraragi.reader.reading.DownloadDirResolver
+import com.lanraragi.reader.reading.ReaderPageCache
+import com.lanraragi.reader.reading.ReadingProgressReconciler
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
@@ -83,14 +83,14 @@ object GalleryOpenHelper {
     /**
      * Intent for a WHOLE-TANK composite session ([GalleryActivity.ACTION_TANK]).
      * [startGlobalPage] is the tank-global 0-indexed page to open on; -1 lets
-     * [com.lanraragi.reader.gallery.TankGalleryProvider] restore its own saved
+     * [com.lanraragi.reader.reading.TankGalleryProvider] restore its own saved
      * progress (local tank save, else the seed's server progress captured by
      * the caller into [startGlobalPage]).
      */
     @JvmStatic
     fun buildTankReadIntent(
         context: Context,
-        seed: com.lanraragi.reader.gallery.TankSessionSeed,
+        seed: com.lanraragi.reader.reading.TankSessionSeed,
         startGlobalPage: Int = -1,
     ): Intent = Intent(context, GalleryActivity::class.java).apply {
         action = GalleryActivity.ACTION_TANK

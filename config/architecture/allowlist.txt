@@ -24,7 +24,7 @@ D3 com/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor.kt
 D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt
 D5 com/lanraragi/reader/dao/DownloadDbRepository.kt
 D5 com/lanraragi/reader/dao/QuickSearchRepository.kt
-D6 com/lanraragi/reader/gallery/TankSessionRouter.kt
+D6 com/lanraragi/reader/reading/TankSessionRouter.kt
 D6 com/lanraragi/reader/settings/AppearanceSettings.kt
 D6 com/lanraragi/reader/settings/DownloadSettings.kt
 D7 com/lanraragi/reader/settings/AppearanceSettings.kt

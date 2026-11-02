@@ -1,6 +1,6 @@
 package com.lanraragi.reader.ui.gallery
 
-import com.lanraragi.reader.gallery.TankGalleryProvider
+import com.lanraragi.reader.reading.TankGalleryProvider
 import com.lanraragi.reader.client.api.LRRStampApi
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap

@@ -4,9 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.gallery.TankGalleryProvider
-import com.lanraragi.reader.gallery.TankSessionSeed
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.TankGalleryProvider
+import com.lanraragi.reader.reading.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.ui.GalleryActivity.Companion.DATA_IN_EVENT
 import com.lanraragi.reader.ui.GalleryActivity.Companion.KEY_ACTION

@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.dao.AppDatabase
-import com.lanraragi.reader.gallery.ReadingSessionEnd
+import com.lanraragi.reader.reading.ReadingSessionEnd
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals

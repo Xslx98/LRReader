@@ -36,11 +36,11 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.buildRatingEmoji
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
-import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.gallery.TankMemberSeed
-import com.lanraragi.reader.gallery.TankPageMath
-import com.lanraragi.reader.gallery.TankSeedStore
-import com.lanraragi.reader.gallery.TankSessionSeed
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.TankMemberSeed
+import com.lanraragi.reader.reading.TankPageMath
+import com.lanraragi.reader.reading.TankSeedStore
+import com.lanraragi.reader.reading.TankSessionSeed
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tankoubon.TankMemberStrip
 import com.lanraragi.reader.ui.GalleryOpenHelper

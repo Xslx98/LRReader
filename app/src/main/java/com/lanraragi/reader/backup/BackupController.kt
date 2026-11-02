@@ -12,7 +12,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.AppDatabase
-import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.reading.GalleryProvider2
 import com.lanraragi.reader.settings.DownloadSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

@@ -11,9 +11,9 @@ import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
-import com.lanraragi.reader.gallery.TankMemberSeed
-import com.lanraragi.reader.gallery.TankSeedStore
-import com.lanraragi.reader.gallery.TankSessionSeed
+import com.lanraragi.reader.reading.TankMemberSeed
+import com.lanraragi.reader.reading.TankSeedStore
+import com.lanraragi.reader.reading.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException

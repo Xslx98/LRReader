@@ -22,10 +22,10 @@ import com.lanraragi.reader.domain.mergeRatingIntoTags
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.gallery.LocalReadingProgress
-import com.lanraragi.reader.gallery.ReaderPageCache
-import com.lanraragi.reader.gallery.ReadingProgressReconciler
-import com.lanraragi.reader.gallery.ReadingProgressTracker
+import com.lanraragi.reader.reading.LocalReadingProgress
+import com.lanraragi.reader.reading.ReaderPageCache
+import com.lanraragi.reader.reading.ReadingProgressReconciler
+import com.lanraragi.reader.reading.ReadingProgressTracker
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -480,7 +480,7 @@ class GalleryDetailViewModel : ViewModel() {
      * archives we fall back to [ReaderPageCache.preloadForDetail],
      * which downloads bytes and decode-warms the same slot.
      *
-     * Either way, [DirGalleryProvider]/[com.lanraragi.reader.gallery.LRRGalleryProvider]
+     * Either way, [DirGalleryProvider]/[com.lanraragi.reader.reading.LRRGalleryProvider]
      * gets a chance to skip the first-page decode on next reader open.
      *
      * [archive] is the freshly fetched detail's archive, passed in: the

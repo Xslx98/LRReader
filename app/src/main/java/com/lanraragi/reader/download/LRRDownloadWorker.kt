@@ -13,8 +13,8 @@ import com.lanraragi.reader.server.OrphanProfileException
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.gallery.ForegroundReading
-import com.lanraragi.reader.gallery.ReaderPageCache
+import com.lanraragi.reader.reading.ForegroundReading
+import com.lanraragi.reader.reading.ReaderPageCache
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -789,9 +789,9 @@ class LRRDownloadWorker(
          * Major brands of ISO-BMFF image containers the platform decoder can
          * read: AVIF (API 31+) plus HEIF/HEIC (API 28+ = minSdk). All share the
          * "ftyp" box at bytes 4-7 with a 4-char brand at bytes 8-11. Kept in sync
-         * with [com.lanraragi.reader.gallery.GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS]
+         * with [com.lanraragi.reader.reading.GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS]
          * (.avif/.heif/.heic) and the reader's copy in
-         * [com.lanraragi.reader.gallery.ReaderPageCache].
+         * [com.lanraragi.reader.reading.ReaderPageCache].
          */
         private val ISO_BMFF_IMAGE_BRANDS = setOf(
             "avif", "avis", // AV1 Image File Format (still / sequence)

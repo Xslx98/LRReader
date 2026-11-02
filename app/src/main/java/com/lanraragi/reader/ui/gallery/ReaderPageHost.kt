@@ -12,7 +12,7 @@ import com.lanraragi.framework.lib.image.PageFit
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.R
 import com.lanraragi.reader.diagnostics.DiagLog
-import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.reading.GalleryProvider2
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.util.MemoryTrim
 

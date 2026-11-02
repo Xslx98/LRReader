@@ -8,7 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityOptionsCompat
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.awaitUntil
-import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.reading.GalleryProvider2
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

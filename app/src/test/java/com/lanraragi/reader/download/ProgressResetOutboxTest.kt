@@ -2,7 +2,7 @@ package com.lanraragi.reader.download
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.gallery.ArchiveProgressOutbox
+import com.lanraragi.reader.reading.ArchiveProgressOutbox
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals

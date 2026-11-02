@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import com.lanraragi.reader.cover.StoredCoverFetcher
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.gallery.ReaderPageCache
+import com.lanraragi.reader.reading.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.PageThumbnailCache
 import okio.Path.Companion.toOkioPath

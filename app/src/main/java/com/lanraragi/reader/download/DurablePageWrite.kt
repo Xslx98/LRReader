@@ -7,7 +7,7 @@ import java.io.IOException
 /**
  * What a page write into a **download directory** must guarantee, whoever
  * writes it: the worker, or the reader's hybrid session
- * ([com.lanraragi.reader.gallery.HybridPageStore]) writing into the same
+ * ([com.lanraragi.reader.reading.HybridPageStore]) writing into the same
  * directory (audit 2026-10-06c REL-04).
  *
  * The worker's resume branch skips any page with a valid header and a

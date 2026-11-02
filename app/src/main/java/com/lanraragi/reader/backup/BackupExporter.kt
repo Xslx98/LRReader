@@ -104,7 +104,7 @@ class BackupExporter(
 
         /**
          * `reading_progress` holds `<profileId>:<arcid>` → page and `…_ts` → saved-at seconds
-         * ([com.lanraragi.reader.gallery.LocalReadingProgress]); a not yet migrated bare arcid
+         * ([com.lanraragi.reader.reading.LocalReadingProgress]); a not yet migrated bare arcid
          * key is exported without a profile.
          */
         fun exportReadingProgress(prefs: SharedPreferences): List<BackupReadingProgress> {

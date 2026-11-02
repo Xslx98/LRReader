@@ -10,10 +10,10 @@
 package com.lanraragi.reader.ui.gallery
 
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.gallery.ReadingContext
-import com.lanraragi.reader.gallery.ReadingContextStore
-import com.lanraragi.reader.gallery.ReadingProgressSyncer
-import com.lanraragi.reader.gallery.TankPageMath
+import com.lanraragi.reader.reading.ReadingContext
+import com.lanraragi.reader.reading.ReadingContextStore
+import com.lanraragi.reader.reading.ReadingProgressSyncer
+import com.lanraragi.reader.reading.TankPageMath
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 
 /**

@@ -47,9 +47,9 @@ import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.ArchiveCoverChangedEvent
-import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.reading.GalleryProvider2
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.TankGalleryProvider
+import com.lanraragi.reader.reading.TankGalleryProvider
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.ui.GalleryActivity

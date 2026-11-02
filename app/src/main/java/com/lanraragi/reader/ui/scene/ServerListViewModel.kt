@@ -7,8 +7,8 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.ui.ContinueReadingShortcut
-import com.lanraragi.reader.gallery.ArchiveProgressOutbox
-import com.lanraragi.reader.gallery.LocalReadingProgress
+import com.lanraragi.reader.reading.ArchiveProgressOutbox
+import com.lanraragi.reader.reading.LocalReadingProgress
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.tankoubon.TankRecentStore
 import com.lanraragi.reader.tankoubon.TankTagOutbox

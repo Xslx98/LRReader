@@ -5,8 +5,8 @@ import androidx.room.withTransaction
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DailyReadingAggregate
-import com.lanraragi.reader.gallery.ReadingSessionEnd
-import com.lanraragi.reader.gallery.ReadingSessionEvents
+import com.lanraragi.reader.reading.ReadingSessionEnd
+import com.lanraragi.reader.reading.ReadingSessionEvents
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 

@@ -173,7 +173,7 @@ class LRReaderApplication : SceneApplication() {
         trace("LRRApp.Settings.init") { Settings.initialize(this) }
         // Single-archive progress PUTs that failed are kept here until the
         // network returns (audit 2026-10-04 C20); flushed below.
-        com.lanraragi.reader.gallery.ArchiveProgressOutbox.install(this)
+        com.lanraragi.reader.reading.ArchiveProgressOutbox.install(this)
         // Tank tag re-materializations a member tag edit could not finish
         // (audit 2026-10-04 REL-24); flushed with the progress outbox.
         com.lanraragi.reader.tankoubon.TankTagOutbox.install(this)
@@ -211,8 +211,8 @@ class LRReaderApplication : SceneApplication() {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                     resolvedId = activeProfile.id
                     // Pre-C37 progress was keyed by arcid alone: it belongs to this profile.
-                    com.lanraragi.reader.gallery.LocalReadingProgress.migrateLegacy(
-                        com.lanraragi.reader.gallery.LocalReadingProgress.prefs(this@LRReaderApplication),
+                    com.lanraragi.reader.reading.LocalReadingProgress.migrateLegacy(
+                        com.lanraragi.reader.reading.LocalReadingProgress.prefs(this@LRReaderApplication),
                         activeProfile.id,
                     )
                 } else {
@@ -283,7 +283,7 @@ class LRReaderApplication : SceneApplication() {
         // per-event work no-ops unless a widget instance is actually placed.
         com.lanraragi.reader.appwidget.ContinueReadingWidget.install()
         // Keeps the history snapshot's progress at where sessions end (A20).
-        com.lanraragi.reader.gallery.ReadingSnapshotRecorder.install()
+        com.lanraragi.reader.reading.ReadingSnapshotRecorder.install()
 
         // Daily reading aggregate rides the same seam (issue #20): one row per
         // (day x profile), accumulating history for future trend features.
@@ -326,7 +326,7 @@ class LRReaderApplication : SceneApplication() {
             ServiceRegistry.networkModule.networkMonitor.isAvailableFlow
                 .filter { it }
                 .collect {
-                    com.lanraragi.reader.gallery.ArchiveProgressOutbox.flushToServers()
+                    com.lanraragi.reader.reading.ArchiveProgressOutbox.flushToServers()
                     com.lanraragi.reader.tankoubon.TankTagOutbox.flushToServers()
                 }
         }

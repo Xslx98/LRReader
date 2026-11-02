@@ -6,9 +6,9 @@ import androidx.lifecycle.LifecycleCoroutineScope
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.gallery.TankGalleryProvider
-import com.lanraragi.reader.gallery.TankSessionSeed
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.TankGalleryProvider
+import com.lanraragi.reader.reading.TankSessionSeed
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.widget.StampOverlayView

@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
  * milliseconds into the JSON field, which fed the reading-progress
  * reconciler a timestamp ~1000x in the future and made a stale snapshot
  * beat a genuinely-newer local save (defended downstream by
- * [com.lanraragi.reader.gallery.ReadingProgressReconciler.normalizeEpochSeconds],
+ * [com.lanraragi.reader.reading.ReadingProgressReconciler.normalizeEpochSeconds],
  * which stays as pure defense for rows persisted by older versions).
  */
 @RunWith(RobolectricTestRunner::class)

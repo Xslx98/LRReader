@@ -43,8 +43,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.util.concurrent.TimeUnit
-import com.lanraragi.reader.gallery.ArchiveProgressOutbox
-import com.lanraragi.reader.gallery.LocalReadingProgress
+import com.lanraragi.reader.reading.ArchiveProgressOutbox
+import com.lanraragi.reader.reading.LocalReadingProgress
 import com.lanraragi.reader.server.ServerCapabilityCache
 
 /**

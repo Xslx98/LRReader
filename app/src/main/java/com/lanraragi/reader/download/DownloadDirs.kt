@@ -19,7 +19,7 @@ package com.lanraragi.reader.download
 import androidx.core.net.toUri
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.gallery.GalleryProvider2
+import com.lanraragi.reader.reading.GalleryProvider2
 import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.storage.StorageFile
@@ -31,7 +31,7 @@ import java.util.Locale
  *
  * The original EhViewer DownloadDirs instance class (image cache + per-archive
  * state) has been removed: LANraragi's image flow goes through
- * [com.lanraragi.reader.gallery.LRRGalleryProvider] /
+ * [com.lanraragi.reader.reading.LRRGalleryProvider] /
  * [com.lanraragi.reader.download.LRRDownloadWorker] and never created a
  * DownloadDirs instance. Only the directory + filename helpers survive.
  */

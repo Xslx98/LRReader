@@ -57,10 +57,10 @@ import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.cover.TankCoverCacheStamp
-import com.lanraragi.reader.gallery.ReadingContext
-import com.lanraragi.reader.gallery.ReadingContextStore
-import com.lanraragi.reader.gallery.HistoryTankRedirect
-import com.lanraragi.reader.gallery.TankSessionRouter
+import com.lanraragi.reader.reading.ReadingContext
+import com.lanraragi.reader.reading.ReadingContextStore
+import com.lanraragi.reader.reading.HistoryTankRedirect
+import com.lanraragi.reader.reading.TankSessionRouter
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.BatchBarAnimator
 import com.lanraragi.reader.ui.scene.ListMultiSelectHelper

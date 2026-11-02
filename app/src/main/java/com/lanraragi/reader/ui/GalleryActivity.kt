@@ -38,11 +38,11 @@ import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.ForegroundReading
-import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.gallery.LRRGalleryProvider
-import com.lanraragi.reader.gallery.NextArchiveResolver
-import com.lanraragi.reader.gallery.ReadingSessionTracker
+import com.lanraragi.reader.reading.ForegroundReading
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.LRRGalleryProvider
+import com.lanraragi.reader.reading.NextArchiveResolver
+import com.lanraragi.reader.reading.ReadingSessionTracker
 import com.lanraragi.reader.ui.gallery.GalleryImageOperations
 import com.lanraragi.reader.ui.gallery.GalleryInputHandler
 import com.lanraragi.reader.ui.gallery.GalleryMenuHelper
@@ -76,7 +76,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
         const val KEY_ACTION = "action"
 
-        /** Parcelable [com.lanraragi.reader.gallery.TankSessionSeed] for [ACTION_TANK]. */
+        /** Parcelable [com.lanraragi.reader.reading.TankSessionSeed] for [ACTION_TANK]. */
         const val KEY_TANK_SEED = "tank_seed"
         const val KEY_FILENAME = "filename"
         /**

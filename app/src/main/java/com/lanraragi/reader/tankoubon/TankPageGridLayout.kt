@@ -1,6 +1,6 @@
 package com.lanraragi.reader.tankoubon
 
-import com.lanraragi.reader.gallery.TankPageMath
+import com.lanraragi.reader.reading.TankPageMath
 
 /**
  * Pure layout of the tank detail page's continuous page grid (spec

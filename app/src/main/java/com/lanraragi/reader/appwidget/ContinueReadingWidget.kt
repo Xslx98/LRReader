@@ -14,8 +14,8 @@ import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
-import com.lanraragi.reader.gallery.ReadingSessionEnd
-import com.lanraragi.reader.gallery.ReadingSessionEvents
+import com.lanraragi.reader.reading.ReadingSessionEnd
+import com.lanraragi.reader.reading.ReadingSessionEvents
 import com.lanraragi.reader.ui.ContinueReadingShortcut
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.domain.Archive

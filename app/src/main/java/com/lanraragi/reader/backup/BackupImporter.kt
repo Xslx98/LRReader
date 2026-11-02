@@ -15,7 +15,7 @@ import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.dao.SearchHistoryEntry
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.dao.TankDownloadGroup
-import com.lanraragi.reader.gallery.LocalReadingProgress
+import com.lanraragi.reader.reading.LocalReadingProgress
 
 /**
  * Merges a backup into this device's data (audit C05, ruling R18). Nothing local

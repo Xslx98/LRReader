@@ -149,7 +149,7 @@ class RedactorTest {
     fun stackFrames_andClassNames_surviveUnchanged() {
         val trace = listOf(
             "java.lang.IllegalStateException: Page 3 out of bounds (size=2) for abc123",
-            "\tat com.lanraragi.reader.gallery.TankMemberSource.load(TankMemberSource.kt:193)",
+            "\tat com.lanraragi.reader.reading.TankMemberSource.load(TankMemberSource.kt:193)",
             "\tat com.lanraragi.reader.Foo\$bar\$1.invokeSuspend(Foo.kt:12)",
             "\tat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)",
             "\tat java.base/java.lang.Thread.run(Thread.java:833)",

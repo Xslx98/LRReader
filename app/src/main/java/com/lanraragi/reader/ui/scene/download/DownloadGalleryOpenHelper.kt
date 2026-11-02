@@ -23,8 +23,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadState
-import com.lanraragi.reader.gallery.ReadingContext
-import com.lanraragi.reader.gallery.ReadingContextStore
+import com.lanraragi.reader.reading.ReadingContext
+import com.lanraragi.reader.reading.ReadingContextStore
 import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.ui.GalleryOpenHelper

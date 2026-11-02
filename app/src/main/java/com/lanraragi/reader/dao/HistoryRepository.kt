@@ -150,7 +150,7 @@ class HistoryRepository(
     /**
      * Zero the archive snapshot's progress pair (`progress`/`lastreadtime`)
      * for [arcid] on [profileId]. Part of the "reset reading progress" flow:
-     * the offline reconciler ([com.lanraragi.reader.gallery.ReadingProgressReconciler])
+     * the offline reconciler ([com.lanraragi.reader.reading.ReadingProgressReconciler])
      * reads this snapshot, so leaving the old pair in place would resurrect
      * the pre-reset resume position. Rows that are missing or fail to decode
      * are skipped.
