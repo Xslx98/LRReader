@@ -4,22 +4,12 @@ import android.app.Activity
 import android.os.CountDownTimer
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.event.ArchiveDeletedEvent
+import com.lanraragi.reader.archive.ArchiveDeletion
 import com.lanraragi.reader.settings.PrivacySettings
-import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.server.LRRClientProvider
-import com.lanraragi.reader.server.resolveSourceBaseUrl
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Two-stage confirmation dialog for deleting an archive from the LANraragi server.
@@ -115,42 +105,21 @@ object DeleteArchiveHelper {
     ) {
         if (arcid.isEmpty()) return
 
-        val componentActivity = activity as ComponentActivity
-        // App-scoped: once the DELETE is sent, a rotation must not cancel it
-        // before ArchiveDeletedEvent is posted (lists would keep the row).
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                // Resolve the owning server from the archive's source profile,
-                // not the active profile (see show()'s serverProfileId doc).
-                val baseUrl = resolveSourceBaseUrl(
-                    serverProfileId,
-                    ServiceRegistry.dataModule.profileLookupCache,
-                )
-                LRRArchiveApi.deleteArchive(
-                    LRRClientProvider.getClient(),
-                    baseUrl,
-                    arcid
-                )
-
-                AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(arcid))
-                withContext(Dispatchers.Main) {
-                    if (!componentActivity.isFinishing && !componentActivity.isDestroyed) {
-                        callback?.onDeleteSuccess(title)
-                    }
-                }
-            } catch (ce: CancellationException) {
-                // Lifecycle teardown cancelled the IO call; not a delete failure.
-                throw ce
-            } catch (e: Exception) {
-                Log.e("DeleteArchiveHelper", "Delete archive failed", e)
-                withContext(Dispatchers.Main) {
-                    if (!componentActivity.isFinishing && !componentActivity.isDestroyed) {
-                        Toast.makeText(
-                            componentActivity,
-                            componentActivity.getString(R.string.lrr_delete_failed, e.message),
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
+        // ArchiveDeletion runs on a process scope: a rotation cannot cancel
+        // the DELETE before the deleted event is posted.
+        ArchiveDeletion.default.deleteAsync(serverProfileId, arcid) { result ->
+            val error = result.exceptionOrNull()
+            if (error != null) Log.e("DeleteArchiveHelper", "Delete archive failed", error)
+            activity.runOnUiThread {
+                if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+                if (error == null) {
+                    callback?.onDeleteSuccess(title)
+                } else {
+                    Toast.makeText(
+                        activity,
+                        activity.getString(R.string.lrr_delete_failed, error.message),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
