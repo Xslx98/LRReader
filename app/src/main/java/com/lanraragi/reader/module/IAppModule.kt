@@ -17,25 +17,14 @@ interface IAppModule {
      */
     fun initialize()
 
-    // --- Global Stuff Registry (ephemeral cross-scene handoff) ---
+    // --- Global Stuff Registry (ephemeral handoff) ---
+    // Only ContentLayout's saved-rows handoff across instance-state save and
+    // restore still uses it; new code passes state through scene arguments
+    // or a ViewModel.
 
+    /** Registers [o] (weakly held) and returns its id. */
     fun putGlobalStuff(o: Any): Int
 
-    fun containGlobalStuff(id: Int): Boolean
-
-    fun getGlobalStuff(id: Int): Any?
-
+    /** Removes and returns the object registered as [id], if still alive. */
     fun removeGlobalStuff(id: Int): Any?
-
-    fun removeGlobalStuff(o: Any)
-
-    // --- Temp Cache (ephemeral keyed storage) ---
-
-    fun putTempCache(key: String, o: Any): String
-
-    fun containTempCache(key: String): Boolean
-
-    fun getTempCache(key: String): Any?
-
-    fun removeTempCache(key: String): Any?
 }

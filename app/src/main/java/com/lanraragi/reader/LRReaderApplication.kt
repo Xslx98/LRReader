@@ -711,44 +711,14 @@ class LRReaderApplication : SceneApplication() {
         ProcessRebirth.trigger(this)
     }
 
-    // --- GlobalStuff delegation ---
+    // --- GlobalStuff delegation (ContentLayout's saved-rows handoff only) ---
 
     fun putGlobalStuff(o: Any): Int {
         return ServiceRegistry.appModule.putGlobalStuff(o)
     }
 
-    fun containGlobalStuff(id: Int): Boolean {
-        return ServiceRegistry.appModule.containGlobalStuff(id)
-    }
-
-    fun getGlobalStuff(id: Int): Any? {
-        return ServiceRegistry.appModule.getGlobalStuff(id)
-    }
-
     fun removeGlobalStuff(id: Int): Any? {
         return ServiceRegistry.appModule.removeGlobalStuff(id)
-    }
-
-    fun removeGlobalStuff(o: Any) {
-        ServiceRegistry.appModule.removeGlobalStuff(o)
-    }
-
-    // --- TempCache delegation ---
-
-    fun putTempCache(key: String, o: Any): String {
-        return ServiceRegistry.appModule.putTempCache(key, o)
-    }
-
-    fun containTempCache(key: String): Boolean {
-        return ServiceRegistry.appModule.containTempCache(key)
-    }
-
-    fun getTempCache(key: String): Any? {
-        return ServiceRegistry.appModule.getTempCache(key)
-    }
-
-    fun removeTempCache(key: String): Any? {
-        return ServiceRegistry.appModule.removeTempCache(key)
     }
 
     /**

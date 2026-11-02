@@ -33,14 +33,7 @@ fun stubAppModule(context: Context): IAppModule = object : IAppModule {
     override fun getContext(): Context = context
     override fun initialize() {}
     override fun putGlobalStuff(o: Any): Int = 0
-    override fun containGlobalStuff(id: Int): Boolean = false
-    override fun getGlobalStuff(id: Int): Any? = null
     override fun removeGlobalStuff(id: Int): Any? = null
-    override fun removeGlobalStuff(o: Any) {}
-    override fun putTempCache(key: String, o: Any): String = key
-    override fun containTempCache(key: String): Boolean = false
-    override fun getTempCache(key: String): Any? = null
-    override fun removeTempCache(key: String): Any? = null
 }
 
 private fun unsupported(): Nothing = throw UnsupportedOperationException()
