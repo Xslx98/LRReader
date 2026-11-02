@@ -10490,9 +10490,6 @@ PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup;-><init>()V
 PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup;->createProvider(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/lanraragi/reader/domain/Archive;Lcom/lanraragi/reader/reading/TankSessionSeed;)Lcom/lanraragi/reader/reading/GalleryProvider2;
 PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup;->recordHistory(Lcom/lanraragi/reader/domain/Archive;Lcom/lanraragi/reader/reading/TankSessionSeed;)V
 PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup;->startReadingSession(Lcom/lanraragi/reader/reading/ReadingSessionTracker;Lcom/lanraragi/reader/domain/Archive;Lcom/lanraragi/reader/reading/TankSessionSeed;ILkotlin/jvm/functions/Function0;)V
-PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup$recordHistory$1$1;-><init>(Lcom/lanraragi/reader/domain/Archive;Lkotlin/coroutines/Continuation;)V
-PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup$recordHistory$1$1;->create(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Lkotlin/coroutines/Continuation;
-PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup$recordHistory$1$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
 PLcom/lanraragi/reader/ui/reader/ReaderStampsController;-><clinit>()V
 PLcom/lanraragi/reader/ui/reader/ReaderStampsController;-><init>(Lkotlinx/coroutines/CoroutineScope;Lcom/lanraragi/reader/ui/reader/StampsBackend;Lkotlin/jvm/functions/Function0;)V
 PLcom/lanraragi/reader/ui/reader/ReaderStampsController;->getSessionVisible()Z

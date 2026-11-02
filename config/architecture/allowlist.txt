@@ -22,7 +22,6 @@ D8a com/lanraragi/reader/ui/scene/ServerConfigViewModel.kt
 D8a com/lanraragi/reader/ui/scene/ServerListViewModel.kt
 D8b com/lanraragi/reader/ui/reader/GalleryImageOperations.kt
 D8b com/lanraragi/reader/ui/reader/GalleryStampOps.kt
-D8b com/lanraragi/reader/ui/reader/ReaderSessionSetup.kt
 D8b com/lanraragi/reader/ui/reader/ReaderStampsController.kt
 D8b com/lanraragi/reader/ui/reader/StampsBackend.kt
 D8b com/lanraragi/reader/ui/reader/TankStampsBackend.kt
@@ -44,5 +43,4 @@ D8c com/lanraragi/reader/ui/ContinueReadingShortcut.kt
 D8c com/lanraragi/reader/ui/SetSecurityActivity.kt
 D8c com/lanraragi/reader/ui/fragment/AdvancedFragment.kt
 D8c com/lanraragi/reader/ui/fragment/DownloadFragment.kt
-D8c com/lanraragi/reader/ui/reader/ReaderSessionSetup.kt
 D8c com/lanraragi/reader/ui/scene/ServerListViewModel.kt
