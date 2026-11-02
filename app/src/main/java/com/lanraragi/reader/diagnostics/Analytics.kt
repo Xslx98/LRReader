@@ -2,7 +2,7 @@
  * Analytics stub for LRReader.
  * Firebase has been removed. All analytics methods are no-ops.
  */
-package com.lanraragi.reader
+package com.lanraragi.reader.diagnostics
 
 import android.util.Log
 

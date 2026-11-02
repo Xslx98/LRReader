@@ -1,7 +1,7 @@
 package com.lanraragi.framework.lib.image
 
 import android.util.Log
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.diagnostics.DiagLog
 
 /**

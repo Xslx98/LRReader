@@ -16,7 +16,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.UpdateSettings
 import com.lanraragi.reader.updater.ApkDownloader

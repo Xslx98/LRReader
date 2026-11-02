@@ -1,7 +1,7 @@
 package com.lanraragi.reader.updater
 
 import android.util.Log
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.UpdateSettings

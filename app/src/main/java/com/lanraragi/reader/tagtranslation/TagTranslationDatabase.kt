@@ -19,7 +19,7 @@ import androidx.annotation.VisibleForTesting
 import android.content.Context
 import android.util.Base64
 import android.util.Pair
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry

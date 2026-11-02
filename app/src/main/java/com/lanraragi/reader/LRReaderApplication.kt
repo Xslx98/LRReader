@@ -62,6 +62,7 @@ import java.io.File
 import java.lang.ref.WeakReference
 import java.util.Locale
 import com.lanraragi.reader.diagnostics.Crash
+import com.lanraragi.reader.diagnostics.Analytics
 
 class LRReaderApplication : SceneApplication() {
 

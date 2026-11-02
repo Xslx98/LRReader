@@ -20,7 +20,7 @@ import android.content.Context
 import android.os.Looper
 import android.util.Log
 import androidx.core.content.edit
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel

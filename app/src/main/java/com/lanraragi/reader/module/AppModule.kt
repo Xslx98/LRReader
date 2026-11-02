@@ -2,7 +2,7 @@ package com.lanraragi.reader.module
 
 import android.content.Context
 import android.util.Log
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.diagnostics.Crash
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.Settings
