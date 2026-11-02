@@ -86,12 +86,16 @@ class QuickSearchViewModel : ViewModel() {
      * DiffUtil collector turns the emission into the removal notification.
      * On DB failure the list is reloaded from Room so the optimistic removal
      * is rolled back and the UI stays consistent with what actually persisted.
+     * The delete finishes even if the screen closes (non-cancellable, like
+     * [addQuickSearch]): this ViewModel is cleared when its scene is popped.
      */
     fun deleteQuickSearch(quickSearch: QuickSearch) {
         _quickSearches.value = _quickSearches.value.filter { it.id != quickSearch.id }
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) { ServiceRegistry.dataModule.quickSearchRepository.delete(quickSearch) }
+                withContext(Dispatchers.IO + NonCancellable) {
+                    ServiceRegistry.dataModule.quickSearchRepository.delete(quickSearch)
+                }
                 _uiEvent.tryEmit(QuickSearchUiEvent.Deleted(quickSearch))
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete quick search", e)
@@ -111,7 +115,8 @@ class QuickSearchViewModel : ViewModel() {
 
     /**
      * Moves a quick search item from [fromPosition] to [toPosition] and
-     * persists the new ordering in the database.
+     * persists the new ordering in the database. The write finishes even if
+     * the screen closes right after the drag (non-cancellable).
      */
     fun moveQuickSearch(fromPosition: Int, toPosition: Int) {
         if (fromPosition == toPosition) return
@@ -130,7 +135,7 @@ class QuickSearchViewModel : ViewModel() {
         // Persist reorder to database
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) {
+                withContext(Dispatchers.IO + NonCancellable) {
                     ServiceRegistry.dataModule.quickSearchRepository.move(fromPosition, toPosition)
                 }
             } catch (e: Exception) {
