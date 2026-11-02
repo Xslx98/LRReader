@@ -28,7 +28,6 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -194,7 +193,9 @@ class GalleryListViewModelBatchTest {
         assertEquals(listOf(ARC_A, ARC_C), result.succeeded)
         assertEquals(1, result.failed.size)
         assertEquals(ARC_B, result.failed[0].arcid)
-        assertNull("batchProgress should be back to idle", vm.batchProgress.value)
+        // The result is emitted inside the batch's try and progress resets in its
+        // finally, so a collector may see the result first: wait for idle.
+        withTimeout(5_000) { vm.batchProgress.first { it == null } }
     }
 
     @Test
