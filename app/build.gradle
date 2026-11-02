@@ -241,6 +241,101 @@ afterEvaluate {
     tasks.matching { it.name == "preBuild" }.configureEach { dependsOn("verifyNoBaseUrlConcat") }
 }
 
+// 2026-11 architecture review: package dependency rules D1–D10 live in
+// config/architecture/rules.txt, existing violations in allowlist.txt (which
+// scripts/ci/check-baselines.sh keeps from growing). A fixed violation must
+// leave the allowlist in the same commit, so a stale line fails too. Same-package
+// references need no import, so the check under-reports and never over-reports.
+// -ParchWriteAllowlist rewrites the allowlist from the current violations; it
+// exists for the initial seed, and CI rejects any growth it would cause.
+tasks.register("verifyArchitecture") {
+    group = "verification"
+    description = "Fails on package-dependency violations not in config/architecture/allowlist.txt."
+
+    def srcDir = file("src/main/java")
+    def rulesFile = rootProject.file("config/architecture/rules.txt")
+    def allowFile = rootProject.file("config/architecture/allowlist.txt")
+    def writeAllowlist = project.hasProperty("archWriteAllowlist")
+    inputs.dir(srcDir)
+    inputs.files(rulesFile, allowFile)
+    inputs.property("writeAllowlist", writeAllowlist)
+    def marker = layout.buildDirectory.file("architecture/verified")
+    outputs.file(marker)
+
+    doLast {
+        def rules = rulesFile.readLines()
+            .findAll { it.trim() && !it.trim().startsWith('#') }
+            .collect { String line ->
+                def f = line.split(/\s+\|\s+/)*.trim()
+                if (f.size() != 5 || !(f[2] in ['import', 'text'])) {
+                    throw new GradleException("Malformed rule in ${rulesFile.name}: $line")
+                }
+                [id: f[0], importer: ~f[1], kind: f[2], forbidden: ~f[3], except: f[4] == '-' ? null : ~f[4]]
+            }
+        def allowed = allowFile.exists()
+            ? allowFile.readLines().collect { it.trim() }.findAll { it && !it.startsWith('#') } as Set
+            : [] as Set
+        def found = new TreeSet<String>()
+        def srcPath = srcDir.toPath()
+        fileTree(srcDir) { include "**/*.kt" }.each { File f ->
+            def text = f.getText('UTF-8')
+            def pm = text =~ /(?m)^package\s+([\w.]+)/
+            if (!pm.find()) return
+            def pkg = pm.group(1)
+            def rel = srcPath.relativize(f.toPath()).toString().replace('\\', '/')
+            def imports = (text =~ /(?m)^import\s+([\w.]+(?:\.\*)?)/).collect { it[1] }
+            List<String> codeLines = null
+            rules.each { r ->
+                if (!r.importer.matcher(pkg).find()) return
+                boolean hit
+                if (r.kind == 'text') {
+                    if (codeLines == null) {
+                        codeLines = text.readLines().findAll { String l ->
+                            def t = l.trim()
+                            !(t.startsWith('//') || t.startsWith('*') || t.startsWith('/*'))
+                        }
+                    }
+                    hit = codeLines.any { r.forbidden.matcher(it).find() }
+                } else {
+                    hit = imports.any { String i ->
+                        r.forbidden.matcher(i).find() && !(r.except != null && r.except.matcher(i).matches())
+                    }
+                }
+                if (hit) found << "${r.id} ${rel}".toString()
+            }
+        }
+        if (writeAllowlist) {
+            allowFile.text = "# Existing violations of config/architecture/rules.txt: \"<rule> <path under app/src/main/java>\".\n" +
+                "# This list may only shrink; fixing a violation means deleting its line.\n" +
+                found.join("\n") + "\n"
+        } else {
+            def violations = found.findAll { !allowed.contains(it) }
+            def stale = allowed.findAll { !found.contains(it) }.sort()
+            if (violations || stale) {
+                def msg = new StringBuilder()
+                if (violations) {
+                    msg << "New architecture violations (rules and reasons: config/architecture/rules.txt):\n  "
+                    msg << violations.join("\n  ")
+                }
+                if (stale) {
+                    msg << (violations ? "\n" : "")
+                    msg << "Fixed violations still in config/architecture/allowlist.txt, delete these lines:\n  "
+                    msg << stale.join("\n  ")
+                }
+                throw new GradleException(msg.toString())
+            }
+        }
+        def out = marker.get().asFile
+        out.parentFile.mkdirs()
+        out.text = "${found.size()} allowlisted violations\n"
+    }
+}
+
+tasks.named("check") { dependsOn("verifyArchitecture") }
+afterEvaluate {
+    tasks.matching { it.name == "preBuild" }.configureEach { dependsOn("verifyArchitecture") }
+}
+
 // Audit 2026-10-06d REL-04: a release crash report is retraced with the
 // mapping.txt of the exact build that shipped, and a rebuild of the tag is not
 // guaranteed to reproduce it. Every R8 release build copies its mapping to a

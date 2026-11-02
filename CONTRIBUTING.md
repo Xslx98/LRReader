@@ -54,13 +54,17 @@ One Gradle module, `app/`:
 - `com.lanraragi.reader.*` — application code, 100% Kotlin.
   - `client/api/` — every LANraragi REST call and its `@Serializable` DTOs.
   - `dao/` — Room entities, DAOs and migrations (`AppDatabase` is the only database).
-  - `download/` — the download service; other packages use the `DownloadManager` facade only.
+  - `download/` — the download engine; other packages go through `DownloadManager`
+    and never use `DownloadRepository`, `DownloadScheduler` or `DownloadEventBus`.
   - `ui/scene/` — screens (scenes) and their ViewModels.
 - `com.lanraragi.framework.*` — the reader's OpenGL ES view system and page
   gallery (`lib/glview`, `lib/glgallery`), the scene stack (`scene`) and a few
   widgets, inherited from EhViewer and converted to Kotlin. Its render, layout
   and touch paths run every frame: no allocations, boxing or lambdas there.
 - `app/schemas/` — exported Room schemas; CI fails when they drift.
+- `config/architecture/rules.txt` — which package may depend on which, with the
+  reason for each rule. `verifyArchitecture` (part of every build) enforces it;
+  `allowlist.txt` lists existing violations and may only shrink.
 
 ## Code conventions
 
@@ -83,11 +87,19 @@ One Gradle module, `app/`:
 
 ### Architecture
 
-- Every functional screen has a ViewModel; scenes observe `StateFlow` /
-  `SharedFlow` and hold no business logic.
+- Every functional screen has a ViewModel scoped to the scene
+  (`ViewModelProvider(this)`); scenes observe `StateFlow` / `SharedFlow` and
+  hold no business logic.
 - UI code reaches persistence through the repositories on
   `ServiceRegistry.dataModule`, not through `LegacyDb` directly.
-- New singletons go into a `ServiceRegistry` module, not `LRReaderApplication`.
+- Network and database work that is not screen state (membership changes,
+  deletes, sync) belongs to a service in its concept's package (`tankoubon`,
+  `download`, …), which owns any long-lived scope it needs. UI code never
+  launches on `ServiceRegistry.coroutineModule.ioScope`.
+- The reader is the deliberate exception to "every screen has a ViewModel":
+  `GalleryActivity` and its `GalleryProvider2` subclasses own the session.
+- New singletons go into a `ServiceRegistry` module, not `LRReaderApplication`
+  or a top-level `object` holding state (CI caps their number).
 - Caches implement `Cacheable` and register themselves.
 - Lists use `DiffUtil` or `notifyItem*()`, never `notifyDataSetChanged()`.
 - Keep the existing look (theme attributes, `RoundSideRectDrawable`); do not
