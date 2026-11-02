@@ -1,0 +1,40 @@
+# Top-level packages, checked by `./gradlew verifyArchitecture`: a source file whose package is
+# not under one of these fails the build. Adding a package is a design decision, so it gets a
+# line here (with its purpose) in the same change and, if the package has tests worth a floor,
+# a line in scripts/ci/coverage-floor.txt. This file is the package table CONTRIBUTING.md
+# points to.
+#
+# Format: package | purpose
+
+com.lanraragi.reader               | composition root: Application, ServiceRegistry, Settings facade
+com.lanraragi.reader.appwidget     | home-screen widget (component name is held by launchers: never rename)
+com.lanraragi.reader.archive       | archive rules and services: search source, batch writes, deletion
+com.lanraragi.reader.backup        | backup export/import and download-list relinking
+com.lanraragi.reader.category      | LANraragi category rules and membership service
+com.lanraragi.reader.client        | transport: client.api (LRR*Api, interceptors, DTOs) and client.exception
+com.lanraragi.reader.cover         | cover loading, storage and cache stamps
+com.lanraragi.reader.dao           | Room database, repositories, entity mapping, persisted types
+com.lanraragi.reader.diagnostics   | crash log, diagnostic ring buffer, telemetry
+com.lanraragi.reader.domain        | Archive and other models with pure parsing (no I/O)
+com.lanraragi.reader.download      | download engine; reached from outside through DownloadManager only
+com.lanraragi.reader.event         | app-wide event bus and its event types
+com.lanraragi.reader.module        | ServiceRegistry modules (app, client, coroutine, data, network)
+com.lanraragi.reader.preference    | app-specific Preference subclasses
+com.lanraragi.reader.reading       | reading pipeline: providers, page cache, progress, tank sessions
+com.lanraragi.reader.security      | app lock credentials
+com.lanraragi.reader.server        | server profiles, session, ServerConnection, trust, capability probes
+com.lanraragi.reader.settings      | modular settings objects (plain preferences, no UI)
+com.lanraragi.reader.shortcuts     | launcher shortcuts and ShortcutsActivity (never rename)
+com.lanraragi.reader.stats         | reading statistics calculators and recorders
+com.lanraragi.reader.storage       | file/SAF storage abstraction and .nomedia helpers
+com.lanraragi.reader.tagtranslation | tag translation dataset and lookups
+com.lanraragi.reader.tankoubon     | tankoubon rules, repository and membership service
+com.lanraragi.reader.ui            | Activities, Scenes + ViewModels, Binders/Controllers, dialogs
+com.lanraragi.reader.updater       | in-app update: GitHub release lookup, APK download and checks
+com.lanraragi.reader.util          | leaf utilities (no other app imports)
+com.lanraragi.reader.widget        | app-owned views (ContentLayout, LoadImageView, drawer, list)
+com.lanraragi.framework.drawable   | generic drawables
+com.lanraragi.framework.lib        | GL reader engine (glgallery, glview) and image decoding; no per-frame allocation
+com.lanraragi.framework.preference | generic Preference widgets
+com.lanraragi.framework.scene      | Scene stack and StageActivity
+com.lanraragi.framework.widget     | generic views
