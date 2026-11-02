@@ -1,9 +1,8 @@
 package com.lanraragi.reader.reading
 
 import android.content.Context
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.server.resolveSourceBaseUrl
+import com.lanraragi.reader.server.ServerConnections
 import java.io.IOException
 
 /**
@@ -90,10 +89,8 @@ object TankSessionRouter {
         profileId: Long,
         anchorArcid: String?,
     ): TankLaunch {
-        val url = resolveSourceBaseUrl(profileId, ServiceRegistry.dataModule.profileLookupCache)
-        val full = LRRTankoubonApi.getTankoubonFull(
-            ServiceRegistry.networkModule.okHttpClient, url, tankId
-        ).result
+        val conn = ServerConnections.forProfile(profileId)
+        val full = LRRTankoubonApi.getTankoubonFull(conn.client, conn.baseUrl, tankId).result
         val byId = full.fullData.associateBy { it.arcid }
         val members = full.archives.mapNotNull { id ->
             byId[id]?.let { TankMemberSeed(it.arcid, it.title, it.pagecount) }
