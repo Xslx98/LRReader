@@ -10,7 +10,6 @@
 package com.lanraragi.reader.download
 
 import android.content.Context
-import android.content.Intent
 import android.content.res.Resources
 import com.lanraragi.reader.R
 import com.lanraragi.reader.domain.Archive
@@ -38,19 +37,10 @@ object TankFillDispatcher {
         val queued: Int get() = toAdd.size + toRestart.size
     }
 
-    /** Pure split of [members] by their current download state. */
+    /** Pure split of [members] by their current download state ([DownloadRequests.plan]). */
     fun plan(members: List<Archive>, stateOf: (String) -> DownloadState): Plan {
-        val toAdd = ArrayList<Archive>()
-        val toRestart = ArrayList<String>()
-        var alreadyLocal = 0
-        for (member in members) {
-            when (DownloadEntryGate.disposition(stateOf(member.arcid))) {
-                DownloadEntryGate.Disposition.NEW -> toAdd.add(member)
-                DownloadEntryGate.Disposition.RESTART -> toRestart.add(member.arcid)
-                DownloadEntryGate.Disposition.ALREADY_LOCAL -> alreadyLocal++
-            }
-        }
-        return Plan(toAdd, toRestart, alreadyLocal)
+        val split = DownloadRequests.plan(members, stateOf)
+        return Plan(split.toAdd, split.toRestart, split.alreadyLocal.size)
     }
 
     /**
@@ -67,16 +57,10 @@ object TankFillDispatcher {
         memberIdsInOrder: List<String>,
     ) {
         if (plan.toRestart.isNotEmpty()) {
-            val intent = Intent(context, DownloadService::class.java)
-            intent.action = DownloadService.ACTION_START_RANGE
-            intent.putStringArrayListExtra(DownloadService.KEY_ARCID_LIST, ArrayList(plan.toRestart))
-            context.startService(intent)
+            context.startService(DownloadRequests.restartIntent(context, plan.toRestart))
         }
         for (member in plan.toAdd) {
-            val intent = Intent(context, DownloadService::class.java)
-            intent.action = DownloadService.ACTION_START
-            intent.putExtra(DownloadService.KEY_ARCHIVE, member)
-            context.startService(intent)
+            context.startService(DownloadRequests.addIntent(context, member, label = null))
         }
         downloadManager.tagTankDownloadGroup(tankId, tankName, profileId, memberIdsInOrder)
     }
