@@ -1,7 +1,7 @@
 package com.lanraragi.reader.module
 
 import androidx.collection.LruCache
-import com.lanraragi.reader.FavouriteStatusRouter
+import com.lanraragi.reader.dao.FavouriteStatusRouter
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.FavoritesRepository

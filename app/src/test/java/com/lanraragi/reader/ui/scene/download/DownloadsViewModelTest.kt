@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.collection.LruCache
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.FavouriteStatusRouter
+import com.lanraragi.reader.dao.FavouriteStatusRouter
 import java.io.File
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
