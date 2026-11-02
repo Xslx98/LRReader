@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.gallery
+package com.lanraragi.reader.ui.reader
 
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRStampApi.StampData

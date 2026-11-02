@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.gallery
+package com.lanraragi.reader.ui.reader
 
 import android.content.Context
 import android.widget.ImageView

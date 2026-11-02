@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader.ui.gallery
+package com.lanraragi.reader.ui.reader
 
 import android.annotation.SuppressLint
 import android.content.Context

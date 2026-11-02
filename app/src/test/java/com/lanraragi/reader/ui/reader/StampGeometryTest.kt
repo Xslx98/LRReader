@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.gallery
+package com.lanraragi.reader.ui.reader
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

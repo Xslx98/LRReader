@@ -7,7 +7,7 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.lanraragi.reader.ui.gallery
+package com.lanraragi.reader.ui.reader
 
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.reading.ReadingContext

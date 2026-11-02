@@ -1002,7 +1002,7 @@
         errorLine1="    val isShowing: Boolean get() = root.visibility == View.VISIBLE"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/lanraragi/reader/ui/gallery/ReaderContinuationController.kt"
+            file="src/main/java/com/lanraragi/reader/ui/reader/ReaderContinuationController.kt"
             line="52"
             column="36"/>
     </issue>

@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.gallery
+package com.lanraragi.reader.ui.reader
 
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.server.LRRClientProvider
