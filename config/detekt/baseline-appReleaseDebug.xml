@@ -58,15 +58,10 @@
     <ID>EmptyFunctionBlock:SecurityScene.kt$SecurityScene${}</ID>
     <ID>EmptyFunctionBlock:ServerConfigScene.kt$ServerConfigScene.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ServerListDialogHelper.kt$ServerListDialogHelper.&lt;no name provided&gt;${}</ID>
-    <ID>EmptyFunctionBlock:SpiderQueen.kt$SpiderQueen${}</ID>
     <ID>EmptyFunctionBlock:TagEditDialog.kt$TagEditDialog.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ThumbDataContainer.kt$ThumbDataContainer${ }</ID>
     <ID>ExplicitGarbageCollectionCall:AdvancedFragment.kt$AdvancedFragment$gc()</ID>
     <ID>FunctionOnlyReturningConstant:LRRUrlOpener.kt$LRRUrlOpener$@JvmStatic fun parseUrl(url: String?): Announcer?</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun forceRequest(index: Int): Any?</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun getError(): String</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun getStartPage(): Int</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun request(index: Int): Any?</ID>
     <ID>FunctionParameterNaming:QuickSearch.kt$QuickSearch.Companion$`object`: JSONObject</ID>
     <ID>ImplicitDefaultLocale:DetailHeaderBinder.kt$DetailHeaderBinder$String.format("%.0f★", archive.rating)</ID>
     <ID>ImplicitDefaultLocale:ReaderPageCache.kt$ReaderPageCache$String.format( "Unknown image format: %02X %02X %02X %02X", header[0], header[1], header[2], header[3] )</ID>
@@ -611,10 +606,6 @@
     <ID>UnusedParameter:GalleryInputHandler.kt$GalleryInputHandler$view: View?</ID>
     <ID>UnusedParameter:LRRDownloadWorker.kt$LRRDownloadWorker$total: Int</ID>
     <ID>UnusedParameter:LRRUrlOpener.kt$LRRUrlOpener$url: String?</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$filename: String</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$index: Int</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$listener: OnSpiderListener?</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$page: Int</ID>
     <ID>UnusedPrivateMember:AppHelper.kt$AppHelper$private fun isWifiProxy(context: Context?): Boolean</ID>
     <ID>UnusedPrivateProperty:AppConfig.kt$AppConfig$private const val APP_DIRNAME = "LRReader"</ID>
     <ID>UnusedPrivateProperty:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$val context = callback.ehContext ?: return false</ID>

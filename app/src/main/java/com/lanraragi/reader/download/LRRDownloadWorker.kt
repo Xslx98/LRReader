@@ -16,7 +16,6 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.gallery.ForegroundReading
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.reader.spider.SpiderQueen
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -45,9 +44,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Downloads all pages of a LANraragi archive to the download directory.
- * Replaces SpiderQueen's MODE_DOWNLOAD for LANraragi galleries.
  *
- * Reports progress via [SpiderQueen.OnSpiderListener] so DownloadManager
+ * Reports progress via [DownloadWorkerListener] so DownloadManager
  * can update UI without any changes to its notification pipeline.
  */
 class LRRDownloadWorker(
@@ -109,7 +107,7 @@ class LRRDownloadWorker(
      */
     private lateinit var serverUrl: String
 
-    var listener: SpiderQueen.OnSpiderListener? = null
+    var listener: DownloadWorkerListener? = null
 
     /** Network-wait lifecycle, surfaced to the scheduler for notifications/banner. */
     enum class NetworkWaitEvent { WAITING, RESUMED, TIMED_OUT }

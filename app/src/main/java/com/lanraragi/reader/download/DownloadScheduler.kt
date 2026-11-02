@@ -20,8 +20,6 @@ import android.content.Context
 import android.os.Looper
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.spider.SpiderQueen
-import com.lanraragi.framework.lib.image.Image
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -496,7 +494,7 @@ internal class DownloadScheduler(
     // ═══════════════════════════════════════════════════════════
 
     /**
-     * Bridges [SpiderQueen.OnSpiderListener] callbacks from
+     * Bridges [DownloadWorkerListener] callbacks from
      * [LRRDownloadWorker] into the [DownloadEvent] sealed interface,
      * posting them to the main thread for dispatch.
      *
@@ -509,7 +507,7 @@ internal class DownloadScheduler(
     internal inner class PerTaskListener(
         private val mInfo: DownloadInfo,
         private val mWorker: LRRDownloadWorker,
-    ) : SpiderQueen.OnSpiderListener {
+    ) : DownloadWorkerListener {
 
         fun post(event: DownloadEvent) {
             eventBus.postToMain {
@@ -539,14 +537,6 @@ internal class DownloadScheduler(
 
         override fun onFinish(finished: Int, downloaded: Int, total: Int) {
             post(DownloadEvent.OnFinish(mInfo, finished, downloaded, total, mWorker.failureReason))
-        }
-
-        override fun onGetImageSuccess(index: Int, image: Image) {
-            // Not used by download scheduler
-        }
-
-        override fun onGetImageFailure(index: Int, error: String) {
-            // Not used by download scheduler
         }
     }
 }
