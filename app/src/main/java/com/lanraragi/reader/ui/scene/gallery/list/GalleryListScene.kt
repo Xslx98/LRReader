@@ -53,10 +53,10 @@ import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.LRRUtils
+import com.lanraragi.reader.archive.LRRUtils
 
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.settings.AppearanceSettings

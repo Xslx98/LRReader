@@ -5,7 +5,7 @@ import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.reading.ReadingContext
 import com.lanraragi.reader.reading.ReadingContextStore

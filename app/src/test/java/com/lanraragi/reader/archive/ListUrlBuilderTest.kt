@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.data
+package com.lanraragi.reader.archive
 
 import android.os.Parcel
 import org.junit.Assert.assertEquals

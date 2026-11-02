@@ -1,6 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.client.api.data.LRRCategory
 
 /**

@@ -7,7 +7,7 @@ import androidx.annotation.DimenRes
 import androidx.core.content.edit
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.client.LRRUtils
+import com.lanraragi.reader.archive.LRRUtils
 import java.util.Locale
 
 /**

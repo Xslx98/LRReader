@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader.client.data
+package com.lanraragi.reader.archive
 
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.annotation.IntDef
-import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.dao.QuickSearch
 
 class ListUrlBuilder : Cloneable, Parcelable {

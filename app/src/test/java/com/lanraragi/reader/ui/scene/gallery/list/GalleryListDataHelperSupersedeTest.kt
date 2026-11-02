@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.content.Context
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.module.CoroutineModule
 import kotlinx.coroutines.awaitCancellation
 import org.junit.Assert.assertTrue

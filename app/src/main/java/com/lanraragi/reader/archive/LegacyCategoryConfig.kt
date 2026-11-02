@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader.client
+package com.lanraragi.reader.archive
 
 /**
  * Constants used across the app. Originally held EH cookie configuration;

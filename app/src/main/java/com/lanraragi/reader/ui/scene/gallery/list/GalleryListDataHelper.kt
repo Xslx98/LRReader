@@ -8,7 +8,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.paging.PagingSource
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.server.LRRAuthManager

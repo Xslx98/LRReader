@@ -55,7 +55,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
-import com.lanraragi.reader.client.LRRUtils
+import com.lanraragi.reader.archive.LRRUtils
 import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.reading.ReadingContext
 import com.lanraragi.reader.reading.ReadingContextStore
