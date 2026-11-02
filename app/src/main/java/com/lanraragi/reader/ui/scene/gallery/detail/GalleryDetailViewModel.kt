@@ -1,8 +1,7 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
+import com.lanraragi.reader.archive.ArchiveRatingWriter
 import com.lanraragi.reader.tankoubon.TankListCache
-import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.event.ArchiveRatingChangedEvent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.BuildConfig
@@ -18,7 +17,6 @@ import com.lanraragi.reader.server.probeSourceHealthy
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
-import com.lanraragi.reader.domain.mergeRatingIntoTags
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
@@ -223,65 +221,25 @@ class GalleryDetailViewModel : ViewModel() {
             ServiceRegistry.dataModule.archiveDetailCache.put(arcid, updatedAd)
         }
 
-        // App-scoped and keyed by arcid: this ViewModel is Activity-scoped
-        // and shared by every detail entry, so resetForNewEntry used to
-        // cancel archive A's PUT when B was opened — after the optimistic
-        // cache write, leaving local and server ratings out of sync. Only a
-        // newer rating of the SAME archive supersedes a pending PUT.
-        pendingRatingJobs.remove(arcid)?.cancel()
-        val job = ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                val serverUrl = resolveSourceServerUrl()
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                // Fetch latest tags so we don't clobber edits the user
-                // made through other channels (tag editor, another client)
-                val serverArchive = LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
-                val updatedTags = mergeRatingIntoTags(serverArchive.tags, rating)
-
-                LRRArchiveApi.updateArchiveMetadata(client, serverUrl, arcid, updatedTags)
-
-                // Persist to local DownloadInfo if the archive is in the
-                // download list — keeps the Downloads page rating in sync
-                // without requiring a manual refresh.
-                withContext(Dispatchers.Main) { syncRatingToDownloadInfo(arcid, rating) }
-                AppEventBus.postArchiveRatingChangedEvent(ArchiveRatingChangedEvent(arcid, rating))
-                if (BuildConfig.DEBUG) android.util.Log.d(TAG, "Rating saved: $rating for $arcid")
-            } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                android.util.Log.e(TAG, "Rating PUT failed; rolling back", e)
-                withContext(Dispatchers.Main) {
-                    // Roll back every SSOT we touched: the shared cache
-                    // always, this screen's state only if it still shows
-                    // the same archive.
-                    if (previousAd != null) {
-                        ServiceRegistry.dataModule.archiveDetailCache.put(arcid, previousAd)
-                    }
-                    if (getEffectiveArcid() == arcid) {
-                        _currentRating.value = previousRating
-                        if (previousAd != null) _archiveDetail.value = previousAd
-                        _ratingError.tryEmit(e)
-                    }
+        // The write runs in ArchiveRatingWriter's process scope, keyed by
+        // arcid: leaving this entry never cancels it (the optimistic cache
+        // write above is already visible), and only a newer rating of the
+        // SAME archive supersedes a pending PUT.
+        ratingWriter.submit(getSourceProfileId(), arcid, rating) { e ->
+            withContext(Dispatchers.Main) {
+                // Roll back every SSOT we touched: the shared cache
+                // always, this screen's state only if it still shows
+                // the same archive.
+                if (previousAd != null) {
+                    ServiceRegistry.dataModule.archiveDetailCache.put(arcid, previousAd)
+                }
+                if (getEffectiveArcid() == arcid) {
+                    _currentRating.value = previousRating
+                    if (previousAd != null) _archiveDetail.value = previousAd
+                    _ratingError.tryEmit(e)
                 }
             }
         }
-        pendingRatingJobs[arcid] = job
-        job.invokeOnCompletion { pendingRatingJobs.remove(arcid, job) }
-    }
-
-    /**
-     * Mirror the new rating into the in-memory + Room download row, if
-     * present. The download list is the secondary surface for ratings;
-     * keeping it consistent without a manual refresh is the whole point
-     * of the optimistic-UI strategy.
-     *
-     * Main thread: the live row is mutated there and written through the
-     * download write queue (audit 2026-10-06b STAB-01). Serializing it from
-     * IO could commit a torn row mid-transition, and a direct write landing
-     * after a queued delete re-created the removed download.
-     */
-    private fun syncRatingToDownloadInfo(arcid: String, rating: Float) {
-        ServiceRegistry.dataModule.downloadManager.updateDownloadInfo(arcid) { it.rating = rating }
     }
 
     fun setState(state: Int) {
@@ -586,9 +544,8 @@ class GalleryDetailViewModel : ViewModel() {
     /** Cancels the previous detail fetch when refresh is invoked twice in a row. */
     private var requestJob: Job? = null
 
-    /** Cancels the previous in-flight rating PUT if the user keeps adjusting the bar. */
-    /** In-flight rating PUTs by arcid; they outlive entry switches (see submitRating). */
-    private val pendingRatingJobs = java.util.concurrent.ConcurrentHashMap<String, Job>()
+    /** Writes ratings to the server; the app's process-wide instance unless a test swaps it. */
+    internal var ratingWriter: ArchiveRatingWriter = ArchiveRatingWriter.default
 
     /**
      * Per-arcid favorite-state cache so that cache-hit detail navigations
