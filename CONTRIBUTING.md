@@ -62,9 +62,14 @@ One Gradle module, `app/`:
   widgets, inherited from EhViewer and converted to Kotlin. Its render, layout
   and touch paths run every frame: no allocations, boxing or lambdas there.
 - `app/schemas/` — exported Room schemas; CI fails when they drift.
+- `config/architecture/packages.txt` — every top-level package and what it
+  holds. A source file outside these packages fails the build: a new package
+  is a design decision and gets its line in the same change.
 - `config/architecture/rules.txt` — which package may depend on which, with the
-  reason for each rule. `verifyArchitecture` (part of every build) enforces it;
-  `allowlist.txt` lists existing violations and may only shrink.
+  reason for each rule. `verifyArchitecture` (part of every build) enforces it,
+  including fully qualified references; `allowlist.txt` lists existing
+  violations and may only shrink. Rules may only be added: removing or editing
+  one needs an `Arch-Rule-Change: <reason>` commit trailer.
 
 ## Code conventions
 

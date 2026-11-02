@@ -75,7 +75,7 @@ class DownloadRepositoryTest {
 
         // Unconfined for synchronous execution; handler-bearing — see
         // containedTestScope's KDoc (defensive convergence: this file's
-        // IDataModule fake throws NotImplementedError from unimplemented
+        // IDataModule fake throws from unimplemented
         // getters, and a future fire-and-forget path reaching one must not
         // poison the suite).
         testScope = containedTestScope()
@@ -102,7 +102,7 @@ class DownloadRepositoryTest {
 
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {
-                override val searchHistoryRepository get() = throw NotImplementedError("not needed")
+                override val searchHistoryRepository get() = throw UnsupportedOperationException("not needed")
                 override val downloadDbRepository: DownloadDbRepository get() {
                     holdAtRepoGate()
                     if (failDbRepo) throw IllegalStateException("download db unavailable (test)")
@@ -111,14 +111,14 @@ class DownloadRepositoryTest {
                         kotlinx.coroutines.Dispatchers.Unconfined
                     )
                 }
-                override val downloadManager get() = throw NotImplementedError("not needed")
-                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+                override val downloadManager get() = throw UnsupportedOperationException("not needed")
+                override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
                 override val historyRepository get() = com.lanraragi.reader.dao.HistoryRepository(db.archiveLocalStateDao(), db)
-                override val profileRepository get() = throw NotImplementedError("not needed")
-                override val profileLookupCache get() = throw NotImplementedError("not needed")
-                override val quickSearchRepository get() = throw NotImplementedError("not needed")
-                override val favoritesRepository get() = throw NotImplementedError("not needed")
-                override val archiveDetailCache get() = throw NotImplementedError("not needed")
+                override val profileRepository get() = throw UnsupportedOperationException("not needed")
+                override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+                override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+                override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+                override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
                 override fun clearArchiveDetailCache() {}
             }
         )

@@ -80,7 +80,7 @@ class QuickSearchViewModelTest {
         ServiceRegistry.initializeForTest(
             coroutine = CoroutineModule(),
             data = object : IDataModule {
-                override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
+                override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
                 override val quickSearchRepository get() =
                     QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =
@@ -89,11 +89,11 @@ class QuickSearchViewModelTest {
                     HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() =
                     ProfileRepository(db.miscDao())
-                override val profileLookupCache get() = throw NotImplementedError("not needed")
+                override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
                 override val downloadDbRepository get() =
-                    throw NotImplementedError("Not needed for QuickSearchViewModel tests")
+                    throw UnsupportedOperationException("Not needed for QuickSearchViewModel tests")
                 override val downloadManager: DownloadManager
-                    get() = throw NotImplementedError("Not needed for QuickSearchViewModel tests")
+                    get() = throw UnsupportedOperationException("Not needed for QuickSearchViewModel tests")
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
                 override val archiveDetailCache get() = LruCache<String, ArchiveDetail>(10)
                 override fun clearArchiveDetailCache() {}

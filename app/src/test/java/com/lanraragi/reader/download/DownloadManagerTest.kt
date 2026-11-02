@@ -1,5 +1,6 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
 import android.content.Context
 import androidx.room.Room
@@ -66,11 +67,14 @@ class DownloadManagerTest {
         Settings.initialize(context)
 
         // Initialize CoroutineModule for ServiceRegistry (needed by DownloadManager default scope)
-        ServiceRegistry.initializeForTest(CoroutineModule())
+        // Own the network module too: initializeForTest keeps whatever an earlier
+        // test class left there, and with a usable client the manager's
+        // background rating sync would run into this test's data module.
+        ServiceRegistry.initializeForTest(CoroutineModule(), network = stubNetworkModule())
 
         // Create a test scope that runs on the unconfined dispatcher for synchronous execution
         // Handler-bearing scope: see containedTestScope's KDoc for why the
-        // handler is load-bearing (NotImplementedError fakes + fire-and-forget
+        // handler is load-bearing (throwing fakes + fire-and-forget
         // coroutines would otherwise poison the whole suite).
         testScope = containedTestScope()
 
@@ -109,20 +113,20 @@ class DownloadManagerTest {
         // through ServiceRegistry.
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {
-                override val searchHistoryRepository get() = throw NotImplementedError("not needed")
+                override val searchHistoryRepository get() = throw UnsupportedOperationException("not needed")
                 override val downloadDbRepository get() =
                     DownloadDbRepository(
                         db.archiveLocalStateDao(), db.downloadDao(), db,
                         kotlinx.coroutines.Dispatchers.Unconfined
                     )
-                override val downloadManager get() = throw NotImplementedError("set after init")
-                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+                override val downloadManager get() = throw UnsupportedOperationException("set after init")
+                override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
                 override val historyRepository get() = com.lanraragi.reader.dao.HistoryRepository(db.archiveLocalStateDao(), db)
-                override val profileRepository get() = throw NotImplementedError("not needed")
-                override val profileLookupCache get() = throw NotImplementedError("not needed")
-                override val quickSearchRepository get() = throw NotImplementedError("not needed")
-                override val favoritesRepository get() = throw NotImplementedError("not needed")
-                override val archiveDetailCache get() = throw NotImplementedError("not needed")
+                override val profileRepository get() = throw UnsupportedOperationException("not needed")
+                override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+                override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+                override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+                override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
                 override fun clearArchiveDetailCache() {}
             }
         )

@@ -219,17 +219,35 @@ object ServerTrust {
 
     // ── Trust managers and socket factories ──────────────────────────────
 
-    private val systemTrustManager: X509TrustManager by lazy {
-        val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-        tmf.init(null as KeyStore?)
-        tmf.trustManagers.filterIsInstance<X509TrustManager>().first()
+    /**
+     * Everything that depends on the installed security providers, built once
+     * on first use. [resetForTesting] drops it: a unit-test JVM changes its
+     * providers between test classes (Robolectric puts Conscrypt first), and a
+     * trust manager from one provider cannot check a socket from another.
+     */
+    private class ProviderBound {
+        val system: X509TrustManager by lazy {
+            val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+            tmf.init(null as KeyStore?)
+            tmf.trustManagers.filterIsInstance<X509TrustManager>().first()
+        }
+        val server by lazy { Trust(ServerTrustManager(::isConfiguredServer)) }
+        val candidate by lazy { Trust(ServerTrustManager { _, _ -> true }) }
     }
 
+    @Volatile
+    private var providerBound: ProviderBound? = null
+
+    private fun providerBound(): ProviderBound =
+        providerBound ?: synchronized(this) { providerBound ?: ProviderBound().also { providerBound = it } }
+
+    private val systemTrustManager: X509TrustManager get() = providerBound().system
+
     /** For the shared client: imported CAs only vouch for configured servers. */
-    val serverClientTrust: Trust by lazy { Trust(ServerTrustManager(::isConfiguredServer)) }
+    val serverClientTrust: Trust get() = providerBound().server
 
     /** For connection tests: the client only ever talks to the candidate server. */
-    val candidateClientTrust: Trust by lazy { Trust(ServerTrustManager { _, _ -> true }) }
+    val candidateClientTrust: Trust get() = providerBound().candidate
 
     class Trust(val trustManager: X509TrustManager) {
         val sslContext: SSLContext = SSLContext.getInstance("TLS").apply { init(null, arrayOf(trustManager), null) }
@@ -357,9 +375,14 @@ object ServerTrust {
         return if (':' in host) "[$host]:$port" else "$host:$port"
     }
 
-    /** Tests only: forget the attached store and every trust decision. */
+    /**
+     * Tests only: forget the attached store and every trust decision, and
+     * rebuild the trust managers and socket factories under the providers
+     * installed now.
+     */
     internal fun resetForTesting() {
         synchronized(this) {
+            providerBound = null
             prefs = null
             pins = emptyMap()
             setCas(emptyList())

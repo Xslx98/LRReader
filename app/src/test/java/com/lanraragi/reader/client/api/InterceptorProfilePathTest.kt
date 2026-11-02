@@ -83,7 +83,7 @@ class InterceptorProfilePathTest {
     @After
     fun tearDown() {
         // Leave the registry as the legacy-path suites expect: no cache hit.
-        ServiceRegistry.initializeForTest(data = dataModule { throw NotImplementedError() })
+        ServiceRegistry.initializeForTest(data = dataModule { throw UnsupportedOperationException() })
         scope.cancel()
         db.close()
         server.shutdown()
@@ -201,15 +201,15 @@ class InterceptorProfilePathTest {
 
     private fun dataModule(lookup: () -> ProfileLookupCache): IDataModule = object : IDataModule {
         override val profileLookupCache get() = lookup()
-        override val profileRepository get() = throw NotImplementedError("not needed")
-        override val searchHistoryRepository get() = throw NotImplementedError("not needed")
-        override val historyRepository get() = throw NotImplementedError("not needed")
-        override val quickSearchRepository get() = throw NotImplementedError("not needed")
-        override val favoritesRepository get() = throw NotImplementedError("not needed")
-        override val downloadDbRepository get() = throw NotImplementedError("not needed")
-        override val downloadManager get() = throw NotImplementedError("not needed")
-        override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
-        override val archiveDetailCache get() = throw NotImplementedError("not needed")
+        override val profileRepository get() = throw UnsupportedOperationException("not needed")
+        override val searchHistoryRepository get() = throw UnsupportedOperationException("not needed")
+        override val historyRepository get() = throw UnsupportedOperationException("not needed")
+        override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+        override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+        override val downloadDbRepository get() = throw UnsupportedOperationException("not needed")
+        override val downloadManager get() = throw UnsupportedOperationException("not needed")
+        override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
+        override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
         override fun clearArchiveDetailCache() {}
     }
 }

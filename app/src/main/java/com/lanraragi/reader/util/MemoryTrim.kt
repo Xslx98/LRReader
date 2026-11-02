@@ -79,16 +79,6 @@ object MemoryTrim {
         return (totalMemBytes / RAM_FRACTION).coerceIn(MIN_READER_CACHE.toLong(), MAX_READER_CACHE.toLong()).toInt()
     }
 
-    /** ActivityManager.isLowRamDevice for the running app; false before the app exists (tests). */
-    @JvmStatic
-    fun isLowRamDevice(): Boolean = try {
-        com.lanraragi.reader.LRReaderApplication.instance
-            .getSystemService(android.app.ActivityManager::class.java)?.isLowRamDevice == true
-    } catch (e: UninitializedPropertyAccessException) {
-        Log.w(TAG, "No application yet; assuming a normal-RAM device", e)
-        false
-    }
-
     private const val RAM_FRACTION = 12
     private const val MB = 1024 * 1024
     const val MIN_READER_CACHE = 64 * MB

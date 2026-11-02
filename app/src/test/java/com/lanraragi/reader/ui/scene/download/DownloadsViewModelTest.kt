@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.download
 
+import com.lanraragi.reader.stubNetworkModule
 import android.content.Context
 import androidx.collection.LruCache
 import androidx.room.Room
@@ -63,7 +64,10 @@ class DownloadsViewModelTest {
         context = ApplicationProvider.getApplicationContext()
 
         Settings.initialize(context)
-        ServiceRegistry.initializeForTest(CoroutineModule())
+        // Own the network module too: initializeForTest keeps whatever an earlier
+        // test class left there, and with a usable client the manager's
+        // background rating sync would run into this test's data module.
+        ServiceRegistry.initializeForTest(CoroutineModule(), network = stubNetworkModule())
 
         // Handler-bearing scope: see containedTestScope's KDoc.
         testScope = containedTestScope()
@@ -98,13 +102,13 @@ class DownloadsViewModelTest {
         lateinit var manager: DownloadManager
         ServiceRegistry.initializeForTest(
             data = object : IDataModule {
-                override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
+                override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
                 override val downloadManager: DownloadManager get() = manager
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
                 override val historyRepository get() =
                     com.lanraragi.reader.dao.HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = ProfileRepository(db.miscDao())
-                override val profileLookupCache get() = throw NotImplementedError("not needed")
+                override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
                 override val quickSearchRepository get() =
                     com.lanraragi.reader.dao.QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =

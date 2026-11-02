@@ -1,5 +1,6 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.stubNetworkModule
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -44,7 +45,10 @@ class DownloadManagerOrphanLabelBatchTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         Settings.initialize(context)
-        ServiceRegistry.initializeForTest(CoroutineModule())
+        // Own the network module too: initializeForTest keeps whatever an earlier
+        // test class left there, and with a usable client the manager's
+        // background rating sync would run into this test's data module.
+        ServiceRegistry.initializeForTest(CoroutineModule(), network = stubNetworkModule())
         // Handler-bearing scope: see containedTestScope's KDoc.
         testScope = containedTestScope()
 
@@ -68,20 +72,20 @@ class DownloadManagerOrphanLabelBatchTest {
 
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {
-                override val searchHistoryRepository get() = throw NotImplementedError("not needed")
+                override val searchHistoryRepository get() = throw UnsupportedOperationException("not needed")
                 override val downloadDbRepository get() =
                     DownloadDbRepository(
                         db.archiveLocalStateDao(), db.downloadDao(), db,
                         kotlinx.coroutines.Dispatchers.Unconfined
                     )
-                override val downloadManager get() = throw NotImplementedError("set after init")
-                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+                override val downloadManager get() = throw UnsupportedOperationException("set after init")
+                override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
                 override val historyRepository get() = com.lanraragi.reader.dao.HistoryRepository(db.archiveLocalStateDao(), db)
-                override val profileRepository get() = throw NotImplementedError("not needed")
-                override val profileLookupCache get() = throw NotImplementedError("not needed")
-                override val quickSearchRepository get() = throw NotImplementedError("not needed")
-                override val favoritesRepository get() = throw NotImplementedError("not needed")
-                override val archiveDetailCache get() = throw NotImplementedError("not needed")
+                override val profileRepository get() = throw UnsupportedOperationException("not needed")
+                override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+                override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+                override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+                override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
                 override fun clearArchiveDetailCache() {}
             }
         )

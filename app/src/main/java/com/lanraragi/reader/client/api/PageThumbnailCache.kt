@@ -107,7 +107,7 @@ object PageThumbnailCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable
     private val lru = object : LruCache<String, Bitmap>(
         budgetBytesFor(
             com.lanraragi.reader.util.OSUtils.getTotalMemory(),
-            com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
+            com.lanraragi.reader.DeviceMemory.isLowRamDevice(),
         )
     ) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount

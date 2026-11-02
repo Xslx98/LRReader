@@ -1,5 +1,7 @@
 # Existing violations of config/architecture/rules.txt: "<rule> <path under app/src/main/java>".
 # This list may only shrink; fixing a violation means deleting its line.
+D11 com/lanraragi/reader/LRReaderApplication.kt
+D11 com/lanraragi/reader/widget/ContentLayout.kt
 D3 com/lanraragi/reader/client/api/LRRApiUtils.kt
 D3 com/lanraragi/reader/client/api/LRRAuthInterceptor.kt
 D3 com/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor.kt

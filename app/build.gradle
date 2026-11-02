@@ -241,11 +241,13 @@ afterEvaluate {
     tasks.matching { it.name == "preBuild" }.configureEach { dependsOn("verifyNoBaseUrlConcat") }
 }
 
-// 2026-11 architecture review: package dependency rules D1–D10 live in
+// 2026-11 architecture review: package dependency rules D1–D11 live in
 // config/architecture/rules.txt, existing violations in allowlist.txt (which
 // scripts/ci/check-baselines.sh keeps from growing). A fixed violation must
-// leave the allowlist in the same commit, so a stale line fails too. Same-package
-// references need no import, so the check under-reports and never over-reports.
+// leave the allowlist in the same commit, so a stale line fails too. Import rules
+// also see fully qualified references in code (string literals and comments are
+// skipped); same-package references need no import and are not seen. Every source
+// package must sit under a top-level package listed in packages.txt.
 // -ParchWriteAllowlist rewrites the allowlist from the current violations; it
 // exists for the initial seed, and CI rejects any growth it would cause.
 tasks.register("verifyArchitecture") {
@@ -255,9 +257,10 @@ tasks.register("verifyArchitecture") {
     def srcDir = file("src/main/java")
     def rulesFile = rootProject.file("config/architecture/rules.txt")
     def allowFile = rootProject.file("config/architecture/allowlist.txt")
+    def packagesFile = rootProject.file("config/architecture/packages.txt")
     def writeAllowlist = project.hasProperty("archWriteAllowlist")
     inputs.dir(srcDir)
-    inputs.files(rulesFile, allowFile)
+    inputs.files(rulesFile, allowFile, packagesFile)
     inputs.property("writeAllowlist", writeAllowlist)
     def marker = layout.buildDirectory.file("architecture/verified")
     outputs.file(marker)
@@ -275,6 +278,10 @@ tasks.register("verifyArchitecture") {
         def allowed = allowFile.exists()
             ? allowFile.readLines().collect { it.trim() }.findAll { it && !it.startsWith('#') } as Set
             : [] as Set
+        def knownPackages = packagesFile.readLines()
+            .findAll { it.trim() && !it.trim().startsWith('#') }
+            .collect { it.split(/\s+\|\s+/)[0].trim() } as Set
+        def unknownPackages = new TreeSet<String>()
         def found = new TreeSet<String>()
         def srcPath = srcDir.toPath()
         fileTree(srcDir) { include "**/*.kt" }.each { File f ->
@@ -283,18 +290,27 @@ tasks.register("verifyArchitecture") {
             if (!pm.find()) return
             def pkg = pm.group(1)
             def rel = srcPath.relativize(f.toPath()).toString().replace('\\', '/')
+            def top = pkg.split(/\./).take(4).join('.')
+            if (!knownPackages.contains(top)) unknownPackages << "${top} (${rel})".toString()
             def imports = (text =~ /(?m)^import\s+([\w.]+(?:\.\*)?)/).collect { it[1] }
-            List<String> codeLines = null
+            def codeLines = text.readLines().findAll { String l ->
+                def t = l.trim()
+                !(t.startsWith('//') || t.startsWith('*') || t.startsWith('/*'))
+            }
+            // A fully qualified reference counts as an import of its class: the
+            // lowercase package segments plus the first capitalised segment.
+            codeLines.findAll { !(it =~ /^\s*(import|package)\s/) }.each { String l ->
+                def code = l.replaceAll(/"(?:[^"\\]|\\.)*"/, '""').replaceAll(/\/\/.*$/, '')
+                (code =~ /(?<![\w.])com\.lanraragi\.[\w.]*\w/).each { String ref ->
+                    def segs = ref.split(/\./)
+                    def cls = segs.findIndexOf { it && Character.isUpperCase(it.charAt(0)) }
+                    imports << (cls >= 0 ? segs.take(cls + 1).join('.') : ref)
+                }
+            }
             rules.each { r ->
                 if (!r.importer.matcher(pkg).find()) return
                 boolean hit
                 if (r.kind == 'text') {
-                    if (codeLines == null) {
-                        codeLines = text.readLines().findAll { String l ->
-                            def t = l.trim()
-                            !(t.startsWith('//') || t.startsWith('*') || t.startsWith('/*'))
-                        }
-                    }
                     hit = codeLines.any { r.forbidden.matcher(it).find() }
                 } else {
                     hit = imports.any { String i ->
@@ -311,8 +327,14 @@ tasks.register("verifyArchitecture") {
         } else {
             def violations = found.findAll { !allowed.contains(it) }
             def stale = allowed.findAll { !found.contains(it) }.sort()
-            if (violations || stale) {
+            if (violations || stale || unknownPackages) {
                 def msg = new StringBuilder()
+                if (unknownPackages) {
+                    msg << "Packages not registered in config/architecture/packages.txt (a new top-level "
+                    msg << "package is a design decision: add its line with its purpose):\n  "
+                    msg << unknownPackages.join("\n  ")
+                    msg << ((violations || stale) ? "\n" : "")
+                }
                 if (violations) {
                     msg << "New architecture violations (rules and reasons: config/architecture/rules.txt):\n  "
                     msg << violations.join("\n  ")

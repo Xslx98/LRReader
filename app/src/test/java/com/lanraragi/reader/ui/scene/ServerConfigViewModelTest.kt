@@ -23,8 +23,12 @@ import com.lanraragi.reader.client.api.LRRCleartextRefusedException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import okhttp3.Cache
@@ -34,6 +38,7 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -97,16 +102,16 @@ class ServerConfigViewModelTest {
         val networkModule = createTestNetworkModule(testClient)
 
         val testDataModule = object : IDataModule {
-            override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
+            override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
             override val profileRepository get() = ProfileRepository(db.miscDao())
-            override val profileLookupCache get() = throw NotImplementedError("not needed")
-            override val historyRepository get() = throw NotImplementedError("not needed")
-            override val quickSearchRepository get() = throw NotImplementedError("not needed")
-            override val favoritesRepository get() = throw NotImplementedError("not needed")
-            override val downloadDbRepository get() = throw NotImplementedError("not needed")
-            override val downloadManager get() = throw NotImplementedError("not needed")
-            override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
-            override val archiveDetailCache get() = throw NotImplementedError("not needed")
+            override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+            override val historyRepository get() = throw UnsupportedOperationException("not needed")
+            override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+            override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+            override val downloadDbRepository get() = throw UnsupportedOperationException("not needed")
+            override val downloadManager get() = throw UnsupportedOperationException("not needed")
+            override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
+            override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
             override fun clearArchiveDetailCache() {}
         }
 
@@ -148,10 +153,6 @@ class ServerConfigViewModelTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
 
         val vm = ServerConfigViewModel()
-        val successes = mutableListOf<ServerConfigViewModel.ConnectSuccess>()
-        val job = CoroutineScope(Dispatchers.Unconfined).launch {
-            vm.connectSuccess.collect { successes.add(it) }
-        }
         val baseUrl = server.url("").toString().removeSuffix("/")
 
         vm.attemptConnection(baseUrl, null, false)
@@ -159,8 +160,8 @@ class ServerConfigViewModelTest {
         awaitViewModelIdle(vm)
 
         assertEquals("the second attempt must not reach the server", 1, server.requestCount)
-        assertEquals(1, successes.size)
-        job.cancel()
+        next(vm.connectSuccess)
+        assertNoMore(vm.connectSuccess)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -197,27 +198,19 @@ class ServerConfigViewModelTest {
         server.enqueue(MockResponse().setBody(SERVER_INFO_JSON).setResponseCode(200))
 
         val vm = ServerConfigViewModel()
-        val successes = mutableListOf<ServerConfigViewModel.ConnectSuccess>()
-        val collectScope = CoroutineScope(Dispatchers.Unconfined)
-        val job = collectScope.launch {
-            vm.connectSuccess.collect { successes.add(it) }
-        }
-
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, null, true)
 
         awaitViewModelIdle(vm)
 
-        assertTrue(successes.isNotEmpty())
-        assertEquals("Test Server", successes.first().serverInfo.name)
-        assertTrue(successes.first().navigateOnSuccess)
+        val success = next(vm.connectSuccess)
+        assertEquals("Test Server", success.serverInfo.name)
+        assertTrue(success.navigateOnSuccess)
         assertFalse(vm.connecting.value)
         val rows = runBlocking { db.miscDao().getAllServerProfiles() }
         val saved = rows.single { it.id != oldId }
         assertEquals(baseUrl, saved.url)
         assertEquals("the connected profile is the only active one", listOf(saved.id), rows.filter { it.isActive }.map { it.id })
-
-        job.cancel()
     }
 
     @Test
@@ -226,21 +219,13 @@ class ServerConfigViewModelTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
         val vm = ServerConfigViewModel()
-        val failures = mutableListOf<Exception>()
-        val collectScope = CoroutineScope(Dispatchers.Unconfined)
-        val job = collectScope.launch {
-            vm.connectFailure.collect { failures.add(it) }
-        }
-
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, "test-key", false)
 
         awaitViewModelIdle(vm)
 
-        assertTrue(failures.isNotEmpty())
+        next(vm.connectFailure)
         assertFalse(vm.connecting.value)
-
-        job.cancel()
     }
 
     @Test
@@ -252,24 +237,16 @@ class ServerConfigViewModelTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
         val vm = ServerConfigViewModel()
-        val failures = mutableListOf<Exception>()
-        val collectScope = CoroutineScope(Dispatchers.Unconfined)
-        val job = collectScope.launch {
-            vm.connectFailure.collect { failures.add(it) }
-        }
-
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, "candidate-key", false)
 
         awaitViewModelIdle(vm)
 
-        assertTrue(failures.isNotEmpty())
+        next(vm.connectFailure)
         // NET-7: a test attempt must never write the global config at all —
         // there is nothing to roll back, even after a process kill mid-test.
         assertEquals("http://prior.example.com:3000", ServerSession.getServerUrl())
         assertEquals("prior-key", ServerSession.getApiKey())
-
-        job.cancel()
     }
 
     @Test
@@ -374,35 +351,46 @@ class ServerConfigViewModelTest {
         )
 
         val vm = ServerConfigViewModel()
-        val failures = mutableListOf<Exception>()
-        val scope = CoroutineScope(Dispatchers.Unconfined)
-        val job = scope.launch { vm.connectFailure.collect { failures.add(it) } }
-
         val baseUrl = server.url("").toString().removeSuffix("/")
         vm.attemptConnection(baseUrl, "candidate-key", false)
         awaitViewModelIdle(vm)
 
-        assertTrue("Room failure must surface as connectFailure", failures.isNotEmpty())
+        next(vm.connectFailure) // the Room failure surfaces as connectFailure
         assertEquals("global URL must stay on the old server", "https://old.example.com", ServerSession.getServerUrl())
         assertEquals("old-key", ServerSession.getApiKey())
-        job.cancel()
     }
 
     // ═══════════════════════════════════════════════════════════
     // Helpers
     // ═══════════════════════════════════════════════════════════
 
+    /**
+     * The next result the view model reported on [events], read once its work
+     * is done. Its result channels are buffered, so a result sent before this
+     * call is waiting here. Do not collect into a list on Dispatchers.Unconfined
+     * instead: the view model's coroutine resumes on an IO thread inside an
+     * Unconfined event loop, the collector's wake-up is queued until that
+     * coroutine finishes, and awaitViewModelIdle can return before the
+     * collector has run (it failed CI that way).
+     */
+    private fun <T> next(events: Flow<T>): T = runBlocking { withTimeout(5_000) { events.first() } }
+
+    /** Nothing more was reported: the work is done, so anything sent would already be buffered. */
+    private fun <T> assertNoMore(events: Flow<T>) {
+        assertNull(runBlocking { withTimeoutOrNull(200) { events.first() } })
+    }
+
     private fun throwingDataModule(repo: ProfileRepository): IDataModule = object : IDataModule {
-        override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
+        override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
         override val profileRepository get() = repo
-        override val profileLookupCache get() = throw NotImplementedError("not needed")
-        override val historyRepository get() = throw NotImplementedError("not needed")
-        override val quickSearchRepository get() = throw NotImplementedError("not needed")
-        override val favoritesRepository get() = throw NotImplementedError("not needed")
-        override val downloadDbRepository get() = throw NotImplementedError("not needed")
-        override val downloadManager get() = throw NotImplementedError("not needed")
-        override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
-        override val archiveDetailCache get() = throw NotImplementedError("not needed")
+        override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+        override val historyRepository get() = throw UnsupportedOperationException("not needed")
+        override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+        override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+        override val downloadDbRepository get() = throw UnsupportedOperationException("not needed")
+        override val downloadManager get() = throw UnsupportedOperationException("not needed")
+        override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
+        override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
         override fun clearArchiveDetailCache() {}
     }
 
