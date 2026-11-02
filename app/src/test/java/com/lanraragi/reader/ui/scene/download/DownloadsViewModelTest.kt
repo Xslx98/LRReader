@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.download
 
+import com.lanraragi.reader.stubNetworkModule
 import android.content.Context
 import androidx.collection.LruCache
 import androidx.room.Room
@@ -63,7 +64,10 @@ class DownloadsViewModelTest {
         context = ApplicationProvider.getApplicationContext()
 
         Settings.initialize(context)
-        ServiceRegistry.initializeForTest(CoroutineModule())
+        // Own the network module too: initializeForTest keeps whatever an earlier
+        // test class left there, and with a usable client the manager's
+        // background rating sync would run into this test's data module.
+        ServiceRegistry.initializeForTest(CoroutineModule(), network = stubNetworkModule())
 
         // Handler-bearing scope: see containedTestScope's KDoc.
         testScope = containedTestScope()

@@ -1,5 +1,6 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
 import android.content.Context
 import androidx.room.Room
@@ -66,11 +67,14 @@ class DownloadManagerTest {
         Settings.initialize(context)
 
         // Initialize CoroutineModule for ServiceRegistry (needed by DownloadManager default scope)
-        ServiceRegistry.initializeForTest(CoroutineModule())
+        // Own the network module too: initializeForTest keeps whatever an earlier
+        // test class left there, and with a usable client the manager's
+        // background rating sync would run into this test's data module.
+        ServiceRegistry.initializeForTest(CoroutineModule(), network = stubNetworkModule())
 
         // Create a test scope that runs on the unconfined dispatcher for synchronous execution
         // Handler-bearing scope: see containedTestScope's KDoc for why the
-        // handler is load-bearing (NotImplementedError fakes + fire-and-forget
+        // handler is load-bearing (throwing fakes + fire-and-forget
         // coroutines would otherwise poison the whole suite).
         testScope = containedTestScope()
 
