@@ -10,10 +10,8 @@
 package com.lanraragi.reader.reading
 
 import android.content.Context
-import android.content.Intent
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.server.resolveSourceBaseUrl
+import com.lanraragi.reader.server.ServerConnections
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -36,14 +34,14 @@ object HistoryTankRedirect {
         null
     }
 
-    /** Whole-tank resume intent anchored on [arcid], or null → open the detail page. */
-    suspend fun resumeIntentOrNull(context: Context, arcid: String, profileId: Long): Intent? {
+    /** Whole-tank session anchored on [arcid], or null → open the detail page. */
+    suspend fun resumeLaunchOrNull(context: Context, arcid: String, profileId: Long): TankLaunch? {
         val tankId = memberTankId {
-            val url = resolveSourceBaseUrl(profileId, ServiceRegistry.dataModule.profileLookupCache)
-            LRRTankoubonApi.getArchiveTankoubons(ServiceRegistry.networkModule.okHttpClient, url, arcid)
+            val conn = ServerConnections.forProfile(profileId)
+            LRRTankoubonApi.getArchiveTankoubons(conn.client, conn.baseUrl, arcid)
         } ?: return null
         return try {
-            TankSessionRouter.buildResumeIntent(context, tankId, profileId, anchorArcid = arcid)
+            TankSessionRouter.resumeLaunch(context, tankId, profileId, anchorArcid = arcid)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

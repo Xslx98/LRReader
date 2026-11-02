@@ -34,8 +34,8 @@ import com.lanraragi.reader.tankoubon.TankMemberSelection
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.tankdetail.TankMembersViewModel.TankDetailUiEvent
 import com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel
-import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.reader.util.collectFlowWhileCreated
+import com.lanraragi.reader.ui.collectFlow
+import com.lanraragi.reader.ui.collectFlowWhileCreated
 import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive

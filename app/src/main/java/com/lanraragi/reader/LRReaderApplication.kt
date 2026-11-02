@@ -51,8 +51,8 @@ import com.lanraragi.reader.settings.PrivacySettings
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.lib.image.ImageTelemetry
 import android.os.Handler
 import android.os.Looper
 import com.lanraragi.reader.util.FileUtils
@@ -63,7 +63,9 @@ import java.lang.ref.WeakReference
 import java.util.Locale
 import com.lanraragi.reader.diagnostics.Crash
 import com.lanraragi.reader.diagnostics.Analytics
+import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.dao.legacy.LegacyDb
+import com.lanraragi.reader.storage.NoMediaFiles
 
 class LRReaderApplication : SceneApplication() {
 
@@ -170,6 +172,14 @@ class LRReaderApplication : SceneApplication() {
         // and is essentially free at runtime — kept enabled for release too
         // so production cold-start traces are not a black box.
         trace("LRRApp.GetText.init") { GetText.initialize(this) }
+        // The framework image decoder reports failures through this sink; it does
+        // not import the app's diagnostics itself.
+        ImageTelemetry.sink = object : ImageTelemetry.Sink {
+            override fun recordException(e: Throwable) = Analytics.recordException(e)
+            override fun logError(tag: String, message: String, e: Throwable) {
+                DiagLog.e(tag, message, e)
+            }
+        }
         trace("LRRApp.Settings.init") { Settings.initialize(this) }
         // Single-archive progress PUTs that failed are kept here until the
         // network returns (audit 2026-10-04 C20); flushed below.
@@ -463,9 +473,9 @@ class LRReaderApplication : SceneApplication() {
             try {
                 val downloadLocation = DownloadSettings.getDownloadLocation()
                 if (DownloadSettings.getMediaScan()) {
-                    CommonOperations.removeNoMediaFile(downloadLocation)
+                    NoMediaFiles.remove(downloadLocation)
                 } else {
-                    CommonOperations.ensureNoMediaFile(downloadLocation)
+                    NoMediaFiles.ensure(downloadLocation)
                 }
             } catch (t: Throwable) {
                 ExceptionUtils.throwIfFatal(t)
@@ -580,7 +590,7 @@ class LRReaderApplication : SceneApplication() {
             FileUtils.deleteContent(dir)
         }
         // Add .nomedia to external temp dir
-        CommonOperations.ensureNoMediaFile(AppConfig.getExternalTempDir()?.let(::StorageFile))
+        NoMediaFiles.ensure(AppConfig.getExternalTempDir()?.let(::StorageFile))
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {

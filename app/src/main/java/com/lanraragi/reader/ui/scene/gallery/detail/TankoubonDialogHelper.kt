@@ -18,7 +18,7 @@ import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankNameSuggester
 import com.lanraragi.reader.tankoubon.TankRecentStore
 import com.lanraragi.reader.tankoubon.TankTagSyncer
-import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException

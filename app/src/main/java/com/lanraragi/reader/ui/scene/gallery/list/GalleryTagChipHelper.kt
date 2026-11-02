@@ -15,7 +15,7 @@ import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.tagtranslation.TagTranslationUtil

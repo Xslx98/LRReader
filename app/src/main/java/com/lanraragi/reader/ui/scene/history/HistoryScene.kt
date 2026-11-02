@@ -18,7 +18,7 @@ package com.lanraragi.reader.ui.scene.history
 
 import com.lanraragi.reader.ui.Haptics
 import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.util.collectFlowWhileCreated
+import com.lanraragi.reader.ui.collectFlowWhileCreated
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.graphics.Color
@@ -55,7 +55,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
-import com.lanraragi.reader.client.LRRUtils
+import com.lanraragi.reader.archive.LRRUtils
 import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.reading.ReadingContext
 import com.lanraragi.reader.reading.ReadingContextStore
@@ -68,7 +68,7 @@ import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.EnterGalleryDetailTransaction
-import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
@@ -81,6 +81,7 @@ import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.ui.GalleryOpenHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -390,7 +391,8 @@ class HistoryScene : ToolbarScene(),
         val ctx = ehContext ?: return false
         viewLifecycleOwner.lifecycleScope.launch {
             val intent = withContext(Dispatchers.IO) {
-                HistoryTankRedirect.resumeIntentOrNull(ctx, archive.arcid, archive.serverProfileId)
+                HistoryTankRedirect.resumeLaunchOrNull(ctx, archive.arcid, archive.serverProfileId)
+                    ?.let { GalleryOpenHelper.buildTankReadIntent(ctx, it) }
             }
             if (intent != null) startActivity(intent) else openArchiveDetail(list, position, archive, view)
         }
@@ -434,7 +436,9 @@ class HistoryScene : ToolbarScene(),
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val intent = withContext(Dispatchers.IO) {
-                    TankSessionRouter.buildResumeIntent(ctx, archive.arcid, archive.serverProfileId)
+                    GalleryOpenHelper.buildTankReadIntent(
+                        ctx, TankSessionRouter.resumeLaunch(ctx, archive.arcid, archive.serverProfileId)
+                    )
                 }
                 startActivity(intent)
             } catch (e: Exception) {

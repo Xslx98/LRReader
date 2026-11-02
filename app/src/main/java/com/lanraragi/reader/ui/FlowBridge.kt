@@ -1,5 +1,5 @@
 @file:JvmName("FlowBridge")
-package com.lanraragi.reader.util
+package com.lanraragi.reader.ui
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner

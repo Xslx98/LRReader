@@ -5,11 +5,13 @@
 # object is a hidden singleton. Counted: files declaring a top-level object that
 # have a member (4-space indent) `var`, `lateinit var`, or a val initialised
 # with a mutable collection, flow, cache or atomic. Lower MAX when the count
-# drops; never raise it for new code.
+# drops; never raise it for new code. Only the app (com.lanraragi.reader) is
+# counted: the framework cannot use ServiceRegistry (rule D1), so its few
+# injection points (for example lib/image/ImageTelemetry) are framework objects.
 set -euo pipefail
 
-MAX=41
-SRC=app/src/main/java
+MAX=37
+SRC=app/src/main/java/com/lanraragi/reader
 STATE='^    (private |internal |protected )?(@Volatile )?(@JvmStatic )?(lateinit var |var |val [A-Za-z_]+[^=]*= *(mutable(Map|List|Set)Of|ConcurrentHashMap|HashMap|HashSet|ArrayList|LinkedHashMap|MutableStateFlow|MutableSharedFlow|LruCache|Atomic[A-Za-z]+|WeakHashMap)\b)'
 
 COUNT=0

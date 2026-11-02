@@ -37,7 +37,7 @@ import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.ui.scene.ToolbarScene
-import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.util.ViewUtils
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition

@@ -37,7 +37,7 @@ import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.scene.SecurityViewModel.SecurityUiEvent
 import com.lanraragi.reader.ui.scene.SecurityViewModel.StorageState
-import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.framework.widget.lockpattern.LockPatternUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
 import com.lanraragi.reader.util.ViewUtils

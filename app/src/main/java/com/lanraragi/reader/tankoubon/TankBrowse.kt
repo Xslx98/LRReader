@@ -5,6 +5,7 @@ import com.lanraragi.reader.client.api.LRRTankoubonApi.Tankoubon
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.parseLrrTagString
 import com.lanraragi.reader.domain.parseRatingFromTags
+import com.lanraragi.reader.settings.AppearanceSettings
 
 /**
  * Order and row mapping of the gallery's tanks-only mode
@@ -14,7 +15,16 @@ import com.lanraragi.reader.domain.parseRatingFromTags
  */
 object TankBrowse {
 
-    enum class Sort { NAME, MEMBERS, RECENT_READ }
+    enum class Sort {
+        NAME, MEMBERS, RECENT_READ;
+
+        companion object {
+            /** The sort saved in the appearance settings; NAME when unset or unknown. */
+            fun saved(): Sort = entries.firstOrNull { it.name == AppearanceSettings.getTankListSortName() } ?: NAME
+
+            fun save(sort: Sort) = AppearanceSettings.putTankListSortName(sort.name)
+        }
+    }
 
     /**
      * @param lastRead tankId → last local read time (the `TANK_` history row);

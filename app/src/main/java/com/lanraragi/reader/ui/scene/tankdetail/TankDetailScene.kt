@@ -46,7 +46,7 @@ import com.lanraragi.reader.tankoubon.TankMemberStrip
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.TankDialogs
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
@@ -57,8 +57,8 @@ import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.TankDetailState
 import com.lanraragi.reader.widget.bindSourceServerBadge
-import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.reader.util.collectFlowWhileCreated
+import com.lanraragi.reader.ui.collectFlow
+import com.lanraragi.reader.ui.collectFlowWhileCreated
 import java.util.Locale
 import kotlin.math.ceil
 import kotlinx.coroutines.flow.distinctUntilChanged

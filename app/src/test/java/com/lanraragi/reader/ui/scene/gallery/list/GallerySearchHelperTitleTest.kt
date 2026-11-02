@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.content.res.Resources
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

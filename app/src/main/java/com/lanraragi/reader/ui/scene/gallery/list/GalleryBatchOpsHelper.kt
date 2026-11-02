@@ -15,7 +15,7 @@ import com.lanraragi.reader.ui.scene.BatchBarAnimator
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.TankoubonDialogHelper
 import com.lanraragi.reader.server.LRRClientProvider
-import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.domain.Archive
 
 /**

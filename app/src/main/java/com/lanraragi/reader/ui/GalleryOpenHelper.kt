@@ -8,6 +8,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.reading.DownloadDirResolver
 import com.lanraragi.reader.reading.ReaderPageCache
 import com.lanraragi.reader.reading.ReadingProgressReconciler
+import com.lanraragi.reader.reading.TankLaunch
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
@@ -88,6 +89,9 @@ object GalleryOpenHelper {
      * the caller into [startGlobalPage]).
      */
     @JvmStatic
+    fun buildTankReadIntent(context: Context, launch: TankLaunch): Intent =
+        buildTankReadIntent(context, launch.seed, launch.startGlobalPage)
+
     fun buildTankReadIntent(
         context: Context,
         seed: com.lanraragi.reader.reading.TankSessionSeed,

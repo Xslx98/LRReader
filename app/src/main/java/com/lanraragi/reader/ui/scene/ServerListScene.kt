@@ -16,8 +16,8 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.reader.util.collectFlowWhileCreated
+import com.lanraragi.reader.ui.collectFlow
+import com.lanraragi.reader.ui.collectFlowWhileCreated
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.friendlyError

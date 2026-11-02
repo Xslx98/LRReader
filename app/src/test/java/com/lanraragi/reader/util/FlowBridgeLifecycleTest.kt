@@ -22,6 +22,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import com.lanraragi.reader.ui.collectFlow
+import com.lanraragi.reader.ui.collectFlowWhileCreated
 
 /**
  * Lifecycle contract of the two FlowBridge collectors.

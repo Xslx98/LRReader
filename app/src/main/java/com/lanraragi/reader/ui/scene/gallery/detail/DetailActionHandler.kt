@@ -13,7 +13,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.reading.TankSessionRouter
 import com.lanraragi.reader.ui.CommonOperations
@@ -122,7 +122,8 @@ internal class DetailActionHandler(
                     // A member reached through a tank detail flow reads in
                     // the whole-tank composite session; everything else
                     // stays a standalone per-archive session.
-                    val tankIntent = TankSessionRouter.tankIntentFor(activity, archive.arcid)
+                    val tankIntent = TankSessionRouter.tankLaunchFor(activity, archive.arcid)
+                        ?.let { GalleryOpenHelper.buildTankReadIntent(activity, it) }
                     if (tankIntent != null) {
                         scene.startActivity(tankIntent)
                         return
@@ -146,7 +147,7 @@ internal class DetailActionHandler(
             v.id == R.id.title -> {
                 val title = viewModel.archiveDetail.value?.archive?.title
                 if (!title.isNullOrEmpty()) {
-                    ClipboardUtil.copyText(title)
+                    ClipboardUtil.copyText(context, title)
                     Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
                 }
             }

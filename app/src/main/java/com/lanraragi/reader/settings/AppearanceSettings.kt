@@ -7,9 +7,7 @@ import androidx.annotation.DimenRes
 import androidx.core.content.edit
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.client.LRRUtils
-import com.lanraragi.reader.tankoubon.TankBrowse
-import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
+import com.lanraragi.reader.archive.LRRUtils
 import java.util.Locale
 
 /**
@@ -90,14 +88,9 @@ object AppearanceSettings {
     private const val KEY_LAUNCH_PAGE = "launch_page"
     private const val DEFAULT_LAUNCH_PAGE = 0
 
+    /** 0 = home, 1 = subscription, 2 = what's hot (GalleryListScene.launchPageAction maps it). */
     @JvmStatic
-    fun getLaunchPageGalleryListSceneAction(): String {
-        return when (Settings.getIntFromStr(KEY_LAUNCH_PAGE, DEFAULT_LAUNCH_PAGE)) {
-            1 -> GalleryListScene.ACTION_SUBSCRIPTION
-            2 -> GalleryListScene.ACTION_WHATS_HOT
-            else -> GalleryListScene.ACTION_HOMEPAGE
-        }
-    }
+    fun getLaunchPage(): Int = Settings.getIntFromStr(KEY_LAUNCH_PAGE, DEFAULT_LAUNCH_PAGE)
 
     // --- List Mode ---
     const val KEY_LIST_MODE = "list_mode"
@@ -174,14 +167,12 @@ object AppearanceSettings {
     // --- Tanks-only list sort (local; the server cannot sort tanks) ---
     const val KEY_TANK_LIST_SORT = "tank_list_sort"
 
+    /** The saved tank list sort's name, or null; TankBrowse.Sort.saved() parses it. */
     @JvmStatic
-    fun getTankListSort(): TankBrowse.Sort {
-        val raw = Settings.getString(KEY_TANK_LIST_SORT, null)
-        return TankBrowse.Sort.entries.firstOrNull { it.name == raw } ?: TankBrowse.Sort.NAME
-    }
+    fun getTankListSortName(): String? = Settings.getString(KEY_TANK_LIST_SORT, null)
 
     @JvmStatic
-    fun putTankListSort(value: TankBrowse.Sort) = Settings.putString(KEY_TANK_LIST_SORT, value.name)
+    fun putTankListSortName(name: String) = Settings.putString(KEY_TANK_LIST_SORT, name)
 
     // --- Hide completed archives in browse/search (LANraragi hidecompleted, 0.9.8+) ---
     const val KEY_HIDE_COMPLETED = "search_hide_completed"

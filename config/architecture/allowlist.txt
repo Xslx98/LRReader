@@ -1,7 +1,5 @@
 # Existing violations of config/architecture/rules.txt: "<rule> <path under app/src/main/java>".
 # This list may only shrink; fixing a violation means deleting its line.
-D1 com/lanraragi/framework/lib/image/DecodeResult.kt
-D1 com/lanraragi/framework/lib/image/Image.kt
 D1 com/lanraragi/framework/scene/StageActivity.kt
 D10b com/lanraragi/reader/ui/scene/LRRCategoriesScene.kt
 D10b com/lanraragi/reader/ui/scene/SecurityScene.kt
@@ -13,22 +11,12 @@ D10b com/lanraragi/reader/ui/scene/gallery/list/GalleryListScene.kt
 D10b com/lanraragi/reader/ui/scene/gallery/list/QuickSearchScene.kt
 D10b com/lanraragi/reader/ui/scene/history/HistoryScene.kt
 D10b com/lanraragi/reader/ui/scene/stats/ReadingStatsScene.kt
-D2 com/lanraragi/reader/util/ClipboardUtil.kt
-D2 com/lanraragi/reader/util/ExceptionUtils.kt
-D2 com/lanraragi/reader/util/FlowBridge.kt
 D3 com/lanraragi/reader/client/api/LRRApiUtils.kt
 D3 com/lanraragi/reader/client/api/LRRArchiveApi.kt
 D3 com/lanraragi/reader/client/api/LRRArchivePagingSource.kt
 D3 com/lanraragi/reader/client/api/LRRAuthInterceptor.kt
 D3 com/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor.kt
 D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt
-D5 com/lanraragi/reader/dao/DownloadDbRepository.kt
-D5 com/lanraragi/reader/dao/QuickSearchRepository.kt
-D6 com/lanraragi/reader/reading/TankSessionRouter.kt
-D6 com/lanraragi/reader/settings/AppearanceSettings.kt
-D6 com/lanraragi/reader/settings/DownloadSettings.kt
-D7 com/lanraragi/reader/settings/AppearanceSettings.kt
-D7 com/lanraragi/reader/settings/DownloadSettings.kt
 D8a com/lanraragi/reader/ui/scene/CategoryListRequest.kt
 D8a com/lanraragi/reader/ui/scene/LRRCategoriesScene.kt
 D8a com/lanraragi/reader/ui/scene/LRRCategoriesViewModel.kt

@@ -12,7 +12,7 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.server.OrphanProfileException
 import com.lanraragi.reader.server.probeSourceHealthy
 import com.lanraragi.reader.server.resolveSourceBaseUrl

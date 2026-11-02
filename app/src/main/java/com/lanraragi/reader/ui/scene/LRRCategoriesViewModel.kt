@@ -35,7 +35,7 @@ class LRRCategoriesViewModel(
      * construct the VM without pinning this parameter.
      */
     private val categoryNameSync: suspend (List<LRRCategory>) -> Unit = { categories ->
-        ServiceRegistry.dataModule.quickSearchRepository.syncCategoryNames(categories)
+        ServiceRegistry.dataModule.quickSearchRepository.syncCategoryNames(categories.map { it.id to it.name })
     }
 ) : ViewModel() {
 

@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader.client.data
+package com.lanraragi.reader.archive
 
 import android.os.Parcel
 import android.os.Parcelable
-import android.util.Log
 import androidx.annotation.IntDef
-import com.lanraragi.reader.client.LegacyCategoryConfig
-import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.dao.QuickSearch
-import com.lanraragi.reader.widget.AdvanceSearchTable
-import java.io.UnsupportedEncodingException
-import java.net.URLDecoder
 
 class ListUrlBuilder : Cloneable, Parcelable {
 
@@ -238,93 +232,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         return keyword != null && keyword == other
     }
 
-    /**
-     * @param query xxx=yyy&mmm=nnn
-     */
-    // EH-LEGACY: pagination for URL builder not implemented
-    fun setQuery(query: String?) {
-        reset()
-
-        if (query.isNullOrEmpty()) return
-
-        val querys = query.split('&').filter { it.isNotEmpty() }
-        var parsedCategory = 0
-        var parsedKeyword: String? = null
-        var enableAdvanceSearch = false
-        var parsedAdvanceSearch = 0
-        var enableMinRating = false
-        var parsedMinRating = -1
-        var enablePage = false
-        var parsedPageFrom = -1
-        var parsedPageTo = -1
-
-        for (str in querys) {
-            val index = str.indexOf('=')
-            if (index < 0) continue
-            val key = str.substring(0, index)
-            val value = str.substring(index + 1)
-
-            when (key) {
-                "f_cats" -> {
-                    val cats = (value.toIntOrNull() ?: LegacyCategoryConfig.ALL_CATEGORY)
-                    parsedCategory = parsedCategory or (cats.inv() and LegacyCategoryConfig.ALL_CATEGORY)
-                }
-                "f_doujinshi" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.DOUJINSHI
-                "f_manga" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.MANGA
-                "f_artistcg" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.ARTIST_CG
-                "f_gamecg" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.GAME_CG
-                "f_western" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.WESTERN
-                "f_non-h" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.NON_H
-                "f_imageset" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.IMAGE_SET
-                "f_cosplay" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.COSPLAY
-                "f_asianporn" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.ASIAN_PORN
-                "f_misc" -> if ("1" == value) parsedCategory = parsedCategory or LegacyCategoryConfig.MISC
-                "f_search" -> {
-                    try {
-                        parsedKeyword = URLDecoder.decode(value, "utf-8")
-                    } catch (e: UnsupportedEncodingException) {
-                        Log.d(TAG, "Decode search keyword", e)
-                    } catch (e: IllegalArgumentException) {
-                        Log.d(TAG, "Decode search keyword", e)
-                    }
-                }
-                "advsearch" -> if ("1" == value) enableAdvanceSearch = true
-                "f_sname" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SNAME
-                "f_stags" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.STAGS
-                "f_sdesc" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SDESC
-                "f_storr" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.STORR
-                "f_sto" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.STO
-                "f_sdt1" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SDT1
-                "f_sdt2" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SDT2
-                "f_sh" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SH
-                "f_sfl" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SFL
-                "f_sfu" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SFU
-                "f_sft" -> if ("on" == value) parsedAdvanceSearch = parsedAdvanceSearch or AdvanceSearchTable.SFT
-                "f_sr" -> if ("on" == value) enableMinRating = true
-                "f_srdd" -> parsedMinRating = (value.toIntOrNull() ?: -1)
-                "f_sp" -> if ("on" == value) enablePage = true
-                "f_spf" -> parsedPageFrom = (value.toIntOrNull() ?: -1)
-                "f_spt" -> parsedPageTo = (value.toIntOrNull() ?: -1)
-            }
-        }
-
-        category = parsedCategory
-        keyword = parsedKeyword
-        if (enableAdvanceSearch) {
-            advanceSearch = parsedAdvanceSearch
-            minRating = if (enableMinRating) parsedMinRating else -1
-            if (enablePage) {
-                pageFrom = parsedPageFrom
-                pageTo = parsedPageTo
-            } else {
-                pageFrom = -1
-                pageTo = -1
-            }
-        } else {
-            advanceSearch = -1
-        }
-    }
-
     override fun describeContents(): Int = 0
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -341,8 +248,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
     }
 
     companion object {
-        private const val TAG = "ListUrlBuilder"
-
         // Mode constants
         const val MODE_NORMAL = 0x0
         const val MODE_UPLOADER = 0x1
@@ -354,8 +259,6 @@ class ListUrlBuilder : Cloneable, Parcelable {
         const val MODE_FILTER = 0x6
         const val MODE_TOP_LIST = 0x7
 
-        const val DEFAULT_ADVANCE = AdvanceSearchTable.SNAME or AdvanceSearchTable.STAGS
-        const val DEFAULT_MIN_RATING = 2
 
         @JvmField
         val CREATOR: Parcelable.Creator<ListUrlBuilder> = object : Parcelable.Creator<ListUrlBuilder> {

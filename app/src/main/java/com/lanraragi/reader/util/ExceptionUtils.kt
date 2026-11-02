@@ -15,47 +15,8 @@
  */
 package com.lanraragi.reader.util
 
-import com.lanraragi.reader.GetText
-import com.lanraragi.reader.R
-import com.lanraragi.reader.client.exception.AppException
-import org.apache.http.conn.ConnectTimeoutException
-import java.net.MalformedURLException
-import java.net.ProtocolException
-import java.net.SocketException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
-import javax.net.ssl.SSLException
-
 object ExceptionUtils {
     private val TAG: String = ExceptionUtils::class.java.getSimpleName()
-
-    @JvmStatic
-    fun getReadableString(e: Throwable): String {
-        e.printStackTrace()
-        if (e is MalformedURLException) {
-            return GetText.getString(R.string.error_invalid_url)
-        } else if (e is ConnectTimeoutException ||
-            e is SocketTimeoutException
-        ) {
-            return GetText.getString(R.string.error_timeout)
-        } else if (e is UnknownHostException) {
-            return GetText.getString(R.string.error_unknown_host)
-        } else if (e is ProtocolException && e.message != null && e.message!!.startsWith("Too many follow-up requests:")) {
-            return GetText.getString(R.string.error_redirection)
-        } else if (e is ProtocolException || e is SocketException || e is SSLException) {
-            return GetText.getString(R.string.error_socket)
-        } else if (e is AppException) {
-            return "" + e.message
-        } else {
-            if (e.localizedMessage == null) {
-                return "" + e.message
-            }
-            if (e.localizedMessage == e.message) {
-                return e.localizedMessage
-            }
-            return e.localizedMessage + "\n" + e.message
-        }
-    }
 
     @JvmStatic
     fun throwIfFatal(t: Throwable) {

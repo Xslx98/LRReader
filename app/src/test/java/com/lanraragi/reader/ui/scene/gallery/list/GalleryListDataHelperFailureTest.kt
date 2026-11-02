@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.ListUrlBuilder
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith

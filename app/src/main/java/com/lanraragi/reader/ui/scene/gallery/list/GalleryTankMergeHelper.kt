@@ -9,7 +9,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.LRRClientProvider
-import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.settings.AppearanceSettings

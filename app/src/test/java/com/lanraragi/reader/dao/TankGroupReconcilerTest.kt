@@ -1,6 +1,5 @@
-package com.lanraragi.reader.download
+package com.lanraragi.reader.dao
 
-import com.lanraragi.reader.dao.TankDownloadGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame

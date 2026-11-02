@@ -7,8 +7,8 @@ import android.text.SpannableStringBuilder
 import android.text.TextUtils
 import android.text.style.ImageSpan
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.LRRUtils
-import com.lanraragi.reader.client.data.ListUrlBuilder
+import com.lanraragi.reader.archive.LRRUtils
+import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.widget.SearchBar
 import androidx.core.content.ContextCompat
 

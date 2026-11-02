@@ -9,7 +9,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
@@ -17,7 +17,7 @@ import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.mergeRatingIntoTags
 import com.lanraragi.reader.domain.parseLrrTagString
 import com.lanraragi.reader.domain.parseRatingFromTags
-import com.lanraragi.reader.download.TankGroupReconciler
+import com.lanraragi.reader.dao.TankGroupReconciler
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.reading.TankPageMath
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
