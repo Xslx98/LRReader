@@ -19,99 +19,44 @@ package com.lanraragi.reader.ui
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
-import com.lanraragi.reader.LRReaderApplication
-import com.lanraragi.reader.settings.AppLockGate
-import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.settings.SecureWindowPolicy
-import com.lanraragi.reader.settings.SecuritySettings
-import com.lanraragi.reader.util.LocaleContext
 
-abstract class BaseActivity : AppCompatActivity() {
+/**
+ * The app's Activity base: applies [ActivityPolicies] at its lifecycle points.
+ * MainActivity extends the framework's StageActivity instead and applies the
+ * same policies through StageActivity's hooks.
+ */
+abstract class BaseActivity : AppCompatActivity(), AppUnlockHost {
+
+    private val policies = ActivityPolicies(this)
 
     @StyleRes
     protected abstract fun getThemeResId(theme: Int): Int
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Apply FLAG_SECURE before the window is created -- must be set before
-        // super.onCreate() / setContentView() for reliable screenshot prevention.
-        // See: WindowManager.LayoutParams.FLAG_SECURE documentation.
-        if (SecuritySettings.getEnabledSecurity()) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
-
-        // Extend content into display cutout (notch/punch-hole) areas.
-        // Prevents white bars in landscape mode on devices with cutouts.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            window.attributes.layoutInDisplayCutoutMode =
-                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-        }
-
-        setTheme(getThemeResId(AppearanceSettings.getTheme()))
+        policies.beforeCreate(::getThemeResId)
         super.onCreate(savedInstanceState)
-
-        // Process-level app lock: an Activity created while the app is
-        // locked (restored after process death, or launched directly by a
-        // widget / shortcut / notification) never shows its content; it
-        // hands off to the lock screen and finishes. Subclasses must return
-        // early from onCreate when isFinishing.
-        if (!hostsLockScreen() && AppLockGate.isLocked()) {
-            redirectToLockScreen()
-        }
+        // Subclasses must return early from onCreate when isFinishing.
+        // MainActivity, the lock-screen host, is not a BaseActivity.
+        policies.afterCreate(hostsLockScreen = false, lockResumeIntent = ::lockResumeIntent)
     }
 
     override fun onResume() {
         super.onResume()
-        // Re-check on resume to handle setting changes while app is running;
-        // a locked app on API < 33 stays secure until the lock is passed.
-        applySecureFlag(resumedAndUnlocked = !AppLockGate.isLocked())
-        // With an app lock set, the recents thumbnail must not show the last
-        // screen. Unlike FLAG_SECURE this keeps screenshots working.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            setRecentsScreenshotEnabled(!SecuritySettings.isLockEnabled())
-        }
-        onForegroundLockCheck()
+        policies.onResume(::onForegroundLockCheck)
     }
 
-
     override fun onPause() {
-        // API < 33 with an app lock: hide the window before the recents
-        // snapshot is taken (audit C48 / SEC-14).
-        applySecureFlag(resumedAndUnlocked = false)
+        policies.onPause()
         super.onPause()
     }
 
     /** The lock was just passed in this resumed activity: lift the lock-only FLAG_SECURE. */
-    fun onAppUnlocked() {
-        applySecureFlag(resumedAndUnlocked = true)
+    override fun onAppUnlocked() {
+        policies.onAppUnlocked()
     }
-
-    private fun applySecureFlag(resumedAndUnlocked: Boolean) {
-        val secure = SecureWindowPolicy.wantsSecureFlag(
-            sdkInt = Build.VERSION.SDK_INT,
-            userSecureMode = SecuritySettings.getEnabledSecurity(),
-            lockEnabled = SecuritySettings.isLockEnabled(),
-            resumedAndUnlocked = resumedAndUnlocked,
-        )
-        if (secure) {
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-            )
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
-    }
-
-    /**
-     * True for the Activity that hosts the lock screen itself (MainActivity).
-     * Every other Activity is redirected there while the app is locked.
-     */
-    protected open fun hostsLockScreen(): Boolean = false
 
     /**
      * The intent to relaunch once the lock is passed, or null to land on
@@ -122,41 +67,22 @@ abstract class BaseActivity : AppCompatActivity() {
 
     /**
      * Called from [onResume] after the secure-flag check: while the app is
-     * locked, surface MainActivity (the lock-screen host). MainActivity is
-     * `singleTask`, so `FLAG_ACTIVITY_CLEAR_TOP` handles both topologies —
-     * this activity above MainActivity in the same task (popped), or the
-     * root of its own task (MainActivity's task is brought forward).
-     *
-     * MainActivity overrides this to push SecurityScene directly.
+     * locked, surface MainActivity (the lock-screen host); see
+     * [ActivityPolicies.foregroundLockCheck].
      *
      * Subclasses that override [onResume] and run additional work after
      * `super.onResume()` should bail out via `if (isFinishing) return`.
      */
     protected open fun onForegroundLockCheck() {
-        if (!AppLockGate.isLocked()) return
-        redirectToLockScreen()
-    }
-
-    private fun redirectToLockScreen() {
-        lockResumeIntent()?.let { AppLockGate.stashResumeIntent(it) }
-        startActivity(
-            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        )
-        finish()
+        policies.foregroundLockCheck(::lockResumeIntent)
     }
 
     override fun attachBaseContext(newBase: Context) {
-        val locale = AppearanceSettings.resolveAppLocale(AppearanceSettings.getAppLanguage())
-        super.attachBaseContext(LocaleContext.wrap(newBase, locale))
+        super.attachBaseContext(ActivityPolicies.wrapBaseContext(newBase))
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        if (AppearanceSettings.isThemeAutoSwitchAvailable()) {
-            val isDark = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-            if (AppearanceSettings.syncThemeWithSystem(isDark)) {
-                (application as LRReaderApplication).recreate()
-            }
-        }
+        policies.onConfigurationChanged(newConfig)
     }
 }

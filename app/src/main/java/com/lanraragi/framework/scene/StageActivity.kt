@@ -28,10 +28,10 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ui.BaseActivity
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.IntIdGenerator
 import java.util.concurrent.atomic.AtomicInteger
@@ -39,7 +39,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 @Suppress("LargeClass") // scene stack, back routing and predictive back share one tag list; splitting is a redesign
-abstract class StageActivity : BaseActivity() {
+abstract class StageActivity : AppCompatActivity() {
 
     private val sceneTagList = ArrayList<String>()
     private val delaySceneTagList = ArrayList<String>()
@@ -188,8 +188,35 @@ abstract class StageActivity : BaseActivity() {
      */
     protected abstract fun onCreate2(savedInstanceState: Bundle?)
 
+    // Lifecycle hooks for the host app's Activity-wide policies (window flags,
+    // theme, app lock). [onCreate] is final, and these run at the points where
+    // a base class between AppCompatActivity and StageActivity would run its own
+    // code: right around AppCompatActivity's callback, before the stage's work.
+
+    /** Before `AppCompatActivity.onCreate`: window flags and `setTheme` go here. */
+    protected open fun onStageBeforeCreate(savedInstanceState: Bundle?) {
+        // Optional hook for subclasses.
+    }
+
+    /** Right after `AppCompatActivity.onCreate`, before the stage sets itself up. */
+    protected open fun onStageCreated(savedInstanceState: Bundle?) {
+        // Optional hook for subclasses.
+    }
+
+    /** Right after `AppCompatActivity.onResume`, before the stage updates its back callback. */
+    protected open fun onStageResumed() {
+        // Optional hook for subclasses.
+    }
+
+    /** Right before `AppCompatActivity.onPause`, after the stage settled predictive back. */
+    protected open fun onStagePausing() {
+        // Optional hook for subclasses.
+    }
+
     final override fun onCreate(savedInstanceState: Bundle?) {
+        onStageBeforeCreate(savedInstanceState)
         super.onCreate(savedInstanceState)
+        onStageCreated(savedInstanceState)
         onBackPressedDispatcher.addCallback(this, backCallback)
 
         if (savedInstanceState != null) {
@@ -670,6 +697,7 @@ abstract class StageActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        onStageResumed()
         updateBackCallback()
     }
 
@@ -938,6 +966,7 @@ abstract class StageActivity : BaseActivity() {
         if (predictTop != null) {
             restoreAfterPredictiveBack()
         }
+        onStagePausing()
         super.onPause()
     }
 
