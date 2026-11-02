@@ -3,9 +3,6 @@
 D1 com/lanraragi/framework/lib/image/DecodeResult.kt
 D1 com/lanraragi/framework/lib/image/Image.kt
 D1 com/lanraragi/framework/scene/StageActivity.kt
-D1 com/lanraragi/framework/widget/ContentLayout.kt
-D1 com/lanraragi/framework/widget/LoadImageView.kt
-D1 com/lanraragi/framework/widget/LoadImageViewNew.kt
 D10b com/lanraragi/reader/ui/scene/LRRCategoriesScene.kt
 D10b com/lanraragi/reader/ui/scene/SecurityScene.kt
 D10b com/lanraragi/reader/ui/scene/ServerConfigScene.kt

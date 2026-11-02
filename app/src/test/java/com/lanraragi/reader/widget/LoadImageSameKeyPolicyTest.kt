@@ -1,4 +1,4 @@
-package com.lanraragi.framework.widget
+package com.lanraragi.reader.widget
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

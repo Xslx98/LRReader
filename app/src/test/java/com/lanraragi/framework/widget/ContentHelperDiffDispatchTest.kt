@@ -11,6 +11,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.widget.ContentLayout
 
 /**
  * [ContentLayout.ContentHelper] turns each page result into granular adapter

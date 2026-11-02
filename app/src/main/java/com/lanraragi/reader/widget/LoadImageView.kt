@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.widget
+package com.lanraragi.reader.widget
 
 import android.content.Context
 import android.graphics.Color
@@ -33,6 +33,7 @@ import com.lanraragi.framework.drawable.PreciselyClipDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.CoverLoader
 import com.lanraragi.reader.cover.CoverStore
+import com.lanraragi.framework.widget.FixedAspectImageView
 
 open class LoadImageView : FixedAspectImageView, CoverLoader.Callback,
     View.OnClickListener, View.OnLongClickListener, Animatable {

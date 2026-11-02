@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.widget
+package com.lanraragi.reader.widget
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -34,6 +34,7 @@ import coil3.request.Disposable
 import com.lanraragi.framework.drawable.PreciselyClipDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.CoverLoader
+import com.lanraragi.framework.widget.FixedAspectImageView
 
 open class LoadImageViewNew : FixedAspectImageView, CoverLoader.Callback,
     View.OnClickListener, View.OnLongClickListener, Animatable {

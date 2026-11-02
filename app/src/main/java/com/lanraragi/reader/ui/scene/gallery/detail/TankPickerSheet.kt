@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.lanraragi.framework.widget.LoadImageViewNew
+import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.cover.TankCoverCacheStamp

@@ -36,7 +36,7 @@ import com.lanraragi.reader.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
 import com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
-import com.lanraragi.framework.widget.LoadImageViewNew
+import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import java.util.Collections

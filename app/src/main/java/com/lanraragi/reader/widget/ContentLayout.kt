@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.framework.widget
+package com.lanraragi.reader.widget
 
 import android.content.Context
 import android.os.Bundle
@@ -39,8 +39,6 @@ import com.lanraragi.reader.util.IntIdGenerator
 import com.lanraragi.reader.util.IntList
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.util.attrColor
-import com.lanraragi.reader.widget.ListRefreshLayout
-import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.widget.list.HandlerDrawable

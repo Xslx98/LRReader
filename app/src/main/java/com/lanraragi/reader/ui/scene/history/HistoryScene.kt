@@ -74,7 +74,7 @@ import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.framework.widget.LoadImageView
+import com.lanraragi.reader.widget.LoadImageView
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.ViewUtils

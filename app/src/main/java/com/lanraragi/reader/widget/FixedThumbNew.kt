@@ -21,7 +21,6 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import androidx.core.content.withStyledAttributes
 import com.lanraragi.reader.R
-import com.lanraragi.framework.widget.LoadImageViewNew
 
 class FixedThumbNew @JvmOverloads constructor(
     context: Context,

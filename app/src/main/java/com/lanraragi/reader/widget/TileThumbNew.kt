@@ -19,7 +19,6 @@ package com.lanraragi.reader.widget
 import android.content.Context
 import android.util.AttributeSet
 import com.lanraragi.reader.util.MathUtils
-import com.lanraragi.framework.widget.LoadImageViewNew
 
 class TileThumbNew @JvmOverloads constructor(
     context: Context,

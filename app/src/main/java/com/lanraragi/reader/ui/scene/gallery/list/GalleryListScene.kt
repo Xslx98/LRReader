@@ -72,7 +72,7 @@ import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.framework.widget.ContentLayout
+import com.lanraragi.reader.widget.ContentLayout
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.client.api.LRRAuthManager

@@ -22,7 +22,7 @@ import com.lanraragi.reader.ui.scene.TransitionNameFactory
 import com.lanraragi.reader.widget.bindSourceServerBadge
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import androidx.core.content.ContextCompat
-import com.lanraragi.framework.widget.LoadImageView
+import com.lanraragi.reader.widget.LoadImageView
 import kotlinx.coroutines.launch
 
 /**

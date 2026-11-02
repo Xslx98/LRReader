@@ -1,4 +1,4 @@
-package com.lanraragi.framework.widget
+package com.lanraragi.reader.widget
 
 /**
  * Same-key short-circuit decision for [LoadImageView] / [LoadImageViewNew].

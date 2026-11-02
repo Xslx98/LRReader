@@ -4,6 +4,7 @@
 com/lanraragi/reader/dao 84.6
 com/lanraragi/reader/download 68.0
 com/lanraragi/reader/gallery 43.3
+com/lanraragi/reader/widget 20.6
 # Framework (2.4 P0, seeded 2026-10-20 at v2.3.0): the whole tree, plus the
 # tier A/C packages that survive 2.4. Tier B packages are deleted during 2.4,
 # so they get no line of their own. Pure GL/rendering code unit tests cannot
@@ -17,4 +18,4 @@ com/lanraragi/framework/lib/glgallery 23.8
 com/lanraragi/framework/lib/glview 16.2
 com/lanraragi/framework/lib/image 64.8
 com/lanraragi/framework/scene 51.9
-com/lanraragi/framework/widget 11.5
+com/lanraragi/framework/widget 9.6

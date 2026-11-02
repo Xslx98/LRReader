@@ -42,7 +42,7 @@ import com.lanraragi.reader.util.traceSection
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.widget.TileThumbNew
 import com.lanraragi.reader.util.ViewUtils
-import com.lanraragi.framework.widget.LoadImageViewNew
+import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.lanraragi.reader.client.api.isTankoubonId
 

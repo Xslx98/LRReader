@@ -25,7 +25,7 @@ import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.framework.widget.LoadImageView
+import com.lanraragi.reader.widget.LoadImageView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps

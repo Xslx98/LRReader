@@ -42,7 +42,7 @@ import com.lanraragi.reader.widget.Ripples
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.util.ExceptionUtils
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.framework.widget.LoadImageView
+import com.lanraragi.reader.widget.LoadImageView
 import java.text.SimpleDateFormat
 import java.util.Date
 import com.lanraragi.reader.dao.DownloadState

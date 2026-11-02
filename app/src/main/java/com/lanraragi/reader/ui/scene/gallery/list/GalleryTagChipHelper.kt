@@ -19,7 +19,7 @@ import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.tagtranslation.TagTranslationUtil
-import com.lanraragi.framework.widget.LoadImageViewNew
+import com.lanraragi.reader.widget.LoadImageViewNew
 
 /**
  * Handles tag chip building, popup window, and tag click/long-click for GalleryListScene.
@@ -34,7 +34,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
         fun isDrawersVisible(): Boolean
         fun closeDrawer(gravity: Int)
         fun getUrlBuilder(): ListUrlBuilder?
-        fun getContentHelper(): com.lanraragi.framework.widget.ContentLayout.ContentHelper<*>?
+        fun getContentHelper(): com.lanraragi.reader.widget.ContentLayout.ContentHelper<*>?
         fun isFilterOpen(): Boolean
         fun buildFilterSearch(tagName: String): String
         fun updateFilterDisplay()

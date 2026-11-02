@@ -17,7 +17,6 @@
 package com.lanraragi.reader.widget
 
 import android.os.Parcelable
-import com.lanraragi.framework.widget.ContentLayout
 import com.lanraragi.reader.domain.Archive
 
 abstract class GalleryInfoContentHelper : ContentLayout.ContentHelper<Archive>() {
