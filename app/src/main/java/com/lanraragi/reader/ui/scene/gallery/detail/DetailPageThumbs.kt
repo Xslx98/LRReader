@@ -204,9 +204,9 @@ class DetailPageThumbs(
         // Tank-flow members read in the whole-tank session; the tapped
         // member-local page maps to its global page inside it.
         TankSessionRouter
-            .tankIntentFor(ctx, archive.arcid, memberPage0 = page0)
-            ?.let { tankIntent ->
-                scene.startActivity(tankIntent)
+            .tankLaunchFor(ctx, archive.arcid, memberPage0 = page0)
+            ?.let { launch ->
+                scene.startActivity(GalleryOpenHelper.buildTankReadIntent(ctx, launch))
                 return
             }
         scene.viewLifecycleOwner.lifecycleScope.launch(

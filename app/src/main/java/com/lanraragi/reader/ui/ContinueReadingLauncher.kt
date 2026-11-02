@@ -66,8 +66,9 @@ object ContinueReadingLauncher {
             if (isTankoubonId(archive.arcid)) {
                 try {
                     val tankIntent = withContext(ioDispatcher) {
-                        TankSessionRouter.buildResumeIntent(
-                            activity, archive.arcid, archive.serverProfileId
+                        GalleryOpenHelper.buildTankReadIntent(
+                            activity,
+                            TankSessionRouter.resumeLaunch(activity, archive.arcid, archive.serverProfileId),
                         )
                     }
                     activity.startActivity(tankIntent)

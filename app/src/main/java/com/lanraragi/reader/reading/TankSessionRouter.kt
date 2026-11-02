@@ -1,9 +1,7 @@
 package com.lanraragi.reader.reading
 
 import android.content.Context
-import android.content.Intent
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import java.io.IOException
@@ -44,7 +42,7 @@ object TankSessionRouter {
      *   resume the tank's saved global progress when it already sits
      *   inside this member, else open the member's first page.
      */
-    fun tankIntentFor(context: Context, arcid: String, memberPage0: Int = -1): Intent? {
+    fun tankLaunchFor(context: Context, arcid: String, memberPage0: Int = -1): TankLaunch? {
         val readingCtx =
             ReadingContextStore.currentFor(arcid) as? ReadingContext.Tankoubon ?: return null
         val seed = TankSeedStore.seedFor(readingCtx.tankId) ?: return null
@@ -64,7 +62,7 @@ object TankSessionRouter {
             // restore it (-1); anywhere else → this member's first page.
             if (savedMember == memberIndex) -1 else memberStart
         }
-        return GalleryOpenHelper.buildTankReadIntent(context, seed, startGlobalPage)
+        return TankLaunch(seed, startGlobalPage)
     }
 
     /**
@@ -75,23 +73,23 @@ object TankSessionRouter {
      * — resuming a tank without server truth would read a stale member set.
      */
     @Throws(IOException::class)
-    suspend fun buildResumeIntent(context: Context, tankId: String, profileId: Long): Intent =
-        buildResumeIntent(context, tankId, profileId, anchorArcid = null)
+    suspend fun resumeLaunch(context: Context, tankId: String, profileId: Long): TankLaunch =
+        resumeLaunch(context, tankId, profileId, anchorArcid = null)
 
     /**
-     * [buildResumeIntent] entered THROUGH a member (spec 2026-09-21 §5):
+     * [resumeLaunch] entered THROUGH a member (spec 2026-09-21 §5):
      * when [anchorArcid] is a current member and the saved tank progress
      * lies outside it, the session opens on that member's first page;
      * otherwise (inside it, or anchor unknown) the saved progress is
      * restored.
      */
     @Throws(IOException::class)
-    suspend fun buildResumeIntent(
+    suspend fun resumeLaunch(
         context: Context,
         tankId: String,
         profileId: Long,
         anchorArcid: String?,
-    ): Intent {
+    ): TankLaunch {
         val url = resolveSourceBaseUrl(profileId, ServiceRegistry.dataModule.profileLookupCache)
         val full = LRRTankoubonApi.getTankoubonFull(
             ServiceRegistry.networkModule.okHttpClient, url, tankId
@@ -108,6 +106,6 @@ object TankSessionRouter {
             members.map { it.pagecount }, anchorIndex,
             TankProgress.start0(context, tankId, full.progress),
         )
-        return GalleryOpenHelper.buildTankReadIntent(context, seed, startGlobalPage = start)
+        return TankLaunch(seed, startGlobalPage = start)
     }
 }

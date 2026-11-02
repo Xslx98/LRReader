@@ -122,7 +122,8 @@ internal class DetailActionHandler(
                     // A member reached through a tank detail flow reads in
                     // the whole-tank composite session; everything else
                     // stays a standalone per-archive session.
-                    val tankIntent = TankSessionRouter.tankIntentFor(activity, archive.arcid)
+                    val tankIntent = TankSessionRouter.tankLaunchFor(activity, archive.arcid)
+                        ?.let { GalleryOpenHelper.buildTankReadIntent(activity, it) }
                     if (tankIntent != null) {
                         scene.startActivity(tankIntent)
                         return

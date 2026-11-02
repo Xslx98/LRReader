@@ -81,6 +81,7 @@ import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.ui.GalleryOpenHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -390,7 +391,8 @@ class HistoryScene : ToolbarScene(),
         val ctx = ehContext ?: return false
         viewLifecycleOwner.lifecycleScope.launch {
             val intent = withContext(Dispatchers.IO) {
-                HistoryTankRedirect.resumeIntentOrNull(ctx, archive.arcid, archive.serverProfileId)
+                HistoryTankRedirect.resumeLaunchOrNull(ctx, archive.arcid, archive.serverProfileId)
+                    ?.let { GalleryOpenHelper.buildTankReadIntent(ctx, it) }
             }
             if (intent != null) startActivity(intent) else openArchiveDetail(list, position, archive, view)
         }
@@ -434,7 +436,9 @@ class HistoryScene : ToolbarScene(),
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val intent = withContext(Dispatchers.IO) {
-                    TankSessionRouter.buildResumeIntent(ctx, archive.arcid, archive.serverProfileId)
+                    GalleryOpenHelper.buildTankReadIntent(
+                        ctx, TankSessionRouter.resumeLaunch(ctx, archive.arcid, archive.serverProfileId)
+                    )
                 }
                 startActivity(intent)
             } catch (e: Exception) {
