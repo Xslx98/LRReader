@@ -147,7 +147,7 @@ internal class DetailActionHandler(
             v.id == R.id.title -> {
                 val title = viewModel.archiveDetail.value?.archive?.title
                 if (!title.isNullOrEmpty()) {
-                    ClipboardUtil.copyText(title)
+                    ClipboardUtil.copyText(context, title)
                     Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
                 }
             }
