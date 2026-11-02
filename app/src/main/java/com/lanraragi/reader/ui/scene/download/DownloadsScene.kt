@@ -171,7 +171,7 @@ class DownloadsScene : ToolbarScene(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel = ViewModelProvider(requireActivity())[DownloadsViewModel::class.java]
+        viewModel = ViewModelProvider(this)[DownloadsViewModel::class.java]
 
         val context = ehContext
         AssertUtils.assertNotNull(context)

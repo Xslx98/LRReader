@@ -1,7 +1,6 @@
 # Existing violations of config/architecture/rules.txt: "<rule> <path under app/src/main/java>".
 # This list may only shrink; fixing a violation means deleting its line.
 D1 com/lanraragi/framework/scene/StageActivity.kt
-D10b com/lanraragi/reader/ui/scene/download/DownloadsScene.kt
 D10b com/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailScene.kt
 D10b com/lanraragi/reader/ui/scene/gallery/list/QuickSearchScene.kt
 D10b com/lanraragi/reader/ui/scene/history/HistoryScene.kt
