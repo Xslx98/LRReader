@@ -113,20 +113,20 @@ class DownloadManagerTest {
         // through ServiceRegistry.
         ServiceRegistry.initializeForTest(
             data = object : com.lanraragi.reader.module.IDataModule {
-                override val searchHistoryRepository get() = throw NotImplementedError("not needed")
+                override val searchHistoryRepository get() = throw UnsupportedOperationException("not needed")
                 override val downloadDbRepository get() =
                     DownloadDbRepository(
                         db.archiveLocalStateDao(), db.downloadDao(), db,
                         kotlinx.coroutines.Dispatchers.Unconfined
                     )
-                override val downloadManager get() = throw NotImplementedError("set after init")
-                override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
+                override val downloadManager get() = throw UnsupportedOperationException("set after init")
+                override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
                 override val historyRepository get() = com.lanraragi.reader.dao.HistoryRepository(db.archiveLocalStateDao(), db)
-                override val profileRepository get() = throw NotImplementedError("not needed")
-                override val profileLookupCache get() = throw NotImplementedError("not needed")
-                override val quickSearchRepository get() = throw NotImplementedError("not needed")
-                override val favoritesRepository get() = throw NotImplementedError("not needed")
-                override val archiveDetailCache get() = throw NotImplementedError("not needed")
+                override val profileRepository get() = throw UnsupportedOperationException("not needed")
+                override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+                override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+                override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+                override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
                 override fun clearArchiveDetailCache() {}
             }
         )

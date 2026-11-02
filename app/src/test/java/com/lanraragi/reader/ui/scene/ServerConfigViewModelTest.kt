@@ -102,16 +102,16 @@ class ServerConfigViewModelTest {
         val networkModule = createTestNetworkModule(testClient)
 
         val testDataModule = object : IDataModule {
-            override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
+            override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
             override val profileRepository get() = ProfileRepository(db.miscDao())
-            override val profileLookupCache get() = throw NotImplementedError("not needed")
-            override val historyRepository get() = throw NotImplementedError("not needed")
-            override val quickSearchRepository get() = throw NotImplementedError("not needed")
-            override val favoritesRepository get() = throw NotImplementedError("not needed")
-            override val downloadDbRepository get() = throw NotImplementedError("not needed")
-            override val downloadManager get() = throw NotImplementedError("not needed")
-            override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
-            override val archiveDetailCache get() = throw NotImplementedError("not needed")
+            override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+            override val historyRepository get() = throw UnsupportedOperationException("not needed")
+            override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+            override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+            override val downloadDbRepository get() = throw UnsupportedOperationException("not needed")
+            override val downloadManager get() = throw UnsupportedOperationException("not needed")
+            override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
+            override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
             override fun clearArchiveDetailCache() {}
         }
 
@@ -381,16 +381,16 @@ class ServerConfigViewModelTest {
     }
 
     private fun throwingDataModule(repo: ProfileRepository): IDataModule = object : IDataModule {
-        override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
+        override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
         override val profileRepository get() = repo
-        override val profileLookupCache get() = throw NotImplementedError("not needed")
-        override val historyRepository get() = throw NotImplementedError("not needed")
-        override val quickSearchRepository get() = throw NotImplementedError("not needed")
-        override val favoritesRepository get() = throw NotImplementedError("not needed")
-        override val downloadDbRepository get() = throw NotImplementedError("not needed")
-        override val downloadManager get() = throw NotImplementedError("not needed")
-        override val favouriteStatusRouter get() = throw NotImplementedError("not needed")
-        override val archiveDetailCache get() = throw NotImplementedError("not needed")
+        override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+        override val historyRepository get() = throw UnsupportedOperationException("not needed")
+        override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
+        override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
+        override val downloadDbRepository get() = throw UnsupportedOperationException("not needed")
+        override val downloadManager get() = throw UnsupportedOperationException("not needed")
+        override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
+        override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
         override fun clearArchiveDetailCache() {}
     }
 

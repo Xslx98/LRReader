@@ -102,13 +102,13 @@ class DownloadsViewModelTest {
         lateinit var manager: DownloadManager
         ServiceRegistry.initializeForTest(
             data = object : IDataModule {
-                override val searchHistoryRepository get() = throw NotImplementedError("Not needed for these tests")
+                override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
                 override val downloadManager: DownloadManager get() = manager
                 override val favouriteStatusRouter get() = FavouriteStatusRouter()
                 override val historyRepository get() =
                     com.lanraragi.reader.dao.HistoryRepository(db.archiveLocalStateDao(), db)
                 override val profileRepository get() = ProfileRepository(db.miscDao())
-                override val profileLookupCache get() = throw NotImplementedError("not needed")
+                override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
                 override val quickSearchRepository get() =
                     com.lanraragi.reader.dao.QuickSearchRepository(db.browsingDao())
                 override val favoritesRepository get() =
