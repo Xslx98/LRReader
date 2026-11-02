@@ -59,6 +59,9 @@ jobs:
       - name: No new plain runCatching (it swallows coroutine cancellation)
         run: bash scripts/ci/check-runcatching.sh
 
+      - name: Baseline profile must not name classes that no longer exist
+        run: bash scripts/ci/check-profile-classes.sh
+
       - name: Room schema must be committed
         # KSP rewrites app/schemas/<version>.json on every build (its tasks
         # never come from the build cache); a diff here means an entity
