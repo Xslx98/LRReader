@@ -61,7 +61,7 @@ class ServerListScene : BaseScene() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        viewModel = ViewModelProvider(requireActivity())[ServerListViewModel::class.java]
+        viewModel = ViewModelProvider(this)[ServerListViewModel::class.java]
         dialogHelper = ServerListDialogHelper(
             contextProvider = { getEHContext() },
             activityProvider = { activity as? androidx.fragment.app.FragmentActivity },
