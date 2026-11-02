@@ -19,4 +19,5 @@
 - [ ] Moved or renamed classes went through `scripts/move-package.sh` (tests, XML class names, `baseline-prof.txt`, baselines and coverage floor updated in the same commit).
 - [ ] Changes to `framework/lib/glview` or `glgallery` keep the render, layout and touch paths free of allocations, boxing and lambdas.
 - [ ] Schema changes include a Room migration and the exported schema.
+- [ ] Docs follow the change in the same PR: `README.md` for anything a user sees (features, settings, requirements, screenshots), `CONTRIBUTING.md` for conventions and layout, `config/architecture/packages.txt` for a new package.
 - [ ] No credentials, keystores or `local.properties` in the diff.
