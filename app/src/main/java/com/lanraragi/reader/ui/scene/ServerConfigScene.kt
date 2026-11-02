@@ -20,7 +20,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.ui.collectFlowWhileCreated
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
@@ -54,7 +54,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
 
     override fun needShowLeftDrawer(): Boolean {
         // Show drawer when server is already configured (allows back navigation)
-        return LRRAuthManager.isConfigured()
+        return ServerSession.isConfigured()
     }
 
     override fun onCreateView2(
@@ -107,7 +107,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
     private fun prefillSavedSettings() {
         viewLifecycleOwner.lifecycleScope.launch {
             val (savedUrl, savedKey) = withContext(ServiceRegistry.coroutineModule.ioDispatcher) {
-                LRRAuthManager.getServerUrl() to LRRAuthManager.getApiKey()
+                ServerSession.getServerUrl() to ServerSession.getApiKey()
             }
             if (savedUrl != null && mServerUrl?.text.isNullOrEmpty()) mServerUrl?.setText(savedUrl)
             if (savedKey != null && mApiKey?.text.isNullOrEmpty()) mApiKey?.setText(savedKey)

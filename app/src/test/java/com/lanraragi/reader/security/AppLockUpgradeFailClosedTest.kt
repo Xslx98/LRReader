@@ -22,7 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 
@@ -35,7 +35,7 @@ import com.lanraragi.reader.client.api.InMemoryValueCipher
  *
  * Robolectric has no AndroidKeyStore, so the production init always takes
  * its failure branch unless [SecureCredentialStore.secureStoreCipher] is swapped.
- * [LRRAuthManager] and [AppLockGate] are process-wide singletons: the init
+ * [SecureCredentialStore] and [AppLockGate] are process-wide singletons: the init
  * gate and the files are restored in both setUp and tearDown.
  */
 @RunWith(RobolectricTestRunner::class)

@@ -7,7 +7,7 @@ import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.collectInto
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.data.LRRCategory
 import kotlinx.coroutines.CoroutineScope
@@ -69,7 +69,7 @@ class LRRCategoriesViewModelTest {
         SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("categories_vm_test", Context.MODE_PRIVATE)
         )
-        LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
+        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
 
         val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
 

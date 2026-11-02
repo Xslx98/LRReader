@@ -47,7 +47,7 @@ import com.lanraragi.reader.settings.NetworkSettings
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.dao.DatabaseResetNotice
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.CredentialResetDialog
@@ -165,7 +165,7 @@ class MainActivity : StageActivity(), AppUnlockHost,
     override fun getLaunchAnnouncer(): Announcer {
         return if (SecuritySettings.isLockEnabled()) {
             Announcer(SecurityScene::class.java)
-        } else if (!LRRAuthManager.isConfiguredFast()) {
+        } else if (!ServerSession.isConfiguredFast()) {
             // LANraragi: show server config if not yet configured
             val announcer = Announcer(ServerConfigScene::class.java)
             // Benchmark builds only (PerfSeam): auto-fill and submit the form.
@@ -250,7 +250,7 @@ class MainActivity : StageActivity(), AppUnlockHost,
         // Prompt user to re-enter credentials: the KeyStore became unavailable,
         // or it works but saved API keys are missing (after a credential reset
         // or a restore on a new device).
-        if (LRRAuthManager.isNeedsReauthentication()) {
+        if (ServerSession.isNeedsReauthentication()) {
             val storeAvailable = SecureCredentialStore.isSecureStorageAvailable()
             val prompt = ReauthPrompt.startup(storeAvailable)
             val openServerList: () -> Unit = {
@@ -372,7 +372,7 @@ class MainActivity : StageActivity(), AppUnlockHost,
     }
 
     private fun onInit() {
-        // EH cookie auth check removed -- login state is managed via LRRAuthManager
+        // EH cookie auth check removed -- login state is managed via ServerSession
     }
 
     private fun onRestore(savedInstanceState: Bundle) {

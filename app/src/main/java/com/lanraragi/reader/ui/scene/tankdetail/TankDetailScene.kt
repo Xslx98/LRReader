@@ -30,7 +30,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.buildRatingEmoji
@@ -471,7 +471,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     private fun bindSourceBadge() {
         val badge = mSourceBadge ?: return
         val sid = viewModel.profileId
-        if (sid != 0L && sid != LRRAuthManager.getActiveProfileId()) {
+        if (sid != 0L && sid != ServerSession.getActiveProfileId()) {
             bindSourceServerBadge(badge, sid)
         } else {
             badge.visibility = View.GONE

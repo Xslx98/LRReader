@@ -6,7 +6,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response
 import com.lanraragi.reader.server.ProfileUrlCandidate
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 
 /**
  * Authoritative cleartext gate for LANraragi Reader.
@@ -26,7 +26,7 @@ import com.lanraragi.reader.server.LRRAuthManager
  *     no consent and not a LAN address                                   → reject
  *   - HTTP, host:port matches a configured profile, scheme differs       → reject
  *   - HTTP, no profile matches host:port (cache empty / cold-start) →
- *     fall back to legacy active-only check against [LRRAuthManager]
+ *     fall back to legacy active-only check against [ServerSession]
  *
  * Reject = throw [LRRCleartextRefusedException], a subclass of [java.io.IOException]
  * so OkHttp surfaces it as a normal network failure handled by existing
@@ -94,7 +94,7 @@ class LRRCleartextRejectionInterceptor : Interceptor {
         request: okhttp3.Request,
         url: HttpUrl,
     ): Response {
-        val serverUrlStr = LRRAuthManager.getServerUrl()
+        val serverUrlStr = ServerSession.getServerUrl()
             ?: throw LRRCleartextRefusedException(
                 "Cleartext request refused: no active LANraragi server configured."
             )
@@ -123,7 +123,7 @@ class LRRCleartextRejectionInterceptor : Interceptor {
             )
         }
 
-        if (!cleartextPermitted(LRRAuthManager.getAllowCleartext(), url)) {
+        if (!cleartextPermitted(ServerSession.getAllowCleartext(), url)) {
             throw LRRCleartextRefusedException(
                 "Cleartext request refused: profile does not allow plain HTTP."
             )

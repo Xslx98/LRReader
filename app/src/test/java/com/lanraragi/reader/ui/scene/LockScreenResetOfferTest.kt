@@ -6,7 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.InMemoryValueCipher
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 import java.io.File
@@ -36,7 +36,7 @@ import org.robolectric.annotation.Config
  * the lock state was unreadable is not told to reset an app lock (06d R3).
  *
  * Robolectric has no AndroidKeyStore: the production init fails unless
- * [SecureCredentialStore.secureStoreCipher] is swapped. [LRRAuthManager] is a
+ * [SecureCredentialStore.secureStoreCipher] is swapped. [SecureCredentialStore] is a
  * process-wide singleton; [SecureCredentialStore.resetInitGateForTesting] stands
  * for a new process.
  */

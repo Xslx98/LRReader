@@ -14,7 +14,7 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.LRRUrlHelper
 
 /**
@@ -94,7 +94,7 @@ internal class ServerListDialogHelper(
         // Pre-fill current values
         nameEdit.setText(profile.name)
         urlEdit.setText(profile.url)
-        val existingKey = LRRAuthManager.getApiKeyForProfile(profile.id)
+        val existingKey = ServerSession.getApiKeyForProfile(profile.id)
         if (existingKey != null) {
             apiKeyEdit.setText(existingKey)
         }

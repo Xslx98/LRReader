@@ -131,7 +131,6 @@
     <ID>LargeClass:GalleryActivity.kt$GalleryActivity : BaseActivityListenerCallbackSettingsCallback</ID>
     <ID>LargeClass:GalleryDetailScene.kt$GalleryDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
     <ID>LargeClass:GalleryListScene.kt$GalleryListScene : BaseSceneOnItemClickListenerOnItemLongClickListenerOnClickListener</ID>
-    <ID>LargeClass:LRRAuthManager.kt$LRRAuthManager</ID>
     <ID>LargeClass:MainActivity.kt$MainActivity : StageActivityOnNavigationItemSelectedListenerDrawerListener</ID>
     <ID>LargeClass:TankDetailScene.kt$TankDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
     <ID>LongMethod:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
@@ -500,7 +499,7 @@
     <ID>UnreachableCode:ReadingStatsCalculator.kt$ReadingStatsCalculator$val archive = row.archive ?: return@mapNotNull null</ID>
     <ID>UnreachableCode:SceneFactory.kt$SceneFactory$return factory()</ID>
     <ID>UnreachableCode:SceneFactory.kt$SceneFactory$val factory = factories[className] ?: throw IllegalArgumentException( "Unknown scene class: $className. Did you forget to register it?" )</ID>
-    <ID>UnreachableCode:SourceBadgeBinder.kt$LRRAuthManager.getActiveProfileId() ?: 0L</ID>
+    <ID>UnreachableCode:SourceBadgeBinder.kt$ServerSession.getActiveProfileId() ?: 0L</ID>
     <ID>UnreachableCode:StampGeometry.kt$StampGeometry$return x.coerceIn(0f, 100f) to y.coerceIn(0f, 100f)</ID>
     <ID>UnreachableCode:StampGeometry.kt$StampGeometry$val x = parts[0].trim().toFloatOrNull() ?: return null</ID>
     <ID>UnreachableCode:StampGeometry.kt$StampGeometry$val y = parts[1].trim().toFloatOrNull() ?: return null</ID>
@@ -639,9 +638,9 @@
     <ID>UseOrEmpty:LRRArchive.kt$LRRArchive$parcel.readString() ?: ""</ID>
     <ID>UseOrEmpty:LRRArchiveApi.kt$LRRArchiveApi$jsonObj["filename"]?.jsonPrimitive?.content ?: ""</ID>
     <ID>UseOrEmpty:LRRArchiveApi.kt$LRRArchiveApi$jsonObj["id"]?.jsonPrimitive?.content ?: ""</ID>
-    <ID>UseOrEmpty:LRRAuthManager.kt$LRRAuthManager$apiKey ?: ""</ID>
+    <ID>UseOrEmpty:ServerSession.kt$ServerSession$apiKey ?: ""</ID>
     <ID>UseOrEmpty:AppLockCredentials.kt$AppLockCredentials$input ?: ""</ID>
-    <ID>UseOrEmpty:LRRClientProvider.kt$LRRClientProvider$LRRAuthManager.getServerUrl() ?: ""</ID>
+    <ID>UseOrEmpty:LRRClientProvider.kt$LRRClientProvider$ServerSession.getServerUrl() ?: ""</ID>
     <ID>UseOrEmpty:LegacyDb.kt$LegacyDb$thumb ?: ""</ID>
     <ID>UseOrEmpty:LegacyDb.kt$LegacyDb$title ?: ""</ID>
     <ID>UseOrEmpty:LocalFavoriteInfo.kt$LocalFavoriteInfo$`in`.readString() ?: ""</ID>

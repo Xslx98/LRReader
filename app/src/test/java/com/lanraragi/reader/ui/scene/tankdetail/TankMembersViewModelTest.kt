@@ -10,7 +10,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.ui.scene.tankdetail.TankMembersViewModel.TankDetailUiEvent
 import java.io.File
@@ -129,7 +129,7 @@ class TankMembersViewModelTest {
         SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("tank_detail_vm_test", Context.MODE_PRIVATE)
         )
-        LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
+        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
 
         val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
         val testAppModule = stubAppModule(ctx)
@@ -159,7 +159,7 @@ class TankMembersViewModelTest {
         store: TankCoverChoiceStore = TankCoverChoiceStore(MemoryStorage()),
     ): TankMembersViewModel {
         val vm = TankMembersViewModel()
-        vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
+        vm.baseUrlResolver = { ServerSession.getServerUrl()!! }
         vm.coverChoices = store
         vm.coverReapplyDelayMs = 0L
         vm.init(TANK, "Tank", profileId = 5L)

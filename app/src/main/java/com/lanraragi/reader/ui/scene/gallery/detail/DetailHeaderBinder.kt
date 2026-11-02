@@ -15,7 +15,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
 
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
@@ -139,7 +139,7 @@ internal class DetailHeaderBinder(
      */
     fun bindSourceBadge(@Suppress("UNUSED_PARAMETER") archive: Archive) {
         val sid = viewModel.archive.value?.serverProfileId ?: 0L
-        val activeId = LRRAuthManager.getActiveProfileId()
+        val activeId = ServerSession.getActiveProfileId()
         val isCrossServer = sid != 0L && sid != activeId
         if (isCrossServer) {
             bindSourceServerBadge(sourceBadge, sid)

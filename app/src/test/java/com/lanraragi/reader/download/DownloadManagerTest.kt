@@ -7,7 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.toArchive
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadInfo
@@ -74,7 +74,7 @@ class DownloadManagerTest {
         // coroutines would otherwise poison the whole suite).
         testScope = containedTestScope()
 
-        // Initialize LRRAuthManager — KeyStore unavailable under Robolectric,
+        // Initialize SecureCredentialStore — KeyStore unavailable under Robolectric,
         // but sActiveProfileId defaults to 0 which is fine for our tests.
         SecureCredentialStore.initialize(context)
         // In Robolectric, EncryptedSharedPreferences always fails — inject plain prefs.
@@ -129,7 +129,7 @@ class DownloadManagerTest {
 
         // Configure a fake server URL so LRRDownloadWorker can be constructed
         // (ensureDownload creates workers that check for a non-null server URL)
-        LRRAuthManager.setServerUrl("http://localhost:3000")
+        ServerSession.setServerUrl("http://localhost:3000")
 
         // Drain any pending Handler callbacks from prior tests before creating manager
         org.robolectric.shadows.ShadowLooper.idleMainLooper()

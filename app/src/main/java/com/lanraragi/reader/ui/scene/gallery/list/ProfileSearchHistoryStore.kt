@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.util.Log
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.widget.SearchBar
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 class ProfileSearchHistoryStore(
     private val scope: CoroutineScope,
     private val repository: SearchHistoryRepository,
-    private val activeProfileId: () -> Long = { LRRAuthManager.getActiveProfileId() },
+    private val activeProfileId: () -> Long = { ServerSession.getActiveProfileId() },
 ) : SearchBar.HistoryStore {
 
     private var cache: List<String> = emptyList()

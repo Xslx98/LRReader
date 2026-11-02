@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.InMemoryValueCipher
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -42,7 +42,7 @@ import org.robolectric.shadows.ShadowLooper
  * is still running (transient, audit SEC-04), not on a healthy store, and not
  * when a lock is set (the lock screen owns the reset there).
  *
- * [LRRAuthManager] is a process-wide singleton, so the init gate is restored
+ * [SecureCredentialStore] is a process-wide singleton, so the init gate is restored
  * in both setUp and tearDown.
  */
 @RunWith(RobolectricTestRunner::class)

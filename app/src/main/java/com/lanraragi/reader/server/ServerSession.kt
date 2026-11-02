@@ -15,7 +15,7 @@ import com.lanraragi.reader.server.CredentialStoreLayout.profileApiKey
  * [SecureCredentialStore]. This object holds no state of its own; the
  * store's readiness gate holds readers until the store has opened.
  */
-object LRRAuthManager {
+object ServerSession {
 
     private val store get() = SecureCredentialStore
 

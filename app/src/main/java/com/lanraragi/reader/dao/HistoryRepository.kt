@@ -1,7 +1,7 @@
 package com.lanraragi.reader.dao
 
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.domain.Archive
 
 /**
@@ -29,7 +29,7 @@ class HistoryRepository(
 ) {
 
     suspend fun getHistoryLazyList(): List<HistoryInfo> {
-        val profileId = LRRAuthManager.getActiveProfileId()
+        val profileId = ServerSession.getActiveProfileId()
         val rows = if (profileId > 0) dao.getHistoryByServer(profileId) else dao.getAllHistory()
         return rows.map { it.toHistoryInfoView() }
     }
@@ -106,7 +106,7 @@ class HistoryRepository(
      * profile's when none is active — mirroring [getHistoryLazyList].
      */
     suspend fun clearHistory() {
-        val profileId = LRRAuthManager.getActiveProfileId()
+        val profileId = ServerSession.getActiveProfileId()
         if (profileId > 0) {
             dao.clearHistoryForProfileAndPruneEmptyRows(profileId)
         } else {

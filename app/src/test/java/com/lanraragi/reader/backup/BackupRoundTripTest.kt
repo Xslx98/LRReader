@@ -3,7 +3,7 @@ package com.lanraragi.reader.backup
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ArchiveLocalState
@@ -175,7 +175,7 @@ class BackupRoundTripTest {
             val mine = runBlocking {
                 target.miscDao().insertServerProfile(ServerProfile(name = "Mine", url = "https://mine.example"))
             }
-            LRRAuthManager.setApiKeyForProfile(mine, "secret")
+            ServerSession.setApiKeyForProfile(mine, "secret")
             val backup = BackupCodec.read(ByteArrayInputStream(backupBytes()))
 
             runBlocking { importer().restore(backup) }
@@ -183,10 +183,10 @@ class BackupRoundTripTest {
             val profiles = runBlocking { target.miscDao().getAllServerProfiles() }
             val restored = profiles.single { it.id != mine }.id
             // The boot check of LRReaderApplication, run on the next launch.
-            LRRAuthManager.markReauthIfProfilesUnprotected(profiles.map { it.id })
-            assertFalse("a restore must not ask for reauthentication", LRRAuthManager.isNeedsReauthentication())
-            assertNull("no key is sent for the restored server", LRRAuthManager.getApiKeyForProfile(restored))
-            assertEquals("a local key is untouched", "secret", LRRAuthManager.getApiKeyForProfile(mine))
+            ServerSession.markReauthIfProfilesUnprotected(profiles.map { it.id })
+            assertFalse("a restore must not ask for reauthentication", ServerSession.isNeedsReauthentication())
+            assertNull("no key is sent for the restored server", ServerSession.getApiKeyForProfile(restored))
+            assertEquals("a local key is untouched", "secret", ServerSession.getApiKeyForProfile(mine))
         } finally {
             SecureCredentialStore.clear()
         }

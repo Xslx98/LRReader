@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
  * - answering clears the value (`compareAndSet`), so it is shown once.
  *
  * KeyStore-only failures do not come here: they flow through the reauth
- * dialog (`LRRAuthManager.isNeedsReauthentication`), which takes precedence.
+ * dialog (`ServerSession.isNeedsReauthentication`), which takes precedence.
  */
 class BootNoticePresenter(
     private val activity: AppCompatActivity,

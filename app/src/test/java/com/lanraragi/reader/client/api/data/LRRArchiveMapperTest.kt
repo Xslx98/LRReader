@@ -10,7 +10,7 @@ import org.junit.Test
  * Tests for LRRArchive → Archive / ArchiveDetail domain model conversion.
  *
  * Note: These tests create LRRArchive instances directly and call toArchive()/toArchiveDetail().
- * LRRAuthManager static calls return defaults (null serverUrl, 0 profileId) in test context,
+ * ServerSession static calls return defaults (null serverUrl, 0 profileId) in test context,
  * which is acceptable — we verify the mapping logic, not the auth state.
  */
 class LRRArchiveMapperTest {
@@ -119,7 +119,7 @@ class LRRArchiveMapperTest {
 
     @Test
     fun `toArchive thumbnailUrl is empty when no server URL`() {
-        // LRRAuthManager.getServerUrl() returns null in test context
+        // ServerSession.getServerUrl() returns null in test context
         val archive = createLRRArchive().toArchive()
         assertEquals("", archive.thumbnailUrl)
     }

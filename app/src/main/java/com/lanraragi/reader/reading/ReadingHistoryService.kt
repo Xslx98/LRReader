@@ -6,7 +6,7 @@ import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.dao.HistoryInfo
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -67,7 +67,7 @@ class ReadingHistoryService(
      */
     suspend fun clearShownServer() = edit("Failed to clear history") { repo ->
         repo.clearHistory()
-        val profileId = LRRAuthManager.getActiveProfileId()
+        val profileId = ServerSession.getActiveProfileId()
         if (profileId > 0) {
             ContinueReadingShortcut.removeIfProfileSafely(profileId)
         } else {

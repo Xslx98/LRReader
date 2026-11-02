@@ -74,7 +74,6 @@
     <ID>LargeClass:GalleryActivity.kt$GalleryActivity : BaseActivityListenerCallbackSettingsCallback</ID>
     <ID>LargeClass:GalleryDetailScene.kt$GalleryDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
     <ID>LargeClass:GalleryListScene.kt$GalleryListScene : BaseSceneOnItemClickListenerOnItemLongClickListenerOnClickListener</ID>
-    <ID>LargeClass:LRRAuthManager.kt$LRRAuthManager</ID>
     <ID>LargeClass:MainActivity.kt$MainActivity : StageActivityOnNavigationItemSelectedListenerDrawerListener</ID>
     <ID>LargeClass:TankDetailScene.kt$TankDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
     <ID>LongMethod:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>

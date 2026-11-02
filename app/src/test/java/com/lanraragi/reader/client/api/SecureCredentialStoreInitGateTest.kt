@@ -20,7 +20,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 
@@ -54,9 +54,9 @@ class SecureCredentialStoreInitGateTest {
     @Test
     fun neverScheduled_gettersReturnDefaultsImmediately() {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        assertNull(LRRAuthManager.getServerUrl())
-        assertFalse(LRRAuthManager.isConfigured())
-        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+        assertNull(ServerSession.getServerUrl())
+        assertFalse(ServerSession.isConfigured())
+        assertEquals(0L, ServerSession.getActiveProfileId())
         assertFalse(AppLockCredentials.hasPattern())
     }
 
@@ -80,7 +80,7 @@ class SecureCredentialStoreInitGateTest {
             val readerDone = CountDownLatch(1)
             var observedUrl: String? = "sentinel"
             thread(isDaemon = true) {
-                observedUrl = LRRAuthManager.getServerUrl()
+                observedUrl = ServerSession.getServerUrl()
                 readerDone.countDown()
             }
 
@@ -123,7 +123,7 @@ class SecureCredentialStoreInitGateTest {
             // Gate must be open: a reader thread completes promptly.
             val readerDone = CountDownLatch(1)
             thread(isDaemon = true) {
-                LRRAuthManager.getServerUrl()
+                ServerSession.getServerUrl()
                 AppLockCredentials.isLockedOut()
                 readerDone.countDown()
             }
@@ -155,14 +155,14 @@ class SecureCredentialStoreInitGateTest {
             val first = CountDownLatch(1)
             var observed: String? = "sentinel"
             thread(isDaemon = true) {
-                observed = LRRAuthManager.getServerUrl()
+                observed = ServerSession.getServerUrl()
                 first.countDown()
             }
             assertTrue("reader must give up after the timeout", first.await(5, TimeUnit.SECONDS))
             assertNull(observed)
 
             val started = System.nanoTime()
-            LRRAuthManager.getServerUrl()
+            ServerSession.getServerUrl()
             assertTrue(
                 "later readers must not wait again",
                 TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started) < 150
@@ -171,7 +171,7 @@ class SecureCredentialStoreInitGateTest {
             val prefs = ctx.getSharedPreferences("lrr_gate_timeout_test", Context.MODE_PRIVATE)
             prefs.edit().putString("server_url", "http://10.0.0.8:3000").commit()
             SecureCredentialStore.initializeForTesting(prefs)
-            assertEquals("http://10.0.0.8:3000", LRRAuthManager.getServerUrl())
+            assertEquals("http://10.0.0.8:3000", ServerSession.getServerUrl())
         } finally {
             scope.cancel()
         }
@@ -194,12 +194,12 @@ class SecureCredentialStoreInitGateTest {
             assertTrue(android.os.Looper.myLooper() == android.os.Looper.getMainLooper())
 
             val started = System.nanoTime()
-            assertNull(LRRAuthManager.getServerUrl())
+            assertNull(ServerSession.getServerUrl())
             val waitedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
             assertTrue("main thread waited $waitedMs ms, at the ANR limit", waitedMs < 5_000)
 
             val again = System.nanoTime()
-            LRRAuthManager.getActiveProfileId()
+            ServerSession.getActiveProfileId()
             assertTrue(
                 "later main-thread readers must not wait again",
                 TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - again) < 150
@@ -208,7 +208,7 @@ class SecureCredentialStoreInitGateTest {
             val background = CountDownLatch(1)
             var observed: String? = "sentinel"
             thread(isDaemon = true) {
-                observed = LRRAuthManager.getServerUrl()
+                observed = ServerSession.getServerUrl()
                 background.countDown()
             }
             assertFalse(

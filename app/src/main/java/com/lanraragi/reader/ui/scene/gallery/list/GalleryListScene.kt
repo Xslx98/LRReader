@@ -74,7 +74,7 @@ import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.ContentLayout
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 
 open class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
@@ -120,7 +120,7 @@ open class GalleryListScene : BaseScene(),
 
     /** The query this scene's rows came from (C01); saved with the scene's state. */
     internal val shownSearch = ShownSearchState()
-    private var mLastServerConfigVersion = LRRAuthManager.serverConfigVersion
+    private var mLastServerConfigVersion = ServerSession.serverConfigVersion
     private var mNavCheckedId = 0
     private var mRestoredState = GalleryStateHelper.STATE_NORMAL
 
@@ -622,7 +622,7 @@ open class GalleryListScene : BaseScene(),
         rowHighlighter.flushAfterReturn()
 
         // Auto-refresh when active server config changed (edit/switch/add)
-        val currentVersion = LRRAuthManager.serverConfigVersion
+        val currentVersion = ServerSession.serverConfigVersion
         if (currentVersion != mLastServerConfigVersion) {
             mLastServerConfigVersion = currentVersion
             // The whole result set is replaced by another server's data — a

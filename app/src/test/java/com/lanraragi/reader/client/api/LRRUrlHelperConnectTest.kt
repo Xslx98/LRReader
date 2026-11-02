@@ -30,7 +30,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.util.concurrent.TimeUnit
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
@@ -82,7 +82,7 @@ class LRRUrlHelperConnectTest {
 
     @Test
     fun explicitUrl_withKey_sendsBearerAndLeavesGlobalUrlUntouched() = runBlocking {
-        LRRAuthManager.setServerUrl("http://prior.example.com:3000")
+        ServerSession.setServerUrl("http://prior.example.com:3000")
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
 
         val result = LRRUrlHelper.connectWithFallback(client, baseUrl(), "candidate-key")
@@ -93,7 +93,7 @@ class LRRUrlHelperConnectTest {
         )
         assertEquals(expected, server.awaitRequest().getHeader("Authorization"))
         // The whole point of NET-7:
-        assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
+        assertEquals("http://prior.example.com:3000", ServerSession.getServerUrl())
     }
 
     @Test
@@ -106,7 +106,7 @@ class LRRUrlHelperConnectTest {
 
     @Test
     fun schemelessLadder_httpsFailsHttpSucceeds_globalUrlStillUntouched() = runBlocking {
-        LRRAuthManager.setServerUrl("http://prior.example.com:3000")
+        ServerSession.setServerUrl("http://prior.example.com:3000")
         // Schemeless 127.0.0.1:port → HTTPS attempt against the plaintext
         // MockWebServer fails the TLS handshake fast, then the LAN gate admits
         // the HTTP fallback which succeeds.
@@ -117,7 +117,7 @@ class LRRUrlHelperConnectTest {
 
         assertEquals("http://$hostPort", result.resolvedUrl)
         assertTrue(result.usedHttpFallback)
-        assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
+        assertEquals("http://prior.example.com:3000", ServerSession.getServerUrl())
     }
 
     @Test

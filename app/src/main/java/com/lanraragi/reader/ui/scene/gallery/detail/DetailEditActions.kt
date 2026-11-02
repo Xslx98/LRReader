@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.ui.scene.tankdetail.TankMembersScene
 
@@ -20,7 +20,7 @@ class DetailEditActions(
     /** Shows the tag-edit button on LANraragi servers; a save refreshes the page. */
     fun bindEditTagsButton(button: ImageButton?) {
         button?.let { btn ->
-            val isLrr = LRRAuthManager.getServerUrl() != null
+            val isLrr = ServerSession.getServerUrl() != null
             btn.visibility = if (isLrr) View.VISIBLE else View.GONE
             btn.setOnClickListener {
                 val ad = viewModel.archiveDetail.value

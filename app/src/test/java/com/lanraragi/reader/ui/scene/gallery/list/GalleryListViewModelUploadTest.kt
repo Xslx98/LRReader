@@ -10,7 +10,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.LRRClientProvider
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +63,7 @@ class GalleryListViewModelUploadTest {
         SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("upload_vm_test", Context.MODE_PRIVATE)
         )
-        LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
+        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
         LRRClientProvider.init(ctx)
 
         val client = OkHttpClient.Builder()

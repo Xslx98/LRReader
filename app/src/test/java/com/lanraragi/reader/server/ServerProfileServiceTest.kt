@@ -107,9 +107,9 @@ class ServerProfileServiceTest {
         assertFalse(operation.isCancelled)
         val active = db.miscDao().getAllServerProfiles().single()
         assertEquals(url, active.url)
-        assertEquals(active.id, LRRAuthManager.getActiveProfileId())
-        assertEquals(url, LRRAuthManager.getServerUrl())
-        assertEquals("new-key", LRRAuthManager.getApiKey())
+        assertEquals(active.id, ServerSession.getActiveProfileId())
+        assertEquals(url, ServerSession.getServerUrl())
+        assertEquals("new-key", ServerSession.getApiKey())
     }
 
     @Test
@@ -122,8 +122,8 @@ class ServerProfileServiceTest {
         val rows = db.miscDao().getAllServerProfiles()
         val added = rows.single { it.id != oldId }
         assertEquals(listOf(added.id), rows.filter { it.isActive }.map { it.id })
-        assertEquals(url, LRRAuthManager.getServerUrl())
-        assertEquals("new-key", LRRAuthManager.getApiKey())
+        assertEquals(url, ServerSession.getServerUrl())
+        assertEquals("new-key", ServerSession.getApiKey())
     }
 
     @Test
@@ -137,8 +137,8 @@ class ServerProfileServiceTest {
         val saved = db.miscDao().getAllServerProfiles().single()
         assertEquals("After", saved.name)
         assertEquals(url, saved.url)
-        assertEquals(url, LRRAuthManager.getServerUrl())
-        assertEquals("edited-key", LRRAuthManager.getApiKey())
+        assertEquals(url, ServerSession.getServerUrl())
+        assertEquals("edited-key", ServerSession.getApiKey())
     }
 
     /**

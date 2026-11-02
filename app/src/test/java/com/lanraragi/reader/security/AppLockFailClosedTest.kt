@@ -14,7 +14,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
@@ -64,21 +64,21 @@ class AppLockFailClosedTest {
 
     @Test
     fun serverUrlMaintainsTheConfiguredMirror() {
-        assertNull(LRRAuthManager.configuredHint())
-        LRRAuthManager.setServerUrl("http://10.0.2.2:3000/")
-        assertEquals(true, LRRAuthManager.configuredHint())
-        assertTrue(LRRAuthManager.isConfiguredFast())
+        assertNull(ServerSession.configuredHint())
+        ServerSession.setServerUrl("http://10.0.2.2:3000/")
+        assertEquals(true, ServerSession.configuredHint())
+        assertTrue(ServerSession.isConfiguredFast())
     }
 
     @Test
     fun resetClearsTheLockAndTheCredentials() {
         AppLockCredentials.setPattern("0123")
-        LRRAuthManager.setServerUrl("http://10.0.2.2:3000")
+        ServerSession.setServerUrl("http://10.0.2.2:3000")
 
         AppLockCredentials.resetAppLockAndCredentials(ctx)
 
         assertEquals(false, AppLockCredentials.lockEnabledHint())
-        assertEquals(false, LRRAuthManager.configuredHint())
+        assertEquals(false, ServerSession.configuredHint())
         assertFalse(SecuritySettings.isLockEnabled())
     }
 }

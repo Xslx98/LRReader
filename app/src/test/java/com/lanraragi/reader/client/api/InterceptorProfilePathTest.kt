@@ -29,7 +29,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
 import com.lanraragi.reader.server.ProfileLookupCache
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
@@ -75,9 +75,9 @@ class InterceptorProfilePathTest {
         val prefs = ctx.getSharedPreferences("interceptor_profile_path", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
         SecureCredentialStore.initializeForTesting(prefs)
-        LRRAuthManager.setServerUrl("http://$host:$port")
-        LRRAuthManager.setApiKey("legacy-key")
-        LRRAuthManager.setAllowCleartext(true)
+        ServerSession.setServerUrl("http://$host:$port")
+        ServerSession.setApiKey("legacy-key")
+        ServerSession.setAllowCleartext(true)
     }
 
     @After
@@ -94,7 +94,7 @@ class InterceptorProfilePathTest {
         val id = runBlocking {
             repo.insert(ServerProfile(name = "p", url = url, isActive = false, allowCleartext = allowCleartext))
         }
-        if (key != null) LRRAuthManager.setApiKeyForProfile(id, key)
+        if (key != null) ServerSession.setApiKeyForProfile(id, key)
         awaitUntil(message = "profile never reached the lookup cache") { cache.findById(id) != null }
         return id
     }

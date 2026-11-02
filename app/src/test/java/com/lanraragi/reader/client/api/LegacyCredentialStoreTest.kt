@@ -19,7 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 
@@ -29,7 +29,7 @@ import com.lanraragi.reader.server.SecureCredentialStore
  * say so — reauth prompt for the API keys, lock-removed notice for a pattern
  * — and drop the store, instead of opening silently unconfigured and unlocked.
  *
- * [LRRAuthManager] is a process-wide singleton: init gate and files are
+ * [SecureCredentialStore] is a process-wide singleton: init gate and files are
  * restored in both setUp and tearDown.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -74,7 +74,7 @@ class LegacyCredentialStoreTest {
         launch()
 
         assertTrue(SecureCredentialStore.isSecureStorageAvailable())
-        assertTrue("the old API keys are gone: ask for them", LRRAuthManager.isNeedsReauthentication())
+        assertTrue("the old API keys are gone: ask for them", ServerSession.isNeedsReauthentication())
         assertTrue("the old lock is gone: tell the user", AppLockCredentials.isLegacyLockRemovedNoticePending())
         assertEquals("the app opens unlocked", false, AppLockCredentials.lockEnabledHint())
         assertFalse(plainPrefs().contains("pattern_keystore_bound"))
@@ -87,7 +87,7 @@ class LegacyCredentialStoreTest {
 
         launch()
 
-        assertFalse(LRRAuthManager.isNeedsReauthentication())
+        assertFalse(ServerSession.isNeedsReauthentication())
         assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
         assertFalse(legacyFile().exists())
     }
@@ -97,12 +97,12 @@ class LegacyCredentialStoreTest {
         writeLegacyStoreFile()
         plainPrefs().edit(commit = true) { putBoolean("was_configured", true) }
         launch()
-        assertTrue(LRRAuthManager.isNeedsReauthentication())
+        assertTrue(ServerSession.isNeedsReauthentication())
 
         SecureCredentialStore.clear()
         launch()
 
-        assertFalse(LRRAuthManager.isNeedsReauthentication())
+        assertFalse(ServerSession.isNeedsReauthentication())
     }
 
     private fun launch() {

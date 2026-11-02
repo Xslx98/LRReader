@@ -8,7 +8,7 @@ import okhttp3.OkHttpClient
  * Which LANraragi server a call goes to: the profile, its base URL and the
  * client to send it with. The `LRR*Api` objects stay stateless and take
  * `conn.client, conn.baseUrl`; this value is how callers pick the pair
- * without reaching into [LRRAuthManager] and [ProfileLookupCache] themselves.
+ * without reaching into [ServerSession] and [ProfileLookupCache] themselves.
  */
 data class ServerConnection(val profileId: Long, val baseUrl: String, val client: OkHttpClient)
 
@@ -16,8 +16,8 @@ object ServerConnections {
 
     /** The active server, or null when none is configured. */
     fun active(): ServerConnection? {
-        val url = LRRAuthManager.getServerUrl() ?: return null
-        return ServerConnection(LRRAuthManager.getActiveProfileId(), url, ServiceRegistry.networkModule.okHttpClient)
+        val url = ServerSession.getServerUrl() ?: return null
+        return ServerConnection(ServerSession.getActiveProfileId(), url, ServiceRegistry.networkModule.okHttpClient)
     }
 
     /**

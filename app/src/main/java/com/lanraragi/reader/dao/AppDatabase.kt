@@ -1012,7 +1012,7 @@ abstract class AppDatabase : RoomDatabase() {
          * v13 → v14: Add ALLOW_CLEARTEXT column to SERVER_PROFILES.
          *
          * Per-profile opt-in for plain HTTP. The authoritative cleartext gate
-         * (LRRCleartextRejectionInterceptor) reads this flag via LRRAuthManager
+         * (LRRCleartextRejectionInterceptor) reads this flag via ServerSession
          * and rejects HTTP requests when it is false.
          *
          * Default 1 grandfathers existing profiles to "trusted cleartext" so
@@ -1041,7 +1041,7 @@ abstract class AppDatabase : RoomDatabase() {
          * v11 → v12: Remove plaintext API_KEY column from SERVER_PROFILES.
          *
          * API keys are now stored exclusively in EncryptedSharedPreferences
-         * via LRRAuthManager. The Room column was a security remnant.
+         * via ServerSession. The Room column was a security remnant.
          *
          * SQLite < 3.35.0 (Android < API 34) doesn't support DROP COLUMN,
          * so we use the recreate-table pattern for API 28+ compatibility.

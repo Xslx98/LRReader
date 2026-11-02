@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.TankCoverCacheStamp
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
@@ -91,7 +91,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
                 tankName = tankName,
                 wasEmpty = wasEmpty,
                 firstAddedThumbnailUrl = helper.data.firstOrNull { it.arcid == succeeded.first() }?.thumbnailUrl,
-                sourceProfileId = LRRAuthManager.getActiveProfileId(),
+                sourceProfileId = ServerSession.getActiveProfileId(),
                 sourceBaseUrl = baseUrl,
             )
         }
@@ -189,7 +189,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         val args = Bundle().apply {
             putString(TankDetailScene.KEY_TANK_ID, tankId)
             putString(TankDetailScene.KEY_TANK_NAME, tankName)
-            putLong(TankDetailScene.KEY_PROFILE_ID, LRRAuthManager.getActiveProfileId())
+            putLong(TankDetailScene.KEY_PROFILE_ID, ServerSession.getActiveProfileId())
         }
         scene.startScene(
             Announcer(TankDetailScene::class.java).setArgs(args)

@@ -9,7 +9,7 @@ import android.widget.TextView
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 
 /**
  * Bind a source-server origin badge onto a [TextView].
@@ -43,7 +43,7 @@ fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
     // If active profile is also unset (degenerate fresh-install state)
     // effectiveId stays 0 and the cache lookup falls through to orphan.
     val effectiveId = if (serverProfileId == 0L) {
-        LRRAuthManager.getActiveProfileId() ?: 0L
+        ServerSession.getActiveProfileId() ?: 0L
     } else {
         serverProfileId
     }

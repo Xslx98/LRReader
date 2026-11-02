@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.R
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.SecuritySettings
@@ -38,7 +38,7 @@ class MainIntentRouter(private val activity: MainActivity) {
                 newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
                 newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
                 return Announcer(SecurityScene::class.java).setArgs(newArgs)
-            } else if (!LRRAuthManager.isConfiguredFast()) {
+            } else if (!ServerSession.isConfiguredFast()) {
                 val newArgs = Bundle()
                 newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
                 newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)

@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
 import com.lanraragi.reader.security.AppLockCredentials
 
 /**
- * Unit tests for [LRRAuthManager].
+ * Unit tests for [ServerSession].
  *
  * Uses Robolectric because [SecureCredentialStore.initialize] creates [EncryptedSharedPreferences]
  * which requires an Android Context. The test Application is a plain [android.app.Application]
@@ -24,7 +24,7 @@ import com.lanraragi.reader.security.AppLockCredentials
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
-class LRRAuthManagerTest {
+class ServerSessionTest {
 
     private lateinit var ctx: Context
 
@@ -51,103 +51,103 @@ class LRRAuthManagerTest {
 
     @Test
     fun setAndGetServerUrl_roundtrips() {
-        LRRAuthManager.setServerUrl("http://192.168.1.100:3000")
-        assertEquals("http://192.168.1.100:3000", LRRAuthManager.getServerUrl())
+        ServerSession.setServerUrl("http://192.168.1.100:3000")
+        assertEquals("http://192.168.1.100:3000", ServerSession.getServerUrl())
     }
 
     @Test
     fun setServerUrl_stripsTrailingSlash() {
-        LRRAuthManager.setServerUrl("http://192.168.1.100:3000/")
-        assertEquals("http://192.168.1.100:3000", LRRAuthManager.getServerUrl())
+        ServerSession.setServerUrl("http://192.168.1.100:3000/")
+        assertEquals("http://192.168.1.100:3000", ServerSession.getServerUrl())
     }
 
     @Test
     fun isConfigured_falseWhenNoUrl() {
-        assertFalse(LRRAuthManager.isConfigured())
+        assertFalse(ServerSession.isConfigured())
     }
 
     @Test
     fun isConfigured_trueAfterSettingUrl() {
-        LRRAuthManager.setServerUrl("http://192.168.1.100:3000")
-        assertTrue(LRRAuthManager.isConfigured())
+        ServerSession.setServerUrl("http://192.168.1.100:3000")
+        assertTrue(ServerSession.isConfigured())
     }
 
     // ── API key ─────────────────────────────────────────────────────
 
     @Test
     fun setAndGetApiKey_roundtrips() {
-        LRRAuthManager.setApiKey("abc123")
-        assertEquals("abc123", LRRAuthManager.getApiKey())
+        ServerSession.setApiKey("abc123")
+        assertEquals("abc123", ServerSession.getApiKey())
     }
 
     @Test
     fun setApiKey_nullClearsKey() {
-        LRRAuthManager.setApiKey("abc123")
-        LRRAuthManager.setApiKey(null)
-        assertNull(LRRAuthManager.getApiKey())
+        ServerSession.setApiKey("abc123")
+        ServerSession.setApiKey(null)
+        assertNull(ServerSession.getApiKey())
     }
 
     // ── Per-profile API key ─────────────────────────────────────────
 
     @Test
     fun setAndGetApiKeyForProfile_roundtrips() {
-        LRRAuthManager.setApiKeyForProfile(42L, "profile-key")
-        assertEquals("profile-key", LRRAuthManager.getApiKeyForProfile(42L))
+        ServerSession.setApiKeyForProfile(42L, "profile-key")
+        assertEquals("profile-key", ServerSession.getApiKeyForProfile(42L))
     }
 
     @Test
     fun clearApiKeyForProfile_removesOnlyThatProfilesKey() {
-        LRRAuthManager.setApiKeyForProfile(41L, "keep-me")
-        LRRAuthManager.setApiKeyForProfile(42L, "profile-key")
-        LRRAuthManager.clearApiKeyForProfile(42L)
-        assertNull(LRRAuthManager.getApiKeyForProfile(42L))
-        assertEquals("keep-me", LRRAuthManager.getApiKeyForProfile(41L))
+        ServerSession.setApiKeyForProfile(41L, "keep-me")
+        ServerSession.setApiKeyForProfile(42L, "profile-key")
+        ServerSession.clearApiKeyForProfile(42L)
+        assertNull(ServerSession.getApiKeyForProfile(42L))
+        assertEquals("keep-me", ServerSession.getApiKeyForProfile(41L))
     }
 
     @Test
     fun setApiKeyForProfile_emptyString_readsAsNoKey() {
-        LRRAuthManager.setApiKeyForProfile(5L, "some_key")
-        LRRAuthManager.setApiKeyForProfile(5L, "")
-        assertNull(LRRAuthManager.getApiKeyForProfile(5L))
+        ServerSession.setApiKeyForProfile(5L, "some_key")
+        ServerSession.setApiKeyForProfile(5L, "")
+        assertNull(ServerSession.getApiKeyForProfile(5L))
     }
 
     @Test
     fun profileKeysAreIsolated() {
-        LRRAuthManager.setApiKeyForProfile(1L, "key-1")
-        LRRAuthManager.setApiKeyForProfile(2L, "key-2")
-        assertEquals("key-1", LRRAuthManager.getApiKeyForProfile(1L))
-        assertEquals("key-2", LRRAuthManager.getApiKeyForProfile(2L))
+        ServerSession.setApiKeyForProfile(1L, "key-1")
+        ServerSession.setApiKeyForProfile(2L, "key-2")
+        assertEquals("key-1", ServerSession.getApiKeyForProfile(1L))
+        assertEquals("key-2", ServerSession.getApiKeyForProfile(2L))
     }
 
     // ── Active profile ID ───────────────────────────────────────────
 
     @Test
     fun setAndGetActiveProfileId_roundtrips() {
-        LRRAuthManager.setActiveProfileId(99L)
-        assertEquals(99L, LRRAuthManager.getActiveProfileId())
+        ServerSession.setActiveProfileId(99L)
+        assertEquals(99L, ServerSession.getActiveProfileId())
     }
 
     @Test
     fun isNeedsReauthentication_falseAfterInitializeForTesting() {
         assertFalse("Reauth flag should be false when KeyStore is available",
-            LRRAuthManager.isNeedsReauthentication())
+            ServerSession.isNeedsReauthentication())
     }
 
     @Test
     fun getServerUrl_returnsNullWhenNotSet() {
-        assertNull(LRRAuthManager.getServerUrl())
+        assertNull(ServerSession.getServerUrl())
     }
 
     @Test
     fun clear_removesAllCredentials() {
-        LRRAuthManager.setServerUrl("http://test.local")
-        LRRAuthManager.setApiKey("key")
-        LRRAuthManager.setActiveProfileId(5L)
+        ServerSession.setServerUrl("http://test.local")
+        ServerSession.setApiKey("key")
+        ServerSession.setActiveProfileId(5L)
         AppLockCredentials.setPattern("pin")
         SecureCredentialStore.clear()
-        assertNull(LRRAuthManager.getServerUrl())
-        assertNull(LRRAuthManager.getApiKey())
-        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+        assertNull(ServerSession.getServerUrl())
+        assertNull(ServerSession.getApiKey())
+        assertEquals(0L, ServerSession.getActiveProfileId())
         assertFalse(AppLockCredentials.hasPattern())
     }
 
@@ -157,16 +157,16 @@ class LRRAuthManagerTest {
     fun allowCleartext_defaultsToTrueWhenPrefsAvailable() {
         // Default value (no key in prefs, sPrefs available) — existing HTTP profiles
         // never wrote this key explicitly, so default must be true for compatibility
-        assertTrue("default should be true when sPrefs available", LRRAuthManager.getAllowCleartext())
+        assertTrue("default should be true when sPrefs available", ServerSession.getAllowCleartext())
     }
 
     @Test
     fun setAllowCleartext_roundTripsThroughPrefs() {
-        LRRAuthManager.setAllowCleartext(false)
-        assertFalse("after setAllowCleartext(false)", LRRAuthManager.getAllowCleartext())
+        ServerSession.setAllowCleartext(false)
+        assertFalse("after setAllowCleartext(false)", ServerSession.getAllowCleartext())
 
-        LRRAuthManager.setAllowCleartext(true)
-        assertTrue("after setAllowCleartext(true)", LRRAuthManager.getAllowCleartext())
+        ServerSession.setAllowCleartext(true)
+        assertTrue("after setAllowCleartext(true)", ServerSession.getAllowCleartext())
     }
 
     @Test
@@ -175,7 +175,7 @@ class LRRAuthManagerTest {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
         assertFalse(
             "getAllowCleartext must return false when secure storage is unavailable",
-            LRRAuthManager.getAllowCleartext()
+            ServerSession.getAllowCleartext()
         )
     }
 
@@ -189,37 +189,37 @@ class LRRAuthManagerTest {
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setServerUrl_throwsWhenStorageUnavailable() {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.setServerUrl("http://test.local")
+        ServerSession.setServerUrl("http://test.local")
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setApiKey_throwsWhenStorageUnavailable() {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.setApiKey("secret")
+        ServerSession.setApiKey("secret")
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setServerName_throwsWhenStorageUnavailable() {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.setServerName("LRR")
+        ServerSession.setServerName("LRR")
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setActiveProfileId_throwsWhenStorageUnavailable() {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.setActiveProfileId(7L)
+        ServerSession.setActiveProfileId(7L)
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setApiKeyForProfile_throwsWhenStorageUnavailable() {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.setApiKeyForProfile(1L, "key")
+        ServerSession.setApiKeyForProfile(1L, "key")
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun clearApiKeyForProfile_throwsWhenStorageUnavailable() {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.clearApiKeyForProfile(1L)
+        ServerSession.clearApiKeyForProfile(1L)
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
@@ -229,17 +229,17 @@ class LRRAuthManagerTest {
         // setter. Aligned here so the UI catches are guaranteed to fire on
         // KeyStore failure instead of the flag update being silently dropped.
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.setAllowCleartext(false)
+        ServerSession.setAllowCleartext(false)
     }
 
     @Test
     fun getters_returnNullWhenStorageUnavailable() {
         // Reads MUST NOT throw — UI polls getApiKey()/getServerUrl() frequently.
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        assertNull(LRRAuthManager.getServerUrl())
-        assertNull(LRRAuthManager.getApiKey())
-        assertNull(LRRAuthManager.getServerName())
-        assertNull(LRRAuthManager.getApiKeyForProfile(1L))
+        assertNull(ServerSession.getServerUrl())
+        assertNull(ServerSession.getApiKey())
+        assertNull(ServerSession.getServerName())
+        assertNull(ServerSession.getApiKeyForProfile(1L))
         assertFalse(AppLockCredentials.hasPattern())
     }
 
@@ -249,7 +249,7 @@ class LRRAuthManagerTest {
         // the backing store was never initialized.
         SecureCredentialStore.simulateStorageUnavailableForTesting()
         SecureCredentialStore.clear() // should not throw
-        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+        assertEquals(0L, ServerSession.getActiveProfileId())
     }
 
     // ── Multi-profile reauth detection (W0-4 part 2) ────────────────
@@ -259,33 +259,33 @@ class LRRAuthManagerTest {
         // Fresh install: no profiles in Room — should NOT trigger reauth even
         // if storage is broken (there's nothing to recover).
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.markReauthIfProfilesUnprotected(emptyList())
-        assertFalse(LRRAuthManager.isNeedsReauthentication())
+        ServerSession.markReauthIfProfilesUnprotected(emptyList())
+        assertFalse(ServerSession.isNeedsReauthentication())
     }
 
     @Test
     fun markReauthIfProfilesUnprotected_storageDownWithProfiles_marksReauth() {
         // KeyStore broken AND user has at least one server: keys are unrecoverable.
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
-        assertTrue(LRRAuthManager.isNeedsReauthentication())
+        ServerSession.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertTrue(ServerSession.isNeedsReauthentication())
     }
 
     @Test
     fun markReauthIfProfilesUnprotected_allProfilesHaveKeys_doesNotMark() {
-        LRRAuthManager.setApiKeyForProfile(1L, "k1")
-        LRRAuthManager.setApiKeyForProfile(2L, "k2")
-        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
-        assertFalse(LRRAuthManager.isNeedsReauthentication())
+        ServerSession.setApiKeyForProfile(1L, "k1")
+        ServerSession.setApiKeyForProfile(2L, "k2")
+        ServerSession.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertFalse(ServerSession.isNeedsReauthentication())
     }
 
     @Test
     fun markReauthIfProfilesUnprotected_oneMissingKey_marksReauth() {
         // Partial corruption / interrupted migration: one profile lost its key.
-        LRRAuthManager.setApiKeyForProfile(1L, "k1")
+        ServerSession.setApiKeyForProfile(1L, "k1")
         // Profile 2 has no key entry
-        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
-        assertTrue(LRRAuthManager.isNeedsReauthentication())
+        ServerSession.markReauthIfProfilesUnprotected(listOf(1L, 2L))
+        assertTrue(ServerSession.isNeedsReauthentication())
     }
 
     @Test
@@ -293,69 +293,69 @@ class LRRAuthManagerTest {
         // Once flagged, additional checks should not unset the flag — only an
         // explicit clear() (after re-auth) should reset it.
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L))
-        assertTrue(LRRAuthManager.isNeedsReauthentication())
+        ServerSession.markReauthIfProfilesUnprotected(listOf(1L))
+        assertTrue(ServerSession.isNeedsReauthentication())
         // Restore healthy storage and re-check with all keys present
         SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("lrr_auth_test_2", android.content.Context.MODE_PRIVATE)
         )
         // initializeForTesting() resets the flag — that's the documented "fresh test setup"
         // behavior. Verify subsequent successful checks keep it false.
-        LRRAuthManager.setApiKeyForProfile(1L, "restored")
-        LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L))
-        assertFalse(LRRAuthManager.isNeedsReauthentication())
+        ServerSession.setApiKeyForProfile(1L, "restored")
+        ServerSession.markReauthIfProfilesUnprotected(listOf(1L))
+        assertFalse(ServerSession.isNeedsReauthentication())
     }
 
     // -- Audit 2026-10-04 C02: deleting the active profile ---------------
 
     @Test
     fun clearActiveSession_forgetsGlobalCredentials() {
-        LRRAuthManager.setServerUrl("http://192.168.1.50:3000")
-        LRRAuthManager.setApiKey("old-key")
-        LRRAuthManager.setServerName("Old NAS")
-        LRRAuthManager.setActiveProfileId(7L)
-        LRRAuthManager.setAllowCleartext(true)
-        LRRAuthManager.setApiKeyForProfile(8L, "other-profile-key")
-        val before = LRRAuthManager.serverConfigVersion
+        ServerSession.setServerUrl("http://192.168.1.50:3000")
+        ServerSession.setApiKey("old-key")
+        ServerSession.setServerName("Old NAS")
+        ServerSession.setActiveProfileId(7L)
+        ServerSession.setAllowCleartext(true)
+        ServerSession.setApiKeyForProfile(8L, "other-profile-key")
+        val before = ServerSession.serverConfigVersion
 
-        LRRAuthManager.clearActiveSession()
+        ServerSession.clearActiveSession()
 
-        assertNull(LRRAuthManager.getServerUrl())
-        assertNull(LRRAuthManager.getApiKey())
-        assertNull(LRRAuthManager.getServerName())
-        assertEquals(0L, LRRAuthManager.getActiveProfileId())
-        assertFalse(LRRAuthManager.isConfigured())
-        assertTrue(LRRAuthManager.serverConfigVersion > before)
+        assertNull(ServerSession.getServerUrl())
+        assertNull(ServerSession.getApiKey())
+        assertNull(ServerSession.getServerName())
+        assertEquals(0L, ServerSession.getActiveProfileId())
+        assertFalse(ServerSession.isConfigured())
+        assertTrue(ServerSession.serverConfigVersion > before)
         // Other profiles' keys are not part of the active session.
-        assertEquals("other-profile-key", LRRAuthManager.getApiKeyForProfile(8L))
+        assertEquals("other-profile-key", ServerSession.getApiKeyForProfile(8L))
     }
 
     @Test
     fun clearSessionIfActiveProfileGone_clearsWhenActiveRowIsMissing() {
-        LRRAuthManager.setServerUrl("http://192.168.1.50:3000")
-        LRRAuthManager.setApiKey("old-key")
-        LRRAuthManager.setActiveProfileId(7L)
+        ServerSession.setServerUrl("http://192.168.1.50:3000")
+        ServerSession.setApiKey("old-key")
+        ServerSession.setActiveProfileId(7L)
 
-        assertTrue(LRRAuthManager.clearSessionIfActiveProfileGone(listOf(1L, 2L)))
+        assertTrue(ServerSession.clearSessionIfActiveProfileGone(listOf(1L, 2L)))
 
-        assertNull(LRRAuthManager.getApiKey())
-        assertNull(LRRAuthManager.getServerUrl())
+        assertNull(ServerSession.getApiKey())
+        assertNull(ServerSession.getServerUrl())
     }
 
     @Test
     fun clearSessionIfActiveProfileGone_keepsLiveAndLegacySessions() {
-        LRRAuthManager.setServerUrl("http://192.168.1.50:3000")
-        LRRAuthManager.setApiKey("key")
+        ServerSession.setServerUrl("http://192.168.1.50:3000")
+        ServerSession.setApiKey("key")
 
         // Legacy single-server setup: no active profile id at all.
-        LRRAuthManager.setActiveProfileId(0L)
-        assertFalse(LRRAuthManager.clearSessionIfActiveProfileGone(emptyList()))
+        ServerSession.setActiveProfileId(0L)
+        assertFalse(ServerSession.clearSessionIfActiveProfileGone(emptyList()))
 
         // The active profile still exists.
-        LRRAuthManager.setActiveProfileId(2L)
-        assertFalse(LRRAuthManager.clearSessionIfActiveProfileGone(listOf(1L, 2L)))
+        ServerSession.setActiveProfileId(2L)
+        assertFalse(ServerSession.clearSessionIfActiveProfileGone(listOf(1L, 2L)))
 
-        assertEquals("key", LRRAuthManager.getApiKey())
-        assertEquals("http://192.168.1.50:3000", LRRAuthManager.getServerUrl())
+        assertEquals("key", ServerSession.getApiKey())
+        assertEquals("http://192.168.1.50:3000", ServerSession.getServerUrl())
     }
 }

@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.ui.scene.SecurityViewModel.StorageState
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -21,7 +21,7 @@ import org.robolectric.annotation.Config
 /**
  * Audit SEC-04: the lock screen offers "Reset app lock" only when the secure
  * store's init finished and failed, never while init is merely slow (the
- * reader timed out waiting). [LRRAuthManager] is a process-wide singleton, so
+ * reader timed out waiting). [SecureCredentialStore] is a process-wide singleton, so
  * the init gate is restored in both setUp and tearDown.
  */
 @RunWith(RobolectricTestRunner::class)

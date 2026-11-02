@@ -10,7 +10,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.server.KeystoreSecurePrefs
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.SecuritySettings
@@ -43,7 +43,7 @@ import org.robolectric.shadows.ShadowLooper
  * finding the lock silently gone.
  *
  * Robolectric has no AndroidKeyStore; the store is opened with an in-memory
- * cipher. [LRRAuthManager] is a process-wide singleton, so the init gate and
+ * cipher. [SecureCredentialStore] is a process-wide singleton, so the init gate and
  * the files are restored in both setUp and tearDown.
  */
 @RunWith(RobolectricTestRunner::class)

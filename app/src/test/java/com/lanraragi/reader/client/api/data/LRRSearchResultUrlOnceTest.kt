@@ -3,7 +3,7 @@ package com.lanraragi.reader.client.api.data
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.lrrJson
 import org.junit.After
@@ -42,7 +42,7 @@ class LRRSearchResultUrlOnceTest {
         real.edit().clear().commit()
         counting = CountingPrefs(real)
         SecureCredentialStore.initializeForTesting(counting)
-        LRRAuthManager.setServerUrl("http://h:3000")
+        ServerSession.setServerUrl("http://h:3000")
         counting.urlReads = 0
     }
 

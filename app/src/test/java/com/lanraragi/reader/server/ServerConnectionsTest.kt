@@ -61,8 +61,8 @@ class ServerConnectionsTest {
 
     @Test
     fun active_isTheActiveProfileOnTheSharedClient() {
-        LRRAuthManager.setServerUrl("http://active.local:3000")
-        LRRAuthManager.setActiveProfileId(7L)
+        ServerSession.setServerUrl("http://active.local:3000")
+        ServerSession.setActiveProfileId(7L)
 
         val conn = ServerConnections.active()!!
 
@@ -73,7 +73,7 @@ class ServerConnectionsTest {
 
     @Test
     fun forProfile_isTheSourceProfileNotTheActiveOne() = runBlocking {
-        LRRAuthManager.setServerUrl("http://active.local:3000")
+        ServerSession.setServerUrl("http://active.local:3000")
         val id = repo.insert(ServerProfile(name = "B", url = "http://server-b.local:3000"))
         val cache = ProfileLookupCache(repo, scope)
         withTimeout(2_000) { while (cache.snapshot.value.size != 1) kotlinx.coroutines.delay(20) }

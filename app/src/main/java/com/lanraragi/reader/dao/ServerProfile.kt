@@ -8,11 +8,11 @@ import androidx.room.PrimaryKey
  * Room Entity representing a LANraragi server profile.
  * Stores connection settings (URL) and an active flag
  * to identify the currently connected server.
- * API keys are stored in EncryptedSharedPreferences via LRRAuthManager.
+ * API keys are stored in the encrypted credential store via ServerSession.
  *
  * `allowCleartext` is the per-profile opt-in for plain HTTP. The
  * authoritative cleartext gate (LRRCleartextRejectionInterceptor) reads
- * the active profile's flag (cached in LRRAuthManager) and rejects HTTP
+ * the active profile's flag (cached in ServerSession) and rejects HTTP
  * requests when the flag is false. Defaults to true for backwards
  * compatibility — existing profiles are grandfathered by MIGRATION_13_14.
  */

@@ -5,7 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -86,7 +86,7 @@ class DownloadManagerOrphanLabelBatchTest {
             }
         )
 
-        LRRAuthManager.setServerUrl("http://localhost:3000")
+        ServerSession.setServerUrl("http://localhost:3000")
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
     }
 

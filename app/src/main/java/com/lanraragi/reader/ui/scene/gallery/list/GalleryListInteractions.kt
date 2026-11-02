@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.view.View
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
@@ -51,7 +51,7 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
         val params = scene.shownSearch.forReadingContext()
         ReadingContextStore.publish(
             ReadingContext.OnlineSearch(
-                sourceProfileId = LRRAuthManager.getActiveProfileId(),
+                sourceProfileId = ServerSession.getActiveProfileId(),
                 sourceBaseUrl = baseUrl,
                 filter = params.filter,
                 category = params.category,

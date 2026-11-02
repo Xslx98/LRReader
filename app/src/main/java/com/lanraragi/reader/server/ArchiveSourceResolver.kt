@@ -23,7 +23,7 @@ class OrphanProfileException(val profileId: Long) :
  *     written before the multi-profile schema landed never carry a
  *     profile id (and neither do downloads queued via the upgrade path
  *     of a single-profile install). Fall back to the active profile's
- *     URL via [LRRAuthManager.getServerUrl] so existing flows do not
+ *     URL via [ServerSession.getServerUrl] so existing flows do not
  *     regress; null active URL → [OrphanProfileException].
  *  2. Any other id is resolved against [ProfileLookupCache]. Cache
  *     misses mean the user deleted the source profile — surface as
@@ -40,7 +40,7 @@ suspend fun resolveSourceBaseUrl(
 ): String {
     cache.awaitInitialized()
     if (serverProfileId == 0L) {
-        return LRRAuthManager.getServerUrl()
+        return ServerSession.getServerUrl()
             ?: throw OrphanProfileException(0L)
     }
     val profile = cache.findById(serverProfileId)

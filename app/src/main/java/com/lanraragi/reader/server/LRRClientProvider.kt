@@ -56,14 +56,14 @@ object LRRClientProvider {
      */
     @JvmStatic
     fun getBaseUrl(): String {
-        return LRRAuthManager.getServerUrl() ?: ""
+        return ServerSession.getServerUrl() ?: ""
     }
 
     /**
-     * @return true if a server URL has been configured in [LRRAuthManager]
+     * @return true if a server URL has been configured in [ServerSession]
      */
     @JvmStatic
     fun isConfigured(): Boolean {
-        return LRRAuthManager.isConfigured()
+        return ServerSession.isConfigured()
     }
 }

@@ -17,11 +17,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.security.SecureRandom
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
- * Unit tests for pattern failure lockout logic in [LRRAuthManager].
+ * Unit tests for pattern failure lockout logic in [AppLockCredentials].
  *
  * Uses a controllable clock source to deterministically test time-based lockout
  * without relying on real wall-clock time.

@@ -15,7 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.category.CategoryMembershipService
 import com.lanraragi.reader.category.StaticCategory
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.client.api.friendlyError
 import kotlinx.coroutines.CancellationException
@@ -95,7 +95,7 @@ object CategoryDialogHelper {
         serverProfileId: Long,
         onLoaded: (staticCats: List<StaticCategory>, conn: ServerConnection) -> Unit,
     ) {
-        if (LRRAuthManager.getServerUrl() == null) return
+        if (ServerSession.getServerUrl() == null) return
 
         Toast.makeText(activity, R.string.lrr_loading_categories, Toast.LENGTH_SHORT).show()
 
