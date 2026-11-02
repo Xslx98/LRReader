@@ -15,9 +15,11 @@ import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankTagSyncer
-import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.ServerConnection
+import com.lanraragi.reader.server.ServerConnections
+import com.lanraragi.reader.tankoubon.TankRepository
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadRequests
 import com.lanraragi.reader.download.DownloadInfoListener
@@ -324,15 +326,13 @@ class GalleryListViewModel : ViewModel() {
     val batchResultEvent: SharedFlow<BatchResult> = _batchResultEvent.asSharedFlow()
 
     /**
-     * Resolves the base URL of the server that owns an archive (by its source
-     * profile id). Injectable so unit tests can point batches at a
-     * MockWebServer without registering server profiles; production always
-     * uses [resolveSourceBaseUrl] against the app's
-     * [com.lanraragi.reader.server.ProfileLookupCache] (cross-server
-     * rule: source context is per item, never blanket-active).
+     * The server that owns an archive (by its source profile id). Injectable
+     * so unit tests can point batches at a MockWebServer without registering
+     * server profiles; production always uses [ServerConnections.forProfile]
+     * (cross-server rule: source context is per item, never blanket-active).
      */
-    internal var baseUrlResolver: suspend (Long) -> String = { profileId ->
-        resolveSourceBaseUrl(profileId, ServiceRegistry.dataModule.profileLookupCache)
+    internal var connectionFor: suspend (Long) -> ServerConnection = { profileId ->
+        ServerConnections.forProfile(profileId)
     }
 
     /** Where batch writes run: the process scope, so they outlive this screen. Replaceable for tests. */
@@ -502,9 +502,10 @@ class GalleryListViewModel : ViewModel() {
         val profileId = archives.firstOrNull { it.arcid == firstAdded }?.serverProfileId ?: return
         try {
             withContext(Dispatchers.IO) {
+                val conn = connectionFor(profileId)
                 LRRTankoubonApi.updateTankThumbnail(
-                    LRRClientProvider.getClient(),
-                    baseUrlResolver(profileId),
+                    conn.client,
+                    conn.baseUrl,
                     op.tankId,
                     globalPage1 = 1,
                 )
@@ -541,10 +542,9 @@ class GalleryListViewModel : ViewModel() {
         val profileId = archives.firstOrNull { it.arcid == first }?.serverProfileId ?: return
         try {
             withContext(Dispatchers.IO) {
-                val client = LRRClientProvider.getClient()
-                val baseUrl = baseUrlResolver(profileId)
-                tankTagSyncAfterAdd(client, baseUrl, op.tankId)
-                tankCategorySyncAfterAdd(client, baseUrl, op.tankId, op.tankName, succeeded)
+                val conn = connectionFor(profileId)
+                tankTagSyncAfterAdd(conn.client, conn.baseUrl, op.tankId)
+                tankCategorySyncAfterAdd(conn.client, conn.baseUrl, op.tankId, op.tankName, succeeded)
             }
         } catch (ce: CancellationException) {
             throw ce
@@ -553,16 +553,28 @@ class GalleryListViewModel : ViewModel() {
         }
     }
 
-    private val tankService by lazy { TankListService(viewModelScope) }
+    /** Tank list reads and writes; replaceable for tests. */
+    internal var tanks: TankRepository = TankRepository(TankMembershipSyncFactory.runnerSafely()::sync)
+
+    /**
+     * Tank mode's create: an empty tank named [name] on the active server.
+     * Failures propagate (the caller maps them to a tip).
+     * @return false when no server is configured (nothing was sent)
+     */
+    suspend fun createTank(name: String): Boolean {
+        val conn = ServerConnections.active() ?: return false
+        tanks.create(conn, name)
+        return true
+    }
 
     /** Undo of a [BatchOp.SortTanks] run: PUT each previous order back (best-effort per tank). */
     fun restoreTankOrders(orders: Map<String, List<String>>, profileId: Long) {
         viewModelScope.launch {
             batchWrites.run {
-                val baseUrl = baseUrlResolver(profileId)
+                val conn = connectionFor(profileId)
                 for ((tankId, order) in orders) {
                     try {
-                        tankService.restoreOrder(baseUrl, tankId, order)
+                        tanks.restoreOrder(conn, tankId, order)
                     } catch (ce: CancellationException) {
                         throw ce
                     } catch (ignored: Exception) {
@@ -578,8 +590,9 @@ class GalleryListViewModel : ViewModel() {
         archive: Archive,
         undoOrders: MutableMap<String, List<String>> = mutableMapOf(),
     ) {
-        val baseUrl = baseUrlResolver(archive.serverProfileId)
-        val client = LRRClientProvider.getClient()
+        val conn = connectionFor(archive.serverProfileId)
+        val client = conn.client
+        val baseUrl = conn.baseUrl
         when (op) {
             is BatchOp.AddToCategory ->
                 LRRCategoryApi.addToCategory(client, baseUrl, op.categoryId, archive.arcid)
@@ -593,7 +606,7 @@ class GalleryListViewModel : ViewModel() {
             BatchOp.DownloadTanks -> {
                 // Resolve the members, then fire the fill on the main thread
                 // (download-manager state lookups are main-thread only).
-                val m = tankService.members(baseUrl, archive.serverProfileId, archive.arcid)
+                val m = tanks.members(conn, archive.arcid)
                 val context = ServiceRegistry.appModule.getContext()
                 if (m.members.isEmpty()) throw IOException(context.getString(R.string.error_empty))
                 withContext(Dispatchers.Main) {
@@ -604,8 +617,8 @@ class GalleryListViewModel : ViewModel() {
                 }
             }
             BatchOp.SortTanks ->
-                tankService.autoSort(baseUrl, archive.arcid)?.let { undoOrders[archive.arcid] = it }
-            BatchOp.DeleteTanks -> tankService.delete(baseUrl, archive.arcid)
+                tanks.autoSort(conn, archive.arcid)?.let { undoOrders[archive.arcid] = it }
+            BatchOp.DeleteTanks -> tanks.delete(conn, archive.arcid)
             BatchOp.Download -> error("use runBatchDownload")
         }
     }

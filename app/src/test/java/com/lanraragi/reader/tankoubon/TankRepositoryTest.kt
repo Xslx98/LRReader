@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.scene.gallery.list
+package com.lanraragi.reader.tankoubon
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -7,11 +7,12 @@ import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.download.TankMembershipSync
-import com.lanraragi.reader.ui.TankMembershipSyncFactory
+import com.lanraragi.reader.server.ServerConnection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
@@ -29,22 +30,24 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
- * [TankListService] against a MockWebServer LANraragi: the full list load and
+ * [TankRepository] against a MockWebServer LANraragi: the full list load and
  * its side effects (cover stamps, membership sync), the missing-cover probe,
  * auto-sort / restore, the member fetch and create. Ported from the retired
  * TankoubonsViewModelTest when the drawer's tank list moved into the gallery.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
-class TankListServiceTest {
+class TankRepositoryTest {
 
     private lateinit var server: MockWebServer
     private lateinit var baseUrl: String
     private lateinit var background: CoroutineScope
-    private lateinit var service: TankListService
+    private lateinit var client: OkHttpClient
+    private lateinit var service: TankRepository
     private val syncCalls = CopyOnWriteArrayList<Triple<Long, String, List<TankMembershipSync.TankTruth>>>()
 
     @Before
@@ -53,13 +56,12 @@ class TankListServiceTest {
         server = MockWebServer()
         server.start()
         baseUrl = server.url("").toString().removeSuffix("/")
-        val client = OkHttpClient.Builder()
+        client = OkHttpClient.Builder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(2, TimeUnit.SECONDS)
             .build()
         background = CoroutineScope(Dispatchers.Default + SupervisorJob())
-        service = TankListService(background, client = { client })
-        service.membershipSync = TankMembershipSyncFactory.Runner { p, u, t -> syncCalls.add(Triple(p, u, t)) }
+        service = TankRepository({ p, u, t -> syncCalls.add(Triple(p, u, t)) }, background)
     }
 
     @After
@@ -67,6 +69,8 @@ class TankListServiceTest {
         background.cancel()
         server.shutdown()
     }
+
+    private fun conn(profileId: Long = 1L) = ServerConnection(profileId, baseUrl, client)
 
     /** Valid 40-char hex arcid for member [i] (cover fallbacks re-validate ids). */
     private fun arcId(i: Int) = i.toString(16).padStart(40, '0')
@@ -116,13 +120,13 @@ class TankListServiceTest {
         server.dispatcher = ProbeDispatcher(
             pageJson(2, tankJson(a, "Alpha", archiveCount = 1), tankJson(b, "Beta", archiveCount = 1)), 200,
         )
-        service.loadAll(baseUrl, 1L)
+        service.loadAll(conn(1L))
         val stampA = TankCoverCacheStamp.get(a)
         val stampB = TankCoverCacheStamp.get(b)
 
         (server.dispatcher as ProbeDispatcher).listBody =
             pageJson(2, tankJson(a, "Alpha", archiveCount = 2), tankJson(b, "Beta", archiveCount = 1))
-        service.loadAll(baseUrl, 1L)
+        service.loadAll(conn(1L))
 
         assertTrue(TankCoverCacheStamp.get(a) > stampA)
         assertEquals(stampB, TankCoverCacheStamp.get(b))
@@ -134,7 +138,7 @@ class TankListServiceTest {
         val before = TankCoverCacheStamp.generation
 
         try {
-            service.loadAll(baseUrl, 1L)
+            service.loadAll(conn(1L))
             fail("a 500 must propagate")
         } catch (expected: Exception) {
             // ok
@@ -148,7 +152,7 @@ class TankListServiceTest {
     fun loadAll_success_handsServerMembershipToSyncOnce() = runBlocking {
         server.enqueue(MockResponse().setBody(pageJson(1, tankJson("TANK_0000000103", "Alpha", 2, progress = 5))))
 
-        service.loadAll(baseUrl, 7L)
+        service.loadAll(conn(7L))
 
         awaitUntil { syncCalls.size == 1 }
         val (profileId, url, truth) = syncCalls.single()
@@ -167,7 +171,7 @@ class TankListServiceTest {
         server.enqueue(MockResponse().setBody(pageJson(2, tankJson("TANK_0000000104", "First"))))
         server.enqueue(MockResponse().setBody(pageJson(2, tankJson("TANK_0000000105", "Second"))))
 
-        val tanks = service.loadAll(baseUrl, 1L)
+        val tanks = service.loadAll(conn(1L))
 
         assertEquals(listOf("First", "Second"), tanks.map { it.name })
         assertEquals("/api/tankoubons", server.awaitRequest().path)
@@ -184,9 +188,9 @@ class TankListServiceTest {
     fun probe202_mapsTankToFirstMemberFallback() = runBlocking {
         val dispatcher = ProbeDispatcher(pageJson(1, tankJson("TANK_0000000106", "Alpha", 2)), 202)
         server.dispatcher = dispatcher
-        val tanks = service.loadAll(baseUrl, 1L)
+        val tanks = service.loadAll(conn(1L))
 
-        val fallbacks = service.probeCoverFallbacks(baseUrl, tanks)
+        val fallbacks = service.probeCoverFallbacks(conn(), tanks)
 
         assertEquals(mapOf("TANK_0000000106" to arcId(1)), fallbacks.mapValues { it.value.arcid })
         assertEquals(listOf("/api/tankoubons/TANK_0000000106/thumbnail?no_fallback=true"), dispatcher.probePaths)
@@ -196,11 +200,11 @@ class TankListServiceTest {
     fun probe200_noFallback_andAConfirmedCoverIsNeverProbedAgain() = runBlocking {
         val dispatcher = ProbeDispatcher(pageJson(1, tankJson("TANK_0000000107", "Alpha", 1)), 200)
         server.dispatcher = dispatcher
-        val tanks = service.loadAll(baseUrl, 1L)
+        val tanks = service.loadAll(conn(1L))
 
-        assertTrue(service.probeCoverFallbacks(baseUrl, tanks).isEmpty())
+        assertTrue(service.probeCoverFallbacks(conn(), tanks).isEmpty())
         // A reopened list (new service) on the same server.
-        assertTrue(TankListService(background).probeCoverFallbacks(baseUrl, tanks).isEmpty())
+        assertTrue(TankRepository({ _, _, _ -> }, background).probeCoverFallbacks(conn(), tanks).isEmpty())
 
         assertEquals(1, dispatcher.probePaths.size)
     }
@@ -209,9 +213,9 @@ class TankListServiceTest {
     fun emptyTank_isNotProbed() = runBlocking {
         val dispatcher = ProbeDispatcher(pageJson(1, tankJson("TANK_0000000108", "Empty", 0)), 202)
         server.dispatcher = dispatcher
-        val tanks = service.loadAll(baseUrl, 1L)
+        val tanks = service.loadAll(conn(1L))
 
-        assertTrue(service.probeCoverFallbacks(baseUrl, tanks).isEmpty())
+        assertTrue(service.probeCoverFallbacks(conn(), tanks).isEmpty())
         assertTrue("empty tank must not be probed", dispatcher.probePaths.isEmpty())
     }
 
@@ -221,7 +225,7 @@ class TankListServiceTest {
     fun members_keepsTankOrder() = runBlocking {
         server.enqueue(MockResponse().setBody(fullJson("TANK_0000000109", arcId(2) to "B", arcId(1) to "A")))
 
-        val m = service.members(baseUrl, 3L, "TANK_0000000109")
+        val m = service.members(conn(3L), "TANK_0000000109")
 
         assertEquals(listOf(arcId(2), arcId(1)), m.members.map { it.arcid })
         assertEquals(listOf(arcId(2), arcId(1)), m.memberIdsInOrder)
@@ -234,7 +238,7 @@ class TankListServiceTest {
         server.enqueue(MockResponse().setBody(fullJson(id, arcId(1) to "第2话", arcId(2) to "番外", arcId(3) to "第1话")))
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
 
-        val previous = service.autoSort(baseUrl, id)
+        val previous = service.autoSort(conn(), id)
 
         assertEquals(listOf(arcId(1), arcId(2), arcId(3)), previous)
         assertTrue(server.awaitRequest().path!!.startsWith("/api/tankoubons/$id/full"))
@@ -248,7 +252,7 @@ class TankListServiceTest {
     fun autoSort_alreadySorted_returnsNullWithoutPut() = runBlocking {
         server.enqueue(MockResponse().setBody(fullJson("TANK_0000000111", arcId(1) to "第1话", arcId(2) to "第2话")))
 
-        assertNull(service.autoSort(baseUrl, "TANK_0000000111"))
+        assertNull(service.autoSort(conn(), "TANK_0000000111"))
         assertEquals(1, server.requestCount)
     }
 
@@ -256,7 +260,7 @@ class TankListServiceTest {
     fun restoreOrder_putsThePreviousOrderBack() = runBlocking {
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
 
-        service.restoreOrder(baseUrl, "TANK_0000000112", listOf(arcId(2), arcId(1)))
+        service.restoreOrder(conn(), "TANK_0000000112", listOf(arcId(2), arcId(1)))
 
         val put = server.awaitRequest()
         assertEquals("PUT", put.method)
@@ -266,14 +270,41 @@ class TankListServiceTest {
     @Test
     fun create_returnsTheNewId_andLockedSurfacesAs423() = runBlocking {
         server.enqueue(MockResponse().setBody("""{"tankoubon_id":"TANK_0000000113","success":1}"""))
-        assertEquals("TANK_0000000113", service.create(baseUrl, "NewTank"))
+        assertEquals("TANK_0000000113", service.create(conn(), "NewTank"))
 
         server.enqueue(MockResponse().setResponseCode(423).setBody("""{"success":0,"error":"Locker is busy"}"""))
         try {
-            service.create(baseUrl, "NewTank")
+            service.create(conn(), "NewTank")
             fail("423 must propagate")
         } catch (e: LRRHttpException) {
             assertEquals(423, e.code)
         }
+    }
+    // ── delete ─────────────────────────────────────────────────────
+
+    @Test
+    fun delete_aCallerThatGoesAwayMidWay_doesNotStopTheDelete() = runBlocking {
+        val id = "TANK_0000000114"
+        val paths = CopyOnWriteArrayList<String>()
+        val firstHeld = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                paths += "${request.method} ${request.path}"
+                if (request.path.orEmpty().contains("/full")) {
+                    firstHeld.countDown()
+                    release.await(5, TimeUnit.SECONDS)
+                    return MockResponse().setResponseCode(500)
+                }
+                return MockResponse().setBody(if (request.method == "DELETE") """{"success":1}""" else "[]")
+            }
+        }
+
+        val caller = launch(Dispatchers.Default) { service.delete(conn(), id) }
+        assertTrue("the delete never started", firstHeld.await(5, TimeUnit.SECONDS))
+        caller.cancel() // the screen that asked for the delete is gone
+        release.countDown()
+
+        awaitUntil(message = "the delete was cut off: $paths") { paths.contains("DELETE /api/tankoubons/$id") }
     }
 }

@@ -16,6 +16,9 @@ import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.tankoubon.TankBrowse
+import com.lanraragi.reader.tankoubon.TankRepository
+import com.lanraragi.reader.server.ServerConnection
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.widget.GalleryInfoContentHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -87,13 +90,13 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
         fun getTankSort(): TankBrowse.Sort = TankBrowse.Sort.NAME
     }
 
-    private val tankService by lazy { TankListService(ServiceRegistry.coroutineModule.ioScope) }
+    private val tankRepository by lazy { TankRepository(TankMembershipSyncFactory.runnerSafely()::sync) }
 
     /**
      * tankId → stand-in cover for tanks whose generated cover is missing,
      * from the last probe. Applied to later loads at once; Main-thread only.
      */
-    private var tankCoverFallbacks: Map<String, TankListService.CoverFallback> = emptyMap()
+    private var tankCoverFallbacks: Map<String, TankRepository.CoverFallback> = emptyMap()
 
     override fun getPageData(taskId: Int, type: Int, page: Int) {
         // Any load that replaces or prepends rows invalidates adapter positions,
@@ -197,11 +200,12 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
      */
     private fun loadTanks(taskId: Int, serverUrl: String) {
         val profileId = LRRAuthManager.getActiveProfileId()
+        val conn = ServerConnection(profileId, serverUrl, LRRClientProvider.getClient())
         val query = callback.getUrlBuilder()?.keyword.orEmpty()
         val sort = callback.getTankSort()
         replaceLoad {
             try {
-                val tanks = tankService.loadAll(serverUrl, profileId)
+                val tanks = tankRepository.loadAll(conn)
                 val lastRead = if (sort == TankBrowse.Sort.RECENT_READ) tankReadTimes() else emptyMap()
                 val ordered = TankBrowse.order(tanks, query, sort, lastRead)
                 withContext(Dispatchers.Main) {
@@ -214,7 +218,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
                     emptyString = callback.getString(R.string.tankoubons_empty)
                     onGetPageData(taskId, 1, 0, rows)
                 }
-                val fallbacks = tankService.probeCoverFallbacks(serverUrl, tanks)
+                val fallbacks = tankRepository.probeCoverFallbacks(conn, tanks)
                 withContext(Dispatchers.Main) { applyTankCoverFallbacks(fallbacks) }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -234,7 +238,7 @@ class GalleryListDataHelper(private val callback: Callback) : GalleryInfoContent
             .filter { isTankoubonId(it.arcid) }
             .associate { it.arcid to it.time }
 
-    private fun applyTankCoverFallbacks(fallbacks: Map<String, TankListService.CoverFallback>) {
+    private fun applyTankCoverFallbacks(fallbacks: Map<String, TankRepository.CoverFallback>) {
         tankCoverFallbacks = fallbacks
         if (fallbacks.isEmpty()) return
         val rows = data

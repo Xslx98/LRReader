@@ -38,7 +38,6 @@ import android.widget.TextView
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.tankoubon.TankBrowse
@@ -254,9 +253,7 @@ open class GalleryListScene : BaseScene(),
         TankDialogs.showNameInputDialog(context, R.string.tank_create, "") { name ->
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                    // Main-safe: the API call switches to IO itself.
-                    TankListService(ServiceRegistry.coroutineModule.ioScope).create(serverUrl, name)
+                    if (!viewModel.createTank(name)) return@launch
                     showTip(R.string.tank_op_done, LENGTH_SHORT)
                     mHelper?.refresh()
                 } catch (ce: CancellationException) {

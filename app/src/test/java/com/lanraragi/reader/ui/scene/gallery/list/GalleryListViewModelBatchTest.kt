@@ -10,6 +10,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -99,9 +100,9 @@ class GalleryListViewModelBatchTest {
 
     private fun mockBaseUrl() = server.url("").toString().removeSuffix("/")
 
-    /** VM with the base-URL resolution pinned to the MockWebServer (no profile registry needed). */
+    /** VM with the server connection pinned to the MockWebServer (no profile registry needed). */
     private fun newVm(vm: GalleryListViewModel = GalleryListViewModel()): GalleryListViewModel = vm.apply {
-        baseUrlResolver = { mockBaseUrl() }
+        connectionFor = { ServerConnection(it, mockBaseUrl(), ServiceRegistry.networkModule.okHttpClient) }
         // Tag materialization has its own wire tests (TankTagSyncerTest); keep
         // the request counts here about the membership writes.
         tankTagSyncAfterAdd = { _, _, _ -> false }

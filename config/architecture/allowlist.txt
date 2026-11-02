@@ -40,7 +40,6 @@ D8b com/lanraragi/reader/ui/scene/gallery/detail/TankPickerSheet.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/TankoubonDialogHelper.kt
 D8b com/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel.kt
 D8b com/lanraragi/reader/ui/scene/gallery/list/GalleryUploadHelper.kt
-D8b com/lanraragi/reader/ui/scene/gallery/list/TankListService.kt
 D8b com/lanraragi/reader/ui/scene/stats/ReadingStatsViewModel.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankDetailScene.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankDetailViewModel.kt
@@ -54,4 +53,3 @@ D8c com/lanraragi/reader/ui/scene/ServerListViewModel.kt
 D8c com/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailViewModel.kt
 D8c com/lanraragi/reader/ui/scene/gallery/detail/TankoubonDialogHelper.kt
 D8c com/lanraragi/reader/ui/scene/gallery/list/GalleryListDataHelper.kt
-D8c com/lanraragi/reader/ui/scene/gallery/list/GalleryListScene.kt
