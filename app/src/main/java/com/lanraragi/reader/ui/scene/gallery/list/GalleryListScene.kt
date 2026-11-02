@@ -124,12 +124,6 @@ open class GalleryListScene : BaseScene(),
     private var mNavCheckedId = 0
     private var mRestoredState = GalleryStateHelper.STATE_NORMAL
 
-    // Stable per-instance token stamped on batches this scene starts; the
-    // batch result collector handles only results carrying it. Scene-level (not
-    // in the per-view Callback object) so it survives view recreation, matching
-    // the fragment-scoped collector.
-    internal val batchOwnerToken = Any()
-
     internal lateinit var downloadManager: DownloadManager
         private set
 

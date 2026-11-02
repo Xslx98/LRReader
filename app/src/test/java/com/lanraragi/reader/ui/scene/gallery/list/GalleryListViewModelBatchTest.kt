@@ -32,7 +32,6 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -152,24 +151,6 @@ class GalleryListViewModelBatchTest {
     }
 
     // ─── tests ───────────────────────────────────────────────────────────
-
-    @Test
-    fun `runBatch stamps the initiating owner token on the emitted result`() = runTest {
-        // The result must carry the token of the scene that started the batch
-        // so that, with an activity-scoped ViewModel shared across stacked list
-        // instances, only the initiating scene handles/buffers it instead of
-        // every instance fanning out a duplicate dialog.
-        server.dispatcher = object : Dispatcher() {
-            override fun dispatch(request: RecordedRequest): MockResponse =
-                jsonResponse(200, """{"success":1}""")
-        }
-        val vm = newVm()
-        val token = Any()
-        val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.ClearNew, listOf(archiveOf(ARC_A)), owner = token)
-        }
-        assertSame("result must carry the initiating owner token", token, result.owner)
-    }
 
     @Test
     fun `clearNew batch aggregates per-item results and isolates failures`() = runTest {

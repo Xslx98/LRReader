@@ -104,12 +104,7 @@ class GalleryListEvents(private val scene: GalleryListScene) {
         // per-item failure dialog after a partial delete and skipping ClearNew's
         // badge refresh. Buffer while detached and replay in onResume, same as
         // archiveDeletedEvent above.
-        //
-        // Only results stamped with this scene's owner token are handled: a
-        // guard from when the ViewModel was shared by every stacked list
-        // instance, kept so a result can never reach a scene that did not run it.
         collectFlowWhileCreated(scene, viewModel.batchResultEvent) { result ->
-            if (result.owner !== scene.batchOwnerToken) return@collectFlowWhileCreated
             batchResultBuffer.deliverOrBuffer(result, ready = scene.isResumed && scene.batchOpsHelper != null) {
                 scene.batchOpsHelper?.onBatchResult(it)
                 scene.rowHighlighter.onBatchResult(it)

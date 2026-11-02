@@ -77,7 +77,6 @@ object GalleryListSelection {
             override fun openTankoubon(tankId: String, tankName: String) {
                 scene.tankMerge.openTankoubonDetail(tankId, tankName)
             }
-            override fun batchOwnerToken(): Any = scene.batchOwnerToken
             override fun isTankMode(): Boolean = scene.isTankMode
         })
         val multiSelect = ListMultiSelectHelper(
