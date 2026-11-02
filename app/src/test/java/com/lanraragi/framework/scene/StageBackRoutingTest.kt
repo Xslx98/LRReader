@@ -50,7 +50,9 @@ class StageBackRoutingTest {
         var intercept = false
         var intercepted = 0
 
-        override fun getThemeResId(theme: Int): Int = R.style.AppTheme_Main
+        override fun onStageBeforeCreate(savedInstanceState: Bundle?) {
+            setTheme(R.style.AppTheme_Main)
+        }
 
         override val containerViewId: Int get() = CONTAINER_ID
 

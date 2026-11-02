@@ -10,7 +10,9 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.server.KeystoreSecurePrefs
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.security.AppLockCredentials
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.SetSecurityActivity
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -41,7 +43,7 @@ import org.robolectric.shadows.ShadowLooper
  * finding the lock silently gone.
  *
  * Robolectric has no AndroidKeyStore; the store is opened with an in-memory
- * cipher. [LRRAuthManager] is a process-wide singleton, so the init gate and
+ * cipher. [SecureCredentialStore] is a process-wide singleton, so the init gate and
  * the files are restored in both setUp and tearDown.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -58,8 +60,8 @@ class LegacyLockRemovedNoticeTest {
 
     @Before
     fun setUp() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         controller = Robolectric.buildActivity(AppCompatActivity::class.java)
         activity = controller.get()
         activity.setTheme(R.style.AppTheme)
@@ -72,8 +74,8 @@ class LegacyLockRemovedNoticeTest {
     @After
     fun tearDown() {
         scope.cancel()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         wipeFiles()
         controller.close()
     }
@@ -125,7 +127,7 @@ class LegacyLockRemovedNoticeTest {
         activity = controller.get()
         ShadowLooper.idleMainLooper()
         assertFalse("closed with the old activity", first.isShowing)
-        assertTrue("not answered yet", LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertTrue("not answered yet", AppLockCredentials.isLegacyLockRemovedNoticePending())
         LegacyLockRemovedNotice.showIfPending(activity)
         ShadowLooper.idleMainLooper()
         val second = ShadowDialog.getLatestDialog() as AlertDialog
@@ -133,7 +135,7 @@ class LegacyLockRemovedNoticeTest {
 
         second.getButton(DialogInterface.BUTTON_NEGATIVE).performClick()
         ShadowLooper.idleMainLooper()
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
     }
 
     @Test(timeout = 10_000)
@@ -148,7 +150,7 @@ class LegacyLockRemovedNoticeTest {
 
         dialog.cancel()
         ShadowLooper.idleMainLooper()
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
     }
 
     @Test(timeout = 10_000)
@@ -157,7 +159,7 @@ class LegacyLockRemovedNoticeTest {
         launch()
 
         assertTrue(SecuritySettings.isLockEnabled())
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
     }
 
     @Test(timeout = 10_000)
@@ -165,7 +167,7 @@ class LegacyLockRemovedNoticeTest {
         storeWith("pattern_hash_v2" to "cGJrZGYy", "pattern_salt" to "c2FsdA==")
         launch()
 
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
     }
 
     /** Entries as an older version left them in the secure store. */
@@ -178,11 +180,11 @@ class LegacyLockRemovedNoticeTest {
 
     /** One process start whose store opens. */
     private fun launch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.secureStoreCipher = { cipher }
-        LRRAuthManager.scheduleInitialize(activity, scope)
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.secureStoreCipher = { cipher }
+        SecureCredentialStore.scheduleInitialize(activity, scope)
         scheduler.advanceUntilIdle()
-        assertTrue(LRRAuthManager.isSecureStorageAvailable())
+        assertTrue(SecureCredentialStore.isSecureStorageAvailable())
     }
 
     private fun plainPrefs() = activity.getSharedPreferences("lrr_auth_plain", Context.MODE_PRIVATE)

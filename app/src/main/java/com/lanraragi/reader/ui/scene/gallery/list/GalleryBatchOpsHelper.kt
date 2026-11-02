@@ -14,7 +14,7 @@ import com.lanraragi.reader.settings.PrivacySettings
 import com.lanraragi.reader.ui.scene.BatchBarAnimator
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.TankoubonDialogHelper
-import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.domain.Archive
 
@@ -104,7 +104,7 @@ internal class GalleryBatchOpsHelper(
             // Hidden entirely on servers already proven pre-0.9.8; UNKNOWN keeps
             // it visible and the first failed call flips the gate + toasts.
             tankoubonButton.visibility =
-                if (TankoubonSupportGate.isUnsupported(LRRClientProvider.getBaseUrl())) View.GONE
+                if (TankoubonSupportGate.isUnsupported(ServerConnections.active()?.baseUrl.orEmpty())) View.GONE
                 else View.VISIBLE
         }
     }

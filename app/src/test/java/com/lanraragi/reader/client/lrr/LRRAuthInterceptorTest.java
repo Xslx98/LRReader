@@ -3,7 +3,8 @@ package com.lanraragi.reader.client.lrr;
 import com.lanraragi.reader.MockWebServerAwaitKt;
 import com.lanraragi.reader.client.api.*;
 import com.lanraragi.reader.client.api.data.*;
-import com.lanraragi.reader.server.LRRAuthManager;
+import com.lanraragi.reader.server.ServerSession;
+import com.lanraragi.reader.server.SecureCredentialStore;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -34,7 +35,7 @@ import static org.junit.Assert.*;
  * only for requests targeting the configured LANraragi server.
  *
  * Uses Robolectric for Context, but bypasses EncryptedSharedPreferences
- * by injecting a plain SharedPreferences into LRRAuthManager via reflection.
+ * by injecting a plain SharedPreferences into SecureCredentialStore via reflection.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30, application = android.app.Application.class)
@@ -56,27 +57,27 @@ public class LRRAuthInterceptorTest {
                 .addInterceptor(new LRRAuthInterceptor())
                 .build();
 
-        // Inject plain SharedPreferences into LRRAuthManager via reflection
+        // Inject plain SharedPreferences into SecureCredentialStore via reflection
         // (avoids EncryptedSharedPreferences which requires Android KeyStore)
         Context ctx = ApplicationProvider.getApplicationContext();
         SharedPreferences prefs = ctx.getSharedPreferences("test_lrr_auth", Context.MODE_PRIVATE);
         prefs.edit().clear().apply();
-        // LRRAuthManager is a Kotlin object — set the field on the singleton INSTANCE
-        Field sPrefsField = LRRAuthManager.class.getDeclaredField("sPrefs");
+        // SecureCredentialStore is a Kotlin object — set the field on the singleton INSTANCE
+        Field sPrefsField = SecureCredentialStore.class.getDeclaredField("prefs");
         sPrefsField.setAccessible(true);
-        sPrefsField.set(LRRAuthManager.INSTANCE, prefs);
+        sPrefsField.set(SecureCredentialStore.INSTANCE, prefs);
     }
 
     @After
     public void tearDown() throws IOException {
         server.shutdown();
-        LRRAuthManager.clear();
+        SecureCredentialStore.clear();
     }
 
     @Test
     public void noApiKey_noHeader() throws Exception {
         // API key is null by default after clearing prefs
-        LRRAuthManager.setServerUrl(baseUrl);
+        ServerSession.setServerUrl(baseUrl);
 
         server.enqueue(new MockResponse().setBody("ok"));
         Request request = new Request.Builder().url(server.url("/api/info")).build();
@@ -88,8 +89,8 @@ public class LRRAuthInterceptorTest {
 
     @Test
     public void emptyApiKey_noHeader() throws Exception {
-        LRRAuthManager.setApiKey("");
-        LRRAuthManager.setServerUrl(baseUrl);
+        ServerSession.setApiKey("");
+        ServerSession.setServerUrl(baseUrl);
 
         server.enqueue(new MockResponse().setBody("ok"));
         Request request = new Request.Builder().url(server.url("/api/info")).build();
@@ -101,8 +102,8 @@ public class LRRAuthInterceptorTest {
 
     @Test
     public void withApiKey_addsBearer() throws Exception {
-        LRRAuthManager.setApiKey("test-key");
-        LRRAuthManager.setServerUrl(baseUrl);
+        ServerSession.setApiKey("test-key");
+        ServerSession.setServerUrl(baseUrl);
 
         server.enqueue(new MockResponse().setBody("ok"));
         Request request = new Request.Builder().url(server.url("/api/info")).build();
@@ -119,8 +120,8 @@ public class LRRAuthInterceptorTest {
 
     @Test
     public void requestToOtherHost_noHeader() throws Exception {
-        LRRAuthManager.setApiKey("secret");
-        LRRAuthManager.setServerUrl("https://different-host.example.com");
+        ServerSession.setApiKey("secret");
+        ServerSession.setServerUrl("https://different-host.example.com");
 
         server.enqueue(new MockResponse().setBody("ok"));
         Request request = new Request.Builder().url(server.url("/api/info")).build();
@@ -132,7 +133,7 @@ public class LRRAuthInterceptorTest {
 
     @Test
     public void noServerUrl_noHeader() throws Exception {
-        LRRAuthManager.setApiKey("secret");
+        ServerSession.setApiKey("secret");
         // Server URL not set — getServerUrl() returns null
 
         server.enqueue(new MockResponse().setBody("ok"));
@@ -151,10 +152,10 @@ public class LRRAuthInterceptorTest {
      */
     @Test
     public void httpsConfigured_httpRequest_throwsPlaintextRefused() throws Exception {
-        LRRAuthManager.setApiKey("secret");
+        ServerSession.setApiKey("secret");
         // Configure HTTPS for the same host:port that MockWebServer listens on (HTTP).
         HttpUrl mockUrl = server.url("/");
-        LRRAuthManager.setServerUrl("https://" + mockUrl.host() + ":" + mockUrl.port());
+        ServerSession.setServerUrl("https://" + mockUrl.host() + ":" + mockUrl.port());
 
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         try {
@@ -174,8 +175,8 @@ public class LRRAuthInterceptorTest {
      */
     @Test
     public void httpConfigured_httpsRequest_throwsPlaintextRefused() throws Exception {
-        LRRAuthManager.setApiKey("secret");
-        LRRAuthManager.setServerUrl("http://example.local:3000");
+        ServerSession.setApiKey("secret");
+        ServerSession.setServerUrl("http://example.local:3000");
 
         Request request = new Request.Builder()
                 .url("https://example.local:3000/api/info")
@@ -196,9 +197,9 @@ public class LRRAuthInterceptorTest {
      */
     @Test
     public void serverUrlWithUserInfo_throwsPlaintextRefused() throws Exception {
-        LRRAuthManager.setApiKey("secret");
+        ServerSession.setApiKey("secret");
         HttpUrl mockUrl = server.url("/");
-        LRRAuthManager.setServerUrl(
+        ServerSession.setServerUrl(
                 "http://attacker:pwd@" + mockUrl.host() + ":" + mockUrl.port());
 
         Request request = new Request.Builder().url(server.url("/api/info")).build();
@@ -222,9 +223,9 @@ public class LRRAuthInterceptorTest {
      */
     @Test
     public void serverUrlWithFragment_throwsPlaintextRefused() throws Exception {
-        LRRAuthManager.setApiKey("secret");
+        ServerSession.setApiKey("secret");
         HttpUrl mockUrl = server.url("/");
-        LRRAuthManager.setServerUrl(
+        ServerSession.setServerUrl(
                 "http://" + mockUrl.host() + ":" + mockUrl.port() + "/#@evil.local/api");
 
         Request request = new Request.Builder().url(server.url("/api/info")).build();
@@ -245,9 +246,9 @@ public class LRRAuthInterceptorTest {
      */
     @Test
     public void requestUrlWithUserInfo_throwsPlaintextRefused() throws Exception {
-        LRRAuthManager.setApiKey("secret");
+        ServerSession.setApiKey("secret");
         HttpUrl mockUrl = server.url("/");
-        LRRAuthManager.setServerUrl("http://" + mockUrl.host() + ":" + mockUrl.port());
+        ServerSession.setServerUrl("http://" + mockUrl.host() + ":" + mockUrl.port());
 
         // Build a request URL with userInfo via HttpUrl.Builder so OkHttp accepts it.
         HttpUrl evilUrl = mockUrl.newBuilder()
@@ -274,11 +275,11 @@ public class LRRAuthInterceptorTest {
      */
     @Test
     public void differentPort_noHeader() throws Exception {
-        LRRAuthManager.setApiKey("k");
+        ServerSession.setApiKey("k");
         // Configure a port that does not match MockWebServer's.
         HttpUrl mockUrl = server.url("/");
         int otherPort = mockUrl.port() == 9999 ? 9998 : 9999;
-        LRRAuthManager.setServerUrl("http://" + mockUrl.host() + ":" + otherPort);
+        ServerSession.setServerUrl("http://" + mockUrl.host() + ":" + otherPort);
 
         server.enqueue(new MockResponse().setBody("ok"));
         Request request = new Request.Builder().url(server.url("/api/info")).build();
@@ -293,11 +294,11 @@ public class LRRAuthInterceptorTest {
      */
     @Test
     public void hostCaseInsensitive_match() throws Exception {
-        LRRAuthManager.setApiKey("k");
+        ServerSession.setApiKey("k");
         HttpUrl mockUrl = server.url("/");
         // Mixed-case version of the host (HttpUrl will lowercase on parse).
         String mixedHost = mockUrl.host().toUpperCase();
-        LRRAuthManager.setServerUrl("http://" + mixedHost + ":" + mockUrl.port());
+        ServerSession.setServerUrl("http://" + mixedHost + ":" + mockUrl.port());
 
         server.enqueue(new MockResponse().setBody("ok"));
         Request request = new Request.Builder().url(server.url("/api/info")).build();
@@ -314,8 +315,8 @@ public class LRRAuthInterceptorTest {
      */
     @Test
     public void invalidServerUrl_throwsPlaintextRefused() throws Exception {
-        LRRAuthManager.setApiKey("k");
-        LRRAuthManager.setServerUrl("not-a-valid-url");
+        ServerSession.setApiKey("k");
+        ServerSession.setServerUrl("not-a-valid-url");
 
         Request request = new Request.Builder().url(server.url("/api/info")).build();
         try {

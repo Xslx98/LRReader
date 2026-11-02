@@ -8,7 +8,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
-import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for miscellaneous LANraragi operations.
@@ -55,10 +54,4 @@ object LRRMiscApi {
             jsonObj["job"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0
         }
     }
-
-    // ==================== Simplified overload ====================
-
-    @JvmStatic
-    suspend fun downloadUrl(url: String, catid: String? = null): Int =
-        downloadUrl(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), url, catid)
 }

@@ -19,7 +19,8 @@ import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -80,8 +81,8 @@ class ServerListViewModelTest {
             .allowMainThreadQueries()
             .build()
 
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test", Context.MODE_PRIVATE)
         )
 
@@ -125,7 +126,7 @@ class ServerListViewModelTest {
         viewModels.forEach { awaitViewModelIdle(it) }
         eventScope.cancel()
         Dispatchers.resetMain()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         db.close()
         server.shutdown()
     }
@@ -156,8 +157,8 @@ class ServerListViewModelTest {
 
     @Test
     fun testAndAddProfile_failure_leavesGlobalAuthUntouched() {
-        LRRAuthManager.setServerUrl("http://prior.example.com:3000")
-        LRRAuthManager.setApiKey("prior-key")
+        ServerSession.setServerUrl("http://prior.example.com:3000")
+        ServerSession.setApiKey("prior-key")
         // 401 = permanent failure, no retry.
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
@@ -169,8 +170,8 @@ class ServerListViewModelTest {
         awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.AddConnectionFailed }
         }
-        assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
-        assertEquals("prior-key", LRRAuthManager.getApiKey())
+        assertEquals("http://prior.example.com:3000", ServerSession.getServerUrl())
+        assertEquals("prior-key", ServerSession.getApiKey())
     }
 
     @Test
@@ -192,9 +193,9 @@ class ServerListViewModelTest {
         val rows = runBlocking { db.miscDao().getAllServerProfiles() }
         val added = rows.single { it.id != oldId }
         assertEquals("exactly one active profile", listOf(added.id), rows.filter { it.isActive }.map { it.id })
-        assertEquals(added.id, LRRAuthManager.getActiveProfileId())
-        assertEquals(url, LRRAuthManager.getServerUrl())
-        assertEquals("new-key", LRRAuthManager.getApiKey())
+        assertEquals(added.id, ServerSession.getActiveProfileId())
+        assertEquals(url, ServerSession.getServerUrl())
+        assertEquals("new-key", ServerSession.getApiKey())
     }
 
     @Test
@@ -226,8 +227,8 @@ class ServerListViewModelTest {
         // A Room insert failure after a successful probe must surface
         // AddConnectionFailed (not silently soft-lock the dialog) and must not
         // have switched the live global auth to the new server.
-        LRRAuthManager.setServerUrl("https://old.example.com")
-        LRRAuthManager.setApiKey("old-key")
+        ServerSession.setServerUrl("https://old.example.com")
+        ServerSession.setApiKey("old-key")
         server.enqueue(MockResponse().setResponseCode(200)
             .setBody("""{"name":"New","version":"0.9.8","archives_per_page":100}"""))
 
@@ -248,8 +249,8 @@ class ServerListViewModelTest {
         awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.AddConnectionFailed }
         }
-        assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
-        assertEquals("old-key", LRRAuthManager.getApiKey())
+        assertEquals("global URL must stay on the old server", "https://old.example.com", ServerSession.getServerUrl())
+        assertEquals("old-key", ServerSession.getApiKey())
     }
 
     @Test
@@ -257,7 +258,7 @@ class ServerListViewModelTest {
         val oldId = insertProfile("Old", "https://old.example.com", isActive = true)
         server.enqueue(MockResponse().setResponseCode(200)
             .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
 
         val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
@@ -270,7 +271,7 @@ class ServerListViewModelTest {
         assertEquals("the keyless new row is rolled back", listOf(oldId), rows.map { it.id })
         assertTrue("the old profile stays active", rows.single().isActive)
 
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore_add", Context.MODE_PRIVATE)
         )
     }
@@ -284,7 +285,7 @@ class ServerListViewModelTest {
         val profile = ServerProfile(id = id, name = "Old Name", url = "https://old.example.com", isActive = true)
         server.enqueue(MockResponse().setResponseCode(200)
             .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
 
         val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
@@ -300,7 +301,7 @@ class ServerListViewModelTest {
         assertEquals("Old Name", fromDb.name)
 
         // Restore secure storage for tearDown / suite order.
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore2", Context.MODE_PRIVATE)
         )
     }
@@ -344,8 +345,8 @@ class ServerListViewModelTest {
         // commits. If the Room update fails, the active server URL/key must
         // still point at the old server — otherwise traffic silently follows
         // the edited URL while the profile list shows the old one.
-        LRRAuthManager.setServerUrl("https://old.example.com")
-        LRRAuthManager.setApiKey("old-key")
+        ServerSession.setServerUrl("https://old.example.com")
+        ServerSession.setApiKey("old-key")
         val id = insertProfile("Old Name", "https://old.example.com", isActive = true)
         val profile = ServerProfile(id = id, name = "Old Name", url = "https://old.example.com", isActive = true)
         server.enqueue(MockResponse().setResponseCode(200)
@@ -368,8 +369,8 @@ class ServerListViewModelTest {
         awaitUntil {
             events.any { it is ServerListViewModel.ServerListUiEvent.EditConnectionFailed }
         }
-        assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
-        assertEquals("old-key", LRRAuthManager.getApiKey())
+        assertEquals("global URL must stay on the old server", "https://old.example.com", ServerSession.getServerUrl())
+        assertEquals("old-key", ServerSession.getApiKey())
     }
 
     @Test
@@ -449,9 +450,9 @@ class ServerListViewModelTest {
     fun activateProfile_pointsTheAuthSessionAtTheProfileBeforeReporting() {
         insertProfile("A", "https://a.com", isActive = true)
         val id2 = insertProfile("B", "https://b.com", isActive = false)
-        LRRAuthManager.setApiKeyForProfile(id2, "key-b")
+        ServerSession.setApiKeyForProfile(id2, "key-b")
         val profileB = ServerProfile(id = id2, name = "B", url = "https://b.com", isActive = false)
-        val versionBefore = LRRAuthManager.serverConfigVersion
+        val versionBefore = ServerSession.serverConfigVersion
 
         val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
@@ -459,11 +460,11 @@ class ServerListViewModelTest {
         awaitUntil { events.any { it is ServerListViewModel.ServerListUiEvent.ProfileActivated } }
 
         // Done by the view model (off main) by the time the Scene hears of it.
-        assertEquals("https://b.com", LRRAuthManager.getServerUrl())
-        assertEquals("key-b", LRRAuthManager.getApiKey())
-        assertEquals("B", LRRAuthManager.getServerName())
-        assertEquals(id2, LRRAuthManager.getActiveProfileId())
-        assertTrue(LRRAuthManager.serverConfigVersion > versionBefore)
+        assertEquals("https://b.com", ServerSession.getServerUrl())
+        assertEquals("key-b", ServerSession.getApiKey())
+        assertEquals("B", ServerSession.getServerName())
+        assertEquals(id2, ServerSession.getActiveProfileId())
+        assertTrue(ServerSession.serverConfigVersion > versionBefore)
     }
 
     @Test
@@ -495,7 +496,7 @@ class ServerListViewModelTest {
     fun deleteProfile_cascadesSearchHistory() {
         val id = insertProfile("Doomed", "https://doomed.com")
         val profile = ServerProfile(id = id, name = "Doomed", url = "https://doomed.com")
-        LRRAuthManager.setApiKeyForProfile(id, "test-key")
+        ServerSession.setApiKeyForProfile(id, "test-key")
         val historyRepo = SearchHistoryRepository(db.browsingDao(), db)
         runBlocking { historyRepo.recordSearch(id, "doomed query") }
 
@@ -513,7 +514,7 @@ class ServerListViewModelTest {
         insertProfile("Keep", "https://keep.com")
         val id2 = insertProfile("Remove", "https://remove.com")
         val toDelete = ServerProfile(id = id2, name = "Remove", url = "https://remove.com")
-        LRRAuthManager.setApiKeyForProfile(id2, "key")
+        ServerSession.setApiKeyForProfile(id2, "key")
 
         val vm = newVm()
         vm.loadProfiles()
@@ -537,18 +538,18 @@ class ServerListViewModelTest {
         val profile = ServerProfile(
             id = id, name = "Retired NAS", url = "http://192.168.1.50:3000", isActive = true
         )
-        LRRAuthManager.setApiKeyForProfile(id, "nas-key")
-        LRRAuthManager.setServerUrl(profile.url)
-        LRRAuthManager.setApiKey("nas-key")
-        LRRAuthManager.setActiveProfileId(id)
+        ServerSession.setApiKeyForProfile(id, "nas-key")
+        ServerSession.setServerUrl(profile.url)
+        ServerSession.setApiKey("nas-key")
+        ServerSession.setActiveProfileId(id)
 
         val vm = newVm()
         vm.deleteProfile(profile)
 
         awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.isEmpty() }
-        assertEquals(null, LRRAuthManager.getApiKey())
-        assertEquals(null, LRRAuthManager.getServerUrl())
-        assertEquals(0L, LRRAuthManager.getActiveProfileId())
+        assertEquals(null, ServerSession.getApiKey())
+        assertEquals(null, ServerSession.getServerUrl())
+        assertEquals(0L, ServerSession.getActiveProfileId())
     }
 
     /**
@@ -560,7 +561,7 @@ class ServerListViewModelTest {
     fun deleteProfile_purgesReadingStateButKeepsDownloads() {
         val gone = insertProfile("Gone", "https://gone.example")
         val kept = insertProfile("Kept", "https://kept.example")
-        LRRAuthManager.setApiKeyForProfile(gone, "k")
+        ServerSession.setApiKeyForProfile(gone, "k")
         val dao = db.archiveLocalStateDao()
         val stats = db.statsDao()
         runBlocking {
@@ -596,16 +597,16 @@ class ServerListViewModelTest {
     fun deleteProfile_inactiveProfile_keepsActiveSession() {
         val activeId = insertProfile("Home", "http://192.168.1.10:3000", isActive = true)
         val otherId = insertProfile("Other", "https://other.example")
-        LRRAuthManager.setServerUrl("http://192.168.1.10:3000")
-        LRRAuthManager.setApiKey("home-key")
-        LRRAuthManager.setActiveProfileId(activeId)
+        ServerSession.setServerUrl("http://192.168.1.10:3000")
+        ServerSession.setApiKey("home-key")
+        ServerSession.setActiveProfileId(activeId)
 
         val vm = newVm()
         vm.deleteProfile(ServerProfile(id = otherId, name = "Other", url = "https://other.example"))
 
         awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.size == 1 }
-        assertEquals("home-key", LRRAuthManager.getApiKey())
-        assertEquals(activeId, LRRAuthManager.getActiveProfileId())
+        assertEquals("home-key", ServerSession.getApiKey())
+        assertEquals(activeId, ServerSession.getActiveProfileId())
     }
 
     @Test
@@ -613,7 +614,7 @@ class ServerListViewModelTest {
         val id = insertProfile("Test", "https://test.com")
         val profile = ServerProfile(id = id, name = "Test", url = "https://test.com")
 
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
 
         val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
@@ -629,7 +630,7 @@ class ServerListViewModelTest {
         assertEquals("Profile should still exist", 1, remaining.size)
 
         // Restore secure storage for tearDown
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore", Context.MODE_PRIVATE)
         )
     }

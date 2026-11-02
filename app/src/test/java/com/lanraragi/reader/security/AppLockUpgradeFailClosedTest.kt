@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.security
 
 import android.content.Context
 import androidx.core.content.edit
@@ -22,7 +22,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
+import com.lanraragi.reader.client.api.InMemoryValueCipher
 
 /**
  * Audit 2026-10-06c SEC-01: the plain lock mirror (`app_lock_enabled`) only
@@ -32,8 +34,8 @@ import com.lanraragi.reader.server.LRRAuthManager
  * readable without the keystore, and "locked" when that is not possible.
  *
  * Robolectric has no AndroidKeyStore, so the production init always takes
- * its failure branch unless [LRRAuthManager.secureStoreCipher] is swapped.
- * [LRRAuthManager] and [AppLockGate] are process-wide singletons: the init
+ * its failure branch unless [SecureCredentialStore.secureStoreCipher] is swapped.
+ * [SecureCredentialStore] and [AppLockGate] are process-wide singletons: the init
  * gate and the files are restored in both setUp and tearDown.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -50,9 +52,9 @@ class AppLockUpgradeFailClosedTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
         // Production has no store until init opens one; earlier tests leave one behind.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         wipeFiles()
         AppLockGate.resetForTesting()
     }
@@ -60,8 +62,8 @@ class AppLockUpgradeFailClosedTest {
     @After
     fun tearDown() {
         scope.cancel()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         wipeFiles()
         AppLockGate.resetForTesting()
     }
@@ -72,11 +74,11 @@ class AppLockUpgradeFailClosedTest {
         securePrefs().edit(commit = true) { putString("pattern_hash_v2", "ciphertext") }
         failedLaunch()
 
-        assertFalse(LRRAuthManager.isSecureStorageAvailable())
-        assertNull("mirror absent: written by <= v1.26 or never", LRRAuthManager.lockEnabledHint())
+        assertFalse(SecureCredentialStore.isSecureStorageAvailable())
+        assertNull("mirror absent: written by <= v1.26 or never", AppLockCredentials.lockEnabledHint())
         assertTrue(SecuritySettings.isLockEnabled())
         assertTrue(AppLockGate.isLocked())
-        assertEquals("the answer is remembered", true, LRRAuthManager.lockEnabledHint())
+        assertEquals("the answer is remembered", true, AppLockCredentials.lockEnabledHint())
     }
 
     @Test(timeout = 10_000)
@@ -96,7 +98,7 @@ class AppLockUpgradeFailClosedTest {
 
         assertFalse(SecuritySettings.isLockEnabled())
         assertFalse(AppLockGate.isLocked())
-        assertEquals("the answer is remembered", false, LRRAuthManager.lockEnabledHint())
+        assertEquals("the answer is remembered", false, AppLockCredentials.lockEnabledHint())
     }
 
     @Test(timeout = 10_000)
@@ -107,16 +109,16 @@ class AppLockUpgradeFailClosedTest {
 
         assertTrue("cannot tell without the keystore: locked", SecuritySettings.isLockEnabled())
         assertTrue(AppLockGate.isLocked())
-        assertNull("an unknown answer is not remembered", LRRAuthManager.lockEnabledHint())
+        assertNull("an unknown answer is not remembered", AppLockCredentials.lockEnabledHint())
         // The lock screen owns the reset in this state.
-        assertFalse(LRRAuthManager.canOfferCredentialReset())
+        assertFalse(AppLockCredentials.canOfferCredentialReset())
     }
 
     @Test(timeout = 10_000)
     fun noMirror_initPendingOnMain_isNotCachedAsUnlocked() {
         writeLegacyStoreFile()
-        LRRAuthManager.scheduleInitialize(ctx, scope) // not advanced: init still running
-        LRRAuthManager.mainThreadInitTimeoutMs = 100
+        SecureCredentialStore.scheduleInitialize(ctx, scope) // not advanced: init still running
+        SecureCredentialStore.mainThreadInitTimeoutMs = 100
         assertTrue(android.os.Looper.myLooper() == android.os.Looper.getMainLooper())
 
         assertTrue("store still opening: locked", AppLockGate.isLocked())
@@ -124,27 +126,27 @@ class AppLockUpgradeFailClosedTest {
 
         // Init finishes (legacy store handled and removed) and the store opens without a pattern.
         File(ctx.applicationInfo.dataDir, "shared_prefs/lrr_auth_encrypted.xml").delete()
-        LRRAuthManager.secureStoreCipher = { InMemoryValueCipher() }
+        SecureCredentialStore.secureStoreCipher = { InMemoryValueCipher() }
         scheduler.advanceUntilIdle()
 
-        assertTrue(LRRAuthManager.isSecureStorageAvailable())
-        assertEquals(false, LRRAuthManager.lockEnabledHint())
+        assertTrue(SecureCredentialStore.isSecureStorageAvailable())
+        assertEquals(false, AppLockCredentials.lockEnabledHint())
         assertFalse("decided now, not cached from the pending state", AppLockGate.isLocked())
     }
 
     @Test(timeout = 10_000)
     fun noMirror_storeOpens_mirrorWrittenFromTheStore() {
-        LRRAuthManager.secureStoreCipher = { InMemoryValueCipher() }
-        LRRAuthManager.scheduleInitialize(ctx, scope)
+        SecureCredentialStore.secureStoreCipher = { InMemoryValueCipher() }
+        SecureCredentialStore.scheduleInitialize(ctx, scope)
         scheduler.advanceUntilIdle()
 
-        assertEquals(false, LRRAuthManager.lockEnabledHint())
+        assertEquals(false, AppLockCredentials.lockEnabledHint())
         assertFalse(SecuritySettings.isLockEnabled())
     }
 
     private fun failedLaunch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.scheduleInitialize(ctx, scope)
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.scheduleInitialize(ctx, scope)
         scheduler.advanceUntilIdle()
     }
 

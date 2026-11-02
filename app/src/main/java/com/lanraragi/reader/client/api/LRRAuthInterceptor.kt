@@ -8,7 +8,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response
 import com.lanraragi.reader.server.ProfileUrlCandidate
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 
 /**
  * OkHttp interceptor that injects the LANraragi Bearer token for requests
@@ -31,7 +31,7 @@ import com.lanraragi.reader.server.LRRAuthManager
  *    outright.
  *  - When the cache is cold (boot edge: app started but the Room flow has
  *    not delivered its first emission yet), falls back to legacy active-only
- *    matching against [LRRAuthManager.getServerUrl] so requests issued
+ *    matching against [ServerSession.getServerUrl] so requests issued
  *    during the first few ms of process life still authenticate correctly.
  */
 class LRRAuthInterceptor : Interceptor {
@@ -81,7 +81,7 @@ class LRRAuthInterceptor : Interceptor {
             )
         }
 
-        val apiKey = LRRAuthManager.getApiKeyForProfile(match.profile.id)
+        val apiKey = ServerSession.getApiKeyForProfile(match.profile.id)
         if (apiKey.isNullOrEmpty()) {
             // Profile is configured but has no per-profile key (legacy or
             // intentionally open server). Pass through without injecting;
@@ -96,20 +96,20 @@ class LRRAuthInterceptor : Interceptor {
     }
 
     /**
-     * Legacy fallback path: match against [LRRAuthManager.getServerUrl] and
-     * inject [LRRAuthManager.getApiKey]. Preserves the pre-cache behaviour
+     * Legacy fallback path: match against [ServerSession.getServerUrl] and
+     * inject [ServerSession.getApiKey]. Preserves the pre-cache behaviour
      * for boot-edge requests and for tests that wire only the auth-manager
      * singleton without populating the Room SERVER_PROFILES table.
      */
     private fun interceptViaActive(chain: Interceptor.Chain): Response {
-        val apiKey = LRRAuthManager.getApiKey()
+        val apiKey = ServerSession.getApiKey()
         val original = chain.request()
 
         if (apiKey.isNullOrEmpty()) {
             return chain.proceed(original)
         }
 
-        val serverUrl = LRRAuthManager.getServerUrl()
+        val serverUrl = ServerSession.getServerUrl()
         if (serverUrl.isNullOrEmpty()) {
             // Surface at error level so the line survives R8 log stripping in release.
             // No host is included: the intent is only to flag the missing-config state,

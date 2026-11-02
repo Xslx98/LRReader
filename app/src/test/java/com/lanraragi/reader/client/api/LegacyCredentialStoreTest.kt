@@ -19,7 +19,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.security.AppLockCredentials
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * Ruling R26: androidx.security is gone, so the EncryptedSharedPreferences
@@ -27,7 +29,7 @@ import com.lanraragi.reader.server.LRRAuthManager
  * say so — reauth prompt for the API keys, lock-removed notice for a pattern
  * — and drop the store, instead of opening silently unconfigured and unlocked.
  *
- * [LRRAuthManager] is a process-wide singleton: init gate and files are
+ * [SecureCredentialStore] is a process-wide singleton: init gate and files are
  * restored in both setUp and tearDown.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -46,18 +48,18 @@ class LegacyCredentialStoreTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.simulateStorageUnavailableForTesting()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         wipeFiles()
     }
 
     @After
     fun tearDown() {
         scope.cancel()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         wipeFiles()
     }
 
@@ -71,10 +73,10 @@ class LegacyCredentialStoreTest {
 
         launch()
 
-        assertTrue(LRRAuthManager.isSecureStorageAvailable())
-        assertTrue("the old API keys are gone: ask for them", LRRAuthManager.isNeedsReauthentication())
-        assertTrue("the old lock is gone: tell the user", LRRAuthManager.isLegacyLockRemovedNoticePending())
-        assertEquals("the app opens unlocked", false, LRRAuthManager.lockEnabledHint())
+        assertTrue(SecureCredentialStore.isSecureStorageAvailable())
+        assertTrue("the old API keys are gone: ask for them", ServerSession.isNeedsReauthentication())
+        assertTrue("the old lock is gone: tell the user", AppLockCredentials.isLegacyLockRemovedNoticePending())
+        assertEquals("the app opens unlocked", false, AppLockCredentials.lockEnabledHint())
         assertFalse(plainPrefs().contains("pattern_keystore_bound"))
         assertFalse("the unreadable store is dropped", legacyFile().exists())
     }
@@ -85,8 +87,8 @@ class LegacyCredentialStoreTest {
 
         launch()
 
-        assertFalse(LRRAuthManager.isNeedsReauthentication())
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(ServerSession.isNeedsReauthentication())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
         assertFalse(legacyFile().exists())
     }
 
@@ -95,18 +97,18 @@ class LegacyCredentialStoreTest {
         writeLegacyStoreFile()
         plainPrefs().edit(commit = true) { putBoolean("was_configured", true) }
         launch()
-        assertTrue(LRRAuthManager.isNeedsReauthentication())
+        assertTrue(ServerSession.isNeedsReauthentication())
 
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         launch()
 
-        assertFalse(LRRAuthManager.isNeedsReauthentication())
+        assertFalse(ServerSession.isNeedsReauthentication())
     }
 
     private fun launch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.secureStoreCipher = { cipher }
-        LRRAuthManager.scheduleInitialize(ctx, scope)
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.secureStoreCipher = { cipher }
+        SecureCredentialStore.scheduleInitialize(ctx, scope)
         scheduler.advanceUntilIdle()
     }
 

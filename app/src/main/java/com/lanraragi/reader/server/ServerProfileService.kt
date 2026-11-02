@@ -110,18 +110,18 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             // Room.) bumpServerConfigVersion drives GalleryListScene's
             // auto-refresh, so re-onboarding refreshes the list like add/edit.
             try {
-                LRRAuthManager.setApiKeyForProfile(profileId, apiKey)
+                ServerSession.setApiKeyForProfile(profileId, apiKey)
             } catch (e: LRRSecureStorageUnavailableException) {
                 inserted?.let { profileRepository.delete(it) }
                 throw e
             }
             profileRepository.activateExclusive(profileId)
-            LRRAuthManager.setActiveProfileId(profileId)
-            LRRAuthManager.setServerUrl(resolvedUrl)
-            LRRAuthManager.setApiKey(apiKey)
-            LRRAuthManager.setServerName(info.name)
-            LRRAuthManager.setAllowCleartext(allowCleartext)
-            LRRAuthManager.bumpServerConfigVersion()
+            ServerSession.setActiveProfileId(profileId)
+            ServerSession.setServerUrl(resolvedUrl)
+            ServerSession.setApiKey(apiKey)
+            ServerSession.setServerName(info.name)
+            ServerSession.setAllowCleartext(allowCleartext)
+            ServerSession.bumpServerConfigVersion()
         } catch (e: LRRSecureStorageUnavailableException) {
             Log.e(TAG, "Secure storage unavailable on connect success", e)
             return Outcome.SecureStorageUnavailable
@@ -183,12 +183,12 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
 
     /** Points the auth session at [profile]. Blocking keystore work: call off main. */
     private fun applySessionFor(profile: ServerProfile) {
-        LRRAuthManager.setServerUrl(profile.url)
-        LRRAuthManager.setApiKey(LRRAuthManager.getApiKeyForProfile(profile.id))
-        LRRAuthManager.setServerName(profile.name)
-        LRRAuthManager.setActiveProfileId(profile.id)
-        LRRAuthManager.setAllowCleartext(profile.allowCleartext)
-        LRRAuthManager.bumpServerConfigVersion()
+        ServerSession.setServerUrl(profile.url)
+        ServerSession.setApiKey(ServerSession.getApiKeyForProfile(profile.id))
+        ServerSession.setServerName(profile.name)
+        ServerSession.setActiveProfileId(profile.id)
+        ServerSession.setAllowCleartext(profile.allowCleartext)
+        ServerSession.bumpServerConfigVersion()
     }
 
     /**
@@ -202,10 +202,10 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
      *   when the secure store is unavailable and nothing was deleted
      */
     fun delete(profile: ServerProfile): Deferred<Unit>? {
-        val wasActive = profile.isActive || LRRAuthManager.getActiveProfileId() == profile.id
+        val wasActive = profile.isActive || ServerSession.getActiveProfileId() == profile.id
         try {
-            LRRAuthManager.clearApiKeyForProfile(profile.id)
-            if (wasActive) LRRAuthManager.clearActiveSession()
+            ServerSession.clearApiKeyForProfile(profile.id)
+            if (wasActive) ServerSession.clearActiveSession()
         } catch (e: LRRSecureStorageUnavailableException) {
             Log.e(TAG, "Secure storage unavailable while deleting a profile", e)
             return null
@@ -316,7 +316,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
                 // Fragile keystore per-profile key first: if the keystore is
                 // unavailable this throws before any durable write, so the
                 // edit aborts with Room and live auth untouched.
-                LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
+                ServerSession.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
             } catch (e: LRRSecureStorageUnavailableException) {
                 Log.e(TAG, "Secure storage unavailable while saving an edited profile", e)
                 return Outcome.SecureStorageUnavailable
@@ -327,13 +327,13 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             // Live global-auth switch LAST, only once Room has committed.
             try {
                 if (profile.isActive) {
-                    LRRAuthManager.setServerUrl(updated.url)
-                    LRRAuthManager.setApiKey(newKey.ifEmpty { null })
-                    LRRAuthManager.setServerName(updated.name)
-                    LRRAuthManager.setAllowCleartext(updated.allowCleartext)
-                    LRRAuthManager.bumpServerConfigVersion()
+                    ServerSession.setServerUrl(updated.url)
+                    ServerSession.setApiKey(newKey.ifEmpty { null })
+                    ServerSession.setServerName(updated.name)
+                    ServerSession.setAllowCleartext(updated.allowCleartext)
+                    ServerSession.bumpServerConfigVersion()
                 }
-                LRRAuthManager.markReauthIfProfilesUnprotected(profileRepository.getAllProfiles().map { it.id })
+                ServerSession.markReauthIfProfilesUnprotected(profileRepository.getAllProfiles().map { it.id })
             } catch (e: LRRSecureStorageUnavailableException) {
                 Log.e(TAG, "Secure storage unavailable while switching the edited profile", e)
                 return Outcome.SecureStorageUnavailable
@@ -392,7 +392,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             // active (one atomic UPDATE), else the row is rolled back —
             // never an active profile without its key.
             try {
-                LRRAuthManager.setApiKeyForProfile(id, finalKey)
+                ServerSession.setApiKeyForProfile(id, finalKey)
             } catch (e: LRRSecureStorageUnavailableException) {
                 Log.e(TAG, "Secure storage unavailable while adding a profile", e)
                 profileRepository.delete(row.copy(id = id))
@@ -401,12 +401,12 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             profileRepository.activateExclusive(id)
             // Live global auth LAST.
             try {
-                LRRAuthManager.setActiveProfileId(id)
-                LRRAuthManager.setServerUrl(row.url)
-                LRRAuthManager.setApiKey(finalKey)
-                LRRAuthManager.setServerName(row.name)
-                LRRAuthManager.setAllowCleartext(row.allowCleartext)
-                LRRAuthManager.bumpServerConfigVersion()
+                ServerSession.setActiveProfileId(id)
+                ServerSession.setServerUrl(row.url)
+                ServerSession.setApiKey(finalKey)
+                ServerSession.setServerName(row.name)
+                ServerSession.setAllowCleartext(row.allowCleartext)
+                ServerSession.bumpServerConfigVersion()
             } catch (e: LRRSecureStorageUnavailableException) {
                 Log.e(TAG, "Secure storage unavailable while switching to the added profile", e)
                 return Outcome.SecureStorageUnavailable

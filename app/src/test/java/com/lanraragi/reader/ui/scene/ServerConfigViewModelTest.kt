@@ -17,7 +17,8 @@ import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.module.AppProxySelector
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.LRRCleartextRefusedException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,8 +67,8 @@ class ServerConfigViewModelTest {
         context = ApplicationProvider.getApplicationContext()
         Settings.initialize(context)
 
-        LRRAuthManager.initialize(context)
-        val method = LRRAuthManager::class.java.declaredMethods.first {
+        SecureCredentialStore.initialize(context)
+        val method = SecureCredentialStore::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
                 it.parameterTypes[0] == android.content.SharedPreferences::class.java
@@ -127,7 +128,7 @@ class ServerConfigViewModelTest {
         Dispatchers.resetMain()
         server.shutdown()
         db.close()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     // isInsecureWanUrl coverage lives in LRRUrlHelperLanAddressTest — the
@@ -245,8 +246,8 @@ class ServerConfigViewModelTest {
     @Test
     fun attemptConnection_failure_neverTouchesGlobalAuthState() {
         // Simulate an existing working configuration.
-        LRRAuthManager.setServerUrl("http://prior.example.com:3000")
-        LRRAuthManager.setApiKey("prior-key")
+        ServerSession.setServerUrl("http://prior.example.com:3000")
+        ServerSession.setApiKey("prior-key")
 
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
@@ -265,8 +266,8 @@ class ServerConfigViewModelTest {
         assertTrue(failures.isNotEmpty())
         // NET-7: a test attempt must never write the global config at all —
         // there is nothing to roll back, even after a process kill mid-test.
-        assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
-        assertEquals("prior-key", LRRAuthManager.getApiKey())
+        assertEquals("http://prior.example.com:3000", ServerSession.getServerUrl())
+        assertEquals("prior-key", ServerSession.getApiKey())
 
         job.cancel()
     }
@@ -279,8 +280,8 @@ class ServerConfigViewModelTest {
         // LRRCleartextRefusedException. Before delegation tryConnect had no gate
         // and would instead attempt a real cleartext connection. Global auth
         // stays intact.
-        LRRAuthManager.setServerUrl("http://prior.example.com:3000")
-        LRRAuthManager.setApiKey("prior-key")
+        ServerSession.setServerUrl("http://prior.example.com:3000")
+        ServerSession.setApiKey("prior-key")
 
         val vm = ServerConfigViewModel()
         val failures = mutableListOf<Exception>()
@@ -297,8 +298,8 @@ class ServerConfigViewModelTest {
             "explicit WAN http must be refused with a cleartext-refusal error",
             failures.any { it is LRRCleartextRefusedException }
         )
-        assertEquals("http://prior.example.com:3000", LRRAuthManager.getServerUrl())
-        assertEquals("prior-key", LRRAuthManager.getApiKey())
+        assertEquals("http://prior.example.com:3000", ServerSession.getServerUrl())
+        assertEquals("prior-key", ServerSession.getApiKey())
 
         job.cancel()
     }
@@ -331,15 +332,15 @@ class ServerConfigViewModelTest {
         awaitViewModelIdle(vm)
 
         // NET-7: success is the single commit point for global auth state.
-        assertEquals(baseUrl, LRRAuthManager.getServerUrl())
-        assertEquals("candidate-key", LRRAuthManager.getApiKey())
+        assertEquals(baseUrl, ServerSession.getServerUrl())
+        assertEquals("candidate-key", ServerSession.getApiKey())
     }
 
     @Test
     fun attemptConnection_success_bumpsServerConfigVersionForListAutoRefresh() {
         // Re-onboarding to a server must bump serverConfigVersion so
         // GalleryListScene.onResume auto-refreshes, matching the add/edit paths.
-        val before = LRRAuthManager.serverConfigVersion
+        val before = ServerSession.serverConfigVersion
         server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
 
         val vm = ServerConfigViewModel()
@@ -348,7 +349,7 @@ class ServerConfigViewModelTest {
 
         assertTrue(
             "onboarding success must bump serverConfigVersion",
-            LRRAuthManager.serverConfigVersion > before
+            ServerSession.serverConfigVersion > before
         )
     }
 
@@ -357,8 +358,8 @@ class ServerConfigViewModelTest {
         // The live global auth must switch only after the profile row persists.
         // If the Room insert fails, the active server URL/key must still point
         // at the old server, and the failure must surface (not silently switch).
-        LRRAuthManager.setServerUrl("https://old.example.com")
-        LRRAuthManager.setApiKey("old-key")
+        ServerSession.setServerUrl("https://old.example.com")
+        ServerSession.setApiKey("old-key")
         server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
 
         val throwingDao = object : MiscRoomDao by db.miscDao() {
@@ -382,8 +383,8 @@ class ServerConfigViewModelTest {
         awaitViewModelIdle(vm)
 
         assertTrue("Room failure must surface as connectFailure", failures.isNotEmpty())
-        assertEquals("global URL must stay on the old server", "https://old.example.com", LRRAuthManager.getServerUrl())
-        assertEquals("old-key", LRRAuthManager.getApiKey())
+        assertEquals("global URL must stay on the old server", "https://old.example.com", ServerSession.getServerUrl())
+        assertEquals("old-key", ServerSession.getApiKey())
         job.cancel()
     }
 

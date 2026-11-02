@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.security
 
 import android.security.keystore.KeyProperties
 import org.junit.Assert.assertEquals
@@ -7,7 +7,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * Audit 2026-10-06d STAB-01: the pattern key's spec called the API 30
@@ -35,7 +34,7 @@ class PatternKeySpecTest {
     @Test
     @Config(sdk = [30])
     fun android11_keyNeedsAStrongBiometricForEveryUse() {
-        val spec = LRRAuthManager.patternKeySpec()
+        val spec = AppLockCredentials.patternKeySpec()
 
         assertTrue(spec.isUserAuthenticationRequired)
         assertEquals(KeyProperties.AUTH_BIOMETRIC_STRONG, spec.userAuthenticationType)
@@ -44,7 +43,7 @@ class PatternKeySpecTest {
     }
 
     private fun assertPerUseAuthBelowApi30() {
-        val spec = LRRAuthManager.patternKeySpec()
+        val spec = AppLockCredentials.patternKeySpec()
 
         assertTrue(spec.isUserAuthenticationRequired)
         assertEquals("-1: every use needs a biometric", -1, spec.userAuthenticationValidityDurationSeconds)

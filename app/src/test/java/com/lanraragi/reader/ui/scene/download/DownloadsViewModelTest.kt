@@ -17,7 +17,8 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.containedTestScope
 import kotlinx.coroutines.CoroutineScope
@@ -67,8 +68,8 @@ class DownloadsViewModelTest {
         // Handler-bearing scope: see containedTestScope's KDoc.
         testScope = containedTestScope()
 
-        LRRAuthManager.initialize(context)
-        val method = LRRAuthManager::class.java.declaredMethods.first {
+        SecureCredentialStore.initialize(context)
+        val method = SecureCredentialStore::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
                 it.parameterTypes[0] == android.content.SharedPreferences::class.java
@@ -85,7 +86,7 @@ class DownloadsViewModelTest {
             .setTransactionExecutor { it.run() }
             .build()
 
-        LRRAuthManager.setServerUrl("http://localhost:3000")
+        ServerSession.setServerUrl("http://localhost:3000")
 
         ShadowLooper.idleMainLooper()
 
@@ -137,7 +138,7 @@ class DownloadsViewModelTest {
         testScope.cancel()
         ShadowLooper.idleMainLooper()
         db.close()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     // ═══════════════════════════════════════════════════════════

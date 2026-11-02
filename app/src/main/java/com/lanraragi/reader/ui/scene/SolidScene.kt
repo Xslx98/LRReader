@@ -18,7 +18,7 @@ package com.lanraragi.reader.ui.scene
 
 import android.os.Bundle
 import android.util.Log
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.framework.scene.Announcer
 
@@ -55,7 +55,7 @@ open class SolidScene : BaseScene() {
             CHECK_STEP_ANALYTICS -> {
                 // LANraragi: skip Warning and Analytics, go straight to server config check
                 // If LANraragi server is not configured, show ServerConfigScene
-                if (!LRRAuthManager.isConfigured()) {
+                if (!ServerSession.isConfigured()) {
                     startScene(Announcer(ServerConfigScene::class.java).setArgs(args))
                     return
                 }

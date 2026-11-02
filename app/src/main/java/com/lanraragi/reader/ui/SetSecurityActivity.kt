@@ -31,7 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.lanraragi.reader.R
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.PatternConfirmFlow
@@ -210,7 +210,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
     private fun setPatternWithKeystoreBinding(security: String) {
         // Generate the KeyStore key first
         try {
-            LRRAuthManager.generatePatternKeystoreKey()
+            AppLockCredentials.generatePatternKeystoreKey()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate KeyStore key, falling back to PBKDF2", e)
             setPatternPbkdf2Only(security)
@@ -220,10 +220,10 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
         // Get an encrypt cipher to present to BiometricPrompt
         val cipher: javax.crypto.Cipher
         try {
-            cipher = LRRAuthManager.getEncryptCipher()
+            cipher = AppLockCredentials.getEncryptCipher()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get encrypt cipher, falling back to PBKDF2", e)
-            LRRAuthManager.deletePatternKeystoreKey()
+            AppLockCredentials.deletePatternKeystoreKey()
             setPatternPbkdf2Only(security)
             return
         }
@@ -239,7 +239,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                         return
                     }
                     try {
-                        LRRAuthManager.setPatternWithCipher(security, authCipher)
+                        AppLockCredentials.setPatternWithCipher(security, authCipher)
                         SecuritySettings.putEnableFingerprint(
                             fingerprintUnlockAfterSave(fingerprintRequested(security), keystoreBound = true)
                         )
@@ -248,7 +248,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                         return
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to set pattern with cipher, falling back", e)
-                        LRRAuthManager.deletePatternKeystoreKey()
+                        AppLockCredentials.deletePatternKeystoreKey()
                         setPatternPbkdf2Only(security)
                         return
                     }
@@ -263,7 +263,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
                         setPatternPbkdf2Only(security)
                     } else {
                         Toast.makeText(this@SetSecurityActivity, errString, Toast.LENGTH_SHORT).show()
-                        LRRAuthManager.deletePatternKeystoreKey()
+                        AppLockCredentials.deletePatternKeystoreKey()
                         setPatternPbkdf2Only(security)
                     }
                 }

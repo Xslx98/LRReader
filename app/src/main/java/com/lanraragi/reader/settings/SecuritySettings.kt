@@ -2,7 +2,7 @@ package com.lanraragi.reader.settings
 
 import android.util.Log
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 
 /**
@@ -36,12 +36,12 @@ object SecuritySettings {
      */
     @JvmStatic
     fun hasPattern(): Boolean {
-        if (LRRAuthManager.hasPattern()) return true
+        if (AppLockCredentials.hasPattern()) return true
         // One-time migration: hash the legacy plaintext pattern
         val legacy = Settings.getString(KEY_SECURITY, "") ?: ""
         if (legacy.isNotEmpty()) {
             try {
-                LRRAuthManager.setPattern(legacy)
+                AppLockCredentials.setPattern(legacy)
                 Settings.putString(KEY_SECURITY, "")
                 return true
             } catch (e: LRRSecureStorageUnavailableException) {
@@ -63,17 +63,17 @@ object SecuritySettings {
      * locked. Before this version has written the mirror (first launch after
      * upgrading from <= v1.26) it decides without the keystore and reports
      * "locked" while that is not possible (audit 2026-10-06c SEC-01, see
-     * [LRRAuthManager.isLockSetOrUnknown]).
+     * [AppLockCredentials.isLockSetOrUnknown]).
      */
     @JvmStatic
     fun isLockEnabled(): Boolean {
         if (!Settings.getString(KEY_SECURITY, "").isNullOrEmpty()) {
             // Pre-hash plaintext pattern: locked. Migrate it while the mirror
             // is unwritten, as before.
-            if (LRRAuthManager.lockEnabledHint() == null) hasPattern()
+            if (AppLockCredentials.lockEnabledHint() == null) hasPattern()
             return true
         }
-        return LRRAuthManager.isLockSetOrUnknown()
+        return AppLockCredentials.isLockSetOrUnknown()
     }
 
     /**
@@ -84,36 +84,36 @@ object SecuritySettings {
     @JvmStatic
     fun isLockKnownSet(): Boolean =
         !Settings.getString(KEY_SECURITY, "").isNullOrEmpty() ||
-            LRRAuthManager.lockStateWithoutKeystore() == true
+            AppLockCredentials.lockStateWithoutKeystore() == true
 
     /**
      * Hash and store [pattern] in EncryptedSharedPreferences.
      * Pass null or empty string to clear the pattern.
      */
     @JvmStatic
-    fun setPattern(pattern: String?) = LRRAuthManager.setPattern(pattern)
+    fun setPattern(pattern: String?) = AppLockCredentials.setPattern(pattern)
 
     /**
      * Verify [input] against the stored hash using a timing-safe comparison.
-     * For non-KeyStore-bound patterns only. See [LRRAuthManager.verifyPatternWithCipher]
+     * For non-KeyStore-bound patterns only. See [AppLockCredentials.verifyPatternWithCipher]
      * for KeyStore-bound pattern verification.
      */
     @JvmStatic
-    fun verifyPattern(input: String?): Boolean = LRRAuthManager.verifyPattern(input)
+    fun verifyPattern(input: String?): Boolean = AppLockCredentials.verifyPattern(input)
 
     // --- Lockout ---
 
     /** @return true if the pattern is currently locked out due to too many failures. */
     @JvmStatic
-    fun isLockedOut(): Boolean = LRRAuthManager.isLockedOut()
+    fun isLockedOut(): Boolean = AppLockCredentials.isLockedOut()
 
     /** @return remaining lockout duration in milliseconds, or 0. */
     @JvmStatic
-    fun getLockoutRemainingMs(): Long = LRRAuthManager.getLockoutRemainingMs()
+    fun getLockoutRemainingMs(): Long = AppLockCredentials.getLockoutRemainingMs()
 
     /** @return true if the stored pattern is bound to Android KeyStore via AES-GCM. */
     @JvmStatic
-    fun isPatternKeystoreBound(): Boolean = LRRAuthManager.isPatternKeystoreBound()
+    fun isPatternKeystoreBound(): Boolean = AppLockCredentials.isPatternKeystoreBound()
 
     // --- Fingerprint ---
     const val KEY_ENABLE_FINGERPRINT = "enable_fingerprint"

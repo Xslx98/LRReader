@@ -8,7 +8,8 @@ import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.TagGroup
@@ -158,9 +159,9 @@ class TankDetailViewModelTest {
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(2, TimeUnit.SECONDS)
             .build()
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("tank_detail_test", Context.MODE_PRIVATE))
-        LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("tank_detail_test", Context.MODE_PRIVATE))
+        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
 
         val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
         val testAppModule = stubAppModule(ctx)
@@ -172,7 +173,7 @@ class TankDetailViewModelTest {
     fun tearDown() {
         eventScope.cancel()
         Dispatchers.resetMain()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         TankoubonSupportGate.clear()
         server.shutdown()
     }
@@ -192,7 +193,7 @@ class TankDetailViewModelTest {
 
     private fun newVm(offline: OfflineTank? = null): TankDetailViewModel {
         val vm = TankDetailViewModel()
-        vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
+        vm.baseUrlResolver = { ServerSession.getServerUrl()!! }
         vm.offlineSource = { _, _ -> offline }
         vm.membershipSync = TankMembershipSyncFactory.Runner { _, _, _ -> }
         vm.forgetCoverChoice = { forgotten.add(it) }
@@ -379,7 +380,7 @@ class TankDetailViewModelTest {
         awaitSettled(vm)
 
         assertTrue(vm.loadState.value is LoadState.Unsupported)
-        assertTrue(TankoubonSupportGate.isUnsupported(LRRAuthManager.getServerUrl()!!))
+        assertTrue(TankoubonSupportGate.isUnsupported(ServerSession.getServerUrl()!!))
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.lanraragi.reader.client.api
 
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.data.LRRArchive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,7 +23,6 @@ import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
 import com.lanraragi.reader.server.ServerCapabilityCache
-import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for LANraragi archive operations.
@@ -500,36 +498,6 @@ object LRRArchiveApi {
         }
     }
 
-    // ==================== Simplified overloads (use LRRClientProvider) ====================
-
-    @JvmStatic
-    suspend fun getArchiveMetadata(arcid: String): LRRArchive =
-        getArchiveMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
-
-    @JvmStatic
-    suspend fun archiveExists(arcid: String): Boolean =
-        archiveExists(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
-
-    @JvmStatic
-    suspend fun updateArchiveMetadata(arcid: String, tags: String) =
-        updateArchiveMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, tags)
-
-    @JvmStatic
-    suspend fun updateMetadata(
-        arcid: String,
-        title: String? = null,
-        tags: String? = null,
-        summary: String? = null
-    ) = updateMetadata(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, title, tags, summary)
-
-    @JvmStatic
-    suspend fun getFileList(arcid: String): Array<String> =
-        getFileList(ServiceRegistry.networkModule.longReadClient, LRRClientProvider.getBaseUrl(), arcid)
-
-    @JvmStatic
-    suspend fun clearNewFlag(arcid: String) =
-        clearNewFlag(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
-
     /**
      * PUT /api/archives/{id}/thumbnail?page=N — sets the archive cover to
      * page [page1] (1-indexed, as the web client's reader overlay does).
@@ -553,28 +521,4 @@ object LRRArchiveApi {
         val request = Request.Builder().url(url).put(EMPTY_REQUEST_BODY).build()
         client.newCall(request).await().use { response -> ensureSuccess(response) }
     }
-
-    @JvmStatic
-    suspend fun updateProgress(arcid: String, page: Int) =
-        updateProgress(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid, page)
-
-    @JvmStatic
-    suspend fun deleteArchive(arcid: String): String =
-        deleteArchive(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), arcid)
-
-    @JvmStatic
-    @Suppress("LongParameterList")
-    suspend fun uploadArchive(
-        file: File,
-        title: String? = null,
-        tags: String? = null,
-        categoryId: String? = null,
-        summary: String? = null,
-        fileChecksum: String? = null,
-        progressListener: ((written: Long, total: Long) -> Unit)? = null
-    ): String =
-        uploadArchive(
-            ServiceRegistry.networkModule.uploadClient, LRRClientProvider.getBaseUrl(),
-            file, title, tags, categoryId, summary, fileChecksum, progressListener
-        )
 }

@@ -20,6 +20,8 @@ import android.annotation.SuppressLint
 import android.util.Log
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
+import androidx.annotation.StyleRes
 import androidx.annotation.VisibleForTesting
 import android.os.Bundle
 import android.os.Handler
@@ -45,7 +47,8 @@ import com.lanraragi.reader.settings.NetworkSettings
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.dao.DatabaseResetNotice
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.CredentialResetDialog
 import com.lanraragi.reader.ui.scene.LegacyLockRemovedNotice
@@ -67,8 +70,10 @@ import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.util.ViewUtils
 import java.io.File
 
-class MainActivity : StageActivity(),
+class MainActivity : StageActivity(), AppUnlockHost,
     NavigationView.OnNavigationItemSelectedListener, DrawerLayout.DrawerListener {
+
+    private val policies = ActivityPolicies(this)
 
     companion object {
         /**
@@ -148,7 +153,8 @@ class MainActivity : StageActivity(),
 
     private var mNavCheckedItem = 0
 
-    override fun getThemeResId(theme: Int): Int = when (theme) {
+    @StyleRes
+    private fun getThemeResId(theme: Int): Int = when (theme) {
         AppearanceSettings.THEME_DARK -> R.style.AppTheme_Main_Dark
         AppearanceSettings.THEME_BLACK -> R.style.AppTheme_Main_Black
         else -> R.style.AppTheme_Main
@@ -159,7 +165,7 @@ class MainActivity : StageActivity(),
     override fun getLaunchAnnouncer(): Announcer {
         return if (SecuritySettings.isLockEnabled()) {
             Announcer(SecurityScene::class.java)
-        } else if (!LRRAuthManager.isConfiguredFast()) {
+        } else if (!ServerSession.isConfiguredFast()) {
             // LANraragi: show server config if not yet configured
             val announcer = Announcer(ServerConfigScene::class.java)
             // Benchmark builds only (PerfSeam): auto-fill and submit the form.
@@ -244,8 +250,8 @@ class MainActivity : StageActivity(),
         // Prompt user to re-enter credentials: the KeyStore became unavailable,
         // or it works but saved API keys are missing (after a credential reset
         // or a restore on a new device).
-        if (LRRAuthManager.isNeedsReauthentication()) {
-            val storeAvailable = LRRAuthManager.isSecureStorageAvailable()
+        if (ServerSession.isNeedsReauthentication()) {
+            val storeAvailable = SecureCredentialStore.isSecureStorageAvailable()
             val prompt = ReauthPrompt.startup(storeAvailable)
             val openServerList: () -> Unit = {
                 val args = Bundle().apply { putBoolean(ReauthPrompt.ARG_KEYS_MISSING_PROMPTED, storeAvailable) }
@@ -366,7 +372,7 @@ class MainActivity : StageActivity(),
     }
 
     private fun onInit() {
-        // EH cookie auth check removed -- login state is managed via LRRAuthManager
+        // EH cookie auth check removed -- login state is managed via ServerSession
     }
 
     private fun onRestore(savedInstanceState: Bundle) {
@@ -395,15 +401,40 @@ class MainActivity : StageActivity(),
         setNavCheckedItem(mNavCheckedItem)
     }
 
-    /**
-     * MainActivity hosts the SecurityScene, so when the app returns from
-     * background and a re-lock is pending, push a fresh SecurityScene on top
-     * of the existing scene stack instead of bouncing through the
-     * BaseActivity default. The scene is launched in re-lock mode so
-     * successful unlock just pops it back to the previous scene without
-     * resetting navigation.
-     */
-    override fun hostsLockScreen(): Boolean = true
+    // ======== App-wide Activity policies (what BaseActivity applies elsewhere) ========
+    // StageActivity is framework code and extends AppCompatActivity directly; its
+    // hooks run where BaseActivity's overrides would, so the order is unchanged.
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(ActivityPolicies.wrapBaseContext(newBase))
+    }
+
+    override fun onStageBeforeCreate(savedInstanceState: Bundle?) {
+        policies.beforeCreate(::getThemeResId)
+    }
+
+    override fun onStageCreated(savedInstanceState: Bundle?) {
+        // MainActivity hosts the lock screen itself: never redirected to it.
+        policies.afterCreate(hostsLockScreen = true, lockResumeIntent = { null })
+    }
+
+    override fun onStageResumed() {
+        policies.onResume(::onForegroundLockCheck)
+    }
+
+    override fun onStagePausing() {
+        policies.onPause()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        policies.onConfigurationChanged(newConfig)
+    }
+
+    /** The lock was just passed in this resumed activity: lift the lock-only FLAG_SECURE. */
+    override fun onAppUnlocked() {
+        policies.onAppUnlocked()
+    }
 
     /**
      * start_scene is only honoured for registered scenes, and — when it did
@@ -413,7 +444,15 @@ class MainActivity : StageActivity(),
     override fun acceptSceneIntent(intent: Intent, clazzName: String): Boolean =
         isSceneIntentAccepted(intent.component?.className, clazzName, SceneFactory::isRegistered)
 
-    override fun onForegroundLockCheck() {
+    /**
+     * MainActivity hosts the SecurityScene, so when the app returns from
+     * background and a re-lock is pending, push a fresh SecurityScene on top
+     * of the existing scene stack instead of redirecting to the lock-screen
+     * host like other activities do. The scene is launched in re-lock mode so
+     * successful unlock just pops it back to the previous scene without
+     * resetting navigation.
+     */
+    private fun onForegroundLockCheck() {
         if (!AppLockGate.isLocked()) return
         // Skip if SecurityScene is already on top (the cold-start launch
         // scene, or the user backgrounded the lock prompt itself), and while

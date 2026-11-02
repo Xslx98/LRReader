@@ -6,7 +6,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.lanraragi.reader.R
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.ui.SetSecurityActivity
 
 /**
@@ -24,19 +24,19 @@ internal object LegacyLockRemovedNotice {
 
     /** Shows the notice if init dropped such a lock and the user has not answered it yet. */
     fun showIfPending(activity: Activity) {
-        if (!LRRAuthManager.isLegacyLockRemovedNoticePending()) return
+        if (!AppLockCredentials.isLegacyLockRemovedNoticePending()) return
         val dialog = AlertDialog.Builder(activity)
             .setTitle(R.string.security_legacy_lock_removed_title)
             .setMessage(R.string.security_legacy_lock_removed_message)
             .setPositiveButton(R.string.set_pattern_protection) { _, _ ->
-                LRRAuthManager.clearLegacyLockRemovedNotice()
+                AppLockCredentials.clearLegacyLockRemovedNotice()
                 activity.startActivity(Intent(activity, SetSecurityActivity::class.java))
             }
             .setNegativeButton(android.R.string.cancel) { _, _ ->
-                LRRAuthManager.clearLegacyLockRemovedNotice()
+                AppLockCredentials.clearLegacyLockRemovedNotice()
             }
             // Back is an answer; a stray tap outside is not.
-            .setOnCancelListener { LRRAuthManager.clearLegacyLockRemovedNotice() }
+            .setOnCancelListener { AppLockCredentials.clearLegacyLockRemovedNotice() }
             .create()
         dialog.setCanceledOnTouchOutside(false)
         // Close it with the activity (rotation) without counting as an

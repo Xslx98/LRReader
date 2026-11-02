@@ -33,13 +33,13 @@ import android.os.Trace
 import android.util.Log
 import com.lanraragi.reader.util.LocaleContext
 import com.lanraragi.framework.scene.SceneApplication
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.module.AppModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.download.DownloadDirMarkerBackfill
@@ -160,11 +160,11 @@ class LRReaderApplication : SceneApplication() {
             )
         }
 
-        // INF-9: LRRAuthManager.initialize() spends 50-200ms on KeyStore binder
+        // INF-9: SecureCredentialStore.initialize() spends 50-200ms on KeyStore binder
         // calls + encrypted-pref decryption. Run it on bootScope so it overlaps
         // the remaining main-thread initializers and the Activity launch window;
-        // LRRAuthManager's readiness gate holds any reader that arrives early.
-        val authInitJob = LRRAuthManager.scheduleInitialize(this, AppModule.bootScope)
+        // the store's readiness gate holds any reader that arrives early.
+        val authInitJob = SecureCredentialStore.scheduleInitialize(this, AppModule.bootScope)
 
         // Wrap each main-thread initialiser in a Trace section so cold-start
         // profiles in Android Studio Profiler / perfetto show exactly which
@@ -200,7 +200,7 @@ class LRReaderApplication : SceneApplication() {
         // DownloadDirs.initialize(this);
         trace("LRRApp.LegacyDb.init") { LegacyDb.initialize(this) }
 
-        // Load active server profile into LRRAuthManager asynchronously, and verify
+        // Load active server profile into ServerSession asynchronously, and verify
         // every profile has its API key still encrypted in storage. If any profile
         // lost its key (KeyStore down or partial corruption) we flag reauth so the
         // MainActivity dialog directs the user to re-enter credentials.
@@ -215,10 +215,10 @@ class LRReaderApplication : SceneApplication() {
                 authInitJob.join()
                 val allProfiles = com.lanraragi.reader.dao.AppDatabase.getInstance(this@LRReaderApplication)
                     .miscDao().getAllServerProfiles()
-                LRRAuthManager.markReauthIfProfilesUnprotected(allProfiles.map { it.id })
+                ServerSession.markReauthIfProfilesUnprotected(allProfiles.map { it.id })
                 val activeProfile = allProfiles.firstOrNull { it.isActive }
                 if (activeProfile != null) {
-                    LRRAuthManager.setActiveProfileId(activeProfile.id)
+                    ServerSession.setActiveProfileId(activeProfile.id)
                     resolvedId = activeProfile.id
                     // Pre-C37 progress was keyed by arcid alone: it belongs to this profile.
                     com.lanraragi.reader.reading.LocalReadingProgress.migrateLegacy(
@@ -228,7 +228,7 @@ class LRReaderApplication : SceneApplication() {
                 } else {
                     // Repair installs where the active profile was deleted before
                     // the session was cleared on delete (audit 2026-10-04 C02).
-                    LRRAuthManager.clearSessionIfActiveProfileGone(allProfiles.map { it.id })
+                    ServerSession.clearSessionIfActiveProfileGone(allProfiles.map { it.id })
                 }
             } catch (e: com.lanraragi.reader.server.LRRSecureStorageUnavailableException) {
                 // Log.e, not Log.w: R8 cannot strip a Throwable-carrying Log.w
@@ -282,8 +282,6 @@ class LRReaderApplication : SceneApplication() {
                 Log.w(TAG, "legacy search-history import launch failed")
             }
         }
-
-        trace("LRRApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
 
         // Continue-reading shortcut publisher rides the reading-session-end
         // seam (issue #15). Registration is cheap; work happens per session end.

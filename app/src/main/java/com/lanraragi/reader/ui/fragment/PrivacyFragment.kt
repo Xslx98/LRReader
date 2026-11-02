@@ -11,7 +11,7 @@ import androidx.preference.Preference
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.SecuritySettings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.ServerCertificate
 import com.lanraragi.reader.server.ServerTrust
 import com.lanraragi.reader.ui.scene.CertificateTrustDialog
@@ -51,7 +51,7 @@ class PrivacyFragment : BasePreferenceFragmentCompat() {
             .setTitle(R.string.settings_privacy_clear_search_history)
             .setMessage(R.string.clear_search_history_confirm)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                val profileId = LRRAuthManager.getActiveProfileId()
+                val profileId = ServerSession.getActiveProfileId()
                 lifecycleScope.launch {
                     try {
                         ServiceRegistry.dataModule.searchHistoryRepository.clearAll(profileId)

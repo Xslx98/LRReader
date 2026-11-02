@@ -2,7 +2,7 @@ package com.lanraragi.reader.client.api.data
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 
 import com.lanraragi.reader.domain.Archive
@@ -54,8 +54,8 @@ class LRRArchive() : Parcelable {
      *   callers pass the originating server's URL.
      */
     fun toArchive(
-        sourceProfileId: Long = LRRAuthManager.getActiveProfileId(),
-        sourceBaseUrl: String? = LRRAuthManager.getServerUrl(),
+        sourceProfileId: Long = ServerSession.getActiveProfileId(),
+        sourceBaseUrl: String? = ServerSession.getServerUrl(),
     ): Archive {
         return Archive(
             arcid = arcid,
@@ -110,8 +110,8 @@ class LRRArchive() : Parcelable {
      * @param sourceBaseUrl @see [toArchive]
      */
     fun toArchiveDetail(
-        sourceProfileId: Long = LRRAuthManager.getActiveProfileId(),
-        sourceBaseUrl: String? = LRRAuthManager.getServerUrl(),
+        sourceProfileId: Long = ServerSession.getActiveProfileId(),
+        sourceBaseUrl: String? = ServerSession.getServerUrl(),
     ): ArchiveDetail {
         val parsedTags = getParsedTags()
         val tagGroups = parsedTags.map { (namespace, values) ->

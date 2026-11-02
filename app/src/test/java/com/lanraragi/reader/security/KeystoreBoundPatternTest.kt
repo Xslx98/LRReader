@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.security
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -20,7 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * A fingerprint-bound pattern must survive the keystore key being
@@ -37,12 +37,12 @@ class KeystoreBoundPatternTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("bound_pattern_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("bound_pattern_test", Context.MODE_PRIVATE))
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     /** A software AES-GCM cipher standing in for the BiometricPrompt-unlocked one. */
@@ -53,16 +53,16 @@ class KeystoreBoundPatternTest {
 
     @Test
     fun boundPatternStaysVerifiableWithoutTheKeystore() {
-        LRRAuthManager.setPatternWithCipher("0147", encryptCipher())
-        assertTrue(LRRAuthManager.isPatternKeystoreBound())
-        assertTrue(LRRAuthManager.canVerifyWithoutKeystore())
-        assertTrue(LRRAuthManager.verifyPattern("0147"))
-        assertFalse(LRRAuthManager.verifyPattern("0148"))
+        AppLockCredentials.setPatternWithCipher("0147", encryptCipher())
+        assertTrue(AppLockCredentials.isPatternKeystoreBound())
+        assertTrue(AppLockCredentials.canVerifyWithoutKeystore())
+        assertTrue(AppLockCredentials.verifyPattern("0147"))
+        assertFalse(AppLockCredentials.verifyPattern("0148"))
     }
 
     @Test
     fun invalidatedKeyFallsBackToThePatternAndSwitchesFingerprintOff() = runTest(UnconfinedTestDispatcher()) {
-        LRRAuthManager.setPatternWithCipher("0147", encryptCipher())
+        AppLockCredentials.setPatternWithCipher("0147", encryptCipher())
         SecuritySettings.putEnableFingerprint(true)
         val vm = SecurityViewModel()
         val received = mutableListOf<SecurityUiEvent>()
@@ -71,8 +71,8 @@ class KeystoreBoundPatternTest {
         vm.onBiometricCipherUnavailable("0147")
 
         assertEquals(listOf<SecurityUiEvent>(SecurityUiEvent.VerifiedAfterFingerprintChange), received)
-        assertFalse(LRRAuthManager.isPatternKeystoreBound())
+        assertFalse(AppLockCredentials.isPatternKeystoreBound())
         assertFalse(SecuritySettings.getEnableFingerprint())
-        assertTrue(LRRAuthManager.verifyPattern("0147"))
+        assertTrue(AppLockCredentials.verifyPattern("0147"))
     }
 }

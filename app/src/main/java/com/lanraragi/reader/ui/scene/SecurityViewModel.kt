@@ -6,7 +6,8 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.SecuritySettings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
+import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -120,16 +121,16 @@ class SecurityViewModel : ViewModel() {
         UNAVAILABLE,
     }
 
-    fun storageState(): StorageState = when (LRRAuthManager.secureStorageState()) {
-        LRRAuthManager.SecureStorageState.AVAILABLE -> StorageState.AVAILABLE
-        LRRAuthManager.SecureStorageState.STARTING -> StorageState.STARTING
-        LRRAuthManager.SecureStorageState.UNAVAILABLE -> StorageState.UNAVAILABLE
+    fun storageState(): StorageState = when (SecureCredentialStore.secureStorageState()) {
+        SecureCredentialStore.SecureStorageState.AVAILABLE -> StorageState.AVAILABLE
+        SecureCredentialStore.SecureStorageState.STARTING -> StorageState.STARTING
+        SecureCredentialStore.SecureStorageState.UNAVAILABLE -> StorageState.UNAVAILABLE
     }
 
     /** The UNAVAILABLE prompt's wording and whether it offers the reset (audit 06d SEC-01). */
     internal fun unavailablePrompt(): StorageUnavailablePrompt.Text = StorageUnavailablePrompt.of(
         lockKnownSet = SecuritySettings.isLockKnownSet(),
-        offerReset = LRRAuthManager.canOfferLockScreenReset(),
+        offerReset = AppLockCredentials.canOfferLockScreenReset(),
     )
 
     private val _uiEvent = MutableSharedFlow<SecurityUiEvent>(extraBufferCapacity = 1)
@@ -169,7 +170,7 @@ class SecurityViewModel : ViewModel() {
      * The Scene calls this with the result from BiometricPrompt.
      */
     fun onBiometricVerificationResult(patternString: String, cipher: Cipher?) {
-        if (cipher != null && LRRAuthManager.verifyPatternWithCipher(patternString, cipher)) {
+        if (cipher != null && AppLockCredentials.verifyPatternWithCipher(patternString, cipher)) {
             _uiEvent.tryEmit(SecurityUiEvent.PatternVerified)
         } else {
             onVerificationFailed()
@@ -183,12 +184,12 @@ class SecurityViewModel : ViewModel() {
      * keystore binding and fingerprint unlock are switched off.
      */
     fun onBiometricCipherUnavailable(patternString: String) {
-        if (!LRRAuthManager.canVerifyWithoutKeystore()) {
+        if (!AppLockCredentials.canVerifyWithoutKeystore()) {
             _uiEvent.tryEmit(SecurityUiEvent.PatternUnverifiable)
             return
         }
         if (SecuritySettings.verifyPattern(patternString)) {
-            LRRAuthManager.unbindPatternFromKeystore()
+            AppLockCredentials.unbindPatternFromKeystore()
             // Already off when the lock screen switched it off on resume
             // (startFingerprintUnlock) and told the user: do not tell twice.
             val wasOn = SecuritySettings.getEnableFingerprint()
@@ -218,15 +219,15 @@ class SecurityViewModel : ViewModel() {
      */
     fun startFingerprintUnlock(): FingerprintStart {
         if (!SecuritySettings.getEnableFingerprint()) return FingerprintStart.Off
-        if (!LRRAuthManager.isPatternKeystoreBound()) {
+        if (!AppLockCredentials.isPatternKeystoreBound()) {
             return turnFingerprintOff(R.string.security_fingerprint_not_bound)
         }
         return try {
-            FingerprintStart.Ready(LRRAuthManager.getDecryptCipher())
+            FingerprintStart.Ready(AppLockCredentials.getDecryptCipher())
         } catch (e: KeyPermanentlyInvalidatedException) {
             Log.e(TAG, "Fingerprint key invalidated", e)
             turnFingerprintOff(R.string.security_fingerprint_changed)
-        } catch (e: LRRAuthManager.PatternKeyMissingException) {
+        } catch (e: AppLockCredentials.PatternKeyMissingException) {
             Log.e(TAG, "Fingerprint key missing", e)
             turnFingerprintOff(R.string.security_fingerprint_not_bound)
         } catch (e: Exception) {
@@ -245,7 +246,7 @@ class SecurityViewModel : ViewModel() {
      * CryptoObject cipher really decrypts the pattern key's blob.
      */
     fun onFingerprintAuthenticated(cipher: Cipher?) {
-        if (LRRAuthManager.verifyFingerprintCipher(cipher)) {
+        if (AppLockCredentials.verifyFingerprintCipher(cipher)) {
             _uiEvent.tryEmit(SecurityUiEvent.FingerprintVerified)
         } else {
             _uiEvent.tryEmit(SecurityUiEvent.FingerprintUnverified)
@@ -258,7 +259,7 @@ class SecurityViewModel : ViewModel() {
      */
     fun getDecryptCipher(): Cipher? {
         return try {
-            LRRAuthManager.getDecryptCipher()
+            AppLockCredentials.getDecryptCipher()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get decrypt cipher", e)
             null

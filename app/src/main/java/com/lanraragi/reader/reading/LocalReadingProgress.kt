@@ -3,7 +3,7 @@ package com.lanraragi.reader.reading
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 
 /**
  * The local reading-progress store (`reading_progress` SharedPreferences) behind
@@ -181,7 +181,7 @@ internal object LocalReadingProgress {
         return moved
     }
 
-    private fun activeProfileId(): Long = LRRAuthManager.getActiveProfileId()
+    private fun activeProfileId(): Long = ServerSession.getActiveProfileId()
 
     internal fun resetForTest() {
         entries = -1

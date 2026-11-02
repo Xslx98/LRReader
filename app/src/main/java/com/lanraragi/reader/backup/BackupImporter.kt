@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.room.withTransaction
 import com.lanraragi.reader.backup.BackupMerge.Relink
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DailyReadingAggregate
@@ -27,7 +27,7 @@ import com.lanraragi.reader.reading.LocalReadingProgress
  * @param currentRootUri the download root in use now, searched for re-linkable downloads
  * @param markKeyless records "no key yet" for a restored profile, as adding a
  *   server without a key does; without it the boot check
- *   [LRRAuthManager.markReauthIfProfilesUnprotected] takes the restored profile
+ *   [ServerSession.markReauthIfProfilesUnprotected] takes the restored profile
  *   for a lost key and asks for reauthentication on every launch
  */
 class BackupImporter(
@@ -36,7 +36,7 @@ class BackupImporter(
     private val readingProgress: SharedPreferences,
     private val relinker: DownloadRelinker,
     private val currentRootUri: () -> String?,
-    private val markKeyless: (Long) -> Unit = { LRRAuthManager.setApiKeyForProfile(it, null) },
+    private val markKeyless: (Long) -> Unit = { ServerSession.setApiKeyForProfile(it, null) },
 ) {
 
     data class Result(

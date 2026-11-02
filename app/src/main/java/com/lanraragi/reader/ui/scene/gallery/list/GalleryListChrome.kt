@@ -11,7 +11,7 @@ import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 
 /**
  * The controls around the gallery list: the search bar (drawables, helpers,
@@ -79,7 +79,7 @@ object GalleryListChrome {
                 if (child !== fabLayout.primaryFab) fabLayout.removeView(child)
             }
             fabLayout.primaryFab.contentDescription = context.getString(R.string.tank_create)
-        } else if (LRRAuthManager.getServerUrl() == null) {
+        } else if (ServerSession.getServerUrl() == null) {
             val fabUpload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_upload)
             val fabUrlDownload: FloatingActionButton? = mainLayout.findViewById(R.id.fab_url_download)
             if (fabUpload != null) fabLayout.removeView(fabUpload)

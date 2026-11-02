@@ -9,7 +9,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for LANraragi category operations.
@@ -247,30 +246,4 @@ object LRRCategoryApi {
             ensureSuccess(response)
         }
     }
-
-    // ==================== Simplified overloads (use LRRClientProvider) ====================
-
-    @JvmStatic
-    suspend fun getCategories(): List<LRRCategory> =
-        getCategories(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl())
-
-    @JvmStatic
-    suspend fun createCategory(name: String, search: String? = null, pinned: Boolean = false): String =
-        createCategory(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), name, search, pinned)
-
-    @JvmStatic
-    suspend fun updateCategory(categoryId: String, name: String, search: String? = null, pinned: Boolean = false) =
-        updateCategory(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), categoryId, name, search, pinned)
-
-    @JvmStatic
-    suspend fun deleteCategory(categoryId: String) =
-        deleteCategory(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), categoryId)
-
-    @JvmStatic
-    suspend fun addToCategory(categoryId: String, arcid: String) =
-        addToCategory(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), categoryId, arcid)
-
-    @JvmStatic
-    suspend fun removeFromCategory(categoryId: String, arcid: String) =
-        removeFromCategory(LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(), categoryId, arcid)
 }

@@ -18,7 +18,8 @@ import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.ui.collectFlowWhileCreated
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.dao.ServerProfile
@@ -100,9 +101,9 @@ class ServerListScene : BaseScene() {
         viewModel.loadProfiles()
         // Prompt user if API keys are lost (keystore unavailable or keys missing),
         // unless the startup prompt already explained the missing keys.
-        if (LRRAuthManager.isNeedsReauthentication() && !mReauthDialogShown) {
+        if (ServerSession.isNeedsReauthentication() && !mReauthDialogShown) {
             mReauthDialogShown = true
-            val storeAvailable = LRRAuthManager.isSecureStorageAvailable()
+            val storeAvailable = SecureCredentialStore.isSecureStorageAvailable()
             val prompted = arguments?.getBoolean(ReauthPrompt.ARG_KEYS_MISSING_PROMPTED, false) == true
             if (ReauthPrompt.serverListShouldPrompt(prompted, storeAvailable)) {
                 dialogHelper.showReauthDialog(ReauthPrompt.serverList(storeAvailable))
@@ -136,7 +137,7 @@ class ServerListScene : BaseScene() {
         // Observe one-shot UI events. These are buffered channel events that drive
         // state-machine transitions (ProfileActivated → applyProfileSwitch,
         // ProfileAdded/EditSaved → navigation/dialog dismissal); losing one in a
-        // STOPPED window would split Room's active flag from LRRAuthManager or
+        // STOPPED window would split Room's active flag from ServerSession or
         // soft-lock the add/edit dialog, so collect for the whole view lifetime.
         // viewLifecycleOwner scoping still cancels on view destroy, so no
         // duplicate collector stacks across re-attach.
@@ -211,7 +212,7 @@ class ServerListScene : BaseScene() {
     private fun applyProfileSwitch(profile: ServerProfile) {
         val ctx = getEHContext() ?: return
 
-        // The view model has already pointed LRRAuthManager at the profile, off
+        // The view model has already pointed ServerSession at the profile, off
         // the main thread (audit 2026-10-13 STAB-10), and cleared the previous
         // server's caches.
 

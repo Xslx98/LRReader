@@ -10,8 +10,8 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.server.LRRAuthManager
-import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -58,12 +58,11 @@ class GalleryListViewModelUploadTest {
             .allowMainThreadQueries()
             .build()
 
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("upload_vm_test", Context.MODE_PRIVATE)
         )
-        LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
-        LRRClientProvider.init(ctx)
+        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
 
         val client = OkHttpClient.Builder()
             .connectTimeout(2, TimeUnit.SECONDS)
@@ -96,7 +95,7 @@ class GalleryListViewModelUploadTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         db.close()
         server.shutdown()
     }

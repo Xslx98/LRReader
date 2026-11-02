@@ -5,9 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import android.util.Log
 import com.lanraragi.reader.client.api.data.LRRTagStat
 import com.lanraragi.reader.module.Cacheable
+import com.lanraragi.reader.server.ServerConnections
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.cancellation.CancellationException
+import okhttp3.OkHttpClient
+import java.io.IOException
 
 /**
  * In-memory cache for LANraragi tag statistics from /api/database/stats.
@@ -56,10 +59,15 @@ object LRRTagCache : Cacheable {
      * Fetch tag stats from the server if the cache is empty or stale.
      * Safe to call from a coroutine; network I/O happens inside [LRRDatabaseApi].
      * Uses a mutex with double-check to prevent concurrent refreshes.
+     * The server is the active one, read when the fetch starts (after
+     * [generation] is sampled, so a profile switch in between is caught).
      *
+     * @param client transport for the call; the stats body can be several MB
+     *   on large libraries, so callers pass a client without the shared 30s
+     *   call cap (the large-file client)
      * @return the cached tag list (may be stale if the fetch fails)
      */
-    suspend fun getTags(): List<LRRTagStat> {
+    suspend fun getTags(client: OkHttpClient): List<LRRTagStat> {
         if (needsRefresh()) {
             refreshMutex.withLock {
                 // Double-check after acquiring lock
@@ -67,7 +75,9 @@ object LRRTagCache : Cacheable {
                     lastAttemptTime = System.currentTimeMillis()
                     val startedIn = generation.get()
                     try {
-                        val fetched = LRRDatabaseApi.getTagStats()
+                        val baseUrl = ServerConnections.active()?.baseUrl
+                            ?: throw IOException("No server configured")
+                        val fetched = LRRDatabaseApi.getTagStats(client, baseUrl)
                         val keys = fetched.map { "${it.namespace ?: ""}:${it.text}".lowercase() }
                         if (generation.get() == startedIn) {
                             snapshot = CacheSnapshot(fetched, keys)

@@ -7,8 +7,8 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.TankCoverCacheStamp
-import com.lanraragi.reader.server.LRRAuthManager
-import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.event.TankMembershipChangedEvent
@@ -70,7 +70,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         val recyclerView = scene.recyclerView
         cancelTankMerge()
         scene.multiSelectHelper?.exit()
-        val baseUrl = LRRClientProvider.getBaseUrl()
+        val baseUrl = ServerConnections.active()?.baseUrl.orEmpty()
         val groupMode = AppearanceSettings.getGroupTanks() && !TankoubonSupportGate.isUnsupported(baseUrl)
         val (first, last) = visibleRange()
         val plan = TankMergePlanner.plan(
@@ -91,7 +91,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
                 tankName = tankName,
                 wasEmpty = wasEmpty,
                 firstAddedThumbnailUrl = helper.data.firstOrNull { it.arcid == succeeded.first() }?.thumbnailUrl,
-                sourceProfileId = LRRAuthManager.getActiveProfileId(),
+                sourceProfileId = ServerSession.getActiveProfileId(),
                 sourceBaseUrl = baseUrl,
             )
         }
@@ -148,7 +148,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
      * sort. Ungrouped lists have nothing to move.
      */
     fun onTankMembershipChanged(event: TankMembershipChangedEvent) {
-        val baseUrl = LRRClientProvider.getBaseUrl()
+        val baseUrl = ServerConnections.active()?.baseUrl.orEmpty()
         val groupMode = AppearanceSettings.getGroupTanks() && !TankoubonSupportGate.isUnsupported(baseUrl)
         if (!groupMode) return
         val joined = event.joined.firstOrNull()
@@ -189,7 +189,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         val args = Bundle().apply {
             putString(TankDetailScene.KEY_TANK_ID, tankId)
             putString(TankDetailScene.KEY_TANK_NAME, tankName)
-            putLong(TankDetailScene.KEY_PROFILE_ID, LRRAuthManager.getActiveProfileId())
+            putLong(TankDetailScene.KEY_PROFILE_ID, ServerSession.getActiveProfileId())
         }
         scene.startScene(
             Announcer(TankDetailScene::class.java).setArgs(args)

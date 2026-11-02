@@ -12,7 +12,7 @@ import org.robolectric.annotation.Config
 
 /**
  * Unit test for the [UpdateSettings] auto-check default.
- * Robolectric-backed SharedPreferences (matches existing LRRAuthManagerTest pattern).
+ * Robolectric-backed SharedPreferences (matches existing ServerSessionTest pattern).
  *
  * Note: Settings has no remove() API, so setUp/tearDown call
  * Settings.getPreferences().edit().remove(KEY).apply() directly.

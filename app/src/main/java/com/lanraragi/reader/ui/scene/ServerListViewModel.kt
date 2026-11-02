@@ -61,7 +61,7 @@ class ServerListViewModel(
         data class ShowToastRes(val resId: Int) : ServerListUiEvent
         data object SecureStorageError : ServerListUiEvent
 
-        /** Profile activated — Scene should update LRRAuthManager, clear caches, reload DM, navigate. */
+        /** Profile activated — Scene should update ServerSession, clear caches, reload DM, navigate. */
         data class ProfileActivated(val profile: ServerProfile) : ServerListUiEvent
 
         /** A new profile was added and activated — Scene should navigate. */

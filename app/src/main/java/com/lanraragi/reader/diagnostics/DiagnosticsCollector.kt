@@ -11,7 +11,7 @@ import androidx.core.content.FileProvider
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.ServerCapabilityCache
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.settings.PrivacySettings
@@ -72,7 +72,7 @@ object DiagnosticsCollector {
         val dir = File(context.cacheDir, DIR)
         dir.deleteRecursively()
         val reports = Crash.store()?.list().orEmpty()
-        val serverUrl = guard("server url") { LRRAuthManager.getServerUrl() }
+        val serverUrl = guard("server url") { ServerSession.getServerUrl() }
         val info = DiagnosticsInfo(
             app = listOf(
                 "Package" to context.packageName,

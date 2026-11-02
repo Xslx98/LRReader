@@ -63,6 +63,7 @@ import androidx.core.util.Pools
 import com.lanraragi.reader.util.ViewUtils
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
+import com.lanraragi.framework.scene.BackDispatch
 
 class GalleryActivity : BaseActivity(), GalleryView.Listener,
     GalleryInputHandler.Callback, GalleryMenuHelper.SettingsCallback, ReaderTopBar.Callback {

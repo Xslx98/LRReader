@@ -8,7 +8,7 @@ import org.junit.Test
 /**
  * Unit tests for [LRRArchive] — data model, tag parsing, rating parsing.
  * Note: toGalleryInfo/toGalleryDetail are NOT tested here because they
- * depend on LRRAuthManager (SharedPreferences / Android context).
+ * depend on ServerSession (SharedPreferences / Android context).
  */
 class LRRArchiveTest {
 

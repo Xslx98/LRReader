@@ -131,7 +131,6 @@
     <ID>LargeClass:GalleryActivity.kt$GalleryActivity : BaseActivityListenerCallbackSettingsCallback</ID>
     <ID>LargeClass:GalleryDetailScene.kt$GalleryDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
     <ID>LargeClass:GalleryListScene.kt$GalleryListScene : BaseSceneOnItemClickListenerOnItemLongClickListenerOnClickListener</ID>
-    <ID>LargeClass:LRRAuthManager.kt$LRRAuthManager</ID>
     <ID>LargeClass:MainActivity.kt$MainActivity : StageActivityOnNavigationItemSelectedListenerDrawerListener</ID>
     <ID>LargeClass:TankDetailScene.kt$TankDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
     <ID>LongMethod:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
@@ -204,8 +203,8 @@
     <ID>NestedBlockDepth:FileUtils.kt$FileUtils.Companion$@JvmStatic fun getFileName(context: Context, uri: Uri): String?</ID>
     <ID>NestedBlockDepth:GalleryInputHandler.kt$GalleryInputHandler$fun handleGenericMotion(view: View?, motionEvent: MotionEvent): Boolean</ID>
     <ID>NestedBlockDepth:Image.kt$Image$@Synchronized fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int)</ID>
-    <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
-    <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
+    <ID>NestedBlockDepth:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
+    <ID>NestedBlockDepth:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
     <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
     <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
     <ID>NestedBlockDepth:LRRGalleryProvider.kt$LRRGalleryProvider$override fun save(index: Int, file: StorageFile): Boolean</ID>
@@ -248,8 +247,8 @@
     <ID>ReturnCount:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$fun updateReadProcess(result: ActivityResult)</ID>
     <ID>ReturnCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun getReadableString(e: Throwable): String</ID>
     <ID>ReturnCount:GalleryInputHandler.kt$GalleryInputHandler$fun handleKeyDown(keyCode: Int, event: KeyEvent?): Boolean</ID>
-    <ID>ReturnCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
-    <ID>ReturnCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
+    <ID>ReturnCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
+    <ID>ReturnCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
     <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
     <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun reportIfLocallyComplete(): Boolean</ID>
     <ID>ReturnCount:LRRUtils.kt$LRRUtils$@JvmStatic fun getCategoryColor(category: Int): Int</ID>
@@ -305,7 +304,7 @@
     <ID>ThrowsCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun throwIfFatal(t: Throwable)</ID>
     <ID>ThrowsCount:GalleryListViewModel.kt$GalleryListViewModel$fun uploadArchive(req: UploadRequest)</ID>
     <ID>ThrowsCount:LRRAuthInterceptor.kt$internal fun matchesConfiguredServer( requestUrl: HttpUrl, serverUrlString: String ): ServerMatchResult</ID>
-    <ID>ThrowsCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
+    <ID>ThrowsCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
     <ID>ThrowsCount:LRRCleartextRejectionInterceptor.kt$LRRCleartextRejectionInterceptor$private fun enforceActiveBased( chain: Interceptor.Chain, request: okhttp3.Request, url: HttpUrl, ): Response</ID>
     <ID>ThrowsCount:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
     <ID>ThrowsCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
@@ -314,8 +313,8 @@
     <ID>ThrowsCount:TankGalleryProvider.kt$TankGalleryProvider$private suspend fun countedSourceFor(memberIndex: Int): TankMemberSource</ID>
     <ID>ThrowsCount:TankMemberSource.kt$LrrTankMemberSource$@Throws(IOException::class) private suspend fun downloadPage(page0: Int, onPercent: ((Float) -&gt; Unit)?)</ID>
     <ID>TooGenericExceptionThrown:Image.kt$Image$throw Exception("Android 9 解码失败", e)</ID>
-    <ID>TooGenericExceptionThrown:LRRAuthManager.kt$LRRAuthManager$throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)</ID>
-    <ID>TooGenericExceptionThrown:LRRAuthManager.kt$LRRAuthManager$throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)</ID>
+    <ID>TooGenericExceptionThrown:AppLockCredentials.kt$AppLockCredentials$throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)</ID>
+    <ID>TooGenericExceptionThrown:AppLockCredentials.kt$AppLockCredentials$throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)</ID>
     <ID>UnnecessaryAbstractClass:BaseScene.kt$BaseScene$BaseScene</ID>
     <ID>UnnecessaryAbstractClass:ToolbarActivity.kt$ToolbarActivity$ToolbarActivity</ID>
     <ID>UnnecessaryAbstractClass:ToolbarScene.kt$ToolbarScene$ToolbarScene</ID>
@@ -500,7 +499,7 @@
     <ID>UnreachableCode:ReadingStatsCalculator.kt$ReadingStatsCalculator$val archive = row.archive ?: return@mapNotNull null</ID>
     <ID>UnreachableCode:SceneFactory.kt$SceneFactory$return factory()</ID>
     <ID>UnreachableCode:SceneFactory.kt$SceneFactory$val factory = factories[className] ?: throw IllegalArgumentException( "Unknown scene class: $className. Did you forget to register it?" )</ID>
-    <ID>UnreachableCode:SourceBadgeBinder.kt$LRRAuthManager.getActiveProfileId() ?: 0L</ID>
+    <ID>UnreachableCode:SourceBadgeBinder.kt$ServerSession.getActiveProfileId() ?: 0L</ID>
     <ID>UnreachableCode:StampGeometry.kt$StampGeometry$return x.coerceIn(0f, 100f) to y.coerceIn(0f, 100f)</ID>
     <ID>UnreachableCode:StampGeometry.kt$StampGeometry$val x = parts[0].trim().toFloatOrNull() ?: return null</ID>
     <ID>UnreachableCode:StampGeometry.kt$StampGeometry$val y = parts[1].trim().toFloatOrNull() ?: return null</ID>
@@ -612,12 +611,10 @@
     <ID>UnusedPrivateProperty:GalleryDetailScene.kt$GalleryDetailScene.Companion$private const val REQUEST_CODE_COMMENT_GALLERY = 0</ID>
     <ID>UnusedPrivateProperty:GalleryListScene.kt$GalleryListScene.Companion$private const val TAG = "GalleryListScene"</ID>
     <ID>UnusedPrivateProperty:LRRCategoriesScene.kt$LRRCategoriesScene.Companion$private const val TAG = "LRRCategoriesScene"</ID>
-    <ID>UnusedPrivateProperty:LRRClientProvider.kt$LRRClientProvider$val ctx = appContext ?: throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")</ID>
     <ID>UnusedPrivateProperty:QuickSearchScene.kt$QuickSearchScene.Companion$private const val TAG = "QuickSearchScene"</ID>
     <ID>UnusedPrivateProperty:SecurityScene.kt$SecurityScene.Companion$private const val TAG = "SecurityScene"</ID>
     <ID>UseCheckOrError:DownloadAdapter.kt$DownloadAdapter$throw IllegalStateException("Cannot get LayoutInflater: Fragment is not attached and Context/Activity is null")</ID>
     <ID>UseCheckOrError:DownloadService.kt$DownloadService$throw IllegalStateException("No bindService")</ID>
-    <ID>UseCheckOrError:LRRClientProvider.kt$LRRClientProvider$throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")</ID>
     <ID>UseIsNullOrEmpty:GalleryTagChipHelper.kt$GalleryTagChipHelper$tgList == null || tgList.isEmpty()</ID>
     <ID>UseIsNullOrEmpty:ReadingStatsScene.kt$ReadingStatsScene$stats == null || stats.totalArchives == 0</ID>
     <ID>UseOrEmpty:Archive.kt$Archive$parcel.readString() ?: ""</ID>
@@ -639,9 +636,8 @@
     <ID>UseOrEmpty:LRRArchive.kt$LRRArchive$parcel.readString() ?: ""</ID>
     <ID>UseOrEmpty:LRRArchiveApi.kt$LRRArchiveApi$jsonObj["filename"]?.jsonPrimitive?.content ?: ""</ID>
     <ID>UseOrEmpty:LRRArchiveApi.kt$LRRArchiveApi$jsonObj["id"]?.jsonPrimitive?.content ?: ""</ID>
-    <ID>UseOrEmpty:LRRAuthManager.kt$LRRAuthManager$apiKey ?: ""</ID>
-    <ID>UseOrEmpty:LRRAuthManager.kt$LRRAuthManager$input ?: ""</ID>
-    <ID>UseOrEmpty:LRRClientProvider.kt$LRRClientProvider$LRRAuthManager.getServerUrl() ?: ""</ID>
+    <ID>UseOrEmpty:ServerSession.kt$ServerSession$apiKey ?: ""</ID>
+    <ID>UseOrEmpty:AppLockCredentials.kt$AppLockCredentials$input ?: ""</ID>
     <ID>UseOrEmpty:LegacyDb.kt$LegacyDb$thumb ?: ""</ID>
     <ID>UseOrEmpty:LegacyDb.kt$LegacyDb$title ?: ""</ID>
     <ID>UseOrEmpty:LocalFavoriteInfo.kt$LocalFavoriteInfo$`in`.readString() ?: ""</ID>

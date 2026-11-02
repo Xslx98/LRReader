@@ -5,7 +5,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.DownloadInfo
@@ -47,8 +48,8 @@ class DownloadManagerOrphanLabelBatchTest {
         // Handler-bearing scope: see containedTestScope's KDoc.
         testScope = containedTestScope()
 
-        LRRAuthManager.initialize(context)
-        val method = LRRAuthManager::class.java.declaredMethods.first {
+        SecureCredentialStore.initialize(context)
+        val method = SecureCredentialStore::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
                 it.parameterTypes[0] == android.content.SharedPreferences::class.java
@@ -85,7 +86,7 @@ class DownloadManagerOrphanLabelBatchTest {
             }
         )
 
-        LRRAuthManager.setServerUrl("http://localhost:3000")
+        ServerSession.setServerUrl("http://localhost:3000")
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
     }
 
@@ -94,7 +95,7 @@ class DownloadManagerOrphanLabelBatchTest {
         testScope.cancel()
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
         db.close()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     /**

@@ -1,9 +1,7 @@
 package com.lanraragi.reader.ui.reader
 
-import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.client.api.LRRStampApi
-import com.lanraragi.reader.server.resolveSourceBaseUrl
+import com.lanraragi.reader.server.ServerConnections
 
 /** Server calls for one archive's stamps; pages 1-indexed (server semantics). */
 interface StampsBackend {
@@ -23,23 +21,20 @@ class LRRStampsBackend(
     private val serverProfileId: Long,
 ) : StampsBackend {
 
-    private suspend fun baseUrl(): String = resolveSourceBaseUrl(
-        serverProfileId,
-        ServiceRegistry.dataModule.profileLookupCache,
-    )
+    private suspend fun conn() = ServerConnections.forProfile(serverProfileId)
 
     override suspend fun stampedPages(): List<Int> =
-        LRRStampApi.getStampedPages(LRRClientProvider.getClient(), baseUrl(), arcid)
+        conn().let { LRRStampApi.getStampedPages(it.client, it.baseUrl, arcid) }
 
     override suspend fun stampsByPage(page1: Int): List<LRRStampApi.StampData> =
-        LRRStampApi.getStampsByPage(LRRClientProvider.getClient(), baseUrl(), arcid, page1)
+        conn().let { LRRStampApi.getStampsByPage(it.client, it.baseUrl, arcid, page1) }
 
     override suspend fun add(page1: Int, content: String, position: String): String =
-        LRRStampApi.addStamp(LRRClientProvider.getClient(), baseUrl(), arcid, page1, content, position)
+        conn().let { LRRStampApi.addStamp(it.client, it.baseUrl, arcid, page1, content, position) }
 
     override suspend fun update(stampId: String, content: String?, position: String?) =
-        LRRStampApi.updateStamp(LRRClientProvider.getClient(), baseUrl(), stampId, content, position)
+        conn().let { LRRStampApi.updateStamp(it.client, it.baseUrl, stampId, content, position) }
 
     override suspend fun delete(stampId: String) =
-        LRRStampApi.deleteStamp(LRRClientProvider.getClient(), baseUrl(), stampId)
+        conn().let { LRRStampApi.deleteStamp(it.client, it.baseUrl, stampId) }
 }

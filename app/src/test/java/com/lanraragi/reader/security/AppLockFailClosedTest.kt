@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.security
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -14,7 +14,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * The app lock must fail closed: when the secure store cannot be opened the
@@ -32,52 +33,52 @@ class AppLockFailClosedTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("fail_closed_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("fail_closed_test", Context.MODE_PRIVATE))
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     @Test
     fun settingAndClearingThePatternMaintainsTheMirror() {
-        LRRAuthManager.setPattern("0123")
-        assertEquals(true, LRRAuthManager.lockEnabledHint())
+        AppLockCredentials.setPattern("0123")
+        assertEquals(true, AppLockCredentials.lockEnabledHint())
         assertTrue(SecuritySettings.isLockEnabled())
 
-        LRRAuthManager.setPattern(null)
-        assertEquals(false, LRRAuthManager.lockEnabledHint())
+        AppLockCredentials.setPattern(null)
+        assertEquals(false, AppLockCredentials.lockEnabledHint())
         assertFalse(SecuritySettings.isLockEnabled())
     }
 
     @Test
     fun lockStaysOnWhenTheSecureStoreBecomesUnavailable() {
-        LRRAuthManager.setPattern("0123")
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        AppLockCredentials.setPattern("0123")
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
 
-        assertFalse("the pattern itself is unreadable", LRRAuthManager.hasPattern())
-        assertFalse(LRRAuthManager.isSecureStorageAvailable())
+        assertFalse("the pattern itself is unreadable", AppLockCredentials.hasPattern())
+        assertFalse(SecureCredentialStore.isSecureStorageAvailable())
         assertTrue("gates must still see the app as locked", SecuritySettings.isLockEnabled())
     }
 
     @Test
     fun serverUrlMaintainsTheConfiguredMirror() {
-        assertNull(LRRAuthManager.configuredHint())
-        LRRAuthManager.setServerUrl("http://10.0.2.2:3000/")
-        assertEquals(true, LRRAuthManager.configuredHint())
-        assertTrue(LRRAuthManager.isConfiguredFast())
+        assertNull(ServerSession.configuredHint())
+        ServerSession.setServerUrl("http://10.0.2.2:3000/")
+        assertEquals(true, ServerSession.configuredHint())
+        assertTrue(ServerSession.isConfiguredFast())
     }
 
     @Test
     fun resetClearsTheLockAndTheCredentials() {
-        LRRAuthManager.setPattern("0123")
-        LRRAuthManager.setServerUrl("http://10.0.2.2:3000")
+        AppLockCredentials.setPattern("0123")
+        ServerSession.setServerUrl("http://10.0.2.2:3000")
 
-        LRRAuthManager.resetAppLockAndCredentials(ctx)
+        AppLockCredentials.resetAppLockAndCredentials(ctx)
 
-        assertEquals(false, LRRAuthManager.lockEnabledHint())
-        assertEquals(false, LRRAuthManager.configuredHint())
+        assertEquals(false, AppLockCredentials.lockEnabledHint())
+        assertEquals(false, ServerSession.configuredHint())
         assertFalse(SecuritySettings.isLockEnabled())
     }
 }

@@ -7,7 +7,8 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.toArchive
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -73,13 +74,13 @@ class DownloadManagerTest {
         // coroutines would otherwise poison the whole suite).
         testScope = containedTestScope()
 
-        // Initialize LRRAuthManager — KeyStore unavailable under Robolectric,
+        // Initialize SecureCredentialStore — KeyStore unavailable under Robolectric,
         // but sActiveProfileId defaults to 0 which is fine for our tests.
-        LRRAuthManager.initialize(context)
+        SecureCredentialStore.initialize(context)
         // In Robolectric, EncryptedSharedPreferences always fails — inject plain prefs.
         // The method is 'internal' in Kotlin, so its JVM name may be mangled.
         // Search by prefix to handle both plain and mangled names.
-        val method = LRRAuthManager::class.java.declaredMethods.first {
+        val method = SecureCredentialStore::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
                 it.parameterTypes[0] == android.content.SharedPreferences::class.java
@@ -128,7 +129,7 @@ class DownloadManagerTest {
 
         // Configure a fake server URL so LRRDownloadWorker can be constructed
         // (ensureDownload creates workers that check for a non-null server URL)
-        LRRAuthManager.setServerUrl("http://localhost:3000")
+        ServerSession.setServerUrl("http://localhost:3000")
 
         // Drain any pending Handler callbacks from prior tests before creating manager
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
@@ -149,7 +150,7 @@ class DownloadManagerTest {
         // Drain any pending Handler callbacks (e.g., from async reload)
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
         db.close()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     // ═══════════════════════════════════════════════════════════

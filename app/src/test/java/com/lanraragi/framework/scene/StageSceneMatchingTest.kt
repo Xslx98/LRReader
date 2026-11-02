@@ -42,7 +42,9 @@ class StageSceneMatchingTest {
     class ChildScene : ParentScene()
 
     class TestStage : StageActivity() {
-        override fun getThemeResId(theme: Int): Int = R.style.AppTheme_Main
+        override fun onStageBeforeCreate(savedInstanceState: Bundle?) {
+            setTheme(R.style.AppTheme_Main)
+        }
 
         override val containerViewId: Int get() = STAGE_CONTAINER_ID
 

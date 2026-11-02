@@ -1,6 +1,6 @@
 package com.lanraragi.reader.client.api.data
 
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import kotlinx.serialization.SerialName
@@ -32,8 +32,8 @@ class LRRSearchResult {
         includeTanks: Boolean = false,
         tankProfileId: Long = -1L,
         tankBaseUrl: String? = null,
-        sourceProfileId: Long = LRRAuthManager.getActiveProfileId(),
-        sourceBaseUrl: String? = LRRAuthManager.getServerUrl(),
+        sourceProfileId: Long = ServerSession.getActiveProfileId(),
+        sourceBaseUrl: String? = ServerSession.getServerUrl(),
     ): List<Archive> = data.mapNotNull { entry ->
         when {
             !isTankoubonId(entry.arcid) -> entry.toArchive(sourceProfileId, sourceBaseUrl)

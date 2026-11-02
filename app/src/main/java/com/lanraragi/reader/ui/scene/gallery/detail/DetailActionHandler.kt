@@ -14,7 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.archive.ListUrlBuilder
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.reading.TankSessionRouter
 import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.reader.ui.GalleryOpenHelper
@@ -74,7 +74,7 @@ internal class DetailActionHandler(
         popupMenu = popup
         popup.menuInflater.inflate(R.menu.scene_gallery_detail, popup.menu)
         // Show LANraragi-specific menu items only when connected
-        val isLrrConnected = LRRAuthManager.getServerUrl() != null
+        val isLrrConnected = ServerSession.getServerUrl() != null
         val deleteItem = popup.menu.findItem(R.id.action_lrr_delete)
         deleteItem?.isVisible = isLrrConnected
         popup.setOnMenuItemClickListener { item ->

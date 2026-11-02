@@ -53,18 +53,18 @@ class ArchiveSourceResolverTest {
         // that would otherwise escape to the global handler and fail the
         // next runTest in this sandbox with UncaughtExceptionsBeforeTest.
         scope = containedTestScope()
-        // Wire LRRAuthManager onto a clean SharedPreferences so the legacy
+        // Wire SecureCredentialStore onto a clean SharedPreferences so the legacy
         // (id == 0) fallback path is testable without touching KeyStore.
         val prefs = ctx.getSharedPreferences("lrr_test_prefs", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
-        LRRAuthManager.initializeForTesting(prefs)
+        SecureCredentialStore.initializeForTesting(prefs)
     }
 
     @After
     fun tearDown() {
         scope.cancel()
         db.close()
-        // Leave LRRAuthManager state behind for the next test's setUp() to wipe.
+        // Leave SecureCredentialStore state behind for the next test's setUp() to wipe.
     }
 
     private fun newCache(): ProfileLookupCache = ProfileLookupCache(repo, scope)
@@ -79,7 +79,7 @@ class ArchiveSourceResolverTest {
 
     @Test
     fun legacyId_returnsActiveServerUrl() = runBlocking {
-        LRRAuthManager.setServerUrl("http://active.local:3000")
+        ServerSession.setServerUrl("http://active.local:3000")
         val cache = newCache()
         cache.awaitInitialized()
 

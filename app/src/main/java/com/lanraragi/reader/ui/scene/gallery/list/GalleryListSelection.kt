@@ -5,7 +5,7 @@ import android.view.View
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.R
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.DownloadManager
@@ -56,7 +56,7 @@ object GalleryListSelection {
                     // never reach a batch op
                     .filter { isSelectable(scene, it) }
 
-            override fun activeProfileId(): Long = LRRAuthManager.getActiveProfileId()
+            override fun activeProfileId(): Long = ServerSession.getActiveProfileId()
             override fun isSelectionActive(): Boolean = scene.multiSelectHelper?.isActive == true
             override fun exitSelection() { scene.multiSelectHelper?.exit() }
             override fun checkAllSelection() { scene.multiSelectHelper?.checkAll() }
