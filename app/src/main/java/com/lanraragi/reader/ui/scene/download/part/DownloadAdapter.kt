@@ -39,8 +39,8 @@ import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.ArchiveCoverStamps
-import com.lanraragi.reader.client.LRRCacheKeyFactory
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.download.DownloadManager

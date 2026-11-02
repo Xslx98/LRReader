@@ -53,10 +53,10 @@ import com.lanraragi.reader.widget.list.HandlerDrawable
 import com.lanraragi.reader.widget.list.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.ArchiveCoverStamps
-import com.lanraragi.reader.client.LRRCacheKeyFactory
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.client.LRRUtils
-import com.lanraragi.reader.client.TankCoverCacheStamp
+import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.gallery.ReadingContext
 import com.lanraragi.reader.gallery.ReadingContextStore
 import com.lanraragi.reader.gallery.HistoryTankRedirect

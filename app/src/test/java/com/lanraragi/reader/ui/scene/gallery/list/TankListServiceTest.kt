@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitUntil
-import com.lanraragi.reader.client.TankCoverCacheStamp
+import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.ui.TankMembershipSyncFactory

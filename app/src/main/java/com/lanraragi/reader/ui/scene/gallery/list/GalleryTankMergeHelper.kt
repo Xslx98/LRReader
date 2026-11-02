@@ -6,7 +6,7 @@ import android.view.View
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.TankCoverCacheStamp
+import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.TankoubonSupportGate

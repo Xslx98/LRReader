@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader.client
+package com.lanraragi.reader.cover
+
 
 object LRRCacheKeyFactory {
 

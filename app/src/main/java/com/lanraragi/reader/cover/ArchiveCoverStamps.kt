@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client
+package com.lanraragi.reader.cover
 
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.isTankoubonId

@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client
+package com.lanraragi.reader.cover
 
 import androidx.annotation.VisibleForTesting
 import java.util.concurrent.ConcurrentHashMap

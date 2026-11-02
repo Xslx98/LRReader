@@ -30,8 +30,8 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lanraragi.reader.widget.list.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.ArchiveCoverStamps
-import com.lanraragi.reader.client.LRRCacheKeyFactory
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.download.DownloadManager
 
 import com.lanraragi.reader.domain.Archive
