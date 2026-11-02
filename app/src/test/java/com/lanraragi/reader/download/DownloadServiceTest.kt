@@ -141,6 +141,32 @@ class DownloadServiceTest {
         assertEquals(0, shadow.stopSelfId)
     }
 
+    /** A batch queued directly (DownloadRequests.enqueueBatch) keeps the service up while it runs. */
+    @Test
+    fun attach_keepsTheServiceWhileTheManagerIsBusy() {
+        val busy = com.lanraragi.reader.dao.DownloadInfo().apply { arcid = "attach_busy"; title = "A" }
+        manager.scheduler.activeTasks.add(busy)
+        try {
+            val c = Robolectric.buildService(DownloadService::class.java).create().also { controller = it }
+            c.withIntent(intent(DownloadService.ACTION_ATTACH)).startCommand(0, 1)
+            val handled = DownloadService::class.java.getDeclaredField("lastHandledStartId")
+                .apply { isAccessible = true }
+            awaitUntil(message = "attach never handled") { handled.getInt(c.get()) == 1 }
+            assertFalse("busy manager: no self-stop", shadowOf(c.get()).isStoppedBySelf)
+        } finally {
+            manager.scheduler.activeTasks.remove(busy)
+        }
+    }
+
+    @Test
+    fun attach_withNothingQueued_stopsTheService() {
+        val c = Robolectric.buildService(DownloadService::class.java).create().also { controller = it }
+        c.withIntent(intent(DownloadService.ACTION_ATTACH)).startCommand(0, 1)
+        awaitUntil(message = "idle attach never stopped the service") {
+            shadowOf(c.get()).stopSelfResultId == 1
+        }
+    }
+
     /** Audit PERF-06 / STAB-06: no wake lock while every running download only waits for the network. */
     @Test
     fun networkWait_releasesTheWakeLockUntilADownloadCanRunAgain() {

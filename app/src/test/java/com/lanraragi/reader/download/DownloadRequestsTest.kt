@@ -111,6 +111,43 @@ class DownloadRequestsTest {
     }
 
     @Test
+    fun `batch queues everything not local in one call and attaches the service`() {
+        val states = mapOf(
+            "new" to DownloadState.INVALID,
+            "done" to DownloadState.FINISH,
+            "failed" to DownloadState.FAILED,
+        )
+        val queuedCalls = mutableListOf<List<String>>()
+        val batch = DownloadRequests.enqueueBatch(
+            archives = states.keys.map(::archive),
+            stateOf = { states.getValue(it) },
+            startDownloads = { list -> queuedCalls += list.map { it.arcid } },
+            send = { sent += it },
+            context = context,
+        )
+
+        // Selection order kept, new and restarted rows in one batch write.
+        assertEquals(listOf(listOf("new", "failed")), queuedCalls)
+        assertEquals(listOf("new", "failed"), batch.queued.map { it.arcid })
+        assertEquals(listOf("done"), batch.alreadyLocal)
+        assertEquals(listOf(DownloadService.ACTION_ATTACH), sent.map { it.action })
+    }
+
+    @Test
+    fun `an all-local batch does not start the service`() {
+        val batch = DownloadRequests.enqueueBatch(
+            archives = listOf(archive("a")),
+            stateOf = { DownloadState.FINISH },
+            startDownloads = { assertTrue(it.isEmpty()) },
+            send = { sent += it },
+            context = context,
+        )
+        assertTrue(batch.queued.isEmpty())
+        assertEquals(listOf("a"), batch.alreadyLocal)
+        assertTrue(sent.isEmpty())
+    }
+
+    @Test
     fun `label decision`() {
         fun decide(force: Boolean, hasDefault: Boolean, default: String?, known: Set<String>, count: Int) =
             DownloadRequests.decideLabel(force, hasDefault, default, { it in known }, count)

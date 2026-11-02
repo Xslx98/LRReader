@@ -183,6 +183,42 @@ object DownloadRequests {
         }
     }
 
+    /** Outcome of [enqueueBatch]: the queued archives and the skipped local ones. */
+    class Batch(val queued: List<Archive>, val alreadyLocal: List<String>)
+
+    /**
+     * Gallery-list "download selected": queues every archive that is not
+     * already local under the default label in ONE batch write
+     * ([DownloadManager.startDownloads], audit C17) and brings up
+     * [DownloadService] for the session ([DownloadService.ACTION_ATTACH]).
+     */
+    fun enqueueBatch(context: Context, downloadManager: DownloadManager, archives: List<Archive>): Batch =
+        enqueueBatch(
+            archives = archives,
+            stateOf = downloadManager::getDownloadState,
+            startDownloads = { downloadManager.startDownloads(it, null) },
+            send = context::startService,
+            context = context,
+        )
+
+    /** [enqueueBatch] with its lookups and the service hand-off injected. */
+    internal fun enqueueBatch(
+        archives: List<Archive>,
+        stateOf: (String) -> DownloadState,
+        startDownloads: (List<Archive>) -> Unit,
+        send: (Intent) -> Unit,
+        context: Context,
+    ): Batch {
+        val (alreadyLocal, toQueue) = archives.partition {
+            DownloadEntryGate.disposition(stateOf(it.arcid)) == DownloadEntryGate.Disposition.ALREADY_LOCAL
+        }
+        startDownloads(toQueue)
+        if (toQueue.isNotEmpty()) {
+            send(Intent(context, DownloadService::class.java).setAction(DownloadService.ACTION_ATTACH))
+        }
+        return Batch(toQueue, alreadyLocal.map { it.arcid })
+    }
+
     /** [DownloadService.ACTION_START_RANGE] for [arcids]. */
     internal fun restartIntent(context: Context, arcids: List<String>): Intent =
         Intent(context, DownloadService::class.java)

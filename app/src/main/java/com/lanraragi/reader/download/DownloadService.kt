@@ -379,6 +379,11 @@ class DownloadService : Service(), DownloadListener {
 
             ACTION_START_ALL -> dm?.startAllDownload()
 
+            // The work was queued directly (DownloadRequests.enqueueBatch);
+            // the command only brings the service up for the session, and
+            // the checkStopSelf after it keeps it while the manager is busy.
+            ACTION_ATTACH -> Unit
+
             ACTION_START_RANGE -> {
                 val arcidListSR = intent.getStringArrayListExtra(KEY_ARCID_LIST)
                 if (arcidListSR != null && dm != null) {
@@ -953,6 +958,9 @@ class DownloadService : Service(), DownloadListener {
         const val ACTION_START: String = "start"
         const val ACTION_START_RANGE: String = "start_range"
         const val ACTION_START_ALL: String = "start_all"
+
+        /** No-op command: start (or keep) the service for downloads queued directly. */
+        const val ACTION_ATTACH: String = "attach"
         const val ACTION_STOP: String = "stop"
         const val ACTION_STOP_RANGE: String = "stop_range"
         const val ACTION_STOP_CURRENT: String = "stop_current"

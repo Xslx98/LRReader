@@ -18,7 +18,7 @@ import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.download.DownloadEntryGate
+import com.lanraragi.reader.download.DownloadRequests
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.util.suspendRunCatching
@@ -337,28 +337,24 @@ class GalleryListViewModel : ViewModel() {
     }
 
     /**
-     * Batch download is main-thread queueing: [DownloadManager.startDownloads]
-     * asserts the main thread and is itself asynchronous, so no IO hop or
-     * fault isolation is needed here. Rows already FINISH are gated out
-     * ([DownloadEntryGate]) instead of re-queued — arcid is a content hash,
-     * so the selection may contain archives downloaded through another
-     * profile of the same server, and a re-queue against an unreachable
-     * source URL would flip them to FAILED.
+     * Batch download is main-thread queueing through
+     * [DownloadRequests.enqueueBatch]: one batch write for the selection,
+     * [com.lanraragi.reader.download.DownloadService] brought up for the session, and rows already FINISH
+     * gated out ([com.lanraragi.reader.download.DownloadEntryGate]) instead
+     * of re-queued — arcid is a content hash, so the selection may contain
+     * archives downloaded through another profile of the same server, and a
+     * re-queue against an unreachable source URL would flip them to FAILED.
+     * No IO hop or fault isolation is needed here.
      */
     fun runBatchDownload(archives: List<Archive>, downloadManager: DownloadManager, owner: Any? = null) {
-        val (alreadyLocal, toQueue) = archives.partition {
-            DownloadEntryGate.disposition(downloadManager.getDownloadState(it.arcid)) ==
-                DownloadEntryGate.Disposition.ALREADY_LOCAL
-        }
-        // One batch write + one list refresh for the whole selection (audit C17).
-        downloadManager.startDownloads(toQueue, null)
+        val batch = DownloadRequests.enqueueBatch(ServiceRegistry.appModule.getContext(), downloadManager, archives)
         _batchResultEvent.tryEmit(
             BatchResult(
                 BatchOp.Download,
-                toQueue.map { it.arcid },
+                batch.queued.map { it.arcid },
                 emptyList(),
                 owner,
-                alreadyLocal = alreadyLocal.map { it.arcid },
+                alreadyLocal = batch.alreadyLocal,
             )
         )
     }
