@@ -1,7 +1,10 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.test.core.app.ApplicationProvider
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
@@ -37,6 +40,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -96,12 +100,12 @@ class GalleryListViewModelBatchTest {
     private fun mockBaseUrl() = server.url("").toString().removeSuffix("/")
 
     /** VM with the base-URL resolution pinned to the MockWebServer (no profile registry needed). */
-    private fun newVm(): GalleryListViewModel = GalleryListViewModel().also { vm ->
-        vm.baseUrlResolver = { mockBaseUrl() }
+    private fun newVm(vm: GalleryListViewModel = GalleryListViewModel()): GalleryListViewModel = vm.apply {
+        baseUrlResolver = { mockBaseUrl() }
         // Tag materialization has its own wire tests (TankTagSyncerTest); keep
         // the request counts here about the membership writes.
-        vm.tankTagSyncAfterAdd = { _, _, _ -> false }
-        vm.tankCategorySyncAfterAdd = { _, _, _, _, _ -> false }
+        tankTagSyncAfterAdd = { _, _, _ -> false }
+        tankCategorySyncAfterAdd = { _, _, _, _, _ -> false }
     }
 
     private fun jsonResponse(code: Int, body: String) = MockResponse()
@@ -450,6 +454,37 @@ class GalleryListViewModelBatchTest {
 
         assertEquals(listOf(ARC_A), result.succeeded)
         assertTrue("seed failure must not surface as a batch failure", result.failed.isEmpty())
+    }
+
+    // ─── batch lifetime ──────────────────────────────────────────────────
+
+    @Test
+    fun `closing the list mid-batch does not cut off the remaining writes`() {
+        val paths = CopyOnWriteArrayList<String>()
+        val firstHeld = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        server.dispatcher = recordingDispatcher(paths) { request ->
+            if (request.path.orEmpty().endsWith("/$ARC_A")) {
+                firstHeld.countDown()
+                release.await(RESULT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            }
+            jsonResponse(200, """{"success":1}""")
+        }
+        val store = ViewModelStore()
+        val vm = newVm(ViewModelProvider.create(store)[GalleryListViewModel::class])
+
+        // Sequential op: the second append only starts after the first returns.
+        vm.runBatch(
+            GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID),
+            listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
+        )
+        assertTrue("first append never reached the server", firstHeld.await(RESULT_TIMEOUT_MS, TimeUnit.MILLISECONDS))
+        store.clear() // the list scene that started the batch is gone
+        release.countDown()
+
+        awaitUntil(message = "the second append was cut off: $paths") {
+            paths.any { it == "PUT /api/tankoubons/$TANK_ID/$ARC_B" }
+        }
     }
 
     private companion object {

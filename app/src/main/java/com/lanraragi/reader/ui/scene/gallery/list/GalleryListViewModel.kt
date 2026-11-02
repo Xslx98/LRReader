@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.R
+import com.lanraragi.reader.archive.ListBatchWrites
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.event.AppEventBus
@@ -27,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -336,6 +338,9 @@ class GalleryListViewModel : ViewModel() {
         resolveSourceBaseUrl(profileId, ServiceRegistry.dataModule.profileLookupCache)
     }
 
+    /** Where batch writes run: the process scope, so they outlive this screen. Replaceable for tests. */
+    internal var batchWrites = ListBatchWrites()
+
     /**
      * Batch download is main-thread queueing through
      * [DownloadRequests.enqueueBatch]: one batch write for the selection,
@@ -380,34 +385,9 @@ class GalleryListViewModel : ViewModel() {
         _batchProgress.value = 0 to archives.size
         val undoOrders = ConcurrentHashMap<String, List<String>>()
         viewModelScope.launch {
-            val semaphore = Semaphore(BATCH_CONCURRENCY)
-            val done = AtomicInteger(0)
             try {
-                val outcomes = archives.map { archive ->
-                    async(Dispatchers.IO) {
-                        semaphore.withPermit {
-                            val outcome = try {
-                                executeOne(op, archive, undoOrders)
-                                null // success
-                            } catch (ce: CancellationException) {
-                                throw ce
-                            } catch (e: Exception) {
-                                BatchFailure(archive.arcid, archive.title, e.message ?: "unknown")
-                            }
-                            // Monotonic publication: concurrent items finish out of
-                            // order — never let the visible counter go backwards.
-                            // Only advance a live pair: null (batch already ended or
-                            // cancelled) stays null, never revived by a straggler item.
-                            // The synchronous `0 to size` publish in runBatch guarantees
-                            // the first item compares against a live 0-pair, not null.
-                            val d = done.incrementAndGet()
-                            _batchProgress.update { cur ->
-                                if (cur != null && d > cur.first) d to archives.size else cur
-                            }
-                            archive.arcid to outcome
-                        }
-                    }
-                }.awaitAll()
+                // On the process scope: closing the list must not cut the batch in half.
+                val outcomes = batchWrites.run { runParallel(op, archives, undoOrders) }
                 _batchResultEvent.tryEmit(
                     BatchResult(
                         op = op,
@@ -419,11 +399,46 @@ class GalleryListViewModel : ViewModel() {
                 )
             } finally {
                 // Progress must never stay stuck non-null, even if the batch is
-                // cancelled (viewModelScope teardown) or a future executeOne
+                // wait is cancelled (viewModelScope teardown) or a future executeOne
                 // change lets an exception escape the per-item catch.
                 _batchProgress.value = null
             }
         }
+    }
+
+    /** [runBatch]'s items with [BATCH_CONCURRENCY] in flight; arcid to its failure (null = success). */
+    private suspend fun runParallel(
+        op: BatchOp,
+        archives: List<Archive>,
+        undoOrders: MutableMap<String, List<String>>,
+    ): List<Pair<String, BatchFailure?>> = coroutineScope {
+        val semaphore = Semaphore(BATCH_CONCURRENCY)
+        val done = AtomicInteger(0)
+        archives.map { archive ->
+            async(Dispatchers.IO) {
+                semaphore.withPermit {
+                    val outcome = try {
+                        executeOne(op, archive, undoOrders)
+                        null // success
+                    } catch (ce: CancellationException) {
+                        throw ce
+                    } catch (e: Exception) {
+                        BatchFailure(archive.arcid, archive.title, e.message ?: "unknown")
+                    }
+                    // Monotonic publication: concurrent items finish out of
+                    // order — never let the visible counter go backwards.
+                    // Only advance a live pair: null (batch already ended or
+                    // cancelled) stays null, never revived by a straggler item.
+                    // The synchronous `0 to size` publish in runBatch guarantees
+                    // the first item compares against a live 0-pair, not null.
+                    val d = done.incrementAndGet()
+                    _batchProgress.update { cur ->
+                        if (cur != null && d > cur.first) d to archives.size else cur
+                    }
+                    archive.arcid to outcome
+                }
+            }
+        }.awaitAll()
     }
 
     /**
@@ -441,20 +456,22 @@ class GalleryListViewModel : ViewModel() {
             val failed = mutableListOf<BatchFailure>()
             val succeeded = mutableListOf<String>()
             try {
-                archives.forEachIndexed { i, archive ->
-                    try {
-                        withContext(Dispatchers.IO) { executeOne(op, archive) }
-                        succeeded.add(archive.arcid)
-                    } catch (ce: CancellationException) {
-                        throw ce
-                    } catch (e: Exception) {
-                        failed.add(BatchFailure(archive.arcid, archive.title, e.message ?: "unknown"))
+                batchWrites.run {
+                    archives.forEachIndexed { i, archive ->
+                        try {
+                            withContext(Dispatchers.IO) { executeOne(op, archive) }
+                            succeeded.add(archive.arcid)
+                        } catch (ce: CancellationException) {
+                            throw ce
+                        } catch (e: Exception) {
+                            failed.add(BatchFailure(archive.arcid, archive.title, e.message ?: "unknown"))
+                        }
+                        _batchProgress.value = (i + 1) to archives.size
                     }
-                    _batchProgress.value = (i + 1) to archives.size
-                }
-                if (op is BatchOp.AddToTankoubon) {
-                    seedTankCoverIfNeeded(op, succeeded, archives)
-                    syncTankTagsAfterAdd(op, succeeded, archives)
+                    if (op is BatchOp.AddToTankoubon) {
+                        seedTankCoverIfNeeded(op, succeeded, archives)
+                        syncTankTagsAfterAdd(op, succeeded, archives)
+                    }
                 }
                 _batchResultEvent.tryEmit(
                     BatchResult(
@@ -544,14 +561,16 @@ class GalleryListViewModel : ViewModel() {
     /** Undo of a [BatchOp.SortTanks] run: PUT each previous order back (best-effort per tank). */
     fun restoreTankOrders(orders: Map<String, List<String>>, profileId: Long) {
         viewModelScope.launch {
-            val baseUrl = baseUrlResolver(profileId)
-            for ((tankId, order) in orders) {
-                try {
-                    tankService.restoreOrder(baseUrl, tankId, order)
-                } catch (ce: CancellationException) {
-                    throw ce
-                } catch (ignored: Exception) {
-                    Log.w(TAG, "tank order restore failed")
+            batchWrites.run {
+                val baseUrl = baseUrlResolver(profileId)
+                for ((tankId, order) in orders) {
+                    try {
+                        tankService.restoreOrder(baseUrl, tankId, order)
+                    } catch (ce: CancellationException) {
+                        throw ce
+                    } catch (ignored: Exception) {
+                        Log.w(TAG, "tank order restore failed")
+                    }
                 }
             }
         }
