@@ -7,7 +7,6 @@ D10b com/lanraragi/reader/ui/scene/ServerConfigScene.kt
 D10b com/lanraragi/reader/ui/scene/ServerListScene.kt
 D10b com/lanraragi/reader/ui/scene/download/DownloadsScene.kt
 D10b com/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailScene.kt
-D10b com/lanraragi/reader/ui/scene/gallery/list/GalleryListScene.kt
 D10b com/lanraragi/reader/ui/scene/gallery/list/QuickSearchScene.kt
 D10b com/lanraragi/reader/ui/scene/history/HistoryScene.kt
 D10b com/lanraragi/reader/ui/scene/stats/ReadingStatsScene.kt

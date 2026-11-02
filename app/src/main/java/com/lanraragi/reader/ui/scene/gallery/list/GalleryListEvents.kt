@@ -105,11 +105,9 @@ class GalleryListEvents(private val scene: GalleryListScene) {
         // badge refresh. Buffer while detached and replay in onResume, same as
         // archiveDeletedEvent above.
         //
-        // The ViewModel is activity-scoped (shared by every stacked list
-        // instance), so this replay=0 result is broadcast to all of them. Only
-        // the scene that started the batch (owner token match) may handle or
-        // buffer it; the rest ignore it, or a covered instance would replay a
-        // duplicate dialog / spurious refresh on pop-back.
+        // Only results stamped with this scene's owner token are handled: a
+        // guard from when the ViewModel was shared by every stacked list
+        // instance, kept so a result can never reach a scene that did not run it.
         collectFlowWhileCreated(scene, viewModel.batchResultEvent) { result ->
             if (result.owner !== scene.batchOwnerToken) return@collectFlowWhileCreated
             batchResultBuffer.deliverOrBuffer(result, ready = scene.isResumed && scene.batchOpsHelper != null) {

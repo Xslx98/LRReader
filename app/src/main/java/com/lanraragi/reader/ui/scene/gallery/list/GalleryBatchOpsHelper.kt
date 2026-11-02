@@ -67,9 +67,8 @@ internal class GalleryBatchOpsHelper(
         fun openTankoubon(tankId: String, tankName: String)
 
         /**
-         * Stable per-scene identity stamped on batches this scene starts, so
-         * the shared activity-scoped ViewModel's broadcast result is handled by
-         * this scene alone (see [GalleryListViewModel.BatchResult.owner]).
+         * Stable per-scene identity stamped on batches this scene starts; only
+         * results carrying it are handled (see [GalleryListViewModel.BatchResult.owner]).
          */
         fun batchOwnerToken(): Any
 

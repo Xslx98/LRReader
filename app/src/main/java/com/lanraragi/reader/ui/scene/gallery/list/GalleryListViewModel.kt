@@ -50,9 +50,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.parcelize.Parcelize
 
 /**
- * ViewModel for the gallery list screen. Activity-scoped and therefore shared by
- * every list scene on the back stack, so it deliberately holds no per-list search
- * state: each scene keeps the query it shows (audit 2026-10-06 C01).
+ * ViewModel of one gallery list scene (scoped to the scene, so every list on the
+ * back stack has its own). Batch writes run on [ListBatchWrites]'s process scope
+ * and outlive it; an upload is bound to the scene's progress dialog.
  *
  * Also manages the [DownloadInfoListener] registration so the Scene does not
  * need to hold the listener directly. The Scene observes [downloadEvent] to
@@ -294,11 +294,8 @@ class GalleryListViewModel : ViewModel() {
         val succeeded: List<String>,
         val failed: List<BatchFailure>,
         /**
-         * Identity token of the scene that started the batch. The ViewModel is
-         * activity-scoped and shared across stacked list instances, so the
-         * result is broadcast to every instance's collector; each instance
-         * handles/buffers only the results whose owner is its own token,
-         * preventing a duplicate dialog/refresh on scenes that never ran it.
+         * Identity token of the scene that started the batch; a scene
+         * handles/buffers only the results whose owner is its own token.
          */
         val owner: Any? = null,
         /**
