@@ -95,6 +95,21 @@ object ContinueReadingShortcut : ReadingSessionEvents.Listener {
         publish(context, historyRepository, arcid, profileId)
     }
 
+    /**
+     * [refresh] on the process scope, fire and forget: the caller (the
+     * app-lock settings screen) may close before it finishes.
+     */
+    fun refreshInBackground() {
+        val context = appOrNull() ?: return
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                refresh(context, ServiceRegistry.dataModule.historyRepository)
+            } catch (e: Exception) {
+                Log.w(TAG, "Continue-reading shortcut refresh failed")
+            }
+        }
+    }
+
     /** (arcid, profileId) the published shortcut deep-links to, or null when absent. */
     fun currentTarget(context: Context): Pair<String, Long>? {
         val current = ShortcutManagerCompat.getDynamicShortcuts(context)

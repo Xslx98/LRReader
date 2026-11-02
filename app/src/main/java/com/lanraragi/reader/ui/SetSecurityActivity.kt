@@ -30,9 +30,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
-import kotlinx.coroutines.launch
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.settings.AppLockGate
@@ -108,14 +106,7 @@ class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
      */
     private fun refreshLockDependentSurfaces() {
         ContinueReadingWidget.refreshSafely()
-        val app = applicationContext
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                ContinueReadingShortcut.refresh(app, ServiceRegistry.dataModule.historyRepository)
-            } catch (e: Exception) {
-                Log.w(TAG, "Continue-reading shortcut refresh failed")
-            }
-        }
+        ContinueReadingShortcut.refreshInBackground()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
