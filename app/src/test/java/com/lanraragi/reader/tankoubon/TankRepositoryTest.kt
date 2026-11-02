@@ -8,6 +8,7 @@ import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.server.ServerConnection
+import com.lanraragi.reader.server.TankoubonSupportGate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -280,6 +281,58 @@ class TankRepositoryTest {
             assertEquals(423, e.code)
         }
     }
+    @Test
+    fun createAsync_deliversTheIdOrThe423_evenWhenTheCallerIsGone() {
+        server.enqueue(MockResponse().setBody("""{"tankoubon_id":"TANK_0000000116","success":1}"""))
+        server.enqueue(MockResponse().setResponseCode(423).setBody("""{"success":0,"error":"Locker is busy"}"""))
+        val results = CopyOnWriteArrayList<Result<String>>()
+
+        // No caller scope at all: the repository's own scope runs the write.
+        service.createAsync(conn(), "A") { results += it }
+        awaitUntil { results.size == 1 }
+        service.createAsync(conn(), "B") { results += it }
+        awaitUntil { results.size == 2 }
+
+        assertEquals("TANK_0000000116", results[0].getOrThrow())
+        assertEquals(423, (results[1].exceptionOrNull() as LRRHttpException).code)
+    }
+
+    // ── picker load ────────────────────────────────────────────────
+
+    @Test
+    fun loadForPicker_withArcid_readsMembership_pagesTheList_marksSupported_andNeverSyncs() = runBlocking {
+        TankoubonSupportGate.clear()
+        server.enqueue(MockResponse().setBody("""{"tankoubons":["TANK_0000000104"],"success":1}"""))
+        server.enqueue(MockResponse().setBody(pageJson(2, tankJson("TANK_0000000104", "First", archiveCount = 1))))
+        server.enqueue(MockResponse().setBody(pageJson(2, tankJson("TANK_0000000105", "Second"))))
+        val stamps = TankCoverCacheStamp.generation
+
+        val loaded = service.loadForPicker(conn(), arcId(1))
+
+        assertEquals(setOf("TANK_0000000104"), loaded.memberIds)
+        assertEquals(listOf("First", "Second"), loaded.tanks.map { it.name })
+        assertEquals("/api/archives/${arcId(1)}/tankoubons", server.awaitRequest().path)
+        assertEquals("/api/tankoubons", server.awaitRequest().path)
+        assertEquals("/api/tankoubons?page=1", server.awaitRequest().path)
+        assertEquals(TankoubonSupportGate.Support.SUPPORTED, TankoubonSupportGate.support(baseUrl))
+        assertEquals(stamps, TankCoverCacheStamp.generation)
+        assertTrue(syncCalls.isEmpty())
+    }
+
+    @Test
+    fun loadForPicker_withoutArcid_skipsTheLookup_andLeavesSupportUnknown() = runBlocking {
+        TankoubonSupportGate.clear()
+        server.enqueue(MockResponse().setBody(pageJson(0)))
+
+        val loaded = service.loadForPicker(conn(), arcid = null)
+
+        assertTrue(loaded.tanks.isEmpty())
+        assertTrue(loaded.memberIds.isEmpty())
+        assertEquals("/api/tankoubons", server.awaitRequest().path)
+        assertEquals(1, server.requestCount)
+        assertEquals(TankoubonSupportGate.Support.UNKNOWN, TankoubonSupportGate.support(baseUrl))
+    }
+
     // ── delete ─────────────────────────────────────────────────────
 
     @Test

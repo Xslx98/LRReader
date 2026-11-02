@@ -8,8 +8,10 @@ import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.server.ServerConnection
+import com.lanraragi.reader.server.TankoubonSupportGate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -63,19 +65,46 @@ class TankRepository(
      * refreshes [TankListCache] and starts the membership sync.
      */
     suspend fun loadAll(conn: ServerConnection): List<LRRTankoubonApi.Tankoubon> {
-        val serverUrl = conn.baseUrl
+        val all = fetchPages(conn)
+        for (tank in all) TankCoverCacheStamp.observe(tank.id, tank.archives)
+        TankListCache.put(conn.baseUrl, all)
+        syncMembership(conn.profileId, conn.baseUrl, all)
+        return ArrayList(all)
+    }
+
+    /** What the tank picker sheet shows: every tank, and the tanks one archive is in. */
+    data class PickerList(val tanks: List<LRRTankoubonApi.Tankoubon>, val memberIds: Set<String>)
+
+    /**
+     * The picker sheet's load: [arcid]'s current tanks (reverse lookup, when
+     * given), then the whole list with [loadAll]'s page loop, kept in
+     * [TankListCache]. No cover re-keying and no membership sync: the sheet
+     * only reads. Only the reverse lookup is a 0.9.8-only route, so success
+     * with an [arcid] marks the server supported in [TankoubonSupportGate].
+     */
+    suspend fun loadForPicker(conn: ServerConnection, arcid: String?): PickerList {
+        val memberIds = if (arcid != null) {
+            LRRTankoubonApi.getArchiveTankoubons(conn.client, conn.baseUrl, arcid).toSet()
+        } else {
+            emptySet()
+        }
+        val tanks = fetchPages(conn)
+        if (arcid != null) TankoubonSupportGate.markSupported(conn.baseUrl)
+        TankListCache.put(conn.baseUrl, tanks)
+        return PickerList(tanks, memberIds)
+    }
+
+    /** GET /api/tankoubons page by page (0-based) until all `total` entries are held. */
+    private suspend fun fetchPages(conn: ServerConnection): List<LRRTankoubonApi.Tankoubon> {
         val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
         var page = 0
         while (page < MAX_PAGES) {
-            val r = LRRTankoubonApi.getTankoubons(conn.client, serverUrl, page)
+            val r = LRRTankoubonApi.getTankoubons(conn.client, conn.baseUrl, page)
             all.addAll(r.result)
             if (r.result.isEmpty() || all.size >= r.total) break
             page++
         }
-        for (tank in all) TankCoverCacheStamp.observe(tank.id, tank.archives)
-        TankListCache.put(serverUrl, all)
-        syncMembership(conn.profileId, serverUrl, all)
-        return ArrayList(all)
+        return all
     }
 
     private fun syncMembership(profileId: Long, serverUrl: String, tanks: List<LRRTankoubonApi.Tankoubon>) {
@@ -171,6 +200,24 @@ class TankRepository(
         TankListCache.invalidate(conn.baseUrl)
         return id
     }
+
+    /**
+     * [create] on [background], so a closing screen or a rotation cannot cut
+     * the write off. [onResult] runs on that scope's thread with the new id,
+     * or with the exception that stopped it (a locked server surfaces as
+     * `LRRHttpException` 423).
+     */
+    fun createAsync(conn: ServerConnection, name: String, onResult: (Result<String>) -> Unit): Job =
+        background.launch {
+            val result = try {
+                Result.success(create(conn, name))
+            } catch (ce: CancellationException) {
+                throw ce
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+            onResult(result)
+        }
 
     /**
      * Deletes the tank (never its archives). Upstream leaves the deleted id
