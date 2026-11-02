@@ -18,7 +18,7 @@ package com.lanraragi.reader.ui.scene.history
 
 import com.lanraragi.reader.ui.Haptics
 import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.util.collectFlowWhileCreated
+import com.lanraragi.reader.ui.collectFlowWhileCreated
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.graphics.Color
@@ -68,7 +68,7 @@ import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.EnterGalleryDetailTransaction
-import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer

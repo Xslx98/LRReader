@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.scene.download
 
 import androidx.lifecycle.LifecycleOwner
-import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.ui.collectFlow
 
 /**
  * The Downloads page's view-scoped collectors: load errors, the structural

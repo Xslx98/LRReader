@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.util.DetachBuffer
-import com.lanraragi.reader.util.collectFlowWhileCreated
+import com.lanraragi.reader.ui.collectFlowWhileCreated
 
 /**
  * The app events the gallery list follows for its whole lifetime — download

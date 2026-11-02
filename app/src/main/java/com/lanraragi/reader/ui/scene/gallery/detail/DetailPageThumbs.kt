@@ -17,7 +17,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.reading.TankSessionRouter
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.GalleryOpenHelper
-import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.ui.collectFlow
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull

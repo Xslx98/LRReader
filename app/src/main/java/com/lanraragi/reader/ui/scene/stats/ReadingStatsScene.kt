@@ -16,7 +16,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.stats.ReadingStatsCalculator
 import com.lanraragi.reader.stats.TagPreferenceCalculator
 import com.lanraragi.reader.ui.scene.BaseScene
-import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.framework.widget.AutoWrapLayout
 import java.util.Locale
 

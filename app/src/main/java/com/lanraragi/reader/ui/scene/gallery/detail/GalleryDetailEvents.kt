@@ -4,8 +4,8 @@ import android.view.View
 import androidx.lifecycle.LifecycleOwner
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.reading.ReadingProgressTracker
-import com.lanraragi.reader.util.collectFlow
-import com.lanraragi.reader.util.collectFlowWhileCreated
+import com.lanraragi.reader.ui.collectFlow
+import com.lanraragi.reader.ui.collectFlowWhileCreated
 
 /**
  * The view-scoped collectors of the detail page: load success / failure,

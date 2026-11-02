@@ -18,7 +18,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.scene.LRRCategoriesViewModel.CategoriesUiEvent
-import com.lanraragi.reader.util.collectFlow
+import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.client.api.data.LRRCategory
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.framework.scene.Announcer
