@@ -24,7 +24,6 @@ D3 com/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor.kt
 D3 com/lanraragi/reader/client/api/LRRClientProvider.kt
 D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt
 D3 com/lanraragi/reader/client/api/ProfileLookupCache.kt
-D3 com/lanraragi/reader/client/api/ServerTrust.kt
 D5 com/lanraragi/reader/dao/DownloadDbRepository.kt
 D5 com/lanraragi/reader/dao/HistoryRepository.kt
 D5 com/lanraragi/reader/dao/QuickSearchRepository.kt

@@ -15,8 +15,8 @@ import com.lanraragi.reader.tankoubon.TankTagOutbox
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
-import com.lanraragi.reader.client.api.ServerCertificate
-import com.lanraragi.reader.client.api.ServerTrust
+import com.lanraragi.reader.server.ServerCertificate
+import com.lanraragi.reader.server.ServerTrust
 import com.lanraragi.reader.client.api.ServerCapabilityCache
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException

@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.server
 
 import java.security.MessageDigest
 import java.security.cert.CertificateException

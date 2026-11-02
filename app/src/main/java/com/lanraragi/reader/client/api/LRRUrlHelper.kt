@@ -7,6 +7,9 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import java.net.URI
 import java.util.concurrent.TimeUnit
+import com.lanraragi.reader.server.ServerTrust
+import com.lanraragi.reader.server.ServerCertificate
+import com.lanraragi.reader.server.untrustedCertificateIn
 
 /**
  * Shared URL utilities for LANraragi server addresses.

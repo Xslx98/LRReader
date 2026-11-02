@@ -24,6 +24,7 @@ import java.io.FilterInputStream
 import java.io.IOException
 import java.io.InputStream
 import javax.net.ssl.SSLException
+import com.lanraragi.reader.server.isCertificateTrustFailure
 
 /**
  * Shared utilities for all LRR API classes.

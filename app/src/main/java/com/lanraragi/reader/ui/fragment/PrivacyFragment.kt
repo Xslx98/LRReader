@@ -12,8 +12,8 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.ServerCertificate
-import com.lanraragi.reader.client.api.ServerTrust
+import com.lanraragi.reader.server.ServerCertificate
+import com.lanraragi.reader.server.ServerTrust
 import com.lanraragi.reader.ui.scene.CertificateTrustDialog
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
