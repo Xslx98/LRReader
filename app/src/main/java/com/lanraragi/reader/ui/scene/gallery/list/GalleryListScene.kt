@@ -165,7 +165,6 @@ open class GalleryListScene : BaseScene(),
     private val events = GalleryListEvents(this)
     private val interactions = GalleryListInteractions(this)
     internal var uploadHelper: GalleryUploadHelper? = null
-    internal var mSearchHelper: GallerySearchHelper? = null
     internal var mHistoryStore: ProfileSearchHistoryStore? = null
     internal var listSearchHelper: GalleryListSearchHelper? = null
     private var mDrawerHelper: GalleryDrawerHelper? = null
@@ -534,7 +533,6 @@ open class GalleryListScene : BaseScene(),
         itemActionHelper = result.itemActionHelper
         tagChipHelper = result.tagChipHelper
         mHelper = result.dataHelper
-        mSearchHelper = result.searchHelper
         listSearchHelper = result.listSearchHelper
         uploadHelper = result.uploadHelper
         searchBarHelper = result.searchBarHelper

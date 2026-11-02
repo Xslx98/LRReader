@@ -11294,7 +11294,6 @@ HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$Result;-
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$Result;->getItemActionHelper()Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryItemActionHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$Result;->getListSearchHelper()Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListSearchHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$Result;->getSearchBarHelper()Lcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchBarHelper;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$Result;->getSearchHelper()Lcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$Result;->getStateHelper()Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$Result;->getTagChipHelper()Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryTagChipHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$Result;->getUploadHelper()Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryUploadHelper;
@@ -11332,8 +11331,6 @@ Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$sear
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$searchBarHelper$5;-><init>(Ljava/lang/Object;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$searchBarHelper$6;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$searchBarHelper$6;-><init>(Ljava/lang/Object;)V
-Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$searchHelper$1;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$searchHelper$1;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$stateHelper$1;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$stateHelper$1;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;)V
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$stateHelper$1;->getFabLayout()Lcom/lanraragi/framework/widget/FabLayout;
@@ -11367,7 +11364,6 @@ PLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;->getItemActionHel
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;->getLeftDrawable$app_appReleaseNonMinifiedRelease()Lcom/lanraragi/framework/drawable/DrawerArrowDrawable;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;->getListSearchHelper$app_appReleaseNonMinifiedRelease()Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListSearchHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;->getMFabHelper$app_appReleaseNonMinifiedRelease()Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryFabHelper;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;->getMSearchHelper$app_appReleaseNonMinifiedRelease()Lcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;->getMultiSelectHelper$app_appReleaseNonMinifiedRelease()Lcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;->getNavCheckedItem()I
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;->getRightDrawable$app_appReleaseNonMinifiedRelease()Lcom/lanraragi/framework/drawable/AddDeleteDrawable;
@@ -11529,16 +11525,8 @@ PLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchBarHelper;->getValidRe
 PLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchBarHelper;->isValidView(Landroidx/recyclerview/widget/RecyclerView;)Z
 Lcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper;-><clinit>()V
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$Callback;)V
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper;->createSuggestionProvider()Lcom/lanraragi/reader/widget/SearchBar$SuggestionProvider;
-Lcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$Callback;
-Lcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$Companion;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$Companion;-><init>()V
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$Companion;->getSuitableTitleForUrlBuilder(Landroid/content/res/Resources;Lcom/lanraragi/reader/client/data/ListUrlBuilder;Z)Ljava/lang/String;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$Companion;->setSearchBarHint(Landroid/content/Context;Lcom/lanraragi/reader/widget/SearchBar;)V
-Lcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$createSuggestionProvider$1;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper$createSuggestionProvider$1;-><init>()V
+HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper;->getSuitableTitleForUrlBuilder(Landroid/content/res/Resources;Lcom/lanraragi/reader/client/data/ListUrlBuilder;Z)Ljava/lang/String;
+HSPLcom/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper;->setSearchBarHint(Landroid/content/Context;Lcom/lanraragi/reader/widget/SearchBar;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper;-><clinit>()V
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper$Callback;)V

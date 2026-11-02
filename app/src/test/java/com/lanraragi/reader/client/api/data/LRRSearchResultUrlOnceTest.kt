@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.lrrJson
-import com.lanraragi.reader.ui.scene.gallery.list.GallerySearchHelper
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -68,14 +67,5 @@ class LRRSearchResultUrlOnceTest {
         assertEquals(50, out.size)
         assertTrue(out.all { it.thumbnailUrl.startsWith("http://h:3000/") })
         assertEquals("a 50-entry page must read the server URL once", 1, counting.urlReads)
-    }
-
-    @Test
-    fun convertLRRSearchResult_reads_the_server_url_once_per_page() {
-        val out = GallerySearchHelper.convertLRRSearchResult(page(50), 0)
-
-        assertEquals(50, out.galleryInfoList.size)
-        assertTrue(out.galleryInfoList.all { it.thumbnailUrl.startsWith("http://h:3000/") })
-        assertEquals(1, counting.urlReads)
     }
 }

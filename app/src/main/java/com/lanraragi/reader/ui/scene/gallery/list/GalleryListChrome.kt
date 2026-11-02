@@ -43,7 +43,6 @@ object GalleryListChrome {
             bindTankModeSearchBar(scene, context)
         } else {
             GallerySearchHelper.setSearchBarHint(context, searchBar)
-            scene.mSearchHelper?.let { searchBar.setSuggestionProvider(it.createSuggestionProvider()) }
             val historyStore = ProfileSearchHistoryStore(
                 scene.viewLifecycleOwner.lifecycleScope,
                 ServiceRegistry.dataModule.searchHistoryRepository,

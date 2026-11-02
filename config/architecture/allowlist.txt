@@ -48,7 +48,6 @@ D8a com/lanraragi/reader/ui/scene/LRRCategoriesViewModel.kt
 D8a com/lanraragi/reader/ui/scene/ServerConfigViewModel.kt
 D8a com/lanraragi/reader/ui/scene/ServerListViewModel.kt
 D8a com/lanraragi/reader/ui/scene/gallery/detail/CategoryDialogHelper.kt
-D8a com/lanraragi/reader/ui/scene/gallery/list/GallerySearchHelper.kt
 D8b com/lanraragi/reader/ui/gallery/GalleryImageOperations.kt
 D8b com/lanraragi/reader/ui/gallery/GalleryStampOps.kt
 D8b com/lanraragi/reader/ui/gallery/ReaderSessionSetup.kt
