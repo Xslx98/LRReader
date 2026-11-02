@@ -224,7 +224,7 @@ open class GalleryListScene : BaseScene(),
 
     /** Tank mode's sort choice (search bar right icon). */
     internal fun showTankSortMenu(anchor: View) {
-        val current = AppearanceSettings.getTankListSort()
+        val current = TankBrowse.Sort.saved()
         val popup = PopupMenu(anchor.context, anchor, Gravity.END)
         for ((i, sort) in TankBrowse.Sort.entries.withIndex()) {
             popup.menu.add(0, i, i, tankSortLabel(sort)).apply {
@@ -236,7 +236,7 @@ open class GalleryListScene : BaseScene(),
         popup.setOnMenuItemClickListener { item ->
             val picked = TankBrowse.Sort.entries[item.itemId]
             if (picked != current) {
-                AppearanceSettings.putTankListSort(picked)
+                TankBrowse.Sort.save(picked)
                 mHelper?.refresh()
             }
             true
@@ -705,6 +705,13 @@ open class GalleryListScene : BaseScene(),
         const val ACTION_HOMEPAGE = "action_homepage"
         const val ACTION_SUBSCRIPTION = "action_subscription"
         const val ACTION_WHATS_HOT = "action_whats_hot"
+
+        /** The scene action for the launch page setting ([AppearanceSettings.getLaunchPage]). */
+        fun launchPageAction(launchPage: Int): String = when (launchPage) {
+            1 -> ACTION_SUBSCRIPTION
+            2 -> ACTION_WHATS_HOT
+            else -> ACTION_HOMEPAGE
+        }
         const val ACTION_TOP_LIST = "action_top_list"
         const val ACTION_LIST_URL_BUILDER = "action_list_url_builder"
 

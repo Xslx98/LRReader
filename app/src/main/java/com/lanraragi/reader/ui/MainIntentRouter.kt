@@ -105,7 +105,7 @@ class MainIntentRouter(private val activity: MainActivity) {
                     val args = Bundle()
                     args.putString(
                         GalleryListScene.KEY_ACTION,
-                        AppearanceSettings.getLaunchPageGalleryListSceneAction()
+                        GalleryListScene.launchPageAction(AppearanceSettings.getLaunchPage())
                     )
                     activity.startScene(
                         processAnnouncer(Announcer(GalleryListScene::class.java).setArgs(args))

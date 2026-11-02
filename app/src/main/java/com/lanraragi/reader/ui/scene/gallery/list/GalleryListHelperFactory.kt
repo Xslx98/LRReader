@@ -11,7 +11,6 @@ import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
-import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
@@ -138,7 +137,7 @@ internal object GalleryListHelperFactory {
                 scene.activity?.reportFullyDrawn()
             }
             override fun isTankMode(): Boolean = scene.isTankMode
-            override fun getTankSort(): TankBrowse.Sort = AppearanceSettings.getTankListSort()
+            override fun getTankSort(): TankBrowse.Sort = TankBrowse.Sort.saved()
         })
 
         val listSearchHelper = GalleryListSearchHelper(object : GalleryListSearchHelper.Callback {
