@@ -22,5 +22,6 @@ bash scripts/ci/check-dex-logs.sh
 bash scripts/ci/check-dex-retrace.sh
 bash scripts/ci/check-dex-animators.sh
 bash scripts/ci/check-runcatching.sh
+bash scripts/ci/check-stateful-objects.sh
 bash scripts/ci/check-coverage.sh
 echo "ci-check: all gates passed"

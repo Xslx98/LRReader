@@ -62,6 +62,9 @@ jobs:
       - name: Baseline profile must not name classes that no longer exist
         run: bash scripts/ci/check-profile-classes.sh
 
+      - name: No new stateful top-level object (process-wide state goes on a ServiceRegistry module)
+        run: bash scripts/ci/check-stateful-objects.sh
+
       - name: Room schema must be committed
         # KSP rewrites app/schemas/<version>.json on every build (its tasks
         # never come from the build cache); a diff here means an entity
