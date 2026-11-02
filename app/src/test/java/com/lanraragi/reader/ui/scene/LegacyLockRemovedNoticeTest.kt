@@ -11,6 +11,7 @@ import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.server.KeystoreSecurePrefs
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.SetSecurityActivity
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -58,8 +59,8 @@ class LegacyLockRemovedNoticeTest {
 
     @Before
     fun setUp() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         controller = Robolectric.buildActivity(AppCompatActivity::class.java)
         activity = controller.get()
         activity.setTheme(R.style.AppTheme)
@@ -72,8 +73,8 @@ class LegacyLockRemovedNoticeTest {
     @After
     fun tearDown() {
         scope.cancel()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         wipeFiles()
         controller.close()
     }
@@ -178,11 +179,11 @@ class LegacyLockRemovedNoticeTest {
 
     /** One process start whose store opens. */
     private fun launch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.secureStoreCipher = { cipher }
-        LRRAuthManager.scheduleInitialize(activity, scope)
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.secureStoreCipher = { cipher }
+        SecureCredentialStore.scheduleInitialize(activity, scope)
         scheduler.advanceUntilIdle()
-        assertTrue(LRRAuthManager.isSecureStorageAvailable())
+        assertTrue(SecureCredentialStore.isSecureStorageAvailable())
     }
 
     private fun plainPrefs() = activity.getSharedPreferences("lrr_auth_plain", Context.MODE_PRIVATE)

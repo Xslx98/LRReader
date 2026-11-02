@@ -11,7 +11,7 @@ import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,7 +54,7 @@ class HistoryViewModelTest {
         Settings.initialize(context)
         ServiceRegistry.initializeForTest(CoroutineModule())
 
-        LRRAuthManager.initialize(context)
+        SecureCredentialStore.initialize(context)
         // Initialize DB early so we can wire HistoryRepository before ViewModel creation
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
@@ -78,7 +78,7 @@ class HistoryViewModelTest {
                 override fun clearArchiveDetailCache() {}
             }
         )
-        val method = LRRAuthManager::class.java.declaredMethods.first {
+        val method = SecureCredentialStore::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
                 it.parameterTypes[0] == android.content.SharedPreferences::class.java
@@ -94,7 +94,7 @@ class HistoryViewModelTest {
     fun tearDown() {
         Dispatchers.resetMain()
         db.close()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     // ═══════════════════════════════════════════════════════════

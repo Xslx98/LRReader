@@ -8,6 +8,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.data.LRRCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,8 +65,8 @@ class LRRCategoriesViewModelTest {
             .readTimeout(2, TimeUnit.SECONDS)
             .build()
 
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("categories_vm_test", Context.MODE_PRIVATE)
         )
         LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
@@ -87,7 +88,7 @@ class LRRCategoriesViewModelTest {
     fun tearDown() {
         eventScope.cancel()
         Dispatchers.resetMain()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         server.shutdown()
     }
 

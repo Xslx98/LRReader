@@ -21,6 +21,7 @@ import org.robolectric.annotation.Config
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * A fingerprint-bound pattern must survive the keystore key being
@@ -37,12 +38,12 @@ class KeystoreBoundPatternTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("bound_pattern_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("bound_pattern_test", Context.MODE_PRIVATE))
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     /** A software AES-GCM cipher standing in for the BiometricPrompt-unlocked one. */

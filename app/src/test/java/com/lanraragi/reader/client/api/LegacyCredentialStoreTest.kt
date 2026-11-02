@@ -20,6 +20,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * Ruling R26: androidx.security is gone, so the EncryptedSharedPreferences
@@ -46,18 +47,18 @@ class LegacyCredentialStoreTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.simulateStorageUnavailableForTesting()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         wipeFiles()
     }
 
     @After
     fun tearDown() {
         scope.cancel()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         wipeFiles()
     }
 
@@ -71,7 +72,7 @@ class LegacyCredentialStoreTest {
 
         launch()
 
-        assertTrue(LRRAuthManager.isSecureStorageAvailable())
+        assertTrue(SecureCredentialStore.isSecureStorageAvailable())
         assertTrue("the old API keys are gone: ask for them", LRRAuthManager.isNeedsReauthentication())
         assertTrue("the old lock is gone: tell the user", LRRAuthManager.isLegacyLockRemovedNoticePending())
         assertEquals("the app opens unlocked", false, LRRAuthManager.lockEnabledHint())
@@ -97,16 +98,16 @@ class LegacyCredentialStoreTest {
         launch()
         assertTrue(LRRAuthManager.isNeedsReauthentication())
 
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         launch()
 
         assertFalse(LRRAuthManager.isNeedsReauthentication())
     }
 
     private fun launch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.secureStoreCipher = { cipher }
-        LRRAuthManager.scheduleInitialize(ctx, scope)
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.secureStoreCipher = { cipher }
+        SecureCredentialStore.scheduleInitialize(ctx, scope)
         scheduler.advanceUntilIdle()
     }
 

@@ -12,6 +12,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * Locks the in-memory profile-key cache contract of
@@ -42,16 +43,16 @@ class LRRAuthManagerKeyCacheTest {
     @Before
     fun setUp() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        LRRAuthManager.initialize(context)
+        SecureCredentialStore.initialize(context)
         val real = context.getSharedPreferences("lrr_auth_keycache_test", Context.MODE_PRIVATE)
         real.edit().clear().commit()
         counting = CountingPrefs(real)
-        LRRAuthManager.initializeForTesting(counting)
+        SecureCredentialStore.initializeForTesting(counting)
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     @Test
@@ -103,7 +104,7 @@ class LRRAuthManagerKeyCacheTest {
         LRRAuthManager.setApiKeyForProfile(11L, "k11")
         assertEquals("k11", LRRAuthManager.getApiKeyForProfile(11L))
 
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
 
         assertNull(LRRAuthManager.getApiKeyForProfile(11L))
     }
@@ -118,7 +119,7 @@ class LRRAuthManagerKeyCacheTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         val fresh = context.getSharedPreferences("lrr_auth_keycache_fresh", Context.MODE_PRIVATE)
         fresh.edit().clear().commit()
-        LRRAuthManager.initializeForTesting(fresh)
+        SecureCredentialStore.initializeForTesting(fresh)
 
         assertNull(LRRAuthManager.getApiKeyForProfile(12L))
     }

@@ -3,6 +3,7 @@ package com.lanraragi.reader.ui.scene
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.ui.scene.SecurityViewModel.StorageState
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -36,22 +37,22 @@ class SecurityViewModelStorageStateTest {
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
         // Production has no store until init opens one; earlier tests leave one behind.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
     }
 
     @After
     fun tearDown() {
         scope.cancel()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
     }
 
     @Test(timeout = 10_000)
     fun slowInit_offersOnlyARetry() {
-        LRRAuthManager.scheduleInitialize(ctx, scope) // never advanced: init still running
-        LRRAuthManager.mainThreadInitTimeoutMs = 100
+        SecureCredentialStore.scheduleInitialize(ctx, scope) // never advanced: init still running
+        SecureCredentialStore.mainThreadInitTimeoutMs = 100
 
         assertEquals(StorageState.STARTING, SecurityViewModel().storageState())
     }
@@ -59,7 +60,7 @@ class SecurityViewModelStorageStateTest {
     @Test(timeout = 10_000)
     fun initThatFailed_offersTheReset() {
         // Robolectric has no AndroidKeyStore: initialize() finishes on its failure branch.
-        LRRAuthManager.scheduleInitialize(ctx, scope)
+        SecureCredentialStore.scheduleInitialize(ctx, scope)
         scheduler.advanceUntilIdle()
 
         assertEquals(StorageState.UNAVAILABLE, SecurityViewModel().storageState())
@@ -67,12 +68,12 @@ class SecurityViewModelStorageStateTest {
 
     @Test(timeout = 10_000)
     fun slowInitThatLaterOpens_becomesAvailableOnRetry() {
-        LRRAuthManager.scheduleInitialize(ctx, scope)
-        LRRAuthManager.mainThreadInitTimeoutMs = 100
+        SecureCredentialStore.scheduleInitialize(ctx, scope)
+        SecureCredentialStore.mainThreadInitTimeoutMs = 100
         val viewModel = SecurityViewModel()
         assertEquals(StorageState.STARTING, viewModel.storageState())
 
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("storage_state_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("storage_state_test", Context.MODE_PRIVATE))
 
         assertEquals(StorageState.AVAILABLE, viewModel.storageState())
     }

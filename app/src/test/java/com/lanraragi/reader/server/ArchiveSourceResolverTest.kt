@@ -57,7 +57,7 @@ class ArchiveSourceResolverTest {
         // (id == 0) fallback path is testable without touching KeyStore.
         val prefs = ctx.getSharedPreferences("lrr_test_prefs", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
-        LRRAuthManager.initializeForTesting(prefs)
+        SecureCredentialStore.initializeForTesting(prefs)
     }
 
     @After

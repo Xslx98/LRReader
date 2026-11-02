@@ -8,6 +8,7 @@ import com.lanraragi.reader.Settings
 import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.stubNetworkModule
@@ -61,8 +62,8 @@ class GalleryListViewModelLoadTest {
         server = MockWebServer()
         server.start()
 
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("list_load_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("list_load_test", Context.MODE_PRIVATE))
         LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
         LRRClientProvider.init(ctx)
         val client = OkHttpClient.Builder()
@@ -75,7 +76,7 @@ class GalleryListViewModelLoadTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         server.shutdown()
     }
 
@@ -156,7 +157,7 @@ class GalleryListViewModelLoadTest {
 
     @Test
     fun `without a server the load fails at once with its own text`() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         val results = mutableListOf<GalleryListLoad>()
 
         GalleryListViewModel().loadPage(archiveQuery, 0) { results += it; true }

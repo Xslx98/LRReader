@@ -11,6 +11,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.LRRClientProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -58,8 +59,8 @@ class GalleryListViewModelUploadTest {
             .allowMainThreadQueries()
             .build()
 
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("upload_vm_test", Context.MODE_PRIVATE)
         )
         LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
@@ -96,7 +97,7 @@ class GalleryListViewModelUploadTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         db.close()
         server.shutdown()
     }

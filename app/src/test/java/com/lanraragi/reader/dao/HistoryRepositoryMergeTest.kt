@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * A history write must not wipe what the shared row's `archive_json`
@@ -96,7 +97,7 @@ class HistoryRepositoryMergeTest {
     fun clearHistory_clearsOnlyTheActiveProfile() = runTest {
         val prefs = ApplicationProvider.getApplicationContext<Context>()
             .getSharedPreferences("history_clear_test", Context.MODE_PRIVATE)
-        com.lanraragi.reader.server.LRRAuthManager.initializeForTesting(prefs)
+        com.lanraragi.reader.server.SecureCredentialStore.initializeForTesting(prefs)
         try {
             com.lanraragi.reader.server.LRRAuthManager.setActiveProfileId(1L)
             repo.putHistoryInfo(archive(pagecount = 5, progress = 1, summary = null, tags = emptyMap()))
@@ -109,7 +110,7 @@ class HistoryRepositoryMergeTest {
             assertEquals(null, dao.loadByArcidAndProfile("a1", 1L))
             assertEquals(true, dao.loadByArcidAndProfile("a1", 2L)?.historyTime != null)
         } finally {
-            com.lanraragi.reader.server.LRRAuthManager.clear()
+            com.lanraragi.reader.server.SecureCredentialStore.clear()
         }
     }
 }

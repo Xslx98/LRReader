@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.module.CoroutineModule
@@ -55,8 +56,8 @@ class DownloadSchedulerTest {
         // convergence — a fake-reaching coroutine must not poison the suite).
         testScope = containedTestScope()
 
-        LRRAuthManager.initialize(context)
-        val method = LRRAuthManager::class.java.declaredMethods.first {
+        SecureCredentialStore.initialize(context)
+        val method = SecureCredentialStore::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
                 it.parameterTypes[0] == android.content.SharedPreferences::class.java
@@ -123,7 +124,7 @@ class DownloadSchedulerTest {
         testScope.cancel()
         ShadowLooper.idleMainLooper()
         db.close()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         DownloadResumeBanner.clear()
     }
 

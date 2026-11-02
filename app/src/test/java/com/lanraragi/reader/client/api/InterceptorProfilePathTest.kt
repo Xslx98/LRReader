@@ -30,6 +30,7 @@ import org.robolectric.annotation.Config
 import java.io.IOException
 import com.lanraragi.reader.server.ProfileLookupCache
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * The production path of both interceptors: the request's host:port is owned
@@ -73,7 +74,7 @@ class InterceptorProfilePathTest {
 
         val prefs = ctx.getSharedPreferences("interceptor_profile_path", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
-        LRRAuthManager.initializeForTesting(prefs)
+        SecureCredentialStore.initializeForTesting(prefs)
         LRRAuthManager.setServerUrl("http://$host:$port")
         LRRAuthManager.setApiKey("legacy-key")
         LRRAuthManager.setAllowCleartext(true)
@@ -86,7 +87,7 @@ class InterceptorProfilePathTest {
         scope.cancel()
         db.close()
         server.shutdown()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     private fun addProfile(url: String, key: String?, allowCleartext: Boolean = true): Long {

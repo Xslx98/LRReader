@@ -7,6 +7,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.DownloadInfo
@@ -80,8 +81,8 @@ class DownloadRepositoryTest {
         testScope = containedTestScope()
 
         // Initialize LRRAuthManager
-        LRRAuthManager.initialize(context)
-        val method = LRRAuthManager::class.java.declaredMethods.first {
+        SecureCredentialStore.initialize(context)
+        val method = SecureCredentialStore::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
                 it.parameterTypes[0] == android.content.SharedPreferences::class.java
@@ -136,7 +137,7 @@ class DownloadRepositoryTest {
         testScope.cancel()
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
         db.close()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     // ═══════════════════════════════════════════════════════════

@@ -18,6 +18,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.security.SecureRandom
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * Unit tests for pattern failure lockout logic in [LRRAuthManager].
@@ -36,22 +37,22 @@ class PatternLockoutTest {
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("lockout_test", Context.MODE_PRIVATE)
         )
         // Install a fake clock
         fakeTimeMs = 1_000_000L
         fakeBoot = 7
-        LRRAuthManager.clockMillis = { fakeTimeMs }
-        LRRAuthManager.bootCount = { fakeBoot }
+        SecureCredentialStore.clockMillis = { fakeTimeMs }
+        SecureCredentialStore.bootCount = { fakeBoot }
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
-        LRRAuthManager.clockMillis = { android.os.SystemClock.elapsedRealtime() }
-        LRRAuthManager.bootCount = { -1 }
+        SecureCredentialStore.clear()
+        SecureCredentialStore.clockMillis = { android.os.SystemClock.elapsedRealtime() }
+        SecureCredentialStore.bootCount = { -1 }
     }
 
     // ── isLockedOut ─────────────────────────────────────────────────
@@ -224,7 +225,7 @@ class PatternLockoutTest {
         repeat(5) { LRRAuthManager.recordFailure() }
         assertTrue(LRRAuthManager.isLockedOut())
         // Simulate KeyStore failure — plain prefs (lockout state) survive
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         assertTrue("Lockout should survive KeyStore failure", LRRAuthManager.isLockedOut())
     }
 

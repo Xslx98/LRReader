@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DailyReadingAggregate
@@ -168,7 +169,7 @@ class BackupRoundTripTest {
 
     @Test
     fun a_restored_profile_reads_as_keyless_not_as_a_lost_key() {
-        LRRAuthManager.initializeForTesting(prefs("auth_secure"))
+        SecureCredentialStore.initializeForTesting(prefs("auth_secure"))
         try {
             seedSource()
             val mine = runBlocking {
@@ -187,7 +188,7 @@ class BackupRoundTripTest {
             assertNull("no key is sent for the restored server", LRRAuthManager.getApiKeyForProfile(restored))
             assertEquals("a local key is untouched", "secret", LRRAuthManager.getApiKeyForProfile(mine))
         } finally {
-            LRRAuthManager.clear()
+            SecureCredentialStore.clear()
         }
     }
 

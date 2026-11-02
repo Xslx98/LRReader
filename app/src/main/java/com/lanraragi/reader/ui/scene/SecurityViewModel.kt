@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -120,10 +121,10 @@ class SecurityViewModel : ViewModel() {
         UNAVAILABLE,
     }
 
-    fun storageState(): StorageState = when (LRRAuthManager.secureStorageState()) {
-        LRRAuthManager.SecureStorageState.AVAILABLE -> StorageState.AVAILABLE
-        LRRAuthManager.SecureStorageState.STARTING -> StorageState.STARTING
-        LRRAuthManager.SecureStorageState.UNAVAILABLE -> StorageState.UNAVAILABLE
+    fun storageState(): StorageState = when (SecureCredentialStore.secureStorageState()) {
+        SecureCredentialStore.SecureStorageState.AVAILABLE -> StorageState.AVAILABLE
+        SecureCredentialStore.SecureStorageState.STARTING -> StorageState.STARTING
+        SecureCredentialStore.SecureStorageState.UNAVAILABLE -> StorageState.UNAVAILABLE
     }
 
     /** The UNAVAILABLE prompt's wording and whether it offers the reset (audit 06d SEC-01). */

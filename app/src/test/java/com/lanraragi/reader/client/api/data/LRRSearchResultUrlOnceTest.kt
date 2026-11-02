@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.lrrJson
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -40,14 +41,14 @@ class LRRSearchResultUrlOnceTest {
         val real = context.getSharedPreferences("lrr_search_url_once_test", Context.MODE_PRIVATE)
         real.edit().clear().commit()
         counting = CountingPrefs(real)
-        LRRAuthManager.initializeForTesting(counting)
+        SecureCredentialStore.initializeForTesting(counting)
         LRRAuthManager.setServerUrl("http://h:3000")
         counting.urlReads = 0
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     private fun page(size: Int): LRRSearchResult {

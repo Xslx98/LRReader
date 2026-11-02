@@ -7,6 +7,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import java.io.File
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -34,8 +35,8 @@ import org.robolectric.annotation.Config
  * the lock state was unreadable is not told to reset an app lock (06d R3).
  *
  * Robolectric has no AndroidKeyStore: the production init fails unless
- * [LRRAuthManager.secureStoreCipher] is swapped. [LRRAuthManager] is a
- * process-wide singleton; [LRRAuthManager.resetInitGateForTesting] stands
+ * [SecureCredentialStore.secureStoreCipher] is swapped. [LRRAuthManager] is a
+ * process-wide singleton; [SecureCredentialStore.resetInitGateForTesting] stands
  * for a new process.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -52,16 +53,16 @@ class LockScreenResetOfferTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         wipeFiles()
     }
 
     @After
     fun tearDown() {
         scope.cancel()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         wipeFiles()
     }
 
@@ -73,7 +74,7 @@ class LockScreenResetOfferTest {
 
         assertEquals(R.string.security_storage_unavailable_first_message, prompt.message)
         assertNull("no reset on the first failure", prompt.resetButton)
-        assertEquals(1, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertEquals(1, SecureCredentialStore.consecutiveStoreOpenFailures())
     }
 
     @Test(timeout = 10_000)
@@ -95,7 +96,7 @@ class LockScreenResetOfferTest {
 
         val prompt = shownFailedLaunch()
 
-        assertEquals(1, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertEquals(1, SecureCredentialStore.consecutiveStoreOpenFailures())
         assertNull(prompt.resetButton)
     }
 
@@ -107,7 +108,7 @@ class LockScreenResetOfferTest {
         // Rotation, or "cancel" on the reset confirmation, shows the prompt again.
         val again = SecurityViewModel().unavailablePrompt()
 
-        assertEquals(1, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertEquals(1, SecureCredentialStore.consecutiveStoreOpenFailures())
         assertNull(again.resetButton)
     }
 
@@ -116,7 +117,7 @@ class LockScreenResetOfferTest {
         setLock()
         shownFailedLaunch()
         openedLaunch()
-        assertEquals(0, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertEquals(0, SecureCredentialStore.consecutiveStoreOpenFailures())
 
         assertNull(shownFailedLaunch().resetButton)
     }
@@ -142,18 +143,18 @@ class LockScreenResetOfferTest {
         setLock()
         shownFailedLaunch()
         shownFailedLaunch()
-        assertEquals(2, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertEquals(2, SecureCredentialStore.consecutiveStoreOpenFailures())
 
         LRRAuthManager.resetAppLockAndCredentials(ctx)
 
-        assertEquals(0, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertEquals(0, SecureCredentialStore.consecutiveStoreOpenFailures())
         assertTrue(!plainPrefs().contains("secure_store_open_failures"))
     }
 
     /** A process start whose store fails to open and that shows no screen. */
     private fun failedLaunch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.scheduleInitialize(ctx, scope)
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.scheduleInitialize(ctx, scope)
         scheduler.advanceUntilIdle()
     }
 
@@ -165,13 +166,13 @@ class LockScreenResetOfferTest {
     }
 
     private fun openedLaunch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.secureStoreCipher = { InMemoryValueCipher() }
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.secureStoreCipher = { InMemoryValueCipher() }
         // A fresh cipher cannot read the old store; start from an empty one.
         securePrefs().edit(commit = true) { clear() }
-        LRRAuthManager.scheduleInitialize(ctx, scope)
+        SecureCredentialStore.scheduleInitialize(ctx, scope)
         scheduler.advanceUntilIdle()
-        assertTrue(LRRAuthManager.isSecureStorageAvailable())
+        assertTrue(SecureCredentialStore.isSecureStorageAvailable())
     }
 
     private fun setLock() {

@@ -7,9 +7,10 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import com.lanraragi.reader.server.ValueCipher
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
- * In-memory AES-GCM for [LRRAuthManager.secureStoreCipher]: Robolectric has
+ * In-memory AES-GCM for [SecureCredentialStore.secureStoreCipher]: Robolectric has
  * no AndroidKeyStore, so without it the production init always fails to
  * open the store.
  */

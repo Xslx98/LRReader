@@ -20,6 +20,7 @@ import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -80,8 +81,8 @@ class ServerListViewModelTest {
             .allowMainThreadQueries()
             .build()
 
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test", Context.MODE_PRIVATE)
         )
 
@@ -125,7 +126,7 @@ class ServerListViewModelTest {
         viewModels.forEach { awaitViewModelIdle(it) }
         eventScope.cancel()
         Dispatchers.resetMain()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         db.close()
         server.shutdown()
     }
@@ -257,7 +258,7 @@ class ServerListViewModelTest {
         val oldId = insertProfile("Old", "https://old.example.com", isActive = true)
         server.enqueue(MockResponse().setResponseCode(200)
             .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
 
         val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
@@ -270,7 +271,7 @@ class ServerListViewModelTest {
         assertEquals("the keyless new row is rolled back", listOf(oldId), rows.map { it.id })
         assertTrue("the old profile stays active", rows.single().isActive)
 
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore_add", Context.MODE_PRIVATE)
         )
     }
@@ -284,7 +285,7 @@ class ServerListViewModelTest {
         val profile = ServerProfile(id = id, name = "Old Name", url = "https://old.example.com", isActive = true)
         server.enqueue(MockResponse().setResponseCode(200)
             .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
 
         val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
@@ -300,7 +301,7 @@ class ServerListViewModelTest {
         assertEquals("Old Name", fromDb.name)
 
         // Restore secure storage for tearDown / suite order.
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore2", Context.MODE_PRIVATE)
         )
     }
@@ -613,7 +614,7 @@ class ServerListViewModelTest {
         val id = insertProfile("Test", "https://test.com")
         val profile = ServerProfile(id = id, name = "Test", url = "https://test.com")
 
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
 
         val vm = newVm()
         val events = vm.uiEvent.collectInto(eventScope)
@@ -629,7 +630,7 @@ class ServerListViewModelTest {
         assertEquals("Profile should still exist", 1, remaining.size)
 
         // Restore secure storage for tearDown
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("server_vm_test_restore", Context.MODE_PRIVATE)
         )
     }

@@ -21,37 +21,38 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * Tests for the INF-9 async-init readiness gate.
  *
- * [LRRAuthManager] is a process-wide singleton whose state survives across test
+ * [SecureCredentialStore] is a process-wide singleton whose state survives across test
  * classes inside one Robolectric sandbox, so every test here restores the gate
  * to the never-scheduled default in BOTH setUp and tearDown — leaving it
  * "scheduled but pending" would hang any later test that touches auth state.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
-class LRRAuthManagerInitGateTest {
+class SecureCredentialStoreInitGateTest {
 
     private lateinit var ctx: Context
 
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
     }
 
     /** Legacy semantics: tests that never initialize read defaults, no blocking. */
     @Test
     fun neverScheduled_gettersReturnDefaultsImmediately() {
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         assertNull(LRRAuthManager.getServerUrl())
         assertFalse(LRRAuthManager.isConfigured())
         assertEquals(0L, LRRAuthManager.getActiveProfileId())
@@ -73,7 +74,7 @@ class LRRAuthManagerInitGateTest {
         )
         try {
             // Dispatcher is never advanced: initialize() has NOT run.
-            LRRAuthManager.scheduleInitialize(ctx, scope)
+            SecureCredentialStore.scheduleInitialize(ctx, scope)
 
             val readerDone = CountDownLatch(1)
             var observedUrl: String? = "sentinel"
@@ -90,7 +91,7 @@ class LRRAuthManagerInitGateTest {
             // Open the gate with injected prefs carrying a known value.
             val prefs = ctx.getSharedPreferences("lrr_gate_test", Context.MODE_PRIVATE)
             prefs.edit().putString("server_url", "http://10.0.0.9:3000").commit()
-            LRRAuthManager.initializeForTesting(prefs)
+            SecureCredentialStore.initializeForTesting(prefs)
 
             assertTrue(
                 "reader must be released once the gate opens",
@@ -115,7 +116,7 @@ class LRRAuthManagerInitGateTest {
                 CoroutineExceptionHandler { _, t -> println("contained: $t") }
         )
         try {
-            LRRAuthManager.scheduleInitialize(ctx, scope)
+            SecureCredentialStore.scheduleInitialize(ctx, scope)
             scheduler.advanceUntilIdle() // runs initialize(ctx) on the test thread
 
             // Gate must be open: a reader thread completes promptly.
@@ -147,8 +148,8 @@ class LRRAuthManagerInitGateTest {
                 CoroutineExceptionHandler { _, t -> println("contained: $t") }
         )
         try {
-            LRRAuthManager.scheduleInitialize(ctx, scope) // never advanced: init "hangs"
-            LRRAuthManager.initTimeoutMs = 200
+            SecureCredentialStore.scheduleInitialize(ctx, scope) // never advanced: init "hangs"
+            SecureCredentialStore.initTimeoutMs = 200
 
             val first = CountDownLatch(1)
             var observed: String? = "sentinel"
@@ -168,7 +169,7 @@ class LRRAuthManagerInitGateTest {
 
             val prefs = ctx.getSharedPreferences("lrr_gate_timeout_test", Context.MODE_PRIVATE)
             prefs.edit().putString("server_url", "http://10.0.0.8:3000").commit()
-            LRRAuthManager.initializeForTesting(prefs)
+            SecureCredentialStore.initializeForTesting(prefs)
             assertEquals("http://10.0.0.8:3000", LRRAuthManager.getServerUrl())
         } finally {
             scope.cancel()
@@ -188,7 +189,7 @@ class LRRAuthManagerInitGateTest {
                 CoroutineExceptionHandler { _, t -> println("contained: $t") }
         )
         try {
-            LRRAuthManager.scheduleInitialize(ctx, scope) // never advanced: init "hangs"
+            SecureCredentialStore.scheduleInitialize(ctx, scope) // never advanced: init "hangs"
             assertTrue(android.os.Looper.myLooper() == android.os.Looper.getMainLooper())
 
             val started = System.nanoTime()
@@ -215,7 +216,7 @@ class LRRAuthManagerInitGateTest {
             )
             val prefs = ctx.getSharedPreferences("lrr_gate_main_test", Context.MODE_PRIVATE)
             prefs.edit().putString("server_url", "http://10.0.0.7:3000").commit()
-            LRRAuthManager.initializeForTesting(prefs)
+            SecureCredentialStore.initializeForTesting(prefs)
             assertTrue(background.await(5, TimeUnit.SECONDS))
             assertEquals("http://10.0.0.7:3000", observed)
         } finally {

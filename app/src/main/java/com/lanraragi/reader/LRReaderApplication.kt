@@ -34,6 +34,7 @@ import android.util.Log
 import com.lanraragi.reader.util.LocaleContext
 import com.lanraragi.framework.scene.SceneApplication
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.module.AppModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
@@ -160,11 +161,11 @@ class LRReaderApplication : SceneApplication() {
             )
         }
 
-        // INF-9: LRRAuthManager.initialize() spends 50-200ms on KeyStore binder
+        // INF-9: SecureCredentialStore.initialize() spends 50-200ms on KeyStore binder
         // calls + encrypted-pref decryption. Run it on bootScope so it overlaps
         // the remaining main-thread initializers and the Activity launch window;
-        // LRRAuthManager's readiness gate holds any reader that arrives early.
-        val authInitJob = LRRAuthManager.scheduleInitialize(this, AppModule.bootScope)
+        // the store's readiness gate holds any reader that arrives early.
+        val authInitJob = SecureCredentialStore.scheduleInitialize(this, AppModule.bootScope)
 
         // Wrap each main-thread initialiser in a Trace section so cold-start
         // profiles in Android Studio Profiler / perfetto show exactly which

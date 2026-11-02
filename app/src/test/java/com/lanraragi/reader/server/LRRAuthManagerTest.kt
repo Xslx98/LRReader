@@ -15,10 +15,10 @@ import org.robolectric.annotation.Config
 /**
  * Unit tests for [LRRAuthManager].
  *
- * Uses Robolectric because [LRRAuthManager.initialize] creates [EncryptedSharedPreferences]
+ * Uses Robolectric because [SecureCredentialStore.initialize] creates [EncryptedSharedPreferences]
  * which requires an Android Context. The test Application is a plain [android.app.Application]
- * so the Android KeyStore is unavailable in this environment — [LRRAuthManager.initialize]
- * will set sPrefs=null. We always recover via [LRRAuthManager.initializeForTesting] which
+ * so the Android KeyStore is unavailable in this environment — [SecureCredentialStore.initialize]
+ * will set sPrefs=null. We always recover via [SecureCredentialStore.initializeForTesting] which
  * injects a plain SharedPreferences so that all credential round-trip tests remain meaningful.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -30,20 +30,20 @@ class LRRAuthManagerTest {
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
-        LRRAuthManager.initialize(ctx)
+        SecureCredentialStore.initialize(ctx)
         // In Robolectric, Android KeyStore is unavailable so EncryptedSharedPreferences
         // initialization fails and sPrefs is left null. Always inject a plain
         // SharedPreferences so the remaining tests can exercise credential storage logic.
         // (With improved degradation detection, isNeedsReauthentication() is false for
         // fresh installs even when sPrefs is null, so we always inject here.)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("lrr_auth_test", android.content.Context.MODE_PRIVATE)
         )
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     // ── Server URL ──────────────────────────────────────────────────
@@ -197,7 +197,7 @@ class LRRAuthManagerTest {
         LRRAuthManager.setApiKey("key")
         LRRAuthManager.setActiveProfileId(5L)
         LRRAuthManager.setPattern("pin")
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         assertNull(LRRAuthManager.getServerUrl())
         assertNull(LRRAuthManager.getApiKey())
         assertEquals(0L, LRRAuthManager.getActiveProfileId())
@@ -225,7 +225,7 @@ class LRRAuthManagerTest {
     @Test
     fun allowCleartext_returnsFalseWhenStorageUnavailable() {
         // When sPrefs is null (KeyStore broken), getAllowCleartext() must fail-closed
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         assertFalse(
             "getAllowCleartext must return false when secure storage is unavailable",
             LRRAuthManager.getAllowCleartext()
@@ -241,43 +241,43 @@ class LRRAuthManagerTest {
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setServerUrl_throwsWhenStorageUnavailable() {
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.setServerUrl("http://test.local")
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setApiKey_throwsWhenStorageUnavailable() {
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.setApiKey("secret")
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setServerName_throwsWhenStorageUnavailable() {
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.setServerName("LRR")
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setActiveProfileId_throwsWhenStorageUnavailable() {
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.setActiveProfileId(7L)
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setApiKeyForProfile_throwsWhenStorageUnavailable() {
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.setApiKeyForProfile(1L, "key")
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun clearApiKeyForProfile_throwsWhenStorageUnavailable() {
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.clearApiKeyForProfile(1L)
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setPattern_throwsWhenStorageUnavailable() {
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.setPattern("1234")
     }
 
@@ -287,21 +287,21 @@ class LRRAuthManagerTest {
         // silent `?: return` pattern that W0-4 had purged from every other
         // setter. Aligned here so the UI catches are guaranteed to fire on
         // KeyStore failure instead of the flag update being silently dropped.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.setAllowCleartext(false)
     }
 
     @Test
     fun verifyPattern_returnsFalseWhenStorageUnavailable() {
         // Reads MUST NOT throw — verify-before-unlock flows need to degrade gracefully.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         assertFalse(LRRAuthManager.verifyPattern("anything"))
     }
 
     @Test
     fun getters_returnNullWhenStorageUnavailable() {
         // Reads MUST NOT throw — UI polls getApiKey()/getServerUrl() frequently.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         assertNull(LRRAuthManager.getServerUrl())
         assertNull(LRRAuthManager.getApiKey())
         assertNull(LRRAuthManager.getServerName())
@@ -313,8 +313,8 @@ class LRRAuthManagerTest {
     fun clear_toleratesUnavailableStorage() {
         // clear() is safe to call during reauth flows — must not throw even if
         // the backing store was never initialized.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
-        LRRAuthManager.clear() // should not throw
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.clear() // should not throw
         assertEquals(0L, LRRAuthManager.getActiveProfileId())
     }
 
@@ -324,7 +324,7 @@ class LRRAuthManagerTest {
     fun markReauthIfProfilesUnprotected_emptyList_doesNothing() {
         // Fresh install: no profiles in Room — should NOT trigger reauth even
         // if storage is broken (there's nothing to recover).
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.markReauthIfProfilesUnprotected(emptyList())
         assertFalse(LRRAuthManager.isNeedsReauthentication())
     }
@@ -332,7 +332,7 @@ class LRRAuthManagerTest {
     @Test
     fun markReauthIfProfilesUnprotected_storageDownWithProfiles_marksReauth() {
         // KeyStore broken AND user has at least one server: keys are unrecoverable.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L, 2L))
         assertTrue(LRRAuthManager.isNeedsReauthentication())
     }
@@ -358,11 +358,11 @@ class LRRAuthManagerTest {
     fun markReauthIfProfilesUnprotected_doesNotClearExistingFlag() {
         // Once flagged, additional checks should not unset the flag — only an
         // explicit clear() (after re-auth) should reset it.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         LRRAuthManager.markReauthIfProfilesUnprotected(listOf(1L))
         assertTrue(LRRAuthManager.isNeedsReauthentication())
         // Restore healthy storage and re-check with all keys present
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("lrr_auth_test_2", android.content.Context.MODE_PRIVATE)
         )
         // initializeForTesting() resets the flag — that's the documented "fresh test setup"

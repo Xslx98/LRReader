@@ -25,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * Rendering + content-selection contract of the continue-reading widget
@@ -111,7 +112,7 @@ class ContinueReadingWidgetTest {
 
     @Test
     fun buildViews_withAnAppLock_hidesTitleAndProgress() {
-        com.lanraragi.reader.server.LRRAuthManager.initializeForTesting(
+        com.lanraragi.reader.server.SecureCredentialStore.initializeForTesting(
             context.getSharedPreferences("widget_redact_test", Context.MODE_PRIVATE)
         )
         try {
@@ -124,7 +125,7 @@ class ContinueReadingWidgetTest {
             assertEquals(context.getString(R.string.shortcut_continue_reading), root.text(R.id.appwidget_title))
             assertEquals(View.GONE, root.visibility(R.id.appwidget_progress))
         } finally {
-            com.lanraragi.reader.server.LRRAuthManager.clear()
+            com.lanraragi.reader.server.SecureCredentialStore.clear()
         }
     }
 

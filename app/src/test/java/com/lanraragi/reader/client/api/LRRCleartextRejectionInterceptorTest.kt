@@ -28,6 +28,7 @@ import java.io.IOException
 import java.lang.reflect.Field
 import java.util.concurrent.TimeUnit
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * Unit tests for [LRRCleartextRejectionInterceptor].
@@ -59,15 +60,15 @@ class LRRCleartextRejectionInterceptorTest {
         val ctx: Context = ApplicationProvider.getApplicationContext()
         prefs = ctx.getSharedPreferences("test_lrr_cleartext", Context.MODE_PRIVATE)
         prefs.edit().clear().apply()
-        // Inject plain prefs into the LRRAuthManager singleton (object)
-        val sPrefsField: Field = LRRAuthManager::class.java.getDeclaredField("sPrefs")
+        // Inject plain prefs into the SecureCredentialStore singleton (object)
+        val sPrefsField: Field = SecureCredentialStore::class.java.getDeclaredField("prefs")
         sPrefsField.isAccessible = true
-        sPrefsField.set(LRRAuthManager, prefs)
+        sPrefsField.set(SecureCredentialStore, prefs)
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     private fun client() = OkHttpClient.Builder()

@@ -15,6 +15,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * The app lock must fail closed: when the secure store cannot be opened the
@@ -32,12 +33,12 @@ class AppLockFailClosedTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("fail_closed_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("fail_closed_test", Context.MODE_PRIVATE))
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     @Test
@@ -54,10 +55,10 @@ class AppLockFailClosedTest {
     @Test
     fun lockStaysOnWhenTheSecureStoreBecomesUnavailable() {
         LRRAuthManager.setPattern("0123")
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
 
         assertFalse("the pattern itself is unreadable", LRRAuthManager.hasPattern())
-        assertFalse(LRRAuthManager.isSecureStorageAvailable())
+        assertFalse(SecureCredentialStore.isSecureStorageAvailable())
         assertTrue("gates must still see the app as locked", SecuritySettings.isLockEnabled())
     }
 

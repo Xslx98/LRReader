@@ -4,6 +4,7 @@ import com.lanraragi.reader.MockWebServerAwaitKt;
 import com.lanraragi.reader.client.api.*;
 import com.lanraragi.reader.client.api.data.*;
 import com.lanraragi.reader.server.LRRAuthManager;
+import com.lanraragi.reader.server.SecureCredentialStore;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -34,7 +35,7 @@ import static org.junit.Assert.*;
  * only for requests targeting the configured LANraragi server.
  *
  * Uses Robolectric for Context, but bypasses EncryptedSharedPreferences
- * by injecting a plain SharedPreferences into LRRAuthManager via reflection.
+ * by injecting a plain SharedPreferences into SecureCredentialStore via reflection.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30, application = android.app.Application.class)
@@ -56,21 +57,21 @@ public class LRRAuthInterceptorTest {
                 .addInterceptor(new LRRAuthInterceptor())
                 .build();
 
-        // Inject plain SharedPreferences into LRRAuthManager via reflection
+        // Inject plain SharedPreferences into SecureCredentialStore via reflection
         // (avoids EncryptedSharedPreferences which requires Android KeyStore)
         Context ctx = ApplicationProvider.getApplicationContext();
         SharedPreferences prefs = ctx.getSharedPreferences("test_lrr_auth", Context.MODE_PRIVATE);
         prefs.edit().clear().apply();
-        // LRRAuthManager is a Kotlin object — set the field on the singleton INSTANCE
-        Field sPrefsField = LRRAuthManager.class.getDeclaredField("sPrefs");
+        // SecureCredentialStore is a Kotlin object — set the field on the singleton INSTANCE
+        Field sPrefsField = SecureCredentialStore.class.getDeclaredField("prefs");
         sPrefsField.setAccessible(true);
-        sPrefsField.set(LRRAuthManager.INSTANCE, prefs);
+        sPrefsField.set(SecureCredentialStore.INSTANCE, prefs);
     }
 
     @After
     public void tearDown() throws IOException {
         server.shutdown();
-        LRRAuthManager.clear();
+        SecureCredentialStore.clear();
     }
 
     @Test

@@ -11,6 +11,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.ui.scene.tankdetail.TankMembersViewModel.TankDetailUiEvent
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
@@ -124,8 +125,8 @@ class TankMembersViewModelTest {
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(2, TimeUnit.SECONDS)
             .build()
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("tank_detail_vm_test", Context.MODE_PRIVATE)
         )
         LRRAuthManager.setServerUrl(server.url("").toString().removeSuffix("/"))
@@ -140,7 +141,7 @@ class TankMembersViewModelTest {
     fun tearDown() {
         eventScope.cancel()
         Dispatchers.resetMain()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         server.shutdown()
     }
 

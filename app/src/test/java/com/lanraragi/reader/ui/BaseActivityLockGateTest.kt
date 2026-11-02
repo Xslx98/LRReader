@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.SecuritySettings
 import org.junit.After
@@ -43,14 +44,14 @@ class BaseActivityLockGateTest {
     fun setUp() {
         val ctx: Context = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("base_activity_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("base_activity_test", Context.MODE_PRIVATE))
         AppLockGate.resetForTesting()
         SecuritySettings.putEnabledSecurity(false)
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         AppLockGate.resetForTesting()
         SecuritySettings.putEnabledSecurity(false)
     }

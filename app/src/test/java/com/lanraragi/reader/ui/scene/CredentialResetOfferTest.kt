@@ -10,6 +10,7 @@ import androidx.core.content.edit
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -57,9 +58,9 @@ class CredentialResetOfferTest {
 
     @Before
     fun setUp() {
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.resetInitGateForTesting()
         // Production has no store until init opens one; earlier tests leave one behind.
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         controller = Robolectric.buildActivity(AppCompatActivity::class.java)
         activity = controller.get()
         activity.setTheme(R.style.AppTheme)
@@ -71,8 +72,8 @@ class CredentialResetOfferTest {
     @After
     fun tearDown() {
         scope.cancel()
-        LRRAuthManager.clear()
-        LRRAuthManager.resetInitGateForTesting()
+        SecureCredentialStore.clear()
+        SecureCredentialStore.resetInitGateForTesting()
         controller.close()
     }
 
@@ -102,8 +103,8 @@ class CredentialResetOfferTest {
     fun storeThatFailedToOpenOnce_offersNoReset() {
         failedLaunch()
 
-        assertFalse(LRRAuthManager.isSecureStorageAvailable())
-        assertEquals(1, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertFalse(SecureCredentialStore.isSecureStorageAvailable())
+        assertEquals(1, SecureCredentialStore.consecutiveStoreOpenFailures())
         assertFalse(LRRAuthManager.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
     }
@@ -112,7 +113,7 @@ class CredentialResetOfferTest {
     fun aLaunchThatOpensTheStore_restartsTheCount() {
         failedLaunch()
         openedLaunch()
-        assertEquals(0, LRRAuthManager.consecutiveStoreOpenFailures())
+        assertEquals(0, SecureCredentialStore.consecutiveStoreOpenFailures())
 
         failedLaunch()
         assertFalse("not two failures in a row", LRRAuthManager.canOfferCredentialReset())
@@ -122,8 +123,8 @@ class CredentialResetOfferTest {
 
     @Test(timeout = 10_000)
     fun storeStillStarting_offersNoReset() {
-        LRRAuthManager.scheduleInitialize(activity, scope) // never advanced: init still running
-        LRRAuthManager.mainThreadInitTimeoutMs = 100
+        SecureCredentialStore.scheduleInitialize(activity, scope) // never advanced: init still running
+        SecureCredentialStore.mainThreadInitTimeoutMs = 100
 
         assertFalse(LRRAuthManager.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
@@ -131,7 +132,7 @@ class CredentialResetOfferTest {
 
     @Test(timeout = 10_000)
     fun healthyStore_offersNoReset() {
-        LRRAuthManager.initializeForTesting(activity.getSharedPreferences("reset_offer_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initializeForTesting(activity.getSharedPreferences("reset_offer_test", Context.MODE_PRIVATE))
 
         assertFalse(LRRAuthManager.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
@@ -143,7 +144,7 @@ class CredentialResetOfferTest {
         failedLaunch()
         failedLaunch()
 
-        assertFalse(LRRAuthManager.isSecureStorageAvailable())
+        assertFalse(SecureCredentialStore.isSecureStorageAvailable())
         assertFalse(LRRAuthManager.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
     }
@@ -153,19 +154,19 @@ class CredentialResetOfferTest {
      * and that shows the error prompt: only such launches count (audit 06d SEC-01).
      */
     private fun failedLaunch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.scheduleInitialize(activity, scope)
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.scheduleInitialize(activity, scope)
         scheduler.advanceUntilIdle()
         showErrorDialog().dismiss()
     }
 
     /** One process start whose store opens. */
     private fun openedLaunch() {
-        LRRAuthManager.resetInitGateForTesting()
-        LRRAuthManager.secureStoreCipher = { cipher }
-        LRRAuthManager.scheduleInitialize(activity, scope)
+        SecureCredentialStore.resetInitGateForTesting()
+        SecureCredentialStore.secureStoreCipher = { cipher }
+        SecureCredentialStore.scheduleInitialize(activity, scope)
         scheduler.advanceUntilIdle()
-        assertTrue(LRRAuthManager.isSecureStorageAvailable())
+        assertTrue(SecureCredentialStore.isSecureStorageAvailable())
     }
 
     private fun plainPrefs() = activity.getSharedPreferences("lrr_auth_plain", Context.MODE_PRIVATE)

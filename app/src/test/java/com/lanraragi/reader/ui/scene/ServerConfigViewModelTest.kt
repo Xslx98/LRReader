@@ -18,6 +18,7 @@ import com.lanraragi.reader.module.INetworkModule
 import com.lanraragi.reader.module.NetworkMonitor
 import com.lanraragi.reader.module.AppProxySelector
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.LRRCleartextRefusedException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,8 +67,8 @@ class ServerConfigViewModelTest {
         context = ApplicationProvider.getApplicationContext()
         Settings.initialize(context)
 
-        LRRAuthManager.initialize(context)
-        val method = LRRAuthManager::class.java.declaredMethods.first {
+        SecureCredentialStore.initialize(context)
+        val method = SecureCredentialStore::class.java.declaredMethods.first {
             it.name.startsWith("initializeForTesting") &&
                 it.parameterTypes.size == 1 &&
                 it.parameterTypes[0] == android.content.SharedPreferences::class.java
@@ -127,7 +128,7 @@ class ServerConfigViewModelTest {
         Dispatchers.resetMain()
         server.shutdown()
         db.close()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     // isInsecureWanUrl coverage lives in LRRUrlHelperLanAddressTest — the

@@ -19,6 +19,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.ui.collectFlowWhileCreated
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.dao.ServerProfile
@@ -102,7 +103,7 @@ class ServerListScene : BaseScene() {
         // unless the startup prompt already explained the missing keys.
         if (LRRAuthManager.isNeedsReauthentication() && !mReauthDialogShown) {
             mReauthDialogShown = true
-            val storeAvailable = LRRAuthManager.isSecureStorageAvailable()
+            val storeAvailable = SecureCredentialStore.isSecureStorageAvailable()
             val prompted = arguments?.getBoolean(ReauthPrompt.ARG_KEYS_MISSING_PROMPTED, false) == true
             if (ReauthPrompt.serverListShouldPrompt(prompted, storeAvailable)) {
                 dialogHelper.showReauthDialog(ReauthPrompt.serverList(storeAvailable))

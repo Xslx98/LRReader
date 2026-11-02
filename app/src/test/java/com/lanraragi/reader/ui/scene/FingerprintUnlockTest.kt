@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.scene.SecurityViewModel.FingerprintStart
 import com.lanraragi.reader.ui.scene.SecurityViewModel.SecurityUiEvent
@@ -49,16 +50,16 @@ class FingerprintUnlockTest {
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("fingerprint_unlock_test", Context.MODE_PRIVATE))
-        originalLoader = LRRAuthManager.patternKeyLoader
-        LRRAuthManager.patternKeyLoader = { patternKey }
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("fingerprint_unlock_test", Context.MODE_PRIVATE))
+        originalLoader = SecureCredentialStore.patternKeyLoader
+        SecureCredentialStore.patternKeyLoader = { patternKey }
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.patternKeyLoader = originalLoader
+        SecureCredentialStore.patternKeyLoader = originalLoader
         SecuritySettings.putEnableFingerprint(false)
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     /** Sets pattern "0147" bound to [patternKey], fingerprint unlock on. */
@@ -110,7 +111,7 @@ class FingerprintUnlockTest {
     @Test
     fun invalidatedKeyTurnsFingerprintOffAndKeepsThePattern() = runTest(UnconfinedTestDispatcher()) {
         bindPattern()
-        LRRAuthManager.patternKeyLoader = { throw KeyPermanentlyInvalidatedException() }
+        SecureCredentialStore.patternKeyLoader = { throw KeyPermanentlyInvalidatedException() }
         val vm = SecurityViewModel()
         val received = events(vm)
 
@@ -140,7 +141,7 @@ class FingerprintUnlockTest {
     @Test
     fun missingKeyTurnsFingerprintOff() {
         bindPattern()
-        LRRAuthManager.patternKeyLoader = { null }
+        SecureCredentialStore.patternKeyLoader = { null }
 
         assertEquals(
             FingerprintStart.TurnedOff(R.string.security_fingerprint_not_bound),
@@ -152,7 +153,7 @@ class FingerprintUnlockTest {
     @Test
     fun transientKeystoreFailureKeepsTheSetting() {
         bindPattern()
-        LRRAuthManager.patternKeyLoader = { throw KeyStoreException("busy") }
+        SecureCredentialStore.patternKeyLoader = { throw KeyStoreException("busy") }
 
         assertEquals(FingerprintStart.Unavailable, SecurityViewModel().startFingerprintUnlock())
         assertTrue(SecuritySettings.getEnableFingerprint())

@@ -31,6 +31,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.util.concurrent.TimeUnit
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
  * NET-7: connectWithFallback must never touch the global active server URL —
@@ -52,8 +53,8 @@ class LRRUrlHelperConnectTest {
     @Before
     fun setUp() {
         val ctx = ApplicationProvider.getApplicationContext<Context>()
-        LRRAuthManager.initialize(ctx)
-        LRRAuthManager.initializeForTesting(
+        SecureCredentialStore.initialize(ctx)
+        SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("lrr_url_helper_test", Context.MODE_PRIVATE)
         )
         // Suite-order robustness: neutralize any offline NetworkMonitor left
@@ -69,7 +70,7 @@ class LRRUrlHelperConnectTest {
     @After
     fun tearDown() {
         server.shutdown()
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
     }
 
     private fun baseUrl() = server.url("").toString().removeSuffix("/")

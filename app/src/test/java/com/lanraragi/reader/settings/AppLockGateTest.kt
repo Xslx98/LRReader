@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -26,13 +27,13 @@ class AppLockGateTest {
     fun setUp() {
         val ctx: Context = ApplicationProvider.getApplicationContext()
         Settings.initialize(ctx)
-        LRRAuthManager.initializeForTesting(ctx.getSharedPreferences("gate_test", Context.MODE_PRIVATE))
+        SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("gate_test", Context.MODE_PRIVATE))
         AppLockGate.resetForTesting()
     }
 
     @After
     fun tearDown() {
-        LRRAuthManager.clear()
+        SecureCredentialStore.clear()
         AppLockGate.resetForTesting()
     }
 
@@ -64,7 +65,7 @@ class AppLockGateTest {
     @Test
     fun lockHoldsWhenTheSecureStoreIsUnavailable() {
         LRRAuthManager.setPattern("0123")
-        LRRAuthManager.simulateStorageUnavailableForTesting()
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         assertTrue(AppLockGate.isLocked())
     }
 }

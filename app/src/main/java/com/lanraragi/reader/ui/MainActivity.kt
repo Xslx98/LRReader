@@ -48,6 +48,7 @@ import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.dao.DatabaseResetNotice
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.CredentialResetDialog
 import com.lanraragi.reader.ui.scene.LegacyLockRemovedNotice
@@ -250,7 +251,7 @@ class MainActivity : StageActivity(), AppUnlockHost,
         // or it works but saved API keys are missing (after a credential reset
         // or a restore on a new device).
         if (LRRAuthManager.isNeedsReauthentication()) {
-            val storeAvailable = LRRAuthManager.isSecureStorageAvailable()
+            val storeAvailable = SecureCredentialStore.isSecureStorageAvailable()
             val prompt = ReauthPrompt.startup(storeAvailable)
             val openServerList: () -> Unit = {
                 val args = Bundle().apply { putBoolean(ReauthPrompt.ARG_KEYS_MISSING_PROMPTED, storeAvailable) }
