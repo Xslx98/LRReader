@@ -61,7 +61,7 @@ class LRRCategoriesScene : BaseScene() {
     ): View? {
         val view = inflater.inflate(R.layout.scene_lrr_categories, container, false)
 
-        viewModel = ViewModelProvider(requireActivity())[LRRCategoriesViewModel::class.java]
+        viewModel = ViewModelProvider(this)[LRRCategoriesViewModel::class.java]
 
         mToolbar = view.findViewById(R.id.toolbar)
         mProgress = view.findViewById(R.id.progress)
