@@ -1104,6 +1104,25 @@ class DownloadManagerTest {
         assertEquals(listOf("del_a" to "content://a", "del_b" to null), deleted.toList())
     }
 
+    @Test
+    fun moveDownloadOrder_rotatesTimesOfThePreMoveList() {
+        val rows = mutableListOf(finishedRow("mv_a", 300L), finishedRow("mv_b", 200L), finishedRow("mv_c", 100L))
+        manager.addDownload(rows.map { finishedRow(it.arcid, it.time) })
+        runBlocking { manager.repo.awaitDbWrites() }
+
+        manager.moveDownloadOrder(rows, 0, 2)
+        // The adapter reorders its own list right after the call.
+        rows.add(2, rows.removeAt(0))
+
+        val dbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        val expected = mapOf("mv_a" to 100L, "mv_b" to 300L, "mv_c" to 200L)
+        awaitUntil(message = "order never persisted") {
+            runBlocking { dbRepo.getAllDownloadInfo() }
+                .filter { it.arcid.startsWith("mv_") }
+                .associate { it.arcid to it.time } == expected
+        }
+    }
+
     private fun tankGroupFailures(): MutableList<com.lanraragi.reader.event.TankTagSyncFailedEvent> {
         val events = java.util.concurrent.CopyOnWriteArrayList<com.lanraragi.reader.event.TankTagSyncFailedEvent>()
         testScope.launch { com.lanraragi.reader.event.AppEventBus.tankTagSyncFailedEvent.collect { events += it } }

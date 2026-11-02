@@ -642,6 +642,26 @@ class DownloadManager(
     }
 
     /**
+     * Persists a drag reorder of the downloads list: [infos] is the list as
+     * shown before the move; the DOWNLOAD_TIME values between [fromPosition]
+     * and [toPosition] are rotated in one transaction on the manager's scope
+     * ([com.lanraragi.reader.dao.DownloadDbRepository.moveDownloadInfo]).
+     * The list is copied first, so the caller may reorder its own list right away.
+     */
+    fun moveDownloadOrder(infos: List<DownloadInfo>, fromPosition: Int, toPosition: Int) {
+        val snapshot = ArrayList(infos)
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.moveDownloadInfo(snapshot, fromPosition, toPosition)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist the download order", e)
+            }
+        }
+    }
+
+    /**
      * One-shot boot cleanup for rows created by the removed
      * import-local-archive feature (audit #69, removed 2026-08-05). Legacy
      * imported rows carry a content:// [DownloadInfo.archiveUri]; with the

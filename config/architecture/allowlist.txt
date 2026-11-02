@@ -53,7 +53,6 @@ D8c com/lanraragi/reader/ui/reader/ReaderSessionSetup.kt
 D8c com/lanraragi/reader/ui/reader/TankoubonProgressSync.kt
 D8c com/lanraragi/reader/ui/scene/ServerListViewModel.kt
 D8c com/lanraragi/reader/ui/scene/download/DownloadsViewModel.kt
-D8c com/lanraragi/reader/ui/scene/download/part/DownloadAdapter.kt
 D8c com/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailViewModel.kt
 D8c com/lanraragi/reader/ui/scene/gallery/detail/TankoubonDialogHelper.kt
 D8c com/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw.kt
