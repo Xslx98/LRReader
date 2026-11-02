@@ -25,7 +25,7 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.gallery.ReadingContext
 import com.lanraragi.reader.gallery.ReadingContextStore
-import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.client.api.isTankoubonId

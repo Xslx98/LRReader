@@ -12,8 +12,8 @@ import com.lanraragi.reader.dao.HistoryInfo
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.mapper.toArchive
-import com.lanraragi.reader.mapper.toArchiveJson
+import com.lanraragi.reader.dao.toArchive
+import com.lanraragi.reader.dao.toArchiveJson
 import com.lanraragi.reader.ui.ContinueReadingShortcut
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.runBlocking

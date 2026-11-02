@@ -29,7 +29,7 @@ import com.lanraragi.reader.event.TankTagSyncFailedEvent
 import com.lanraragi.reader.gallery.ArchiveProgressOutbox
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.LocalReadingProgress
-import com.lanraragi.reader.mapper.toDownloadInfoView
+import com.lanraragi.reader.dao.toDownloadInfoView
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException

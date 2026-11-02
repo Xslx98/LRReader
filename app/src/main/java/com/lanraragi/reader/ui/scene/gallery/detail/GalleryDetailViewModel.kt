@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.mapper.toDegradedArchiveDetail
+import com.lanraragi.reader.dao.toDegradedArchiveDetail
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRHttpException

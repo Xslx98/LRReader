@@ -1,13 +1,7 @@
-package com.lanraragi.reader.mapper
+package com.lanraragi.reader.dao
 
 import android.util.Log
 import com.lanraragi.reader.BuildConfig
-import com.lanraragi.reader.dao.ArchiveLocalState
-import com.lanraragi.reader.dao.ArchiveLocalStateJson
-import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.dao.DownloadObservedRow
-import com.lanraragi.reader.dao.HistoryInfo
-import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup

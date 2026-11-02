@@ -5,7 +5,6 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.mapper.toArchiveJson
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals

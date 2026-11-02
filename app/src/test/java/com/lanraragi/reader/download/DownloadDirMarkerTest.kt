@@ -8,7 +8,7 @@ import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.mapper.toArchiveJson
+import com.lanraragi.reader.dao.toArchiveJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.After

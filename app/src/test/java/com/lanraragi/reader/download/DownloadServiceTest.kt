@@ -12,7 +12,7 @@ import com.lanraragi.reader.containedTestScope
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.HistoryRepository
-import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
 import kotlinx.coroutines.CoroutineScope

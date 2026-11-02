@@ -23,7 +23,7 @@ import androidx.annotation.VisibleForTesting
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel
-import com.lanraragi.reader.mapper.toDownloadInfoView
+import com.lanraragi.reader.dao.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher

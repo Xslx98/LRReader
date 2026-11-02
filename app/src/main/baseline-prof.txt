@@ -9749,7 +9749,7 @@ PLcom/lanraragi/reader/gallery/TankSessionRouter;-><clinit>()V
 PLcom/lanraragi/reader/gallery/TankSessionRouter;-><init>()V
 PLcom/lanraragi/reader/gallery/TankSessionRouter;->tankIntentFor$default(Lcom/lanraragi/reader/gallery/TankSessionRouter;Landroid/content/Context;Ljava/lang/String;IILjava/lang/Object;)Landroid/content/Intent;
 PLcom/lanraragi/reader/gallery/TankSessionRouter;->tankIntentFor(Landroid/content/Context;Ljava/lang/String;I)Landroid/content/Intent;
-PLcom/lanraragi/reader/mapper/EntityMapperKt;->toArchiveJson(Lcom/lanraragi/reader/domain/Archive;)Ljava/lang/String;
+PLcom/lanraragi/reader/dao/EntityMapperKt;->toArchiveJson(Lcom/lanraragi/reader/domain/Archive;)Ljava/lang/String;
 Lcom/lanraragi/reader/module/AppModule;
 HSPLcom/lanraragi/reader/module/AppModule;-><clinit>()V
 HSPLcom/lanraragi/reader/module/AppModule;-><init>(Landroid/content/Context;)V

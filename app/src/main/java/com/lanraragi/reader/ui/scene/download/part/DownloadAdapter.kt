@@ -42,7 +42,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.settings.DownloadSettings

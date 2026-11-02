@@ -1,10 +1,6 @@
-package com.lanraragi.reader.mapper
+package com.lanraragi.reader.dao
 
-import com.lanraragi.reader.dao.ArchiveLocalState
-import com.lanraragi.reader.dao.DownloadObservedRow
-import com.lanraragi.reader.dao.HistoryInfo
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.dao.DownloadState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -1,7 +1,7 @@
 package com.lanraragi.reader.download.search
 
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.mapper.toDownloadInfoView
+import com.lanraragi.reader.dao.toDownloadInfoView
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
