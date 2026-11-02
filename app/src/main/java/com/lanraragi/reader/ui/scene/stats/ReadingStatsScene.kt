@@ -51,7 +51,7 @@ class ReadingStatsScene : BaseScene() {
     ): View? {
         val view = inflater.inflate(R.layout.scene_reading_stats, container, false)
 
-        viewModel = ViewModelProvider(requireActivity())[ReadingStatsViewModel::class.java]
+        viewModel = ViewModelProvider(this)[ReadingStatsViewModel::class.java]
 
         mToolbar = view.findViewById(R.id.toolbar)
         mProgress = view.findViewById(R.id.progress)
