@@ -27,11 +27,9 @@ import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import com.lanraragi.reader.util.isLightTheme
-import com.lanraragi.reader.Analytics
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.settings.AppearanceSettings
 import androidx.lifecycle.ViewModelProvider
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.MainActivity
@@ -43,7 +41,6 @@ import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.ui.widget.Ripples
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.util.ExceptionUtils
-import kotlinx.coroutines.launch
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
 import java.text.SimpleDateFormat

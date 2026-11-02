@@ -39,7 +39,6 @@ import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.settings.NetworkSettings

@@ -19,7 +19,6 @@ package com.lanraragi.reader.spider
 import androidx.core.net.toUri
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.Settings
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.download.DownloadDirAllocator
 import com.lanraragi.reader.download.DownloadDirNaming

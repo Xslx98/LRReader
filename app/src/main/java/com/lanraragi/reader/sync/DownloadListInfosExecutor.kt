@@ -7,7 +7,6 @@ import com.lanraragi.reader.callBack.DownloadSearchCallback
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

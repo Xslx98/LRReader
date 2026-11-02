@@ -8,7 +8,6 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.gallery.DownloadDirResolver
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.gallery.ReadingProgressReconciler
-import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive

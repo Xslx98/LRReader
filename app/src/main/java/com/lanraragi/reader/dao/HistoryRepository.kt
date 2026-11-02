@@ -1,6 +1,5 @@
 package com.lanraragi.reader.dao
 
-import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.mapper.toArchiveJson
 import com.lanraragi.reader.mapper.toHistoryInfoView
 import com.lanraragi.reader.settings.AppearanceSettings

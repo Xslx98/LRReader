@@ -32,15 +32,12 @@ import com.lanraragi.reader.gallery.LocalReadingProgress
 import com.lanraragi.reader.mapper.toDownloadInfoView
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.lanraragi.reader.domain.parseRatingFromTags
 import kotlinx.coroutines.CancellationException
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.domain.Archive
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.io.IOException
 import java.lang.ref.WeakReference
 import java.util.Collections
 

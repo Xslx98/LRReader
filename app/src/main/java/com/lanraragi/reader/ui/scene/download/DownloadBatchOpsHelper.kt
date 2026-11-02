@@ -34,7 +34,6 @@ import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

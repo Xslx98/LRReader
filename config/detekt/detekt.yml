@@ -17,6 +17,8 @@ complexity:
     active: false  # Many legacy files have many functions
 
 style:
+  UnusedImports:
+    active: true
   MagicNumber:
     active: false  # Too noisy for legacy code
   WildcardImport:

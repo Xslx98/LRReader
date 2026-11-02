@@ -4,7 +4,6 @@ import com.lanraragi.reader.domain.splitNamespace
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View

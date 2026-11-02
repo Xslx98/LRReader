@@ -15,9 +15,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.gallery.TankSessionRouter
-import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.MainActivity

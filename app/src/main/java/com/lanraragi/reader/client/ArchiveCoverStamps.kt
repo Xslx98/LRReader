@@ -2,7 +2,6 @@ package com.lanraragi.reader.client
 
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.isTankoubonId
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**

@@ -6,7 +6,6 @@ import com.lanraragi.reader.event.ArchiveRatingChangedEvent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.BuildConfig
-import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.mapper.toDegradedArchiveDetail
 import com.lanraragi.reader.client.api.LRRArchiveApi

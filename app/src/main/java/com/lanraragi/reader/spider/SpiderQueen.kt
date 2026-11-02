@@ -8,7 +8,6 @@ package com.lanraragi.reader.spider
 import androidx.annotation.IntDef
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.reader.storage.StorageFile
 
 /**
  * SpiderQueen -- STUB.

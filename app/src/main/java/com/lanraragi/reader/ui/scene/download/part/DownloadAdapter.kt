@@ -17,9 +17,7 @@ package com.lanraragi.reader.ui.scene.download.part
 
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.IntProperty
 import android.util.Log
@@ -30,7 +28,6 @@ import android.view.animation.LinearInterpolator
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.RelativeLayout
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -48,7 +45,6 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.DownloadService
-import com.lanraragi.reader.gallery.Pipe
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
@@ -59,7 +55,6 @@ import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.ui.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.storage.StorageFile
-import com.lanraragi.reader.util.NaturalComparator
 import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
 import com.lanraragi.reader.download.DownloadState

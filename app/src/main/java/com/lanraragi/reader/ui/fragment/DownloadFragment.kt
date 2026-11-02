@@ -34,9 +34,7 @@ import androidx.preference.PreferenceFragmentCompat
 
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.reader.util.readDownloadCsv
@@ -53,7 +51,6 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.lanraragi.reader.download.DownloadState
 
 class DownloadFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener,

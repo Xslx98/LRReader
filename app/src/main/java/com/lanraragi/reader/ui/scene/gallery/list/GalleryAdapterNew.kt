@@ -18,7 +18,6 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
-import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -33,7 +32,6 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.ArchiveCoverStamps
 import com.lanraragi.reader.client.LRRCacheKeyFactory
-import com.lanraragi.reader.client.LRRUtils
 import com.lanraragi.reader.download.DownloadManager
 
 import com.lanraragi.reader.domain.Archive

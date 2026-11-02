@@ -1,13 +1,10 @@
 package com.lanraragi.reader.ui.scene.download
 
-import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.client.api.toHexLower
 import com.lanraragi.reader.callBack.DownloadSearchCallback
 import com.lanraragi.reader.dao.DownloadInfo
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,7 +32,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
-import com.lanraragi.reader.download.DownloadState
 import java.util.concurrent.CompletableFuture
 
 /**

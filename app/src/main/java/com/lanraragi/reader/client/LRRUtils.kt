@@ -16,7 +16,6 @@
 package com.lanraragi.reader.client
 
 import android.graphics.Color
-import com.lanraragi.reader.Settings
 import java.util.regex.Pattern
 
 object LRRUtils {

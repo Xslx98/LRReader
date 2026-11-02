@@ -18,7 +18,6 @@ package com.lanraragi.reader.gallery
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.core.content.edit
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.reader.diagnostics.DiagLog
