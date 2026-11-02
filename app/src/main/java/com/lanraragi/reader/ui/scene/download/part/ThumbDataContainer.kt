@@ -34,7 +34,7 @@ import java.util.concurrent.TimeoutException
  * suspend call to
  * [com.lanraragi.reader.download.DownloadDirs.findGalleryDownloadDir]) is shared
  * per archive through
- * [com.lanraragi.reader.ui.scene.download.DownloadDirCache], so rebinding
+ * [com.lanraragi.reader.download.DownloadDirCache], so rebinding
  * the same row never restarts it; the result is delivered via
  * [downloadDirFuture].
  *

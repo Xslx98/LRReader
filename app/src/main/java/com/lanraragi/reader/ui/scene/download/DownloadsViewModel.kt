@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import java.util.concurrent.CompletableFuture
+import com.lanraragi.reader.download.DownloadDirCache
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -262,12 +263,12 @@ class DownloadsViewModel(
 
     /**
      * Per-arcid download-dir resolutions shared by every thumbnail bind.
-     * Lives on the application ioScope (not viewModelScope) because
+     * Resolves on the application scope (not viewModelScope) because
      * ThumbDataContainer blocks on the future from cover-loader I/O threads —
      * see [DownloadDirCache]. Invalidated from the [DownloadInfoListener]
      * callbacks below so a deleted-then-re-added archive re-resolves.
      */
-    private val downloadDirCache = DownloadDirCache(ServiceRegistry.coroutineModule.ioScope)
+    private val downloadDirCache = DownloadDirCache()
 
     /** The shared (possibly in-flight) download-dir resolution for [info]. */
     fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<StorageFile?> =
