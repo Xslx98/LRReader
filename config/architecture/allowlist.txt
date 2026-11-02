@@ -13,7 +13,6 @@ D10b com/lanraragi/reader/ui/scene/gallery/list/GalleryListScene.kt
 D10b com/lanraragi/reader/ui/scene/gallery/list/QuickSearchScene.kt
 D10b com/lanraragi/reader/ui/scene/history/HistoryScene.kt
 D10b com/lanraragi/reader/ui/scene/stats/ReadingStatsScene.kt
-D2 com/lanraragi/reader/util/ExceptionUtils.kt
 D2 com/lanraragi/reader/util/FlowBridge.kt
 D3 com/lanraragi/reader/client/api/LRRApiUtils.kt
 D3 com/lanraragi/reader/client/api/LRRArchiveApi.kt

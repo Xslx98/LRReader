@@ -40,12 +40,12 @@ import com.lanraragi.reader.util.IntIdGenerator
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.widget.Ripples
 import androidx.core.content.ContextCompat
-import com.lanraragi.reader.util.ExceptionUtils
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.LoadImageView
 import java.text.SimpleDateFormat
 import java.util.Date
 import com.lanraragi.reader.dao.DownloadState
+import com.lanraragi.reader.ui.readableErrorText
 
 class GalleryDetailScene : BaseScene(), View.OnClickListener,
     View.OnLongClickListener {
@@ -607,7 +607,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val context = getEHContext()
         val tip = mTip
         if (context != null && tip != null) {
-            val error = ExceptionUtils.getReadableString(e)
+            val error = readableErrorText(e)
             tip.text = error
             adjustViewVisibility(STATE_FAILED, true)
         }
