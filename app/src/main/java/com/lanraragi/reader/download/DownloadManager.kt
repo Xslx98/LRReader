@@ -585,6 +585,83 @@ class DownloadManager(
     }
 
     /**
+     * The delete dialog's delete: removes [arcid]'s row like [deleteDownload]
+     * and, when [deleteFiles] is set, its on-disk directory too.
+     * [deleteFiles] is remembered as the next delete dialog's default.
+     *
+     * The row's download root is captured BEFORE the row goes: afterwards
+     * resolution falls back to the current download location, which may
+     * hold a different archive under the same name. The files are removed
+     * on the manager's process scope, so the delete finishes even if the
+     * screen that asked for it closes.
+     */
+    fun deleteDownloadAndFiles(arcid: String, deleteFiles: Boolean) {
+        repo.assertMainThread()
+        val rootUri = getDownloadInfo(arcid)?.downloadRootUri
+        deleteDownload(arcid)
+        rememberAndDeleteDirs(deleteFiles, listOf(arcid to rootUri))
+    }
+
+    /**
+     * Range form of [deleteDownloadAndFiles] for a multi-selection:
+     * [arcidList] rows go as in [deleteRangeDownload] (with the
+     * [dissolveTankIds] groups); the directories of [infos] go when
+     * [deleteFiles] is set. Each info carries the root it was stored under.
+     */
+    fun deleteRangeDownloadAndFiles(
+        infos: List<DownloadInfo>,
+        arcidList: List<String>,
+        deleteFiles: Boolean,
+        dissolveTankIds: Collection<String> = emptyList(),
+    ) {
+        repo.assertMainThread()
+        val targets = infos.map { it.arcid to it.downloadRootUri }
+        deleteRangeDownload(arcidList, dissolveTankIds)
+        rememberAndDeleteDirs(deleteFiles, targets)
+    }
+
+    /** Seam for tests: removes one archive's download directory. */
+    internal var dirDeleter: suspend (arcid: String, rootUri: String?) -> Unit = { arcid, rootUri ->
+        DownloadDirs.deleteGalleryDownloadDir(arcid, rootUri)
+    }
+
+    private fun rememberAndDeleteDirs(deleteFiles: Boolean, targets: List<Pair<String, String?>>) {
+        DownloadSettings.putRemoveImageFiles(deleteFiles)
+        if (!deleteFiles) return
+        scope.launch {
+            for ((arcid, rootUri) in targets) {
+                try {
+                    dirDeleter(arcid, rootUri)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to delete download files for $arcid", e)
+                }
+            }
+        }
+    }
+
+    /**
+     * Persists a drag reorder of the downloads list: [infos] is the list as
+     * shown before the move; the DOWNLOAD_TIME values between [fromPosition]
+     * and [toPosition] are rotated in one transaction on the manager's scope
+     * ([com.lanraragi.reader.dao.DownloadDbRepository.moveDownloadInfo]).
+     * The list is copied first, so the caller may reorder its own list right away.
+     */
+    fun moveDownloadOrder(infos: List<DownloadInfo>, fromPosition: Int, toPosition: Int) {
+        val snapshot = ArrayList(infos)
+        scope.launch {
+            try {
+                ServiceRegistry.dataModule.downloadDbRepository.moveDownloadInfo(snapshot, fromPosition, toPosition)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to persist the download order", e)
+            }
+        }
+    }
+
+    /**
      * One-shot boot cleanup for rows created by the removed
      * import-local-archive feature (audit #69, removed 2026-08-05). Legacy
      * imported rows carry a content:// [DownloadInfo.archiveUri]; with the

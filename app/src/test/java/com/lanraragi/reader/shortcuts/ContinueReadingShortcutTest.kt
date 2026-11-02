@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui
+package com.lanraragi.reader.shortcuts
 
 import android.content.Context
 import androidx.core.content.pm.ShortcutManagerCompat

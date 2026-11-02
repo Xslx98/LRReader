@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.scene.download
+package com.lanraragi.reader.download
 
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.storage.StorageFile

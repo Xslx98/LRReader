@@ -106,9 +106,13 @@ internal object GalleryListHelperFactory {
 
         val dataHelper = GalleryListDataHelper(object : GalleryListDataHelper.Callback {
             override fun getHostContext(): Context? = scene.ehContext
-            override fun getUrlBuilder(): ListUrlBuilder? = scene.mUrlBuilder
-            override fun getSortBy(): String = scene.searchLayout.sortBy
-            override fun getSortOrder(): String = scene.searchLayout.sortOrder
+            override fun currentQuery() = GalleryListQuery.of(
+                scene.mUrlBuilder,
+                scene.searchLayout.sortBy,
+                scene.searchLayout.sortOrder,
+                scene.isTankMode,
+                if (scene.isTankMode) TankBrowse.Sort.saved() else TankBrowse.Sort.NAME,
+            )
             override fun notifyAdapterDataSetChanged() {
                 scene.adapter?.notifyItemRangeChanged(0, scene.adapter?.itemCount ?: 0)
             }
@@ -136,9 +140,7 @@ internal object GalleryListHelperFactory {
                 // swallows the pre-API-29 permission quirk).
                 scene.activity?.reportFullyDrawn()
             }
-            override fun isTankMode(): Boolean = scene.isTankMode
-            override fun getTankSort(): TankBrowse.Sort = TankBrowse.Sort.saved()
-        })
+        }, scene.viewModel)
 
         val listSearchHelper = GalleryListSearchHelper(object : GalleryListSearchHelper.Callback {
             override fun getSearchBar(): SearchBar? = scene.searchBar

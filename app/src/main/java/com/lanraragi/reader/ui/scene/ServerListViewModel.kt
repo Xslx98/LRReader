@@ -3,24 +3,12 @@ package com.lanraragi.reader.ui.scene
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.appwidget.ContinueReadingWidget
-import com.lanraragi.reader.ui.ContinueReadingShortcut
-import com.lanraragi.reader.reading.ArchiveProgressOutbox
-import com.lanraragi.reader.reading.LocalReadingProgress
-import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
-import com.lanraragi.reader.tankoubon.TankRecentStore
-import com.lanraragi.reader.tankoubon.TankTagOutbox
-import com.lanraragi.reader.server.LRRAuthManager
-import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
-import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.server.ServerCertificate
-import com.lanraragi.reader.server.ServerTrust
-import com.lanraragi.reader.server.ServerCapabilityCache
+import com.lanraragi.reader.server.ServerProfileService
 import com.lanraragi.reader.client.api.data.LRRServerInfo
-import kotlinx.coroutines.CancellationException
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -32,15 +20,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * ViewModel for [ServerListScene]. Manages server profile CRUD,
- * connection verification, and profile activation (cache clearing +
- * DownloadManager reload).
+ * ViewModel for [ServerListScene]. Lists the server profiles and reports
+ * the outcome of the profile changes [ServerProfileService] runs (add,
+ * edit, switch, delete).
  *
  * The Scene observes [profiles] and [uiEvent] to update the UI.
  * View references, dialogs, navigation, and adapter setup remain
  * in the Scene.
  */
-class ServerListViewModel : ViewModel() {
+class ServerListViewModel(
+    private val profileService: ServerProfileService = ServerProfileService.default,
+) : ViewModel() {
 
     private val profileRepository = ServiceRegistry.dataModule.profileRepository
 
@@ -57,11 +47,10 @@ class ServerListViewModel : ViewModel() {
     // One-shot events
     // -------------------------------------------------------------------------
 
-    // A buffered channel, not a replay=0 SharedFlow: the work behind these
-    // events runs in viewModelScope (activity-scoped) and outlives the scene's
-    // view, so an event that fires while the view is destroyed (Back, rotation,
-    // a covering scene) waits here for the next collector instead of being
-    // dropped.
+    // A buffered channel, not a replay=0 SharedFlow: the ViewModel outlives
+    // the scene's view, so an event that fires while the view is destroyed
+    // (rotation, a covering scene) waits here for the next collector instead
+    // of being dropped.
     private val _uiEvent = Channel<ServerListUiEvent>(Channel.BUFFERED)
 
     /** One-shot UI events (toasts, navigation, errors), each delivered once. */
@@ -126,56 +115,15 @@ class ServerListViewModel : ViewModel() {
 
     fun activateProfile(profile: ServerProfile) {
         viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    // Single atomic statement: flips IS_ACTIVE for the chosen profile and
-                    // clears it for all others without a window where none is active. Other
-                    // columns (name/url/allowCleartext) are untouched and thus preserved.
-                    profileRepository.activateExclusive(profile.id)
-                    // Every secure-store access is an AndroidKeyStore AES-GCM call (a
-                    // binder round trip into keystore2), so the session switch runs
-                    // here rather than in the Scene on main (audit 2026-10-13 STAB-10).
-                    applySessionFor(profile)
-                }
-                clearCachesAfterSwitch()
+            when (profileService.activate(profile)) {
                 // Scene handles toasts and navigation
-                _uiEvent.send(ServerListUiEvent.ProfileActivated(profile))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: LRRSecureStorageUnavailableException) {
-                Log.e(TAG, "Secure storage unavailable while switching profile", e)
-                _uiEvent.send(ServerListUiEvent.SecureStorageError)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to activate profile", e)
+                ServerProfileService.SwitchResult.SWITCHED ->
+                    _uiEvent.send(ServerListUiEvent.ProfileActivated(profile))
+                ServerProfileService.SwitchResult.SECURE_STORAGE_UNAVAILABLE ->
+                    _uiEvent.send(ServerListUiEvent.SecureStorageError)
+                ServerProfileService.SwitchResult.FAILED -> Unit
             }
         }
-    }
-
-    /**
-     * Drops the previous server's caches so its content cannot show up under
-     * the new one. Runs here rather than in the scene so it happens even when
-     * the scene's view is gone by the time the switch commits; off main on the
-     * application IO scope, since the disk caches delete their files and may
-     * wait for in-flight readers.
-     */
-    private fun clearCachesAfterSwitch() {
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                ServiceRegistry.clearAllCaches()
-            } catch (e: Exception) {
-                Log.e(TAG, "Cache clear after profile switch failed", e)
-            }
-        }
-    }
-
-    /** Points the auth session at [profile]. Blocking keystore work: call off main. */
-    private fun applySessionFor(profile: ServerProfile) {
-        LRRAuthManager.setServerUrl(profile.url)
-        LRRAuthManager.setApiKey(LRRAuthManager.getApiKeyForProfile(profile.id))
-        LRRAuthManager.setServerName(profile.name)
-        LRRAuthManager.setActiveProfileId(profile.id)
-        LRRAuthManager.setAllowCleartext(profile.allowCleartext)
-        LRRAuthManager.bumpServerConfigVersion()
     }
 
     // -------------------------------------------------------------------------
@@ -183,47 +131,13 @@ class ServerListViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     fun deleteProfile(profile: ServerProfile) {
-        val wasActive = profile.isActive || LRRAuthManager.getActiveProfileId() == profile.id
-        try {
-            LRRAuthManager.clearApiKeyForProfile(profile.id)
-            // The active profile's URL and key are also mirrored into the global
-            // session that the auth interceptor falls back to. Clear it before
-            // the row goes, or the deleted server keeps receiving the key.
-            if (wasActive) LRRAuthManager.clearActiveSession()
-        } catch (e: LRRSecureStorageUnavailableException) {
+        val purge = profileService.delete(profile)
+        if (purge == null) {
             _uiEvent.trySend(ServerListUiEvent.SecureStorageError)
             return
         }
         viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    profileRepository.delete(profile)
-                    // Cascade (triage decision, issue #12): a deleted profile's
-                    // search history must not linger.
-                    ServiceRegistry.dataModule.searchHistoryRepository
-                        .deleteAllForProfile(profile.id)
-                    // Likewise its reading history, local favourites and stats
-                    // aggregates (audit 2026-10-04 C22). Downloads stay listed.
-                    ServiceRegistry.dataModule.historyRepository
-                        .purgeDeletedProfile(profile.id)
-                    purgeServerState(profile)
-                    forgetPinIfUnused(profile)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete profile", e)
-            }
-            // The deleted server's thumbnails and details must not linger on
-            // disk or show up under whatever is picked next (audit SEC-16).
-            try {
-                withContext(Dispatchers.IO) { ServiceRegistry.clearAllCaches() }
-            } catch (e: Exception) {
-                Log.e(TAG, "Cache clear after deleting a profile failed", e)
-            }
-            // A continue-reading shortcut pointing at the deleted profile is
-            // now a dead end — drop it (issue #16). The widget re-renders from
-            // the most recent surviving profile's history instead (issue #9).
-            ContinueReadingShortcut.removeIfProfileSafely(profile.id)
-            ContinueReadingWidget.refreshSafely()
+            purge.await()
             // Reload to reflect deletion
             loadProfiles()
         }
@@ -251,105 +165,22 @@ class ServerListViewModel : ViewModel() {
         newKey: String,
         allowCleartext: Boolean
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val testClient = LRRUrlHelper.buildTestClient(
-                ServiceRegistry.networkModule.okHttpClient
-            )
-            // NET-7: the probe is self-contained (explicit Bearer header on a
-            // stripped test client) — no global auth state is touched, so
-            // there is nothing to snapshot, restore, or guard against cancel.
-            // Gate on the edit dialog's current consent, not the stale stored
-            // flag, so a just-granted plain-HTTP opt-in is honoured and a
-            // revoked one is enforced.
-            when (
-                val r = LRRUrlHelper.connectWithFallback(
-                    testClient, newUrl, newKey.ifEmpty { null }, allowCleartext
-                )
-            ) {
-                is LRRUrlHelper.ConnectResult.Success ->
-                    saveEditedProfile(
-                        profile, position, newName, r.resolvedUrl, newKey, r.usedHttpFallback, allowCleartext
-                    )
-                is LRRUrlHelper.ConnectResult.Failure ->
-                    _uiEvent.trySend(ServerListUiEvent.EditConnectionFailed(r.error))
-                is LRRUrlHelper.ConnectResult.UntrustedCertificate ->
-                    _uiEvent.trySend(ServerListUiEvent.UntrustedCertificate(r.certificate, forEdit = true))
-            }
-        }
-    }
-
-    private fun saveEditedProfile(
-        profile: ServerProfile,
-        position: Int,
-        newName: String,
-        resolvedUrl: String,
-        newKey: String,
-        usedHttpFallback: Boolean,
-        allowCleartext: Boolean
-    ) {
-        // The persisted cleartext flag is the user's consent from the dialog
-        // (audit C27, ruling R11); LAN hosts need none — the interceptor
-        // admits them like the connect gate does.
-        val updated = ServerProfile(
-            id = profile.id,
-            name = newName,
-            url = resolvedUrl,
-            isActive = profile.isActive,
-            allowCleartext = allowCleartext
-        )
-        val isActive = profile.isActive
         viewModelScope.launch {
-            try {
-                val committed = withContext(Dispatchers.IO) {
-                    try {
-                        // Fragile keystore per-profile key first: if the keystore
-                        // is unavailable this throws before any durable write, so
-                        // the edit aborts with Room and live auth untouched.
-                        LRRAuthManager.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
-                    } catch (e: LRRSecureStorageUnavailableException) {
-                        _uiEvent.send(ServerListUiEvent.SecureStorageError)
-                        return@withContext false
+            when (val r = profileService.connectAndSaveEdit(profile, newName, newUrl, newKey, allowCleartext)) {
+                is ServerProfileService.Outcome.Done -> {
+                    _uiEvent.send(ServerListUiEvent.EditSaved(position, r.value.updated))
+                    if (r.value.usedHttpFallback) {
+                        _uiEvent.send(ServerListUiEvent.ShowToastRes(R.string.lrr_https_fallback_warning))
                     }
-                    // Durable Room write next. A failure propagates to the outer
-                    // catch (EditConnectionFailed) with the live global auth still
-                    // pointing at the old server — no silent switch.
-                    profileRepository.update(updated)
-                    // Live global-auth switch LAST, only once Room has committed.
-                    try {
-                        if (isActive) {
-                            LRRAuthManager.setServerUrl(updated.url)
-                            LRRAuthManager.setApiKey(newKey.ifEmpty { null })
-                            LRRAuthManager.setServerName(newName)
-                            LRRAuthManager.setAllowCleartext(updated.allowCleartext)
-                            LRRAuthManager.bumpServerConfigVersion()
-                        }
-                        LRRAuthManager.markReauthIfProfilesUnprotected(
-                            profileRepository.getAllProfiles().map { it.id }
-                        )
-                    } catch (e: LRRSecureStorageUnavailableException) {
-                        _uiEvent.send(ServerListUiEvent.SecureStorageError)
-                        return@withContext false
-                    }
-                    true
+                    // Reload profiles to reflect the change
+                    loadProfiles()
                 }
-                if (!committed) return@launch
-                _uiEvent.send(ServerListUiEvent.EditSaved(position, updated))
-                if (usedHttpFallback) {
-                    _uiEvent.send(ServerListUiEvent.ShowToastRes(
-                        com.lanraragi.reader.R.string.lrr_https_fallback_warning
-                    ))
-                }
-                // Reload profiles to reflect the change
-                loadProfiles()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // The keystore writes already committed but persistence failed
-                // (e.g. a Room write error). Surface it so the edit dialog
-                // re-enables instead of soft-locking with the Save button stuck
-                // disabled and no feedback.
-                Log.e(TAG, "Failed to save edited profile", e)
-                _uiEvent.send(ServerListUiEvent.EditConnectionFailed(e))
+                is ServerProfileService.Outcome.Failed ->
+                    _uiEvent.send(ServerListUiEvent.EditConnectionFailed(r.error))
+                is ServerProfileService.Outcome.Untrusted ->
+                    _uiEvent.send(ServerListUiEvent.UntrustedCertificate(r.certificate, forEdit = true))
+                ServerProfileService.Outcome.SecureStorageUnavailable ->
+                    _uiEvent.send(ServerListUiEvent.SecureStorageError)
             }
         }
     }
@@ -372,140 +203,29 @@ class ServerListViewModel : ViewModel() {
         apiKey: String?,
         allowCleartext: Boolean
     ) {
-        val finalKey: String? = apiKey?.ifEmpty { null }
-
-        val baseClient = ServiceRegistry.networkModule.okHttpClient
-        val testClient = LRRUrlHelper.buildTestClient(baseClient)
-
-        viewModelScope.launch(Dispatchers.IO) {
-            // NET-7: the probe is self-contained (explicit Bearer header on a
-            // stripped test client) — no global auth state is touched, so
-            // there is nothing to snapshot, restore, or guard against cancel.
-            when (
-                val r = LRRUrlHelper.connectWithFallback(
-                    testClient, normalizedUrl, finalKey, allowCleartext
-                )
-            ) {
-                is LRRUrlHelper.ConnectResult.Success ->
-                    performAddProfile(name, r.resolvedUrl, finalKey, r.info, r.usedHttpFallback, allowCleartext)
-                is LRRUrlHelper.ConnectResult.Failure ->
-                    _uiEvent.trySend(ServerListUiEvent.AddConnectionFailed(r.error))
-                is LRRUrlHelper.ConnectResult.UntrustedCertificate ->
-                    _uiEvent.trySend(ServerListUiEvent.UntrustedCertificate(r.certificate, forEdit = false))
-            }
-        }
-    }
-
-    private fun performAddProfile(
-        name: String,
-        resolvedUrl: String,
-        finalKey: String?,
-        info: LRRServerInfo,
-        usedHttpFallback: Boolean,
-        allowCleartext: Boolean
-    ) {
-        // The persisted cleartext flag is the user's consent (audit C27,
-        // ruling R11), not the resolved scheme; LAN hosts need none.
-        val savedAllowCleartext = allowCleartext
-
         viewModelScope.launch {
-            try {
-                val newId = withContext(Dispatchers.IO) {
-                    // Row first, INACTIVE: a failure falls to the outer catch
-                    // (AddConnectionFailed) with the old active profile and the
-                    // live global auth untouched.
-                    val newProfile = ServerProfile(
-                        id = 0,
-                        name = name,
-                        url = resolvedUrl,
-                        isActive = false,
-                        allowCleartext = savedAllowCleartext
+            when (val r = profileService.connectAndAdd(name, normalizedUrl, apiKey, allowCleartext)) {
+                is ServerProfileService.Outcome.Done -> {
+                    val added = r.value
+                    _uiEvent.send(
+                        ServerListUiEvent.ProfileAdded(
+                            profile = added.profile,
+                            newId = added.profile.id,
+                            info = added.info,
+                            resolvedUrl = added.resolvedUrl,
+                            usedHttpFallback = added.usedHttpFallback
+                        )
                     )
-                    val id = profileRepository.insert(newProfile)
-                    // Then its key; only a profile whose key is stored becomes
-                    // active (one atomic UPDATE), else the row is rolled back —
-                    // never an active profile without its key.
-                    try {
-                        LRRAuthManager.setApiKeyForProfile(id, finalKey)
-                    } catch (e: LRRSecureStorageUnavailableException) {
-                        profileRepository.delete(newProfile.copy(id = id))
-                        _uiEvent.send(ServerListUiEvent.SecureStorageError)
-                        return@withContext -1L
-                    }
-                    profileRepository.activateExclusive(id)
-                    // Live global auth LAST.
-                    try {
-                        LRRAuthManager.setActiveProfileId(id)
-                        LRRAuthManager.setServerUrl(resolvedUrl)
-                        LRRAuthManager.setApiKey(finalKey)
-                        LRRAuthManager.setServerName(name)
-                        LRRAuthManager.setAllowCleartext(savedAllowCleartext)
-                        LRRAuthManager.bumpServerConfigVersion()
-                    } catch (e: LRRSecureStorageUnavailableException) {
-                        _uiEvent.send(ServerListUiEvent.SecureStorageError)
-                        return@withContext -1L
-                    }
-                    id
+                    loadProfiles()
                 }
-                if (newId < 0) return@launch
-
-                val profile = ServerProfile(
-                    id = newId,
-                    name = name,
-                    url = resolvedUrl,
-                    isActive = true,
-                    allowCleartext = savedAllowCleartext
-                )
-                _uiEvent.send(
-                    ServerListUiEvent.ProfileAdded(
-                        profile = profile,
-                        newId = newId,
-                        info = info,
-                        resolvedUrl = resolvedUrl,
-                        usedHttpFallback = usedHttpFallback
-                    )
-                )
-                loadProfiles()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Persistence failed after a successful probe. Surface it so the
-                // add dialog re-enables instead of soft-locking with no feedback;
-                // the live global auth was not switched (it runs only after the
-                // Room insert succeeds).
-                Log.e(TAG, "Failed to add profile", e)
-                _uiEvent.send(ServerListUiEvent.AddConnectionFailed(e))
+                is ServerProfileService.Outcome.Failed ->
+                    _uiEvent.send(ServerListUiEvent.AddConnectionFailed(r.error))
+                is ServerProfileService.Outcome.Untrusted ->
+                    _uiEvent.send(ServerListUiEvent.UntrustedCertificate(r.certificate, forEdit = false))
+                ServerProfileService.Outcome.SecureStorageUnavailable ->
+                    _uiEvent.send(ServerListUiEvent.SecureStorageError)
             }
         }
-    }
-
-    /**
-     * Per-server state outside Room that a deleted profile leaves behind
-     * (audit SEC-16): capability facts, pending progress PUTs, pending tank
-     * tag retries, tank cover choices, local reading positions (audit
-     * 2026-10-06 C37). Base URLs are stored without a trailing slash.
-     */
-    /**
-     * A deleted server's pinned certificate goes with it, unless another
-     * server uses the same host:port (audit C27 phase 2).
-     */
-    private suspend fun forgetPinIfUnused(profile: ServerProfile) {
-        val url = profile.url.toHttpUrlOrNull() ?: return
-        val stillUsed = profileRepository.getAllProfiles().any { other ->
-            other.url.toHttpUrlOrNull()
-                ?.let { it.host == url.host && it.port == url.port } == true
-        }
-        if (!stillUsed) ServerTrust.forgetPin(url.host, url.port)
-    }
-
-    private fun purgeServerState(profile: ServerProfile) {
-        val baseUrl = profile.url.removeSuffix("/")
-        ServerCapabilityCache.forget(baseUrl)
-        ArchiveProgressOutbox.dropServer(baseUrl)
-        TankTagOutbox.dropServer(baseUrl)
-        TankCoverChoiceStore.default.removeProfile(profile.id)
-        TankRecentStore.default.removeProfile(profile.id)
-        LocalReadingProgress.removeProfile(ServiceRegistry.appModule.getContext(), profile.id)
     }
 
     companion object {

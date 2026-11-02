@@ -121,7 +121,7 @@ class SecurityScene : SolidScene(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel = ViewModelProvider(requireActivity())[SecurityViewModel::class.java]
+        viewModel = ViewModelProvider(this)[SecurityViewModel::class.java]
     }
 
     override fun onDestroy() {

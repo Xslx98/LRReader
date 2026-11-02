@@ -16,7 +16,7 @@ import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.reading.ReadingSessionEnd
 import com.lanraragi.reader.reading.ReadingSessionEvents
-import com.lanraragi.reader.ui.ContinueReadingShortcut
+import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.launch

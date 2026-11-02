@@ -29,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lanraragi.reader.dao.DownloadState
+import com.lanraragi.reader.domain.FavoriteState
 
 /**
  * Handles action button clicks and popup menu for [GalleryDetailScene].
@@ -217,7 +218,7 @@ internal class DetailActionHandler(
                 return@launch
             }
             DownloadLabelHelper.showDeleteDialog(context, archive) { deleteFiles ->
-                DownloadLabelHelper.performDelete(archive, deleteFiles)
+                viewModel.downloadManager.deleteDownloadAndFiles(archive.arcid, deleteFiles)
             }
         }
     }

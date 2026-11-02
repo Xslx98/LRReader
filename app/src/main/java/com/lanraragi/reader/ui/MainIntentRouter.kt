@@ -13,6 +13,7 @@ import com.lanraragi.reader.ui.scene.SecurityScene
 import com.lanraragi.reader.ui.scene.ServerConfigScene
 import com.lanraragi.reader.ui.scene.SolidScene
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
+import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 
 /**
  * Where MainActivity's incoming intents and intent-started scenes go: links,

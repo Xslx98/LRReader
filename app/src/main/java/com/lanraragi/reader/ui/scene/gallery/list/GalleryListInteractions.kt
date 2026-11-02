@@ -61,7 +61,7 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
                 untaggedonly = params.untaggedonly,
                 anchorArcid = archive.arcid,
                 anchorIndex = position,
-                // Same fold decision the paging source made for this list, so
+                // Same fold decision ArchiveSearchSource made for this list, so
                 // resolver windows reproduce the raw indexing the user saw.
                 groupbyTanks = AppearanceSettings.getGroupTanks() &&
                     !TankoubonSupportGate.isUnsupported(baseUrl),

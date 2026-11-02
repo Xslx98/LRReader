@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui
+package com.lanraragi.reader.shortcuts
 
 import android.content.Context
 import android.content.Intent
@@ -13,6 +13,7 @@ import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.reading.ReadingSessionEnd
 import com.lanraragi.reader.reading.ReadingSessionEvents
 import kotlinx.coroutines.launch
+import com.lanraragi.reader.ui.MainActivity
 
 /**
  * Publishes the "Continue reading" dynamic launcher shortcut (issue #15).
@@ -92,6 +93,21 @@ object ContinueReadingShortcut : ReadingSessionEvents.Listener {
     suspend fun refresh(context: Context, historyRepository: HistoryRepository) {
         val (arcid, profileId) = currentTarget(context) ?: return
         publish(context, historyRepository, arcid, profileId)
+    }
+
+    /**
+     * [refresh] on the process scope, fire and forget: the caller (the
+     * app-lock settings screen) may close before it finishes.
+     */
+    fun refreshInBackground() {
+        val context = appOrNull() ?: return
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            try {
+                refresh(context, ServiceRegistry.dataModule.historyRepository)
+            } catch (e: Exception) {
+                Log.w(TAG, "Continue-reading shortcut refresh failed")
+            }
+        }
     }
 
     /** (arcid, profileId) the published shortcut deep-links to, or null when absent. */

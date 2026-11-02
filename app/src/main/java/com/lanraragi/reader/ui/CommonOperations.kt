@@ -16,13 +16,10 @@
 
 package com.lanraragi.reader.ui
 
-import android.content.Intent
 import com.lanraragi.reader.ui.dialog.ListCheckBoxDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.download.DownloadEntryGate
-import com.lanraragi.reader.download.DownloadService
-import com.lanraragi.reader.settings.DownloadSettings
+import com.lanraragi.reader.download.DownloadRequests
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.domain.Archive
 
@@ -33,104 +30,49 @@ object CommonOperations {
         startDownload(activity, listOf(archive), forceDefault)
     }
 
+    /**
+     * Starts a download from a browse entry through [DownloadRequests]; this
+     * helper only shows the label picker when the entry asks for one, and the
+     * resulting tip.
+     */
     // KNOWN-ISSUE (P2): assumes Activity context matches theme; may mismatch in multi-window
     @JvmStatic
     fun startDownload(activity: MainActivity, archives: List<Archive>, forceDefault: Boolean) {
         val dm = ServiceRegistry.dataModule.downloadManager
-
-        val toStart = ArrayList<String>()
-        val toAdd = mutableListOf<Archive>()
-        var alreadyLocal = 0
-        for (a in archives) {
-            when (DownloadEntryGate.disposition(dm.getDownloadState(a.arcid))) {
-                DownloadEntryGate.Disposition.NEW -> toAdd.add(a)
-                DownloadEntryGate.Disposition.RESTART -> toStart.add(a.arcid)
-                // FINISH rows stay untouched: re-queuing runs the worker
-                // against the source profile's URL and an unreachable source
-                // would flip a completed download to FAILED.
-                DownloadEntryGate.Disposition.ALREADY_LOCAL -> alreadyLocal++
-            }
-        }
-
-        if (toStart.isNotEmpty()) {
-            val intent = Intent(activity, DownloadService::class.java)
-            intent.action = DownloadService.ACTION_START_RANGE
-            intent.putStringArrayListExtra(DownloadService.KEY_ARCID_LIST, toStart)
-            activity.startService(intent)
-        }
-
-        if (toAdd.isEmpty()) {
-            if (toStart.isEmpty() && alreadyLocal > 0) {
-                activity.showTip(R.string.download_already_local, BaseScene.LENGTH_SHORT)
-            } else {
-                activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT)
-            }
-            return
-        }
-
-        var justStart = forceDefault
-        var label: String? = null
-        // Get default download label
-        if (!justStart && DownloadSettings.getHasDefaultDownloadLabel()) {
-            label = DownloadSettings.getDefaultDownloadLabel()
-            justStart = label == null || dm.containLabel(label)
-        }
-        // If there is no other label, just use null label
-        if (!justStart && dm.labelList.size == 0) {
-            justStart = true
-            label = null
-        }
-
-        if (justStart) {
-            // Got default label
-            for (a in toAdd) {
-                val intent = Intent(activity, DownloadService::class.java)
-                intent.action = DownloadService.ACTION_START
-                intent.putExtra(DownloadService.KEY_LABEL, label)
-                intent.putExtra(DownloadService.KEY_ARCHIVE, a)
-                activity.startService(intent)
-            }
-            // Notify
-            activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT)
-        } else {
-            // Let user choose label
-            val list = dm.labelList
-            val items = Array<String?>(list.size + 1) { i ->
-                if (i == 0) activity.getString(R.string.default_download_label_name) else list[i - 1].label
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            ListCheckBoxDialogBuilder(
-                activity, items as Array<CharSequence>,
-                { builder, _, position ->
-                    val selectedLabel = if (position == 0) {
-                        null
-                    } else {
-                        val candidate = items[position]
-                        if (candidate != null && dm.containLabel(candidate)) candidate else null
-                    }
-                    // Start download
-                    for (a in toAdd) {
-                        val intent = Intent(activity, DownloadService::class.java)
-                        intent.action = DownloadService.ACTION_START
-                        intent.putExtra(DownloadService.KEY_LABEL, selectedLabel)
-                        intent.putExtra(DownloadService.KEY_ARCHIVE, a)
-                        activity.startService(intent)
-                    }
-                    // Save settings
-                    if (builder?.isChecked == true) {
-                        DownloadSettings.putHasDefaultDownloadLabel(true)
-                        DownloadSettings.putDefaultDownloadLabel(selectedLabel)
-                    } else {
-                        DownloadSettings.putHasDefaultDownloadLabel(false)
-                    }
-                    // Notify
-                    activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT)
+        when (val outcome = DownloadRequests.enqueue(activity, dm, archives, forceDefault)) {
+            is DownloadRequests.Outcome.Done -> activity.showTip(
+                when (outcome.feedback) {
+                    DownloadRequests.Feedback.ALREADY_LOCAL -> R.string.download_already_local
+                    DownloadRequests.Feedback.ADDED -> R.string.added_to_download_list
                 },
-                activity.getString(R.string.remember_download_label), false
+                BaseScene.LENGTH_SHORT,
             )
-                .setTitle(R.string.download)
-                .show()
+            is DownloadRequests.Outcome.PickLabel -> showLabelPicker(activity, outcome)
         }
+    }
+
+    private fun showLabelPicker(activity: MainActivity, outcome: DownloadRequests.Outcome.PickLabel) {
+        val labels = outcome.labels
+        val items = Array<String?>(labels.size + 1) { i ->
+            if (i == 0) activity.getString(R.string.default_download_label_name) else labels[i - 1]
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        ListCheckBoxDialogBuilder(
+            activity, items as Array<CharSequence>,
+            { builder, _, position ->
+                DownloadRequests.addWithPickedLabel(
+                    activity,
+                    ServiceRegistry.dataModule.downloadManager,
+                    outcome.toAdd,
+                    picked = if (position == 0) null else items[position],
+                    remember = builder?.isChecked == true,
+                )
+                activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT)
+            },
+            activity.getString(R.string.remember_download_label), false
+        )
+            .setTitle(R.string.download)
+            .show()
     }
 }

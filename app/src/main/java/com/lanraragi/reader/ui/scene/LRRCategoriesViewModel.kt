@@ -1,11 +1,12 @@
 package com.lanraragi.reader.ui.scene
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.server.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRCategoryApi
+import com.lanraragi.reader.category.CategoryLibraryService
 import com.lanraragi.reader.client.api.data.LRRCategory
 import com.lanraragi.reader.client.api.friendlyError
 import kotlinx.coroutines.CancellationException
@@ -20,7 +21,7 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel for [LRRCategoriesScene]. Manages category list state and
- * delegates all LANraragi category API calls (load/create/edit/delete).
+ * calls [CategoryLibraryService] for load/create/edit/delete.
  *
  * The Scene observes [categories] for list updates and [uiEvent] for
  * one-shot Toast messages. View construction, adapter, dialogs, and
@@ -36,7 +37,8 @@ class LRRCategoriesViewModel(
      */
     private val categoryNameSync: suspend (List<LRRCategory>) -> Unit = { categories ->
         ServiceRegistry.dataModule.quickSearchRepository.syncCategoryNames(categories.map { it.id to it.name })
-    }
+    },
+    private val library: CategoryLibraryService = CategoryLibraryService.default,
 ) : ViewModel() {
 
     // -------------------------------------------------------------------------
@@ -89,37 +91,14 @@ class LRRCategoriesViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val serverUrl = LRRAuthManager.getServerUrl()
-                if (serverUrl == null) {
-                    _isLoading.value = false // otherwise the scene spins forever
-                    return@launch
-                }
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                val categories = LRRCategoryApi.getCategories(client, serverUrl)
-
-                // Sort: pinned first, then unpinned; skip nameless entries
-                val pinned = mutableListOf<LRRCategory>()
-                val unpinned = mutableListOf<LRRCategory>()
-                for (cat in categories) {
-                    if (cat.name.isNullOrEmpty()) continue
-                    if (cat.isPinned()) {
-                        pinned.add(cat)
-                    } else {
-                        unpinned.add(cat)
-                    }
-                }
-                pinned.addAll(unpinned)
-
-                _categories.value = ArrayList(pinned)
-            syncNames(pinned)
+                // No server (null) still clears the spinner, or the scene spins forever.
+                library.load()?.let { publish(it) }
                 _isLoading.value = false
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to load categories", e)
                 _isLoading.value = false
-                val context = ServiceRegistry.appModule.getContext()
-                _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
+                emitError(e)
             }
         }
     }
@@ -127,78 +106,42 @@ class LRRCategoriesViewModel(
     /**
      * Creates a new category on the server, then reloads the list.
      */
-    fun createCategory(name: String, search: String?, pinned: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                LRRCategoryApi.createCategory(client, serverUrl, name, search, pinned)
-
-                _uiEvent.tryEmit(
-                    CategoriesUiEvent.ShowSuccess(com.lanraragi.reader.R.string.lrr_category_created)
-                )
-                loadCategoriesInternal()
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "Failed to create category", e)
-                val context = ServiceRegistry.appModule.getContext()
-                _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
-            }
-        }
-    }
+    fun createCategory(name: String, search: String?, pinned: Boolean) =
+        writeThenReload(R.string.lrr_category_created) { library.create(name, search, pinned) }
 
     /**
      * Updates an existing category on the server, then reloads the list.
      */
-    fun editCategory(categoryId: String, name: String, search: String?, pinned: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                LRRCategoryApi.updateCategory(client, serverUrl, categoryId, name, search, pinned)
-
-                _uiEvent.tryEmit(
-                    CategoriesUiEvent.ShowSuccess(com.lanraragi.reader.R.string.lrr_category_updated)
-                )
-                loadCategoriesInternal()
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "Failed to update category", e)
-                val context = ServiceRegistry.appModule.getContext()
-                _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
-            }
-        }
-    }
+    fun editCategory(categoryId: String, name: String, search: String?, pinned: Boolean) =
+        writeThenReload(R.string.lrr_category_updated) { library.update(categoryId, name, search, pinned) }
 
     /**
      * Deletes a category from the server, then reloads the list.
      */
-    fun deleteCategory(categoryId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-
-                LRRCategoryApi.deleteCategory(client, serverUrl, categoryId)
-
-                _uiEvent.tryEmit(
-                    CategoriesUiEvent.ShowSuccess(com.lanraragi.reader.R.string.lrr_category_deleted)
-                )
-                loadCategoriesInternal()
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "Failed to delete category", e)
-                val context = ServiceRegistry.appModule.getContext()
-                _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
-            }
-        }
-    }
+    fun deleteCategory(categoryId: String) =
+        writeThenReload(R.string.lrr_category_deleted) { library.delete(categoryId) }
 
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Runs [write] (which the service finishes even if this screen closes),
+     * then reports [successRes] and reloads. Nothing happens when no server is
+     * configured; a failure is reported as [CategoriesUiEvent.ShowError].
+     */
+    private fun writeThenReload(@StringRes successRes: Int, write: suspend () -> Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (!write()) return@launch
+                _uiEvent.tryEmit(CategoriesUiEvent.ShowSuccess(successRes))
+                loadCategoriesInternal()
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                emitError(e)
+            }
+        }
+    }
 
     /**
      * Internal reload that does not toggle [_isLoading] — used after
@@ -206,31 +149,22 @@ class LRRCategoriesViewModel(
      */
     private suspend fun loadCategoriesInternal() {
         try {
-            val serverUrl = LRRAuthManager.getServerUrl() ?: return
-            val client = ServiceRegistry.networkModule.okHttpClient
-
-            val categories = LRRCategoryApi.getCategories(client, serverUrl)
-
-            val pinned = mutableListOf<LRRCategory>()
-            val unpinned = mutableListOf<LRRCategory>()
-            for (cat in categories) {
-                if (cat.name.isNullOrEmpty()) continue
-                if (cat.isPinned()) {
-                    pinned.add(cat)
-                } else {
-                    unpinned.add(cat)
-                }
-            }
-            pinned.addAll(unpinned)
-
-            _categories.value = ArrayList(pinned)
-            syncNames(pinned)
+            library.load()?.let { publish(it) }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             Log.e(TAG, "Failed to reload categories after CRUD", e)
-            val context = ServiceRegistry.appModule.getContext()
-            _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
+            emitError(e)
         }
+    }
+
+    private suspend fun publish(categories: List<LRRCategory>) {
+        _categories.value = ArrayList(categories)
+        syncNames(categories)
+    }
+
+    private fun emitError(e: Exception) {
+        val context = ServiceRegistry.appModule.getContext()
+        _uiEvent.tryEmit(CategoriesUiEvent.ShowError(friendlyError(context, e)))
     }
 
     /**

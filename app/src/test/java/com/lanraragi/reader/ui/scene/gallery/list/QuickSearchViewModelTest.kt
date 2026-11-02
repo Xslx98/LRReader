@@ -2,6 +2,9 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
 import androidx.collection.LruCache
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.dao.FavouriteStatusRouter
@@ -35,6 +38,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.util.concurrent.Executor
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 /**
  * Unit tests for [QuickSearchViewModel].
@@ -51,6 +57,14 @@ class QuickSearchViewModelTest {
     private lateinit var db: AppDatabase
     private lateinit var eventScope: CoroutineScope
 
+    /** Room work waiting while [holdRoom] is set, so a test can close the screen mid-write. */
+    private val heldRoomWork = LinkedBlockingQueue<Runnable>()
+
+    @Volatile
+    private var holdRoom = false
+
+    private val gate = Executor { work -> if (holdRoom) heldRoomWork.add(work) else work.run() }
+
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -58,8 +72,8 @@ class QuickSearchViewModelTest {
         val ctx: Context = ApplicationProvider.getApplicationContext()
         db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java)
             .allowMainThreadQueries()
-            .setQueryExecutor { it.run() }
-            .setTransactionExecutor { it.run() }
+            .setQueryExecutor(gate)
+            .setTransactionExecutor(gate)
             .build()
 
         // Set up ServiceRegistry with a test DataModule providing the repository
@@ -143,6 +157,34 @@ class QuickSearchViewModelTest {
             events.any { it is QuickSearchViewModel.QuickSearchUiEvent.Deleted })
     }
 
+    @Test
+    fun moveQuickSearch_persistsWhenTheScreenClosesMidWrite() {
+        insertQuickSearch("A", time = 100)
+        insertQuickSearch("B", time = 200)
+        val store = ViewModelStore()
+        val vm = scoped(store)
+        vm.loadQuickSearches()
+        awaitUntil { vm.quickSearches.value.size == 2 }
+
+        holdRoom = true
+        vm.moveQuickSearch(0, 1)
+        closeScreenMidWrite(store)
+
+        awaitUntil { runBlocking { db.browsingDao().getAllQuickSearch() }.map { it.name } == listOf("B", "A") }
+    }
+
+    private fun scoped(store: ViewModelStore): QuickSearchViewModel =
+        ViewModelProvider(object : ViewModelStoreOwner { override val viewModelStore = store })[QuickSearchViewModel::class.java]
+
+    /** The write has reached Room; the scene is popped (ViewModel cleared) before Room runs it. */
+    private fun closeScreenMidWrite(store: ViewModelStore) {
+        val write = checkNotNull(heldRoomWork.poll(5, TimeUnit.SECONDS)) { "the write never reached Room" }
+        store.clear()
+        holdRoom = false
+        write.run()
+        while (true) heldRoomWork.poll()?.run() ?: break
+    }
+
     // ── moveQuickSearch ────────────────────────────────────────────
 
     @Test
@@ -192,5 +234,48 @@ class QuickSearchViewModelTest {
         val sizeAfter = vm.quickSearches.value.size
 
         assertEquals("List should not change for out-of-bounds move", sizeBefore, sizeAfter)
+    }
+
+    // ── gallery-list drawer ────────────────────────────────────────
+
+    @Test
+    fun loadForDrawer_withTranslations_persistsRenamedEntries() {
+        insertQuickSearch("artist:foo", time = 100)
+        insertQuickSearch("plain", time = 200)
+
+        val vm = QuickSearchViewModel()
+        var loaded: List<QuickSearch>? = null
+        vm.loadForDrawer(showTranslations = true, translate = { "T-" + it[1] }) { loaded = it }
+
+        awaitUntil { loaded != null }
+        assertEquals(setOf("T-foo", "plain"), loaded!!.map { it.name }.toSet())
+        val stored = runBlocking { db.browsingDao().getAllQuickSearch() }.map { it.name }.toSet()
+        assertEquals(setOf("T-foo", "plain"), stored)
+    }
+
+    @Test
+    fun loadForDrawer_withoutTranslations_rewritesNothing() {
+        insertQuickSearch("artist:foo", time = 100)
+
+        val vm = QuickSearchViewModel()
+        var loaded: List<QuickSearch>? = null
+        vm.loadForDrawer(showTranslations = false, translate = { "T-" + it[1] }) { loaded = it }
+
+        awaitUntil { loaded != null }
+        assertEquals(listOf("artist:foo"), loaded!!.map { it.name })
+        assertEquals(
+            listOf("artist:foo"),
+            runBlocking { db.browsingDao().getAllQuickSearch() }.map { it.name },
+        )
+    }
+
+    @Test
+    fun addQuickSearch_insertsThenCallsBack() {
+        val vm = QuickSearchViewModel()
+        var added = false
+        vm.addQuickSearch(QuickSearch().apply { name = "New" }) { added = true }
+
+        awaitUntil { added }
+        assertEquals(listOf("New"), runBlocking { db.browsingDao().getAllQuickSearch() }.map { it.name })
     }
 }

@@ -15,7 +15,9 @@ import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.ServerCapabilityCache
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.settings.PrivacySettings
+import kotlinx.coroutines.async
 import java.io.File
+import java.io.IOException
 import java.io.Writer
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -47,6 +49,22 @@ object DiagnosticsCollector {
         Log.e(TAG, "Download summary", e)
         null
     }
+
+    /**
+     * [build] on the process IO scope, awaited: the zip is finished even if
+     * the screen that asked for it closes first. Null when writing it failed
+     * (logged).
+     */
+    @Suppress("RedundantSuspendModifier") // detektMain misses kotlinx.coroutines metadata: await() suspends
+    suspend fun buildInBackground(context: Context, downloads: DiagnosticsInfo.DownloadSummary?): File? =
+        ServiceRegistry.coroutineModule.ioScope.async {
+            try {
+                build(context, downloads)
+            } catch (e: IOException) {
+                Log.e(TAG, "Build diagnostics bundle", e)
+                null
+            }
+        }.await()
 
     /** Builds the zip. Blocking: disk, database and logcat. */
     @WorkerThread

@@ -2,7 +2,6 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -12,9 +11,8 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
-import com.lanraragi.reader.LRReaderApplication
+import androidx.lifecycle.ViewModelProvider
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.settings.AppearanceSettings
@@ -22,7 +20,6 @@ import com.lanraragi.reader.tagtranslation.TagTranslationUtil
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
-import kotlinx.coroutines.launch
 
 class BookmarksDraw(
     private val context: Context,
@@ -31,9 +28,8 @@ class BookmarksDraw(
 ) {
 
     private val ehTags: TagTranslationDatabase? = ehTags ?: TagTranslationDatabase.getInstance(context)
-    private val ehApplication: LRReaderApplication = context.applicationContext as LRReaderApplication
-
     private lateinit var listView: ListView
+    private lateinit var viewModel: QuickSearchViewModel
 
     @SuppressLint("NonConstantResourceId")
     fun onCreate(scene: GalleryListScene, parent: ViewGroup): View {
@@ -42,6 +38,7 @@ class BookmarksDraw(
         val toolbar = ViewUtils.requireView(bookmarksView, R.id.toolbar) as Toolbar
         val tip = ViewUtils.requireView(bookmarksView, R.id.tip) as TextView
         listView = ViewUtils.requireView(bookmarksView, R.id.list_view) as ListView
+        viewModel = ViewModelProvider(scene)[QuickSearchViewModel::class.java]
 
         AssertUtils.assertNotNull(context)
 
@@ -52,78 +49,55 @@ class BookmarksDraw(
         toolbar.setTitle(R.string.quick_search)
         toolbar.inflateMenu(R.menu.drawer_gallery_list)
 
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            val quickSearchList = try {
-                ServiceRegistry.dataModule.quickSearchRepository.getAll()
-            } catch (e: Exception) {
-                // Red line: a DB launch must handle its own exceptions rather
-                // than fire-and-forget. On failure the drawer stays empty.
-                Log.e(TAG, "Failed to load quick searches for bookmarks drawer", e)
-                return@launch
+        // Translated tag names are persisted by the ViewModel; with translations
+        // off nothing is rewritten (see QuickSearchNameReconciler for the history).
+        viewModel.loadForDrawer(
+            AppearanceSettings.getShowTagTranslations(),
+            { parts -> TagTranslationUtil.getTagCN(parts, this@BookmarksDraw.ehTags) },
+        ) { list ->
+            val adapter = ArrayAdapter(context, R.layout.item_simple_list, list)
+            listView.adapter = adapter
+            // Quick search click tag event listener
+            listView.setOnItemClickListener { _, _, position, _ ->
+                val urlBuilder = scene.mUrlBuilder ?: return@setOnItemClickListener
+                val helper = scene.mHelper ?: return@setOnItemClickListener
+
+                urlBuilder.set(list[position])
+                urlBuilder.setPageIndex(0)
+                // Quick-search launches are real searches: record the
+                // keyword (triage decision, issue #12 — recording is
+                // source-agnostic).
+                list[position].keyword?.takeIf { it.isNotBlank() }
+                    ?.let { scene.mHistoryStore?.record(it) }
+                scene.onUpdateUrlBuilder()
+                helper.refresh()
+                scene.setState(GalleryListScene.STATE_NORMAL)
+                scene.closeDrawer(Gravity.RIGHT)
             }
-            // Translated tag names are persisted on the IO thread; with translations
-            // off nothing is rewritten (see QuickSearchNameReconciler for the history).
-            val toUpdate = QuickSearchNameReconciler.reconcile(
-                quickSearchList,
-                AppearanceSettings.getShowTagTranslations()
-            ) { parts -> TagTranslationUtil.getTagCN(parts, this@BookmarksDraw.ehTags) }
-            if (toUpdate.isNotEmpty()) {
-                try {
-                    for (qs in toUpdate) ServiceRegistry.dataModule.quickSearchRepository.update(qs)
-                } catch (e: Exception) {
-                    // Non-fatal: the list still renders with translated names in
-                    // memory even if persisting them failed.
-                    Log.e(TAG, "Failed to persist quick-search tag translations", e)
-                }
-            }
 
-            val list = quickSearchList
-
-            listView.post {
-                val adapter = ArrayAdapter(context, R.layout.item_simple_list, list)
-                listView.adapter = adapter
-                // Quick search click tag event listener
-                listView.setOnItemClickListener { _, _, position, _ ->
-                    val urlBuilder = scene.mUrlBuilder ?: return@setOnItemClickListener
-                    val helper = scene.mHelper ?: return@setOnItemClickListener
-
-                    urlBuilder.set(list[position])
-                    urlBuilder.setPageIndex(0)
-                    // Quick-search launches are real searches: record the
-                    // keyword (triage decision, issue #12 — recording is
-                    // source-agnostic).
-                    list[position].keyword?.takeIf { it.isNotBlank() }
-                        ?.let { scene.mHistoryStore?.record(it) }
-                    scene.onUpdateUrlBuilder()
-                    helper.refresh()
-                    scene.setState(GalleryListScene.STATE_NORMAL)
-                    scene.closeDrawer(Gravity.RIGHT)
-                }
-
-                toolbar.setOnMenuItemClickListener { item ->
-                    when (item.itemId) {
-                        R.id.action_add -> {
-                            if (GuideSettings.getQuickSearchTip()) {
-                                scene.showQuickSearchTipDialog(list, adapter, listView, tip)
-                            } else {
-                                scene.showAddQuickSearchDialog(list, adapter, listView, tip)
-                            }
-                        }
-                        R.id.action_settings -> {
-                            scene.startScene(Announcer(QuickSearchScene::class.java))
+            toolbar.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.action_add -> {
+                        if (GuideSettings.getQuickSearchTip()) {
+                            scene.showQuickSearchTipDialog(list, adapter, listView, tip)
+                        } else {
+                            scene.showAddQuickSearchDialog(list, adapter, listView, tip)
                         }
                     }
-                    true
+                    R.id.action_settings -> {
+                        scene.startScene(Announcer(QuickSearchScene::class.java))
+                    }
                 }
+                true
+            }
 
-                if (list.isEmpty()) {
-                    tip.visibility = View.VISIBLE
-                    listView.visibility = View.GONE
-                } else {
-                    tip.visibility = View.GONE
-                    listView.visibility = View.VISIBLE
-                    resume()
-                }
+            if (list.isEmpty()) {
+                tip.visibility = View.VISIBLE
+                listView.visibility = View.GONE
+            } else {
+                tip.visibility = View.GONE
+                listView.visibility = View.VISIBLE
+                resume()
             }
         }
 
@@ -135,29 +109,16 @@ class BookmarksDraw(
     }
 
     fun resume() {
-        val scrollY = ehApplication.getTempCache(QUICK_SEARCH_DRAW_SCROLL_Y)
-        val pos = ehApplication.getTempCache(QUICK_SEARCH_DRAW_SCROLL_POS)
-        if (scrollY != null && pos != null) {
-            listView.setSelection(pos as Int)
-        }
+        viewModel.drawerScrollPosition?.let { listView.setSelection(it) }
     }
 
     private inner class ScrollListener : AbsListView.OnScrollListener {
         override fun onScrollStateChanged(view: AbsListView, scrollState: Int) {
-            val item = view.getChildAt(0) ?: return
-            val firstPos = view.firstVisiblePosition
-            val top = item.top
-            val scrollY = firstPos * item.height - top
-            ehApplication.putTempCache(QUICK_SEARCH_DRAW_SCROLL_Y, scrollY)
-            ehApplication.putTempCache(QUICK_SEARCH_DRAW_SCROLL_POS, firstPos)
+            // Only once the list has rows, as before.
+            if (view.getChildAt(0) == null) return
+            viewModel.drawerScrollPosition = view.firstVisiblePosition
         }
 
         override fun onScroll(view: AbsListView, firstVisibleItem: Int, visibleItemCount: Int, totalItemCount: Int) {}
-    }
-
-    companion object {
-        private const val TAG = "BookmarksDraw"
-        private const val QUICK_SEARCH_DRAW_SCROLL_Y = "QuickSearchDrawScrollY"
-        private const val QUICK_SEARCH_DRAW_SCROLL_POS = "QuickSearchDrawScrollPos"
     }
 }

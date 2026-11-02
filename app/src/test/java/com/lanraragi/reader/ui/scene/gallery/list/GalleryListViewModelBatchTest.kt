@@ -1,12 +1,16 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.test.core.app.ApplicationProvider
+import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +32,6 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,6 +40,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -95,13 +99,13 @@ class GalleryListViewModelBatchTest {
 
     private fun mockBaseUrl() = server.url("").toString().removeSuffix("/")
 
-    /** VM with the base-URL resolution pinned to the MockWebServer (no profile registry needed). */
-    private fun newVm(): GalleryListViewModel = GalleryListViewModel().also { vm ->
-        vm.baseUrlResolver = { mockBaseUrl() }
+    /** VM with the server connection pinned to the MockWebServer (no profile registry needed). */
+    private fun newVm(vm: GalleryListViewModel = GalleryListViewModel()): GalleryListViewModel = vm.apply {
+        connectionFor = { ServerConnection(it, mockBaseUrl(), ServiceRegistry.networkModule.okHttpClient) }
         // Tag materialization has its own wire tests (TankTagSyncerTest); keep
         // the request counts here about the membership writes.
-        vm.tankTagSyncAfterAdd = { _, _, _ -> false }
-        vm.tankCategorySyncAfterAdd = { _, _, _, _, _ -> false }
+        tankTagSyncAfterAdd = { _, _, _ -> false }
+        tankCategorySyncAfterAdd = { _, _, _, _, _ -> false }
     }
 
     private fun jsonResponse(code: Int, body: String) = MockResponse()
@@ -147,24 +151,6 @@ class GalleryListViewModelBatchTest {
     }
 
     // ─── tests ───────────────────────────────────────────────────────────
-
-    @Test
-    fun `runBatch stamps the initiating owner token on the emitted result`() = runTest {
-        // The result must carry the token of the scene that started the batch
-        // so that, with an activity-scoped ViewModel shared across stacked list
-        // instances, only the initiating scene handles/buffers it instead of
-        // every instance fanning out a duplicate dialog.
-        server.dispatcher = object : Dispatcher() {
-            override fun dispatch(request: RecordedRequest): MockResponse =
-                jsonResponse(200, """{"success":1}""")
-        }
-        val vm = newVm()
-        val token = Any()
-        val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.ClearNew, listOf(archiveOf(ARC_A)), owner = token)
-        }
-        assertSame("result must carry the initiating owner token", token, result.owner)
-    }
 
     @Test
     fun `clearNew batch aggregates per-item results and isolates failures`() = runTest {
@@ -450,6 +436,37 @@ class GalleryListViewModelBatchTest {
 
         assertEquals(listOf(ARC_A), result.succeeded)
         assertTrue("seed failure must not surface as a batch failure", result.failed.isEmpty())
+    }
+
+    // ─── batch lifetime ──────────────────────────────────────────────────
+
+    @Test
+    fun `closing the list mid-batch does not cut off the remaining writes`() {
+        val paths = CopyOnWriteArrayList<String>()
+        val firstHeld = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        server.dispatcher = recordingDispatcher(paths) { request ->
+            if (request.path.orEmpty().endsWith("/$ARC_A")) {
+                firstHeld.countDown()
+                release.await(RESULT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            }
+            jsonResponse(200, """{"success":1}""")
+        }
+        val store = ViewModelStore()
+        val vm = newVm(ViewModelProvider.create(store)[GalleryListViewModel::class])
+
+        // Sequential op: the second append only starts after the first returns.
+        vm.runBatch(
+            GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID),
+            listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
+        )
+        assertTrue("first append never reached the server", firstHeld.await(RESULT_TIMEOUT_MS, TimeUnit.MILLISECONDS))
+        store.clear() // the list scene that started the batch is gone
+        release.countDown()
+
+        awaitUntil(message = "the second append was cut off: $paths") {
+            paths.any { it == "PUT /api/tankoubons/$TANK_ID/$ARC_B" }
+        }
     }
 
     private companion object {

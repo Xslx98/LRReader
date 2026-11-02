@@ -38,7 +38,6 @@ import android.widget.TextView
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.tankoubon.TankBrowse
@@ -119,19 +118,11 @@ open class GalleryListScene : BaseScene(),
 
     private var mHasFirstRefresh = false
 
-    /** The query this scene's rows came from (not the shared ViewModel's; C01). */
+    /** The query this scene's rows came from (C01); saved with the scene's state. */
     internal val shownSearch = ShownSearchState()
     private var mLastServerConfigVersion = LRRAuthManager.serverConfigVersion
     private var mNavCheckedId = 0
     private var mRestoredState = GalleryStateHelper.STATE_NORMAL
-
-    // Stable per-instance token stamped on batches this scene starts. The
-    // ViewModel is activity-scoped and shared, so its result is broadcast to
-    // every stacked list instance's collector; matching on this token keeps
-    // handling/buffering to the one scene that ran the batch. Scene-level (not
-    // in the per-view Callback object) so it survives view recreation, matching
-    // the fragment-scoped collector.
-    internal val batchOwnerToken = Any()
 
     internal lateinit var downloadManager: DownloadManager
         private set
@@ -256,9 +247,7 @@ open class GalleryListScene : BaseScene(),
         TankDialogs.showNameInputDialog(context, R.string.tank_create, "") { name ->
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    val serverUrl = LRRAuthManager.getServerUrl() ?: return@launch
-                    // Main-safe: the API call switches to IO itself.
-                    TankListService(ServiceRegistry.coroutineModule.ioScope).create(serverUrl, name)
+                    if (!viewModel.createTank(name)) return@launch
                     showTip(R.string.tank_op_done, LENGTH_SHORT)
                     mHelper?.refresh()
                 } catch (ce: CancellationException) {
@@ -318,7 +307,9 @@ open class GalleryListScene : BaseScene(),
 
         val context = ehContext
         AssertUtils.assertNotNull(context)
-        viewModel = ViewModelProvider(requireActivity())[GalleryListViewModel::class.java]
+        // Scene-scoped: every list on the back stack (search results, tank
+        // mode, the home list) has its own; it survives configuration changes.
+        viewModel = ViewModelProvider(this)[GalleryListViewModel::class.java]
         downloadManager = viewModel.downloadManager
 
         // Start observing download changes in the ViewModel. The ViewModel owns
@@ -511,11 +502,8 @@ open class GalleryListScene : BaseScene(),
         collectFlow(viewLifecycleOwner, viewModel.batchProgress) {
             batchOpsHelper?.onBatchProgress(it)
         }
-        // Upload progress/result rendering is view-scoped: the ViewModel is
-        // activity-scoped and several GalleryListScene instances can sit in the
-        // back stack — fragment-scoped collection rendered one progress dialog
-        // per live instance (stacked dialogs, double success tip) and poked
-        // mHelper on detached scenes. StateFlow replay restores the dialog on
+        // Upload progress/result rendering is view-scoped so it never pokes
+        // mHelper on a detached scene. StateFlow replay restores the dialog on
         // re-attach mid-upload and defers a Success that landed while this
         // scene was covered to return time.
         collectFlow(viewLifecycleOwner, viewModel.uploadState) { state ->

@@ -76,7 +76,7 @@ internal class DownloadBatchOpsHelper(
     }
 
     fun stopAll() {
-        callback.viewModel.downloadManager.stopAllDownload()
+        callback.viewModel.stopAllDownloads()
     }
 
     fun resetReadingProgress(searching: Boolean) {
@@ -89,7 +89,7 @@ internal class DownloadBatchOpsHelper(
             .setMessage(R.string.reset_reading_progress_message)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                callback.viewModel.downloadManager.resetAllReadingProgress()
+                callback.viewModel.resetAllReadingProgress()
             }.show()
     }
 

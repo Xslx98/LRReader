@@ -71,7 +71,7 @@ class QuickSearchScene : ToolbarScene() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        viewModel = ViewModelProvider(requireActivity())[QuickSearchViewModel::class.java]
+        viewModel = ViewModelProvider(this)[QuickSearchViewModel::class.java]
 
         val view = inflater.inflate(R.layout.scene_label_list, container, false)
 

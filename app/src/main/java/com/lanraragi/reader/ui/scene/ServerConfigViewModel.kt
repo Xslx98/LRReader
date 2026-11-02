@@ -1,17 +1,11 @@
 package com.lanraragi.reader.ui.scene
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
-import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.server.ServerCertificate
+import com.lanraragi.reader.server.ServerProfileService
 import com.lanraragi.reader.client.api.data.LRRServerInfo
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,19 +13,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
- * ViewModel for [ServerConfigScene]. Manages connection state, protocol
- * auto-detection, form validation, and server profile persistence.
+ * ViewModel for [ServerConfigScene]. Manages connection state and reports
+ * the outcome of [ServerProfileService.connectAndActivate], which does the
+ * protocol auto-detection and the profile persistence.
  *
  * The Scene observes [StateFlow] / [SharedFlow] properties and updates
  * the UI accordingly. View references, dialogs, and navigation remain
  * in the Scene.
  */
-class ServerConfigViewModel : ViewModel() {
-
-    private val profileRepository = ServiceRegistry.dataModule.profileRepository
+class ServerConfigViewModel(
+    private val profiles: ServerProfileService = ServerProfileService.default,
+) : ViewModel() {
 
     // -------------------------------------------------------------------------
     // Connection state
@@ -56,11 +50,10 @@ class ServerConfigViewModel : ViewModel() {
         val navigateOnSuccess: Boolean
     )
 
-    // Buffered channels, not replay=0 SharedFlows: the connection test runs in
-    // viewModelScope (activity-scoped) and outlives the scene's view, so a
-    // result that lands while the view is destroyed (Back, rotation, a drawer
-    // scene on top) waits for the next collector instead of being dropped —
-    // onConnectSuccess has already switched the server by then.
+    // Buffered channels, not replay=0 SharedFlows: the ViewModel outlives the
+    // scene's view, so a result that lands while the view is destroyed
+    // (rotation, a drawer scene on top) waits for the next collector instead
+    // of being dropped — the service has already switched the server by then.
     private val _connectSuccess = Channel<ConnectSuccess>(Channel.BUFFERED)
 
     /** Emitted once per successful connection. */
@@ -112,110 +105,25 @@ class ServerConfigViewModel : ViewModel() {
 
         _connecting.value = true
 
-        // NET-7: the candidate key rides the test request itself (explicit
-        // Bearer header on a stripped test client). No global auth state is
-        // written until onConnectSuccess — the single commit point.
-        val candidateKey = apiKey?.ifEmpty { null }
-        val testClient = LRRUrlHelper.buildTestClient(ServiceRegistry.networkModule.okHttpClient)
-
-        viewModelScope.launch(Dispatchers.IO) {
-            // Delegate protocol detection, HTTPS->HTTP fallback, and the
-            // cleartext LAN gate to the shared helper (the same one
-            // ServerListViewModel uses) so onboarding can never probe a WAN
-            // host over cleartext with the API key attached.
-            when (
-                val r = LRRUrlHelper.connectWithFallback(
-                    testClient, rawInput, candidateKey, allowCleartext
-                )
-            ) {
-                is LRRUrlHelper.ConnectResult.Success ->
-                    onConnectSuccess(r.resolvedUrl, r.info, candidateKey, navigateOnSuccess, allowCleartext)
-                is LRRUrlHelper.ConnectResult.Failure -> onConnectFailure(r.error)
-                is LRRUrlHelper.ConnectResult.UntrustedCertificate -> {
+        viewModelScope.launch {
+            // The service finishes the test and the commit even if this
+            // screen closes first; only the report below needs the screen.
+            when (val r = profiles.connectAndActivate(rawInput, apiKey, allowCleartext)) {
+                is ServerProfileService.Outcome.Done -> {
+                    _connecting.value = false
+                    _connectSuccess.trySend(ConnectSuccess(r.value.resolvedUrl, r.value.info, navigateOnSuccess))
+                }
+                is ServerProfileService.Outcome.Failed -> onConnectFailure(r.error)
+                ServerProfileService.Outcome.SecureStorageUnavailable -> {
+                    _connecting.value = false
+                    _secureStorageError.trySend(Unit)
+                }
+                is ServerProfileService.Outcome.Untrusted -> {
                     _connecting.value = false
                     _untrustedCertificate.trySend(UntrustedCertificate(r.certificate, navigateOnSuccess))
                 }
             }
         }
-    }
-
-    /**
-     * Called on IO thread when connection succeeds. Persists/updates the
-     * [ServerProfile] then emits the success event.
-     */
-    private suspend fun onConnectSuccess(
-        resolvedUrl: String,
-        info: LRRServerInfo,
-        apiKey: String?,
-        navigateOnSuccess: Boolean,
-        allowCleartext: Boolean
-    ) {
-        try {
-            withContext(Dispatchers.IO) {
-                // The persisted cleartext flag is the user's consent (as on the
-                // add/edit paths, audit C27 ruling R11); LAN hosts need none —
-                // the interceptor admits them like the connect gate does.
-                val savedAllowCleartext = allowCleartext
-
-                // Room first: create or update the active profile row. A failure
-                // here is reported below with the live global auth still on the
-                // previous server, so a persistence error never silently switches
-                // traffic to an unpersisted candidate.
-                // The active flag moves only after the key is stored (below),
-                // in one atomic UPDATE: never zero active profiles, never an
-                // active one without its key.
-                val existing = profileRepository.findByUrl(resolvedUrl)
-                val inserted: ServerProfile?
-                val profileId = if (existing != null) {
-                    inserted = null
-                    val updated = ServerProfile(
-                        existing.id,
-                        info.name ?: existing.name,
-                        resolvedUrl,
-                        existing.isActive,
-                        savedAllowCleartext
-                    )
-                    profileRepository.update(updated)
-                    existing.id
-                } else {
-                    val profileName = info.name ?: "LANraragi"
-                    val row = ServerProfile(0, profileName, resolvedUrl, false, savedAllowCleartext)
-                    val id = profileRepository.insert(row)
-                    inserted = row.copy(id = id)
-                    id
-                }
-
-                // Keystore per-profile key, then activation, then live global
-                // auth LAST. (API key rides EncryptedSharedPreferences, not
-                // Room.) bumpServerConfigVersion drives GalleryListScene's
-                // auto-refresh, so re-onboarding refreshes the list like add/edit.
-                try {
-                    LRRAuthManager.setApiKeyForProfile(profileId, apiKey)
-                } catch (e: LRRSecureStorageUnavailableException) {
-                    inserted?.let { profileRepository.delete(it) }
-                    throw e
-                }
-                profileRepository.activateExclusive(profileId)
-                LRRAuthManager.setActiveProfileId(profileId)
-                LRRAuthManager.setServerUrl(resolvedUrl)
-                LRRAuthManager.setApiKey(apiKey)
-                LRRAuthManager.setServerName(info.name)
-                LRRAuthManager.setAllowCleartext(savedAllowCleartext)
-                LRRAuthManager.bumpServerConfigVersion()
-            }
-        } catch (e: LRRSecureStorageUnavailableException) {
-            Log.e(TAG, "Secure storage unavailable on connect success", e)
-            onConnectFailure(e)
-            return
-        } catch (e: Exception) {
-            if (e is CancellationException) throw e
-            Log.e(TAG, "Failed to persist profile on connect success", e)
-            onConnectFailure(e)
-            return
-        }
-
-        _connecting.value = false
-        _connectSuccess.trySend(ConnectSuccess(resolvedUrl, info, navigateOnSuccess))
     }
 
     /**
@@ -229,9 +137,5 @@ class ServerConfigViewModel : ViewModel() {
         } else {
             _connectFailure.trySend(e)
         }
-    }
-
-    companion object {
-        private const val TAG = "ServerConfigVM"
     }
 }

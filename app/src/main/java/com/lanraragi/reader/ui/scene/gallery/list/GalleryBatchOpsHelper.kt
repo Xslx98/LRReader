@@ -66,13 +66,6 @@ internal class GalleryBatchOpsHelper(
         /** Pushes the tank's member-management scene. */
         fun openTankoubon(tankId: String, tankName: String)
 
-        /**
-         * Stable per-scene identity stamped on batches this scene starts, so
-         * the shared activity-scoped ViewModel's broadcast result is handled by
-         * this scene alone (see [GalleryListViewModel.BatchResult.owner]).
-         */
-        fun batchOwnerToken(): Any
-
         /** The list shows tanks only: Download / Sort / Delete act on tanks. */
         fun isTankMode(): Boolean = false
     }
@@ -247,9 +240,7 @@ internal class GalleryBatchOpsHelper(
             runAndExit(GalleryListViewModel.BatchOp.DownloadTanks, selected)
             return
         }
-        callback.viewModel.runBatchDownload(
-            selected, callback.downloadManager, owner = callback.batchOwnerToken()
-        )
+        callback.viewModel.runBatchDownload(selected, callback.downloadManager)
         callback.exitSelection()
     }
 
@@ -263,8 +254,7 @@ internal class GalleryBatchOpsHelper(
             callback.activity, callback.activeProfileId()
         ) { categoryId ->
             callback.viewModel.runBatch(
-                GalleryListViewModel.BatchOp.AddToCategory(categoryId), selected,
-                owner = callback.batchOwnerToken()
+                GalleryListViewModel.BatchOp.AddToCategory(categoryId), selected
             )
             callback.exitSelection()
         }
@@ -284,8 +274,7 @@ internal class GalleryBatchOpsHelper(
                     tankName = tank.name,
                     knownMembers = tank.archives.toSet(),
                 ),
-                selected,
-                owner = callback.batchOwnerToken()
+                selected
             )
             callback.exitSelection()
         }
@@ -297,15 +286,13 @@ internal class GalleryBatchOpsHelper(
     }
 
     private fun runAndExit(op: GalleryListViewModel.BatchOp, selected: List<Archive>) {
-        callback.viewModel.runBatch(op, selected, owner = callback.batchOwnerToken())
+        callback.viewModel.runBatch(op, selected)
         callback.exitSelection()
     }
 
     private fun onClearNewClick() {
         val selected = takeSelection() ?: return
-        callback.viewModel.runBatch(
-            GalleryListViewModel.BatchOp.ClearNew, selected, owner = callback.batchOwnerToken()
-        )
+        callback.viewModel.runBatch(GalleryListViewModel.BatchOp.ClearNew, selected)
         callback.exitSelection()
     }
 
@@ -366,7 +353,7 @@ internal class GalleryBatchOpsHelper(
             positiveButton.setOnClickListener {
                 countdownTimer?.cancel()
                 dialog.dismiss()
-                callback.viewModel.runBatch(op, selected, owner = callback.batchOwnerToken())
+                callback.viewModel.runBatch(op, selected)
                 callback.exitSelection()
             }
         }

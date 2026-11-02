@@ -1053,6 +1053,76 @@ class DownloadManagerTest {
         serverProfileId = 1L
     }
 
+    /** Captures the dirs [DownloadManager.deleteDownloadAndFiles] and the range form remove. */
+    private fun recordDirDeletes(): MutableList<Pair<String, String?>> {
+        val deleted = java.util.concurrent.CopyOnWriteArrayList<Pair<String, String?>>()
+        manager.dirDeleter = { arcid, root -> deleted += arcid to root }
+        return deleted
+    }
+
+    @Test
+    fun deleteDownloadAndFiles_removesTheRowAndTheDirUnderItsStoredRoot() {
+        val deleted = recordDirDeletes()
+        manager.addDownload(listOf(finishedRow("del_1", 100L).apply { downloadRootUri = "content://old-root" }))
+
+        manager.deleteDownloadAndFiles("del_1", deleteFiles = true)
+
+        assertFalse(manager.containDownloadInfo("del_1"))
+        // The root was captured before the row went.
+        awaitUntil { deleted.isNotEmpty() }
+        assertEquals(listOf("del_1" to "content://old-root"), deleted.toList())
+        assertTrue(com.lanraragi.reader.settings.DownloadSettings.getRemoveImageFiles())
+    }
+
+    @Test
+    fun deleteDownloadAndFiles_keepingFiles_onlyRemovesTheRow() {
+        val deleted = recordDirDeletes()
+        manager.addDownload(listOf(finishedRow("del_2", 100L)))
+
+        manager.deleteDownloadAndFiles("del_2", deleteFiles = false)
+
+        assertFalse(manager.containDownloadInfo("del_2"))
+        assertFalse(com.lanraragi.reader.settings.DownloadSettings.getRemoveImageFiles())
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        assertTrue(deleted.isEmpty())
+    }
+
+    @Test
+    fun deleteRangeDownloadAndFiles_removesRowsAndEachDir() {
+        val deleted = recordDirDeletes()
+        val rows = listOf(
+            finishedRow("del_a", 100L).apply { downloadRootUri = "content://a" },
+            finishedRow("del_b", 200L),
+        )
+        manager.addDownload(rows)
+
+        manager.deleteRangeDownloadAndFiles(rows, rows.map { it.arcid }, deleteFiles = true)
+
+        assertFalse(manager.containDownloadInfo("del_a"))
+        assertFalse(manager.containDownloadInfo("del_b"))
+        awaitUntil { deleted.size == 2 }
+        assertEquals(listOf("del_a" to "content://a", "del_b" to null), deleted.toList())
+    }
+
+    @Test
+    fun moveDownloadOrder_rotatesTimesOfThePreMoveList() {
+        val rows = mutableListOf(finishedRow("mv_a", 300L), finishedRow("mv_b", 200L), finishedRow("mv_c", 100L))
+        manager.addDownload(rows.map { finishedRow(it.arcid, it.time) })
+        runBlocking { manager.repo.awaitDbWrites() }
+
+        manager.moveDownloadOrder(rows, 0, 2)
+        // The adapter reorders its own list right after the call.
+        rows.add(2, rows.removeAt(0))
+
+        val dbRepo = ServiceRegistry.dataModule.downloadDbRepository
+        val expected = mapOf("mv_a" to 100L, "mv_b" to 300L, "mv_c" to 200L)
+        awaitUntil(message = "order never persisted") {
+            runBlocking { dbRepo.getAllDownloadInfo() }
+                .filter { it.arcid.startsWith("mv_") }
+                .associate { it.arcid to it.time } == expected
+        }
+    }
+
     private fun tankGroupFailures(): MutableList<com.lanraragi.reader.event.TankTagSyncFailedEvent> {
         val events = java.util.concurrent.CopyOnWriteArrayList<com.lanraragi.reader.event.TankTagSyncFailedEvent>()
         testScope.launch { com.lanraragi.reader.event.AppEventBus.tankTagSyncFailedEvent.collect { events += it } }

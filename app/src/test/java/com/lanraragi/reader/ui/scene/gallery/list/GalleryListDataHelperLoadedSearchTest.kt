@@ -1,7 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
-import com.lanraragi.reader.archive.ListUrlBuilder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,9 +22,7 @@ class GalleryListDataHelperLoadedSearchTest {
     private class RecordingCallback : GalleryListDataHelper.Callback {
         val loaded = mutableListOf<GalleryListViewModel.SearchParams>()
         override fun getHostContext(): Context? = null
-        override fun getUrlBuilder(): ListUrlBuilder? = null
-        override fun getSortBy(): String = "title"
-        override fun getSortOrder(): String = "asc"
+        override fun currentQuery() = GalleryListQuery(GalleryListLoader.SearchInputs(null, null), "title", "asc")
         override fun notifyAdapterDataSetChanged() {}
         override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {}
         override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {}
@@ -50,7 +47,7 @@ class GalleryListDataHelperLoadedSearchTest {
     @Test
     fun `current task reports the issued query`() {
         val callback = RecordingCallback()
-        val helper = GalleryListDataHelper(callback)
+        val helper = GalleryListDataHelper(callback, GalleryListViewModel())
 
         // A fresh helper's current task id is 0.
         helper.recordLoadedSearch(taskId = 0, issued = filtered)
@@ -61,7 +58,7 @@ class GalleryListDataHelperLoadedSearchTest {
     @Test
     fun `superseded task does not overwrite the query`() {
         val callback = RecordingCallback()
-        val helper = GalleryListDataHelper(callback)
+        val helper = GalleryListDataHelper(callback, GalleryListViewModel())
 
         helper.recordLoadedSearch(taskId = 7, issued = filtered)
 

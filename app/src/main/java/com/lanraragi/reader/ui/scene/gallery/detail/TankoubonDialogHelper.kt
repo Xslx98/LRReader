@@ -1,6 +1,5 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
-import com.lanraragi.reader.tankoubon.TankListCache
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
@@ -8,31 +7,32 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.event.TankMembershipChangedEvent
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.ui.scene.TankDialogs
 import com.lanraragi.reader.client.api.LRRHttpException
-import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.tankoubon.TankCategorySyncer
+import com.lanraragi.reader.tankoubon.PickedTank
+import com.lanraragi.reader.tankoubon.TankMembershipService
 import com.lanraragi.reader.tankoubon.TankNameSuggester
 import com.lanraragi.reader.tankoubon.TankRecentStore
-import com.lanraragi.reader.tankoubon.TankTagSyncer
+import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.server.resolveSourceBaseUrl
+import com.lanraragi.reader.server.ServerConnection
+import com.lanraragi.reader.server.ServerConnections
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
 
 /**
  * Tankoubon pickers, both on [TankPickerSheet] (docs/plan-2.4.0-tank-ux.md). Routes every call by the archive's SOURCE profile
- * via resolveSourceBaseUrl — never the active server. A definite 404 marks
+ * via ServerConnections.forProfile — never the active server. A definite 404 marks
  * the server pre-0.9.8 through [TankoubonSupportGate] and surfaces the
  * unsupported toast; 423 means the tank is locked server-side.
  */
 object TankoubonDialogHelper {
+
+    /** The picker's list load and create (it never calls [TankRepository.loadAll]). */
+    private val repository by lazy { TankRepository(TankMembershipSyncFactory.runnerSafely()::sync) }
 
     /**
      * Membership editor: the sheet in membership mode over the archive's
@@ -54,26 +54,21 @@ object TankoubonDialogHelper {
     ) {
         if (activity == null || arcid.isNullOrEmpty()) return
 
-        loadTanksAndMembership(activity, serverProfileId, arcid) { tanks, memberIds, serverUrl ->
+        loadTanksAndMembership(activity, serverProfileId, arcid) { loaded, conn ->
             val mode = TankPickerSheet.Mode.Membership(
                 arcid,
-                checked = (pendingChecked ?: memberIds).toMutableSet(),
+                checked = (pendingChecked ?: loaded.memberIds).toMutableSet(),
                 onApply = { checkedIds ->
-                    applyMembershipChanges(
-                        activity, tanks,
-                        checked = BooleanArray(tanks.size) { tanks[it].id in checkedIds },
-                        originalChecked = BooleanArray(tanks.size) { tanks[it].id in memberIds },
-                        arcid, serverProfileId, serverUrl, onChanged,
-                    )
+                    applyMembershipChanges(activity, conn, arcid, loaded, checkedIds, onChanged)
                 },
             )
             TankPickerSheet(
-                activity, serverUrl, tanks,
+                activity, conn.baseUrl, loaded.tanks,
                 recentIds = TankRecentStore.default.get(serverProfileId),
                 suggestedName = TankNameSuggester.suggest(listOfNotNull(archiveTitle)),
                 mode = mode,
             ) { name ->
-                createTank(activity, serverUrl, name) { newId, _ ->
+                createTank(activity, conn, name) { newId, _ ->
                     // Recent puts the new, pre-checked tank at the top of the reopened sheet.
                     TankRecentStore.default.touch(serverProfileId, newId)
                     showMembershipDialog(
@@ -90,12 +85,12 @@ object TankoubonDialogHelper {
      * with "contains x/y" marks computed from [selectedArcids]. A server with
      * no tankoubon yet skips the sheet and goes straight to the create
      * prompt (spec 2026-09-21 §6). A pick or create also bumps the tank in
-     * [TankRecentStore]. [onPicked] receives the picked
-     * [LRRTankoubonApi.Tankoubon] as the picker saw it: `archives` empty
-     * means the tank had zero members at pick time (a just-created tank
-     * always does) so the batch can seed the tank cover after its first
-     * successful add; `name` feeds the list's merge animation (provisional
-     * tank row + Snackbar). A created tank is synthesized from the typed name.
+     * [TankRecentStore]. [onPicked] receives the tank as the picker saw it:
+     * `archives` empty means the tank had zero members at pick time (a
+     * just-created tank always does) so the batch can seed the tank cover
+     * after its first successful add; `name` feeds the list's merge
+     * animation (provisional tank row + Snackbar). A created tank is
+     * synthesized from the typed name.
      */
     @JvmStatic
     fun pickTankoubon(
@@ -103,72 +98,51 @@ object TankoubonDialogHelper {
         serverProfileId: Long,
         selectedArcids: List<String>,
         selectedTitles: List<String> = emptyList(),
-        onPicked: (tank: LRRTankoubonApi.Tankoubon) -> Unit,
+        onPicked: (tank: PickedTank) -> Unit,
     ) {
         if (activity == null) return
         // Spec 2026-09-22 §9: "New tankoubon" pre-fills a name extracted from the selection.
         val suggested = TankNameSuggester.suggest(selectedTitles)
-        val picked: (LRRTankoubonApi.Tankoubon) -> Unit = { tank ->
+        val picked: (PickedTank) -> Unit = { tank ->
             TankRecentStore.default.touch(serverProfileId, tank.id)
             onPicked(tank)
         }
-        val created: (String, String) -> Unit = { newId, name ->
-            picked(LRRTankoubonApi.Tankoubon(id = newId, name = name))
-        }
+        val created: (String, String) -> Unit = { newId, name -> picked(PickedTank(id = newId, name = name)) }
 
-        loadTanksAndMembership(activity, serverProfileId, arcid = null) { tanks, _, serverUrl ->
-            if (tanks.isEmpty()) {
-                promptCreate(activity, serverUrl, suggested, created)
+        loadTanksAndMembership(activity, serverProfileId, arcid = null) { loaded, conn ->
+            if (loaded.tanks.isEmpty()) {
+                promptCreate(activity, conn, suggested, created)
                 return@loadTanksAndMembership
             }
             TankPickerSheet(
-                activity, serverUrl, tanks,
+                activity, conn.baseUrl, loaded.tanks,
                 recentIds = TankRecentStore.default.get(serverProfileId),
                 suggestedName = suggested,
-                mode = TankPickerSheet.Mode.Pick(selectedArcids, picked),
-            ) { name -> createTank(activity, serverUrl, name, created) }.show()
+                mode = TankPickerSheet.Mode.Pick(selectedArcids) { tank ->
+                    picked(PickedTank(tank.id, tank.name, tank.archives))
+                },
+            ) { name -> createTank(activity, conn, name, created) }.show()
         }
     }
 
     /**
-     * Shared front half of both dialogs: resolve the owning server's base
-     * URL, fetch every tank (list endpoint page loop) plus, when [arcid] is
-     * given, its current membership, then hand off on the main thread. Only
-     * the reverse lookup is a 0.9.8-only route, so success with an arcid
-     * also marks the server supported.
+     * Shared front half of both dialogs: resolve the owning server, load
+     * every tank plus, when [arcid] is given, its current membership
+     * ([TankRepository.loadForPicker]), then hand off on the main thread.
      */
     private fun loadTanksAndMembership(
         activity: Activity,
         serverProfileId: Long,
         arcid: String?,
-        onLoaded: (tanks: List<LRRTankoubonApi.Tankoubon>, memberIds: Set<String>, serverUrl: String) -> Unit,
+        onLoaded: (loaded: TankRepository.PickerList, conn: ServerConnection) -> Unit,
     ) {
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             var serverUrl: String? = null
             try {
-                serverUrl = resolveSourceBaseUrl(
-                    serverProfileId,
-                    ServiceRegistry.dataModule.profileLookupCache,
-                )
-                val url = serverUrl
-                val client = ServiceRegistry.networkModule.okHttpClient
-                val memberIds = if (arcid != null) {
-                    LRRTankoubonApi.getArchiveTankoubons(client, url, arcid).toSet()
-                } else {
-                    emptySet()
-                }
-                val tanks = mutableListOf<LRRTankoubonApi.Tankoubon>()
-                // Server pages are 0-based (page 0 = parameterless request).
-                var page = 0
-                while (page < MAX_PAGES) {
-                    val r = LRRTankoubonApi.getTankoubons(client, url, page)
-                    tanks.addAll(r.result)
-                    if (r.result.isEmpty() || tanks.size >= r.total) break
-                    page++
-                }
-                if (arcid != null) TankoubonSupportGate.markSupported(url)
-                TankListCache.put(url, tanks)
-                Handler(Looper.getMainLooper()).post { onLoaded(tanks, memberIds, url) }
+                val conn = ServerConnections.forProfile(serverProfileId)
+                serverUrl = conn.baseUrl
+                val loaded = repository.loadForPicker(conn, arcid)
+                Handler(Looper.getMainLooper()).post { onLoaded(loaded, conn) }
             } catch (ce: CancellationException) {
                 // Lifecycle teardown cancelled the fetch; not an error to toast.
                 throw ce
@@ -178,136 +152,67 @@ object TankoubonDialogHelper {
         }
     }
 
-    @Suppress("LongParameterList") // mirrors CategoryDialogHelper's apply-changes signature
+    /**
+     * Hands the diff to [TankMembershipService] (process-scoped, so closing
+     * the sheet or rotating cannot cut the write off). Feedback goes through
+     * the app context; the Activity callback only runs if it is alive.
+     */
+    @Suppress("LongParameterList")
     private fun applyMembershipChanges(
         activity: Activity,
-        tanks: List<LRRTankoubonApi.Tankoubon>,
-        checked: BooleanArray,
-        originalChecked: BooleanArray,
+        conn: ServerConnection,
         arcid: String,
-        serverProfileId: Long,
-        serverUrl: String,
+        loaded: TankRepository.PickerList,
+        checkedIds: Set<String>,
         onChanged: (List<String>) -> Unit,
     ) {
-        // App-scoped, not the Activity's lifecycleScope: this is a multi-step
-        // server write (membership, then tag materialization and category
-        // promotion); cutting it off on a rotation left the server
-        // half-updated. Feedback goes through the app context and the
-        // process-wide event bus; the Activity callback only runs if alive.
         val appContext = activity.applicationContext
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                val client = ServiceRegistry.networkModule.okHttpClient
-                val joined = mutableListOf<TankMembershipChangedEvent.JoinedTank>()
-                val left = mutableListOf<String>()
-                // Rule 3 needs the tank's PRE-removal tags and member tags
-                // (spec 2026-09-22 §5.2): snapshot every tank being left first.
-                val beforeRemoval = tanks.indices
-                    .filter { originalChecked[it] && !checked[it] }
-                    .mapNotNull { TankTagSyncer.snapshot(client, serverUrl, tanks[it].id) }
-                // Sequential on purpose: the server appends members in call
-                // order, and a locked tank should fail fast and visibly.
-                for (i in tanks.indices) {
-                    if (checked[i] == originalChecked[i]) continue
-                    val tankId = tanks[i].id
-                    if (checked[i]) {
-                        LRRTankoubonApi.addToTankoubon(client, serverUrl, tankId, arcid)
-                        val wasEmpty = tanks[i].archives.isEmpty()
-                        if (wasEmpty) {
-                            seedTankCoverBestEffort(client, serverUrl, tankId)
-                        }
-                        joined += TankMembershipChangedEvent.JoinedTank(tankId, tanks[i].name, wasEmpty)
-                    } else {
-                        LRRTankoubonApi.removeFromTankoubon(client, serverUrl, tankId, arcid)
-                        left += tankId
+        TankMembershipService.default.applyAsync(conn, arcid, loaded.tanks, loaded.memberIds, checkedIds) { result ->
+            result.fold(
+                onSuccess = { newIds ->
+                    Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(appContext, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
+                        if (!activity.isDestroyed) onChanged(newIds)
                     }
-                }
-                // Materialize tank tags + promote static categories after the
-                // membership writes (best-effort, spec 2026-09-22 §5 / §6).
-                for (tank in joined) {
-                    TankTagSyncer.afterAdd(client, serverUrl, tank.id)
-                    TankCategorySyncer.afterAdd(client, serverUrl, tank.id, tank.name, listOf(arcid))
-                }
-                for (snap in beforeRemoval) {
-                    TankTagSyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
-                    TankCategorySyncer.afterRemove(client, serverUrl, snap, listOf(arcid))
-                }
-                TankListCache.invalidate(serverUrl)
-                for (tank in joined.asReversed()) TankRecentStore.default.touch(serverProfileId, tank.id)
-                val newIds = tanks.indices.filter { checked[it] }.map { tanks[it].id }
-                Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(appContext, R.string.tank_op_done, Toast.LENGTH_SHORT).show()
-                    if (joined.isNotEmpty() || left.isNotEmpty()) {
-                        AppEventBus.postTankMembershipChangedEvent(
-                            TankMembershipChangedEvent(arcid, joined, left)
-                        )
-                    }
-                    if (!activity.isDestroyed) onChanged(newIds)
-                }
-            } catch (ce: CancellationException) {
-                throw ce
-            } catch (e: Exception) {
-                postErrorToast(activity, serverUrl, e)
-            }
+                },
+                onFailure = { e -> postErrorToast(activity, conn.baseUrl, e as Exception) },
+            )
         }
     }
 
-    /**
-     * Best-effort cover seed for a tank that was EMPTY before the add above:
-     * the server's append endpoint never queues thumbnail generation (only
-     * the whole-list JSON PUT does), so without this the tank would serve
-     * the placeholder cover forever. Mirrors the web client's behavior of
-     * ending up with the first member's cover. Failures are swallowed — the
-     * membership write already succeeded and the cover is cosmetic.
-     */
-    private suspend fun seedTankCoverBestEffort(
-        client: OkHttpClient,
-        serverUrl: String,
-        tankId: String,
-    ) {
-        try {
-            LRRTankoubonApi.updateTankThumbnail(client, serverUrl, tankId, globalPage1 = 1)
-        } catch (ce: CancellationException) {
-            throw ce
-        } catch (ignored: Exception) {
-            // Cosmetic — see KDoc.
-        }
-    }
-
-    /** Name dialog → createTankoubon → [onCreated] with the new tank id and the typed name. */
+    /** Name dialog → create → [onCreated] with the new tank id and the typed name. */
     private fun promptCreate(
         activity: Activity,
-        serverUrl: String,
+        conn: ServerConnection,
         suggestedName: String?,
         onCreated: (tankId: String, name: String) -> Unit,
     ) {
         TankDialogs.showNameInputDialog(
             activity, R.string.tank_create, suggestedName.orEmpty(), selectInitial = true,
-        ) { name -> createTank(activity, serverUrl, name, onCreated) }
+        ) { name -> createTank(activity, conn, name, onCreated) }
     }
 
-    /** createTankoubon → [onCreated] with the new tank id and [name]. */
+    /**
+     * [TankRepository.createAsync] → [onCreated] with the new tank id and
+     * [name]. The write runs on the repository's process scope so a rotation
+     * cannot cut it off (see applyMembershipChanges); the follow-up needs a
+     * live Activity.
+     */
     private fun createTank(
         activity: Activity,
-        serverUrl: String,
+        conn: ServerConnection,
         name: String,
         onCreated: (tankId: String, name: String) -> Unit,
     ) {
-        // App-scoped so a rotation cannot cut the create off (see
-        // applyMembershipChanges); the follow-up needs a live Activity.
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            try {
-                val client = ServiceRegistry.networkModule.okHttpClient
-                val newId = LRRTankoubonApi.createTankoubon(client, serverUrl, name)
-                TankListCache.invalidate(serverUrl)
-                Handler(Looper.getMainLooper()).post {
-                    if (!activity.isDestroyed) onCreated(newId, name)
-                }
-            } catch (ce: CancellationException) {
-                throw ce
-            } catch (e: Exception) {
-                postErrorToast(activity, serverUrl, e)
-            }
+        repository.createAsync(conn, name) { result ->
+            result.fold(
+                onSuccess = { newId ->
+                    Handler(Looper.getMainLooper()).post {
+                        if (!activity.isDestroyed) onCreated(newId, name)
+                    }
+                },
+                onFailure = { e -> postErrorToast(activity, conn.baseUrl, e as Exception) },
+            )
         }
     }
 
@@ -326,6 +231,5 @@ object TankoubonDialogHelper {
         }
     }
 
-    private const val MAX_PAGES = 100
     private const val HTTP_LOCKED = 423
 }

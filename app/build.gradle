@@ -377,8 +377,6 @@ dependencies {
     // ProcessLifecycleOwner — used by AppLockGate to detect background→foreground
     // transitions and re-prompt the security pattern.
     implementation libs.lifecycle.process
-    // Paging 3 — paginated gallery list loading
-    implementation libs.paging.runtime
     // kotlinx-serialization (LRR data classes)
     implementation libs.serialization.json
 
@@ -404,7 +402,6 @@ dependencies {
     testImplementation libs.okhttp.tls
     testImplementation libs.coroutines.test
     testImplementation libs.serialization.json
-    testImplementation libs.paging.testing
     testImplementation libs.room.testing
     testImplementation libs.test.core.ktx
 

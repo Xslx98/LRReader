@@ -1,7 +1,7 @@
-package com.lanraragi.reader.ui.scene.download
+package com.lanraragi.reader.download
 
+import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -23,14 +23,14 @@ import java.util.concurrent.ConcurrentHashMap
  * failure for the rest of the session — matching the pre-cache behavior
  * where every bind re-resolved.
  *
- * [scope] must outlive pending resolutions (the application ioScope, not
- * viewModelScope): consumers block on the future from cover-loader I/O threads,
- * and a cancelled-before-completion future would block such a thread
- * forever. The finally below completes the future even on cancellation as
- * a second line of defence.
+ * [scope] must outlive pending resolutions (the application ioScope by
+ * default, never a viewModelScope): consumers block on the future from
+ * cover-loader I/O threads, and a cancelled-before-completion future would
+ * block such a thread forever. The finally below completes the future even
+ * on cancellation as a second line of defence.
  */
 class DownloadDirCache(
-    private val scope: CoroutineScope,
+    private val scope: CoroutineScope = ServiceRegistry.coroutineModule.ioScope,
     private val resolver: suspend (DownloadInfo) -> StorageFile? = { info ->
         DownloadDirs.findGalleryDownloadDir(info.arcid, rootUriOverride = info.downloadRootUri)
     },

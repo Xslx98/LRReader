@@ -28,9 +28,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.backup.BackupController
 import com.lanraragi.reader.diagnostics.DiagnosticsCollector
 import com.lanraragi.reader.settings.AppearanceSettings
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 class AdvancedFragment : BasePreferenceFragmentCompat(),
     Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
@@ -83,16 +81,8 @@ class AdvancedFragment : BasePreferenceFragmentCompat(),
         val downloads = DiagnosticsCollector.downloadSummary()
         preference.isEnabled = false
         viewLifecycleOwner.lifecycleScope.launch(ServiceRegistry.coroutineModule.exceptionHandler) {
-            val build = ServiceRegistry.coroutineModule.ioScope.async {
-                try {
-                    DiagnosticsCollector.build(context, downloads)
-                } catch (e: IOException) {
-                    Log.e(TAG, "Build diagnostics bundle", e)
-                    null
-                }
-            }
             val file = try {
-                build.await()
+                DiagnosticsCollector.buildInBackground(context, downloads)
             } finally {
                 preference.isEnabled = true
             }

@@ -38,7 +38,6 @@ import com.lanraragi.reader.util.isLightTheme
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.dao.DownloadInfo
@@ -56,7 +55,6 @@ import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.widget.LoadImageView
-import kotlinx.coroutines.launch
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.withFailureReason
@@ -537,10 +535,8 @@ class DownloadAdapter(
             if (isTankoubonId(list[fromPosInList].arcid) || isTankoubonId(list[toPosInList].arcid)) {
                 return
             }
-            // 先更新数据库中的顺序（通过 time 字段）
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                ServiceRegistry.dataModule.downloadDbRepository.moveDownloadInfo(list, fromPosInList, toPosInList)
-            }
+            // Persist the new order first (rotates the DOWNLOAD_TIME values).
+            mCallback.downloadManager?.moveDownloadOrder(list, fromPosInList, toPosInList)
 
             // 再尝试更新当前列表的内存顺序
             // list is declared as List<DownloadInfo> (unmodifiable from facade),

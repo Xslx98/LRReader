@@ -1,6 +1,5 @@
 package com.lanraragi.reader.ui.scene.download
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
@@ -15,7 +14,6 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.TankDownloadGrouping
 import com.lanraragi.reader.download.TankProgressAggregate
-import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.download.search.DownloadListInfosExecutor
 import com.lanraragi.reader.download.search.DownloadSearchMatcher
 import com.lanraragi.reader.storage.StorageFile
@@ -33,6 +31,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import java.util.concurrent.CompletableFuture
+import com.lanraragi.reader.download.DownloadDirCache
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -264,12 +263,12 @@ class DownloadsViewModel(
 
     /**
      * Per-arcid download-dir resolutions shared by every thumbnail bind.
-     * Lives on the application ioScope (not viewModelScope) because
+     * Resolves on the application scope (not viewModelScope) because
      * ThumbDataContainer blocks on the future from cover-loader I/O threads —
      * see [DownloadDirCache]. Invalidated from the [DownloadInfoListener]
      * callbacks below so a deleted-then-re-added archive re-resolves.
      */
-    private val downloadDirCache = DownloadDirCache(ServiceRegistry.coroutineModule.ioScope)
+    private val downloadDirCache = DownloadDirCache()
 
     /** The shared (possibly in-flight) download-dir resolution for [info]. */
     fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<StorageFile?> =
@@ -471,7 +470,8 @@ class DownloadsViewModel(
 
     /**
      * Deletes a range of downloads. If [deleteFiles] is true, also removes
-     * the download directories and dirname DB records.
+     * the download directories and dirname DB records
+     * ([DownloadManager.deleteRangeDownloadAndFiles]).
      */
     fun deleteRangeDownloads(
         downloadInfoList: List<DownloadInfo>,
@@ -480,24 +480,7 @@ class DownloadsViewModel(
         tankCardIds: Collection<String> = emptyList(),
     ) {
         // Checked tank cards: their group rows go with the member rows.
-        downloadManager.deleteRangeDownload(arcidList, tankCardIds)
-        DownloadSettings.putRemoveImageFiles(deleteFiles)
-        if (deleteFiles) {
-            // Snapshot the list to avoid concurrent modification
-            val infos = ArrayList(downloadInfoList)
-            // Each info carries the row's root captured before the rows were
-            // removed — see DownloadLabelHelper.performDelete.
-            val targets = infos.map { it.arcid to it.downloadRootUri }
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                for ((arcid, rootUri) in targets) {
-                    try {
-                        DownloadDirs.deleteGalleryDownloadDir(arcid, rootUri)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to delete download files for $arcid", e)
-                    }
-                }
-            }
-        }
+        downloadManager.deleteRangeDownloadAndFiles(downloadInfoList, arcidList, deleteFiles, tankCardIds)
     }
 
     /**
@@ -505,6 +488,16 @@ class DownloadsViewModel(
      */
     fun moveDownloads(downloadInfoList: List<DownloadInfo>, label: String?) {
         downloadManager.changeLabel(downloadInfoList, label)
+    }
+
+    /** Stops every running and queued download (FAB "stop all"). */
+    fun stopAllDownloads() {
+        downloadManager.stopAllDownload()
+    }
+
+    /** Resets the reading progress of every download (local, snapshot and server). */
+    fun resetAllReadingProgress() {
+        downloadManager.resetAllReadingProgress()
     }
 
     /**
@@ -565,7 +558,6 @@ class DownloadsViewModel(
     }
 
     companion object {
-        private const val TAG = "DownloadsViewModel"
         /** Threshold above which pagination activates. */
         private const val PAGINATION_SIZE = 500
 

@@ -27,7 +27,6 @@ import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import com.lanraragi.reader.util.isLightTheme
-import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
@@ -36,7 +35,6 @@ import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.IntIdGenerator
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.widget.Ripples
 import androidx.core.content.ContextCompat
@@ -124,7 +122,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.arcid.value
         set(value) { viewModel.setArcid(value) }
 
-    private var mRequestId: Int = IntIdGenerator.INVALID_ID
     /** Rating when the scene was opened, used to detect changes on exit. */
 
     private var properties: MutableMap<String, String>? = null
@@ -144,12 +141,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return
         }
 
-        // The ViewModel is Activity-scoped, so the previous gallery's
-        // _galleryDetail / _downloadInfo / state would otherwise shadow the
-        // arguments we are about to write via the detail > info > args
-        // fallback in viewModel.getEffective*().
+        // The ViewModels are scene-scoped; new arguments for this same scene
+        // must still not be shadowed by the previous entry's state via the
+        // detail > info > args fallback in viewModel.getEffective*().
         viewModel.resetForNewEntry()
-        // Same Activity-scoping concern for the thumbnail grid VM —
+        // Same for the thumbnail grid VM —
         // without this, navigating from archive A to archive B would
         // briefly show A's pageStates against B's archive.
         pageThumbsViewModel.resetForNewEntry()
@@ -187,12 +183,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel = ViewModelProvider(requireActivity())[GalleryDetailViewModel::class.java]
+        viewModel = ViewModelProvider(this)[GalleryDetailViewModel::class.java]
         // Activity-scoped just like [viewModel]; obtaining it before onInit()
         // so handleArgs() can call resetForNewEntry() on it during a new
         // archive entry, mirroring [GalleryDetailViewModel.resetForNewEntry].
         pageThumbsViewModel =
-            ViewModelProvider(requireActivity())[PageThumbnailsViewModel::class.java]
+            ViewModelProvider(this)[PageThumbnailsViewModel::class.java]
         pageThumbs = DetailPageThumbs(this, viewModel, pageThumbsViewModel)
 
         if (savedInstanceState == null) {
@@ -224,7 +220,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         savedInstanceState.getParcelable<ArchiveDetail>(KEY_ARCHIVE_DETAIL)?.let {
             viewModel.setArchiveDetail(it)
         }
-        mRequestId = savedInstanceState.getInt(KEY_REQUEST_ID)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -240,7 +235,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         viewModel.archiveDetail.value?.let {
             outState.putParcelable(KEY_ARCHIVE_DETAIL, it)
         }
-        outState.putInt(KEY_REQUEST_ID, mRequestId)
     }
 
     override fun onCreateView2(
@@ -443,12 +437,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return true
         }
 
-        val application = requireContext().applicationContext as LRReaderApplication
-        if (application.containGlobalStuff(mRequestId)) {
-            // request exist
-            return true
-        }
-
         // Do request
         return request()
     }
@@ -630,7 +618,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         const val KEY_PAGE = "page"
 
         private const val KEY_ARCHIVE_DETAIL = "archive_detail"
-        private const val KEY_REQUEST_ID = "request_id"
 
         private const val TRANSITION_ANIMATION_DISABLED = true
     }

@@ -1,6 +1,5 @@
 package com.lanraragi.reader.ui.scene.history
 
-import com.lanraragi.reader.server.LRRAuthManager
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,9 +8,8 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.HistoryInfo
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.toArchive
-import com.lanraragi.reader.appwidget.ContinueReadingWidget
-import com.lanraragi.reader.ui.ContinueReadingShortcut
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.reading.ReadingHistoryService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,12 +23,15 @@ import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for [HistoryScene]. Manages the history list data, DiffUtil
- * snapshot tracking, and clear/delete operations.
+ * snapshot tracking, and the clear/delete/rating edits, which
+ * [ReadingHistoryService] finishes even if the screen closes.
  *
  * The Scene observes [historyList] for data and [listUpdate] for dispatching
  * adapter updates. View references, adapters, and navigation remain in the Scene.
  */
-class HistoryViewModel : ViewModel() {
+class HistoryViewModel(
+    private val historyEdits: ReadingHistoryService = ReadingHistoryService.default,
+) : ViewModel() {
 
     private val historyRepository: HistoryRepository =
         ServiceRegistry.dataModule.historyRepository
@@ -140,9 +141,9 @@ class HistoryViewModel : ViewModel() {
             if (rawInfo != null) {
                 viewModelScope.launch {
                     try {
-                        withContext(Dispatchers.IO) {
-                            historyRepository.updateRating(rawInfo.arcid, rawInfo.serverProfileId, newRating)
-                        }
+                        historyEdits.updateRating(rawInfo.arcid, rawInfo.serverProfileId, newRating)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to persist history rating", e)
                     }
@@ -161,8 +162,10 @@ class HistoryViewModel : ViewModel() {
     fun deleteHistoryItem(info: HistoryInfo) {
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) { historyRepository.deleteHistoryInfo(info) }
+                historyEdits.delete(info)
                 loadHistory()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete history item", e)
             }
@@ -181,23 +184,9 @@ class HistoryViewModel : ViewModel() {
      */
     fun removeHistories(archives: List<Archive>) {
         viewModelScope.launch {
-            var ok = 0
-            var bad = 0
-            withContext(Dispatchers.IO) {
-                archives.forEach {
-                    try {
-                        historyRepository.deleteHistory(it.arcid, it.serverProfileId)
-                        ok++
-                    } catch (ce: CancellationException) {
-                        throw ce
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to batch-remove history entry ${it.arcid}", e)
-                        bad++
-                    }
-                }
-            }
+            val tally = historyEdits.remove(archives)
             loadHistory()
-            _batchRemoveDone.tryEmit(ok to bad)
+            _batchRemoveDone.tryEmit(tally)
         }
     }
 
@@ -215,18 +204,10 @@ class HistoryViewModel : ViewModel() {
     fun clearAllHistory() {
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) { historyRepository.clearHistory() }
-                // Only the shown server's history is gone: drop the launcher
-                // entry if it pointed there (issue #16) and let the widget
-                // re-render from whatever history survives (issue #9).
-                val profileId = LRRAuthManager.getActiveProfileId()
-                if (profileId > 0) {
-                    ContinueReadingShortcut.removeIfProfileSafely(profileId)
-                } else {
-                    ContinueReadingShortcut.removeSafely()
-                }
-                ContinueReadingWidget.refreshSafely()
+                historyEdits.clearShownServer()
                 loadHistory()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to clear history", e)
             }

@@ -7,12 +7,12 @@ import androidx.core.os.BundleCompat
  * The `/api/search` inputs behind the rows ONE list scene shows, for the
  * "continue to the next archive" reading context (audit 2026-10-06 C01).
  *
- * [GalleryListViewModel] is activity-scoped, so every list scene on the back
- * stack shares it: a tag search opened from a detail page used to overwrite the
- * query of the list underneath, and opening an archive after popping back
- * continued through the tag search's results. Each scene now owns one of these,
- * fed only by its own [GalleryListDataHelper], and saves it with its state — a
- * restored scene that does not reload must still know what it shows.
+ * When the list ViewModel was shared by every list scene on the back stack, a
+ * tag search opened from a detail page overwrote the query of the list
+ * underneath, and opening an archive after popping back continued through the
+ * tag search's results. Each scene owns one of these, fed only by its own
+ * loads, and saves it with its state — a restored scene that does not reload
+ * must still know what it shows.
  */
 internal class ShownSearchState {
 
