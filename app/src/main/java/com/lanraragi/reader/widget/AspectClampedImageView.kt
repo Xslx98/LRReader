@@ -7,7 +7,7 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.lanraragi.reader.ui.widget
+package com.lanraragi.reader.widget
 
 import android.content.Context
 import android.graphics.drawable.Drawable

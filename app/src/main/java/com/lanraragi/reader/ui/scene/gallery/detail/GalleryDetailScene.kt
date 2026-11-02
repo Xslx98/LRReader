@@ -38,7 +38,7 @@ import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.IntIdGenerator
 import com.lanraragi.reader.util.ViewUtils
-import com.lanraragi.reader.ui.widget.Ripples
+import com.lanraragi.reader.widget.Ripples
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.util.ExceptionUtils
 import com.lanraragi.reader.widget.ViewTransition

@@ -19,7 +19,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
-import com.lanraragi.reader.ui.widget.bindSourceServerBadge
+import com.lanraragi.reader.widget.bindSourceServerBadge
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import androidx.core.content.ContextCompat
 import com.lanraragi.framework.widget.LoadImageView

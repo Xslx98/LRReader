@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.widget
+package com.lanraragi.reader.widget
 
 import android.content.res.ColorStateList
 import android.graphics.Color

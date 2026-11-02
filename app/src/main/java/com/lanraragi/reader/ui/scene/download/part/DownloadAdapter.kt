@@ -52,7 +52,7 @@ import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.util.ViewUtils
-import com.lanraragi.reader.ui.widget.Ripples
+import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.framework.widget.LoadImageView
@@ -268,7 +268,7 @@ class DownloadAdapter(
         // Visual binding (text + colour pair + drawable tint) is shared
         // with the detail-header badge so both surfaces show identical
         // labels / colours for the same profile.
-        com.lanraragi.reader.ui.widget.bindSourceServerBadge(badge, info.serverProfileId)
+        com.lanraragi.reader.widget.bindSourceServerBadge(badge, info.serverProfileId)
 
         // The XML pins source_server 8dp above thumb's bottom — fine when
         // category is GONE (the LRR-archive default). For imported archives

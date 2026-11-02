@@ -68,7 +68,7 @@ import com.lanraragi.reader.widget.SkeletonView
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.widget.ListRefreshLayout
-import com.lanraragi.reader.ui.widget.Ripples
+import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.widget.ViewTransition

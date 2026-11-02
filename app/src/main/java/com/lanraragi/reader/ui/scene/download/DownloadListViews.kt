@@ -11,7 +11,7 @@ import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.widget.list.HandlerDrawable
 import com.lanraragi.reader.widget.list.MarginItemDecoration
-import com.lanraragi.reader.ui.widget.Ripples
+import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
