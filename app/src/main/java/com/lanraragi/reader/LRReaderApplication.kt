@@ -52,6 +52,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.lanraragi.framework.lib.image.Image
+import com.lanraragi.framework.lib.image.ImageTelemetry
 import android.os.Handler
 import android.os.Looper
 import com.lanraragi.reader.util.FileUtils
@@ -62,6 +63,7 @@ import java.lang.ref.WeakReference
 import java.util.Locale
 import com.lanraragi.reader.diagnostics.Crash
 import com.lanraragi.reader.diagnostics.Analytics
+import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.dao.legacy.LegacyDb
 import com.lanraragi.reader.storage.NoMediaFiles
 
@@ -170,6 +172,14 @@ class LRReaderApplication : SceneApplication() {
         // and is essentially free at runtime — kept enabled for release too
         // so production cold-start traces are not a black box.
         trace("LRRApp.GetText.init") { GetText.initialize(this) }
+        // The framework image decoder reports failures through this sink; it does
+        // not import the app's diagnostics itself.
+        ImageTelemetry.sink = object : ImageTelemetry.Sink {
+            override fun recordException(e: Throwable) = Analytics.recordException(e)
+            override fun logError(tag: String, message: String, e: Throwable) {
+                DiagLog.e(tag, message, e)
+            }
+        }
         trace("LRRApp.Settings.init") { Settings.initialize(this) }
         // Single-archive progress PUTs that failed are kept here until the
         // network returns (audit 2026-10-04 C20); flushed below.

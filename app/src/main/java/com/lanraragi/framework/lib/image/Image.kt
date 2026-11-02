@@ -19,7 +19,6 @@ import android.os.Build
 import android.util.Log
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
-import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.util.TraceSections
 import com.lanraragi.reader.util.traceSection
 import java.io.FileInputStream
@@ -115,7 +114,7 @@ class Image private constructor(
                         )
                         mDrawableRef.set(bitmap?.toDrawable(Resources.getSystem()))
                     } catch (fallbackException: Exception) {
-                        Analytics.recordException(fallbackException)
+                        ImageTelemetry.recordException(fallbackException)
                         throw Exception("Android 9 解码失败", e)
                     }
                 }
@@ -293,7 +292,7 @@ class Image private constructor(
             )
         } catch (e: Exception) {
             // Catch all exceptions (ClassCastException, NPE from race, etc.)
-            Analytics.recordException(e)
+            ImageTelemetry.recordException(e)
             return
         } catch (e: OutOfMemoryError) {
             // An Error, which the catch above does not see: the sticker bitmap
@@ -565,7 +564,7 @@ class Image private constructor(
                 return Image(null, drawable, hardware = hardware)
             } catch (e: Exception) {
                 e.printStackTrace()
-                Analytics.recordException(e)
+                ImageTelemetry.recordException(e)
                 return null
             }
         }

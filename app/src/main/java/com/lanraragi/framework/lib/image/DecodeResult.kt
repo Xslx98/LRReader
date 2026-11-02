@@ -1,8 +1,6 @@
 package com.lanraragi.framework.lib.image
 
 import android.util.Log
-import com.lanraragi.reader.diagnostics.Analytics
-import com.lanraragi.reader.diagnostics.DiagLog
 
 /**
  * Outcome of a decode that keeps the reason for a failure (audit 2026-10-06d
@@ -35,10 +33,10 @@ internal fun <T> decodeWithOomRetry(rewind: () -> Unit, attempt: (Int) -> T): De
             return DecodeResult.Ok(attempt(multiplier))
         } catch (e: OutOfMemoryError) {
             Log.e(TAG, "Decode ran out of memory at sample x$multiplier", e)
-            DiagLog.e(TAG, "Decode OOM at sample x$multiplier", e)
+            ImageTelemetry.logError(TAG, "Decode OOM at sample x$multiplier", e)
         } catch (e: Exception) {
             Log.e(TAG, "Decode failed", e)
-            Analytics.recordException(e)
+            ImageTelemetry.recordException(e)
             return DecodeResult.Failed(e)
         }
     }
