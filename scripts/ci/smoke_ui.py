@@ -771,13 +771,19 @@ class Widgets:
         self.tap_into("Pattern protection", "pattern_view")
 
     def background_and_return(self):
+        # The app counts as backgrounded once its activity has stopped and
+        # ProcessLifecycleOwner dispatched ON_STOP (measured 2026-11-02 on
+        # lrr-api35: returns after 0.7 s re-lock every time, on v2.3.0 too).
+        # 3 s leaves room for a slow AVD; the old cold-start fallback hid
+        # exactly that timing as a "no re-lock" bug.
         shell("input", "keyevent", "KEYCODE_HOME")
-        time.sleep(2)
+        time.sleep(3)
         self.relaunch()
 
     def lock(self):
-        """Pattern lock: set (draw + confirm), lock (backgrounding, else a cold
-        start), reject a wrong pattern, unlock, then clear it again."""
+        """Pattern lock: set (draw + confirm), lock by a trip to the
+        background (no cold-start fallback), reject a wrong pattern, unlock,
+        then clear it again."""
         pattern = [0, 3, 6, 7]
         self.open_pattern_settings()
         self.draw_pattern(pattern)
@@ -789,13 +795,6 @@ class Widgets:
         self.check("lock: pattern set")
         self.to_home()
         self.background_and_return()
-        if not wait("resource-id", self.rid("pattern_view"), 8):
-            # v2.3.0 behaviour on the API 35 AVD (2026-10-20): coming back
-            # from the background does not re-lock; only a new process does.
-            print("WARN: lock: no lock screen after backgrounding; locking via a cold start",
-                  flush=True)
-            shell("am", "force-stop", self.pkg)
-            self.relaunch()
         self.need("pattern_view", 15)
         self.check("lock: app locked")
         self.draw_pattern([0, 1, 2, 5])
