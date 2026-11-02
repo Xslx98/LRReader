@@ -10774,9 +10774,9 @@ PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder;->bind(Ljav
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder$$ExternalSyntheticLambda0;-><init>(Lkotlin/jvm/functions/Function0;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder$Companion;-><init>()V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-PLcom/lanraragi/reader/ui/scene/gallery/detail/FavoriteState;-><init>(ZLjava/lang/String;)V
-PLcom/lanraragi/reader/ui/scene/gallery/detail/FavoriteState;->getName()Ljava/lang/String;
-PLcom/lanraragi/reader/ui/scene/gallery/detail/FavoriteState;->isFavorited()Z
+PLcom/lanraragi/reader/domain/FavoriteState;-><init>(ZLjava/lang/String;)V
+PLcom/lanraragi/reader/domain/FavoriteState;->getName()Ljava/lang/String;
+PLcom/lanraragi/reader/domain/FavoriteState;->isFavorited()Z
 PLcom/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailEvents;->$r8$lambda$1GPl7rLxZKdLs4kLPuuyJkhk58A(Lcom/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailEvents;Ljava/util/List;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailEvents;->$r8$lambda$HwuISTfqBb3SErxdyTWaSYihDXs(Lcom/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailEvents;Lcom/lanraragi/reader/domain/ArchiveDetail;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailEvents;->$r8$lambda$XnWX9IgeZjPzKjjeDadhsFZ5QiA(Lcom/lanraragi/reader/domain/ArchiveDetail;)V

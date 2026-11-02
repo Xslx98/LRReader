@@ -11,6 +11,7 @@ import com.lanraragi.reader.dao.QuickSearchRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.server.ProfileLookupCache
+import com.lanraragi.reader.domain.FavoriteState
 
 /**
  * Abstraction over [DataModule] to allow ServiceRegistry consumers to depend on the
@@ -55,4 +56,12 @@ interface IDataModule {
 
     /** Evicts every entry from [archiveDetailCache]. */
     fun clearArchiveDetailCache()
+
+    /**
+     * Favorite indicator per arcid for the detail page, kept next to
+     * [archiveDetailCache] and evicted with it. Test doubles that never reach
+     * the detail page can leave the default.
+     */
+    val archiveFavoriteCache: LruCache<String, FavoriteState>
+        get() = throw UnsupportedOperationException("archiveFavoriteCache")
 }

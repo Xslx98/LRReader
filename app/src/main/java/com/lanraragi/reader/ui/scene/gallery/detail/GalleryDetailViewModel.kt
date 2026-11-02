@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lanraragi.reader.dao.DownloadState
+import com.lanraragi.reader.domain.FavoriteState
 
 /**
  * ViewModel for [GalleryDetailScene]. Manages gallery detail state, gallery info,
@@ -180,7 +181,7 @@ class GalleryDetailViewModel : ViewModel() {
         _favoriteState.value = state
         val arcid = getEffectiveArcid()
         if (arcid != null && state != null) {
-            favoriteStateCache[arcid] = state
+            favoriteStateCache.put(arcid, state)
         }
     }
 
@@ -548,12 +549,13 @@ class GalleryDetailViewModel : ViewModel() {
     internal var ratingWriter: ArchiveRatingWriter = ArchiveRatingWriter.default
 
     /**
-     * Per-arcid favorite-state cache so that cache-hit detail navigations
+     * Per-arcid favorite-state cache (process-wide, next to `archiveDetailCache`,
+ * cleared with it) so that cache-hit detail navigations
      * (LRU `archiveDetailCache` already remembered the metadata) restore
      * the heart icon instead of momentarily showing "no category" until
      * the next categories request lands.
      */
-    private val favoriteStateCache = mutableMapOf<String, FavoriteState>()
+    private val favoriteStateCache get() = ServiceRegistry.dataModule.archiveFavoriteCache
 
     // -------------------------------------------------------------------------
     // Download state tracking
@@ -724,7 +726,7 @@ class GalleryDetailViewModel : ViewModel() {
                     } else {
                         FavoriteState(isFavorited = false, name = null)
                     }
-                    favoriteStateCache[arcid] = newState
+                    favoriteStateCache.put(arcid, newState)
                     _favoriteState.value = newState
                 } catch (catEx: Exception) {
                     if (catEx is kotlinx.coroutines.CancellationException) throw catEx
@@ -855,18 +857,3 @@ class GalleryDetailViewModel : ViewModel() {
     }
 
 }
-
-/**
- * Detail-page favorite indicator. Lives on
- * [GalleryDetailViewModel.favoriteState] as `null` (unresolved /
- * unknown), `FavoriteState(false, null)` (resolved → not favorited),
- * or `FavoriteState(true, displayName)` (resolved → favorited under
- * `displayName`).
- *
- * The display name composes the matched LRR category(ies) — see
- * `requestGalleryDetail` for the formatting.
- */
-data class FavoriteState(
-    val isFavorited: Boolean,
-    val name: String?,
-)

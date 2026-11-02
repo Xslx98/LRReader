@@ -24,7 +24,7 @@ import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
-import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
+import com.lanraragi.reader.domain.FavoriteState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

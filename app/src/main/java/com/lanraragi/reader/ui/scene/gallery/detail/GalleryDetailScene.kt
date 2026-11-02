@@ -141,12 +141,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return
         }
 
-        // The ViewModel is Activity-scoped, so the previous gallery's
-        // _galleryDetail / _downloadInfo / state would otherwise shadow the
-        // arguments we are about to write via the detail > info > args
-        // fallback in viewModel.getEffective*().
+        // The ViewModels are scene-scoped; new arguments for this same scene
+        // must still not be shadowed by the previous entry's state via the
+        // detail > info > args fallback in viewModel.getEffective*().
         viewModel.resetForNewEntry()
-        // Same Activity-scoping concern for the thumbnail grid VM —
+        // Same for the thumbnail grid VM —
         // without this, navigating from archive A to archive B would
         // briefly show A's pageStates against B's archive.
         pageThumbsViewModel.resetForNewEntry()
@@ -184,12 +183,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel = ViewModelProvider(requireActivity())[GalleryDetailViewModel::class.java]
+        viewModel = ViewModelProvider(this)[GalleryDetailViewModel::class.java]
         // Activity-scoped just like [viewModel]; obtaining it before onInit()
         // so handleArgs() can call resetForNewEntry() on it during a new
         // archive entry, mirroring [GalleryDetailViewModel.resetForNewEntry].
         pageThumbsViewModel =
-            ViewModelProvider(requireActivity())[PageThumbnailsViewModel::class.java]
+            ViewModelProvider(this)[PageThumbnailsViewModel::class.java]
         pageThumbs = DetailPageThumbs(this, viewModel, pageThumbsViewModel)
 
         if (savedInstanceState == null) {

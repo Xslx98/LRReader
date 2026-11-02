@@ -49,7 +49,7 @@ import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.TankDialogs
 import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
-import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
+import com.lanraragi.reader.domain.FavoriteState
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryTagHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.PrefetchScrollListener

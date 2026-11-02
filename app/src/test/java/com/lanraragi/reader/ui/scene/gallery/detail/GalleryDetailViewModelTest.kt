@@ -11,6 +11,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.lanraragi.reader.domain.FavoriteState
 
 /**
  * Regression tests for the Activity-scoped state bleed in [GalleryDetailViewModel].
@@ -108,6 +109,8 @@ class GalleryDetailViewModelTest {
 
     @Test
     fun resetForNewEntry_clearsAllPerEntryState() {
+        // updateFavoriteState mirrors into the process-wide favorite cache.
+        ServiceRegistry.initializeForTest(coroutine = null, data = detailCacheOnly(LruCache(4)))
         val vm = GalleryDetailViewModel()
 
         vm.setAction(GalleryDetailScene.ACTION_ARCHIVE)
@@ -168,6 +171,24 @@ class GalleryDetailViewModelTest {
         assertEquals(FavoriteState(isFavorited = true, name = "Reading"), vm.favoriteState.value)
     }
 
+    @Test
+    fun tryLoadFromCache_restoresTheFavoriteState_inANewSceneScopedViewModel() {
+        // Each detail scene owns its ViewModel, so the favorite resolved on an
+        // earlier visit must come from the process-wide cache, not the instance.
+        val detailCache = LruCache<String, ArchiveDetail>(4)
+        ServiceRegistry.initializeForTest(coroutine = null, data = detailCacheOnly(detailCache))
+        val earlier = GalleryDetailViewModel()
+        earlier.setArchiveDetail(archiveDetail("favTok"))
+        earlier.updateFavoriteState(FavoriteState(isFavorited = true, name = "Reading"))
+        detailCache.put("favTok", archiveDetail("favTok"))
+
+        val next = GalleryDetailViewModel()
+        next.setArchive(archive("favTok"))
+
+        assertTrue(next.tryLoadFromCache())
+        assertEquals(FavoriteState(isFavorited = true, name = "Reading"), next.favoriteState.value)
+    }
+
     /** Only [IDataModule.archiveDetailCache] is live; everything else is unreachable here. */
     private fun detailCacheOnly(cache: LruCache<String, ArchiveDetail>): IDataModule = object : IDataModule {
         override val favouriteStatusRouter get() = throw UnsupportedOperationException()
@@ -181,6 +202,7 @@ class GalleryDetailViewModelTest {
         override val downloadDbRepository get() = throw UnsupportedOperationException()
         override val archiveDetailCache get() = cache
         override fun clearArchiveDetailCache() = cache.evictAll()
+        override val archiveFavoriteCache = LruCache<String, FavoriteState>(16)
     }
 
     @Test

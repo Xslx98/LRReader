@@ -14,6 +14,7 @@ import com.lanraragi.reader.dao.QuickSearchRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.server.ProfileLookupCache
+import com.lanraragi.reader.domain.FavoriteState
 
 /**
  * Manages data-layer singletons: DownloadManager, GalleryDetailCache,
@@ -69,11 +70,17 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
         LruCache<String, ArchiveDetail>(150)
     }
 
+    override val archiveFavoriteCache: LruCache<String, FavoriteState> by lazy {
+        LruCache<String, FavoriteState>(150)
+    }
+
     override fun clearArchiveDetailCache() {
         archiveDetailCache.evictAll()
+        archiveFavoriteCache.evictAll()
     }
 
     override fun clearCache() {
         archiveDetailCache.evictAll()
+        archiveFavoriteCache.evictAll()
     }
 }
