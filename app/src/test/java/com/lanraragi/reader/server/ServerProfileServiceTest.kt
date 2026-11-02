@@ -8,6 +8,7 @@ import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
+import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
@@ -41,8 +42,9 @@ import org.robolectric.annotation.Config
 /**
  * [ServerProfileService]: a profile change the user started is committed in
  * full even when the screen that awaited it is gone. The step-by-step
- * commit rules (order, rollback, live session last) are covered through the
- * ViewModels in ServerConfigViewModelTest and ServerListViewModelTest.
+ * commit rules (order, rollback, live session last), switching and the
+ * delete cascade are covered through the ViewModels in
+ * ServerConfigViewModelTest and ServerListViewModelTest.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
@@ -108,6 +110,35 @@ class ServerProfileServiceTest {
         assertEquals(active.id, LRRAuthManager.getActiveProfileId())
         assertEquals(url, LRRAuthManager.getServerUrl())
         assertEquals("new-key", LRRAuthManager.getApiKey())
+    }
+
+    @Test
+    fun connectAndAdd_commitsWhenTheCallerIsCancelledMidTest() = runBlocking {
+        val oldId = db.miscDao().insertServerProfile(ServerProfile(name = "Old", url = "https://old.example.com", isActive = true))
+        server.enqueue(MockResponse().setBody(SERVER_INFO).setBodyDelay(300, TimeUnit.MILLISECONDS))
+
+        startThenCancelCaller { service.connectAndAdd("New", url, "new-key", allowCleartext = false) }
+
+        val rows = db.miscDao().getAllServerProfiles()
+        val added = rows.single { it.id != oldId }
+        assertEquals(listOf(added.id), rows.filter { it.isActive }.map { it.id })
+        assertEquals(url, LRRAuthManager.getServerUrl())
+        assertEquals("new-key", LRRAuthManager.getApiKey())
+    }
+
+    @Test
+    fun connectAndSaveEdit_savesWhenTheCallerIsCancelledMidTest() = runBlocking {
+        val id = db.miscDao().insertServerProfile(ServerProfile(name = "Before", url = "https://old.example.com", isActive = true))
+        val profile = db.miscDao().getAllServerProfiles().single { it.id == id }
+        server.enqueue(MockResponse().setBody(SERVER_INFO).setBodyDelay(300, TimeUnit.MILLISECONDS))
+
+        startThenCancelCaller { service.connectAndSaveEdit(profile, "After", url, "edited-key", allowCleartext = false) }
+
+        val saved = db.miscDao().getAllServerProfiles().single()
+        assertEquals("After", saved.name)
+        assertEquals(url, saved.url)
+        assertEquals(url, LRRAuthManager.getServerUrl())
+        assertEquals("edited-key", LRRAuthManager.getApiKey())
     }
 
     /**
