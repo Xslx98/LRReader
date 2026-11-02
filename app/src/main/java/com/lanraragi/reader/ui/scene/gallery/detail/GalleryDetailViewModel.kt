@@ -5,7 +5,6 @@ import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.ArchiveRatingChangedEvent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
