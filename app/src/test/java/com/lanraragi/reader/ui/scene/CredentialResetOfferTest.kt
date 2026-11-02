@@ -10,6 +10,7 @@ import androidx.core.content.edit
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -82,7 +83,7 @@ class CredentialResetOfferTest {
         failedLaunch()
         failedLaunch()
 
-        assertTrue(LRRAuthManager.canOfferCredentialReset())
+        assertTrue(AppLockCredentials.canOfferCredentialReset())
         val reset = showErrorDialog().getButton(DialogInterface.BUTTON_NEGATIVE)
         assertEquals(View.VISIBLE, reset.visibility)
         assertEquals(activity.getString(R.string.lrr_reset_credentials), reset.text.toString())
@@ -105,7 +106,7 @@ class CredentialResetOfferTest {
 
         assertFalse(SecureCredentialStore.isSecureStorageAvailable())
         assertEquals(1, SecureCredentialStore.consecutiveStoreOpenFailures())
-        assertFalse(LRRAuthManager.canOfferCredentialReset())
+        assertFalse(AppLockCredentials.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
     }
 
@@ -116,9 +117,9 @@ class CredentialResetOfferTest {
         assertEquals(0, SecureCredentialStore.consecutiveStoreOpenFailures())
 
         failedLaunch()
-        assertFalse("not two failures in a row", LRRAuthManager.canOfferCredentialReset())
+        assertFalse("not two failures in a row", AppLockCredentials.canOfferCredentialReset())
         failedLaunch()
-        assertTrue(LRRAuthManager.canOfferCredentialReset())
+        assertTrue(AppLockCredentials.canOfferCredentialReset())
     }
 
     @Test(timeout = 10_000)
@@ -126,7 +127,7 @@ class CredentialResetOfferTest {
         SecureCredentialStore.scheduleInitialize(activity, scope) // never advanced: init still running
         SecureCredentialStore.mainThreadInitTimeoutMs = 100
 
-        assertFalse(LRRAuthManager.canOfferCredentialReset())
+        assertFalse(AppLockCredentials.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
     }
 
@@ -134,7 +135,7 @@ class CredentialResetOfferTest {
     fun healthyStore_offersNoReset() {
         SecureCredentialStore.initializeForTesting(activity.getSharedPreferences("reset_offer_test", Context.MODE_PRIVATE))
 
-        assertFalse(LRRAuthManager.canOfferCredentialReset())
+        assertFalse(AppLockCredentials.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
     }
 
@@ -145,7 +146,7 @@ class CredentialResetOfferTest {
         failedLaunch()
 
         assertFalse(SecureCredentialStore.isSecureStorageAvailable())
-        assertFalse(LRRAuthManager.canOfferCredentialReset())
+        assertFalse(AppLockCredentials.canOfferCredentialReset())
         assertResetHidden(showErrorDialog())
     }
 

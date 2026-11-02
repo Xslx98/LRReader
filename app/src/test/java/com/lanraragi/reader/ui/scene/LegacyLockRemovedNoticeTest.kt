@@ -11,6 +11,7 @@ import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.server.KeystoreSecurePrefs
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.SetSecurityActivity
@@ -126,7 +127,7 @@ class LegacyLockRemovedNoticeTest {
         activity = controller.get()
         ShadowLooper.idleMainLooper()
         assertFalse("closed with the old activity", first.isShowing)
-        assertTrue("not answered yet", LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertTrue("not answered yet", AppLockCredentials.isLegacyLockRemovedNoticePending())
         LegacyLockRemovedNotice.showIfPending(activity)
         ShadowLooper.idleMainLooper()
         val second = ShadowDialog.getLatestDialog() as AlertDialog
@@ -134,7 +135,7 @@ class LegacyLockRemovedNoticeTest {
 
         second.getButton(DialogInterface.BUTTON_NEGATIVE).performClick()
         ShadowLooper.idleMainLooper()
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
     }
 
     @Test(timeout = 10_000)
@@ -149,7 +150,7 @@ class LegacyLockRemovedNoticeTest {
 
         dialog.cancel()
         ShadowLooper.idleMainLooper()
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
     }
 
     @Test(timeout = 10_000)
@@ -158,7 +159,7 @@ class LegacyLockRemovedNoticeTest {
         launch()
 
         assertTrue(SecuritySettings.isLockEnabled())
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
     }
 
     @Test(timeout = 10_000)
@@ -166,7 +167,7 @@ class LegacyLockRemovedNoticeTest {
         storeWith("pattern_hash_v2" to "cGJrZGYy", "pattern_salt" to "c2FsdA==")
         launch()
 
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
     }
 
     /** Entries as an older version left them in the secure store. */

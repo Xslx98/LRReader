@@ -5,7 +5,7 @@ import android.security.keystore.KeyPermanentlyInvalidatedException
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.scene.SecurityViewModel.FingerprintStart
@@ -65,7 +65,7 @@ class FingerprintUnlockTest {
     /** Sets pattern "0147" bound to [patternKey], fingerprint unlock on. */
     private fun bindPattern() {
         val encrypt = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.ENCRYPT_MODE, patternKey) }
-        LRRAuthManager.setPatternWithCipher("0147", encrypt)
+        AppLockCredentials.setPatternWithCipher("0147", encrypt)
         SecuritySettings.putEnableFingerprint(true)
     }
 
@@ -127,7 +127,7 @@ class FingerprintUnlockTest {
 
     @Test
     fun unboundPatternTurnsFingerprintOff() {
-        LRRAuthManager.setPattern("0147")
+        AppLockCredentials.setPattern("0147")
         SecuritySettings.putEnableFingerprint(true)
 
         assertEquals(
@@ -135,7 +135,7 @@ class FingerprintUnlockTest {
             SecurityViewModel().startFingerprintUnlock(),
         )
         assertFalse(SecuritySettings.getEnableFingerprint())
-        assertTrue(LRRAuthManager.verifyPattern("0147"))
+        assertTrue(AppLockCredentials.verifyPattern("0147"))
     }
 
     @Test

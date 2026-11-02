@@ -11,6 +11,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.security.AppLockCredentials
 
 /**
  * Unit tests for [LRRAuthManager].
@@ -126,60 +127,6 @@ class LRRAuthManagerTest {
         assertEquals(99L, LRRAuthManager.getActiveProfileId())
     }
 
-    // ── Pattern hash/verify ─────────────────────────────────────────
-
-    @Test
-    fun hasPattern_falseBeforeSet() {
-        assertFalse(LRRAuthManager.hasPattern())
-    }
-
-    @Test
-    fun setPattern_thenHasPattern() {
-        LRRAuthManager.setPattern("1234")
-        assertTrue(LRRAuthManager.hasPattern())
-    }
-
-    @Test
-    fun verifyPattern_correctInput_returnsTrue() {
-        LRRAuthManager.setPattern("secret")
-        assertTrue(LRRAuthManager.verifyPattern("secret"))
-    }
-
-    @Test
-    fun verifyPattern_wrongInput_returnsFalse() {
-        LRRAuthManager.setPattern("secret")
-        assertFalse(LRRAuthManager.verifyPattern("wrong"))
-    }
-
-    @Test
-    fun verifyPattern_emptyInput_returnsFalse() {
-        LRRAuthManager.setPattern("secret")
-        assertFalse(LRRAuthManager.verifyPattern(""))
-    }
-
-    @Test
-    fun verifyPattern_nullInput_returnsFalse() {
-        LRRAuthManager.setPattern("secret")
-        assertFalse(LRRAuthManager.verifyPattern(null))
-    }
-
-    @Test
-    fun setPattern_null_clearsPattern() {
-        LRRAuthManager.setPattern("secret")
-        LRRAuthManager.setPattern(null)
-        assertFalse(LRRAuthManager.hasPattern())
-        assertFalse(LRRAuthManager.verifyPattern("secret"))
-    }
-
-    @Test
-    fun setPattern_overwritesPriorHash_stillVerifiesCorrectly() {
-        // Same pattern stored twice should still verify correctly (different salts but same result)
-        LRRAuthManager.setPattern("same")
-        assertTrue(LRRAuthManager.verifyPattern("same"))
-        LRRAuthManager.setPattern("same")
-        assertTrue(LRRAuthManager.verifyPattern("same"))
-    }
-
     @Test
     fun isNeedsReauthentication_falseAfterInitializeForTesting() {
         assertFalse("Reauth flag should be false when KeyStore is available",
@@ -196,12 +143,12 @@ class LRRAuthManagerTest {
         LRRAuthManager.setServerUrl("http://test.local")
         LRRAuthManager.setApiKey("key")
         LRRAuthManager.setActiveProfileId(5L)
-        LRRAuthManager.setPattern("pin")
+        AppLockCredentials.setPattern("pin")
         SecureCredentialStore.clear()
         assertNull(LRRAuthManager.getServerUrl())
         assertNull(LRRAuthManager.getApiKey())
         assertEquals(0L, LRRAuthManager.getActiveProfileId())
-        assertFalse(LRRAuthManager.hasPattern())
+        assertFalse(AppLockCredentials.hasPattern())
     }
 
     // ── Allow cleartext flag ────────────────────────────────────────
@@ -276,12 +223,6 @@ class LRRAuthManagerTest {
     }
 
     @Test(expected = LRRSecureStorageUnavailableException::class)
-    fun setPattern_throwsWhenStorageUnavailable() {
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        LRRAuthManager.setPattern("1234")
-    }
-
-    @Test(expected = LRRSecureStorageUnavailableException::class)
     fun setAllowCleartext_throwsWhenStorageUnavailable() {
         // Added during W0-3/W0-4 merge: setAllowCleartext originally used the
         // silent `?: return` pattern that W0-4 had purged from every other
@@ -292,13 +233,6 @@ class LRRAuthManagerTest {
     }
 
     @Test
-    fun verifyPattern_returnsFalseWhenStorageUnavailable() {
-        // Reads MUST NOT throw — verify-before-unlock flows need to degrade gracefully.
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        assertFalse(LRRAuthManager.verifyPattern("anything"))
-    }
-
-    @Test
     fun getters_returnNullWhenStorageUnavailable() {
         // Reads MUST NOT throw — UI polls getApiKey()/getServerUrl() frequently.
         SecureCredentialStore.simulateStorageUnavailableForTesting()
@@ -306,7 +240,7 @@ class LRRAuthManagerTest {
         assertNull(LRRAuthManager.getApiKey())
         assertNull(LRRAuthManager.getServerName())
         assertNull(LRRAuthManager.getApiKeyForProfile(1L))
-        assertFalse(LRRAuthManager.hasPattern())
+        assertFalse(AppLockCredentials.hasPattern())
     }
 
     @Test

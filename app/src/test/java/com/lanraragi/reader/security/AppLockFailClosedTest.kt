@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.security
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -43,21 +43,21 @@ class AppLockFailClosedTest {
 
     @Test
     fun settingAndClearingThePatternMaintainsTheMirror() {
-        LRRAuthManager.setPattern("0123")
-        assertEquals(true, LRRAuthManager.lockEnabledHint())
+        AppLockCredentials.setPattern("0123")
+        assertEquals(true, AppLockCredentials.lockEnabledHint())
         assertTrue(SecuritySettings.isLockEnabled())
 
-        LRRAuthManager.setPattern(null)
-        assertEquals(false, LRRAuthManager.lockEnabledHint())
+        AppLockCredentials.setPattern(null)
+        assertEquals(false, AppLockCredentials.lockEnabledHint())
         assertFalse(SecuritySettings.isLockEnabled())
     }
 
     @Test
     fun lockStaysOnWhenTheSecureStoreBecomesUnavailable() {
-        LRRAuthManager.setPattern("0123")
+        AppLockCredentials.setPattern("0123")
         SecureCredentialStore.simulateStorageUnavailableForTesting()
 
-        assertFalse("the pattern itself is unreadable", LRRAuthManager.hasPattern())
+        assertFalse("the pattern itself is unreadable", AppLockCredentials.hasPattern())
         assertFalse(SecureCredentialStore.isSecureStorageAvailable())
         assertTrue("gates must still see the app as locked", SecuritySettings.isLockEnabled())
     }
@@ -72,12 +72,12 @@ class AppLockFailClosedTest {
 
     @Test
     fun resetClearsTheLockAndTheCredentials() {
-        LRRAuthManager.setPattern("0123")
+        AppLockCredentials.setPattern("0123")
         LRRAuthManager.setServerUrl("http://10.0.2.2:3000")
 
-        LRRAuthManager.resetAppLockAndCredentials(ctx)
+        AppLockCredentials.resetAppLockAndCredentials(ctx)
 
-        assertEquals(false, LRRAuthManager.lockEnabledHint())
+        assertEquals(false, AppLockCredentials.lockEnabledHint())
         assertEquals(false, LRRAuthManager.configuredHint())
         assertFalse(SecuritySettings.isLockEnabled())
     }

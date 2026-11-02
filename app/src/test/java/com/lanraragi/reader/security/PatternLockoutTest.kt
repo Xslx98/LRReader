@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.security
 
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.SecretKeyFactory
@@ -59,162 +59,162 @@ class PatternLockoutTest {
 
     @Test
     fun isLockedOut_falseInitially() {
-        assertFalse(LRRAuthManager.isLockedOut())
+        assertFalse(AppLockCredentials.isLockedOut())
     }
 
     @Test
     fun isLockedOut_falseAfterFewFailures() {
-        repeat(4) { LRRAuthManager.recordFailure() }
-        assertFalse("Should not be locked out after 4 failures", LRRAuthManager.isLockedOut())
+        repeat(4) { AppLockCredentials.recordFailure() }
+        assertFalse("Should not be locked out after 4 failures", AppLockCredentials.isLockedOut())
     }
 
     @Test
     fun isLockedOut_trueAfterFiveFailures() {
-        repeat(5) { LRRAuthManager.recordFailure() }
-        assertTrue("Should be locked out after 5 failures", LRRAuthManager.isLockedOut())
+        repeat(5) { AppLockCredentials.recordFailure() }
+        assertTrue("Should be locked out after 5 failures", AppLockCredentials.isLockedOut())
     }
 
     @Test
     fun isLockedOut_expiresAfterThirtySeconds() {
-        repeat(5) { LRRAuthManager.recordFailure() }
-        assertTrue(LRRAuthManager.isLockedOut())
+        repeat(5) { AppLockCredentials.recordFailure() }
+        assertTrue(AppLockCredentials.isLockedOut())
         // Advance clock past the 30-second lockout
         fakeTimeMs += 30_001L
-        assertFalse("Lockout should expire after 30s", LRRAuthManager.isLockedOut())
+        assertFalse("Lockout should expire after 30s", AppLockCredentials.isLockedOut())
     }
 
     @Test
     fun isLockedOut_trueAfterTenFailures() {
-        repeat(10) { LRRAuthManager.recordFailure() }
-        assertTrue("Should be locked out after 10 failures", LRRAuthManager.isLockedOut())
+        repeat(10) { AppLockCredentials.recordFailure() }
+        assertTrue("Should be locked out after 10 failures", AppLockCredentials.isLockedOut())
     }
 
     @Test
     fun lockoutEscalatesWithEachFurtherFailure() {
         val expected = listOf(30_000L, 60_000L, 300_000L, 900_000L, 3_600_000L, 3_600_000L)
-        repeat(4) { LRRAuthManager.recordFailure() }
+        repeat(4) { AppLockCredentials.recordFailure() }
         for (duration in expected) {
-            LRRAuthManager.recordFailure()
-            assertEquals(duration, LRRAuthManager.getLockoutRemainingMs())
+            AppLockCredentials.recordFailure()
+            assertEquals(duration, AppLockCredentials.getLockoutRemainingMs())
         }
     }
 
     @Test
     fun lockoutIsNotEndedByAWallClockChange() {
-        repeat(5) { LRRAuthManager.recordFailure() }
+        repeat(5) { AppLockCredentials.recordFailure() }
         // A wall-clock jump does not move the monotonic clock at all.
-        assertTrue(LRRAuthManager.isLockedOut())
+        assertTrue(AppLockCredentials.isLockedOut())
         fakeTimeMs += 10_000L
-        assertEquals(20_000L, LRRAuthManager.getLockoutRemainingMs())
+        assertEquals(20_000L, AppLockCredentials.getLockoutRemainingMs())
     }
 
     @Test
     fun rebootReAnchorsTheLockoutInsteadOfEndingIt() {
-        repeat(5) { LRRAuthManager.recordFailure() }
+        repeat(5) { AppLockCredentials.recordFailure() }
         fakeTimeMs += 20_000L
         // Reboot: the monotonic clock restarts near zero.
         fakeBoot += 1
         fakeTimeMs = 5_000L
-        assertEquals(30_000L, LRRAuthManager.getLockoutRemainingMs())
+        assertEquals(30_000L, AppLockCredentials.getLockoutRemainingMs())
         fakeTimeMs += 30_001L
-        assertFalse(LRRAuthManager.isLockedOut())
+        assertFalse(AppLockCredentials.isLockedOut())
     }
 
     // ── getLockoutRemainingMs ────────────────────────────────────────
 
     @Test
     fun getLockoutRemainingMs_zeroWhenNotLockedOut() {
-        assertEquals(0L, LRRAuthManager.getLockoutRemainingMs())
+        assertEquals(0L, AppLockCredentials.getLockoutRemainingMs())
     }
 
     @Test
     fun getLockoutRemainingMs_thirtySecondsAfterFiveFailures() {
-        repeat(5) { LRRAuthManager.recordFailure() }
-        val remaining = LRRAuthManager.getLockoutRemainingMs()
+        repeat(5) { AppLockCredentials.recordFailure() }
+        val remaining = AppLockCredentials.getLockoutRemainingMs()
         assertTrue("Remaining should be close to 30s", remaining in 29_000L..30_000L)
     }
 
     @Test
     fun getLockoutRemainingMs_oneHourAfterTenFailures() {
-        repeat(10) { LRRAuthManager.recordFailure() }
-        assertEquals(3_600_000L, LRRAuthManager.getLockoutRemainingMs())
+        repeat(10) { AppLockCredentials.recordFailure() }
+        assertEquals(3_600_000L, AppLockCredentials.getLockoutRemainingMs())
     }
 
     @Test
     fun getLockoutRemainingMs_zeroAfterExpiry() {
-        repeat(5) { LRRAuthManager.recordFailure() }
+        repeat(5) { AppLockCredentials.recordFailure() }
         fakeTimeMs += 31_000L
-        assertEquals(0L, LRRAuthManager.getLockoutRemainingMs())
+        assertEquals(0L, AppLockCredentials.getLockoutRemainingMs())
     }
 
     // ── resetFailures ───────────────────────────────────────────────
 
     @Test
     fun resetFailures_clearsLockout() {
-        repeat(5) { LRRAuthManager.recordFailure() }
-        assertTrue(LRRAuthManager.isLockedOut())
-        LRRAuthManager.resetFailures()
-        assertFalse("Lockout should be cleared after reset", LRRAuthManager.isLockedOut())
+        repeat(5) { AppLockCredentials.recordFailure() }
+        assertTrue(AppLockCredentials.isLockedOut())
+        AppLockCredentials.resetFailures()
+        assertFalse("Lockout should be cleared after reset", AppLockCredentials.isLockedOut())
     }
 
     @Test
     fun resetFailures_resetsCounter() {
-        repeat(5) { LRRAuthManager.recordFailure() }
-        LRRAuthManager.resetFailures()
-        assertEquals(0, LRRAuthManager.getFailureCount())
+        repeat(5) { AppLockCredentials.recordFailure() }
+        AppLockCredentials.resetFailures()
+        assertEquals(0, AppLockCredentials.getFailureCount())
     }
 
     // ── getFailureCount ─────────────────────────────────────────────
 
     @Test
     fun getFailureCount_zeroInitially() {
-        assertEquals(0, LRRAuthManager.getFailureCount())
+        assertEquals(0, AppLockCredentials.getFailureCount())
     }
 
     @Test
     fun getFailureCount_incrementsOnEachFailure() {
-        LRRAuthManager.recordFailure()
-        assertEquals(1, LRRAuthManager.getFailureCount())
-        LRRAuthManager.recordFailure()
-        assertEquals(2, LRRAuthManager.getFailureCount())
-        LRRAuthManager.recordFailure()
-        assertEquals(3, LRRAuthManager.getFailureCount())
+        AppLockCredentials.recordFailure()
+        assertEquals(1, AppLockCredentials.getFailureCount())
+        AppLockCredentials.recordFailure()
+        assertEquals(2, AppLockCredentials.getFailureCount())
+        AppLockCredentials.recordFailure()
+        assertEquals(3, AppLockCredentials.getFailureCount())
     }
 
     // ── Integration with verifyPattern ──────────────────────────────
 
     @Test
     fun verifyPattern_returnsFalseWhenLockedOut() {
-        LRRAuthManager.setPattern("test123")
-        repeat(5) { LRRAuthManager.recordFailure() }
+        AppLockCredentials.setPattern("test123")
+        repeat(5) { AppLockCredentials.recordFailure() }
         // Even correct pattern should be rejected during lockout
         assertFalse("Verify should return false when locked out",
-            LRRAuthManager.verifyPattern("test123"))
+            AppLockCredentials.verifyPattern("test123"))
     }
 
     @Test
     fun verifyPattern_resetsFailuresOnSuccess() {
-        LRRAuthManager.setPattern("test123")
-        repeat(3) { LRRAuthManager.recordFailure() }
-        assertEquals(3, LRRAuthManager.getFailureCount())
-        assertTrue(LRRAuthManager.verifyPattern("test123"))
-        assertEquals(0, LRRAuthManager.getFailureCount())
+        AppLockCredentials.setPattern("test123")
+        repeat(3) { AppLockCredentials.recordFailure() }
+        assertEquals(3, AppLockCredentials.getFailureCount())
+        assertTrue(AppLockCredentials.verifyPattern("test123"))
+        assertEquals(0, AppLockCredentials.getFailureCount())
     }
 
     @Test
     fun verifyPattern_recordsFailureOnWrongInput() {
-        LRRAuthManager.setPattern("test123")
-        LRRAuthManager.verifyPattern("wrong")
-        assertEquals(1, LRRAuthManager.getFailureCount())
+        AppLockCredentials.setPattern("test123")
+        AppLockCredentials.verifyPattern("wrong")
+        assertEquals(1, AppLockCredentials.getFailureCount())
     }
 
     @Test
     fun verifyPattern_triggersLockoutAfterFiveWrongAttempts() {
-        LRRAuthManager.setPattern("test123")
-        repeat(5) { LRRAuthManager.verifyPattern("wrong") }
+        AppLockCredentials.setPattern("test123")
+        repeat(5) { AppLockCredentials.verifyPattern("wrong") }
         assertTrue("Should be locked out after 5 wrong verify attempts",
-            LRRAuthManager.isLockedOut())
-        assertEquals(5, LRRAuthManager.getFailureCount())
+            AppLockCredentials.isLockedOut())
+        assertEquals(5, AppLockCredentials.getFailureCount())
     }
 
     // ── Persistence across simulated restart ────────────────────────
@@ -222,11 +222,11 @@ class PatternLockoutTest {
     @Test
     fun lockoutSurvivesStorageUnavailability() {
         // Record failures, then simulate KeyStore going away (but plain prefs survive)
-        repeat(5) { LRRAuthManager.recordFailure() }
-        assertTrue(LRRAuthManager.isLockedOut())
+        repeat(5) { AppLockCredentials.recordFailure() }
+        assertTrue(AppLockCredentials.isLockedOut())
         // Simulate KeyStore failure — plain prefs (lockout state) survive
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        assertTrue("Lockout should survive KeyStore failure", LRRAuthManager.isLockedOut())
+        assertTrue("Lockout should survive KeyStore failure", AppLockCredentials.isLockedOut())
     }
 
     // ── Edge: continued failures extend lockout ─────────────────────
@@ -234,17 +234,17 @@ class PatternLockoutTest {
     @Test
     fun continuedFailuresUpgradeLockout() {
         // 5 failures -> 30s lockout
-        repeat(5) { LRRAuthManager.recordFailure() }
-        val remaining5 = LRRAuthManager.getLockoutRemainingMs()
+        repeat(5) { AppLockCredentials.recordFailure() }
+        val remaining5 = AppLockCredentials.getLockoutRemainingMs()
         assertTrue(remaining5 <= 30_000L)
 
         // Wait for lockout to expire
         fakeTimeMs += 31_000L
-        assertFalse(LRRAuthManager.isLockedOut())
+        assertFalse(AppLockCredentials.isLockedOut())
 
         // 5 more failures (total 10) -> 5min lockout
-        repeat(5) { LRRAuthManager.recordFailure() }
-        val remaining10 = LRRAuthManager.getLockoutRemainingMs()
+        repeat(5) { AppLockCredentials.recordFailure() }
+        val remaining10 = AppLockCredentials.getLockoutRemainingMs()
         assertTrue("After 10 failures, lockout should be ~5min",
             remaining10 > 30_000L)
     }
@@ -263,7 +263,7 @@ class PatternLockoutTest {
 
     /**
      * Helper: manually write a legacy (V1 / 100K-iteration) PBKDF2 hash into
-     * SharedPreferences, bypassing [LRRAuthManager.setPattern] which now uses 200K.
+     * SharedPreferences, bypassing [AppLockCredentials.setPattern] which now uses 200K.
      */
     private fun storeLegacyV1Hash(pattern: String): ByteArray {
         val prefs: SharedPreferences = ctx.getSharedPreferences("lockout_test", Context.MODE_PRIVATE)
@@ -284,7 +284,7 @@ class PatternLockoutTest {
 
         // Verification should succeed against the legacy hash
         assertTrue("Should verify against 100K-iteration hash",
-            LRRAuthManager.verifyPattern(pattern))
+            AppLockCredentials.verifyPattern(pattern))
     }
 
     @Test
@@ -293,7 +293,7 @@ class PatternLockoutTest {
         val salt = storeLegacyV1Hash(pattern)
 
         // First verify triggers migration
-        assertTrue(LRRAuthManager.verifyPattern(pattern))
+        assertTrue(AppLockCredentials.verifyPattern(pattern))
 
         // Read back the stored hash — it should now match a 200K-iteration computation
         val prefs: SharedPreferences = ctx.getSharedPreferences("lockout_test", Context.MODE_PRIVATE)
@@ -311,10 +311,10 @@ class PatternLockoutTest {
         storeLegacyV1Hash(pattern)
 
         // Migrate
-        assertTrue(LRRAuthManager.verifyPattern(pattern))
+        assertTrue(AppLockCredentials.verifyPattern(pattern))
 
         // Wrong pattern should fail against the new 200K hash
-        assertFalse(LRRAuthManager.verifyPattern("wrong_pattern"))
+        assertFalse(AppLockCredentials.verifyPattern("wrong_pattern"))
     }
 
     @Test
@@ -323,24 +323,24 @@ class PatternLockoutTest {
         storeLegacyV1Hash(pattern)
 
         // First verify: triggers migration from V1 → current
-        assertTrue(LRRAuthManager.verifyPattern(pattern))
+        assertTrue(AppLockCredentials.verifyPattern(pattern))
 
         // Second verify: should succeed using the current iteration count path
         // (the legacy fallback path should not be needed)
         assertTrue("Second verify should work with migrated 200K hash",
-            LRRAuthManager.verifyPattern(pattern))
+            AppLockCredentials.verifyPattern(pattern))
     }
 
     @Test
     fun verifyPattern_currentIterationHashVerifiesNormally() {
         val pattern = "current_normal"
         // setPattern now uses 200K iterations
-        LRRAuthManager.setPattern(pattern)
+        AppLockCredentials.setPattern(pattern)
 
         assertTrue("Pattern created with 200K iterations should verify",
-            LRRAuthManager.verifyPattern(pattern))
+            AppLockCredentials.verifyPattern(pattern))
         assertFalse("Wrong pattern should not verify",
-            LRRAuthManager.verifyPattern("wrong"))
+            AppLockCredentials.verifyPattern("wrong"))
     }
 
     @Test
@@ -349,8 +349,8 @@ class PatternLockoutTest {
         storeLegacyV1Hash(pattern)
 
         assertFalse("Wrong pattern should not verify against legacy hash",
-            LRRAuthManager.verifyPattern("not_the_pattern"))
-        assertEquals("Failure should be recorded", 1, LRRAuthManager.getFailureCount())
+            AppLockCredentials.verifyPattern("not_the_pattern"))
+        assertEquals("Failure should be recorded", 1, AppLockCredentials.getFailureCount())
     }
 
     @Test
@@ -362,7 +362,7 @@ class PatternLockoutTest {
         val saltBefore = prefs.getString("pattern_salt", null)!!
 
         // Trigger migration
-        assertTrue(LRRAuthManager.verifyPattern(pattern))
+        assertTrue(AppLockCredentials.verifyPattern(pattern))
 
         val saltAfter = prefs.getString("pattern_salt", null)!!
         assertEquals("Salt should not change during migration", saltBefore, saltAfter)

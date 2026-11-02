@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.security
 
 import android.content.Context
 import androidx.core.content.edit
@@ -24,6 +24,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.SecureCredentialStore
+import com.lanraragi.reader.client.api.InMemoryValueCipher
 
 /**
  * Audit 2026-10-06c SEC-01: the plain lock mirror (`app_lock_enabled`) only
@@ -74,10 +75,10 @@ class AppLockUpgradeFailClosedTest {
         failedLaunch()
 
         assertFalse(SecureCredentialStore.isSecureStorageAvailable())
-        assertNull("mirror absent: written by <= v1.26 or never", LRRAuthManager.lockEnabledHint())
+        assertNull("mirror absent: written by <= v1.26 or never", AppLockCredentials.lockEnabledHint())
         assertTrue(SecuritySettings.isLockEnabled())
         assertTrue(AppLockGate.isLocked())
-        assertEquals("the answer is remembered", true, LRRAuthManager.lockEnabledHint())
+        assertEquals("the answer is remembered", true, AppLockCredentials.lockEnabledHint())
     }
 
     @Test(timeout = 10_000)
@@ -97,7 +98,7 @@ class AppLockUpgradeFailClosedTest {
 
         assertFalse(SecuritySettings.isLockEnabled())
         assertFalse(AppLockGate.isLocked())
-        assertEquals("the answer is remembered", false, LRRAuthManager.lockEnabledHint())
+        assertEquals("the answer is remembered", false, AppLockCredentials.lockEnabledHint())
     }
 
     @Test(timeout = 10_000)
@@ -108,9 +109,9 @@ class AppLockUpgradeFailClosedTest {
 
         assertTrue("cannot tell without the keystore: locked", SecuritySettings.isLockEnabled())
         assertTrue(AppLockGate.isLocked())
-        assertNull("an unknown answer is not remembered", LRRAuthManager.lockEnabledHint())
+        assertNull("an unknown answer is not remembered", AppLockCredentials.lockEnabledHint())
         // The lock screen owns the reset in this state.
-        assertFalse(LRRAuthManager.canOfferCredentialReset())
+        assertFalse(AppLockCredentials.canOfferCredentialReset())
     }
 
     @Test(timeout = 10_000)
@@ -129,7 +130,7 @@ class AppLockUpgradeFailClosedTest {
         scheduler.advanceUntilIdle()
 
         assertTrue(SecureCredentialStore.isSecureStorageAvailable())
-        assertEquals(false, LRRAuthManager.lockEnabledHint())
+        assertEquals(false, AppLockCredentials.lockEnabledHint())
         assertFalse("decided now, not cached from the pending state", AppLockGate.isLocked())
     }
 
@@ -139,7 +140,7 @@ class AppLockUpgradeFailClosedTest {
         SecureCredentialStore.scheduleInitialize(ctx, scope)
         scheduler.advanceUntilIdle()
 
-        assertEquals(false, LRRAuthManager.lockEnabledHint())
+        assertEquals(false, AppLockCredentials.lockEnabledHint())
         assertFalse(SecuritySettings.isLockEnabled())
     }
 

@@ -42,7 +42,7 @@ import com.lanraragi.framework.widget.lockpattern.LockPatternUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.LRReaderApplication
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 
 class SecurityScene : SolidScene(),
     LockPatternView.OnPatternListener {
@@ -301,7 +301,7 @@ class SecurityScene : SolidScene(),
             .setMessage(message)
             .setCancelable(false)
             .setPositiveButton(button) { _, _ ->
-                LRRAuthManager.resetAppLockAndCredentials(ctx)
+                AppLockCredentials.resetAppLockAndCredentials(ctx)
                 AppLockGate.reset()
                 (ctx.applicationContext as LRReaderApplication).restart()
             }

@@ -147,8 +147,8 @@
     <ID>NestedBlockDepth:FileUtils.kt$FileUtils.Companion$@JvmStatic fun getFileName(context: Context, uri: Uri): String?</ID>
     <ID>NestedBlockDepth:GalleryInputHandler.kt$GalleryInputHandler$fun handleGenericMotion(view: View?, motionEvent: MotionEvent): Boolean</ID>
     <ID>NestedBlockDepth:Image.kt$Image$@Synchronized fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int)</ID>
-    <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
-    <ID>NestedBlockDepth:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
+    <ID>NestedBlockDepth:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
+    <ID>NestedBlockDepth:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
     <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
     <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
     <ID>NestedBlockDepth:LRRGalleryProvider.kt$LRRGalleryProvider$override fun save(index: Int, file: StorageFile): Boolean</ID>
@@ -171,8 +171,8 @@
     <ID>ReturnCount:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$fun updateReadProcess(result: ActivityResult)</ID>
     <ID>ReturnCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun getReadableString(e: Throwable): String</ID>
     <ID>ReturnCount:GalleryInputHandler.kt$GalleryInputHandler$fun handleKeyDown(keyCode: Int, event: KeyEvent?): Boolean</ID>
-    <ID>ReturnCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
-    <ID>ReturnCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
+    <ID>ReturnCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
+    <ID>ReturnCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
     <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
     <ID>ReturnCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun reportIfLocallyComplete(): Boolean</ID>
     <ID>ReturnCount:LRRUtils.kt$LRRUtils$@JvmStatic fun getCategoryColor(category: Int): Int</ID>
@@ -228,7 +228,7 @@
     <ID>ThrowsCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun throwIfFatal(t: Throwable)</ID>
     <ID>ThrowsCount:GalleryListViewModel.kt$GalleryListViewModel$fun uploadArchive(req: UploadRequest)</ID>
     <ID>ThrowsCount:LRRAuthInterceptor.kt$internal fun matchesConfiguredServer( requestUrl: HttpUrl, serverUrlString: String ): ServerMatchResult</ID>
-    <ID>ThrowsCount:LRRAuthManager.kt$LRRAuthManager$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
+    <ID>ThrowsCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
     <ID>ThrowsCount:LRRCleartextRejectionInterceptor.kt$LRRCleartextRejectionInterceptor$private fun enforceActiveBased( chain: Interceptor.Chain, request: okhttp3.Request, url: HttpUrl, ): Response</ID>
     <ID>ThrowsCount:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
     <ID>ThrowsCount:LRRDownloadWorker.kt$LRRDownloadWorker$private suspend fun doDownload()</ID>
@@ -237,8 +237,8 @@
     <ID>ThrowsCount:TankGalleryProvider.kt$TankGalleryProvider$private suspend fun countedSourceFor(memberIndex: Int): TankMemberSource</ID>
     <ID>ThrowsCount:TankMemberSource.kt$LrrTankMemberSource$@Throws(IOException::class) private suspend fun downloadPage(page0: Int, onPercent: ((Float) -&gt; Unit)?)</ID>
     <ID>TooGenericExceptionThrown:Image.kt$Image$throw Exception("Android 9 解码失败", e)</ID>
-    <ID>TooGenericExceptionThrown:LRRAuthManager.kt$LRRAuthManager$throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)</ID>
-    <ID>TooGenericExceptionThrown:LRRAuthManager.kt$LRRAuthManager$throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)</ID>
+    <ID>TooGenericExceptionThrown:AppLockCredentials.kt$AppLockCredentials$throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)</ID>
+    <ID>TooGenericExceptionThrown:AppLockCredentials.kt$AppLockCredentials$throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)</ID>
     <ID>UnusedParameter:Analytics.kt$Analytics$context: Context</ID>
     <ID>UnusedParameter:Analytics.kt$Analytics$scene: SceneFragment</ID>
     <ID>UnusedParameter:AppHelper.kt$AppHelper$context: Context?</ID>

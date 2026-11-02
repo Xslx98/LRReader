@@ -26,6 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.lanraragi.reader.server.SecureCredentialStore
+import com.lanraragi.reader.security.AppLockCredentials
 
 /**
  * Rendering + content-selection contract of the continue-reading widget
@@ -116,7 +117,7 @@ class ContinueReadingWidgetTest {
             context.getSharedPreferences("widget_redact_test", Context.MODE_PRIVATE)
         )
         try {
-            com.lanraragi.reader.server.LRRAuthManager.setPattern("0123")
+            AppLockCredentials.setPattern("0123")
             val root = applied(
                 ContinueReadingWidget.buildViews(
                     context, archive("a".repeat(40), 7L, "Private Book", pagecount = 100, progress = 12)

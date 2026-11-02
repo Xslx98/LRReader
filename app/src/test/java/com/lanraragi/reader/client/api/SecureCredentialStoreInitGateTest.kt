@@ -21,6 +21,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
@@ -56,7 +57,7 @@ class SecureCredentialStoreInitGateTest {
         assertNull(LRRAuthManager.getServerUrl())
         assertFalse(LRRAuthManager.isConfigured())
         assertEquals(0L, LRRAuthManager.getActiveProfileId())
-        assertFalse(LRRAuthManager.hasPattern())
+        assertFalse(AppLockCredentials.hasPattern())
     }
 
     /**
@@ -123,7 +124,7 @@ class SecureCredentialStoreInitGateTest {
             val readerDone = CountDownLatch(1)
             thread(isDaemon = true) {
                 LRRAuthManager.getServerUrl()
-                LRRAuthManager.isLockedOut()
+                AppLockCredentials.isLockedOut()
                 readerDone.countDown()
             }
             assertTrue(

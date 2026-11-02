@@ -7,6 +7,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.InMemoryValueCipher
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 import java.io.File
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -145,7 +146,7 @@ class LockScreenResetOfferTest {
         shownFailedLaunch()
         assertEquals(2, SecureCredentialStore.consecutiveStoreOpenFailures())
 
-        LRRAuthManager.resetAppLockAndCredentials(ctx)
+        AppLockCredentials.resetAppLockAndCredentials(ctx)
 
         assertEquals(0, SecureCredentialStore.consecutiveStoreOpenFailures())
         assertTrue(!plainPrefs().contains("secure_store_open_failures"))

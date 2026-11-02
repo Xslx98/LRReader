@@ -8060,10 +8060,10 @@ HSPLcom/lanraragi/reader/server/SecureCredentialStore;->initialize(Landroid/cont
 HSPLcom/lanraragi/reader/server/SecureCredentialStore;->initializeInner(Landroid/content/Context;)V
 HSPLcom/lanraragi/reader/server/LRRAuthManager;->isConfigured()Z
 HSPLcom/lanraragi/reader/server/LRRAuthManager;->isConfiguredFast()Z
-HSPLcom/lanraragi/reader/server/LRRAuthManager;->isLegacyLockRemovedNoticePending()Z
-HSPLcom/lanraragi/reader/server/LRRAuthManager;->isLockSetOrUnknown()Z
+HSPLcom/lanraragi/reader/security/AppLockCredentials;->isLegacyLockRemovedNoticePending()Z
+HSPLcom/lanraragi/reader/security/AppLockCredentials;->isLockSetOrUnknown()Z
 HSPLcom/lanraragi/reader/server/LRRAuthManager;->isNeedsReauthentication()Z
-HSPLcom/lanraragi/reader/server/LRRAuthManager;->lockEnabledHint()Ljava/lang/Boolean;
+HSPLcom/lanraragi/reader/security/AppLockCredentials;->lockEnabledHint()Ljava/lang/Boolean;
 HSPLcom/lanraragi/reader/server/LRRAuthManager;->markReauthIfProfilesUnprotected(Ljava/util/List;)V
 HSPLcom/lanraragi/reader/server/SecureCredentialStore;->openInitGate()V
 HSPLcom/lanraragi/reader/server/SecureCredentialStore;->recordStoreOpenOutcome(Landroid/content/SharedPreferences;Z)V

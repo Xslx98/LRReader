@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.settings.AppLockGate
 
 /**
@@ -27,7 +27,7 @@ internal object CredentialResetDialog {
     }
 
     /**
-     * Add the reset button to [builder] when [LRRAuthManager.canOfferCredentialReset].
+     * Add the reset button to [builder] when [AppLockCredentials.canOfferCredentialReset].
      * [onCancel] runs when the user backs out of the confirmation.
      */
     fun offerResetIfStuck(
@@ -35,7 +35,7 @@ internal object CredentialResetDialog {
         ctx: Context,
         onCancel: () -> Unit = {},
     ): AlertDialog.Builder {
-        if (LRRAuthManager.canOfferCredentialReset()) {
+        if (AppLockCredentials.canOfferCredentialReset()) {
             builder.setNegativeButton(R.string.lrr_reset_credentials) { _, _ -> confirm(ctx, onCancel) }
         }
         return builder
@@ -46,7 +46,7 @@ internal object CredentialResetDialog {
             .setMessage(R.string.lrr_reset_credentials_confirm)
             .setCancelable(false)
             .setPositiveButton(R.string.lrr_reset_credentials) { _, _ ->
-                LRRAuthManager.resetAppLockAndCredentials(ctx)
+                AppLockCredentials.resetAppLockAndCredentials(ctx)
                 AppLockGate.reset()
                 (ctx.applicationContext as LRReaderApplication).restart()
             }

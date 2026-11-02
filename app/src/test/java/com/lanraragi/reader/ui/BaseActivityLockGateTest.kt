@@ -6,7 +6,7 @@ import android.view.WindowManager
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.SecuritySettings
@@ -69,7 +69,7 @@ class BaseActivityLockGateTest {
 
     @Test
     fun createdWhileLocked_handsOffToTheLockScreenWithItsResumeIntent() {
-        LRRAuthManager.setPattern("0123")
+        AppLockCredentials.setPattern("0123")
 
         val activity = Robolectric.buildActivity(TestActivity::class.java).create().get()
 
@@ -87,7 +87,7 @@ class BaseActivityLockGateTest {
 
     @Test
     fun resumedAfterTheAppWentToTheBackground_handsOffToTheLockScreen() {
-        LRRAuthManager.setPattern("0123")
+        AppLockCredentials.setPattern("0123")
         AppLockGate.markUnlocked()
         val controller = Robolectric.buildActivity(TestActivity::class.java).setup()
         assertFalse(controller.get().isFinishing)
@@ -110,7 +110,7 @@ class BaseActivityLockGateTest {
 
     @Test
     fun appLockBelowApi33_securesThePausedWindowOnly() {
-        LRRAuthManager.setPattern("0123")
+        AppLockCredentials.setPattern("0123")
         AppLockGate.markUnlocked()
         val controller = Robolectric.buildActivity(TestActivity::class.java).setup()
         assertFalse("resumed and unlocked: screenshots allowed", controller.get().isSecure())
@@ -124,7 +124,7 @@ class BaseActivityLockGateTest {
 
     @Test
     fun onAppUnlocked_liftsTheLockOnlyFlag() {
-        LRRAuthManager.setPattern("0123")
+        AppLockCredentials.setPattern("0123")
         AppLockGate.markUnlocked()
         val controller = Robolectric.buildActivity(TestActivity::class.java).setup()
         controller.pause()

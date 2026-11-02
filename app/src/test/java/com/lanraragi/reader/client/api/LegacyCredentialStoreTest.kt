@@ -20,6 +20,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.security.AppLockCredentials
 import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
@@ -74,8 +75,8 @@ class LegacyCredentialStoreTest {
 
         assertTrue(SecureCredentialStore.isSecureStorageAvailable())
         assertTrue("the old API keys are gone: ask for them", LRRAuthManager.isNeedsReauthentication())
-        assertTrue("the old lock is gone: tell the user", LRRAuthManager.isLegacyLockRemovedNoticePending())
-        assertEquals("the app opens unlocked", false, LRRAuthManager.lockEnabledHint())
+        assertTrue("the old lock is gone: tell the user", AppLockCredentials.isLegacyLockRemovedNoticePending())
+        assertEquals("the app opens unlocked", false, AppLockCredentials.lockEnabledHint())
         assertFalse(plainPrefs().contains("pattern_keystore_bound"))
         assertFalse("the unreadable store is dropped", legacyFile().exists())
     }
@@ -87,7 +88,7 @@ class LegacyCredentialStoreTest {
         launch()
 
         assertFalse(LRRAuthManager.isNeedsReauthentication())
-        assertFalse(LRRAuthManager.isLegacyLockRemovedNoticePending())
+        assertFalse(AppLockCredentials.isLegacyLockRemovedNoticePending())
         assertFalse(legacyFile().exists())
     }
 
