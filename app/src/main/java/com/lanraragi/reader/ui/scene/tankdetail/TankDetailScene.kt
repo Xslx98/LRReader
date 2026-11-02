@@ -43,6 +43,7 @@ import com.lanraragi.reader.reading.TankSeedStore
 import com.lanraragi.reader.reading.TankSessionSeed
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tankoubon.TankMemberStrip
+import com.lanraragi.reader.tankoubon.TankTagWriter
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.TankDialogs
@@ -798,7 +799,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     private fun showTagEditDialog() {
         val s = viewModel.state.value ?: return
         if (s.offline) return
-        TagEditDialog.show(activity2, s.tankId, s.tagGroups, s.profileId, TagEditDialog.tankoubonWriter) {
+        TagEditDialog.show(activity2, s.tankId, s.tagGroups, s.profileId, TankTagWriter) {
             viewModel.load()
         }
     }

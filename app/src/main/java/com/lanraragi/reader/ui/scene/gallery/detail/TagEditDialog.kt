@@ -25,7 +25,6 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.archive.ArchiveTagWriter
 import com.lanraragi.reader.archive.TagEditSaver
 import com.lanraragi.reader.archive.TagWriter
-import com.lanraragi.reader.tankoubon.TankTagWriter
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.friendlyError
@@ -47,10 +46,6 @@ object TagEditDialog {
     fun interface Callback {
         fun onTagsUpdated()
     }
-
-    /** The tank detail page's writer (kept here for its call site). */
-    @JvmField
-    val tankoubonWriter: TagWriter = TankTagWriter
 
     /**
      * Mutable model for a namespace + its tags, used during editing.
