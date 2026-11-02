@@ -3,7 +3,6 @@ package com.lanraragi.reader.dao
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.client.api.data.LRRCategory
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -44,8 +43,7 @@ class QuickSearchRepositoryCategoryNameTest {
         db.close()
     }
 
-    private fun category(id: String?, name: String?) =
-        LRRCategory().also { it.id = id; it.name = name }
+    private fun category(id: String?, name: String?) = id to name
 
     private suspend fun seed(name: String, categoryId: String?, categoryName: String?, keyword: String? = null) {
         repo.insert(

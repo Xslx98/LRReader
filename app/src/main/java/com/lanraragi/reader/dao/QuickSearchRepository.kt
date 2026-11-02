@@ -1,6 +1,5 @@
 package com.lanraragi.reader.dao
 
-import com.lanraragi.reader.client.api.data.LRRCategory
 
 /**
  * Repository for quick-search-related database operations, backed by [BrowsingRoomDao].
@@ -38,12 +37,14 @@ class QuickSearchRepository(private val dao: BrowsingRoomDao) {
      * and follows server-side renames. Idempotent — each UPDATE is guarded on
      * "missing or different", so a repeat call changes nothing. Categories
      * without a usable id or name are skipped. Returns rows changed.
+     *
+     * @param categories (id, name) pairs as the server reported them
      */
-    suspend fun syncCategoryNames(categories: List<LRRCategory>): Int {
+    suspend fun syncCategoryNames(categories: List<Pair<String?, String?>>): Int {
         var changed = 0
         for (category in categories) {
-            val id = category.id?.trim()?.takeIf { it.isNotEmpty() } ?: continue
-            val name = category.name?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+            val id = category.first?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+            val name = category.second?.trim()?.takeIf { it.isNotEmpty() } ?: continue
             changed += dao.updateQuickSearchCategoryName(id, name)
         }
         return changed
