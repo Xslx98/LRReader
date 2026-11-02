@@ -5,7 +5,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for LANraragi search operations.
@@ -107,34 +106,4 @@ object LRRSearchApi {
             decodeJsonBody<LRRSearchResult>(response)
         }
     }
-
-    // ==================== Simplified overloads (use LRRClientProvider) ====================
-
-    /**
-     * Simplified searchArchives using [LRRClientProvider].
-     */
-    @JvmStatic
-    suspend fun searchArchives(
-        filter: String?,
-        category: String?,
-        start: Int,
-        sortby: String?,
-        order: String?,
-        newonly: Boolean
-    ): LRRSearchResult = searchArchives(
-        LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(),
-        filter, category, start, sortby, order, newonly
-    )
-
-    /**
-     * Simplified getRandomArchives using [LRRClientProvider].
-     */
-    @JvmStatic
-    suspend fun getRandomArchives(
-        filter: String?,
-        count: Int
-    ): LRRSearchResult = getRandomArchives(
-        LRRClientProvider.getClient(), LRRClientProvider.getBaseUrl(),
-        filter, count
-    )
 }
