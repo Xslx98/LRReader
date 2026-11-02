@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.callBack.DownloadSearchCallback
+import com.lanraragi.reader.download.search.DownloadSearchCallback
 import com.lanraragi.reader.dao.DownloadInfo
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -16,8 +16,8 @@ import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.TankDownloadGrouping
 import com.lanraragi.reader.download.TankProgressAggregate
 import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.reader.sync.DownloadListInfosExecutor
-import com.lanraragi.reader.sync.DownloadSearchMatcher
+import com.lanraragi.reader.download.search.DownloadListInfosExecutor
+import com.lanraragi.reader.download.search.DownloadSearchMatcher
 import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

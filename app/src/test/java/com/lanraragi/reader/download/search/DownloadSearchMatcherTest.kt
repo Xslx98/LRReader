@@ -1,4 +1,4 @@
-package com.lanraragi.reader.sync
+package com.lanraragi.reader.download.search
 
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.mapper.toDownloadInfoView

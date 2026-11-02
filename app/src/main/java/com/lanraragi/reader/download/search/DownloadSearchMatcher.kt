@@ -1,4 +1,4 @@
-package com.lanraragi.reader.sync
+package com.lanraragi.reader.download.search
 
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.domain.splitNamespace

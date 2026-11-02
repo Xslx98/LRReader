@@ -1,9 +1,8 @@
-package com.lanraragi.reader.sync
+package com.lanraragi.reader.download.search
 
 import com.lanraragi.reader.download.DownloadSizeCache
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.callBack.DownloadSearchCallback
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.spider.SpiderDen

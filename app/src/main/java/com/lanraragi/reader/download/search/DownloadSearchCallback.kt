@@ -1,4 +1,4 @@
-package com.lanraragi.reader.callBack
+package com.lanraragi.reader.download.search
 
 import com.lanraragi.reader.dao.DownloadInfo
 
