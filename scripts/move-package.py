@@ -29,6 +29,7 @@ import subprocess
 import sys
 
 ROOT = os.getcwd()
+APP_NAMESPACE = "com.lanraragi.reader"
 SRC_SETS = ["app/src/main/java", "app/src/test/java"]
 EXTRA_FILES = [
     "app/proguard-rules.pro",
@@ -44,8 +45,8 @@ TEXT_EXT = (".kt", ".java", ".xml", ".pro", ".txt")
 
 TOP_DECL = re.compile(
     r"^(?:@[\w.]+(?:\([^)]*\))?\s+)*"
-    r"((?:public|internal|private|protected|data|sealed|enum|abstract|open|inline|value|annotation"
-    r"|const|lateinit|operator|infix|suspend|tailrec|fun\s+interface|external)\s+)*"
+    r"((?:(?:public|internal|private|protected|data|sealed|enum|abstract|open|inline|value|annotation"
+    r"|const|lateinit|operator|infix|suspend|tailrec|fun\s+interface|external)\s+)*)"
     r"(class|interface|object|fun|val|var|typealias)\s+"
     r"(?:<[^>]*>\s*)?"
     r"(?:[\w.]+(?:<[^>]*>)?\??\.)?"
@@ -113,6 +114,15 @@ def top_level_names(text, include_private=False):
             continue
         names.add(m.group(3))
     return names
+
+
+def uses(text, name):
+    """True when `name` appears as a word in code (comments, KDoc and imports ignored)."""
+    code = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    code = re.sub(r"//[^\n]*", " ", code)
+    code = re.sub(r"^import\s+[^\n]*", " ", code, flags=re.M)
+    # a preceding dot still counts: extension functions are called as x.name()
+    return re.search(r"(?<!\w)" + re.escape(name) + r"\b", code) is not None
 
 
 def add_imports(text, imports):
@@ -212,6 +222,8 @@ def move_file(old_fqn, new_fqn):
     for f in os.listdir(old_dir):
         if f.endswith(".kt") and f != old_name + ".kt":
             old_pkg_names |= top_level_names(read(os.path.join(old_dir, f)))
+    if old_pkg == APP_NAMESPACE:
+        old_pkg_names |= {"R", "BuildConfig"}  # generated, not in the sources
 
     moves = [(old_path, os.path.join(pkg_dir(src_main, new_pkg), new_name + ".kt"))]
     test_old = os.path.join(pkg_dir("app/src/test/java", old_pkg), old_name + "Test.kt")
@@ -227,7 +239,8 @@ def move_file(old_fqn, new_fqn):
     for _, b in moves:
         t = read(b)
         t = re.sub(r"^package[ \t]+" + re.escape(old_pkg) + r"(?=[ \t]*\r?$)", "package " + new_pkg, t, count=1, flags=re.M)
-        used = {n for n in old_pkg_names if re.search(r"(?<![\w.])" + re.escape(n) + r"\b", t)}
+        declared_here = top_level_names(t, include_private=True)
+        used = {n for n in old_pkg_names - declared_here if uses(t, n)}
         t = add_imports(t, {old_pkg + "." + n for n in used})
         write(b, t)
 
@@ -254,19 +267,26 @@ def move_file(old_fqn, new_fqn):
             t = read(p)
             if file_package(t) != old_pkg:
                 continue
-            need = {n for n in moved_names if re.search(r"(?<![\w.])" + re.escape(n) + r"\b", t)}
+            need = {n for n in moved_names if uses(t, n)}
             if need:
                 write(p, add_imports(t, {new_pkg + "." + (new_name if rename and n == old_name else n) for n in need}))
     # wildcard importers of the old package
     for path in all_text_files():
-        if not path.endswith(".kt"):
+        if not path.endswith((".kt", ".java")):
             continue
         t = read(path)
-        if not re.search(r"^import\s+" + re.escape(old_pkg) + r"\.\*", t, re.M):
+        wild = re.search(r"^import\s+" + re.escape(old_pkg) + r"\.\*;?[ \t]*\r?\n", t, re.M)
+        if not wild:
             continue
-        need = {n for n in moved_names if re.search(r"(?<![\w.])" + re.escape(n) + r"\b", t)}
-        if need:
+        need = {n for n in moved_names if uses(t, n)}
+        if not need:
+            continue
+        if path.endswith(".kt"):
             write(path, add_imports(t, {new_pkg + "." + n for n in need}))
+        else:  # Java: explicit imports with semicolons, right after the wildcard
+            nl = "\r\n" if "\r\n" in t else "\n"
+            block = "".join("import " + new_pkg + "." + n + ";" + nl for n in sorted(need))
+            write(path, t[:wild.end()] + block + t[wild.end():])
     # redundant self-imports in the new package
     for src in SRC_SETS:
         d = pkg_dir(src, new_pkg)
