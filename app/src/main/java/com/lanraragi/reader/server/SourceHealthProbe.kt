@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.server
 
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
@@ -6,6 +6,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
+import com.lanraragi.reader.client.api.await
+import com.lanraragi.reader.client.api.parseBaseUrl
 
 /**
  * Quick liveness probe for a LANraragi server.

@@ -183,8 +183,8 @@ class LRReaderApplication : SceneApplication() {
             com.lanraragi.reader.download.PrefsInterruptedStore(Settings.getPreferences())
         // /api/info facts worth keeping across launches (excluded_namespaces feeds
         // the offline reading-stats page; the round-trip only happens on connect).
-        com.lanraragi.reader.client.api.ServerCapabilityCache.attachStore(
-            com.lanraragi.reader.client.api.PrefsServerCapabilityStore(Settings.getPreferences())
+        com.lanraragi.reader.server.ServerCapabilityCache.attachStore(
+            com.lanraragi.reader.server.PrefsServerCapabilityStore(Settings.getPreferences())
         )
         // Skip DownloadDirs disk cache in LRR mode — it's EH-specific and wastes 40-640MB
         // DownloadDirs.initialize(this);

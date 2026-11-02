@@ -14,7 +14,7 @@ import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.OrphanProfileException
-import com.lanraragi.reader.client.api.probeSourceHealthy
+import com.lanraragi.reader.server.probeSourceHealthy
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail

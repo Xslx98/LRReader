@@ -15,6 +15,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import com.lanraragi.reader.server.ServerCapabilityCache
 
 /**
  * API class for LANraragi Tankoubon operations.

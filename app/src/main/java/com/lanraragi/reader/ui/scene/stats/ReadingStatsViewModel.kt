@@ -7,7 +7,7 @@ import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRClientProvider
 import com.lanraragi.reader.client.api.LRRServerApi
-import com.lanraragi.reader.client.api.ServerCapabilityCache
+import com.lanraragi.reader.server.ServerCapabilityCache
 import com.lanraragi.reader.stats.ReadingStatsCalculator
 import com.lanraragi.reader.stats.TagPreferenceCalculator
 import kotlinx.coroutines.CancellationException

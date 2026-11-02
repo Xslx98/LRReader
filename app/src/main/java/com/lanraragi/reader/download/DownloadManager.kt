@@ -136,7 +136,7 @@ class DownloadManager(
                 val prefs = mContext.getSharedPreferences(RATING_SYNC_PREFS, android.content.Context.MODE_PRIVATE)
                 val now = System.currentTimeMillis()
                 val sync = DownloadRatingSync(
-                    probe = { url -> com.lanraragi.reader.client.api.probeSourceHealthy(client, url) },
+                    probe = { url -> com.lanraragi.reader.server.probeSourceHealthy(client, url) },
                     searchPage = { url, start ->
                         val result = com.lanraragi.reader.client.api.LRRSearchApi.searchArchives(
                             client, url, filter = null, category = null, start = start,

@@ -17,6 +17,7 @@ import com.lanraragi.reader.client.api.data.*
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import com.lanraragi.reader.server.ServerCapabilityCache
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LRRArchiveApiTest {

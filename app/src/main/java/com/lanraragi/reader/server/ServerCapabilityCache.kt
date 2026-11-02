@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.server
 
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import java.util.concurrent.ConcurrentHashMap

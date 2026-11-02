@@ -17,7 +17,7 @@ import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.server.ServerCertificate
 import com.lanraragi.reader.server.ServerTrust
-import com.lanraragi.reader.client.api.ServerCapabilityCache
+import com.lanraragi.reader.server.ServerCapabilityCache
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull

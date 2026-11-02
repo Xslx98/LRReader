@@ -16,7 +16,7 @@ data class DiagnosticsInfo(
     val reportCount: Int,
     /** Raw active server URL; only [Redactor.describeServerUrl] of it is written. */
     val serverUrl: String?,
-    /** [com.lanraragi.reader.client.api.ServerCapabilityCache.describeServerInfo], or null if not contacted. */
+    /** [com.lanraragi.reader.server.ServerCapabilityCache.describeServerInfo], or null if not contacted. */
     val serverInfo: String?,
     val downloads: DownloadSummary?,
 ) {

@@ -45,7 +45,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import com.lanraragi.reader.gallery.ArchiveProgressOutbox
 import com.lanraragi.reader.gallery.LocalReadingProgress
-import com.lanraragi.reader.client.api.ServerCapabilityCache
+import com.lanraragi.reader.server.ServerCapabilityCache
 
 /**
  * Unit tests for [ServerListViewModel].

@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.server
 
 import org.junit.After
 import org.junit.Assert.assertEquals

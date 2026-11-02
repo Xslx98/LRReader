@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.server
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
