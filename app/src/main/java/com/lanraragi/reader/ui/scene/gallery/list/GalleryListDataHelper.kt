@@ -13,7 +13,7 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.LRRClientProvider
-import com.lanraragi.reader.client.api.TankoubonSupportGate
+import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.widget.GalleryInfoContentHelper

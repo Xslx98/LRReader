@@ -1,6 +1,7 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.server
 
 import java.util.concurrent.ConcurrentHashMap
+import com.lanraragi.reader.client.api.LRRHttpException
 
 /**
  * Process-level per-server capability cache for Tankoubon support
