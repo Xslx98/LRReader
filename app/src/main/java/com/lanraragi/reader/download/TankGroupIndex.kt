@@ -10,6 +10,7 @@
 package com.lanraragi.reader.download
 
 import com.lanraragi.reader.dao.TankDownloadGroup
+import com.lanraragi.reader.dao.TankGroupReconciler
 
 /**
  * arcid → downloaded-tank lookup built from the group rows (membership

@@ -7,9 +7,8 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.lanraragi.reader.download
+package com.lanraragi.reader.dao
 
-import com.lanraragi.reader.dao.TankDownloadGroup
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json

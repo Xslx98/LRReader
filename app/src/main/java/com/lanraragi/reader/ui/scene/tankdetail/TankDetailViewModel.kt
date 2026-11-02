@@ -17,7 +17,7 @@ import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.mergeRatingIntoTags
 import com.lanraragi.reader.domain.parseLrrTagString
 import com.lanraragi.reader.domain.parseRatingFromTags
-import com.lanraragi.reader.download.TankGroupReconciler
+import com.lanraragi.reader.dao.TankGroupReconciler
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.reading.TankPageMath
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
