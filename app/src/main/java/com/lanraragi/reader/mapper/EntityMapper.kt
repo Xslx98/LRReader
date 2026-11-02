@@ -7,7 +7,7 @@ import com.lanraragi.reader.dao.ArchiveLocalStateJson
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadObservedRow
 import com.lanraragi.reader.dao.HistoryInfo
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.TagGroup

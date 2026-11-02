@@ -9,7 +9,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.download.DownloadState
 import java.io.ByteArrayInputStream
 
 /**

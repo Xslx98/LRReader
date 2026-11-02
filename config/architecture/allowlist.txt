@@ -28,11 +28,7 @@ D3 com/lanraragi/reader/client/api/LRRClientProvider.kt
 D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt
 D3 com/lanraragi/reader/client/api/ProfileLookupCache.kt
 D3 com/lanraragi/reader/client/api/ServerTrust.kt
-D5 com/lanraragi/reader/dao/AppDatabase.kt
-D5 com/lanraragi/reader/dao/ArchiveLocalState.kt
-D5 com/lanraragi/reader/dao/ArchiveLocalStateDao.kt
 D5 com/lanraragi/reader/dao/DownloadDbRepository.kt
-D5 com/lanraragi/reader/dao/DownloadInfo.kt
 D5 com/lanraragi/reader/dao/HistoryRepository.kt
 D5 com/lanraragi/reader/dao/QuickSearchRepository.kt
 D6 com/lanraragi/reader/gallery/TankSessionRouter.kt

@@ -12,7 +12,6 @@ package com.lanraragi.reader.dao
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
-import com.lanraragi.reader.download.DownloadState
 
 /**
  * Unified per-archive local state row. Replaces the three near-identical

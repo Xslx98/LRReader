@@ -16,6 +16,7 @@ import org.robolectric.annotation.Config
 import java.io.IOException
 import java.net.SocketTimeoutException
 import kotlin.random.Random
+import com.lanraragi.reader.dao.DownloadFailureReason
 
 /** Audit 2026-10-04 C21: page failure classification and retry decisions. */
 @RunWith(RobolectricTestRunner::class)

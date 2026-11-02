@@ -32,6 +32,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ServiceController
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Service-level tests of [DownloadService]'s command handling (audit

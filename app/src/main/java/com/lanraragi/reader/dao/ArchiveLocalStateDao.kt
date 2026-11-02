@@ -16,7 +16,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.lanraragi.reader.download.DownloadState
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -170,7 +169,7 @@ interface ArchiveLocalStateDao {
      * row is a ghost that would otherwise render as "downloading" forever (frozen
      * progress, dead stop button). A NULL DOWNLOAD_STATE means "not a download", so the
      * predicate never touches history/favorite-only rows. Codes are the frozen
-     * [com.lanraragi.reader.download.DownloadState] integers.
+     * [com.lanraragi.reader.dao.DownloadState] integers.
      *
      * Returns the arcids that were reset, read in the same transaction, so the
      * interrupted queue can be offered back to the user. They come in the order

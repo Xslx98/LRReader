@@ -45,6 +45,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.CancellationException
+import com.lanraragi.reader.dao.DownloadState
 
 class DownloadService : Service(), DownloadListener {
     private val TAG = "DownloadService"

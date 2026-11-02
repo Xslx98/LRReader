@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Collections
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Owns download collection state and DB persistence.

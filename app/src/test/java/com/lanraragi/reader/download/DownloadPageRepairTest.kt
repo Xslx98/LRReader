@@ -7,6 +7,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import com.lanraragi.reader.dao.DownloadState
 
 /** Audit 2026-10-06e P4-d: the reader's hand-over of a damaged download-dir page. */
 class DownloadPageRepairTest {

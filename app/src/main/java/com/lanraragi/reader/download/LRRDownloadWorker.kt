@@ -40,6 +40,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import com.lanraragi.reader.dao.DownloadFailureReason
 
 /**
  * Downloads all pages of a LANraragi archive to the download directory.

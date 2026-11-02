@@ -1,7 +1,6 @@
 package com.lanraragi.reader.dao
 
 import androidx.room.withTransaction
-import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.download.TankGroupReconciler
 import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.mapper.toArchiveJson

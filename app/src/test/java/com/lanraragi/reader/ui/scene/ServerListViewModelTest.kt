@@ -14,7 +14,7 @@ import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DailyReadingAggregate
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.MiscRoomDao
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.dao.ServerProfile

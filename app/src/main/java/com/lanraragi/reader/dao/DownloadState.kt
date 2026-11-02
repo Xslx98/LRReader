@@ -1,4 +1,4 @@
-package com.lanraragi.reader.download
+package com.lanraragi.reader.dao
 
 import androidx.room.TypeConverter
 

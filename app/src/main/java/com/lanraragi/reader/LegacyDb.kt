@@ -233,10 +233,10 @@ object LegacyDb {
                             it.moveToNext()
                             continue // skip this row, keep merging the rest of the table
                         }
-                        var state = com.lanraragi.reader.download.DownloadState.fromCode(it.getInt(2))
+                        var state = com.lanraragi.reader.dao.DownloadState.fromCode(it.getInt(2))
                         val legacy = it.getInt(3)
-                        if (state == com.lanraragi.reader.download.DownloadState.FINISH && legacy > 0) {
-                            state = com.lanraragi.reader.download.DownloadState.FAILED
+                        if (state == com.lanraragi.reader.dao.DownloadState.FINISH && legacy > 0) {
+                            state = com.lanraragi.reader.dao.DownloadState.FAILED
                         }
                         val time = if (it.columnCount == 5) it.getLong(4) else i
                         val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)

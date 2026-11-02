@@ -1,5 +1,7 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.dao.DownloadState
+
 /**
  * Classifies a browse-entry download request (user tapped "download" from a
  * list / detail / multi-select context) against the archive's current

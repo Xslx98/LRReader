@@ -40,6 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.Collections
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Thin facade over [DownloadRepository], [DownloadScheduler], and

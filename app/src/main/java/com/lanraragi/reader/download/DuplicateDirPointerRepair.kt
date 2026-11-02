@@ -2,6 +2,7 @@ package com.lanraragi.reader.download
 
 import android.util.Log
 import com.lanraragi.reader.dao.DownloadDbRepository
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * One-shot boot repair for `DOWNLOAD_DIRNAME` pointers that name the same

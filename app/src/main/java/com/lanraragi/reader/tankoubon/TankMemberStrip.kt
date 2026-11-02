@@ -1,6 +1,6 @@
 package com.lanraragi.reader.tankoubon
 
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Pure decisions behind the tank detail page's members strip (spec

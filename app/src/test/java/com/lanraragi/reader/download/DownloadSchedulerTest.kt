@@ -22,6 +22,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.lang.ref.WeakReference
+import com.lanraragi.reader.dao.DownloadFailureReason
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Unit tests for [DownloadScheduler] -- worker scheduling, state machine,

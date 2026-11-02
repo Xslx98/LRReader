@@ -24,6 +24,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Audit 2026-10-04 C05 (first slice): every download directory carries a

@@ -34,7 +34,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.buildRatingEmoji
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.TankMemberSeed

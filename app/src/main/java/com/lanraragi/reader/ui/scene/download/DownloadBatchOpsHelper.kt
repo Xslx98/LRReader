@@ -31,7 +31,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.DownloadService
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.mapper.toArchive
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.GalleryOpenHelper

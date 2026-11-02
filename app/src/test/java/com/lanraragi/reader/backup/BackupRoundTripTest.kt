@@ -9,7 +9,7 @@ import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DailyReadingAggregate
 import com.lanraragi.reader.dao.SearchHistoryEntry
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals

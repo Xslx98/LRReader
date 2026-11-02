@@ -40,7 +40,7 @@ object DiagnosticsCollector {
         val infos = dm.allDownloadInfoList
         DiagnosticsInfo.DownloadSummary(
             byState = infos.groupingBy { it.state }.eachCount(),
-            failures = infos.filter { it.state == com.lanraragi.reader.download.DownloadState.FAILED }
+            failures = infos.filter { it.state == com.lanraragi.reader.dao.DownloadState.FAILED }
                 .groupingBy { it.failureReason }.eachCount(),
             labels = dm.labelList.size,
         )

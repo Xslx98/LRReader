@@ -45,7 +45,7 @@ import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.framework.widget.LoadImageView
 import java.text.SimpleDateFormat
 import java.util.Date
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 
 class GalleryDetailScene : BaseScene(), View.OnClickListener,
     View.OnLongClickListener {

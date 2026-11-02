@@ -1,7 +1,7 @@
 package com.lanraragi.reader.diagnostics
 
-import com.lanraragi.reader.download.DownloadFailureReason
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadFailureReason
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Facts for `info.txt` in the diagnostics bundle (audit 2026-10-04 C06, R2).

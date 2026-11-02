@@ -9,7 +9,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.gallery.TankMemberSeed
 import com.lanraragi.reader.gallery.TankSeedStore

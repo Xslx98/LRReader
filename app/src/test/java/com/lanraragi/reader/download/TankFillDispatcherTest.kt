@@ -4,6 +4,7 @@ import com.lanraragi.reader.domain.Archive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Pure "fill the tank" split shared by the tank detail overflow, the

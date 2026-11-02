@@ -5,6 +5,7 @@ import com.lanraragi.reader.dao.TankDownloadGroup
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Pure grouping step between the Room downloads flow and the downloads

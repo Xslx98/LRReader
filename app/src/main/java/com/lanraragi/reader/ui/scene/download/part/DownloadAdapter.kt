@@ -57,7 +57,7 @@ import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.framework.widget.LoadImageView
 import kotlinx.coroutines.launch
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.withFailureReason
 import com.lanraragi.reader.client.api.isTankoubonId

@@ -21,6 +21,8 @@ import android.os.Looper
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.settings.DownloadSettings
 import kotlinx.coroutines.CoroutineScope
+import com.lanraragi.reader.dao.DownloadFailureReason
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Owns worker scheduling, concurrency management, and the download event

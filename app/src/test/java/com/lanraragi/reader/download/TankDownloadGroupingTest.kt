@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.lanraragi.reader.dao.DownloadState
 
 /** Pure grouping contract for the downloads list's tank cards (Track 2). */
 class TankDownloadGroupingTest {
