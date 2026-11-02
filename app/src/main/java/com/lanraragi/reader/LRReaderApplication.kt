@@ -63,6 +63,7 @@ import java.lang.ref.WeakReference
 import java.util.Locale
 import com.lanraragi.reader.diagnostics.Crash
 import com.lanraragi.reader.diagnostics.Analytics
+import com.lanraragi.reader.dao.legacy.LegacyDb
 
 class LRReaderApplication : SceneApplication() {
 

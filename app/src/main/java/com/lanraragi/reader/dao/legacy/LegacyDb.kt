@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader
+package com.lanraragi.reader.dao.legacy
 
 import com.lanraragi.reader.settings.AppearanceSettings
 

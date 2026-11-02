@@ -7815,11 +7815,11 @@ HSPLcom/lanraragi/reader/LRReaderApplication$onCreate$9;->create(Ljava/lang/Obje
 HSPLcom/lanraragi/reader/LRReaderApplication$onCreate$9;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
 Lcom/lanraragi/reader/LRReaderApplication$activityRecorder$1;
 HSPLcom/lanraragi/reader/LRReaderApplication$activityRecorder$1;->**(**)**
-Lcom/lanraragi/reader/LegacyDb;
-HSPLcom/lanraragi/reader/LegacyDb;-><clinit>()V
-HSPLcom/lanraragi/reader/LegacyDb;-><init>()V
-HSPLcom/lanraragi/reader/LegacyDb;->initialize(Landroid/content/Context;)V
-HSPLcom/lanraragi/reader/LegacyDb;->needMerge()Z
+Lcom/lanraragi/reader/dao/legacy/LegacyDb;
+HSPLcom/lanraragi/reader/dao/legacy/LegacyDb;-><clinit>()V
+HSPLcom/lanraragi/reader/dao/legacy/LegacyDb;-><init>()V
+HSPLcom/lanraragi/reader/dao/legacy/LegacyDb;->initialize(Landroid/content/Context;)V
+HSPLcom/lanraragi/reader/dao/legacy/LegacyDb;->needMerge()Z
 Lcom/lanraragi/reader/ProcessRebirth;
 HSPLcom/lanraragi/reader/ProcessRebirth;-><clinit>()V
 HSPLcom/lanraragi/reader/ProcessRebirth;-><init>()V
