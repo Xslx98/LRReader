@@ -435,6 +435,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
 
     private fun processScope(): CoroutineScope = scope ?: ServiceRegistry.coroutineModule.ioScope
 
+    @Suppress("RedundantSuspendModifier") // detektMain misses kotlinx.coroutines metadata: await() suspends
     private suspend fun <T> onProcessScope(block: suspend CoroutineScope.() -> T): T =
         processScope().async(block = block).await()
 

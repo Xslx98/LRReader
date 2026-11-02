@@ -55,6 +55,7 @@ object DiagnosticsCollector {
      * the screen that asked for it closes first. Null when writing it failed
      * (logged).
      */
+    @Suppress("RedundantSuspendModifier") // detektMain misses kotlinx.coroutines metadata: await() suspends
     suspend fun buildInBackground(context: Context, downloads: DiagnosticsInfo.DownloadSummary?): File? =
         ServiceRegistry.coroutineModule.ioScope.async {
             try {

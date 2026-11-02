@@ -423,12 +423,12 @@
     <ID>UnreachableCode:GalleryDetailViewModel.kt$GalleryDetailViewModel$getLocalDownloadDir(context, archive)</ID>
     <ID>UnreachableCode:GalleryDetailViewModel.kt$GalleryDetailViewModel$val startPage = ReadingProgressReconciler.resolveOffline( context, arcId, archive.progress, archive.lastreadtime )</ID>
     <ID>UnreachableCode:GalleryImageOperations.kt$GalleryImageOperations$filename ?: "page_$page"</ID>
-    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$tankCategorySyncAfterAdd(client, baseUrl, op.tankId, op.tankName, succeeded)</ID>
-    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$tankTagSyncAfterAdd(client, baseUrl, op.tankId)</ID>
-    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$try { withContext(Dispatchers.IO) { LRRTankoubonApi.updateTankThumbnail( LRRClientProvider.getClient(), baseUrlResolver(profileId), op.tankId, globalPage1 = 1, ) } } catch (ce: CancellationException) { throw ce } catch (ignored: Exception) { // Cosmetic — see KDoc. }</ID>
-    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$try { withContext(Dispatchers.IO) { val client = LRRClientProvider.getClient() val baseUrl = baseUrlResolver(profileId) tankTagSyncAfterAdd(client, baseUrl, op.tankId) tankCategorySyncAfterAdd(client, baseUrl, op.tankId, op.tankName, succeeded) } } catch (ce: CancellationException) { throw ce } catch (ignored: Exception) { // Best-effort: the syncer already reported; the batch result stands. }</ID>
-    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$updateTankThumbnail( LRRClientProvider.getClient(), baseUrlResolver(profileId), op.tankId, globalPage1 = 1, )</ID>
-    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$val baseUrl = baseUrlResolver(profileId)</ID>
+    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$LRRTankoubonApi.updateTankThumbnail( conn.client, conn.baseUrl, op.tankId, globalPage1 = 1, )</ID>
+    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$tankCategorySyncAfterAdd(conn.client, conn.baseUrl, op.tankId, op.tankName, succeeded)</ID>
+    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$tankTagSyncAfterAdd(conn.client, conn.baseUrl, op.tankId)</ID>
+    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$try { withContext(Dispatchers.IO) { val conn = connectionFor(profileId) LRRTankoubonApi.updateTankThumbnail( conn.client, conn.baseUrl, op.tankId, globalPage1 = 1, ) } } catch (ce: CancellationException) { throw ce } catch (ignored: Exception) { // Cosmetic — see KDoc. }</ID>
+    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$try { withContext(Dispatchers.IO) { val conn = connectionFor(profileId) tankTagSyncAfterAdd(conn.client, conn.baseUrl, op.tankId) tankCategorySyncAfterAdd(conn.client, conn.baseUrl, op.tankId, op.tankName, succeeded) } } catch (ce: CancellationException) { throw ce } catch (ignored: Exception) { // Best-effort: the syncer already reported; the batch result stands. }</ID>
+    <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$val conn = connectionFor(profileId)</ID>
     <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$val profileId = archives.firstOrNull { it.arcid == first }?.serverProfileId ?: return</ID>
     <ID>UnreachableCode:GalleryListViewModel.kt$GalleryListViewModel$val profileId = archives.firstOrNull { it.arcid == firstAdded }?.serverProfileId ?: return</ID>
     <ID>UnreachableCode:GalleryOpenHelper.kt$GalleryOpenHelper$if (snapshot.progress &lt;= 0) return archive</ID>

@@ -15,6 +15,7 @@ import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.tankoubon.TankRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -86,6 +87,7 @@ class GalleryListLoader(
     private val scope: CoroutineScope,
     private val tanks: () -> TankRepository,
     private val search: ArchiveSearchSource = ArchiveSearchSource(),
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
 
     /** The two `/api/search` inputs a [ListUrlBuilder] contributes. */
@@ -132,6 +134,9 @@ class GalleryListLoader(
         }
     }
 
+    // detektMain reports the statements after the try/catch as unreachable (it
+    // cannot see that withContext returns); they run on every successful load.
+    @Suppress("UnreachableCode")
     private suspend fun loadArchives(
         conn: ServerConnection,
         query: GalleryListQuery,
@@ -149,7 +154,7 @@ class GalleryListLoader(
         if (page == 0) pageOffsets.reset()
         val startOffset = pageOffsets.offsetFor(page)
         val result = try {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 search.load(
                     conn,
                     ArchiveSearchSource.Query(
@@ -198,7 +203,7 @@ class GalleryListLoader(
             val repository = tanks()
             val all = repository.loadAll(conn)
             val fallbacks = tankCoverFallbacks
-            val rows = withContext(Dispatchers.IO) {
+            val rows = withContext(ioDispatcher) {
                 val lastRead = if (query.tankSort == TankBrowse.Sort.RECENT_READ) tankReadTimes() else emptyMap()
                 TankBrowse.order(all, query.tankKeyword, query.tankSort, lastRead).map {
                     TankBrowse.toArchive(

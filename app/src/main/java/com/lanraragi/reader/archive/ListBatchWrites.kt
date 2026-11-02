@@ -19,6 +19,7 @@ import kotlinx.coroutines.async
 class ListBatchWrites(private val scope: CoroutineScope? = null) {
 
     /** Runs [block] on the process scope and waits for its result. */
+    @Suppress("RedundantSuspendModifier") // detektMain misses kotlinx.coroutines metadata: await() suspends
     suspend fun <T> run(block: suspend CoroutineScope.() -> T): T =
         (scope ?: ServiceRegistry.coroutineModule.applicationScope).async(block = block).await()
 }

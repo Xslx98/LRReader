@@ -43,14 +43,14 @@ class CategoryMembershipService(
     ): List<String> {
         for (i in categories.indices) {
             if (checked[i] == original[i]) continue
-            val catId = categories[i].id!!
+            val catId = requireNotNull(categories[i].id) { "static category without an id" }
             if (checked[i]) {
                 LRRCategoryApi.addToCategory(conn.client, conn.baseUrl, catId, arcid)
             } else {
                 LRRCategoryApi.removeFromCategory(conn.client, conn.baseUrl, catId, arcid)
             }
         }
-        return categories.indices.filter { checked[it] }.map { categories[it].name ?: "" }
+        return categories.indices.filter { checked[it] }.map { categories[it].name.orEmpty() }
     }
 
     /** Creates a static category named [name] and puts [arcid] in it; returns the new id. */
