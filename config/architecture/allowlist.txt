@@ -52,4 +52,3 @@ D8c com/lanraragi/reader/ui/reader/TankoubonProgressSync.kt
 D8c com/lanraragi/reader/ui/scene/ServerListViewModel.kt
 D8c com/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailViewModel.kt
 D8c com/lanraragi/reader/ui/scene/gallery/detail/TankoubonDialogHelper.kt
-D8c com/lanraragi/reader/ui/scene/gallery/list/GalleryListDataHelper.kt

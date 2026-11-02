@@ -87,6 +87,23 @@ class GalleryListViewModel : ViewModel() {
     ) : Parcelable
 
     // -------------------------------------------------------------------------
+    // List loading
+    // -------------------------------------------------------------------------
+
+    private val loader = GalleryListLoader(viewModelScope) { tanks }
+
+    /** The in-flight list load (tests). */
+    internal val currentLoad: Job? get() = loader.current
+
+    /**
+     * Loads dense [page] of [query] for the list's paging state machine,
+     * cancelling the load it supersedes; see [GalleryListLoader.load].
+     */
+    fun loadPage(query: GalleryListQuery, page: Int, deliver: (GalleryListLoad) -> Boolean) {
+        loader.load(query, page, deliver)
+    }
+
+    // -------------------------------------------------------------------------
     // Download state observation
     // -------------------------------------------------------------------------
 

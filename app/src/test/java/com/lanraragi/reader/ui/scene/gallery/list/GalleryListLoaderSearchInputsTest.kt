@@ -17,11 +17,11 @@ import org.robolectric.annotation.Config
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
-class GalleryListDataHelperSearchInputsTest {
+class GalleryListLoaderSearchInputsTest {
 
     @Test
     fun `category only sends the id and no filter`() {
-        val inputs = GalleryListDataHelper.searchInputsFor(
+        val inputs = GalleryListLoader.searchInputsFor(
             ListUrlBuilder().apply { categoryId = "SET_1"; categoryName = "Favourites" }
         )
 
@@ -31,7 +31,7 @@ class GalleryListDataHelperSearchInputsTest {
 
     @Test
     fun `keyword only sends the filter and no category`() {
-        val inputs = GalleryListDataHelper.searchInputsFor(ListUrlBuilder().apply { keyword = "touhou" })
+        val inputs = GalleryListLoader.searchInputsFor(ListUrlBuilder().apply { keyword = "touhou" })
 
         assertEquals("touhou", inputs.filter)
         assertNull(inputs.categoryId)
@@ -39,7 +39,7 @@ class GalleryListDataHelperSearchInputsTest {
 
     @Test
     fun `keyword inside a category sends both`() {
-        val inputs = GalleryListDataHelper.searchInputsFor(
+        val inputs = GalleryListLoader.searchInputsFor(
             ListUrlBuilder().apply { categoryId = "SET_1"; keyword = "touhou" }
         )
 
@@ -49,14 +49,14 @@ class GalleryListDataHelperSearchInputsTest {
 
     @Test
     fun `blank keyword is no filter`() {
-        val inputs = GalleryListDataHelper.searchInputsFor(ListUrlBuilder().apply { keyword = "   " })
+        val inputs = GalleryListLoader.searchInputsFor(ListUrlBuilder().apply { keyword = "   " })
 
         assertNull(inputs.filter)
     }
 
     @Test
     fun `legacy category-prefixed keyword is plain filter text now`() {
-        val inputs = GalleryListDataHelper.searchInputsFor(ListUrlBuilder().apply { keyword = "category:SET_1" })
+        val inputs = GalleryListLoader.searchInputsFor(ListUrlBuilder().apply { keyword = "category:SET_1" })
 
         assertEquals("category:SET_1", inputs.filter)
         assertNull(inputs.categoryId)
@@ -64,7 +64,7 @@ class GalleryListDataHelperSearchInputsTest {
 
     @Test
     fun `null builder sends nothing`() {
-        val inputs = GalleryListDataHelper.searchInputsFor(null)
+        val inputs = GalleryListLoader.searchInputsFor(null)
 
         assertNull(inputs.filter)
         assertNull(inputs.categoryId)

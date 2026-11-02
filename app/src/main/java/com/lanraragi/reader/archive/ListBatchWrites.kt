@@ -13,12 +13,12 @@ import kotlinx.coroutines.async
  * wait never cancels the writes.
  *
  * @param scope the long-lived scope the writes run on (Main-dispatched; the
- *   writes switch to IO themselves)
+ *   writes switch to IO themselves); null = the app's application scope,
+ *   resolved at the first write
  */
-class ListBatchWrites(
-    private val scope: CoroutineScope = ServiceRegistry.coroutineModule.applicationScope,
-) {
+class ListBatchWrites(private val scope: CoroutineScope? = null) {
 
     /** Runs [block] on the process scope and waits for its result. */
-    suspend fun <T> run(block: suspend CoroutineScope.() -> T): T = scope.async(block = block).await()
+    suspend fun <T> run(block: suspend CoroutineScope.() -> T): T =
+        (scope ?: ServiceRegistry.coroutineModule.applicationScope).async(block = block).await()
 }

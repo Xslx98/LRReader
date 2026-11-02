@@ -3,7 +3,6 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.content.Context
 import android.os.Bundle
 import android.os.Parcel
-import com.lanraragi.reader.archive.ListUrlBuilder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -26,9 +25,7 @@ class ShownSearchStateTest {
     /** The scene-side wiring of GalleryListHelperFactory, minus the views. */
     private class SceneCallback(val shown: ShownSearchState) : GalleryListDataHelper.Callback {
         override fun getHostContext(): Context? = null
-        override fun getUrlBuilder(): ListUrlBuilder? = null
-        override fun getSortBy(): String = "date_added"
-        override fun getSortOrder(): String = "desc"
+        override fun currentQuery() = GalleryListQuery(GalleryListLoader.SearchInputs(null, null), "date_added", "desc")
         override fun notifyAdapterDataSetChanged() {}
         override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {}
         override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {}
@@ -53,12 +50,12 @@ class ShownSearchStateTest {
     @Test
     fun `a list pushed on top does not change the query of the list below`() {
         val shownA = ShownSearchState()
-        val helperA = GalleryListDataHelper(SceneCallback(shownA))
+        val helperA = GalleryListDataHelper(SceneCallback(shownA), GalleryListViewModel())
         helperA.recordLoadedSearch(taskId = 0, issued = homeQuery)
 
         // Tag search from a detail page opens list B, which loads its own query.
         val shownB = ShownSearchState()
-        val helperB = GalleryListDataHelper(SceneCallback(shownB))
+        val helperB = GalleryListDataHelper(SceneCallback(shownB), GalleryListViewModel())
         helperB.recordLoadedSearch(taskId = 0, issued = tagQuery)
 
         // Back to A without a reload: an archive opened from A continues A's query.

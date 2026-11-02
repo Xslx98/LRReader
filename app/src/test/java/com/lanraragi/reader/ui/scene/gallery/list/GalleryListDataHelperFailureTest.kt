@@ -1,7 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
-import com.lanraragi.reader.archive.ListUrlBuilder
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -13,8 +12,8 @@ import java.lang.reflect.InvocationTargetException
  * Regression test for UI-6: a list load that fails after the hosting Scene has
  * already been popped must not crash the app.
  *
- * The paging load is launched on the process-level ioScope and outlives the
- * Scene, so a slow failure (up to the OkHttp timeout) can be delivered when
+ * The load runs on the ViewModel's scope and ends with it, not with the view,
+ * so a slow failure (up to the OkHttp timeout) can be delivered when
  * [GalleryListDataHelper.Callback.getHostContext] already returns null. The
  * framework `ContentHelper.onGetException` then dereferences that null context
  * (`friendlyError(...)` / `Toast.makeText(null, ...)`) on the main thread and
@@ -32,9 +31,7 @@ class GalleryListDataHelperFailureTest {
     /** Simulates a popped Scene: the host context is gone. */
     private class NullContextCallback : GalleryListDataHelper.Callback {
         override fun getHostContext(): Context? = null
-        override fun getUrlBuilder(): ListUrlBuilder? = null
-        override fun getSortBy(): String = "date_added"
-        override fun getSortOrder(): String = "desc"
+        override fun currentQuery() = GalleryListQuery(GalleryListLoader.SearchInputs(null, null), "title", "asc")
         override fun notifyAdapterDataSetChanged() {}
         override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {}
         override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {}
@@ -49,7 +46,7 @@ class GalleryListDataHelperFailureTest {
 
     @Test
     fun failureDeliveredAfterSceneDetached_doesNotCrash() {
-        val helper = GalleryListDataHelper(NullContextCallback())
+        val helper = GalleryListDataHelper(NullContextCallback(), GalleryListViewModel())
 
         // getPageData is protected (inherited from the Java framework), so drive
         // it via reflection. A fresh helper has mCurrentTaskId == 0, so task id 0

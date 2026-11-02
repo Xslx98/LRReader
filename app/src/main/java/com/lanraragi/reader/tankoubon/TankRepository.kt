@@ -30,7 +30,8 @@ import kotlinx.coroutines.sync.withPermit
  *   runner, tests a recorder
  * @param background process scope this repository owns: the fire-and-forget
  *   membership sync after every load, and [delete]'s write sequence, which
- *   must not be cut in half by a closing screen
+ *   must not be cut in half by a closing screen; null = the app's ioScope,
+ *   resolved at first use
  */
 class TankRepository(
     private val membershipSync: suspend (
@@ -38,8 +39,10 @@ class TankRepository(
         baseUrl: String,
         tanks: List<TankMembershipSync.TankTruth>,
     ) -> Unit,
-    private val background: CoroutineScope = ServiceRegistry.coroutineModule.ioScope,
+    background: CoroutineScope? = null,
 ) {
+
+    private val background: CoroutineScope by lazy { background ?: ServiceRegistry.coroutineModule.ioScope }
 
     /** Stand-in cover for a tank whose generated cover is missing server-side. */
     data class CoverFallback(val arcid: String, val thumbnailUrl: String)
