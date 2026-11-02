@@ -244,8 +244,9 @@ afterEvaluate {
 // 2026-11 architecture review: package dependency rules D1–D10 live in
 // config/architecture/rules.txt, existing violations in allowlist.txt (which
 // scripts/ci/check-baselines.sh keeps from growing). A fixed violation must
-// leave the allowlist in the same commit, so a stale line fails too. Same-package
-// references need no import, so the check under-reports and never over-reports.
+// leave the allowlist in the same commit, so a stale line fails too. Import rules
+// also see fully qualified references in code (string literals and comments are
+// skipped); same-package references need no import and are not seen.
 // -ParchWriteAllowlist rewrites the allowlist from the current violations; it
 // exists for the initial seed, and CI rejects any growth it would cause.
 tasks.register("verifyArchitecture") {
@@ -284,17 +285,24 @@ tasks.register("verifyArchitecture") {
             def pkg = pm.group(1)
             def rel = srcPath.relativize(f.toPath()).toString().replace('\\', '/')
             def imports = (text =~ /(?m)^import\s+([\w.]+(?:\.\*)?)/).collect { it[1] }
-            List<String> codeLines = null
+            def codeLines = text.readLines().findAll { String l ->
+                def t = l.trim()
+                !(t.startsWith('//') || t.startsWith('*') || t.startsWith('/*'))
+            }
+            // A fully qualified reference counts as an import of its class: the
+            // lowercase package segments plus the first capitalised segment.
+            codeLines.findAll { !(it =~ /^\s*(import|package)\s/) }.each { String l ->
+                def code = l.replaceAll(/"(?:[^"\\]|\\.)*"/, '""').replaceAll(/\/\/.*$/, '')
+                (code =~ /(?<![\w.])com\.lanraragi\.[\w.]*\w/).each { String ref ->
+                    def segs = ref.split(/\./)
+                    def cls = segs.findIndexOf { it && Character.isUpperCase(it.charAt(0)) }
+                    imports << (cls >= 0 ? segs.take(cls + 1).join('.') : ref)
+                }
+            }
             rules.each { r ->
                 if (!r.importer.matcher(pkg).find()) return
                 boolean hit
                 if (r.kind == 'text') {
-                    if (codeLines == null) {
-                        codeLines = text.readLines().findAll { String l ->
-                            def t = l.trim()
-                            !(t.startsWith('//') || t.startsWith('*') || t.startsWith('/*'))
-                        }
-                    }
                     hit = codeLines.any { r.forbidden.matcher(it).find() }
                 } else {
                     hit = imports.any { String i ->
