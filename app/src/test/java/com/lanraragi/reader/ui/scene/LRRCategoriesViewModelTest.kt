@@ -3,6 +3,7 @@ package com.lanraragi.reader.ui.scene
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.stubAppModule
+import com.lanraragi.reader.stubDataModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
@@ -75,8 +76,14 @@ class LRRCategoriesViewModelTest {
 
         val testAppModule = stubAppModule(ctx)
 
+        // The data module too: left out, it would be whatever an earlier test
+        // class installed, and a fake there that throws an Error from
+        // quickSearchRepository (read by the default category-name sync after
+        // every successful load) escapes the view model's catch and leaves
+        // isLoading true for good.
         ServiceRegistry.initializeForTest(
             network = testNetworkModule,
+            data = stubDataModule(),
             app = testAppModule
         )
 

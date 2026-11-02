@@ -67,8 +67,12 @@ object ServiceRegistry {
 
     /**
      * Install test doubles for any subset of modules. Any module left `null` keeps
-     * whatever was previously installed (typically nothing in a fresh test), allowing
-     * callers to layer mocks on top of a previous [initializeForTest] call.
+     * whatever was previously installed, allowing callers to layer mocks on top of a
+     * previous [initializeForTest] call. That is usually NOT nothing: Robolectric
+     * reuses a sandbox (and this object) across test classes with the same config,
+     * so a module a test leaves out is whatever an earlier class installed. A test
+     * whose code under test reads a module, even from a background job, installs
+     * it (stubNetworkModule / stubDataModule in the test sources).
      */
     @androidx.annotation.VisibleForTesting
     fun initializeForTest(
