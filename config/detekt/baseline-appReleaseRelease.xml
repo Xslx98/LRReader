@@ -33,7 +33,6 @@
     <ID>CyclomaticComplexMethod:LRRGalleryProvider.kt$LRRGalleryProvider$override fun start()</ID>
     <ID>CyclomaticComplexMethod:LRReaderApplication.kt$LRReaderApplication$@SuppressLint("StaticFieldLeak") // Safe: Application instance is process-scoped override fun onCreate()</ID>
     <ID>CyclomaticComplexMethod:LegacyDb.kt$LegacyDb$suspend fun mergeOldDB(context: Context)</ID>
-    <ID>CyclomaticComplexMethod:ListUrlBuilder.kt$ListUrlBuilder$fun setQuery(query: String?)</ID>
     <ID>CyclomaticComplexMethod:ReaderPageCache.kt$ReaderPageCache$@Throws(IOException::class) fun downloadToFile( client: OkHttpClient, url: String, cacheFile: File, pageIndex: Int = 0, progressCallback: ProgressCallback? = null, onCallCreated: ((Call) -&gt; Unit)? = null )</ID>
     <ID>CyclomaticComplexMethod:ReaderPageCache.kt$ReaderPageCache$fun validateImageFile(file: File): Boolean</ID>
     <ID>CyclomaticComplexMethod:SearchBar.kt$SearchBar$private fun updateSuggestions(scrollToTop: Boolean = true)</ID>
