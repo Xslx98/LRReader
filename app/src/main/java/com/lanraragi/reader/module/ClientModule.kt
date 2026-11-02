@@ -89,7 +89,7 @@ class ClientModule(
 
         internal fun memoryCacheMaxSize(): Int = thumbMemoryCacheSize(
             com.lanraragi.reader.util.OSUtils.getTotalMemory(),
-            com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
+            com.lanraragi.reader.DeviceMemory.isLowRamDevice(),
         ).toInt()
 
         /**
@@ -109,7 +109,7 @@ class ClientModule(
                 context,
                 tieredDiskCacheSize(
                     com.lanraragi.reader.util.OSUtils.getTotalMemory(),
-                    com.lanraragi.reader.util.MemoryTrim.isLowRamDevice(),
+                    com.lanraragi.reader.DeviceMemory.isLowRamDevice(),
                 ),
             ).toInt()
 

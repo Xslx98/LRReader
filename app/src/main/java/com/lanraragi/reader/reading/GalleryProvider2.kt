@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
+import com.lanraragi.reader.DeviceMemory
 import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.CompletableDeferred
@@ -32,7 +33,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 internal const val DIAG_TAG = "Progress"
 
-abstract class GalleryProvider2 : GalleryProvider() {
+abstract class GalleryProvider2 : GalleryProvider(DeviceMemory.readerCacheBytes()) {
 
     private val galleryViewAttached = CompletableDeferred<GalleryView>()
 

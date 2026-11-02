@@ -20,7 +20,6 @@ import android.util.LruCache
 import androidx.annotation.AnyThread
 import androidx.annotation.IntDef
 import androidx.annotation.UiThread
-import androidx.annotation.VisibleForTesting
 import androidx.core.util.Pools
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 import com.lanraragi.framework.lib.glview.image.ImageTexture
@@ -32,10 +31,11 @@ import com.lanraragi.reader.util.MemoryTrimmable
 import com.lanraragi.reader.util.OSUtils
 
 /**
- * @param cacheMaxBytes budget of the decoded-page memory cache (tests pass
- * a small one to exercise the over-budget path).
+ * @param cacheMaxBytes budget of the decoded-page memory cache. The app-side
+ * subclass passes the device budget; tests pass a small one to exercise the
+ * over-budget path.
  */
-abstract class GalleryProvider @VisibleForTesting protected constructor(
+abstract class GalleryProvider protected constructor(
     cacheMaxBytes: Int,
 ) : MemoryTrimmable {
 
@@ -48,10 +48,6 @@ abstract class GalleryProvider @VisibleForTesting protected constructor(
     private var glRoot: GLRoot? = null
 
     private val imageCache: ImageCache = ImageCache(cacheMaxBytes)
-
-    protected constructor() : this(
-        MemoryTrim.readerCacheBytes(OSUtils.getTotalMemory(), MemoryTrim.isLowRamDevice())
-    )
 
     private var started = false
 
