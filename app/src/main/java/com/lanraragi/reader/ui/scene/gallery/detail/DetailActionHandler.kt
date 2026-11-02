@@ -217,7 +217,7 @@ internal class DetailActionHandler(
                 return@launch
             }
             DownloadLabelHelper.showDeleteDialog(context, archive) { deleteFiles ->
-                DownloadLabelHelper.performDelete(archive, deleteFiles)
+                viewModel.downloadManager.deleteDownloadAndFiles(archive.arcid, deleteFiles)
             }
         }
     }

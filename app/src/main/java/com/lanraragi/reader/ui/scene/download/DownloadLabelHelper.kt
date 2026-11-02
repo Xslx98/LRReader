@@ -17,15 +17,12 @@ package com.lanraragi.reader.ui.scene.download
 
 import android.content.Context
 import android.content.DialogInterface
-import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.ui.dialog.CheckBoxDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.domain.Archive
-import kotlinx.coroutines.launch
 
 /**
  * Stateless utility for download label/bulk action dialogs.
@@ -33,12 +30,11 @@ import kotlinx.coroutines.launch
  */
 object DownloadLabelHelper {
 
-    private const val TAG = "DownloadLabelHelper"
-
     /**
      * Shows a delete confirmation dialog for a single gallery.
      *
-     * @param onConfirm called with (deleteFiles: Boolean) when user confirms deletion
+     * @param onConfirm called with (deleteFiles: Boolean) when user confirms deletion;
+     *   the caller passes it to [com.lanraragi.reader.download.DownloadManager.deleteDownloadAndFiles]
      */
     fun showDeleteDialog(
         context: Context,
@@ -82,40 +78,6 @@ object DownloadLabelHelper {
                 onConfirm(builder.isChecked)
             }
             .show()
-    }
-
-    /**
-     * Perform the actual delete for a single archive: remove the DB row +
-     * in-memory entry (always), and if [deleteFiles] is true also drop the
-     * `DOWNLOAD_DIRNAME` record and recursively delete the on-disk gallery
-     * directory.
-     *
-     * The in-memory / DB removal runs synchronously on the caller's thread
-     * (main-thread for [com.lanraragi.reader.download.DownloadManager.deleteDownload]).
-     * File removal is dispatched to [ServiceRegistry.coroutineModule.ioScope]
-     * — don't block the caller waiting for it.
-     *
-     * Also persists [deleteFiles] as the remembered default for the next
-     * dialog invocation.
-     */
-    fun performDelete(archive: Archive, deleteFiles: Boolean) {
-        val manager = ServiceRegistry.dataModule.downloadManager
-        // Capture the row's root BEFORE removing it: afterwards the stored
-        // root is gone and resolution falls back to the current download
-        // location, which may hold a different archive under the same name.
-        val rootUri = manager.getDownloadInfo(archive.arcid)?.downloadRootUri
-        manager.deleteDownload(archive.arcid)
-        DownloadSettings.putRemoveImageFiles(deleteFiles)
-        if (deleteFiles) {
-            val arcid = archive.arcid
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                try {
-                    DownloadDirs.deleteGalleryDownloadDir(arcid, rootUri)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to delete download files for $arcid", e)
-                }
-            }
-        }
     }
 
     /**

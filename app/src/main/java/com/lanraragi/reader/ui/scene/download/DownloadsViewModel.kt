@@ -1,6 +1,5 @@
 package com.lanraragi.reader.ui.scene.download
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
@@ -15,7 +14,6 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.TankDownloadGrouping
 import com.lanraragi.reader.download.TankProgressAggregate
-import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.download.search.DownloadListInfosExecutor
 import com.lanraragi.reader.download.search.DownloadSearchMatcher
 import com.lanraragi.reader.storage.StorageFile
@@ -471,7 +469,8 @@ class DownloadsViewModel(
 
     /**
      * Deletes a range of downloads. If [deleteFiles] is true, also removes
-     * the download directories and dirname DB records.
+     * the download directories and dirname DB records
+     * ([DownloadManager.deleteRangeDownloadAndFiles]).
      */
     fun deleteRangeDownloads(
         downloadInfoList: List<DownloadInfo>,
@@ -480,24 +479,7 @@ class DownloadsViewModel(
         tankCardIds: Collection<String> = emptyList(),
     ) {
         // Checked tank cards: their group rows go with the member rows.
-        downloadManager.deleteRangeDownload(arcidList, tankCardIds)
-        DownloadSettings.putRemoveImageFiles(deleteFiles)
-        if (deleteFiles) {
-            // Snapshot the list to avoid concurrent modification
-            val infos = ArrayList(downloadInfoList)
-            // Each info carries the row's root captured before the rows were
-            // removed — see DownloadLabelHelper.performDelete.
-            val targets = infos.map { it.arcid to it.downloadRootUri }
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                for ((arcid, rootUri) in targets) {
-                    try {
-                        DownloadDirs.deleteGalleryDownloadDir(arcid, rootUri)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to delete download files for $arcid", e)
-                    }
-                }
-            }
-        }
+        downloadManager.deleteRangeDownloadAndFiles(downloadInfoList, arcidList, deleteFiles, tankCardIds)
     }
 
     /**
@@ -565,7 +547,6 @@ class DownloadsViewModel(
     }
 
     companion object {
-        private const val TAG = "DownloadsViewModel"
         /** Threshold above which pagination activates. */
         private const val PAGINATION_SIZE = 500
 
