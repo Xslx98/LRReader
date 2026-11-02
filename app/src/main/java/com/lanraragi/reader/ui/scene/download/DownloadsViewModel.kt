@@ -489,6 +489,16 @@ class DownloadsViewModel(
         downloadManager.changeLabel(downloadInfoList, label)
     }
 
+    /** Stops every running and queued download (FAB "stop all"). */
+    fun stopAllDownloads() {
+        downloadManager.stopAllDownload()
+    }
+
+    /** Resets the reading progress of every download (local, snapshot and server). */
+    fun resetAllReadingProgress() {
+        downloadManager.resetAllReadingProgress()
+    }
+
     /**
      * Stops a range of downloads by arcid list.
      */
