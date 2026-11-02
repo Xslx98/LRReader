@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.scene
+package com.lanraragi.reader.ui.scene.tankdetail
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -32,7 +32,7 @@ import com.lanraragi.reader.reading.TankSessionSeed
 import com.lanraragi.reader.tankoubon.TankMemberOrderOps
 import com.lanraragi.reader.tankoubon.TankMemberSelection
 import com.lanraragi.reader.ui.GalleryOpenHelper
-import com.lanraragi.reader.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
+import com.lanraragi.reader.ui.scene.tankdetail.TankMembersViewModel.TankDetailUiEvent
 import com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
@@ -40,6 +40,10 @@ import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import java.util.Collections
+import com.lanraragi.reader.ui.scene.BaseScene
+import com.lanraragi.reader.ui.scene.BatchBarAnimator
+import com.lanraragi.reader.ui.scene.TankCoverPagePicker
+import com.lanraragi.reader.ui.scene.TankDialogs
 
 /**
  * Detail scene for a single tankoubon: its ordered member archives plus
@@ -50,15 +54,15 @@ import java.util.Collections
  * (checkbox rows, count, select-all) with a floating action card — move to
  * top / bottom / position / before a picked member, reverse the selection,
  * remove, and (single selection) set as cover. Every operation is one PUT
- * of the full order through [TankoubonDetailViewModel.reorder]. Drag
+ * of the full order through [TankMembersViewModel.reorder]. Drag
  * reorder lives on the row's ≡ handle.
  *
  * Business logic (API calls, page math inputs) is delegated to
- * [TankoubonDetailViewModel]. The ViewModel is SCENE-scoped (not activity)
+ * [TankMembersViewModel]. The ViewModel is SCENE-scoped (not activity)
  * on purpose: the scene is LAUNCH_MODE_STANDARD, so two stacked detail
  * scenes must not share state.
  */
-class TankoubonDetailScene : BaseScene() {
+class TankMembersScene : BaseScene() {
 
     private var mRecyclerView: RecyclerView? = null
     private var mProgress: View? = null
@@ -103,7 +107,7 @@ class TankoubonDetailScene : BaseScene() {
     /** Page picker for "set as cover" (action card + header cover tap). */
     private var mCoverPicker: TankCoverPagePicker? = null
 
-    private lateinit var viewModel: TankoubonDetailViewModel
+    private lateinit var viewModel: TankMembersViewModel
 
     override fun getNavCheckedItem(): Int = R.id.nav_tankoubons
 
@@ -125,7 +129,7 @@ class TankoubonDetailScene : BaseScene() {
         }
 
         // Scene-scoped on purpose — see class KDoc.
-        viewModel = ViewModelProvider(this)[TankoubonDetailViewModel::class.java]
+        viewModel = ViewModelProvider(this)[TankMembersViewModel::class.java]
         viewModel.init(
             tankId = tankId,
             name = arguments?.getString(KEY_TANK_NAME).orEmpty(),
@@ -422,7 +426,7 @@ class TankoubonDetailScene : BaseScene() {
     /**
      * Applies a selection-based reorder: [op] maps the current order plus
      * the selected ids to the new order, which becomes one PUT via
-     * [TankoubonDetailViewModel.reorder] (rollback on failure). The
+     * [TankMembersViewModel.reorder] (rollback on failure). The
      * selection stays active so operations can be chained.
      */
     private fun applySelectionOrder(op: (order: List<String>, selected: Set<String>) -> List<String>) {

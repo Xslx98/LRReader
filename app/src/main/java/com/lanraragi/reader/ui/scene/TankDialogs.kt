@@ -13,7 +13,7 @@ import com.lanraragi.reader.R
 
 /**
  * Shared dialog scaffolding for the tankoubon screens (the gallery's tank
- * mode, [TankoubonDetailScene], the picker sheet). Pure UI: builds the dialog, validates trivial
+ * mode, [TankMembersScene], the picker sheet). Pure UI: builds the dialog, validates trivial
  * input (blank name), and hands the result to the caller — no ViewModel
  * knowledge.
  */

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Toolbar menu for TankoubonDetailScene. All items live in the overflow
+<!-- Toolbar menu for TankMembersScene. All items live in the overflow
      on purpose: management ops are secondary to the read entries. -->
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">

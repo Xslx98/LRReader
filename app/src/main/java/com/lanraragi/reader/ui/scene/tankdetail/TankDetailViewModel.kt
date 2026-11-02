@@ -48,7 +48,7 @@ import okhttp3.OkHttpClient
  * `archive_json`) as an OFFLINE state with editing disabled.
  *
  * Member management (rename / reorder / remove / cover) stays in
- * [com.lanraragi.reader.ui.scene.TankoubonDetailViewModel]; this class
+ * [com.lanraragi.reader.ui.scene.tankdetail.TankMembersViewModel]; this class
  * only owns what the detail page renders.
  */
 class TankDetailViewModel : ViewModel() {

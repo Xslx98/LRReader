@@ -43,8 +43,8 @@ D8b com/lanraragi/reader/ui/reader/StampsBackend.kt
 D8b com/lanraragi/reader/ui/reader/TankStampsBackend.kt
 D8b com/lanraragi/reader/ui/reader/TankoubonProgressSync.kt
 D8b com/lanraragi/reader/ui/scene/LRRCategoriesViewModel.kt
-D8b com/lanraragi/reader/ui/scene/TankoubonDetailScene.kt
-D8b com/lanraragi/reader/ui/scene/TankoubonDetailViewModel.kt
+D8b com/lanraragi/reader/ui/scene/tankdetail/TankMembersScene.kt
+D8b com/lanraragi/reader/ui/scene/tankdetail/TankMembersViewModel.kt
 D8b com/lanraragi/reader/ui/scene/download/DownloadTankCards.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/CategoryDialogHelper.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/DeleteArchiveHelper.kt

@@ -111,7 +111,7 @@
     <ID>InjectDispatcher:TankDetailViewModel.kt$TankDetailViewModel$IO</ID>
     <ID>InjectDispatcher:TankGalleryProvider.kt$TankGalleryProvider$IO</ID>
     <ID>InjectDispatcher:TankPageThumbnailsViewModel.kt$TankPageThumbnailsViewModel$IO</ID>
-    <ID>InjectDispatcher:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$IO</ID>
+    <ID>InjectDispatcher:TankMembersViewModel.kt$TankMembersViewModel$IO</ID>
     <ID>InjectDispatcher:TankoubonDialogHelper.kt$TankoubonDialogHelper$IO</ID>
     <ID>InjectDispatcher:TankoubonsViewModel.kt$TankoubonsViewModel$IO</ID>
     <ID>InstanceOfCheckForException:AppUpdater.kt$AppUpdater$t is CancellationException</ID>
@@ -126,8 +126,8 @@
     <ID>InstanceOfCheckForException:ServerConfigViewModel.kt$ServerConfigViewModel$e is CancellationException</ID>
     <ID>InstanceOfCheckForException:ServerListViewModel.kt$ServerListViewModel$e is CancellationException</ID>
     <ID>InstanceOfCheckForException:TagTranslationDatabase.kt$TagTranslationDatabase.Companion$t is CancellationException</ID>
-    <ID>InstanceOfCheckForException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e is CancellationException</ID>
-    <ID>InstanceOfCheckForException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e is LRRHttpException</ID>
+    <ID>InstanceOfCheckForException:TankMembersViewModel.kt$TankMembersViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:TankMembersViewModel.kt$TankMembersViewModel$e is LRRHttpException</ID>
     <ID>InstanceOfCheckForException:TankoubonsViewModel.kt$TankoubonsViewModel$e is CancellationException</ID>
     <ID>LargeClass:GalleryActivity.kt$GalleryActivity : BaseActivityListenerCallbackSettingsCallback</ID>
     <ID>LargeClass:GalleryDetailScene.kt$GalleryDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
@@ -300,7 +300,7 @@
     <ID>SwallowedException:TankDetailViewModel.kt$TankDetailViewModel$e: Exception</ID>
     <ID>SwallowedException:TankMemberSource.kt$LrrTankMemberSource$e: IOException</ID>
     <ID>SwallowedException:TankMembershipSync.kt$TankMembershipSync$e: Exception</ID>
-    <ID>SwallowedException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e: Exception</ID>
+    <ID>SwallowedException:TankMembersViewModel.kt$TankMembersViewModel$e: Exception</ID>
     <ID>SwallowedException:TankoubonsViewModel.kt$TankoubonsViewModel$e: Exception</ID>
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: ExecutionException</ID>
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: TimeoutException</ID>

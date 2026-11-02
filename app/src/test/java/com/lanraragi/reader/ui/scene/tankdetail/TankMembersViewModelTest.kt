@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.scene
+package com.lanraragi.reader.ui.scene.tankdetail
 
 import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
@@ -11,7 +11,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.server.LRRAuthManager
-import com.lanraragi.reader.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
+import com.lanraragi.reader.ui.scene.tankdetail.TankMembersViewModel.TankDetailUiEvent
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
@@ -43,7 +43,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [TankoubonDetailViewModel] reorder contract (spec 2026-09-21 §2/§4):
+ * [TankMembersViewModel] reorder contract (spec 2026-09-21 §2/§4):
  * every order change is one PUT of the full order, undoable automatic
  * actions emit the previous order, a no-op sort says so without a PUT,
  * and a failed PUT rolls the members back to server truth.
@@ -60,7 +60,7 @@ import org.robolectric.annotation.Config
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
-class TankoubonDetailViewModelTest {
+class TankMembersViewModelTest {
 
     private lateinit var server: MockWebServer
     private lateinit var ctx: Context
@@ -156,8 +156,8 @@ class TankoubonDetailViewModelTest {
 
     private fun loadedVm(
         store: TankCoverChoiceStore = TankCoverChoiceStore(MemoryStorage()),
-    ): TankoubonDetailViewModel {
-        val vm = TankoubonDetailViewModel()
+    ): TankMembersViewModel {
+        val vm = TankMembersViewModel()
         vm.baseUrlResolver = { LRRAuthManager.getServerUrl()!! }
         vm.coverChoices = store
         vm.coverReapplyDelayMs = 0L

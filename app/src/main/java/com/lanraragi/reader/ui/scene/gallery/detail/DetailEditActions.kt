@@ -6,7 +6,7 @@ import android.widget.ImageButton
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.ui.scene.TankoubonDetailScene
+import com.lanraragi.reader.ui.scene.tankdetail.TankMembersScene
 
 /**
  * The detail page's edit entry points: the tag editor and the tankoubon
@@ -38,11 +38,11 @@ class DetailEditActions(
 
     fun openTankoubonDetail(tank: LRRTankoubonApi.Tankoubon) {
         val args = Bundle().apply {
-            putString(TankoubonDetailScene.KEY_TANK_ID, tank.id)
-            putString(TankoubonDetailScene.KEY_TANK_NAME, tank.name)
-            putLong(TankoubonDetailScene.KEY_PROFILE_ID, viewModel.getSourceProfileId())
+            putString(TankMembersScene.KEY_TANK_ID, tank.id)
+            putString(TankMembersScene.KEY_TANK_NAME, tank.name)
+            putLong(TankMembersScene.KEY_PROFILE_ID, viewModel.getSourceProfileId())
         }
-        scene.startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
+        scene.startScene(Announcer(TankMembersScene::class.java).setArgs(args))
     }
 
     fun showTankMembershipDialog() {

@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.scene
+package com.lanraragi.reader.ui.scene.tankdetail
 
 import android.content.Context
 import android.util.Log
@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
 /**
- * ViewModel for [TankoubonDetailScene]. Loads a single tankoubon's member
+ * ViewModel for [TankMembersScene]. Loads a single tankoubon's member
  * archives (with full metadata) from its SOURCE server, exposes the
  * global-page math inputs ([memberIds] / [pageOffsets]) the scene needs
  * for the read-from-start / continue-reading entries, and hosts the
@@ -44,7 +44,7 @@ import okhttp3.OkHttpClient
  * for state and [uiEvent] for one-shot messages. View construction,
  * adapter, and navigation remain in the Scene.
  */
-class TankoubonDetailViewModel : ViewModel() {
+class TankMembersViewModel : ViewModel() {
 
     // -------------------------------------------------------------------------
     // Identity (set once by init)
@@ -588,6 +588,6 @@ class TankoubonDetailViewModel : ViewModel() {
     private companion object {
         const val COVER_REAPPLY_DELAY_MS = 6_000L
         const val HTTP_LOCKED = 423
-        const val TAG = "TankoubonDetailViewModel"
+        const val TAG = "TankMembersViewModel"
     }
 }

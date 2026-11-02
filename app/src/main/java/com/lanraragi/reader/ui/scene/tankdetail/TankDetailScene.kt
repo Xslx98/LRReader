@@ -46,7 +46,6 @@ import com.lanraragi.reader.tankoubon.TankMemberStrip
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.TankDialogs
-import com.lanraragi.reader.ui.scene.TankoubonDetailScene
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
@@ -72,7 +71,7 @@ import kotlinx.coroutines.flow.map
  *
  * Read = whole-tank composite session (provider-restored progress);
  * Download = the shared [TankFillDispatcher] fill path. Member
- * management stays in [com.lanraragi.reader.ui.scene.TankoubonDetailScene].
+ * management stays in [com.lanraragi.reader.ui.scene.tankdetail.TankMembersScene].
  *
  * The ViewModel is SCENE-scoped: the scene is LAUNCH_MODE_STANDARD, so
  * two stacked detail pages must not share state.
@@ -569,10 +568,10 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     private fun openMemberManagement() {
         val s = viewModel.state.value ?: return
         val args = Bundle()
-        args.putString(TankoubonDetailScene.KEY_TANK_ID, s.tankId)
-        args.putString(TankoubonDetailScene.KEY_TANK_NAME, s.name)
-        args.putLong(TankoubonDetailScene.KEY_PROFILE_ID, s.profileId)
-        startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
+        args.putString(TankMembersScene.KEY_TANK_ID, s.tankId)
+        args.putString(TankMembersScene.KEY_TANK_NAME, s.name)
+        args.putLong(TankMembersScene.KEY_PROFILE_ID, s.profileId)
+        startScene(Announcer(TankMembersScene::class.java).setArgs(args))
     }
 
     // -------------------------------------------------------------------------
@@ -864,7 +863,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     }
 
     companion object {
-        /** Same key strings as TankoubonDetailScene so launchers can share a bundle. */
+        /** Same key strings as TankMembersScene so launchers can share a bundle. */
         const val KEY_TANK_ID = "tank_id"
         const val KEY_TANK_NAME = "tank_name"
         const val KEY_PROFILE_ID = "tank_profile_id"
