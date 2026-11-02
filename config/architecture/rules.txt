@@ -1,0 +1,52 @@
+# Package dependency rules, checked by `./gradlew verifyArchitecture` (part of `check`
+# and every `preBuild`). Existing violations are listed in allowlist.txt; that file may
+# only shrink (scripts/ci/check-baselines.sh). Fix a violation -> delete its allowlist
+# line in the same commit (the task fails on stale lines too).
+#
+# Format: id | importer package (regex, find) | kind | forbidden (regex) | exception (regex or -)
+#   kind import: the forbidden regex is matched against each `import` of a file
+#   kind text:   the forbidden regex is matched against every non-comment source line
+#
+# Direction: ui -> domain services (archive, tankoubon, category, reading, download)
+#            -> dao | client.api (transport) -> domain / util; framework knows nothing
+#            about the app. The reader (GalleryActivity + providers) has no ViewModel
+#            on purpose.
+
+# D1 The framework (GL reader engine, scene stack, generic views) does not know the app:
+#    only the app's R class and the leaf util package.
+D1  | ^com\.lanraragi\.framework(\.|$)       | import | ^com\.lanraragi\.reader\.             | ^com\.lanraragi\.reader\.(R|util\..+)$
+
+# D2 reader.util is a leaf: anything it imports from the app would make the framework
+#    depend on the app through it.
+D2  | ^com\.lanraragi\.reader\.util$           | import | ^com\.lanraragi\.reader\.             | ^com\.lanraragi\.reader\.(R|util\..+)$
+
+# D3 client.api is transport only (LRR*Api objects, interceptors, DTOs): no UI, no
+#    persistence, no feature logic, no service locator.
+D3  | ^com\.lanraragi\.reader\.client\.api(\.|$) | import | ^com\.lanraragi\.reader\.((ui|widget|dao|download|gallery|reading|tankoubon|category|archive|settings)\.|ServiceRegistry$) | -
+
+# D4 The domain model depends on nothing else in the app.
+D4  | ^com\.lanraragi\.reader\.domain$         | import | ^com\.lanraragi\.reader\.             | ^com\.lanraragi\.reader\.(R|util\..+|domain\..+)$
+
+# D5 Persistence does not depend on features, UI or transport.
+D5  | ^com\.lanraragi\.reader\.dao(\.|$)       | import | ^com\.lanraragi\.reader\.(download|gallery|reading|ui|widget|client\.api)\. | -
+
+# D6 Nothing outside the UI layer depends on the UI layer (the root package is the
+#    composition root and is exempt).
+D6  | ^com\.lanraragi\.reader\.(?!(ui|widget|appwidget|shortcuts)(\.|$))\w+ | import | ^com\.lanraragi\.reader\.ui\. | -
+
+# D7 Settings are plain preference objects.
+D7  | ^com\.lanraragi\.reader\.settings$       | import | ^com\.lanraragi\.reader\.(ui|download|tankoubon)\. | -
+
+# D8 The UI reaches the server through ViewModels and domain services: no DTOs, no
+#    LRR*Api calls, no process-wide scopes (work that must outlive a screen belongs to
+#    a service that owns its scope).
+D8a | ^com\.lanraragi\.reader\.ui(\.|$)        | import | ^com\.lanraragi\.reader\.client\.api\.data\. | -
+D8b | ^com\.lanraragi\.reader\.ui(\.|$)        | import | ^com\.lanraragi\.reader\.client\.api\.LRR\w+Api(\.|$) | -
+D8c | ^com\.lanraragi\.reader\.ui(\.|$)        | text   | coroutineModule\.(ioScope|applicationScope) | -
+
+# D9 The download engine is reached through DownloadManager only.
+D9  | ^com\.lanraragi\.(?!reader\.download(\.|$)) | import | ^com\.lanraragi\.reader\.download\.(DownloadRepository|DownloadScheduler|DownloadEventBus)$ | -
+
+# D10 LegacyDb is the one-time old-database merge; screens are scoped to themselves.
+D10a | ^com\.lanraragi\.(?!reader(\.dao(\.|$)|$)) | import | ^com\.lanraragi\.reader\.(dao\.legacy\.)?LegacyDb$ | -
+D10b | ^com\.lanraragi\.reader\.ui(\.|$)       | text   | ViewModelProvider\(requireActivity\(\)\) | -
