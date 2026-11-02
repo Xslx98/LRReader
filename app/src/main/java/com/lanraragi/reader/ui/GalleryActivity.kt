@@ -55,7 +55,7 @@ import com.lanraragi.reader.ui.reader.ReaderPageHost
 import com.lanraragi.reader.ui.reader.ReaderSessionSetup
 import com.lanraragi.reader.ui.reader.ReaderStampsCoordinator
 import com.lanraragi.reader.ui.reader.ReaderTopBar
-import com.lanraragi.reader.ui.reader.TankoubonProgressSync
+import com.lanraragi.reader.reading.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
 import com.lanraragi.framework.lib.glgallery.GalleryView

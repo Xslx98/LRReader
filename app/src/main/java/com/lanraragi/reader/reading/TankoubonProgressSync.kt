@@ -7,13 +7,9 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.lanraragi.reader.ui.reader
+package com.lanraragi.reader.reading
 
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.reading.ReadingContext
-import com.lanraragi.reader.reading.ReadingContextStore
-import com.lanraragi.reader.reading.ReadingProgressSyncer
-import com.lanraragi.reader.reading.TankPageMath
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 
 /**
@@ -24,7 +20,9 @@ import com.lanraragi.reader.client.api.LRRTankoubonApi
  *
  * Fire-and-forget by design: gated on ServerCapabilityCache inside
  * updateTankProgress, conflated/serialized by ReadingProgressSyncer (which
- * also swallows send failures) — reading must never notice.
+ * also swallows send failures) — reading must never notice. The sends run
+ * on the app's process scope, so the last pages shown still reach the server
+ * after the reader closes.
  */
 class TankoubonProgressSync(private val arcid: String) {
 

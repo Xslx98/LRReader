@@ -10112,7 +10112,7 @@ PLcom/lanraragi/reader/ui/GalleryActivity;->access$getMGalleryProvider$p(Lcom/la
 PLcom/lanraragi/reader/ui/GalleryActivity;->access$getMNotifyTaskPool$p(Lcom/lanraragi/reader/ui/GalleryActivity;)Landroidx/core/util/Pools$SynchronizedPool;
 PLcom/lanraragi/reader/ui/GalleryActivity;->access$getMSliderController$p(Lcom/lanraragi/reader/ui/GalleryActivity;)Lcom/lanraragi/reader/ui/reader/GallerySliderController;
 PLcom/lanraragi/reader/ui/GalleryActivity;->access$getMStampsCoordinator$p(Lcom/lanraragi/reader/ui/GalleryActivity;)Lcom/lanraragi/reader/ui/reader/ReaderStampsCoordinator;
-PLcom/lanraragi/reader/ui/GalleryActivity;->access$getMTankProgress$p(Lcom/lanraragi/reader/ui/GalleryActivity;)Lcom/lanraragi/reader/ui/reader/TankoubonProgressSync;
+PLcom/lanraragi/reader/ui/GalleryActivity;->access$getMTankProgress$p(Lcom/lanraragi/reader/ui/GalleryActivity;)Lcom/lanraragi/reader/reading/TankoubonProgressSync;
 PLcom/lanraragi/reader/ui/GalleryActivity;->applySystemUiState()V
 PLcom/lanraragi/reader/ui/GalleryActivity;->buildProvider()V
 PLcom/lanraragi/reader/ui/GalleryActivity;->consumeStickyGalleryEvent()V
@@ -10520,9 +10520,9 @@ PLcom/lanraragi/reader/ui/reader/ReaderTopBar$$ExternalSyntheticLambda6;-><init>
 PLcom/lanraragi/reader/ui/reader/ReaderTopBar$$ExternalSyntheticLambda7;-><init>(Lcom/lanraragi/reader/ui/reader/ReaderTopBar;)V
 PLcom/lanraragi/reader/ui/reader/ReaderTopBar$$ExternalSyntheticLambda8;-><init>()V
 PLcom/lanraragi/reader/ui/reader/ReaderTopBar$$ExternalSyntheticLambda8;->onApplyWindowInsets(Landroid/view/View;Landroidx/core/view/WindowInsetsCompat;)Landroidx/core/view/WindowInsetsCompat;
-PLcom/lanraragi/reader/ui/reader/TankoubonProgressSync;-><init>(Ljava/lang/String;)V
-PLcom/lanraragi/reader/ui/reader/TankoubonProgressSync;->onPageShown(I)V
-PLcom/lanraragi/reader/ui/reader/TankoubonProgressSync$syncer$1;-><init>(Lcom/lanraragi/reader/ui/reader/TankoubonProgressSync;Lkotlin/coroutines/Continuation;)V
+PLcom/lanraragi/reader/reading/TankoubonProgressSync;-><init>(Ljava/lang/String;)V
+PLcom/lanraragi/reader/reading/TankoubonProgressSync;->onPageShown(I)V
+PLcom/lanraragi/reader/reading/TankoubonProgressSync$syncer$1;-><init>(Lcom/lanraragi/reader/reading/TankoubonProgressSync;Lkotlin/coroutines/Continuation;)V
 Lcom/lanraragi/reader/ui/scene/BaseScene;
 HSPLcom/lanraragi/reader/ui/scene/BaseScene;-><clinit>()V
 HSPLcom/lanraragi/reader/ui/scene/BaseScene;-><init>()V
