@@ -31,7 +31,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ui.BackDispatch
 import com.lanraragi.reader.ui.BaseActivity
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.IntIdGenerator
