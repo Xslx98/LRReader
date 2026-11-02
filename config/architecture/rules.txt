@@ -50,3 +50,8 @@ D9  | ^com\.lanraragi\.(?!reader\.download(\.|$)) | import | ^com\.lanraragi\.re
 # D10 LegacyDb is the one-time old-database merge; screens are scoped to themselves.
 D10a | ^com\.lanraragi\.(?!reader(\.dao(\.|$)|$)) | import | ^com\.lanraragi\.reader\.(dao\.legacy\.)?LegacyDb$ | -
 D10b | ^com\.lanraragi\.reader\.ui(\.|$)       | text   | ViewModelProvider\(requireActivity\(\)\) | -
+
+# D11 GlobalStuff, a process-wide id -> object handoff map, is retired: pass data through
+#    Scene args or keep it on a ViewModel. Only the module that implements it is exempt; the
+#    Application's forwarders and their one caller are in the allowlist until both go.
+D11 | ^com\.lanraragi\.reader(\.(?!module$)\w+|$) | text | \b(put|remove)GlobalStuff\( | -

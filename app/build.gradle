@@ -241,7 +241,7 @@ afterEvaluate {
     tasks.matching { it.name == "preBuild" }.configureEach { dependsOn("verifyNoBaseUrlConcat") }
 }
 
-// 2026-11 architecture review: package dependency rules D1–D10 live in
+// 2026-11 architecture review: package dependency rules D1–D11 live in
 // config/architecture/rules.txt, existing violations in allowlist.txt (which
 // scripts/ci/check-baselines.sh keeps from growing). A fixed violation must
 // leave the allowlist in the same commit, so a stale line fails too. Import rules
