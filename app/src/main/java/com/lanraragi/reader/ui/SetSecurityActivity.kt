@@ -40,6 +40,7 @@ import com.lanraragi.reader.settings.PatternConfirmFlow
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
+import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 
 class SetSecurityActivity : ToolbarActivity(), View.OnClickListener {
 

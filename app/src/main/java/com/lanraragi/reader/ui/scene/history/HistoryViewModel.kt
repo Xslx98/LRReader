@@ -10,7 +10,7 @@ import com.lanraragi.reader.dao.HistoryInfo
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
-import com.lanraragi.reader.ui.ContinueReadingShortcut
+import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

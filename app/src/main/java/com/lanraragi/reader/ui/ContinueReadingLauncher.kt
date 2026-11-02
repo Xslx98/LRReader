@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 
 /** Opens the reader for a continue-reading shortcut or widget deep link. */
 object ContinueReadingLauncher {

@@ -10090,10 +10090,10 @@ Lcom/lanraragi/reader/ui/CommonOperations;
 HSPLcom/lanraragi/reader/ui/CommonOperations;-><clinit>()V
 HSPLcom/lanraragi/reader/ui/CommonOperations;-><init>()V
 HSPLcom/lanraragi/reader/ui/CommonOperations;->ensureNoMediaFile(Lcom/lanraragi/reader/storage/StorageFile;)V
-Lcom/lanraragi/reader/ui/ContinueReadingShortcut;
-HSPLcom/lanraragi/reader/ui/ContinueReadingShortcut;-><clinit>()V
-HSPLcom/lanraragi/reader/ui/ContinueReadingShortcut;-><init>()V
-HSPLcom/lanraragi/reader/ui/ContinueReadingShortcut;->install()V
+Lcom/lanraragi/reader/shortcuts/ContinueReadingShortcut;
+HSPLcom/lanraragi/reader/shortcuts/ContinueReadingShortcut;-><clinit>()V
+HSPLcom/lanraragi/reader/shortcuts/ContinueReadingShortcut;-><init>()V
+HSPLcom/lanraragi/reader/shortcuts/ContinueReadingShortcut;->install()V
 Lcom/lanraragi/reader/ui/DatabaseResetFlow;
 HSPLcom/lanraragi/reader/ui/DatabaseResetFlow;-><clinit>()V
 HSPLcom/lanraragi/reader/ui/DatabaseResetFlow;-><init>(Landroidx/appcompat/app/AppCompatActivity;Lkotlin/jvm/functions/Function0;Lkotlinx/coroutines/CoroutineDispatcher;)V

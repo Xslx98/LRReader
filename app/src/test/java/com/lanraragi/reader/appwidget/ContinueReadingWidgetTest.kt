@@ -14,7 +14,7 @@ import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.dao.toArchiveJson
-import com.lanraragi.reader.ui.ContinueReadingShortcut
+import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.runBlocking
 import org.junit.After

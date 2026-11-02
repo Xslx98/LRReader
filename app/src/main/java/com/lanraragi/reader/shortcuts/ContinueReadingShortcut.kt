@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui
+package com.lanraragi.reader.shortcuts
 
 import android.content.Context
 import android.content.Intent
@@ -13,6 +13,7 @@ import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.reading.ReadingSessionEnd
 import com.lanraragi.reader.reading.ReadingSessionEvents
 import kotlinx.coroutines.launch
+import com.lanraragi.reader.ui.MainActivity
 
 /**
  * Publishes the "Continue reading" dynamic launcher shortcut (issue #15).

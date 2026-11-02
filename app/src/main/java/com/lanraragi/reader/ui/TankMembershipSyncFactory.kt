@@ -15,6 +15,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 
 /**
  * Production wiring for [TankMembershipSync]: Room repositories from the

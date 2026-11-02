@@ -287,7 +287,7 @@ class LRReaderApplication : SceneApplication() {
 
         // Continue-reading shortcut publisher rides the reading-session-end
         // seam (issue #15). Registration is cheap; work happens per session end.
-        com.lanraragi.reader.ui.ContinueReadingShortcut.install()
+        com.lanraragi.reader.shortcuts.ContinueReadingShortcut.install()
 
         // Continue-reading home-screen widget rides the same seam (issue #9);
         // per-event work no-ops unless a widget instance is actually placed.
