@@ -7,26 +7,24 @@ import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.text.TextUtils
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager.widget.ViewPager
 import com.lanraragi.reader.ui.dialog.CheckBoxDialogBuilder
 import com.lanraragi.reader.ui.dialog.EditTextDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.archive.ListUrlBuilder
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.tagtranslation.TagTranslationUtil
-import kotlinx.coroutines.launch
 
 /**
  * Handles drawer view creation, bookmarks, and quick search dialogs
@@ -178,36 +176,22 @@ class GalleryDrawerHelper(private val callback: Callback) {
             } else {
                 quickSearch.name = text
             }
-            val activity = callback.getHostActivity()
-            ServiceRegistry.coroutineModule.ioScope.launch {
-                try {
-                    ServiceRegistry.dataModule.quickSearchRepository.insert(quickSearch)
-                } catch (e: Exception) {
-                    // Red line: a DB launch must handle its own exceptions. On
-                    // failure don't touch the UI list so it stays in sync with
-                    // what actually persisted.
-                    Log.e(TAG, "Failed to add quick search", e)
-                    return@launch
-                }
-                activity?.runOnUiThread {
-                    @Suppress("UNCHECKED_CAST")
-                    (list as MutableList<QuickSearch>).add(quickSearch)
-                    // ArrayAdapter only supports notifyDataSetChanged() — no granular notifications
-                    @Suppress("NotifyDataSetChanged")
-                    adapter.notifyDataSetChanged()
-                    if (list.isEmpty()) {
-                        tip.visibility = View.VISIBLE
-                        listView.visibility = View.GONE
-                    } else {
-                        tip.visibility = View.GONE
-                        listView.visibility = View.VISIBLE
-                    }
+            // On failure the ViewModel logs and skips the callback, so the
+            // drawer list stays in sync with what actually persisted.
+            ViewModelProvider(callback.getScene())[QuickSearchViewModel::class.java].addQuickSearch(quickSearch) {
+                @Suppress("UNCHECKED_CAST")
+                (list as MutableList<QuickSearch>).add(quickSearch)
+                // ArrayAdapter only supports notifyDataSetChanged() — no granular notifications
+                @Suppress("NotifyDataSetChanged")
+                adapter.notifyDataSetChanged()
+                if (list.isEmpty()) {
+                    tip.visibility = View.VISIBLE
+                    listView.visibility = View.GONE
+                } else {
+                    tip.visibility = View.GONE
+                    listView.visibility = View.VISIBLE
                 }
             }
         }
-    }
-
-    companion object {
-        private const val TAG = "GalleryDrawerHelper"
     }
 }

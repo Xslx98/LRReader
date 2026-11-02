@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.QuickSearch
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -18,6 +20,10 @@ import kotlinx.coroutines.withContext
 /**
  * ViewModel for [QuickSearchScene]. Manages the quick search list data and
  * delete/reorder operations.
+ *
+ * The gallery list's quick-search drawer ([BookmarksDraw]) uses its own
+ * instance, scoped to its [GalleryListScene], for loading and adding entries
+ * and to remember its scroll position.
  *
  * The Scene observes [quickSearches] for the current list and [uiEvent] for
  * one-shot events (errors, deletions). View references, adapters, drag-drop
@@ -133,6 +139,74 @@ class QuickSearchViewModel : ViewModel() {
                     QuickSearchUiEvent.ShowError("Failed to reorder quick search")
                 )
             }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Gallery-list drawer (BookmarksDraw)
+    // -------------------------------------------------------------------------
+
+    /** First visible row of the drawer's list, restored when the drawer view comes back. */
+    var drawerScrollPosition: Int? = null
+
+    /**
+     * Loads the quick searches for the drawer. With [showTranslations] the
+     * entries whose names [translate] changes are renamed and persisted
+     * ([QuickSearchNameReconciler]). [onLoaded] gets the list on the main
+     * thread; it is not called when loading fails (the drawer stays empty).
+     */
+    fun loadForDrawer(
+        showTranslations: Boolean,
+        translate: (Array<String>) -> String,
+        onLoaded: (List<QuickSearch>) -> Unit,
+    ) {
+        viewModelScope.launch {
+            val list = withContext(Dispatchers.IO) {
+                val repository = ServiceRegistry.dataModule.quickSearchRepository
+                val all = try {
+                    repository.getAll()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to load quick searches for the drawer", e)
+                    return@withContext null
+                }
+                val toUpdate = QuickSearchNameReconciler.reconcile(all, showTranslations, translate)
+                if (toUpdate.isNotEmpty()) {
+                    try {
+                        withContext(NonCancellable) { for (qs in toUpdate) repository.update(qs) }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // Non-fatal: the list still shows the translated names
+                        // in memory even if persisting them failed.
+                        Log.e(TAG, "Failed to persist quick-search tag translations", e)
+                    }
+                }
+                all
+            } ?: return@launch
+            onLoaded(list)
+        }
+    }
+
+    /**
+     * Saves a new quick search from the drawer's add dialog. The insert
+     * finishes even if the screen closes; [onAdded] runs on the main thread
+     * only when it succeeded, so the drawer list matches what persisted.
+     */
+    fun addQuickSearch(quickSearch: QuickSearch, onAdded: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO + NonCancellable) {
+                    ServiceRegistry.dataModule.quickSearchRepository.insert(quickSearch)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to add quick search", e)
+                return@launch
+            }
+            onAdded()
         }
     }
 

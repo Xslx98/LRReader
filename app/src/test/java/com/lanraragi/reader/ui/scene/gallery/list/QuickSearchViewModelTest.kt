@@ -193,4 +193,47 @@ class QuickSearchViewModelTest {
 
         assertEquals("List should not change for out-of-bounds move", sizeBefore, sizeAfter)
     }
+
+    // ── gallery-list drawer ────────────────────────────────────────
+
+    @Test
+    fun loadForDrawer_withTranslations_persistsRenamedEntries() {
+        insertQuickSearch("artist:foo", time = 100)
+        insertQuickSearch("plain", time = 200)
+
+        val vm = QuickSearchViewModel()
+        var loaded: List<QuickSearch>? = null
+        vm.loadForDrawer(showTranslations = true, translate = { "T-" + it[1] }) { loaded = it }
+
+        awaitUntil { loaded != null }
+        assertEquals(setOf("T-foo", "plain"), loaded!!.map { it.name }.toSet())
+        val stored = runBlocking { db.browsingDao().getAllQuickSearch() }.map { it.name }.toSet()
+        assertEquals(setOf("T-foo", "plain"), stored)
+    }
+
+    @Test
+    fun loadForDrawer_withoutTranslations_rewritesNothing() {
+        insertQuickSearch("artist:foo", time = 100)
+
+        val vm = QuickSearchViewModel()
+        var loaded: List<QuickSearch>? = null
+        vm.loadForDrawer(showTranslations = false, translate = { "T-" + it[1] }) { loaded = it }
+
+        awaitUntil { loaded != null }
+        assertEquals(listOf("artist:foo"), loaded!!.map { it.name })
+        assertEquals(
+            listOf("artist:foo"),
+            runBlocking { db.browsingDao().getAllQuickSearch() }.map { it.name },
+        )
+    }
+
+    @Test
+    fun addQuickSearch_insertsThenCallsBack() {
+        val vm = QuickSearchViewModel()
+        var added = false
+        vm.addQuickSearch(QuickSearch().apply { name = "New" }) { added = true }
+
+        awaitUntil { added }
+        assertEquals(listOf("New"), runBlocking { db.browsingDao().getAllQuickSearch() }.map { it.name })
+    }
 }

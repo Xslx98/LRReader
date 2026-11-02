@@ -11073,9 +11073,6 @@ HSPLcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw;->onCreate(Lcom/lan
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw;->resume()V
 Lcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw$$ExternalSyntheticLambda0;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw$$ExternalSyntheticLambda0;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;)V
-Lcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw$Companion;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw$Companion;-><init>()V
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw$ScrollListener;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw$ScrollListener;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw;)V
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/BookmarksDraw$ScrollListener;->onScroll(Landroid/widget/AbsListView;III)V
@@ -11181,9 +11178,6 @@ HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryDrawerHelper;->getDrawPage
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryDrawerHelper;->onCreateDrawerView(Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Landroid/os/Bundle;)Landroid/view/View;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryDrawerHelper;->onResume()V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryDrawerHelper$Callback;
-Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryDrawerHelper$Companion;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryDrawerHelper$Companion;-><init>()V
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryDrawerHelper$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryFabHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryFabHelper;-><init>(Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper;
