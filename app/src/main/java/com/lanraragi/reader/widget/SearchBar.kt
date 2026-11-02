@@ -527,7 +527,9 @@ class SearchBar : CardView,
         if (LRRTagCache.needsRefresh()) {
             try {
                 ServiceRegistry.coroutineModule.ioScope.launch {
-                    LRRTagCache.getTags()
+                    // The stats body can be several MB: the shared client's
+                    // 30s call cap would truncate it on slow links.
+                    LRRTagCache.getTags(ServiceRegistry.networkModule.largeFileClient)
                     // Refresh suggestions on the UI thread once cache is ready
                     post { updateSuggestions(false) }
                 }

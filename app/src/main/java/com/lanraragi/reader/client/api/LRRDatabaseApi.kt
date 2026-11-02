@@ -5,7 +5,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for LANraragi database operations.
@@ -16,16 +15,6 @@ import com.lanraragi.reader.server.LRRClientProvider
  * - POST /api/database/clean  — Clean orphaned entries (future)
  */
 object LRRDatabaseApi {
-
-    /**
-     * The /api/database/stats response can be several MB on large libraries;
-     * the shared client's 30s callTimeout would truncate it on slow links.
-     * The shared large-file client has no call cap (and a 60s readTimeout
-     * instead of the inherited 10s — a deliberate loosening that's safe in
-     * the lenient direction for a streamed body).
-     */
-    private fun longCallClient(): OkHttpClient =
-        com.lanraragi.reader.ServiceRegistry.networkModule.largeFileClient
 
     /**
      * GET /api/database/stats — Get tag statistics as typed objects.
@@ -50,8 +39,4 @@ object LRRDatabaseApi {
             decodeJsonBody<List<LRRTagStat>>(response)
         }
     }
-
-    @JvmStatic
-    suspend fun getTagStats(): List<LRRTagStat> =
-        getTagStats(longCallClient(), LRRClientProvider.getBaseUrl())
 }
