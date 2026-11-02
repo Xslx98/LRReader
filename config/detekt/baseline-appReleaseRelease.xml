@@ -243,7 +243,7 @@
     <ID>RedundantSuspendModifier:NetworkWaitBudget.kt$NetworkWaitBudget$suspend</ID>
     <ID>RedundantSuspendModifier:PageThumbnailRepository.kt$PageThumbnailRepository$suspend</ID>
     <ID>RedundantSuspendModifier:ProfileLookupCache.kt$ProfileLookupCache$suspend</ID>
-    <ID>RedundantSuspendModifier:SpiderDen.kt$SpiderDen$suspend</ID>
+    <ID>RedundantSuspendModifier:DownloadDirs.kt$DownloadDirs$suspend</ID>
     <ID>RedundantSuspendModifier:TankMemberSource.kt$LrrTankMemberSource$suspend</ID>
     <ID>ReturnCount:DownloadBatchOpsHelper.kt$DownloadBatchOpsHelper$fun onClickSecondaryFab(fab: FloatingActionButton, position: Int)</ID>
     <ID>ReturnCount:DownloadDirMigration.kt$DownloadDirMigration$suspend fun migrateRow(info: DownloadInfo): RowResult</ID>
@@ -390,7 +390,7 @@
     <ID>UnreachableCode:DirGalleryProvider.kt$DirGalleryProvider$val url = serverUrlDeferred.await() ?: return@sync</ID>
     <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$if ("file" != uri.scheme) return null</ID>
     <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$return File(uri.path ?: return null)</ID>
-    <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$val uni = runCatching { // Tracked download: the reader writes pages through into this // directory, so it may allocate it ahead of the worker. SpiderDen.allocateGalleryDownloadDir(archive.arcid, archive.title) }.getOrNull() ?: return null</ID>
+    <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$val uni = runCatching { // Tracked download: the reader writes pages through into this // directory, so it may allocate it ahead of the worker. DownloadDirs.allocateGalleryDownloadDir(archive.arcid, archive.title) }.getOrNull() ?: return null</ID>
     <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$val uri = uni.uri</ID>
     <ID>UnreachableCode:DownloadLabelsScene.kt$DownloadLabelsScene.LabelAdapter$layoutInflater2 ?: LayoutInflater.from(requireContext())</ID>
     <ID>UnreachableCode:DownloadListInfosExecutor.kt$DownloadListInfosExecutor$for (searchTag in searchTags) { if (!tagList.contains(searchTag)) { result = false break } }</ID>
@@ -466,7 +466,7 @@
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val body = response.body ?: throw IOException("Empty response body")</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val dir = File(uni.uri.path ?: return false)</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val pagecount = runCatching { ServiceRegistry.dataModule.historyRepository .getArchiveSnapshot(arcId, info.serverProfileId)?.pagecount }.getOrNull() ?: return false</ID>
-    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val uni = runCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false</ID>
+    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val uni = runCatching { DownloadDirs.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false</ID>
     <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$val client = ServiceRegistry.networkModule.okHttpClient</ID>
     <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$val url = serverUrlDeferred.await() ?: return@sync</ID>
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$if (success != 1) { val error = jsonObj["error"]?.jsonPrimitive?.content ?: "Download queue failed" throw IOException(error) }</ID>

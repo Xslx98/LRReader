@@ -15,7 +15,7 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.TankDownloadGrouping
 import com.lanraragi.reader.download.TankProgressAggregate
-import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.download.search.DownloadListInfosExecutor
 import com.lanraragi.reader.download.search.DownloadSearchMatcher
 import com.lanraragi.reader.storage.StorageFile
@@ -491,7 +491,7 @@ class DownloadsViewModel(
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for ((arcid, rootUri) in targets) {
                     try {
-                        SpiderDen.deleteGalleryDownloadDir(arcid, rootUri)
+                        DownloadDirs.deleteGalleryDownloadDir(arcid, rootUri)
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to delete download files for $arcid", e)
                     }

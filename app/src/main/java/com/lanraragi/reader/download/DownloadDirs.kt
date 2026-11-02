@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader.spider
+package com.lanraragi.reader.download
 
 import androidx.core.net.toUri
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.download.DownloadDirAllocator
-import com.lanraragi.reader.download.DownloadDirNaming
 import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.storage.StorageFile
@@ -31,15 +29,15 @@ import java.util.Locale
  * Helpers for resolving an archive's on-disk download directory and the
  * filename layout LRReader uses for downloaded pages.
  *
- * The original EhViewer SpiderDen instance class (image cache + per-archive
+ * The original EhViewer DownloadDirs instance class (image cache + per-archive
  * state) has been removed: LANraragi's image flow goes through
  * [com.lanraragi.reader.gallery.LRRGalleryProvider] /
  * [com.lanraragi.reader.download.LRRDownloadWorker] and never created a
- * SpiderDen instance. Only the directory + filename helpers survive.
+ * DownloadDirs instance. Only the directory + filename helpers survive.
  */
-object SpiderDen {
+object DownloadDirs {
 
-    private const val TAG = "SpiderDen"
+    private const val TAG = "DownloadDirs"
 
     /** Process-wide: its mutex is what makes pointer allocation atomic. */
     private val allocator by lazy {

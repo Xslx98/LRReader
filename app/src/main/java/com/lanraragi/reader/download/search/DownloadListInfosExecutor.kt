@@ -5,7 +5,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.download.DownloadDirs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -118,7 +118,7 @@ class DownloadListInfosExecutor {
      */
     private suspend fun calculateDownloadDirSize(info: DownloadInfo): Long {
         return try {
-            val downloadDir = SpiderDen.findGalleryDownloadDir(info.arcid, info.downloadRootUri)
+            val downloadDir = DownloadDirs.findGalleryDownloadDir(info.arcid, info.downloadRootUri)
             if (downloadDir == null || !downloadDir.isDirectory) {
                 return 0
             }

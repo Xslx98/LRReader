@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.scene.download
 
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Per-arcid cache of resolved download directories for the downloads list.
  *
  * Every thumbnail bind needs the archive's download dir — a Room lookup via
- * [SpiderDen.findGalleryDownloadDir] plus a possible directory listing. Each
+ * [DownloadDirs.findGalleryDownloadDir] plus a possible directory listing. Each
  * bind used to start that resolution from scratch (one coroutine per
  * ThumbDataContainer), so a fast scroll churned the DB with identical
  * lookups. This cache keys the in-flight/completed future by arcid so each
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 class DownloadDirCache(
     private val scope: CoroutineScope,
     private val resolver: suspend (DownloadInfo) -> StorageFile? = { info ->
-        SpiderDen.findGalleryDownloadDir(info.arcid, rootUriOverride = info.downloadRootUri)
+        DownloadDirs.findGalleryDownloadDir(info.arcid, rootUriOverride = info.downloadRootUri)
     },
 ) {
     private val cache = ConcurrentHashMap<String, CompletableFuture<StorageFile?>>()

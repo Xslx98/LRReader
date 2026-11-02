@@ -265,7 +265,7 @@ class RedactorTest {
     fun titleRules_leaveFramesAndOtherDownloadPathsAlone() {
         val text = listOf(
             "\tat com.lanraragi.reader.download.LRRDownloadWorker.writePage(LRRDownloadWorker.kt:598)",
-            "\tat com.lanraragi.reader.spider.SpiderDen.resolveRootDir(SpiderDen.kt:120)",
+            "\tat com.lanraragi.reader.download.DownloadDirs.resolveRootDir(DownloadDirs.kt:120)",
             "GET https://<host>/Xslx98/LRReader/releases/download/v1.27.1/app.apk",
         ).joinToString("\n")
         Redactor.registerDownloadRoot("/storage/emulated/0/Manga")

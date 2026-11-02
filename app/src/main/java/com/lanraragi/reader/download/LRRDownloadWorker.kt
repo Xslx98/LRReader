@@ -15,7 +15,6 @@ import com.lanraragi.reader.client.api.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.gallery.ForegroundReading
 import com.lanraragi.reader.gallery.ReaderPageCache
-import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -56,7 +55,7 @@ class LRRDownloadWorker(
 
     /**
      * What the worker needs from the rest of the app. [Production] reads
-     * [ServiceRegistry] and [SpiderDen]; tests substitute a MockWebServer
+     * [ServiceRegistry] and [DownloadDirs]; tests substitute a MockWebServer
      * client and a temp directory (audit C09).
      */
     interface Env {
@@ -548,7 +547,7 @@ class LRRDownloadWorker(
         }.getOrNull() ?: return false
         if (pagecount <= 0) return false
         // Lookup only: a verifier must not create a directory it then reports on.
-        val dir = suspendRunCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull()?.file ?: return false
+        val dir = suspendRunCatching { DownloadDirs.findGalleryDownloadDir(arcId) }.getOrNull()?.file ?: return false
         if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish")
@@ -736,13 +735,13 @@ class LRRDownloadWorker(
         /**
          * The archive's download directory, allocated (with its pointer) on
          * first use. There is deliberately no fallback location: a second
-         * naming rule outside [SpiderDen] produced unpointed, undeduplicated
+         * naming rule outside [DownloadDirs] produced unpointed, undeduplicated
          * directories the reader never found. A null result fails the download
          * with a reason instead.
          */
         private suspend fun allocateDownloadDir(info: DownloadInfo): File? {
             try {
-                return SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title)?.file
+                return DownloadDirs.allocateGalleryDownloadDir(info.arcid, info.title)?.file
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

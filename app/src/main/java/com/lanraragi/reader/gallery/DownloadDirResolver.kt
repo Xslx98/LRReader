@@ -5,7 +5,7 @@ import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.DownloadPageRepair
-import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.util.suspendRunCatching
 import java.io.File
 
@@ -28,7 +28,7 @@ interface DownloadDirResolver {
      * straight to `ACTION_DIR`.
      *
      * Resolution:
-     *  1. Primary — [SpiderDen.findGalleryDownloadDir] maps arcid → the DB
+     *  1. Primary — [DownloadDirs.findGalleryDownloadDir] maps arcid → the DB
      *     `dirname` under the recorded root. Directories are title-named
      *     (DownloadDirNaming), so the persisted pointer is the only
      *     arcid → directory link; there is no prefix to scan for.
@@ -58,7 +58,7 @@ interface DownloadDirResolver {
 
         override suspend fun localDownloadDir(context: Context, archive: Archive): File? {
             // 1. Primary resolution.
-            existingDir(SpiderDen.findGalleryDownloadDir(archive.arcid))
+            existingDir(DownloadDirs.findGalleryDownloadDir(archive.arcid))
                 ?.let { primary -> if (hasImageFiles(primary)) return primary }
 
             // 2. Legacy app-private fallback.
@@ -79,7 +79,7 @@ interface DownloadDirResolver {
             return suspendRunCatching {
                 // Tracked download: the reader writes pages through into this
                 // directory, so it may allocate it ahead of the worker.
-                SpiderDen.allocateGalleryDownloadDir(archive.arcid, archive.title)
+                DownloadDirs.allocateGalleryDownloadDir(archive.arcid, archive.title)
             }.getOrNull()?.file
         }
 

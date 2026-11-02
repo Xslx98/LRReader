@@ -45,7 +45,7 @@ import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.download.DownloadDirMarkerBackfill
 import com.lanraragi.reader.download.DownloadDirMigration
 import com.lanraragi.reader.download.DuplicateDirPointerRepair
-import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.settings.PrivacySettings
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -183,8 +183,8 @@ class LRReaderApplication : SceneApplication() {
         com.lanraragi.reader.client.api.ServerCapabilityCache.attachStore(
             com.lanraragi.reader.client.api.PrefsServerCapabilityStore(Settings.getPreferences())
         )
-        // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
-        // SpiderDen.initialize(this);
+        // Skip DownloadDirs disk cache in LRR mode — it's EH-specific and wastes 40-640MB
+        // DownloadDirs.initialize(this);
         trace("LRRApp.LegacyDb.init") { LegacyDb.initialize(this) }
 
         // Load active server profile into LRRAuthManager asynchronously, and verify
@@ -418,7 +418,7 @@ class LRReaderApplication : SceneApplication() {
                 if (!prefs.getBoolean(DownloadDirMigration.PREF_DONE, false)) {
                     val outcome = DownloadDirMigration(
                         ServiceRegistry.dataModule.downloadDbRepository,
-                        SpiderDen::resolveRootDir,
+                        DownloadDirs::resolveRootDir,
                     ).run()
                     if (BuildConfig.DEBUG) Log.i(TAG, "Download dir migration: ${outcome.results}")
                     if (outcome.complete) prefs.edit { putBoolean(DownloadDirMigration.PREF_DONE, true) }
@@ -432,7 +432,7 @@ class LRReaderApplication : SceneApplication() {
                     !prefs.getBoolean(DownloadDirMarkerBackfill.PREF_DONE, false)
                 ) {
                     val complete = DownloadDirMarkerBackfill(ServiceRegistry.dataModule.downloadDbRepository) { arcid, rootUri ->
-                        SpiderDen.findGalleryDownloadDir(arcid, rootUri)
+                        DownloadDirs.findGalleryDownloadDir(arcid, rootUri)
                     }.run()
                     if (complete) prefs.edit { putBoolean(DownloadDirMarkerBackfill.PREF_DONE, true) }
                 }

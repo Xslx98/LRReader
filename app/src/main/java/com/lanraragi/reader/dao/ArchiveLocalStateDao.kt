@@ -371,7 +371,7 @@ interface ArchiveLocalStateDao {
     suspend fun backfillDownloadRootUri(uri: String)
 
     /**
-     * Lightweight lookup used by SpiderDen / GalleryProvider on the
+     * Lightweight lookup used by DownloadDirs / GalleryProvider on the
      * read path: resolve the download tree URI persisted with this
      * archive. Returns NULL when the archive has no download row OR
      * when the row pre-dates the v25→v26 backfill — the caller falls
