@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.security.SecureRandom
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * Unit tests for pattern failure lockout logic in [LRRAuthManager].

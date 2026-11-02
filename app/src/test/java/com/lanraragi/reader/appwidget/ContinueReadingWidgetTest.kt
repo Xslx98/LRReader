@@ -111,11 +111,11 @@ class ContinueReadingWidgetTest {
 
     @Test
     fun buildViews_withAnAppLock_hidesTitleAndProgress() {
-        com.lanraragi.reader.client.api.LRRAuthManager.initializeForTesting(
+        com.lanraragi.reader.server.LRRAuthManager.initializeForTesting(
             context.getSharedPreferences("widget_redact_test", Context.MODE_PRIVATE)
         )
         try {
-            com.lanraragi.reader.client.api.LRRAuthManager.setPattern("0123")
+            com.lanraragi.reader.server.LRRAuthManager.setPattern("0123")
             val root = applied(
                 ContinueReadingWidget.buildViews(
                     context, archive("a".repeat(40), 7L, "Private Book", pagecount = 100, progress = 12)
@@ -124,7 +124,7 @@ class ContinueReadingWidgetTest {
             assertEquals(context.getString(R.string.shortcut_continue_reading), root.text(R.id.appwidget_title))
             assertEquals(View.GONE, root.visibility(R.id.appwidget_progress))
         } finally {
-            com.lanraragi.reader.client.api.LRRAuthManager.clear()
+            com.lanraragi.reader.server.LRRAuthManager.clear()
         }
     }
 

@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit
 import com.lanraragi.reader.server.ServerTrust
 import com.lanraragi.reader.server.ServerCertificate
 import com.lanraragi.reader.server.untrustedCertificateIn
+import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 
 /**
  * Shared URL utilities for LANraragi server addresses.

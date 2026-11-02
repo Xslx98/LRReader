@@ -18,7 +18,7 @@ package com.lanraragi.reader.ui.scene
 
 import android.os.Bundle
 import android.util.Log
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.framework.scene.Announcer
 

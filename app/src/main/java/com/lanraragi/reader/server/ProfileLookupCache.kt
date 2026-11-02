@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.server
 
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import com.lanraragi.reader.client.api.await
 
 /**
  * Synchronously-readable snapshot of all configured [ServerProfile]s.

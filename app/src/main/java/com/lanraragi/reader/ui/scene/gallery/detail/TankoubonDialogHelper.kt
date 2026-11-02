@@ -20,7 +20,7 @@ import com.lanraragi.reader.tankoubon.TankRecentStore
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

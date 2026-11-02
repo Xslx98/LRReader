@@ -24,6 +24,7 @@ import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
 import com.lanraragi.reader.server.ServerCapabilityCache
+import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for LANraragi archive operations.

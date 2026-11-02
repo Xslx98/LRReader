@@ -33,13 +33,13 @@ import android.os.Trace
 import android.util.Log
 import com.lanraragi.reader.util.LocaleContext
 import com.lanraragi.framework.scene.SceneApplication
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.module.AppModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.download.DownloadDirMarkerBackfill
@@ -220,7 +220,7 @@ class LRReaderApplication : SceneApplication() {
                     // the session was cleared on delete (audit 2026-10-04 C02).
                     LRRAuthManager.clearSessionIfActiveProfileGone(allProfiles.map { it.id })
                 }
-            } catch (e: com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException) {
+            } catch (e: com.lanraragi.reader.server.LRRSecureStorageUnavailableException) {
                 // Log.e, not Log.w: R8 cannot strip a Throwable-carrying Log.w
                 // from this coroutine body, and the CI DEX check forbids it.
                 Log.e(TAG, "KeyStore unavailable during profile load", e)

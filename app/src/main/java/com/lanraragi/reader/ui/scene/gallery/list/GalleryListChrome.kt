@@ -11,7 +11,7 @@ import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * The controls around the gallery list: the search bar (drawables, helpers,

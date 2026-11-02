@@ -7,7 +7,7 @@ import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher

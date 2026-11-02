@@ -9,9 +9,9 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.OrphanProfileException
+import com.lanraragi.reader.server.OrphanProfileException
 import com.lanraragi.reader.client.api.resolvePageUrl
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.gallery.ForegroundReading
 import com.lanraragi.reader.gallery.ReaderPageCache

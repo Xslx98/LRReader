@@ -31,7 +31,7 @@ import com.lanraragi.reader.gallery.GalleryProvider2
 import com.lanraragi.reader.gallery.LocalReadingProgress
 import com.lanraragi.reader.dao.toDownloadInfoView
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.domain.Archive
@@ -153,7 +153,7 @@ class DownloadManager(
                     val key = "last_$profileId"
                     if (now - prefs.getLong(key, 0L) < DownloadRatingSync.SYNC_INTERVAL_MS) continue
                     val baseUrl = try {
-                        com.lanraragi.reader.client.api.resolveSourceBaseUrl(profileId, cache)
+                        com.lanraragi.reader.server.resolveSourceBaseUrl(profileId, cache)
                     } catch (e: kotlinx.coroutines.CancellationException) {
                         throw e
                     } catch (e: Exception) {

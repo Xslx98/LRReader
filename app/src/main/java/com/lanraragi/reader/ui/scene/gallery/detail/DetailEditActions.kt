@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import com.lanraragi.framework.scene.Announcer
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.ui.scene.TankoubonDetailScene
 

@@ -138,7 +138,7 @@ class AppModule(private val context: Context) : IAppModule {
          * (`compareAndSet(err, null)`) once the user answers.
          *
          * KeyStore-specific failures continue to flow through
-         * [com.lanraragi.reader.client.api.LRRAuthManager.isNeedsReauthentication]
+         * [com.lanraragi.reader.server.LRRAuthManager.isNeedsReauthentication]
          * and the existing reauth dialog — this slot is for the "everything
          * else" branch that previously vanished into Log.e.
          */

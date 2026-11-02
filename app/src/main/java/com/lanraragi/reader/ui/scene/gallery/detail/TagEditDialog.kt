@@ -33,8 +33,8 @@ import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.explicitlyNamespacedValues
 import com.lanraragi.reader.domain.mergeTagEdits
 import com.lanraragi.reader.domain.toLrrTagString
-import com.lanraragi.reader.client.api.LRRClientProvider
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.friendlyError

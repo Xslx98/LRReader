@@ -3,6 +3,7 @@ package com.lanraragi.reader.client.lrr;
 import com.lanraragi.reader.MockWebServerAwaitKt;
 import com.lanraragi.reader.client.api.*;
 import com.lanraragi.reader.client.api.data.*;
+import com.lanraragi.reader.server.LRRAuthManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 

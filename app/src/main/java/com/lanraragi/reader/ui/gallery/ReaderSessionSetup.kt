@@ -5,7 +5,7 @@ import android.util.Log
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.gallery.DirGalleryProvider
 import com.lanraragi.reader.gallery.GalleryProvider2

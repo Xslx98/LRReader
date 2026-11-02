@@ -5,7 +5,7 @@ import android.view.View
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.download.DownloadManager

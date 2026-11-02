@@ -13,7 +13,7 @@ import android.content.Context
 import android.content.Intent
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
 
 /**

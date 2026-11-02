@@ -30,6 +30,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.util.concurrent.TimeUnit
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * NET-7: connectWithFallback must never touch the global active server URL —

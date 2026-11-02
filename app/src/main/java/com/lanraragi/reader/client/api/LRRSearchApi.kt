@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for LANraragi search operations.

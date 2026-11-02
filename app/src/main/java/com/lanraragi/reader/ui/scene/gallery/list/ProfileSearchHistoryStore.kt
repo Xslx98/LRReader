@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.util.Log
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.widget.SearchBar
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

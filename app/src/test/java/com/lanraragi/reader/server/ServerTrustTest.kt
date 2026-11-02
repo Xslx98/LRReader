@@ -34,7 +34,6 @@ import java.io.IOException
 import java.security.cert.CertificateException
 import java.util.concurrent.TimeUnit
 import com.lanraragi.reader.client.api.LRRUrlHelper
-import com.lanraragi.reader.client.api.ProfileLookupCache
 
 /**
  * Audit C27 phase 2: real TLS handshakes against a MockWebServer with

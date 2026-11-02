@@ -14,9 +14,9 @@ import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankTagSyncer
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadEntryGate
 import com.lanraragi.reader.download.DownloadInfoListener
@@ -329,7 +329,7 @@ class GalleryListViewModel : ViewModel() {
      * profile id). Injectable so unit tests can point batches at a
      * MockWebServer without registering server profiles; production always
      * uses [resolveSourceBaseUrl] against the app's
-     * [com.lanraragi.reader.client.api.ProfileLookupCache] (cross-server
+     * [com.lanraragi.reader.server.ProfileLookupCache] (cross-server
      * rule: source context is per item, never blanket-active).
      */
     internal var baseUrlResolver: suspend (Long) -> String = { profileId ->

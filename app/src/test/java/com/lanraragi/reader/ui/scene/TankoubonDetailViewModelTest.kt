@@ -10,7 +10,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.ui.scene.TankoubonDetailViewModel.TankDetailUiEvent
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList

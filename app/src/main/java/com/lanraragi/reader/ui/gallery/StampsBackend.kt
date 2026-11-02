@@ -1,9 +1,9 @@
 package com.lanraragi.reader.ui.gallery
 
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.client.api.LRRStampApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 
 /** Server calls for one archive's stamps; pages 1-indexed (server semantics). */
 interface StampsBackend {

@@ -3,7 +3,7 @@ package com.lanraragi.reader.client.api.data
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.lrrJson
 import org.junit.After
 import org.junit.Assert.assertEquals

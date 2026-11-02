@@ -1,8 +1,8 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.view.View
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.client.data.ListUrlBuilder

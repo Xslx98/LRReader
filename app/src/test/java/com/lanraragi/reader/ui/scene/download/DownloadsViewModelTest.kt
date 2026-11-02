@@ -17,7 +17,7 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.containedTestScope
 import kotlinx.coroutines.CoroutineScope

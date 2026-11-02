@@ -23,7 +23,7 @@ import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.FileUtils

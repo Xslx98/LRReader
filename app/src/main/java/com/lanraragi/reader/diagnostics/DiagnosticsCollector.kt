@@ -11,7 +11,7 @@ import androidx.core.content.FileProvider
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.server.ServerCapabilityCache
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.settings.PrivacySettings

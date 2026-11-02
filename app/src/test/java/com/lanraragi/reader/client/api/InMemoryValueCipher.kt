@@ -6,6 +6,7 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import com.lanraragi.reader.server.ValueCipher
 
 /**
  * In-memory AES-GCM for [LRRAuthManager.secureStoreCipher]: Robolectric has

@@ -6,8 +6,8 @@ import android.widget.TextView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRHttpException
-import com.lanraragi.reader.client.api.OrphanProfileException
-import com.lanraragi.reader.client.api.ProfileLookupCache
+import com.lanraragi.reader.server.OrphanProfileException
+import com.lanraragi.reader.server.ProfileLookupCache
 import com.lanraragi.reader.client.api.friendlyError
 
 /**

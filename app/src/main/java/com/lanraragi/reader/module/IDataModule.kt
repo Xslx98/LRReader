@@ -10,7 +10,7 @@ import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.QuickSearchRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.client.api.ProfileLookupCache
+import com.lanraragi.reader.server.ProfileLookupCache
 
 /**
  * Abstraction over [DataModule] to allow ServiceRegistry consumers to depend on the

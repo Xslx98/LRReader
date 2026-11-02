@@ -14,8 +14,8 @@ import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.settings.PrivacySettings
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.client.api.LRRClientProvider
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

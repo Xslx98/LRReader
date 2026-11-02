@@ -22,6 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * Audit 2026-10-06c SEC-01: the plain lock mirror (`app_lock_enabled`) only

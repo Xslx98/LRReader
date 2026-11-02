@@ -33,8 +33,8 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import kotlinx.coroutines.launch
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.PatternConfirmFlow
 import com.lanraragi.reader.settings.SecuritySettings

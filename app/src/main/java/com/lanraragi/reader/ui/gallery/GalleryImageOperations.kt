@@ -44,7 +44,7 @@ import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.ArchiveCoverChangedEvent
 import com.lanraragi.reader.gallery.GalleryProvider2

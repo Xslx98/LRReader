@@ -9,7 +9,7 @@ import com.lanraragi.reader.gallery.DownloadDirResolver
 import com.lanraragi.reader.gallery.ReaderPageCache
 import com.lanraragi.reader.gallery.ReadingProgressReconciler
 import com.lanraragi.reader.storage.StorageFile
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.util.suspendRunCatching
 import java.io.File

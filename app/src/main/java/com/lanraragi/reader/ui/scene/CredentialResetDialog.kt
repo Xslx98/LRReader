@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.settings.AppLockGate
 
 /**

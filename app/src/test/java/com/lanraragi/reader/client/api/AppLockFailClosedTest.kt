@@ -14,6 +14,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * The app lock must fail closed: when the secure store cannot be opened the

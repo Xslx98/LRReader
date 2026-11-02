@@ -45,7 +45,7 @@ import com.lanraragi.reader.settings.NetworkSettings
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.dao.DatabaseResetNotice
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.CredentialResetDialog
 import com.lanraragi.reader.ui.scene.LegacyLockRemovedNotice

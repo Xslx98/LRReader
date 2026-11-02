@@ -12,8 +12,8 @@ import com.lanraragi.reader.gallery.LocalReadingProgress
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.tankoubon.TankRecentStore
 import com.lanraragi.reader.tankoubon.TankTagOutbox
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.server.ServerCertificate
 import com.lanraragi.reader.server.ServerTrust

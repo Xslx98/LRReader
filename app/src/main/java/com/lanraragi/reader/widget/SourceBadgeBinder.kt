@@ -9,7 +9,7 @@ import android.widget.TextView
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * Bind a source-server origin badge onto a [TextView].
@@ -23,7 +23,7 @@ import com.lanraragi.reader.client.api.LRRAuthManager
  * the user keeps the same visual identity wherever it appears.
  *
  * Resolution goes through
- * [com.lanraragi.reader.client.api.ProfileLookupCache], the same in-
+ * [com.lanraragi.reader.server.ProfileLookupCache], the same in-
  * memory snapshot the auth interceptor consults — profile rename or
  * delete is reflected on the next bind without an explicit refresh.
  *

@@ -1,7 +1,7 @@
 package com.lanraragi.reader.dao
 
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
 
 /**

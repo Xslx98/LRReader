@@ -6,6 +6,7 @@ import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CancellationException
 import okhttp3.OkHttpClient
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * Paging 3 source that loads gallery archives from the LANraragi search API.

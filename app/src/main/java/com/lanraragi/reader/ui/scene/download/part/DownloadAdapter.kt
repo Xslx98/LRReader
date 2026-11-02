@@ -257,7 +257,7 @@ class DownloadAdapter(
      *    as warning state across all themes.
      *
      * Resolution goes through
-     * [com.lanraragi.reader.client.api.ProfileLookupCache] which tracks
+     * [com.lanraragi.reader.server.ProfileLookupCache] which tracks
      * SERVER_PROFILES via Room flow; profile rename / delete is picked
      * up on the next bind because the cache snapshot is shared.
      */

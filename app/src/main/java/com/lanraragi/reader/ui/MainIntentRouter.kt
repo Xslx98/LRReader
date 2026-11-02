@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.SecuritySettings

@@ -5,7 +5,7 @@ import android.security.keystore.KeyPermanentlyInvalidatedException
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.scene.SecurityViewModel.FingerprintStart
 import com.lanraragi.reader.ui.scene.SecurityViewModel.SecurityUiEvent

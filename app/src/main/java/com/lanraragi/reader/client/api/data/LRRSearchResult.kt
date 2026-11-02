@@ -1,6 +1,6 @@
 package com.lanraragi.reader.client.api.data
 
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import kotlinx.serialization.SerialName

@@ -3,7 +3,7 @@ package com.lanraragi.reader.gallery
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * The local reading-progress store (`reading_progress` SharedPreferences) behind
@@ -48,7 +48,7 @@ internal object LocalReadingProgress {
     /**
      * The profile an archive's progress is stored under: its source
      * [serverProfileId], or the active profile for 0 (legacy row), as in
-     * [com.lanraragi.reader.client.api.resolveSourceBaseUrl].
+     * [com.lanraragi.reader.server.resolveSourceBaseUrl].
      */
     fun sourceProfile(serverProfileId: Long): Long =
         if (serverProfileId == 0L) profileId() else serverProfileId
