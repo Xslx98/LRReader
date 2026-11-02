@@ -6,7 +6,7 @@ import android.os.Looper
 import android.util.Log
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.Analytics
-import com.lanraragi.reader.Crash
+import com.lanraragi.reader.diagnostics.Crash
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

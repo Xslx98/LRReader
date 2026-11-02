@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader
+package com.lanraragi.reader.diagnostics
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -24,13 +24,13 @@ import android.util.Log
 import com.lanraragi.reader.util.FileUtils
 import com.lanraragi.reader.util.OSUtils
 import com.lanraragi.framework.scene.StageActivity
-import com.lanraragi.reader.diagnostics.CrashLogStore
-import com.lanraragi.reader.diagnostics.DiagLog
-import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.settings.PrivacySettings
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import com.lanraragi.reader.AppConfig
+import com.lanraragi.reader.BuildConfig
+import com.lanraragi.reader.LRReaderApplication
 
 /**
  * Writes crash and non-fatal reports into the app-private [CrashLogStore]

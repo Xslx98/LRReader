@@ -159,7 +159,7 @@ class RedactorTest {
             "\tat com.android.internal.os.ZygoteInit.main(Native Method)",
             "Caused by: java.lang.ClassCastException: java.lang.String cannot be cast to java.lang.Integer",
             "\t... 12 more",
-            "10-06 12:00:00.123  1234  5678 E AndroidRuntime: \tat com.lanraragi.reader.Crash.save(Crash.kt:118)",
+            "10-06 12:00:00.123  1234  5678 E AndroidRuntime: \tat com.lanraragi.reader.diagnostics.Crash.save(Crash.kt:118)",
             "  native: #00 pc 000000000004b8a0  /apex/com.android.runtime/lib64/bionic/libc.so (syscall+32)",
             "  | sysTid=1234 nice=-10 cgrp=top-app sched=0/0 handle=0x7b2c4e4f58",
             "Thread=DefaultDispatcher-worker-3",

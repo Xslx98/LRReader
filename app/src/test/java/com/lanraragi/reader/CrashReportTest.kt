@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.lanraragi.reader.diagnostics.Crash
 
 /** Audit 2026-10-04 C06 / STAB-23: one trace per cause, thread name, breadcrumbs. */
 class CrashReportTest {

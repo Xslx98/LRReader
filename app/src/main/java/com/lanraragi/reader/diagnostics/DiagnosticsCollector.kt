@@ -9,7 +9,6 @@ import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
 import androidx.core.content.FileProvider
 import com.lanraragi.reader.BuildConfig
-import com.lanraragi.reader.Crash
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.LRRAuthManager

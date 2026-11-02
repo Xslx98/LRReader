@@ -156,7 +156,7 @@ class DownloadRepository(
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load download data from DB", e)
                 com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "Failed to load download data from DB", e)
-                com.lanraragi.reader.Crash.saveNonFatal(e)
+                com.lanraragi.reader.diagnostics.Crash.saveNonFatal(e)
                 _loadError.value = e
                 finishFailedLoad(onComplete)
             }
