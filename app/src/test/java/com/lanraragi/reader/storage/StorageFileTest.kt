@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.download.DownloadDirs
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -66,7 +66,7 @@ class StorageFileTest {
         Settings.initialize(ApplicationProvider.getApplicationContext())
         DownloadSettings.putDownloadLocation(StorageFile(root))
 
-        val resolved = SpiderDen.resolveRootDir("content://com.android.externalstorage.documents/tree/primary%3ALRReader")
+        val resolved = DownloadDirs.resolveRootDir("content://com.android.externalstorage.documents/tree/primary%3ALRReader")
 
         assertEquals(StorageFile(root).uri, resolved?.uri)
     }

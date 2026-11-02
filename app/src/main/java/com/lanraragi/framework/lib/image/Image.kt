@@ -19,7 +19,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.util.TraceSections
 import com.lanraragi.reader.util.traceSection
 import java.io.FileInputStream

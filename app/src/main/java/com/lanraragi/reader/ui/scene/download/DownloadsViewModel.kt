@@ -1,14 +1,11 @@
 package com.lanraragi.reader.ui.scene.download
 
-import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.client.api.toHexLower
-import com.lanraragi.reader.callBack.DownloadSearchCallback
+import com.lanraragi.reader.download.search.DownloadSearchCallback
 import com.lanraragi.reader.dao.DownloadInfo
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -18,9 +15,9 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.TankDownloadGrouping
 import com.lanraragi.reader.download.TankProgressAggregate
-import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.reader.sync.DownloadListInfosExecutor
-import com.lanraragi.reader.sync.DownloadSearchMatcher
+import com.lanraragi.reader.download.DownloadDirs
+import com.lanraragi.reader.download.search.DownloadListInfosExecutor
+import com.lanraragi.reader.download.search.DownloadSearchMatcher
 import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -35,7 +32,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
-import com.lanraragi.reader.download.DownloadState
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -495,7 +491,7 @@ class DownloadsViewModel(
             ServiceRegistry.coroutineModule.ioScope.launch {
                 for ((arcid, rootUri) in targets) {
                     try {
-                        SpiderDen.deleteGalleryDownloadDir(arcid, rootUri)
+                        DownloadDirs.deleteGalleryDownloadDir(arcid, rootUri)
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to delete download files for $arcid", e)
                     }

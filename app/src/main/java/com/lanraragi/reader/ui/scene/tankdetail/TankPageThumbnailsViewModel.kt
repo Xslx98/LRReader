@@ -6,7 +6,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.PageThumbnailCache
 import com.lanraragi.reader.client.api.PageThumbnailRepository
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.TankPageMap
+import com.lanraragi.reader.reading.TankPageMap
 import com.lanraragi.reader.tankoubon.TankPageGridLayout
 import com.lanraragi.reader.ui.scene.gallery.detail.PageFetchJobs
 import com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel.PageState

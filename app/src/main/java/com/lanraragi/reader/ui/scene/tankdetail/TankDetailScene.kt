@@ -20,33 +20,32 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.util.isLightTheme
-import com.lanraragi.reader.ui.widget.Ripples
+import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.framework.widget.LoadImageView
+import com.lanraragi.reader.widget.LoadImageView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.ArchiveCoverStamps
-import com.lanraragi.reader.client.LRRCacheKeyFactory
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.buildRatingEmoji
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
-import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.gallery.TankMemberSeed
-import com.lanraragi.reader.gallery.TankPageMath
-import com.lanraragi.reader.gallery.TankSeedStore
-import com.lanraragi.reader.gallery.TankSessionSeed
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.TankMemberSeed
+import com.lanraragi.reader.reading.TankPageMath
+import com.lanraragi.reader.reading.TankSeedStore
+import com.lanraragi.reader.reading.TankSessionSeed
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tankoubon.TankMemberStrip
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.TankDialogs
-import com.lanraragi.reader.ui.scene.TankoubonDetailScene
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ui.scene.gallery.detail.CategoryDialogHelper
 import com.lanraragi.reader.ui.scene.gallery.detail.FavoriteState
@@ -57,7 +56,7 @@ import com.lanraragi.reader.ui.scene.gallery.detail.TagEditDialog
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.TankDetailState
-import com.lanraragi.reader.ui.widget.bindSourceServerBadge
+import com.lanraragi.reader.widget.bindSourceServerBadge
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
 import java.util.Locale
@@ -72,7 +71,7 @@ import kotlinx.coroutines.flow.map
  *
  * Read = whole-tank composite session (provider-restored progress);
  * Download = the shared [TankFillDispatcher] fill path. Member
- * management stays in [com.lanraragi.reader.ui.scene.TankoubonDetailScene].
+ * management stays in [com.lanraragi.reader.ui.scene.tankdetail.TankMembersScene].
  *
  * The ViewModel is SCENE-scoped: the scene is LAUNCH_MODE_STANDARD, so
  * two stacked detail pages must not share state.
@@ -569,10 +568,10 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     private fun openMemberManagement() {
         val s = viewModel.state.value ?: return
         val args = Bundle()
-        args.putString(TankoubonDetailScene.KEY_TANK_ID, s.tankId)
-        args.putString(TankoubonDetailScene.KEY_TANK_NAME, s.name)
-        args.putLong(TankoubonDetailScene.KEY_PROFILE_ID, s.profileId)
-        startScene(Announcer(TankoubonDetailScene::class.java).setArgs(args))
+        args.putString(TankMembersScene.KEY_TANK_ID, s.tankId)
+        args.putString(TankMembersScene.KEY_TANK_NAME, s.name)
+        args.putLong(TankMembersScene.KEY_PROFILE_ID, s.profileId)
+        startScene(Announcer(TankMembersScene::class.java).setArgs(args))
     }
 
     // -------------------------------------------------------------------------
@@ -864,7 +863,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
     }
 
     companion object {
-        /** Same key strings as TankoubonDetailScene so launchers can share a bundle. */
+        /** Same key strings as TankMembersScene so launchers can share a bundle. */
         const val KEY_TANK_ID = "tank_id"
         const val KEY_TANK_NAME = "tank_name"
         const val KEY_PROFILE_ID = "tank_profile_id"

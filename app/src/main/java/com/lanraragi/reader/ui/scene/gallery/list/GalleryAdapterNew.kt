@@ -18,7 +18,6 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
-import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -31,9 +30,8 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lanraragi.reader.widget.list.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.ArchiveCoverStamps
-import com.lanraragi.reader.client.LRRCacheKeyFactory
-import com.lanraragi.reader.client.LRRUtils
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.download.DownloadManager
 
 import com.lanraragi.reader.domain.Archive
@@ -44,7 +42,7 @@ import com.lanraragi.reader.util.traceSection
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.widget.TileThumbNew
 import com.lanraragi.reader.util.ViewUtils
-import com.lanraragi.framework.widget.LoadImageViewNew
+import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.lanraragi.reader.client.api.isTankoubonId
 

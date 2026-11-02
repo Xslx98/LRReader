@@ -7,10 +7,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.util.attrColor
-import com.lanraragi.framework.widget.LoadImageViewNew
+import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.ArchiveCoverStamps
-import com.lanraragi.reader.client.LRRCacheKeyFactory
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.tankoubon.TankMemberStrip
 

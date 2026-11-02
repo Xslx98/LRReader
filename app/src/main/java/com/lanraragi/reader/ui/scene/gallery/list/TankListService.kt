@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.TankCoverCacheStamp
+import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.domain.Archive

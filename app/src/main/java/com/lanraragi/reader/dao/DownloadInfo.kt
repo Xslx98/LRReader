@@ -15,8 +15,6 @@
  */
 package com.lanraragi.reader.dao
 
-import com.lanraragi.reader.download.DownloadFailureReason
-import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.domain.Archive
 
 /**
@@ -114,7 +112,7 @@ class DownloadInfo {
 
     /**
      * Cached size of the on-disk download directory; filled lazily by
-     * [com.lanraragi.reader.sync.DownloadListInfosExecutor] when sorting
+     * [com.lanraragi.reader.download.search.DownloadListInfosExecutor] when sorting
      * by size. Not progress data — separate from
      * `DownloadProgressTracker` (see ADR-001).
      */

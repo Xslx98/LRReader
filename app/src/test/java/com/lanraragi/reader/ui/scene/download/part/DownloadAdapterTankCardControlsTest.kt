@@ -9,7 +9,7 @@
  */
 package com.lanraragi.reader.ui.scene.download.part
 
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

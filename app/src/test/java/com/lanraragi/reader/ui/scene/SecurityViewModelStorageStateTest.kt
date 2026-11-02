@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.ui.scene.SecurityViewModel.StorageState
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

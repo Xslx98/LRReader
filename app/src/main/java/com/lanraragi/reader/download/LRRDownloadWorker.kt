@@ -9,14 +9,12 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.OrphanProfileException
+import com.lanraragi.reader.server.OrphanProfileException
 import com.lanraragi.reader.client.api.resolvePageUrl
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.gallery.ForegroundReading
-import com.lanraragi.reader.gallery.ReaderPageCache
-import com.lanraragi.reader.spider.SpiderDen
-import com.lanraragi.reader.spider.SpiderQueen
+import com.lanraragi.reader.reading.ForegroundReading
+import com.lanraragi.reader.reading.ReaderPageCache
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -42,12 +40,12 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import com.lanraragi.reader.dao.DownloadFailureReason
 
 /**
  * Downloads all pages of a LANraragi archive to the download directory.
- * Replaces SpiderQueen's MODE_DOWNLOAD for LANraragi galleries.
  *
- * Reports progress via [SpiderQueen.OnSpiderListener] so DownloadManager
+ * Reports progress via [DownloadWorkerListener] so DownloadManager
  * can update UI without any changes to its notification pipeline.
  */
 class LRRDownloadWorker(
@@ -58,7 +56,7 @@ class LRRDownloadWorker(
 
     /**
      * What the worker needs from the rest of the app. [Production] reads
-     * [ServiceRegistry] and [SpiderDen]; tests substitute a MockWebServer
+     * [ServiceRegistry] and [DownloadDirs]; tests substitute a MockWebServer
      * client and a temp directory (audit C09).
      */
     interface Env {
@@ -109,7 +107,7 @@ class LRRDownloadWorker(
      */
     private lateinit var serverUrl: String
 
-    var listener: SpiderQueen.OnSpiderListener? = null
+    var listener: DownloadWorkerListener? = null
 
     /** Network-wait lifecycle, surfaced to the scheduler for notifications/banner. */
     enum class NetworkWaitEvent { WAITING, RESUMED, TIMED_OUT }
@@ -550,7 +548,7 @@ class LRRDownloadWorker(
         }.getOrNull() ?: return false
         if (pagecount <= 0) return false
         // Lookup only: a verifier must not create a directory it then reports on.
-        val dir = suspendRunCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull()?.file ?: return false
+        val dir = suspendRunCatching { DownloadDirs.findGalleryDownloadDir(arcId) }.getOrNull()?.file ?: return false
         if (!LocalArchiveVerifier.isComplete(dir, pagecount)) return false
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "Page-list fetch failed but archive is complete on disk; reporting finish")
@@ -738,13 +736,13 @@ class LRRDownloadWorker(
         /**
          * The archive's download directory, allocated (with its pointer) on
          * first use. There is deliberately no fallback location: a second
-         * naming rule outside [SpiderDen] produced unpointed, undeduplicated
+         * naming rule outside [DownloadDirs] produced unpointed, undeduplicated
          * directories the reader never found. A null result fails the download
          * with a reason instead.
          */
         private suspend fun allocateDownloadDir(info: DownloadInfo): File? {
             try {
-                return SpiderDen.allocateGalleryDownloadDir(info.arcid, info.title)?.file
+                return DownloadDirs.allocateGalleryDownloadDir(info.arcid, info.title)?.file
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -791,9 +789,9 @@ class LRRDownloadWorker(
          * Major brands of ISO-BMFF image containers the platform decoder can
          * read: AVIF (API 31+) plus HEIF/HEIC (API 28+ = minSdk). All share the
          * "ftyp" box at bytes 4-7 with a 4-char brand at bytes 8-11. Kept in sync
-         * with [com.lanraragi.reader.gallery.GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS]
+         * with [com.lanraragi.reader.reading.GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS]
          * (.avif/.heif/.heic) and the reader's copy in
-         * [com.lanraragi.reader.gallery.ReaderPageCache].
+         * [com.lanraragi.reader.reading.ReaderPageCache].
          */
         private val ISO_BMFF_IMAGE_BRANDS = setOf(
             "avif", "avis", // AV1 Image File Format (still / sequence)

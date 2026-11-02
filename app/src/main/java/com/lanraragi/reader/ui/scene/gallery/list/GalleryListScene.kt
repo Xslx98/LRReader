@@ -22,7 +22,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Color
-import android.graphics.Point
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.drawable.toDrawable
 import android.os.Bundle
@@ -61,24 +60,22 @@ import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.ListMultiSelectHelper
-import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.reader.widget.SkeletonView
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.widget.ListRefreshLayout
-import com.lanraragi.reader.ui.widget.Ripples
+import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.framework.widget.ContentLayout
+import com.lanraragi.reader.widget.ContentLayout
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 
 open class GalleryListScene : BaseScene(),
     EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
@@ -165,7 +162,6 @@ open class GalleryListScene : BaseScene(),
     private val events = GalleryListEvents(this)
     private val interactions = GalleryListInteractions(this)
     internal var uploadHelper: GalleryUploadHelper? = null
-    internal var mSearchHelper: GallerySearchHelper? = null
     internal var mHistoryStore: ProfileSearchHistoryStore? = null
     internal var listSearchHelper: GalleryListSearchHelper? = null
     private var mDrawerHelper: GalleryDrawerHelper? = null
@@ -534,7 +530,6 @@ open class GalleryListScene : BaseScene(),
         itemActionHelper = result.itemActionHelper
         tagChipHelper = result.tagChipHelper
         mHelper = result.dataHelper
-        mSearchHelper = result.searchHelper
         listSearchHelper = result.listSearchHelper
         uploadHelper = result.uploadHelper
         searchBarHelper = result.searchBarHelper

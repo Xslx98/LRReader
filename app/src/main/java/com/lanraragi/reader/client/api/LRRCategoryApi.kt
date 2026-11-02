@@ -9,6 +9,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for LANraragi category operations.

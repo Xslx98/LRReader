@@ -16,10 +16,9 @@ import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.GuideSettings
-import com.lanraragi.reader.client.TagTranslationDatabase
-import com.lanraragi.reader.dao.QuickSearch
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.util.TagTranslationUtil
+import com.lanraragi.reader.tagtranslation.TagTranslationUtil
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer

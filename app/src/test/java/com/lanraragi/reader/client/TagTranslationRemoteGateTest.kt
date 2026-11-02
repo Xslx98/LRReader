@@ -19,6 +19,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
+import com.lanraragi.reader.tagtranslation.TagDbUpdateThrottle
 
 /**
  * Audit C26 (ruling R10): the third-party tag dataset is fetched only while

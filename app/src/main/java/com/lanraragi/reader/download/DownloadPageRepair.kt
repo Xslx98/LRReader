@@ -7,6 +7,7 @@ import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * A reader's hand-over of a damaged download-directory page to the download

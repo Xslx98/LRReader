@@ -33,7 +33,7 @@ import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.widget.list.FastScroller
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadManager

@@ -5,8 +5,6 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.download.DownloadState
-import com.lanraragi.reader.mapper.toArchiveJson
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -98,9 +96,9 @@ class HistoryRepositoryMergeTest {
     fun clearHistory_clearsOnlyTheActiveProfile() = runTest {
         val prefs = ApplicationProvider.getApplicationContext<Context>()
             .getSharedPreferences("history_clear_test", Context.MODE_PRIVATE)
-        com.lanraragi.reader.client.api.LRRAuthManager.initializeForTesting(prefs)
+        com.lanraragi.reader.server.LRRAuthManager.initializeForTesting(prefs)
         try {
-            com.lanraragi.reader.client.api.LRRAuthManager.setActiveProfileId(1L)
+            com.lanraragi.reader.server.LRRAuthManager.setActiveProfileId(1L)
             repo.putHistoryInfo(archive(pagecount = 5, progress = 1, summary = null, tags = emptyMap()))
             repo.putHistoryInfo(
                 archive(pagecount = 5, progress = 1, summary = null, tags = emptyMap()).copy(serverProfileId = 2L)
@@ -111,7 +109,7 @@ class HistoryRepositoryMergeTest {
             assertEquals(null, dao.loadByArcidAndProfile("a1", 1L))
             assertEquals(true, dao.loadByArcidAndProfile("a1", 2L)?.historyTime != null)
         } finally {
-            com.lanraragi.reader.client.api.LRRAuthManager.clear()
+            com.lanraragi.reader.server.LRRAuthManager.clear()
         }
     }
 }

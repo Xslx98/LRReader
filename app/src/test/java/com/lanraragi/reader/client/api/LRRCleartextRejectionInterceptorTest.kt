@@ -27,6 +27,7 @@ import org.robolectric.annotation.Config
 import java.io.IOException
 import java.lang.reflect.Field
 import java.util.concurrent.TimeUnit
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * Unit tests for [LRRCleartextRejectionInterceptor].

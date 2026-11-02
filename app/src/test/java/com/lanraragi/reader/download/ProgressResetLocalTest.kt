@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.gallery.DirGalleryProvider
-import com.lanraragi.reader.gallery.LocalReadingProgress
-import com.lanraragi.reader.gallery.ReadingProgressTracker
+import com.lanraragi.reader.reading.DirGalleryProvider
+import com.lanraragi.reader.reading.LocalReadingProgress
+import com.lanraragi.reader.reading.ReadingProgressTracker
 import com.lanraragi.reader.module.CoroutineModule
 import org.junit.After
 import org.junit.Assert.assertEquals

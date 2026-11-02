@@ -8,7 +8,7 @@ import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.TagGroup

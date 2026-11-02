@@ -5,6 +5,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import com.lanraragi.reader.server.ProfileUrlCandidate
 
 /** Which profile's key a request gets when profiles share host and port (audit 2026-09-22 A22). */
 class AuthProfileSelectionTest {

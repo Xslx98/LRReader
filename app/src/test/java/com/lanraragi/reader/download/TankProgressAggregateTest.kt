@@ -4,6 +4,7 @@ import com.lanraragi.reader.dao.DownloadInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import com.lanraragi.reader.dao.DownloadState
 
 /** Aggregate progress behind a tank card (spec 2026-09-21 §4): sums over members with a live snapshot. */
 class TankProgressAggregateTest {

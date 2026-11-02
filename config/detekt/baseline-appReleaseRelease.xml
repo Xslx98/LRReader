@@ -24,7 +24,7 @@
     <ID>CyclomaticComplexMethod:DownloadService.kt$DownloadService$override fun onFinish(info: DownloadInfo)</ID>
     <ID>CyclomaticComplexMethod:DownloadService.kt$DownloadService$private fun handleIntent(intent: Intent?)</ID>
     <ID>CyclomaticComplexMethod:GalleryActivity.kt$GalleryActivity$private fun onCreateView(savedInstanceState: Bundle?)</ID>
-    <ID>CyclomaticComplexMethod:GallerySearchHelper.kt$GallerySearchHelper.Companion$@JvmStatic fun getSuitableTitleForUrlBuilder( resources: Resources, urlBuilder: ListUrlBuilder, appName: Boolean ): String?</ID>
+    <ID>CyclomaticComplexMethod:GallerySearchHelper.kt$GallerySearchHelper$fun getSuitableTitleForUrlBuilder( resources: Resources, urlBuilder: ListUrlBuilder, appName: Boolean ): String?</ID>
     <ID>CyclomaticComplexMethod:GalleryStateHelper.kt$GalleryStateHelper$fun setState(newState: Int, animation: Boolean)</ID>
     <ID>CyclomaticComplexMethod:LRRApiUtils.kt$@JvmName("friendlyError") fun friendlyError(context: Context, e: Exception): String</ID>
     <ID>CyclomaticComplexMethod:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
@@ -58,15 +58,9 @@
     <ID>EmptyFunctionBlock:SecurityScene.kt$SecurityScene${}</ID>
     <ID>EmptyFunctionBlock:ServerConfigScene.kt$ServerConfigScene.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ServerListDialogHelper.kt$ServerListDialogHelper.&lt;no name provided&gt;${}</ID>
-    <ID>EmptyFunctionBlock:SpiderQueen.kt$SpiderQueen${}</ID>
     <ID>EmptyFunctionBlock:TagEditDialog.kt$TagEditDialog.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ThumbDataContainer.kt$ThumbDataContainer${ }</ID>
     <ID>ExplicitGarbageCollectionCall:AdvancedFragment.kt$AdvancedFragment$gc()</ID>
-    <ID>FunctionOnlyReturningConstant:LRRUrlOpener.kt$LRRUrlOpener$@JvmStatic fun parseUrl(url: String?): Announcer?</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun forceRequest(index: Int): Any?</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun getError(): String</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun getStartPage(): Int</ID>
-    <ID>FunctionOnlyReturningConstant:SpiderQueen.kt$SpiderQueen$fun request(index: Int): Any?</ID>
     <ID>FunctionParameterNaming:QuickSearch.kt$QuickSearch.Companion$`object`: JSONObject</ID>
     <ID>ImplicitDefaultLocale:DetailHeaderBinder.kt$DetailHeaderBinder$String.format("%.0f★", archive.rating)</ID>
     <ID>ImplicitDefaultLocale:ReaderPageCache.kt$ReaderPageCache$String.format( "Unknown image format: %02X %02X %02X %02X", header[0], header[1], header[2], header[3] )</ID>
@@ -117,7 +111,7 @@
     <ID>InjectDispatcher:TankDetailViewModel.kt$TankDetailViewModel$IO</ID>
     <ID>InjectDispatcher:TankGalleryProvider.kt$TankGalleryProvider$IO</ID>
     <ID>InjectDispatcher:TankPageThumbnailsViewModel.kt$TankPageThumbnailsViewModel$IO</ID>
-    <ID>InjectDispatcher:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$IO</ID>
+    <ID>InjectDispatcher:TankMembersViewModel.kt$TankMembersViewModel$IO</ID>
     <ID>InjectDispatcher:TankoubonDialogHelper.kt$TankoubonDialogHelper$IO</ID>
     <ID>InjectDispatcher:TankoubonsViewModel.kt$TankoubonsViewModel$IO</ID>
     <ID>InstanceOfCheckForException:AppUpdater.kt$AppUpdater$t is CancellationException</ID>
@@ -132,8 +126,8 @@
     <ID>InstanceOfCheckForException:ServerConfigViewModel.kt$ServerConfigViewModel$e is CancellationException</ID>
     <ID>InstanceOfCheckForException:ServerListViewModel.kt$ServerListViewModel$e is CancellationException</ID>
     <ID>InstanceOfCheckForException:TagTranslationDatabase.kt$TagTranslationDatabase.Companion$t is CancellationException</ID>
-    <ID>InstanceOfCheckForException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e is CancellationException</ID>
-    <ID>InstanceOfCheckForException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e is LRRHttpException</ID>
+    <ID>InstanceOfCheckForException:TankMembersViewModel.kt$TankMembersViewModel$e is CancellationException</ID>
+    <ID>InstanceOfCheckForException:TankMembersViewModel.kt$TankMembersViewModel$e is LRRHttpException</ID>
     <ID>InstanceOfCheckForException:TankoubonsViewModel.kt$TankoubonsViewModel$e is CancellationException</ID>
     <ID>LargeClass:GalleryActivity.kt$GalleryActivity : BaseActivityListenerCallbackSettingsCallback</ID>
     <ID>LargeClass:GalleryDetailScene.kt$GalleryDetailScene : BaseSceneOnClickListenerOnLongClickListener</ID>
@@ -248,7 +242,7 @@
     <ID>RedundantSuspendModifier:NetworkWaitBudget.kt$NetworkWaitBudget$suspend</ID>
     <ID>RedundantSuspendModifier:PageThumbnailRepository.kt$PageThumbnailRepository$suspend</ID>
     <ID>RedundantSuspendModifier:ProfileLookupCache.kt$ProfileLookupCache$suspend</ID>
-    <ID>RedundantSuspendModifier:SpiderDen.kt$SpiderDen$suspend</ID>
+    <ID>RedundantSuspendModifier:DownloadDirs.kt$DownloadDirs$suspend</ID>
     <ID>RedundantSuspendModifier:TankMemberSource.kt$LrrTankMemberSource$suspend</ID>
     <ID>ReturnCount:DownloadBatchOpsHelper.kt$DownloadBatchOpsHelper$fun onClickSecondaryFab(fab: FloatingActionButton, position: Int)</ID>
     <ID>ReturnCount:DownloadDirMigration.kt$DownloadDirMigration$suspend fun migrateRow(info: DownloadInfo): RowResult</ID>
@@ -306,7 +300,7 @@
     <ID>SwallowedException:TankDetailViewModel.kt$TankDetailViewModel$e: Exception</ID>
     <ID>SwallowedException:TankMemberSource.kt$LrrTankMemberSource$e: IOException</ID>
     <ID>SwallowedException:TankMembershipSync.kt$TankMembershipSync$e: Exception</ID>
-    <ID>SwallowedException:TankoubonDetailViewModel.kt$TankoubonDetailViewModel$e: Exception</ID>
+    <ID>SwallowedException:TankMembersViewModel.kt$TankMembersViewModel$e: Exception</ID>
     <ID>SwallowedException:TankoubonsViewModel.kt$TankoubonsViewModel$e: Exception</ID>
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: ExecutionException</ID>
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: TimeoutException</ID>
@@ -331,9 +325,8 @@
     <ID>UnnecessarySafeCall:CategoryDialogHelper.kt$CategoryDialogHelper$cat.archives?.size</ID>
     <ID>UnnecessarySafeCall:CategoryDialogHelper.kt$CategoryDialogHelper$staticCats[i].archives?.contains(arcid)</ID>
     <ID>UnnecessarySafeCall:GalleryImageOperations.kt$GalleryImageOperations$tempFile.openInputStream()?.use { input -&gt; resolver.openOutputStream(mediaUri)?.use { output -&gt; IOUtils.copy(input, output) copied = true } }</ID>
-    <ID>UnnecessarySafeCall:GallerySearchHelper.kt$GallerySearchHelper.Companion$result.data?.forEach { archive -&gt; galleryInfoList.add(archive.toArchive()) }</ID>
     <ID>UnnecessarySafeCall:LegacyDb.kt$LegacyDb$cursor?.use { if (it.moveToFirst()) { var i = 0L while (!it.isAfterLast) { val gid = it.getInt(0).toLong() val gi = map[gid] if (gi == null) { Log.e(TAG, "Can't get legacy gallery row with gid: $gid") it.moveToNext() continue // skip this row, keep merging the rest of the table } val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating) val archiveJson = archive.toArchiveJson() archiveLocalStateDao.insertOrIgnoreFavorite(gi.arcid, 0L, archiveJson, i) archiveLocalStateDao.updateFavoriteFields(gi.arcid, 0L, archiveJson, i) it.moveToNext() i++ } } }</ID>
-    <ID>UnnecessarySafeCall:LegacyDb.kt$LegacyDb$cursor?.use { if (it.moveToFirst()) { var i = 0L while (!it.isAfterLast) { val gid = it.getInt(0).toLong() val gi = map[gid] if (gi == null) { Log.e(TAG, "Can't get legacy gallery row with gid: $gid") it.moveToNext() continue // skip this row, keep merging the rest of the table } var state = com.lanraragi.reader.download.DownloadState.fromCode(it.getInt(2)) val legacy = it.getInt(3) if (state == com.lanraragi.reader.download.DownloadState.FINISH &amp;&amp; legacy &gt; 0) { state = com.lanraragi.reader.download.DownloadState.FAILED } val time = if (it.columnCount == 5) it.getLong(4) else i val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating) val archiveJson = archive.toArchiveJson() archiveLocalStateDao.insertOrIgnoreDownload( arcid = gi.arcid, serverProfileId = 0L, archiveJson = archiveJson, downloadState = state, downloadLegacy = legacy, downloadTime = time, downloadLabel = null, downloadArchiveUri = null, downloadRootUri = null, ) archiveLocalStateDao.updateDownloadFields( arcid = gi.arcid, serverProfileId = 0L, archiveJson = archiveJson, downloadState = state, downloadLegacy = legacy, downloadTime = time, downloadLabel = null, downloadArchiveUri = null, downloadRootUri = null, ) it.moveToNext() i++ } } }</ID>
+    <ID>UnnecessarySafeCall:LegacyDb.kt$LegacyDb$cursor?.use { if (it.moveToFirst()) { var i = 0L while (!it.isAfterLast) { val gid = it.getInt(0).toLong() val gi = map[gid] if (gi == null) { Log.e(TAG, "Can't get legacy gallery row with gid: $gid") it.moveToNext() continue // skip this row, keep merging the rest of the table } var state = com.lanraragi.reader.dao.DownloadState.fromCode(it.getInt(2)) val legacy = it.getInt(3) if (state == com.lanraragi.reader.dao.DownloadState.FINISH &amp;&amp; legacy &gt; 0) { state = com.lanraragi.reader.dao.DownloadState.FAILED } val time = if (it.columnCount == 5) it.getLong(4) else i val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating) val archiveJson = archive.toArchiveJson() archiveLocalStateDao.insertOrIgnoreDownload( arcid = gi.arcid, serverProfileId = 0L, archiveJson = archiveJson, downloadState = state, downloadLegacy = legacy, downloadTime = time, downloadLabel = null, downloadArchiveUri = null, downloadRootUri = null, ) archiveLocalStateDao.updateDownloadFields( arcid = gi.arcid, serverProfileId = 0L, archiveJson = archiveJson, downloadState = state, downloadLegacy = legacy, downloadTime = time, downloadLabel = null, downloadArchiveUri = null, downloadRootUri = null, ) it.moveToNext() i++ } } }</ID>
     <ID>UnnecessarySafeCall:LegacyDb.kt$LegacyDb$cursor?.use { if (it.moveToFirst()) { while (!it.isAfterLast) { val gid = it.getInt(0).toLong() val gi = map[gid] if (gi == null) { Log.e(TAG, "Can't get legacy gallery row with gid: $gid") it.moveToNext() continue // skip this row, keep merging the rest of the table } val mode = it.getInt(1) val time = it.getLong(2) // Legacy history TIME is device milliseconds; the // archive_json field is epoch SECONDS. The HISTORY_TIME // column below keeps the milliseconds. val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating) .copy(lastreadtime = time / 1000L) val archiveJson = archive.toArchiveJson() archiveLocalStateDao.insertOrIgnoreHistory(gi.arcid, 0L, archiveJson, time, mode) archiveLocalStateDao.updateHistoryFields(gi.arcid, 0L, archiveJson, time, mode) it.moveToNext() } } }</ID>
     <ID>UnnecessarySafeCall:LegacyDb.kt$LegacyDb$cursor?.use { if (it.moveToFirst()) { while (!it.isAfterLast) { val gid = it.getInt(0).toLong() val rating = try { it.getFloat(7) } catch (e: Throwable) { ExceptionUtils.throwIfFatal(e) -1.0f } map[gid] = LegacyGallery( gid = gid, arcid = it.getString(1), title = it.getString(2), thumb = it.getString(5), rating = rating, ) it.moveToNext() } } }</ID>
     <ID>UnnecessarySafeCall:LegacyDb.kt$LegacyDb$cursor?.use { if (it.moveToFirst()) { while (!it.isAfterLast) { val quickSearch = QuickSearch() val mode = it.getInt(2) var search = it.getString(4) val tag = it.getString(7) if (mode == ListUrlBuilder.MODE_UPLOADER &amp;&amp; search != null &amp;&amp; search.startsWith("uploader:")) { search = search.substring("uploader:".length) } quickSearch.time = it.getInt(0).toLong() quickSearch.name = it.getString(1) quickSearch.mode = mode quickSearch.category = it.getInt(3) quickSearch.keyword = if (mode == ListUrlBuilder.MODE_TAG) tag else search quickSearch.advanceSearch = it.getInt(5) quickSearch.minRating = it.getInt(6) browsingDao.insertQuickSearch(quickSearch) it.moveToNext() } } }</ID>
@@ -396,7 +389,7 @@
     <ID>UnreachableCode:DirGalleryProvider.kt$DirGalleryProvider$val url = serverUrlDeferred.await() ?: return@sync</ID>
     <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$if ("file" != uri.scheme) return null</ID>
     <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$return File(uri.path ?: return null)</ID>
-    <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$val uni = runCatching { // Tracked download: the reader writes pages through into this // directory, so it may allocate it ahead of the worker. SpiderDen.allocateGalleryDownloadDir(archive.arcid, archive.title) }.getOrNull() ?: return null</ID>
+    <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$val uni = runCatching { // Tracked download: the reader writes pages through into this // directory, so it may allocate it ahead of the worker. DownloadDirs.allocateGalleryDownloadDir(archive.arcid, archive.title) }.getOrNull() ?: return null</ID>
     <ID>UnreachableCode:DownloadDirResolver.kt$DownloadDirResolver.Companion$val uri = uni.uri</ID>
     <ID>UnreachableCode:DownloadLabelsScene.kt$DownloadLabelsScene.LabelAdapter$layoutInflater2 ?: LayoutInflater.from(requireContext())</ID>
     <ID>UnreachableCode:DownloadListInfosExecutor.kt$DownloadListInfosExecutor$for (searchTag in searchTags) { if (!tagList.contains(searchTag)) { result = false break } }</ID>
@@ -472,7 +465,7 @@
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val body = response.body ?: throw IOException("Empty response body")</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val dir = File(uni.uri.path ?: return false)</ID>
     <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val pagecount = runCatching { ServiceRegistry.dataModule.historyRepository .getArchiveSnapshot(arcId, info.serverProfileId)?.pagecount }.getOrNull() ?: return false</ID>
-    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val uni = runCatching { SpiderDen.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false</ID>
+    <ID>UnreachableCode:LRRDownloadWorker.kt$LRRDownloadWorker$val uni = runCatching { DownloadDirs.findGalleryDownloadDir(arcId) }.getOrNull() ?: return false</ID>
     <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$val client = ServiceRegistry.networkModule.okHttpClient</ID>
     <ID>UnreachableCode:LRRGalleryProvider.kt$LRRGalleryProvider$val url = serverUrlDeferred.await() ?: return@sync</ID>
     <ID>UnreachableCode:LRRMiscApi.kt$LRRMiscApi$if (success != 1) { val error = jsonObj["error"]?.jsonPrimitive?.content ?: "Download queue failed" throw IOException(error) }</ID>
@@ -611,11 +604,6 @@
     <ID>UnusedParameter:GalleryInputHandler.kt$GalleryInputHandler$event: KeyEvent?</ID>
     <ID>UnusedParameter:GalleryInputHandler.kt$GalleryInputHandler$view: View?</ID>
     <ID>UnusedParameter:LRRDownloadWorker.kt$LRRDownloadWorker$total: Int</ID>
-    <ID>UnusedParameter:LRRUrlOpener.kt$LRRUrlOpener$url: String?</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$filename: String</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$index: Int</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$listener: OnSpiderListener?</ID>
-    <ID>UnusedParameter:SpiderQueen.kt$SpiderQueen$page: Int</ID>
     <ID>UnusedPrivateMember:AppHelper.kt$AppHelper$private fun isWifiProxy(context: Context?): Boolean</ID>
     <ID>UnusedPrivateProperty:AppConfig.kt$AppConfig$private const val APP_DIRNAME = "LRReader"</ID>
     <ID>UnusedPrivateProperty:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$val context = callback.ehContext ?: return false</ID>
@@ -625,7 +613,6 @@
     <ID>UnusedPrivateProperty:GalleryAdapterNew.kt$GalleryAdapterNew$private var mShowFavourite: Boolean</ID>
     <ID>UnusedPrivateProperty:GalleryDetailScene.kt$GalleryDetailScene.Companion$private const val REQUEST_CODE_COMMENT_GALLERY = 0</ID>
     <ID>UnusedPrivateProperty:GalleryListScene.kt$GalleryListScene.Companion$private const val TAG = "GalleryListScene"</ID>
-    <ID>UnusedPrivateProperty:GallerySearchHelper.kt$GallerySearchHelper$private val mCallback: Callback</ID>
     <ID>UnusedPrivateProperty:LRRCategoriesScene.kt$LRRCategoriesScene.Companion$private const val TAG = "LRRCategoriesScene"</ID>
     <ID>UnusedPrivateProperty:LRRClientProvider.kt$LRRClientProvider$val ctx = appContext ?: throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")</ID>
     <ID>UnusedPrivateProperty:QuickSearchScene.kt$QuickSearchScene.Companion$private const val TAG = "QuickSearchScene"</ID>

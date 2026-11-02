@@ -2,10 +2,8 @@ package com.lanraragi.reader.download
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.spider.SpiderQueen
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -28,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import com.lanraragi.reader.dao.DownloadFailureReason
 
 /**
  * End-to-end tests of [LRRDownloadWorker] against a MockWebServer (audit
@@ -126,7 +125,7 @@ class LRRDownloadWorkerTest {
             override fun usableBytes(dir: File) = usable
         }
         worker = LRRDownloadWorker(ApplicationProvider.getApplicationContext(), info, env)
-        worker.listener = object : SpiderQueen.OnSpiderListener {
+        worker.listener = object : DownloadWorkerListener {
             override fun onGetPages(pages: Int) {}
             override fun onGet509(index: Int) {}
             override fun onPageDownload(index: Int, contentLength: Long, receivedSize: Long, bytesRead: Int) {}
@@ -137,8 +136,6 @@ class LRRDownloadWorkerTest {
                 result.total = total
                 result.done.countDown()
             }
-            override fun onGetImageSuccess(index: Int, image: Image) {}
-            override fun onGetImageFailure(index: Int, error: String) {}
         }
         worker.start()
         assertTrue("worker never finished", result.done.await(30, TimeUnit.SECONDS))

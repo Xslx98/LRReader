@@ -1,0 +1,125 @@
+/*
+ * Copyright 2016 Hippo Seven
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.lanraragi.reader.download
+
+import androidx.core.net.toUri
+import android.util.Log
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.diagnostics.Redactor
+import com.lanraragi.reader.settings.DownloadSettings
+import com.lanraragi.reader.storage.StorageFile
+import java.util.Locale
+
+/**
+ * Helpers for resolving an archive's on-disk download directory and the
+ * filename layout LRReader uses for downloaded pages.
+ *
+ * The original EhViewer DownloadDirs instance class (image cache + per-archive
+ * state) has been removed: LANraragi's image flow goes through
+ * [com.lanraragi.reader.reading.LRRGalleryProvider] /
+ * [com.lanraragi.reader.download.LRRDownloadWorker] and never created a
+ * DownloadDirs instance. Only the directory + filename helpers survive.
+ */
+object DownloadDirs {
+
+    private const val TAG = "DownloadDirs"
+
+    /** Process-wide: its mutex is what makes pointer allocation atomic. */
+    private val allocator by lazy {
+        DownloadDirAllocator(ServiceRegistry.dataModule.downloadDbRepository, ::resolveRootDir)
+    }
+
+    /**
+     * The download directory [arcid]'s `DOWNLOAD_DIRNAME` pointer names, or
+     * null when the archive has no pointer. Lookup only — never creates a
+     * pointer or a directory; the directory may not exist.
+     *
+     * Root resolution (post-v26): [rootUriOverride] (the caller's
+     * in-memory `downloadRootUri`), else the row's persisted
+     * `DOWNLOAD_ROOT_URI`, else the current download location. Delete
+     * paths must pass [rootUriOverride]: the row may already be gone.
+     */
+    @JvmStatic
+    suspend fun findGalleryDownloadDir(arcid: String, rootUriOverride: String? = null): StorageFile? =
+        allocator.find(arcid, rootUriOverride)
+
+    /**
+     * The download directory for [arcid], creating it (named after
+     * [title], see [DownloadDirNaming]) together with its pointer when
+     * there is none yet. Only callers that are about to write pages — the
+     * download worker and the reader's write-through for tracked
+     * downloads — may call this.
+     */
+    @JvmStatic
+    suspend fun allocateGalleryDownloadDir(
+        arcid: String,
+        title: String?,
+        rootUriOverride: String? = null,
+    ): StorageFile? = allocator.allocate(arcid, title, rootUriOverride)
+
+    /**
+     * Deletes [arcid]'s download directory (recursively) and its pointer;
+     * see [DownloadDirAllocator.delete]. Capture [rootUriOverride] from the
+     * `DownloadInfo` BEFORE removing the download row.
+     */
+    @JvmStatic
+    suspend fun deleteGalleryDownloadDir(arcid: String, rootUriOverride: String?): Boolean =
+        allocator.delete(arcid, rootUriOverride)
+
+    /**
+     * @param extension with dot (e.g. ".jpg")
+     */
+    @JvmStatic
+    fun generateImageFilename(index: Int, extension: String): String =
+        String.format(Locale.US, "%08d%s", index + 1, extension)
+
+    @JvmStatic
+    fun findImageFile(dir: StorageFile, index: Int): StorageFile? {
+        for (extension in GalleryProvider2.SUPPORT_IMAGE_EXTENSIONS) {
+            val filename = generateImageFilename(index, extension)
+            val file = dir.findFile(filename)
+            if (file != null) return file
+        }
+        return null
+    }
+
+    /**
+     * Build a [StorageFile] for the supplied root URI, falling back to
+     * [DownloadSettings.getDownloadLocation] when [storedUri] is null,
+     * malformed, or not a `file://` uri (only pre-v1.16.2 rows can hold a
+     * SAF `content://` root, and their pages were written to the app
+     * directory anyway). This is the per-archive root resolver used by the
+     * download read paths so a setting change after-the-fact doesn't
+     * orphan a previously-downloaded archive.
+     */
+    internal fun resolveRootDir(storedUri: String?): StorageFile? {
+        if (!storedUri.isNullOrEmpty()) {
+            // A root from an earlier setting: its title dirs stay out of reports too (audit 2026-10-06 C06).
+            Redactor.registerDownloadRoot(storedUri)
+            try {
+                val parsed = storedUri.toUri()
+                val file = StorageFile.fromUri(parsed)
+                if (file != null) return file
+                Log.w(TAG, "Stored DOWNLOAD_ROOT_URI no longer resolvable, falling back to current setting")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to parse stored DOWNLOAD_ROOT_URI, falling back to current setting", e)
+            }
+        }
+        return DownloadSettings.getDownloadLocation()
+    }
+}

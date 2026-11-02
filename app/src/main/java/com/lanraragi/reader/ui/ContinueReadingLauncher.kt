@@ -9,7 +9,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.isTankoubonId
-import com.lanraragi.reader.gallery.TankSessionRouter
+import com.lanraragi.reader.reading.TankSessionRouter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

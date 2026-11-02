@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.gallery.LocalReadingProgress
-import com.lanraragi.reader.gallery.ReadingProgressTracker
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.LocalReadingProgress
+import com.lanraragi.reader.reading.ReadingProgressTracker
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.stubAppModule
 import kotlinx.coroutines.CoroutineScope

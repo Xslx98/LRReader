@@ -11,7 +11,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ui.gallery.StampGeometry
+import com.lanraragi.reader.ui.reader.StampGeometry
 import com.lanraragi.framework.lib.glgallery.PageTransform
 import com.lanraragi.reader.client.api.LRRStampApi.StampData
 import kotlin.math.hypot

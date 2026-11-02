@@ -23,7 +23,7 @@ import androidx.annotation.VisibleForTesting
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel
-import com.lanraragi.reader.mapper.toDownloadInfoView
+import com.lanraragi.reader.dao.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Collections
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Owns download collection state and DB persistence.
@@ -155,7 +156,7 @@ class DownloadRepository(
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load download data from DB", e)
                 com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "Failed to load download data from DB", e)
-                com.lanraragi.reader.Crash.saveNonFatal(e)
+                com.lanraragi.reader.diagnostics.Crash.saveNonFatal(e)
                 _loadError.value = e
                 finishFailedLoad(onComplete)
             }

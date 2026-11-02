@@ -8,7 +8,7 @@ import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.mapper.toArchiveJson
+import com.lanraragi.reader.dao.toArchiveJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -24,6 +24,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Audit 2026-10-04 C05 (first slice): every download directory carries a

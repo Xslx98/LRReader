@@ -2,13 +2,12 @@ package com.lanraragi.reader.module
 
 import android.content.Context
 import android.util.Log
-import com.lanraragi.reader.AppProxySelector
 import okhttp3.Cache
 import okhttp3.ConnectionPool
 import okhttp3.CookieJar
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
-import com.lanraragi.reader.client.api.ServerTrust
+import com.lanraragi.reader.server.ServerTrust
 import java.io.File
 import java.util.concurrent.TimeUnit
 

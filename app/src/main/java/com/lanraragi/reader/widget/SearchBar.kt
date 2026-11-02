@@ -57,8 +57,8 @@ import androidx.annotation.StringRes
 import androidx.cardview.widget.CardView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.TagTranslationDatabase
-import com.lanraragi.reader.client.TagTranslationDatabase.Companion.NAMESPACE_TO_PREFIX
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase.Companion.NAMESPACE_TO_PREFIX
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.settings.AppearanceSettings
 import kotlinx.coroutines.launch

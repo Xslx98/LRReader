@@ -2,7 +2,7 @@ package com.lanraragi.reader.backup
 
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Merge rules for a restore (ruling R18: merge, never delete local data).

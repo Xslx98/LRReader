@@ -3,7 +3,7 @@ package com.lanraragi.reader.backup
 import com.lanraragi.reader.backup.BackupMerge.Relink
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

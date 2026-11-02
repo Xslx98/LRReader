@@ -5,6 +5,7 @@ import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.util.suspendRunCatching
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * One-shot boot migration from `<arcid>-<title>` download directories to

@@ -3,6 +3,7 @@ package com.lanraragi.reader.download
 import android.content.res.Resources
 import androidx.annotation.StringRes
 import com.lanraragi.reader.R
+import com.lanraragi.reader.dao.DownloadFailureReason
 
 /** Short user-facing label for [this] reason, or null for [DownloadFailureReason.UNKNOWN]. */
 @StringRes

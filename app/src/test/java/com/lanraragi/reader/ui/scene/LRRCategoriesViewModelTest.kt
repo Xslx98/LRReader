@@ -7,7 +7,7 @@ import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.collectInto
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.data.LRRCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

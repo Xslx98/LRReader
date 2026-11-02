@@ -1,0 +1,214 @@
+package com.lanraragi.reader.download.search
+
+import com.lanraragi.reader.download.DownloadSizeCache
+import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.download.DownloadManager
+import com.lanraragi.reader.download.DownloadDirs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Arrays
+import com.lanraragi.reader.dao.DownloadState
+
+class DownloadListInfosExecutor {
+
+    @Suppress("unused")
+    private val TAG = "DownloadSearchingExecutor"
+
+    private var mDownloadSearchCallback: DownloadSearchCallback? = null
+
+    private val mList: List<DownloadInfo>?
+    private var resultList: List<DownloadInfo>? = null
+
+    @Suppress("unused")
+    private var mDownloadManager: DownloadManager? = null
+
+    constructor(mList: List<DownloadInfo>?, downloadManager: DownloadManager?) {
+        this.mList = mList
+        mDownloadManager = downloadManager
+    }
+
+    fun setDownloadSearchingListener(downloadSearchCallback: DownloadSearchCallback?) {
+        mDownloadSearchCallback = downloadSearchCallback
+    }
+
+    fun executeFilterAndSort(id: Int) {
+        ServiceRegistry.coroutineModule.ioScope.launch {
+            resultList = when (id) {
+                R.id.download_done -> filterDownloadState(DownloadState.FINISH)
+                R.id.not_started -> filterDownloadState(DownloadState.NONE)
+                R.id.waiting -> filterDownloadState(DownloadState.WAIT)
+                R.id.downloading -> filterDownloadState(DownloadState.DOWNLOAD)
+                R.id.failed -> filterDownloadState(DownloadState.FAILED)
+                R.id.sort_by_gallery_id_asc,
+                R.id.sort_by_gallery_id_desc,
+                R.id.sort_by_create_time_asc,
+                R.id.sort_by_create_time_desc,
+                R.id.sort_by_rating_asc,
+                R.id.sort_by_rating_desc,
+                R.id.sort_by_name_asc,
+                R.id.sort_by_name_desc,
+                R.id.sort_by_file_size_asc,
+                R.id.sort_by_file_size_desc -> sortByType(id)
+                R.id.all, R.id.sort_by_default -> mList
+                else -> mList
+            }
+
+            withContext(Dispatchers.Main) {
+                resultList?.let { mDownloadSearchCallback?.onDownloadSearchSuccess(it) }
+            }
+        }
+    }
+
+    private suspend fun sortByType(type: Int): List<DownloadInfo> {
+        if (mList == null) {
+            return ArrayList()
+        }
+        val arr = mList.toTypedArray()
+
+        // If sorting by file size, calculate all file sizes first
+        if (type == R.id.sort_by_file_size_asc || type == R.id.sort_by_file_size_desc) {
+            for (info in arr) {
+                info.fileSize = DownloadSizeCache.get(info.arcid)
+                    ?: calculateDownloadDirSize(info).also { DownloadSizeCache.put(info.arcid, it) }
+            }
+        }
+
+        val n = arr.size
+        // Sub-array sizes are 1, 2, 4, 8...
+        var i = 1
+        while (i < n) {
+            // Partition the array
+            var left = 0
+            var mid = left + i - 1
+            var right = mid + i
+            // Merge in pairs of sub-arrays of size i
+            while (right < n) {
+                merge(arr, left, mid, right, type)
+                left = right + 1
+                mid = left + i - 1
+                right = mid + i
+            }
+            // Handle remaining unmerged portions
+            if (left < n && mid < n) {
+                merge(arr, left, mid, n - 1, type)
+            }
+            i += i
+        }
+        return Arrays.asList(*arr)
+    }
+
+    private fun filterDownloadState(state: DownloadState): List<DownloadInfo> {
+        val list = ArrayList<DownloadInfo>()
+        if (mList == null) {
+            return list
+        }
+        for (info in mList) {
+            if (info.state == state) {
+                list.add(info)
+            }
+        }
+        return list
+    }
+
+    /**
+     * Calculate the total size of the download directory
+     */
+    private suspend fun calculateDownloadDirSize(info: DownloadInfo): Long {
+        return try {
+            val downloadDir = DownloadDirs.findGalleryDownloadDir(info.arcid, info.downloadRootUri)
+            if (downloadDir == null || !downloadDir.isDirectory) {
+                return 0
+            }
+            downloadDir.file.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    companion object {
+        // Merge function: merge two sorted arrays
+        // arr[left..mid] represents one array, arr[mid+1..right] represents another
+        private fun merge(arr: Array<DownloadInfo>, left: Int, mid: Int, right: Int, sortType: Int) {
+            val a = Array<DownloadInfo?>(right - left + 1) { null }
+            var i = left
+            var j = mid + 1
+            var k = 0
+            while (i <= mid && j <= right) {
+                when (sortType) {
+                    R.id.sort_by_gallery_id_asc -> {
+                        val cmp = (arr[i].arcid ?: "").compareTo(arr[j].arcid ?: "")
+                        if (cmp <= 0) a[k++] = arr[i++] else a[k++] = arr[j++]
+                    }
+                    R.id.sort_by_gallery_id_desc -> {
+                        val cmp = (arr[i].arcid ?: "").compareTo(arr[j].arcid ?: "")
+                        if (cmp >= 0) a[k++] = arr[i++] else a[k++] = arr[j++]
+                    }
+                    R.id.sort_by_create_time_asc -> {
+                        if (arr[i].time < arr[j].time) a[k++] = arr[i++] else a[k++] = arr[j++]
+                    }
+                    R.id.sort_by_create_time_desc -> {
+                        if (arr[i].time > arr[j].time) a[k++] = arr[i++] else a[k++] = arr[j++]
+                    }
+                    R.id.sort_by_rating_asc -> {
+                        if (arr[i].rating < arr[j].rating) a[k++] = arr[i++] else a[k++] = arr[j++]
+                    }
+                    R.id.sort_by_rating_desc -> {
+                        if (arr[i].rating > arr[j].rating) a[k++] = arr[i++] else a[k++] = arr[j++]
+                    }
+                    R.id.sort_by_name_asc -> {
+                        val titleI = arr[i].title
+                        val titleJ = arr[j].title
+                        when {
+                            titleI == null && titleJ == null -> a[k++] = arr[i++]
+                            titleI == null -> a[k++] = arr[j++]
+                            titleJ == null -> a[k++] = arr[i++]
+                            titleI.compareTo(titleJ, ignoreCase = true) < 0 -> a[k++] = arr[i++]
+                            else -> a[k++] = arr[j++]
+                        }
+                    }
+                    R.id.sort_by_name_desc -> {
+                        val titleI = arr[i].title
+                        val titleJ = arr[j].title
+                        when {
+                            titleI == null && titleJ == null -> a[k++] = arr[i++]
+                            titleI == null -> a[k++] = arr[j++]
+                            titleJ == null -> a[k++] = arr[i++]
+                            titleI.compareTo(titleJ, ignoreCase = true) > 0 -> a[k++] = arr[i++]
+                            else -> a[k++] = arr[j++]
+                        }
+                    }
+                    R.id.sort_by_file_size_asc -> {
+                        when {
+                            arr[i].fileSize < 0 && arr[j].fileSize < 0 -> a[k++] = arr[i++]
+                            arr[i].fileSize < 0 -> a[k++] = arr[j++]
+                            arr[j].fileSize < 0 -> a[k++] = arr[i++]
+                            arr[i].fileSize < arr[j].fileSize -> a[k++] = arr[i++]
+                            else -> a[k++] = arr[j++]
+                        }
+                    }
+                    R.id.sort_by_file_size_desc -> {
+                        when {
+                            arr[i].fileSize < 0 && arr[j].fileSize < 0 -> a[k++] = arr[i++]
+                            arr[i].fileSize < 0 -> a[k++] = arr[j++]
+                            arr[j].fileSize < 0 -> a[k++] = arr[i++]
+                            arr[i].fileSize > arr[j].fileSize -> a[k++] = arr[i++]
+                            else -> a[k++] = arr[j++]
+                        }
+                    }
+                }
+            }
+            while (i <= mid) a[k++] = arr[i++]
+            while (j <= right) a[k++] = arr[j++]
+            // Copy temp array back to original
+            var idx = left
+            for (x in 0 until k) {
+                arr[idx++] = a[x]!!
+            }
+        }
+    }
+}

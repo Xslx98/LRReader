@@ -4,14 +4,13 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.Resources
 import android.view.LayoutInflater
 import android.view.View
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.TagTranslationDatabase
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.domain.Archive
@@ -41,7 +40,6 @@ internal object GalleryListHelperFactory {
         val itemActionHelper: GalleryItemActionHelper,
         val tagChipHelper: GalleryTagChipHelper,
         val dataHelper: GalleryListDataHelper,
-        val searchHelper: GallerySearchHelper,
         val listSearchHelper: GalleryListSearchHelper,
         val uploadHelper: GalleryUploadHelper,
         val searchBarHelper: GallerySearchBarHelper,
@@ -143,14 +141,6 @@ internal object GalleryListHelperFactory {
             override fun getTankSort(): TankBrowse.Sort = AppearanceSettings.getTankListSort()
         })
 
-        val searchHelper = GallerySearchHelper(object : GallerySearchHelper.Callback {
-            override fun getHostContext(): Context? = scene.ehContext
-            override fun getHostResources(): Resources? = scene.resources2
-            override fun navigateToScene(announcer: Announcer) = scene.startScene(announcer)
-            override fun getSearchState(): Int = scene.stateHelper?.state ?: GalleryStateHelper.STATE_NORMAL
-            override fun setSearchState(state: Int) { scene.stateHelper?.setState(state) }
-        })
-
         val listSearchHelper = GalleryListSearchHelper(object : GalleryListSearchHelper.Callback {
             override fun getSearchBar(): SearchBar? = scene.searchBar
             override fun getSearchLayout(): SearchLayout? = scene.searchLayout
@@ -224,7 +214,6 @@ internal object GalleryListHelperFactory {
             itemActionHelper = itemActionHelper,
             tagChipHelper = tagChipHelper,
             dataHelper = dataHelper,
-            searchHelper = searchHelper,
             listSearchHelper = listSearchHelper,
             uploadHelper = uploadHelper,
             searchBarHelper = searchBarHelper,

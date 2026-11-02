@@ -1,15 +1,14 @@
 package com.lanraragi.reader.dao
 
-import com.lanraragi.reader.util.DownloadCsvTooLargeException
-import com.lanraragi.reader.util.archiveFromCsvLine
-import com.lanraragi.reader.util.readDownloadCsv
-import com.lanraragi.reader.util.toCSV
+import com.lanraragi.reader.backup.DownloadCsvTooLargeException
+import com.lanraragi.reader.backup.archiveFromCsvLine
+import com.lanraragi.reader.backup.readDownloadCsv
+import com.lanraragi.reader.backup.toCSV
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.download.DownloadState
 import java.io.ByteArrayInputStream
 
 /**

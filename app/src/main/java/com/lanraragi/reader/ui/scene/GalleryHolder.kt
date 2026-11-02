@@ -22,7 +22,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.widget.SimpleRatingView
-import com.lanraragi.framework.widget.LoadImageView
+import com.lanraragi.reader.widget.LoadImageView
 
 class GalleryHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 

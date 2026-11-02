@@ -6,8 +6,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.mapper.toArchive
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.dao.toArchive
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -26,7 +26,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Unit tests for [DownloadManager] — the core download state management class.

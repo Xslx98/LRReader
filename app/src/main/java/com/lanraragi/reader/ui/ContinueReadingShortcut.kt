@@ -10,8 +10,8 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.HistoryRepository
-import com.lanraragi.reader.gallery.ReadingSessionEnd
-import com.lanraragi.reader.gallery.ReadingSessionEvents
+import com.lanraragi.reader.reading.ReadingSessionEnd
+import com.lanraragi.reader.reading.ReadingSessionEvents
 import kotlinx.coroutines.launch
 
 /**

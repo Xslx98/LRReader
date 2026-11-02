@@ -8,7 +8,6 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.annotation.VisibleForTesting
-import com.lanraragi.reader.download.DownloadStateConverter
 import com.lanraragi.reader.domain.Archive
 import java.nio.ByteBuffer
 import java.security.MessageDigest

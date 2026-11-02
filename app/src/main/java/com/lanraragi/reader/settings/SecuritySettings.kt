@@ -2,8 +2,8 @@ package com.lanraragi.reader.settings
 
 import android.util.Log
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 
 /**
  * Security-related settings extracted from Settings.java.

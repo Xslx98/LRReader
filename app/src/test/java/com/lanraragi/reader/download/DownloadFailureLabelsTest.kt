@@ -7,6 +7,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.dao.DownloadFailureReason
 
 /** Audit 2026-10-04 C21: a failed download names its reason on the card and in the notification. */
 @RunWith(RobolectricTestRunner::class)

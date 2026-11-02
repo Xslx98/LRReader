@@ -6,12 +6,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.TankCoverCacheStamp
+import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.domain.mergeRatingIntoTags
@@ -19,7 +19,7 @@ import com.lanraragi.reader.domain.parseLrrTagString
 import com.lanraragi.reader.domain.parseRatingFromTags
 import com.lanraragi.reader.download.TankGroupReconciler
 import com.lanraragi.reader.download.TankMembershipSync
-import com.lanraragi.reader.gallery.TankPageMath
+import com.lanraragi.reader.reading.TankPageMath
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.tankoubon.TankTagSyncer
@@ -48,7 +48,7 @@ import okhttp3.OkHttpClient
  * `archive_json`) as an OFFLINE state with editing disabled.
  *
  * Member management (rename / reorder / remove / cover) stays in
- * [com.lanraragi.reader.ui.scene.TankoubonDetailViewModel]; this class
+ * [com.lanraragi.reader.ui.scene.tankdetail.TankMembersViewModel]; this class
  * only owns what the detail page renders.
  */
 class TankDetailViewModel : ViewModel() {

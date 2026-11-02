@@ -7,6 +7,7 @@ import com.lanraragi.reader.module.NetworkMonitor
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.io.File
+import com.lanraragi.reader.module.AppProxySelector
 
 /**
  * [INetworkModule] for [ServiceRegistry.initializeForTest] whose three

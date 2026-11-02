@@ -2,7 +2,7 @@ package com.lanraragi.reader.client.api.data
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 
 import com.lanraragi.reader.domain.Archive

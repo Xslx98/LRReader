@@ -2,6 +2,7 @@ package com.lanraragi.reader.download
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Completion notification for a downloaded tankoubon fires ONCE for the

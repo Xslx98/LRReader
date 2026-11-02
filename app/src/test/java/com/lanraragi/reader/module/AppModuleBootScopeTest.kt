@@ -12,7 +12,7 @@ import org.junit.Test
  * Unit tests for [AppModule.createBootCEH] and the boot-time scope wiring used by
  * [com.lanraragi.reader.LRReaderApplication] before `ServiceRegistry.initialize()` runs.
  *
- * Design note: [com.lanraragi.reader.Crash] and [com.lanraragi.reader.Analytics] are
+ * Design note: [com.lanraragi.reader.diagnostics.Crash] and [com.lanraragi.reader.diagnostics.Analytics] are
  * Kotlin `object` singletons that resist mocking without MockK / PowerMock. Rather
  * than pull in a heavyweight mocking library, [AppModule.createBootCEH] takes
  * injectable function references — the production [AppModule.bootCEH] wires those

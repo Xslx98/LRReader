@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.detail
 
 import androidx.collection.LruCache
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.gallery.ReadingProgressTracker
+import com.lanraragi.reader.reading.ReadingProgressTracker
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.module.IDataModule

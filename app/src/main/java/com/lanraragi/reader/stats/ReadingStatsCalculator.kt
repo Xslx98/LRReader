@@ -1,7 +1,7 @@
 package com.lanraragi.reader.stats
 
 import com.lanraragi.reader.dao.HistoryStatsRow
-import com.lanraragi.reader.gallery.ReadingProgressReconciler
+import com.lanraragi.reader.reading.ReadingProgressReconciler
 
 /**
  * Pure derivation of the snapshot reading statistics (issue #18) from the

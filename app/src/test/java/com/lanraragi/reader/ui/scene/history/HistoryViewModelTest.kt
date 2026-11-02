@@ -11,7 +11,7 @@ import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

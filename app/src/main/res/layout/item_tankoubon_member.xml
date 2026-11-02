@@ -29,7 +29,7 @@
         android:importantForAccessibility="no"
         android:visibility="gone" />
 
-    <com.lanraragi.framework.widget.LoadImageViewNew
+    <com.lanraragi.reader.widget.LoadImageViewNew
         android:id="@+id/member_thumb"
         android:layout_width="56dp"
         android:layout_height="80dp"

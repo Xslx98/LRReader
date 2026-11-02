@@ -149,7 +149,7 @@ class RedactorTest {
     fun stackFrames_andClassNames_surviveUnchanged() {
         val trace = listOf(
             "java.lang.IllegalStateException: Page 3 out of bounds (size=2) for abc123",
-            "\tat com.lanraragi.reader.gallery.TankMemberSource.load(TankMemberSource.kt:193)",
+            "\tat com.lanraragi.reader.reading.TankMemberSource.load(TankMemberSource.kt:193)",
             "\tat com.lanraragi.reader.Foo\$bar\$1.invokeSuspend(Foo.kt:12)",
             "\tat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)",
             "\tat java.base/java.lang.Thread.run(Thread.java:833)",
@@ -159,7 +159,7 @@ class RedactorTest {
             "\tat com.android.internal.os.ZygoteInit.main(Native Method)",
             "Caused by: java.lang.ClassCastException: java.lang.String cannot be cast to java.lang.Integer",
             "\t... 12 more",
-            "10-06 12:00:00.123  1234  5678 E AndroidRuntime: \tat com.lanraragi.reader.Crash.save(Crash.kt:118)",
+            "10-06 12:00:00.123  1234  5678 E AndroidRuntime: \tat com.lanraragi.reader.diagnostics.Crash.save(Crash.kt:118)",
             "  native: #00 pc 000000000004b8a0  /apex/com.android.runtime/lib64/bionic/libc.so (syscall+32)",
             "  | sysTid=1234 nice=-10 cgrp=top-app sched=0/0 handle=0x7b2c4e4f58",
             "Thread=DefaultDispatcher-worker-3",
@@ -265,7 +265,7 @@ class RedactorTest {
     fun titleRules_leaveFramesAndOtherDownloadPathsAlone() {
         val text = listOf(
             "\tat com.lanraragi.reader.download.LRRDownloadWorker.writePage(LRRDownloadWorker.kt:598)",
-            "\tat com.lanraragi.reader.spider.SpiderDen.resolveRootDir(SpiderDen.kt:120)",
+            "\tat com.lanraragi.reader.download.DownloadDirs.resolveRootDir(DownloadDirs.kt:120)",
             "GET https://<host>/Xslx98/LRReader/releases/download/v1.27.1/app.apk",
         ).joinToString("\n")
         Redactor.registerDownloadRoot("/storage/emulated/0/Manga")

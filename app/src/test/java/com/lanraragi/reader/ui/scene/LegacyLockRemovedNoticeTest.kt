@@ -9,8 +9,8 @@ import androidx.core.content.edit
 import com.lanraragi.reader.R
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.client.api.InMemoryValueCipher
-import com.lanraragi.reader.client.api.KeystoreSecurePrefs
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.KeystoreSecurePrefs
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.ui.SetSecurityActivity
 import kotlinx.coroutines.CoroutineExceptionHandler

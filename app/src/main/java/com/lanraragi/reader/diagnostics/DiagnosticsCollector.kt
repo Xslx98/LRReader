@@ -9,11 +9,10 @@ import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
 import androidx.core.content.FileProvider
 import com.lanraragi.reader.BuildConfig
-import com.lanraragi.reader.Crash
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.ServerCapabilityCache
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.ServerCapabilityCache
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.settings.PrivacySettings
 import java.io.File
@@ -40,7 +39,7 @@ object DiagnosticsCollector {
         val infos = dm.allDownloadInfoList
         DiagnosticsInfo.DownloadSummary(
             byState = infos.groupingBy { it.state }.eachCount(),
-            failures = infos.filter { it.state == com.lanraragi.reader.download.DownloadState.FAILED }
+            failures = infos.filter { it.state == com.lanraragi.reader.dao.DownloadState.FAILED }
                 .groupingBy { it.failureReason }.eachCount(),
             labels = dm.labelList.size,
         )

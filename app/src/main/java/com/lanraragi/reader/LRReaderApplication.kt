@@ -33,19 +33,19 @@ import android.os.Trace
 import android.util.Log
 import com.lanraragi.reader.util.LocaleContext
 import com.lanraragi.framework.scene.SceneApplication
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.module.AppModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.download.DownloadDirMarkerBackfill
 import com.lanraragi.reader.download.DownloadDirMigration
 import com.lanraragi.reader.download.DuplicateDirPointerRepair
-import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.settings.PrivacySettings
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -61,6 +61,9 @@ import com.lanraragi.reader.util.ExceptionUtils
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.Locale
+import com.lanraragi.reader.diagnostics.Crash
+import com.lanraragi.reader.diagnostics.Analytics
+import com.lanraragi.reader.dao.legacy.LegacyDb
 
 class LRReaderApplication : SceneApplication() {
 
@@ -170,7 +173,7 @@ class LRReaderApplication : SceneApplication() {
         trace("LRRApp.Settings.init") { Settings.initialize(this) }
         // Single-archive progress PUTs that failed are kept here until the
         // network returns (audit 2026-10-04 C20); flushed below.
-        com.lanraragi.reader.gallery.ArchiveProgressOutbox.install(this)
+        com.lanraragi.reader.reading.ArchiveProgressOutbox.install(this)
         // Tank tag re-materializations a member tag edit could not finish
         // (audit 2026-10-04 REL-24); flushed with the progress outbox.
         com.lanraragi.reader.tankoubon.TankTagOutbox.install(this)
@@ -180,11 +183,11 @@ class LRReaderApplication : SceneApplication() {
             com.lanraragi.reader.download.PrefsInterruptedStore(Settings.getPreferences())
         // /api/info facts worth keeping across launches (excluded_namespaces feeds
         // the offline reading-stats page; the round-trip only happens on connect).
-        com.lanraragi.reader.client.api.ServerCapabilityCache.attachStore(
-            com.lanraragi.reader.client.api.PrefsServerCapabilityStore(Settings.getPreferences())
+        com.lanraragi.reader.server.ServerCapabilityCache.attachStore(
+            com.lanraragi.reader.server.PrefsServerCapabilityStore(Settings.getPreferences())
         )
-        // Skip SpiderDen disk cache in LRR mode — it's EH-specific and wastes 40-640MB
-        // SpiderDen.initialize(this);
+        // Skip DownloadDirs disk cache in LRR mode — it's EH-specific and wastes 40-640MB
+        // DownloadDirs.initialize(this);
         trace("LRRApp.LegacyDb.init") { LegacyDb.initialize(this) }
 
         // Load active server profile into LRRAuthManager asynchronously, and verify
@@ -208,8 +211,8 @@ class LRReaderApplication : SceneApplication() {
                     LRRAuthManager.setActiveProfileId(activeProfile.id)
                     resolvedId = activeProfile.id
                     // Pre-C37 progress was keyed by arcid alone: it belongs to this profile.
-                    com.lanraragi.reader.gallery.LocalReadingProgress.migrateLegacy(
-                        com.lanraragi.reader.gallery.LocalReadingProgress.prefs(this@LRReaderApplication),
+                    com.lanraragi.reader.reading.LocalReadingProgress.migrateLegacy(
+                        com.lanraragi.reader.reading.LocalReadingProgress.prefs(this@LRReaderApplication),
                         activeProfile.id,
                     )
                 } else {
@@ -217,7 +220,7 @@ class LRReaderApplication : SceneApplication() {
                     // the session was cleared on delete (audit 2026-10-04 C02).
                     LRRAuthManager.clearSessionIfActiveProfileGone(allProfiles.map { it.id })
                 }
-            } catch (e: com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException) {
+            } catch (e: com.lanraragi.reader.server.LRRSecureStorageUnavailableException) {
                 // Log.e, not Log.w: R8 cannot strip a Throwable-carrying Log.w
                 // from this coroutine body, and the CI DEX check forbids it.
                 Log.e(TAG, "KeyStore unavailable during profile load", e)
@@ -280,7 +283,7 @@ class LRReaderApplication : SceneApplication() {
         // per-event work no-ops unless a widget instance is actually placed.
         com.lanraragi.reader.appwidget.ContinueReadingWidget.install()
         // Keeps the history snapshot's progress at where sessions end (A20).
-        com.lanraragi.reader.gallery.ReadingSnapshotRecorder.install()
+        com.lanraragi.reader.reading.ReadingSnapshotRecorder.install()
 
         // Daily reading aggregate rides the same seam (issue #20): one row per
         // (day x profile), accumulating history for future trend features.
@@ -323,7 +326,7 @@ class LRReaderApplication : SceneApplication() {
             ServiceRegistry.networkModule.networkMonitor.isAvailableFlow
                 .filter { it }
                 .collect {
-                    com.lanraragi.reader.gallery.ArchiveProgressOutbox.flushToServers()
+                    com.lanraragi.reader.reading.ArchiveProgressOutbox.flushToServers()
                     com.lanraragi.reader.tankoubon.TankTagOutbox.flushToServers()
                 }
         }
@@ -418,7 +421,7 @@ class LRReaderApplication : SceneApplication() {
                 if (!prefs.getBoolean(DownloadDirMigration.PREF_DONE, false)) {
                     val outcome = DownloadDirMigration(
                         ServiceRegistry.dataModule.downloadDbRepository,
-                        SpiderDen::resolveRootDir,
+                        DownloadDirs::resolveRootDir,
                     ).run()
                     if (BuildConfig.DEBUG) Log.i(TAG, "Download dir migration: ${outcome.results}")
                     if (outcome.complete) prefs.edit { putBoolean(DownloadDirMigration.PREF_DONE, true) }
@@ -432,7 +435,7 @@ class LRReaderApplication : SceneApplication() {
                     !prefs.getBoolean(DownloadDirMarkerBackfill.PREF_DONE, false)
                 ) {
                     val complete = DownloadDirMarkerBackfill(ServiceRegistry.dataModule.downloadDbRepository) { arcid, rootUri ->
-                        SpiderDen.findGalleryDownloadDir(arcid, rootUri)
+                        DownloadDirs.findGalleryDownloadDir(arcid, rootUri)
                     }.run()
                     if (complete) prefs.edit { putBoolean(DownloadDirMarkerBackfill.PREF_DONE, true) }
                 }

@@ -23,7 +23,7 @@ import com.lanraragi.reader.ui.dialog.CheckBoxDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.spider.SpiderDen
+import com.lanraragi.reader.download.DownloadDirs
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.launch
 
@@ -110,7 +110,7 @@ object DownloadLabelHelper {
             val arcid = archive.arcid
             ServiceRegistry.coroutineModule.ioScope.launch {
                 try {
-                    SpiderDen.deleteGalleryDownloadDir(arcid, rootUri)
+                    DownloadDirs.deleteGalleryDownloadDir(arcid, rootUri)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to delete download files for $arcid", e)
                 }

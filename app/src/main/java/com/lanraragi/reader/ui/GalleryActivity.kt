@@ -33,33 +33,29 @@ import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.settings.ReadingSettings
-import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.event.GalleryActivityEvent
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.ForegroundReading
-import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.gallery.LRRGalleryProvider
-import com.lanraragi.reader.gallery.NextArchiveResolver
-import com.lanraragi.reader.gallery.ReadingSessionTracker
-import com.lanraragi.reader.gallery.TankGalleryProvider
-import com.lanraragi.reader.ui.gallery.GalleryImageOperations
-import com.lanraragi.reader.ui.gallery.GalleryInputHandler
-import com.lanraragi.reader.ui.gallery.GalleryMenuHelper
-import com.lanraragi.reader.ui.gallery.GallerySliderController
-import com.lanraragi.reader.ui.gallery.ReaderChromeController
-import com.lanraragi.reader.ui.gallery.ReaderContinuationController
-import com.lanraragi.reader.ui.gallery.ReaderGalleryViews
-import com.lanraragi.reader.ui.gallery.ReaderLaunch
-import com.lanraragi.reader.ui.gallery.ReaderPageHost
-import com.lanraragi.reader.ui.gallery.ReaderSessionSetup
-import com.lanraragi.reader.ui.gallery.ReaderStampsCoordinator
-import com.lanraragi.reader.ui.gallery.ReaderTopBar
-import com.lanraragi.reader.ui.gallery.TankoubonProgressSync
+import com.lanraragi.reader.reading.ForegroundReading
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.LRRGalleryProvider
+import com.lanraragi.reader.reading.NextArchiveResolver
+import com.lanraragi.reader.reading.ReadingSessionTracker
+import com.lanraragi.reader.ui.reader.GalleryImageOperations
+import com.lanraragi.reader.ui.reader.GalleryInputHandler
+import com.lanraragi.reader.ui.reader.GalleryMenuHelper
+import com.lanraragi.reader.ui.reader.GallerySliderController
+import com.lanraragi.reader.ui.reader.ReaderChromeController
+import com.lanraragi.reader.ui.reader.ReaderContinuationController
+import com.lanraragi.reader.ui.reader.ReaderGalleryViews
+import com.lanraragi.reader.ui.reader.ReaderLaunch
+import com.lanraragi.reader.ui.reader.ReaderPageHost
+import com.lanraragi.reader.ui.reader.ReaderSessionSetup
+import com.lanraragi.reader.ui.reader.ReaderStampsCoordinator
+import com.lanraragi.reader.ui.reader.ReaderTopBar
+import com.lanraragi.reader.ui.reader.TankoubonProgressSync
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
 import com.lanraragi.framework.lib.glgallery.GalleryView
@@ -80,7 +76,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
         const val KEY_ACTION = "action"
 
-        /** Parcelable [com.lanraragi.reader.gallery.TankSessionSeed] for [ACTION_TANK]. */
+        /** Parcelable [com.lanraragi.reader.reading.TankSessionSeed] for [ACTION_TANK]. */
         const val KEY_TANK_SEED = "tank_seed"
         const val KEY_FILENAME = "filename"
         /**

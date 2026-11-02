@@ -11,7 +11,7 @@ package com.lanraragi.reader.client.api
 
 import android.graphics.Bitmap
 import android.util.LruCache
-import com.lanraragi.reader.client.LRRCacheKeyFactory
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.module.Cacheable
 
 /**

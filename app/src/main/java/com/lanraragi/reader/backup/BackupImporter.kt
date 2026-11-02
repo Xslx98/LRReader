@@ -5,8 +5,8 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.room.withTransaction
 import com.lanraragi.reader.backup.BackupMerge.Relink
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DailyReadingAggregate
 import com.lanraragi.reader.dao.DownloadDirname
@@ -15,7 +15,7 @@ import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.dao.SearchHistoryEntry
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.dao.TankDownloadGroup
-import com.lanraragi.reader.gallery.LocalReadingProgress
+import com.lanraragi.reader.reading.LocalReadingProgress
 
 /**
  * Merges a backup into this device's data (audit C05, ruling R18). Nothing local
@@ -88,7 +88,7 @@ class BackupImporter(
 
     /**
      * Rows from before multi-server support carry profile id 0, which the source
-     * device resolves to its active server ([com.lanraragi.reader.client.api.resolveSourceBaseUrl]).
+     * device resolves to its active server ([com.lanraragi.reader.server.resolveSourceBaseUrl]).
      * No backup profile has that id, so without this mapping they were dropped
      * (audit 2026-10-06f REL-01). They go to the backup's active server; with no
      * active server they stay legacy rows.

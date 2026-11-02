@@ -14,7 +14,7 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.LRRUrlHelper
 
 /**

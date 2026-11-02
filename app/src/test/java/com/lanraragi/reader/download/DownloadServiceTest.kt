@@ -12,7 +12,7 @@ import com.lanraragi.reader.containedTestScope
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
 import com.lanraragi.reader.dao.HistoryRepository
-import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +32,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ServiceController
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Service-level tests of [DownloadService]'s command handling (audit

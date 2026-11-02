@@ -28,6 +28,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
+import com.lanraragi.reader.server.ProfileLookupCache
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * The production path of both interceptors: the request's host:port is owned

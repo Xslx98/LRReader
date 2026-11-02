@@ -7,6 +7,8 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response
+import com.lanraragi.reader.server.ProfileUrlCandidate
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * OkHttp interceptor that injects the LANraragi Bearer token for requests

@@ -2,8 +2,8 @@ package com.lanraragi.reader.module
 
 import android.content.Context
 import android.util.Log
-import com.lanraragi.reader.Analytics
-import com.lanraragi.reader.Crash
+import com.lanraragi.reader.diagnostics.Analytics
+import com.lanraragi.reader.diagnostics.Crash
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.util.IntIdGenerator
@@ -138,7 +138,7 @@ class AppModule(private val context: Context) : IAppModule {
          * (`compareAndSet(err, null)`) once the user answers.
          *
          * KeyStore-specific failures continue to flow through
-         * [com.lanraragi.reader.client.api.LRRAuthManager.isNeedsReauthentication]
+         * [com.lanraragi.reader.server.LRRAuthManager.isNeedsReauthentication]
          * and the existing reauth dialog — this slot is for the "everything
          * else" branch that previously vanished into Log.e.
          */

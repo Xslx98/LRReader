@@ -17,9 +17,7 @@ package com.lanraragi.reader.ui.scene.download.part
 
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.IntProperty
 import android.util.Log
@@ -30,7 +28,6 @@ import android.view.animation.LinearInterpolator
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.RelativeLayout
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -39,16 +36,15 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
 import com.lanraragi.reader.util.isLightTheme
 import com.lanraragi.reader.widget.list.EasyRecyclerView
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.ArchiveCoverStamps
-import com.lanraragi.reader.client.LRRCacheKeyFactory
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.download.DownloadService
-import com.lanraragi.reader.gallery.Pipe
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
 import com.lanraragi.reader.ui.scene.download.DownloadsScene
@@ -56,13 +52,12 @@ import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.util.ViewUtils
-import com.lanraragi.reader.ui.widget.Ripples
+import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.storage.StorageFile
-import com.lanraragi.reader.util.NaturalComparator
-import com.lanraragi.framework.widget.LoadImageView
+import com.lanraragi.reader.widget.LoadImageView
 import kotlinx.coroutines.launch
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.ProgressSnapshot
 import com.lanraragi.reader.download.withFailureReason
 import com.lanraragi.reader.client.api.isTankoubonId
@@ -262,7 +257,7 @@ class DownloadAdapter(
      *    as warning state across all themes.
      *
      * Resolution goes through
-     * [com.lanraragi.reader.client.api.ProfileLookupCache] which tracks
+     * [com.lanraragi.reader.server.ProfileLookupCache] which tracks
      * SERVER_PROFILES via Room flow; profile rename / delete is picked
      * up on the next bind because the cache snapshot is shared.
      */
@@ -273,7 +268,7 @@ class DownloadAdapter(
         // Visual binding (text + colour pair + drawable tint) is shared
         // with the detail-header badge so both surfaces show identical
         // labels / colours for the same profile.
-        com.lanraragi.reader.ui.widget.bindSourceServerBadge(badge, info.serverProfileId)
+        com.lanraragi.reader.widget.bindSourceServerBadge(badge, info.serverProfileId)
 
         // The XML pins source_server 8dp above thumb's bottom — fine when
         // category is GONE (the LRR-archive default). For imported archives

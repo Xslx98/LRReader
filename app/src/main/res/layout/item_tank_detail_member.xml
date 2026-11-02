@@ -10,7 +10,7 @@
     android:clickable="true"
     android:focusable="true">
 
-    <com.lanraragi.framework.widget.LoadImageViewNew
+    <com.lanraragi.reader.widget.LoadImageViewNew
         android:id="@+id/member_thumb"
         android:layout_width="@dimen/gallery_list_thumb_width"
         android:layout_height="@dimen/gallery_list_thumb_height"

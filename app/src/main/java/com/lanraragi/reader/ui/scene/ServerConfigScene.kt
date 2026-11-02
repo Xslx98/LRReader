@@ -20,7 +20,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.util.collectFlow
 import com.lanraragi.reader.util.collectFlowWhileCreated
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene

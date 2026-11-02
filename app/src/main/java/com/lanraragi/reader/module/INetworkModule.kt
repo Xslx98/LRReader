@@ -1,6 +1,5 @@
 package com.lanraragi.reader.module
 
-import com.lanraragi.reader.AppProxySelector
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit

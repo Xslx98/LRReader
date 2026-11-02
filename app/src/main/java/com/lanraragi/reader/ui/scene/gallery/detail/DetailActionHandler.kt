@@ -14,10 +14,8 @@ import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.data.ListUrlBuilder
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.gallery.TankSessionRouter
-import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.reading.TankSessionRouter
 import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.MainActivity
@@ -30,7 +28,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Handles action button clicks and popup menu for [GalleryDetailScene].

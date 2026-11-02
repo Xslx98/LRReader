@@ -28,7 +28,6 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.StyleSpan
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog

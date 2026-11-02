@@ -7,7 +7,6 @@ import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.framework.widget.ContentLayout
 import com.lanraragi.reader.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

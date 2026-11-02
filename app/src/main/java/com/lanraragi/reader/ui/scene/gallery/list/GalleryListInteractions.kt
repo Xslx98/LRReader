@@ -1,17 +1,15 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.view.View
-import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.client.api.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.domain.Archive
-import com.lanraragi.reader.gallery.ReadingContext
-import com.lanraragi.reader.gallery.ReadingContextStore
+import com.lanraragi.reader.reading.ReadingContext
+import com.lanraragi.reader.reading.ReadingContextStore
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.ui.scene.BaseScene
 
 /**
  * What a tap, long press or back press does on the gallery list: open or

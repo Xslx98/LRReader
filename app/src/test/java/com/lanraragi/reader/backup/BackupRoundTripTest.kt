@@ -3,13 +3,13 @@ package com.lanraragi.reader.backup
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DailyReadingAggregate
 import com.lanraragi.reader.dao.SearchHistoryEntry
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals

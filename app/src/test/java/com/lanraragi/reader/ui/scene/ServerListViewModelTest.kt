@@ -14,12 +14,12 @@ import com.lanraragi.reader.dao.ArchiveLocalState
 import com.lanraragi.reader.dao.DailyReadingAggregate
 import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.MiscRoomDao
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,9 +43,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.util.concurrent.TimeUnit
-import com.lanraragi.reader.gallery.ArchiveProgressOutbox
-import com.lanraragi.reader.gallery.LocalReadingProgress
-import com.lanraragi.reader.client.api.ServerCapabilityCache
+import com.lanraragi.reader.reading.ArchiveProgressOutbox
+import com.lanraragi.reader.reading.LocalReadingProgress
+import com.lanraragi.reader.server.ServerCapabilityCache
 
 /**
  * Unit tests for [ServerListViewModel].

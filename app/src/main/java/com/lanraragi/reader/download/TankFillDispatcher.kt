@@ -14,6 +14,7 @@ import android.content.Intent
 import android.content.res.Resources
 import com.lanraragi.reader.R
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * "Fill the tank" — the ONE download path for a whole tankoubon, shared by

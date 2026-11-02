@@ -42,7 +42,7 @@ import com.lanraragi.framework.widget.lockpattern.LockPatternUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
 import com.lanraragi.reader.util.ViewUtils
 import com.lanraragi.reader.LRReaderApplication
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 
 class SecurityScene : SolidScene(),
     LockPatternView.OnPatternListener {

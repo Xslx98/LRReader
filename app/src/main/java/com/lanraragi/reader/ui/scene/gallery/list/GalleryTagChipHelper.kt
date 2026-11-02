@@ -4,7 +4,6 @@ import com.lanraragi.reader.domain.splitNamespace
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -14,13 +13,13 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.TagTranslationDatabase
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.BaseScene
-import com.lanraragi.reader.util.TagTranslationUtil
-import com.lanraragi.framework.widget.LoadImageViewNew
+import com.lanraragi.reader.tagtranslation.TagTranslationUtil
+import com.lanraragi.reader.widget.LoadImageViewNew
 
 /**
  * Handles tag chip building, popup window, and tag click/long-click for GalleryListScene.
@@ -35,7 +34,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
         fun isDrawersVisible(): Boolean
         fun closeDrawer(gravity: Int)
         fun getUrlBuilder(): ListUrlBuilder?
-        fun getContentHelper(): com.lanraragi.framework.widget.ContentLayout.ContentHelper<*>?
+        fun getContentHelper(): com.lanraragi.reader.widget.ContentLayout.ContentHelper<*>?
         fun isFilterOpen(): Boolean
         fun buildFilterSearch(tagName: String): String
         fun updateFilterDisplay()

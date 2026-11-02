@@ -1,10 +1,7 @@
 package com.lanraragi.reader.dao
 
-import com.lanraragi.reader.mapper.toArchive
-import com.lanraragi.reader.mapper.toArchiveJson
-import com.lanraragi.reader.mapper.toHistoryInfoView
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
 
 /**
@@ -153,7 +150,7 @@ class HistoryRepository(
     /**
      * Zero the archive snapshot's progress pair (`progress`/`lastreadtime`)
      * for [arcid] on [profileId]. Part of the "reset reading progress" flow:
-     * the offline reconciler ([com.lanraragi.reader.gallery.ReadingProgressReconciler])
+     * the offline reconciler ([com.lanraragi.reader.reading.ReadingProgressReconciler])
      * reads this snapshot, so leaving the old pair in place would resurrect
      * the pre-reset resume position. Rows that are missing or fail to decode
      * are skipped.

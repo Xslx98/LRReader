@@ -5,8 +5,8 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers

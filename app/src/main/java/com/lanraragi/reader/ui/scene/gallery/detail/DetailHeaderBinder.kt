@@ -12,17 +12,17 @@ import androidx.core.view.ViewCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.ArchiveCoverStamps
-import com.lanraragi.reader.client.LRRCacheKeyFactory
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.LRRCacheKeyFactory
 
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
-import com.lanraragi.reader.ui.widget.bindSourceServerBadge
+import com.lanraragi.reader.widget.bindSourceServerBadge
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import androidx.core.content.ContextCompat
-import com.lanraragi.framework.widget.LoadImageView
+import com.lanraragi.reader.widget.LoadImageView
 import kotlinx.coroutines.launch
 
 /**

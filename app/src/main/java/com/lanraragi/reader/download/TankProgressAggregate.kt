@@ -10,6 +10,7 @@
 package com.lanraragi.reader.download
 
 import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Aggregate [ProgressSnapshot] behind a downloads-list tank card: the WHOLE

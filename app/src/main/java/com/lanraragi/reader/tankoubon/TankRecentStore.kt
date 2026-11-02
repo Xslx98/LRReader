@@ -1,7 +1,6 @@
 package com.lanraragi.reader.tankoubon
 
 import com.lanraragi.reader.Settings
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**

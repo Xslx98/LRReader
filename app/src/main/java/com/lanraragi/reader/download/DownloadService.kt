@@ -31,7 +31,6 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.IntDef
 import androidx.core.app.NotificationCompat
-import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.R
@@ -46,6 +45,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.CancellationException
+import com.lanraragi.reader.dao.DownloadState
 
 class DownloadService : Service(), DownloadListener {
     private val TAG = "DownloadService"

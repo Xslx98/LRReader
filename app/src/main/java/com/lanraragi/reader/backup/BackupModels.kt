@@ -44,7 +44,7 @@ data class BackupArchive(
     val arcid: String,
     val profileId: Long,
     val archiveJson: String,
-    /** [com.lanraragi.reader.download.DownloadState] code, null without a download. */
+    /** [com.lanraragi.reader.dao.DownloadState] code, null without a download. */
     val downloadState: Int? = null,
     val downloadLegacy: Int = 0,
     val downloadTime: Long? = null,

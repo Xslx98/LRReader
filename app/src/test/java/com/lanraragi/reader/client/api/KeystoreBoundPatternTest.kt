@@ -20,6 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * A fingerprint-bound pattern must survive the keystore key being

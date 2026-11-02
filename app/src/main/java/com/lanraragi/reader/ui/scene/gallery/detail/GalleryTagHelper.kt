@@ -24,7 +24,7 @@ import android.widget.TextView
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.TagTranslationDatabase
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.ui.scene.BaseScene

@@ -5,10 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.client.api.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRSecureStorageUnavailableException
+import com.lanraragi.reader.server.LRRAuthManager
+import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.client.api.LRRUrlHelper
-import com.lanraragi.reader.client.api.ServerCertificate
+import com.lanraragi.reader.server.ServerCertificate
 import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

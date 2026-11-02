@@ -8,9 +8,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.AppearanceSettings
-import com.lanraragi.reader.client.TagTranslationDatabase
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.ui.scene.BaseScene
-import com.lanraragi.reader.util.TagTranslationUtil
+import com.lanraragi.reader.tagtranslation.TagTranslationUtil
 
 class GalleryListSceneDialog(val baseScene: BaseScene) {
     val context: Context? = baseScene.context

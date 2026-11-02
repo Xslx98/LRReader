@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.download
 
 import androidx.recyclerview.widget.ListUpdateCallback
 import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

@@ -9,6 +9,8 @@
  */
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.dao.DownloadState
+
 /**
  * When does a downloaded tankoubon count as "done" for the completion
  * notification? Once for the whole tank: every member terminal

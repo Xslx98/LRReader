@@ -4,8 +4,8 @@ import android.content.Context
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.ServerCertificate
-import com.lanraragi.reader.client.api.ServerTrust
+import com.lanraragi.reader.server.ServerCertificate
+import com.lanraragi.reader.server.ServerTrust
 import java.text.DateFormat
 import java.util.Date
 

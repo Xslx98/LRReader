@@ -10,7 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.ui.dialog.EditTextDialogBuilder
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.LRRClientProvider
+import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.client.api.LRRMiscApi
 import com.lanraragi.reader.ui.scene.BaseScene
 import kotlinx.coroutines.CancellationException

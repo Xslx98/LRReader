@@ -1,11 +1,7 @@
 package com.lanraragi.reader.dao
 
 import androidx.room.withTransaction
-import com.lanraragi.reader.download.DownloadState
 import com.lanraragi.reader.download.TankGroupReconciler
-import com.lanraragi.reader.mapper.toArchive
-import com.lanraragi.reader.mapper.toArchiveJson
-import com.lanraragi.reader.mapper.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -155,8 +151,8 @@ class DownloadDbRepository(
     }
 
     /**
-     * Resolve the persisted download tree URI for [arcid]. SpiderDen
-     * uses this in [com.lanraragi.reader.spider.SpiderDen.findGalleryDownloadDir]
+     * Resolve the persisted download tree URI for [arcid]. DownloadDirs
+     * uses this in [com.lanraragi.reader.download.DownloadDirs.findGalleryDownloadDir]
      * to keep already-downloaded archives reachable after the user
      * changes [com.lanraragi.reader.settings.DownloadSettings.getDownloadLocation].
      * Returns NULL for legacy rows that have not been backfilled yet

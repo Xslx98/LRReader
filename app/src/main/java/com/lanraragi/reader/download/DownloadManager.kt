@@ -20,29 +20,27 @@ import android.content.Context
 import android.os.Looper
 import android.util.Log
 import androidx.core.content.edit
-import com.lanraragi.reader.Analytics
+import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.TankTagSyncFailedEvent
-import com.lanraragi.reader.gallery.ArchiveProgressOutbox
-import com.lanraragi.reader.gallery.GalleryProvider2
-import com.lanraragi.reader.gallery.LocalReadingProgress
-import com.lanraragi.reader.mapper.toDownloadInfoView
+import com.lanraragi.reader.reading.ArchiveProgressOutbox
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.LocalReadingProgress
+import com.lanraragi.reader.dao.toDownloadInfoView
 import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
-import com.lanraragi.reader.domain.parseRatingFromTags
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.spider.SpiderDen
 import com.lanraragi.reader.domain.Archive
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.io.IOException
 import java.lang.ref.WeakReference
 import java.util.Collections
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Thin facade over [DownloadRepository], [DownloadScheduler], and
@@ -138,7 +136,7 @@ class DownloadManager(
                 val prefs = mContext.getSharedPreferences(RATING_SYNC_PREFS, android.content.Context.MODE_PRIVATE)
                 val now = System.currentTimeMillis()
                 val sync = DownloadRatingSync(
-                    probe = { url -> com.lanraragi.reader.client.api.probeSourceHealthy(client, url) },
+                    probe = { url -> com.lanraragi.reader.server.probeSourceHealthy(client, url) },
                     searchPage = { url, start ->
                         val result = com.lanraragi.reader.client.api.LRRSearchApi.searchArchives(
                             client, url, filter = null, category = null, start = start,
@@ -155,7 +153,7 @@ class DownloadManager(
                     val key = "last_$profileId"
                     if (now - prefs.getLong(key, 0L) < DownloadRatingSync.SYNC_INTERVAL_MS) continue
                     val baseUrl = try {
-                        com.lanraragi.reader.client.api.resolveSourceBaseUrl(profileId, cache)
+                        com.lanraragi.reader.server.resolveSourceBaseUrl(profileId, cache)
                     } catch (e: kotlinx.coroutines.CancellationException) {
                         throw e
                     } catch (e: Exception) {

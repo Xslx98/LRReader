@@ -15,6 +15,7 @@ import org.junit.Before
 import org.junit.Test
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import com.lanraragi.reader.server.ServerCapabilityCache
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LRRTankoubonApiTest {

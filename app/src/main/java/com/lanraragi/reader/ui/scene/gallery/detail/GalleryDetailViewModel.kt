@@ -5,29 +5,27 @@ import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.ArchiveRatingChangedEvent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lanraragi.reader.LegacyDb
 import com.lanraragi.reader.BuildConfig
-import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.mapper.toDegradedArchiveDetail
+import com.lanraragi.reader.dao.toDegradedArchiveDetail
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.TankoubonSupportGate
-import com.lanraragi.reader.client.api.OrphanProfileException
-import com.lanraragi.reader.client.api.probeSourceHealthy
-import com.lanraragi.reader.client.api.resolveSourceBaseUrl
+import com.lanraragi.reader.server.OrphanProfileException
+import com.lanraragi.reader.server.probeSourceHealthy
+import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.mergeRatingIntoTags
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.gallery.LocalReadingProgress
-import com.lanraragi.reader.gallery.ReaderPageCache
-import com.lanraragi.reader.gallery.ReadingProgressReconciler
-import com.lanraragi.reader.gallery.ReadingProgressTracker
+import com.lanraragi.reader.reading.LocalReadingProgress
+import com.lanraragi.reader.reading.ReaderPageCache
+import com.lanraragi.reader.reading.ReadingProgressReconciler
+import com.lanraragi.reader.reading.ReadingProgressTracker
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,7 +44,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * ViewModel for [GalleryDetailScene]. Manages gallery detail state, gallery info,
@@ -482,7 +480,7 @@ class GalleryDetailViewModel : ViewModel() {
      * archives we fall back to [ReaderPageCache.preloadForDetail],
      * which downloads bytes and decode-warms the same slot.
      *
-     * Either way, [DirGalleryProvider]/[com.lanraragi.reader.gallery.LRRGalleryProvider]
+     * Either way, [DirGalleryProvider]/[com.lanraragi.reader.reading.LRRGalleryProvider]
      * gets a chance to skip the first-page decode on next reader open.
      *
      * [archive] is the freshly fetched detail's archive, passed in: the

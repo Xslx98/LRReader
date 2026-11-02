@@ -7,6 +7,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.server.LRRAuthManager
 
 /**
  * Audit 2026-10-06d STAB-01: the pattern key's spec called the API 30

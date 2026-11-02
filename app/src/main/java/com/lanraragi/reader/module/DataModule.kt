@@ -2,7 +2,7 @@ package com.lanraragi.reader.module
 
 import android.content.Context
 import androidx.collection.LruCache
-import com.lanraragi.reader.FavouriteStatusRouter
+import com.lanraragi.reader.dao.FavouriteStatusRouter
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.dao.AppDatabase
@@ -13,7 +13,7 @@ import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.QuickSearchRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.client.api.ProfileLookupCache
+import com.lanraragi.reader.server.ProfileLookupCache
 
 /**
  * Manages data-layer singletons: DownloadManager, GalleryDetailCache,

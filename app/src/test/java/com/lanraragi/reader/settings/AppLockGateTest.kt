@@ -3,7 +3,7 @@ package com.lanraragi.reader.settings
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -8,6 +8,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import com.lanraragi.reader.server.LRRClientProvider
 
 /**
  * API class for miscellaneous LANraragi operations.

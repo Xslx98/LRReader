@@ -16,7 +16,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.lanraragi.reader.download.DownloadState
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -170,7 +169,7 @@ interface ArchiveLocalStateDao {
      * row is a ghost that would otherwise render as "downloading" forever (frozen
      * progress, dead stop button). A NULL DOWNLOAD_STATE means "not a download", so the
      * predicate never touches history/favorite-only rows. Codes are the frozen
-     * [com.lanraragi.reader.download.DownloadState] integers.
+     * [com.lanraragi.reader.dao.DownloadState] integers.
      *
      * Returns the arcids that were reset, read in the same transaction, so the
      * interrupted queue can be offered back to the user. They come in the order
@@ -371,7 +370,7 @@ interface ArchiveLocalStateDao {
     suspend fun backfillDownloadRootUri(uri: String)
 
     /**
-     * Lightweight lookup used by SpiderDen / GalleryProvider on the
+     * Lightweight lookup used by DownloadDirs / GalleryProvider on the
      * read path: resolve the download tree URI persisted with this
      * archive. Returns NULL when the archive has no download row OR
      * when the row pre-dates the v25→v26 backfill — the caller falls

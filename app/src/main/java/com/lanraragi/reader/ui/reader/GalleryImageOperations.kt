@@ -1,0 +1,468 @@
+/*
+ * Copyright 2016 Hippo Seven
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.lanraragi.reader.ui.reader
+
+import android.provider.DocumentsContract
+import android.app.Activity
+import android.content.ContentValues
+import android.content.Intent
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.text.TextUtils
+import android.util.Log
+import android.webkit.MimeTypeMap
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.lanraragi.reader.AppConfig
+import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.cover.ArchiveCoverStamps
+import com.lanraragi.reader.cover.TankCoverCacheStamp
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.server.resolveSourceBaseUrl
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveCoverChangedEvent
+import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.reading.TankGalleryProvider
+import com.lanraragi.reader.settings.ReadingSettings
+import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
+import com.lanraragi.reader.ui.GalleryActivity
+import com.lanraragi.reader.storage.StorageFile
+import com.lanraragi.reader.util.ExceptionUtils
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
+
+/**
+ * Handles image save, share, and page dialog operations
+ * for the gallery reader. Extracted from GalleryActivity.
+ */
+class GalleryImageOperations(private val mActivity: Activity) {
+
+    /** What "set as cover" on a page writes to (spec 2026-09-22-tank-cover §3.1). */
+    sealed interface CoverTarget {
+        val profileId: Long
+
+        /** Whole-tank session: the reader index IS the global 0-based page. */
+        data class Tank(val tankId: String, override val profileId: Long) : CoverTarget
+
+        /** Archive session (online or a downloaded copy with server context). */
+        data class Archive(val arcid: String, override val profileId: Long) : CoverTarget
+    }
+
+    var galleryProvider: GalleryProvider2? = null
+    var archive: Archive? = null
+    var saveToLauncher: ActivityResultLauncher<Intent>? = null
+
+    /** Null (local directory session without server context) hides the cover entry. */
+    var coverTarget: CoverTarget? = null
+
+    /**
+     * Cache file awaiting the "Save to" picker's result. The host Activity
+     * saves and restores it: after a recreation while the picker is open
+     * the result arrives in a new instance, which otherwise opened
+     * `<cache>/null` and left an empty file at the chosen location.
+     */
+    var pendingSaveFileName: String? = null
+
+    // --- Share ---
+
+    fun shareImage(page: Int) {
+        val provider = galleryProvider ?: return
+
+        val dir = AppConfig.getExternalTempDir()
+        if (dir == null) {
+            Toast.makeText(mActivity, R.string.error_cant_create_temp_file, Toast.LENGTH_SHORT).show()
+            return
+        }
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            // Extracting/copying the page is file I/O — keep it off the main thread.
+            val file = withContext(Dispatchers.IO) {
+                provider.save(page, StorageFile(dir), provider.getImageFilename(page))
+            }
+            val filename = file?.name
+            if (filename == null) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            var mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                MimeTypeMap.getFileExtensionFromUrl(filename)
+            )
+            if (TextUtils.isEmpty(mimeType)) {
+                mimeType = "image/jpeg"
+            }
+
+            // Hand the share target a readable content:// URI. A file:// URI into the app's
+            // external-files temp dir is unreadable to other apps on modern Android (and
+            // only avoided a FileUriExposedException via a StrictMode hack).
+            val uri = try {
+                val authority = mActivity.application.packageName + ".fileprovider"
+                FileProvider.getUriForFile(mActivity, authority, File(dir, filename))
+            } catch (e: IllegalArgumentException) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                putExtra(Intent.EXTRA_STREAM, uri)
+                type = mimeType
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            try {
+                mActivity.startActivity(
+                    Intent.createChooser(intent, mActivity.getString(R.string.share_image))
+                )
+            } catch (e: Throwable) {
+                ExceptionUtils.throwIfFatal(e)
+                Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // --- Save to MediaStore ---
+
+    fun saveImage(page: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            // Android 9 has no MediaStore volume "external_primary" and no
+            // RELATIVE_PATH, and inserting there needs WRITE_EXTERNAL_STORAGE,
+            // which the app does not request: the insert always failed. The
+            // picker saves to Pictures (or anywhere) without a permission.
+            saveImageTo(page)
+            return
+        }
+        val provider = galleryProvider ?: return
+
+        val cacheDir = mActivity.cacheDir
+        if (cacheDir == null) {
+            Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+            return
+        }
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            val filename = provider.getImageFilename(page)
+            val tempFile = withContext(Dispatchers.IO) {
+                provider.save(page, StorageFile(cacheDir), filename)
+            }
+            if (tempFile == null) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            // Build display name with archive title prefix
+            val archiveTitle = archive?.title?.takeIf { it.isNotEmpty() }
+                ?.let { sanitizeFilename(it, 80) }
+                ?: "archive"
+            val displayName = archiveTitle + "_" + (filename ?: "page_$page")
+
+            // Determine MIME type
+            var mimeType: String? = null
+            if (filename != null) {
+                val ext = MimeTypeMap.getFileExtensionFromUrl(filename)
+                mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+            }
+            if (TextUtils.isEmpty(mimeType)) {
+                mimeType = "image/jpeg"
+            }
+
+            // MediaStore insert + the full-file copy are I/O — run them off the
+            // main thread. The whole block is guarded: resolver.insert throws
+            // (not returns null) on quota/volume/provider errors, and
+            // openOutputStream can throw SecurityException — in a CEH-less
+            // lifecycleScope coroutine any of those crashed the app.
+            val saved = withContext(Dispatchers.IO) {
+                try {
+                    saveToMediaStore(cacheDir, filename, displayName, mimeType, tempFile)
+                } catch (e: Exception) {
+                    Log.e(TAG, "MediaStore save failed", e)
+                    false
+                }
+            }
+
+            if (saved) {
+                Toast.makeText(
+                    mActivity,
+                    mActivity.getString(R.string.image_saved, "Pictures/LRReader/$displayName"),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /** MediaStore insert + copy (API 29+, see [saveImage]). Throws on provider errors; caller guards. */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun saveToMediaStore(
+        cacheDir: File,
+        filename: String?,
+        displayName: String,
+        mimeType: String?,
+        tempFile: StorageFile,
+    ): Boolean {
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+            put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+            put(
+                MediaStore.Images.Media.RELATIVE_PATH,
+                Environment.DIRECTORY_PICTURES + "/LRReader"
+            )
+        }
+        val resolver = mActivity.contentResolver
+        val mediaUri = resolver.insert(
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values
+        ) ?: run {
+            File(cacheDir, filename ?: "").delete()
+            return false
+        }
+        var copied = false
+        try {
+            tempFile.openInputStream().use { input ->
+                resolver.openOutputStream(mediaUri)?.use { output ->
+                    input.copyTo(output)
+                    copied = true
+                }
+            }
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to copy image to MediaStore", e)
+        }
+        if (!copied) {
+            resolver.delete(mediaUri, null, null)
+            return false
+        }
+        tempFile.delete()
+        return true
+    }
+
+    // --- Save to user-chosen location (using ActivityResultLauncher) ---
+
+    fun saveImageTo(page: Int) {
+        val provider = galleryProvider ?: return
+        val dir = mActivity.cacheDir
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            val file = withContext(Dispatchers.IO) {
+                provider.save(page, StorageFile(dir), provider.getImageFilename(page))
+            }
+            val filename = file?.name
+            if (filename == null) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            pendingSaveFileName = filename
+            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+                putExtra(Intent.EXTRA_TITLE, filename)
+            }
+            try {
+                saveToLauncher?.launch(intent)
+            } catch (e: Throwable) {
+                ExceptionUtils.throwIfFatal(e)
+                Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * Handle the result from the SAF "save to" picker.
+     */
+    fun handleSaveToResult(result: ActivityResult?) {
+        if (result == null || result.resultCode != Activity.RESULT_OK) {
+            return
+        }
+        val resultData = result.data ?: return
+        val uri = resultData.data ?: return
+        val cacheName = pendingSaveFileName
+        pendingSaveFileName = null
+        val cacheFile = cacheName?.let { File(mActivity.cacheDir, it) }
+
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            val success = withContext(Dispatchers.IO) {
+                var ok = false
+                try {
+                    if (cacheFile == null) throw java.io.FileNotFoundException("No pending save")
+                    FileInputStream(cacheFile).use { input ->
+                        mActivity.contentResolver.openOutputStream(uri)?.use { output ->
+                            input.copyTo(output)
+                            ok = true
+                        }
+                    }
+                } catch (e: Exception) {
+                    // IOException, but also SecurityException / provider
+                    // errors from openOutputStream — an uncaught one crashed
+                    // the CEH-less lifecycleScope coroutine.
+                    Log.e(TAG, "Failed to copy image to chosen location", e)
+                }
+                if (cacheFile != null && !cacheFile.delete()) {
+                    cacheFile.deleteOnExit()
+                }
+                if (!ok) {
+                    // The picker already created the document; don't leave
+                    // an empty file behind in the user's folder.
+                    runCatching { DocumentsContract.deleteDocument(mActivity.contentResolver, uri) }
+                }
+                ok
+            }
+
+            // The copy can fail (destination unwritable, out of space, provider
+            // error). Don't claim success / trigger a media scan when nothing was
+            // written — that left users with a "saved" toast over an empty file.
+            if (!success) {
+                Toast.makeText(mActivity, R.string.error_cant_save_image, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            Toast.makeText(
+                mActivity,
+                mActivity.getString(R.string.image_saved, uri.path),
+                Toast.LENGTH_SHORT
+            ).show()
+            mActivity.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
+        }
+    }
+
+    // --- Page dialog ---
+
+    fun showPageDialog(page: Int) {
+        val builder = AlertDialog.Builder(mActivity)
+        builder.setTitle(mActivity.resources.getString(R.string.page_menu_title, page + 1))
+
+        // Label→action pairs so positions can never drift when entries are
+        // conditionally appended. share/save/saveTo guard a null provider
+        // internally (each bails on `galleryProvider ?: return`), matching
+        // the old dialog-level `?: return@setItems` semantics.
+        val actions = mutableListOf<Pair<CharSequence, () -> Unit>>(
+            mActivity.getString(R.string.page_menu_refresh) to {
+                galleryProvider?.let { it.removeCache(page); it.forceRequest(page) }
+            },
+            mActivity.getString(R.string.page_menu_share) to { shareImage(page) },
+            mActivity.getString(R.string.page_menu_save) to { saveImage(page) },
+            mActivity.getString(R.string.page_menu_save_to) to { saveImageTo(page) },
+        )
+        (mActivity as? GalleryActivity)?.takeIf { it.areStampsAvailable() }?.let { ga ->
+            actions.add(mActivity.getString(R.string.stamps_menu_add) to { ga.startStampPlacement() })
+            actions.add(mActivity.getString(R.string.stamps_menu_list) to { ga.showStampedPagesDialog() })
+        }
+        when (coverTarget) {
+            is CoverTarget.Tank ->
+                actions.add(mActivity.getString(R.string.page_menu_set_tank_cover) to { setCoverFromPage(page) })
+            is CoverTarget.Archive ->
+                actions.add(mActivity.getString(R.string.page_menu_set_cover) to { setCoverFromPage(page) })
+            null -> Unit
+        }
+
+        builder.setItems(actions.map { it.first }.toTypedArray()) { _, which ->
+            actions[which].second()
+        }
+
+        val dialog = builder.show()
+        applyImmersiveToDialog(dialog)
+    }
+
+    // --- Cover ---
+
+    /**
+     * Makes [page] (0-based reader index) the cover of [coverTarget]. Tank
+     * sessions PUT the global page and remember the (member, page) choice
+     * so the app can re-apply it after its own reorders; archive sessions
+     * PUT the archive route and bump the cover cache stamp. Success is a
+     * toast; failure a friendly-error toast (cosmetic, nothing to roll back).
+     */
+    private fun setCoverFromPage(page: Int) {
+        val target = coverTarget ?: return
+        val provider = galleryProvider
+        (mActivity as ComponentActivity).lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val url = resolveSourceBaseUrl(target.profileId, ServiceRegistry.dataModule.profileLookupCache)
+                    val client = ServiceRegistry.networkModule.okHttpClient
+                    when (target) {
+                        is CoverTarget.Tank -> {
+                            LRRTankoubonApi.updateTankThumbnail(client, url, target.tankId, globalPage1 = page + 1)
+                            TankCoverCacheStamp.bump(target.tankId)
+                            (provider as? TankGalleryProvider)?.locateMember(page)?.let { (arcid, page0) ->
+                                TankCoverChoiceStore.default.put(
+                                    target.tankId,
+                                    TankCoverChoiceStore.Choice(arcid, page0, target.profileId),
+                                )
+                            }
+                        }
+                        is CoverTarget.Archive -> {
+                            LRRArchiveApi.updateThumbnail(client, url, target.arcid, page1 = page + 1)
+                            ArchiveCoverStamps.bump(target.arcid)
+                            AppEventBus.postArchiveCoverChangedEvent(ArchiveCoverChangedEvent(target.arcid))
+                        }
+                    }
+                }
+                Toast.makeText(mActivity, R.string.tank_cover_updated, Toast.LENGTH_SHORT).show()
+            } catch (ce: CancellationException) {
+                throw ce
+            } catch (e: Exception) {
+                Toast.makeText(mActivity, friendlyError(mActivity, e), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // --- Utility ---
+
+    /**
+     * Prevent edge-to-edge window insets from offsetting dialog content
+     * when in fullscreen reading mode.
+     */
+    fun applyImmersiveToDialog(dialog: AlertDialog) {
+        val window = dialog.window
+        if (window != null && ReadingSettings.getReadingFullscreen()) {
+            val decorView = window.decorView
+            ViewCompat.setOnApplyWindowInsetsListener(decorView) { _, _ ->
+                WindowInsetsCompat.CONSUMED
+            }
+            decorView.requestApplyInsets()
+        }
+    }
+
+    companion object {
+        private const val TAG = "GalleryImageOperations"
+
+        /**
+         * Sanitize a string for use as a filename.
+         */
+        @JvmStatic
+        fun sanitizeFilename(name: String?, maxLen: Int): String {
+            if (name.isNullOrEmpty()) return "archive"
+            var safe = name.replace("[\\\\/:*?\"<>|]".toRegex(), "_").trim()
+            if (safe.isEmpty()) return "archive"
+            if (safe.length > maxLen) safe = safe.substring(0, maxLen)
+            return safe
+        }
+    }
+}

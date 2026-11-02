@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.collection.LruCache
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.FavouriteStatusRouter
+import com.lanraragi.reader.dao.FavouriteStatusRouter
 import java.io.File
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.mapper.toArchive
+import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -17,7 +17,7 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.client.api.LRRAuthManager
+import com.lanraragi.reader.server.LRRAuthManager
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.containedTestScope
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Unit tests for [DownloadsViewModel] — download list state, label switching,

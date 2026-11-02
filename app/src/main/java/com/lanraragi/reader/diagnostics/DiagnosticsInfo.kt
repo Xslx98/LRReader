@@ -1,7 +1,7 @@
 package com.lanraragi.reader.diagnostics
 
-import com.lanraragi.reader.download.DownloadFailureReason
-import com.lanraragi.reader.download.DownloadState
+import com.lanraragi.reader.dao.DownloadFailureReason
+import com.lanraragi.reader.dao.DownloadState
 
 /**
  * Facts for `info.txt` in the diagnostics bundle (audit 2026-10-04 C06, R2).
@@ -16,7 +16,7 @@ data class DiagnosticsInfo(
     val reportCount: Int,
     /** Raw active server URL; only [Redactor.describeServerUrl] of it is written. */
     val serverUrl: String?,
-    /** [com.lanraragi.reader.client.api.ServerCapabilityCache.describeServerInfo], or null if not contacted. */
+    /** [com.lanraragi.reader.server.ServerCapabilityCache.describeServerInfo], or null if not contacted. */
     val serverInfo: String?,
     val downloads: DownloadSummary?,
 ) {
