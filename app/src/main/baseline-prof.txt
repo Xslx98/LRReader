@@ -8126,12 +8126,6 @@ HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;->cleartext
 HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;->enforceActiveBased(Lokhttp3/Interceptor$Chain;Lokhttp3/Request;Lokhttp3/HttpUrl;)Lokhttp3/Response;
 HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;->enforceProfileBased(Lokhttp3/Interceptor$Chain;Lokhttp3/Request;Lokhttp3/HttpUrl;Ljava/util/List;)Lokhttp3/Response;
 HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;->intercept(Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;
-Lcom/lanraragi/reader/server/LRRClientProvider;
-HSPLcom/lanraragi/reader/server/LRRClientProvider;-><clinit>()V
-HSPLcom/lanraragi/reader/server/LRRClientProvider;-><init>()V
-HSPLcom/lanraragi/reader/server/LRRClientProvider;->getBaseUrl()Ljava/lang/String;
-HSPLcom/lanraragi/reader/server/LRRClientProvider;->getClient()Lokhttp3/OkHttpClient;
-HSPLcom/lanraragi/reader/server/LRRClientProvider;->init(Landroid/content/Context;)V
 Lcom/lanraragi/reader/client/api/LRRHttpException;
 Lcom/lanraragi/reader/client/api/LRRSearchApi;
 HSPLcom/lanraragi/reader/client/api/LRRSearchApi;-><clinit>()V

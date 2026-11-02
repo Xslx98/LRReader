@@ -12,7 +12,6 @@ import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
-import com.lanraragi.reader.server.LRRClientProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -64,7 +63,6 @@ class GalleryListViewModelUploadTest {
             ctx.getSharedPreferences("upload_vm_test", Context.MODE_PRIVATE)
         )
         ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
-        LRRClientProvider.init(ctx)
 
         val client = OkHttpClient.Builder()
             .connectTimeout(2, TimeUnit.SECONDS)

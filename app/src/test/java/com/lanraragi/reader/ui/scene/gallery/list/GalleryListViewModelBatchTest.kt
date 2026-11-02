@@ -10,7 +10,6 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
-import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.CoroutineStart
@@ -78,7 +77,6 @@ class GalleryListViewModelBatchTest {
             ctx.getSharedPreferences("batch_vm_test", Context.MODE_PRIVATE)
         )
         ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
-        LRRClientProvider.init(ctx)
 
         val client = OkHttpClient.Builder()
             .connectTimeout(5, TimeUnit.SECONDS)

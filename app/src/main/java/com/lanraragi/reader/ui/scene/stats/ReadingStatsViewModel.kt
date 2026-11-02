@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.client.api.LRRServerApi
 import com.lanraragi.reader.server.ServerCapabilityCache
 import com.lanraragi.reader.stats.ReadingStatsCalculator
@@ -79,11 +79,12 @@ class ReadingStatsViewModel(
          * no active server, offline, old server — yields the empty set.
          */
         private suspend fun defaultServerExcludedNamespaces(): Set<String> {
-            val baseUrl = LRRClientProvider.getBaseUrl()
+            val conn = ServerConnections.active() ?: return emptySet()
+            val baseUrl = conn.baseUrl
             if (baseUrl.isEmpty()) return emptySet()
             ServerCapabilityCache.excludedNamespaces(baseUrl)?.let { return it }
             return try {
-                LRRServerApi.getServerInfo(LRRClientProvider.getClient(), baseUrl)
+                LRRServerApi.getServerInfo(conn.client, baseUrl)
                 ServerCapabilityCache.excludedNamespaces(baseUrl) ?: emptySet()
             } catch (e: CancellationException) {
                 throw e

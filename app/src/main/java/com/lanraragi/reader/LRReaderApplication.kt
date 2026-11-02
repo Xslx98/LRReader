@@ -40,7 +40,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.download.DownloadDirMarkerBackfill
@@ -283,8 +282,6 @@ class LRReaderApplication : SceneApplication() {
                 Log.w(TAG, "legacy search-history import launch failed")
             }
         }
-
-        trace("LRRApp.LRRClientProvider.init") { LRRClientProvider.init(this) }
 
         // Continue-reading shortcut publisher rides the reading-session-end
         // seam (issue #15). Registration is cheap; work happens per session end.

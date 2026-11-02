@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.view.View
 import com.lanraragi.reader.server.ServerSession
-import com.lanraragi.reader.server.LRRClientProvider
+import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.archive.ListUrlBuilder
@@ -47,7 +47,7 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
      * next archive in this list". Best-effort: must never break navigation.
      */
     private fun publishReadingContext(archive: Archive, position: Int) {
-        val baseUrl = LRRClientProvider.getBaseUrl()
+        val baseUrl = ServerConnections.active()?.baseUrl.orEmpty()
         val params = scene.shownSearch.forReadingContext()
         ReadingContextStore.publish(
             ReadingContext.OnlineSearch(

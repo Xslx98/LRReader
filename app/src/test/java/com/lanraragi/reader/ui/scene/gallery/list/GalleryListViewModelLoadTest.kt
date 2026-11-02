@@ -9,7 +9,6 @@ import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
-import com.lanraragi.reader.server.LRRClientProvider
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.tankoubon.TankRepository
@@ -65,7 +64,6 @@ class GalleryListViewModelLoadTest {
         SecureCredentialStore.initialize(ctx)
         SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("list_load_test", Context.MODE_PRIVATE))
         ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
-        LRRClientProvider.init(ctx)
         val client = OkHttpClient.Builder()
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)

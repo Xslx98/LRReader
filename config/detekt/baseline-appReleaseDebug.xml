@@ -611,12 +611,10 @@
     <ID>UnusedPrivateProperty:GalleryDetailScene.kt$GalleryDetailScene.Companion$private const val REQUEST_CODE_COMMENT_GALLERY = 0</ID>
     <ID>UnusedPrivateProperty:GalleryListScene.kt$GalleryListScene.Companion$private const val TAG = "GalleryListScene"</ID>
     <ID>UnusedPrivateProperty:LRRCategoriesScene.kt$LRRCategoriesScene.Companion$private const val TAG = "LRRCategoriesScene"</ID>
-    <ID>UnusedPrivateProperty:LRRClientProvider.kt$LRRClientProvider$val ctx = appContext ?: throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")</ID>
     <ID>UnusedPrivateProperty:QuickSearchScene.kt$QuickSearchScene.Companion$private const val TAG = "QuickSearchScene"</ID>
     <ID>UnusedPrivateProperty:SecurityScene.kt$SecurityScene.Companion$private const val TAG = "SecurityScene"</ID>
     <ID>UseCheckOrError:DownloadAdapter.kt$DownloadAdapter$throw IllegalStateException("Cannot get LayoutInflater: Fragment is not attached and Context/Activity is null")</ID>
     <ID>UseCheckOrError:DownloadService.kt$DownloadService$throw IllegalStateException("No bindService")</ID>
-    <ID>UseCheckOrError:LRRClientProvider.kt$LRRClientProvider$throw IllegalStateException("LRRClientProvider not initialized. Call init(context) first.")</ID>
     <ID>UseIsNullOrEmpty:GalleryTagChipHelper.kt$GalleryTagChipHelper$tgList == null || tgList.isEmpty()</ID>
     <ID>UseIsNullOrEmpty:ReadingStatsScene.kt$ReadingStatsScene$stats == null || stats.totalArchives == 0</ID>
     <ID>UseOrEmpty:Archive.kt$Archive$parcel.readString() ?: ""</ID>
@@ -640,7 +638,6 @@
     <ID>UseOrEmpty:LRRArchiveApi.kt$LRRArchiveApi$jsonObj["id"]?.jsonPrimitive?.content ?: ""</ID>
     <ID>UseOrEmpty:ServerSession.kt$ServerSession$apiKey ?: ""</ID>
     <ID>UseOrEmpty:AppLockCredentials.kt$AppLockCredentials$input ?: ""</ID>
-    <ID>UseOrEmpty:LRRClientProvider.kt$LRRClientProvider$ServerSession.getServerUrl() ?: ""</ID>
     <ID>UseOrEmpty:LegacyDb.kt$LegacyDb$thumb ?: ""</ID>
     <ID>UseOrEmpty:LegacyDb.kt$LegacyDb$title ?: ""</ID>
     <ID>UseOrEmpty:LocalFavoriteInfo.kt$LocalFavoriteInfo$`in`.readString() ?: ""</ID>
