@@ -35,6 +35,7 @@ import androidx.preference.PreferenceFragmentCompat
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.DownloadManager
+import com.lanraragi.reader.download.InvalidDownloadCleaner
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.backup.readDownloadCsv
 import com.lanraragi.reader.backup.toCSV
@@ -298,8 +299,9 @@ class DownloadFragment : PreferenceFragmentCompat(),
     private var cleanDialog: ProgressDialog? = null
 
     /**
-     * Deletes empty directories in the download location. The scan runs on
-     * the app scope (a rotation neither cancels it nor loses its result);
+     * Deletes empty directories in the download location. The scan runs in
+     * [InvalidDownloadCleaner] on the process scope (a rotation neither
+     * cancels it nor loses its result);
      * the dialog belongs to this view and is dismissed with it, and the
      * result toast uses the application context.
      */
@@ -316,45 +318,19 @@ class DownloadFragment : PreferenceFragmentCompat(),
         dialog.show()
         cleanDialog = dialog
 
-        ServiceRegistry.coroutineModule.ioScope.launch {
-            val logs = mutableListOf<String>()
-            var invalidCount = 0
-
-            val downloadDir = DownloadSettings.getDownloadLocation()
-            val files = downloadDir?.takeIf { it.isDirectory }?.listFiles()
-            if (downloadDir == null || files == null) {
-                mainHandler.post { finishClean(dialog, appContext, 0) }
-                return@launch
+        InvalidDownloadCleaner.default.start(object : InvalidDownloadCleaner.Listener {
+            override fun onTotal(total: Int) {
+                mainHandler.post { if (cleanDialog === dialog) { dialog.max = total; dialog.progress = 0 } }
             }
 
-            val total = files.size
-            mainHandler.post { if (cleanDialog === dialog) { dialog.max = total; dialog.progress = 0 } }
-
-            for (i in files.indices) {
-                val dir = files[i]
-                val progress = i + 1
-                mainHandler.post { if (cleanDialog === dialog) dialog.progress = progress }
-
-                if (!dir.isDirectory) {
-                    continue
-                }
-
-                val subFiles = dir.listFiles()
-                if (subFiles == null || subFiles.isEmpty()) {
-                    logs.add("Empty directory: ${dir.name}")
-                    invalidCount++
-                    dir.delete()
-                    continue
-                }
+            override fun onProgress(checked: Int) {
+                mainHandler.post { if (cleanDialog === dialog) dialog.progress = checked }
             }
 
-            if (logs.isNotEmpty()) {
-                saveCleanLog(downloadDir, logs)
+            override fun onDone(removed: Int) {
+                mainHandler.post { finishClean(dialog, appContext, removed) }
             }
-
-            val resultCount = invalidCount
-            mainHandler.post { finishClean(dialog, appContext, resultCount) }
-        }
+        })
     }
 
     @Suppress("DEPRECATION")
@@ -391,23 +367,6 @@ class DownloadFragment : PreferenceFragmentCompat(),
         }
         cleanDialog = null
         super.onDestroyView()
-    }
-
-    private fun saveCleanLog(downloadDir: StorageFile, logs: List<String>) {
-        val sdf = SimpleDateFormat("yyyyMMddHHmm", Locale.US)
-        val fileName = "delfile-${sdf.format(Date())}.log"
-        val logFile = downloadDir.createFile(fileName)
-        if (logFile != null) {
-            try {
-                logFile.openOutputStream().use { os ->
-                    for (log in logs) {
-                        os.write("$log\n".toByteArray(StandardCharsets.UTF_8))
-                    }
-                }
-            } catch (e: IOException) {
-                Log.w(TAG, "Save clean log file", e)
-            }
-        }
     }
 
     /**

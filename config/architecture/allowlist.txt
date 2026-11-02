@@ -30,4 +30,3 @@ D8b com/lanraragi/reader/ui/scene/gallery/list/GalleryUploadHelper.kt
 D8b com/lanraragi/reader/ui/scene/stats/ReadingStatsViewModel.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankDetailScene.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankDetailViewModel.kt
-D8c com/lanraragi/reader/ui/fragment/DownloadFragment.kt
