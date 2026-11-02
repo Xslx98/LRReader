@@ -62,7 +62,7 @@ class ServerConfigScene : SolidScene(), View.OnClickListener {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        viewModel = ViewModelProvider(requireActivity())[ServerConfigViewModel::class.java]
+        viewModel = ViewModelProvider(this)[ServerConfigViewModel::class.java]
 
         val view = inflater.inflate(R.layout.scene_server_config, container, false)
 
