@@ -22,20 +22,11 @@ import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.util.attrColor
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.event.TankTagSyncFailedEvent
-import com.lanraragi.reader.tankoubon.TankTagOutbox
-import okhttp3.OkHttpClient
-import com.lanraragi.reader.domain.BARE_TAG_BUCKET
+import com.lanraragi.reader.archive.ArchiveTagWriter
+import com.lanraragi.reader.archive.TagEditSaver
+import com.lanraragi.reader.archive.TagWriter
+import com.lanraragi.reader.tankoubon.TankTagWriter
 import com.lanraragi.reader.domain.TagGroup
-import com.lanraragi.reader.domain.explicitlyNamespacedValues
-import com.lanraragi.reader.domain.mergeTagEdits
-import com.lanraragi.reader.domain.toLrrTagString
-import com.lanraragi.reader.server.LRRClientProvider
-import com.lanraragi.reader.server.resolveSourceBaseUrl
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.framework.widget.AutoWrapLayout
@@ -49,7 +40,7 @@ import kotlinx.coroutines.launch
  * in AutoWrapLayout). Click a label to edit, tap its ✕ to delete, [+] to add
  * per namespace, and a bottom button to add new namespaces.
  *
- * Syncs changes to the LANraragi server via [LRRArchiveApi.updateMetadata].
+ * Saves through [TagEditSaver] with a [TagWriter] (archive metadata by default).
  */
 object TagEditDialog {
 
@@ -57,66 +48,9 @@ object TagEditDialog {
         fun onTagsUpdated()
     }
 
-    /**
-     * Where a saved tag string goes. The dialog edits ONE tag string; the
-     * writer decides which server object owns it (an archive's metadata or
-     * a tankoubon's own `metadata.tags`, spec 2026-09-22 §4.4).
-     */
-    interface TagWriter {
-        suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String)
-
-        /**
-         * The object's current tag string as the server stores it, or null
-         * when it cannot be read. Tells bare tags apart from explicit
-         * `misc:` ones, which the grouped display model cannot.
-         */
-        suspend fun readRaw(client: OkHttpClient, baseUrl: String, id: String): String? = null
-
-        /**
-         * Follow-up after a successful [write]; [oldTags] is the server's
-         * string before the edit. Must not throw past cancellation.
-         */
-        @Suppress("LongParameterList")
-        suspend fun afterWrite(client: OkHttpClient, baseUrl: String, id: String, oldTags: String, newTags: String) {}
-    }
-
-    /**
-     * Default: `PUT /api/archives/{id}/metadata`, then (spec 2026-09-22
-     * §5.2) every tankoubon containing the archive re-materializes its own
-     * tags with this member's old → new contribution (rule 3), through
-     * [TankTagOutbox] so a failure is retried later. Servers without the
-     * tankoubon routes just skip the follow-up.
-     */
+    /** The tank detail page's writer (kept here for its call site). */
     @JvmField
-    val archiveWriter: TagWriter = object : TagWriter {
-        override suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String) {
-            LRRArchiveApi.updateMetadata(client, baseUrl, id, tags = tags)
-        }
-
-        override suspend fun readRaw(client: OkHttpClient, baseUrl: String, id: String): String =
-            LRRArchiveApi.getArchiveMetadata(client, baseUrl, id).tags
-
-        override suspend fun afterWrite(client: OkHttpClient, baseUrl: String, id: String, oldTags: String, newTags: String) {
-            // A failed follow-up is kept and retried (audit 2026-10-04 REL-24):
-            // the member's old contribution exists only now.
-            if (!TankTagOutbox.applyOnServer(client, baseUrl, id, oldTags, newTags)) {
-                AppEventBus.postTankTagSyncFailedEvent(
-                    TankTagSyncFailedEvent("", "", TankTagSyncFailedEvent.Kind.TAGS_PENDING)
-                )
-            }
-        }
-    }
-
-    /** Tankoubon: `PUT /api/tankoubons/{id}` with only `metadata.tags` (whole-string replace). */
-    @JvmField
-    val tankoubonWriter: TagWriter = object : TagWriter {
-        override suspend fun write(client: OkHttpClient, baseUrl: String, id: String, tags: String) {
-            LRRTankoubonApi.updateTankoubon(client, baseUrl, id, tags = tags)
-        }
-
-        override suspend fun readRaw(client: OkHttpClient, baseUrl: String, id: String): String? =
-            LRRTankoubonApi.getTankoubonFull(client, baseUrl, id).result.tags
-    }
+    val tankoubonWriter: TagWriter = TankTagWriter
 
     /**
      * Mutable model for a namespace + its tags, used during editing.
@@ -158,7 +92,7 @@ object TagEditDialog {
         arcid: String?,
         tagGroups: List<TagGroup>?,
         serverProfileId: Long,
-        writer: TagWriter = archiveWriter,
+        writer: TagWriter = ArchiveTagWriter,
         callback: Callback?,
     ) {
         if (activity == null || arcid.isNullOrEmpty()) return
@@ -617,33 +551,9 @@ object TagEditDialog {
     ) {
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Resolve the owning server from the archive's source profile, not the
-                // active profile — editing tags on a cross-server archive must PUT to the
-                // server that actually holds it (mirrors DeleteArchiveHelper).
-                val baseUrl = resolveSourceBaseUrl(
-                    serverProfileId,
-                    ServiceRegistry.dataModule.profileLookupCache,
-                )
-                val client = LRRClientProvider.getClient()
-                // The server's own string: which bucket values are really
-                // `misc:` tags, and the exact old string for the follow-up.
-                val raw = try {
-                    writer.readRaw(client, baseUrl, arcid)
-                } catch (ce: CancellationException) {
-                    throw ce
-                } catch (ignored: Exception) {
-                    null
-                }
-                val explicitBucket = raw?.let { explicitlyNamespacedValues(it, BARE_TAG_BUCKET) }.orEmpty()
-                val openedTags = toLrrTagString(opened, explicitBucket)
-                val editedTags = toLrrTagString(edited, explicitBucket)
-                val oldTags = raw ?: openedTags
-                // The editor was built from what the page loaded; the server
-                // may have changed since (a rating saved from this very page).
-                // Apply only the user's edit to the server's current string.
-                val tags = if (raw != null) mergeTagEdits(openedTags, editedTags, raw) else editedTags
-                writer.write(client, baseUrl, arcid, tags)
-                writer.afterWrite(client, baseUrl, arcid, oldTags, tags)
+                // The owning server is the archive's source profile, not the
+                // active one (mirrors DeleteArchiveHelper).
+                TagEditSaver.default.save(serverProfileId, writer, arcid, opened, edited)
                 activity.runOnUiThread {
                     Toast.makeText(activity, R.string.lrr_tags_updated, Toast.LENGTH_SHORT).show()
                     callback?.onTagsUpdated()

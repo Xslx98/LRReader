@@ -37,7 +37,6 @@ D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailViewModel.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/PageThumbnailsViewModel.kt
-D8b com/lanraragi/reader/ui/scene/gallery/detail/TagEditDialog.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/TankPickerSheet.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/TankoubonDialogHelper.kt
 D8b com/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel.kt

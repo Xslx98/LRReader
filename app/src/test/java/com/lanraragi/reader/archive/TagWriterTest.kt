@@ -1,6 +1,7 @@
-package com.lanraragi.reader.ui.scene.gallery.detail
+package com.lanraragi.reader.archive
 
 import com.lanraragi.reader.awaitRequest
+import com.lanraragi.reader.tankoubon.TankTagWriter
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -16,12 +17,12 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * [TagEditDialog.TagWriter] targets (spec 2026-09-22 §4.4): the same
+ * [TagWriter] targets (spec 2026-09-22 §4.4): the same
  * dialog saves an archive's metadata or a tankoubon's own tags, and the
  * tank writer must send ONLY `metadata.tags` — a stray `archives` key
  * would rewrite membership.
  */
-class TagEditDialogWriterTest {
+class TagWriterTest {
 
     private lateinit var server: MockWebServer
     private lateinit var baseUrl: String
@@ -44,10 +45,10 @@ class TagEditDialogWriterTest {
     }
 
     @Test
-    fun tankoubonWriter_putsOnlyMetadataTags() = runTest {
+    fun tankTagWriter_putsOnlyMetadataTags() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
 
-        TagEditDialog.tankoubonWriter.write(client, baseUrl, "TANK_1700000000", "artist:foo, rating:⭐⭐")
+        TankTagWriter.write(client, baseUrl, "TANK_1700000000", "artist:foo, rating:⭐⭐")
 
         val req = server.awaitRequest()
         assertEquals("PUT", req.method)
@@ -60,7 +61,7 @@ class TagEditDialogWriterTest {
     }
 
     @Test
-    fun archiveWriter_afterWrite_rematerializesEveryContainingTank() = runTest {
+    fun archiveTagWriter_afterWrite_rematerializesEveryContainingTank() = runTest {
         val arcid = "b".repeat(40)
         val other = "a".repeat(40)
         // 1) which tanks contain the archive  2) that tank's /full  3) the tag PUT
@@ -78,7 +79,7 @@ class TagEditDialogWriterTest {
         )
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
 
-        TagEditDialog.archiveWriter.afterWrite(client, baseUrl, arcid, oldTags = "artist:a, parody:p", newTags = "artist:a, new:n")
+        ArchiveTagWriter.afterWrite(client, baseUrl, arcid, oldTags = "artist:a, parody:p", newTags = "artist:a, new:n")
 
         assertEquals("/api/archives/$arcid/tankoubons", server.awaitRequest().path)
         assertEquals("/api/tankoubons/TANK_1700000000/full?page=-1", server.awaitRequest().path)
@@ -89,20 +90,20 @@ class TagEditDialogWriterTest {
     }
 
     @Test
-    fun archiveWriter_afterWrite_isSilentWithoutTankoubonRoutes() = runTest {
+    fun archiveTagWriter_afterWrite_isSilentWithoutTankoubonRoutes() = runTest {
         server.enqueue(MockResponse().setResponseCode(404))
 
-        TagEditDialog.archiveWriter.afterWrite(client, baseUrl, "b".repeat(40), "x:1", "x:2")
+        ArchiveTagWriter.afterWrite(client, baseUrl, "b".repeat(40), "x:1", "x:2")
 
         assertEquals(1, server.requestCount)
     }
 
     @Test
-    fun archiveWriter_putsArchiveMetadata() = runTest {
+    fun archiveTagWriter_putsArchiveMetadata() = runTest {
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
         val arcid = "a".repeat(40)
 
-        TagEditDialog.archiveWriter.write(client, baseUrl, arcid, "artist:foo")
+        ArchiveTagWriter.write(client, baseUrl, arcid, "artist:foo")
 
         val req = server.awaitRequest()
         assertEquals("PUT", req.method)
