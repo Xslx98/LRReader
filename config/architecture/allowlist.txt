@@ -25,8 +25,6 @@ D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt
 D5 com/lanraragi/reader/dao/DownloadDbRepository.kt
 D5 com/lanraragi/reader/dao/QuickSearchRepository.kt
 D6 com/lanraragi/reader/reading/TankSessionRouter.kt
-D6 com/lanraragi/reader/settings/DownloadSettings.kt
-D7 com/lanraragi/reader/settings/DownloadSettings.kt
 D8a com/lanraragi/reader/ui/scene/CategoryListRequest.kt
 D8a com/lanraragi/reader/ui/scene/LRRCategoriesScene.kt
 D8a com/lanraragi/reader/ui/scene/LRRCategoriesViewModel.kt

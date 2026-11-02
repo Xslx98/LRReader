@@ -36,7 +36,6 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.settings.DownloadSettings
-import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.reader.backup.readDownloadCsv
 import com.lanraragi.reader.backup.toCSV
 import com.lanraragi.reader.storage.StorageFile
@@ -51,6 +50,7 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.lanraragi.reader.storage.NoMediaFiles
 
 class DownloadFragment : PreferenceFragmentCompat(),
     Preference.OnPreferenceChangeListener,
@@ -194,10 +194,10 @@ class DownloadFragment : PreferenceFragmentCompat(),
             if (newValue is Boolean) {
                 val downloadLocation = DownloadSettings.getDownloadLocation()
                 if (newValue) {
-                    CommonOperations.removeNoMediaFile(downloadLocation)
+                    NoMediaFiles.remove(downloadLocation)
                     triggerMediaScan(downloadLocation)
                 } else {
-                    CommonOperations.ensureNoMediaFile(downloadLocation)
+                    NoMediaFiles.ensure(downloadLocation)
                 }
             }
             return true

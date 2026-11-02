@@ -51,7 +51,6 @@ import com.lanraragi.reader.settings.PrivacySettings
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.framework.lib.image.Image
 import android.os.Handler
 import android.os.Looper
@@ -64,6 +63,7 @@ import java.util.Locale
 import com.lanraragi.reader.diagnostics.Crash
 import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.dao.legacy.LegacyDb
+import com.lanraragi.reader.storage.NoMediaFiles
 
 class LRReaderApplication : SceneApplication() {
 
@@ -463,9 +463,9 @@ class LRReaderApplication : SceneApplication() {
             try {
                 val downloadLocation = DownloadSettings.getDownloadLocation()
                 if (DownloadSettings.getMediaScan()) {
-                    CommonOperations.removeNoMediaFile(downloadLocation)
+                    NoMediaFiles.remove(downloadLocation)
                 } else {
-                    CommonOperations.ensureNoMediaFile(downloadLocation)
+                    NoMediaFiles.ensure(downloadLocation)
                 }
             } catch (t: Throwable) {
                 ExceptionUtils.throwIfFatal(t)
@@ -580,7 +580,7 @@ class LRReaderApplication : SceneApplication() {
             FileUtils.deleteContent(dir)
         }
         // Add .nomedia to external temp dir
-        CommonOperations.ensureNoMediaFile(AppConfig.getExternalTempDir()?.let(::StorageFile))
+        NoMediaFiles.ensure(AppConfig.getExternalTempDir()?.let(::StorageFile))
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {

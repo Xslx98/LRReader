@@ -17,7 +17,6 @@
 package com.lanraragi.reader.ui
 
 import android.content.Intent
-import android.util.Log
 import com.lanraragi.reader.ui.dialog.ListCheckBoxDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
@@ -25,13 +24,9 @@ import com.lanraragi.reader.download.DownloadEntryGate
 import com.lanraragi.reader.download.DownloadService
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.ui.scene.BaseScene
-import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.domain.Archive
-import java.io.IOException
 
 object CommonOperations {
-
-    private const val TAG = "CommonOperations"
 
     @JvmStatic
     fun startDownload(activity: MainActivity, archive: Archive, forceDefault: Boolean) {
@@ -136,29 +131,6 @@ object CommonOperations {
             )
                 .setTitle(R.string.download)
                 .show()
-        }
-    }
-
-    @JvmStatic
-    fun ensureNoMediaFile(file: StorageFile?) {
-        if (file == null) return
-
-        val noMedia = file.createFile(".nomedia") ?: return
-
-        try {
-            noMedia.openInputStream().close()
-        } catch (e: IOException) {
-            Log.w(TAG, "Failed to open .nomedia input stream", e)
-        }
-    }
-
-    @JvmStatic
-    fun removeNoMediaFile(file: StorageFile?) {
-        if (file == null) return
-
-        val noMedia = file.subFile(".nomedia")
-        if (noMedia.isFile) {
-            noMedia.delete()
         }
     }
 }

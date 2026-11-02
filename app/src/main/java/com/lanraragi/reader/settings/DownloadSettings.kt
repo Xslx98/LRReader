@@ -7,9 +7,9 @@ import androidx.core.content.edit
 import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.diagnostics.Redactor
-import com.lanraragi.reader.ui.CommonOperations
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.util.ExceptionUtils
+import com.lanraragi.reader.storage.NoMediaFiles
 
 /**
  * Download-related settings extracted from Settings.java.
@@ -79,9 +79,9 @@ object DownloadSettings {
         Settings.putString(KEY_DOWNLOAD_SAVE_FRAGMENT, uri.encodedFragment)
 
         if (getMediaScan()) {
-            CommonOperations.removeNoMediaFile(location)
+            NoMediaFiles.remove(location)
         } else {
-            CommonOperations.ensureNoMediaFile(location)
+            NoMediaFiles.ensure(location)
         }
     }
 
