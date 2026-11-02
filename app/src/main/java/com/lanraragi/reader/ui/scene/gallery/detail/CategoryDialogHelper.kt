@@ -13,12 +13,11 @@ import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.category.CategoryMembershipService
+import com.lanraragi.reader.category.StaticCategory
 import com.lanraragi.reader.server.LRRAuthManager
-import com.lanraragi.reader.client.api.LRRCategoryApi
-import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.server.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -52,15 +51,14 @@ object CategoryDialogHelper {
     fun showCategoryDialog(activity: Activity?, arcid: String?, serverProfileId: Long, callback: Callback?) {
         if (activity == null || arcid.isNullOrEmpty()) return
 
-        loadStaticCategories(activity, serverProfileId) { staticCats, serverUrl ->
-            val names = categoryDisplayNames(staticCats)
+        loadStaticCategories(activity, serverProfileId) { staticCats, conn ->
             val checked = BooleanArray(staticCats.size) { i ->
-                staticCats[i].archives?.contains(arcid) == true
+                arcid in staticCats[i].archiveIds
             }
             val originalChecked = checked.clone()
             showCategoryCheckboxDialog(
-                activity, staticCats, names, checked, originalChecked,
-                arcid, serverUrl, callback
+                activity, staticCats, checked, originalChecked,
+                arcid, conn, callback
             )
         }
     }
@@ -87,15 +85,15 @@ object CategoryDialogHelper {
     }
 
     /**
-     * Shared front half of both dialogs: resolve the owning server's base URL,
-     * fetch its categories on IO, filter to static ones, then hand the result
+     * Shared front half of both dialogs: [CategoryMembershipService.loadStatic]
+     * (the owning server and its static categories) on IO, then hand the result
      * to [onLoaded] on the main thread. Empty result and fetch errors surface
      * as toasts and [onLoaded] is not called.
      */
     private fun loadStaticCategories(
         activity: Activity,
         serverProfileId: Long,
-        onLoaded: (staticCats: List<LRRCategory>, serverUrl: String) -> Unit,
+        onLoaded: (staticCats: List<StaticCategory>, conn: ServerConnection) -> Unit,
     ) {
         if (LRRAuthManager.getServerUrl() == null) return
 
@@ -103,15 +101,8 @@ object CategoryDialogHelper {
 
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val serverUrl = resolveSourceBaseUrl(
-                    serverProfileId,
-                    ServiceRegistry.dataModule.profileLookupCache,
-                )
-                val client = ServiceRegistry.networkModule.okHttpClient
-                val categories = LRRCategoryApi.getCategories(client, serverUrl)
-
-                // Filter to static categories only
-                val staticCats = categories.filter { it.search.isNullOrEmpty() }
+                val loaded = CategoryMembershipService.default.loadStatic(serverProfileId)
+                val staticCats = loaded.categories
 
                 if (staticCats.isEmpty()) {
                     Handler(Looper.getMainLooper()).post {
@@ -121,7 +112,7 @@ object CategoryDialogHelper {
                 }
 
                 Handler(Looper.getMainLooper()).post {
-                    onLoaded(staticCats, serverUrl)
+                    onLoaded(staticCats, loaded.conn)
                 }
             } catch (ce: CancellationException) {
                 // Lifecycle teardown cancelled the fetch; not an error to toast.
@@ -134,17 +125,18 @@ object CategoryDialogHelper {
         }
     }
 
-    private fun categoryDisplayNames(staticCats: List<LRRCategory>): Array<String> =
+    private fun categoryDisplayNames(staticCats: List<StaticCategory>): Array<String> =
         Array(staticCats.size) { i ->
             val cat = staticCats[i]
-            "${cat.name} (${cat.archives?.size ?: 0})"
+            "${cat.name} (${cat.archiveIds.size})"
         }
 
     private fun showCategoryCheckboxDialog(
-        activity: Activity, staticCats: List<LRRCategory>,
-        names: Array<String>, checked: BooleanArray, originalChecked: BooleanArray,
-        arcid: String, serverUrl: String, callback: Callback?
+        activity: Activity, staticCats: List<StaticCategory>,
+        checked: BooleanArray, originalChecked: BooleanArray,
+        arcid: String, conn: ServerConnection, callback: Callback?
     ) {
+        val names = categoryDisplayNames(staticCats)
         val container = LinearLayout(activity)
         container.orientation = LinearLayout.VERTICAL
         val pad = (16 * activity.resources.displayMetrics.density).toInt()
@@ -173,41 +165,26 @@ object CategoryDialogHelper {
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 applyCategoryChanges(
                     activity, staticCats, checked, originalChecked,
-                    arcid, serverUrl, callback
+                    arcid, conn, callback
                 )
             }
             .setNegativeButton(android.R.string.cancel, null)
             .setNeutralButton(R.string.lrr_category_create_inline) { _, _ ->
-                showCreateCategoryDialog(activity, arcid, serverUrl, callback)
+                showCreateCategoryDialog(activity, arcid, conn, callback)
             }
             .show()
     }
 
     private fun applyCategoryChanges(
-        activity: Activity, staticCats: List<LRRCategory>,
+        activity: Activity, staticCats: List<StaticCategory>,
         checked: BooleanArray, originalChecked: BooleanArray,
-        arcid: String, serverUrl: String, callback: Callback?
+        arcid: String, conn: ServerConnection, callback: Callback?
     ) {
         (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val c = ServiceRegistry.networkModule.okHttpClient
-                for (i in staticCats.indices) {
-                    if (checked[i] != originalChecked[i]) {
-                        val catId = staticCats[i].id!!
-                        if (checked[i]) {
-                            LRRCategoryApi.addToCategory(c, serverUrl, catId, arcid)
-                        } else {
-                            LRRCategoryApi.removeFromCategory(c, serverUrl, catId, arcid)
-                        }
-                    }
-                }
-
-                val newFavNames = ArrayList<String>()
-                for (i in staticCats.indices) {
-                    if (checked[i]) {
-                        newFavNames.add(staticCats[i].name ?: "")
-                    }
-                }
+                val newFavNames = CategoryMembershipService.default.apply(
+                    conn, arcid, staticCats, originalChecked.toList(), checked.toList(),
+                )
 
                 Handler(Looper.getMainLooper()).post {
                     if (callback != null) {
@@ -236,7 +213,7 @@ object CategoryDialogHelper {
     }
 
     private fun showCreateCategoryDialog(
-        activity: Activity, arcid: String, serverUrl: String, callback: Callback?
+        activity: Activity, arcid: String, conn: ServerConnection, callback: Callback?
     ) {
         val input = EditText(activity)
         input.setHint(R.string.lrr_category_name_hint)
@@ -257,9 +234,7 @@ object CategoryDialogHelper {
                 }
                 (activity as ComponentActivity).lifecycleScope.launch(Dispatchers.IO) {
                     try {
-                        val c = ServiceRegistry.networkModule.okHttpClient
-                        val newCatId = LRRCategoryApi.createCategory(c, serverUrl, catName, null, false)
-                        LRRCategoryApi.addToCategory(c, serverUrl, newCatId, arcid)
+                        CategoryMembershipService.default.createWith(conn, catName, arcid)
 
                         Handler(Looper.getMainLooper()).post {
                             Toast.makeText(activity, R.string.lrr_category_created, Toast.LENGTH_SHORT).show()

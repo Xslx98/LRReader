@@ -22,7 +22,6 @@ D8a com/lanraragi/reader/ui/scene/LRRCategoriesScene.kt
 D8a com/lanraragi/reader/ui/scene/LRRCategoriesViewModel.kt
 D8a com/lanraragi/reader/ui/scene/ServerConfigViewModel.kt
 D8a com/lanraragi/reader/ui/scene/ServerListViewModel.kt
-D8a com/lanraragi/reader/ui/scene/gallery/detail/CategoryDialogHelper.kt
 D8b com/lanraragi/reader/ui/reader/GalleryImageOperations.kt
 D8b com/lanraragi/reader/ui/reader/GalleryStampOps.kt
 D8b com/lanraragi/reader/ui/reader/ReaderSessionSetup.kt
@@ -34,7 +33,6 @@ D8b com/lanraragi/reader/ui/scene/LRRCategoriesViewModel.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankMembersScene.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankMembersViewModel.kt
 D8b com/lanraragi/reader/ui/scene/download/DownloadTankCards.kt
-D8b com/lanraragi/reader/ui/scene/gallery/detail/CategoryDialogHelper.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/DeleteArchiveHelper.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder.kt
