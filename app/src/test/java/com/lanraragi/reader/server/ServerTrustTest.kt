@@ -9,6 +9,7 @@ import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.module.IDataModule
+import com.lanraragi.reader.stubNetworkModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
@@ -53,6 +54,9 @@ class ServerTrustTest {
     @Before
     fun setUp() {
         ctx = ApplicationProvider.getApplicationContext()
+        // A network module left by an earlier test class may report "offline",
+        // and the API refuses requests then (LRROfflineException): start online.
+        ServiceRegistry.initializeForTest(network = stubNetworkModule(OkHttpClient()))
         ctx.getSharedPreferences("server_trust", Context.MODE_PRIVATE).edit().clear().commit()
         ServerTrust.resetForTesting()
         ServerTrust.attach(ctx)
@@ -301,11 +305,11 @@ class ServerTrustTest {
         val url = "https://${server.hostName}:${server.port}"
 
         val first = LRRUrlHelper.connectWithFallback(test, url, null)
-        assertTrue(first is LRRUrlHelper.ConnectResult.UntrustedCertificate)
+        assertTrue("first connect: $first", first is LRRUrlHelper.ConnectResult.UntrustedCertificate)
         ServerTrust.trust((first as LRRUrlHelper.ConnectResult.UntrustedCertificate).certificate)
 
         val second = LRRUrlHelper.connectWithFallback(test, url, null)
-        assertTrue(second is LRRUrlHelper.ConnectResult.Success)
+        assertTrue("second connect: $second", second is LRRUrlHelper.ConnectResult.Success)
     }
 
     @Test
