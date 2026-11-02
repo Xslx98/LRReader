@@ -12,7 +12,6 @@ D10b com/lanraragi/reader/ui/scene/history/HistoryScene.kt
 D10b com/lanraragi/reader/ui/scene/stats/ReadingStatsScene.kt
 D3 com/lanraragi/reader/client/api/LRRApiUtils.kt
 D3 com/lanraragi/reader/client/api/LRRArchiveApi.kt
-D3 com/lanraragi/reader/client/api/LRRArchivePagingSource.kt
 D3 com/lanraragi/reader/client/api/LRRAuthInterceptor.kt
 D3 com/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor.kt
 D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt

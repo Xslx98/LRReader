@@ -90,7 +90,7 @@ class GalleryListViewModel : ViewModel() {
     // List loading
     // -------------------------------------------------------------------------
 
-    private val loader = GalleryListLoader(viewModelScope) { tanks }
+    private val loader = GalleryListLoader(viewModelScope, tanks = { tanks })
 
     /** The in-flight list load (tests). */
     internal val currentLoad: Job? get() = loader.current

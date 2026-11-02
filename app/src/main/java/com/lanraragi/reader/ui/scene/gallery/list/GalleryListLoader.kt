@@ -3,11 +3,10 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
-import androidx.paging.PagingSource
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.archive.ArchiveSearchSource
 import com.lanraragi.reader.archive.ListUrlBuilder
-import com.lanraragi.reader.client.api.LRRArchivePagingSource
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.server.ServerConnection
@@ -86,6 +85,7 @@ sealed interface GalleryListLoad {
 class GalleryListLoader(
     private val scope: CoroutineScope,
     private val tanks: () -> TankRepository,
+    private val search: ArchiveSearchSource = ArchiveSearchSource(),
 ) {
 
     /** The two `/api/search` inputs a [ListUrlBuilder] contributes. */
@@ -148,53 +148,39 @@ class GalleryListLoader(
         // result set must not leak into the new one.
         if (page == 0) pageOffsets.reset()
         val startOffset = pageOffsets.offsetFor(page)
-        val pagingSource = LRRArchivePagingSource(
-            client = conn.client,
-            baseUrl = conn.baseUrl,
-            filter = issued.filter,
-            category = issued.category,
-            sortby = issued.sortby,
-            order = issued.order,
-        )
         val result = try {
             withContext(Dispatchers.IO) {
-                pagingSource.load(
-                    PagingSource.LoadParams.Refresh(
-                        // ContentLayout counts dense page indexes (0,1,2,…) but
-                        // the source keys are raw item offsets (NET-2).
-                        key = startOffset,
-                        loadSize = PAGE_SIZE,
-                        placeholdersEnabled = false,
-                    )
+                search.load(
+                    conn,
+                    ArchiveSearchSource.Query(
+                        filter = issued.filter,
+                        category = issued.category,
+                        sortby = issued.sortby,
+                        order = issued.order,
+                    ),
+                    // ContentLayout counts dense page indexes (0,1,2,…) but the
+                    // server is addressed by raw item offsets (NET-2).
+                    offset = startOffset,
                 )
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "LRR paging search failed", e)
+            Log.e(TAG, "LRR search failed", e)
             deliver(GalleryListLoad.Failed(e))
             return
         }
-        when (result) {
-            is PagingSource.LoadResult.Page -> {
-                val nextOffset = result.nextKey
-                val hasMore = nextOffset != null
-                val accepted = deliver(
-                    GalleryListLoad.Page(
-                        rows = result.data,
-                        pageCount = if (hasMore) page + 2 else page + 1,
-                        nextPage = if (hasMore) page + 1 else 0,
-                        emptyText = R.string.gallery_list_empty_hit,
-                        issued = issued,
-                    )
-                )
-                if (accepted) pageOffsets.recordLoaded(page, nextOffset)
-            }
-            is PagingSource.LoadResult.Error -> deliver(
-                GalleryListLoad.Failed(result.throwable as? Exception ?: Exception(result.throwable))
+        val hasMore = result.nextOffset != null
+        val accepted = deliver(
+            GalleryListLoad.Page(
+                rows = result.items,
+                pageCount = if (hasMore) page + 2 else page + 1,
+                nextPage = if (hasMore) page + 1 else 0,
+                emptyText = R.string.gallery_list_empty_hit,
+                issued = issued,
             )
-            is PagingSource.LoadResult.Invalid -> deliver(GalleryListLoad.Failed(Exception("PagingSource invalidated")))
-        }
+        )
+        if (accepted) pageOffsets.recordLoaded(page, result.nextOffset)
     }
 
     /**
