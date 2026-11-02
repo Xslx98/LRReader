@@ -1,6 +1,6 @@
 package com.lanraragi.reader.settings
 
-import com.lanraragi.reader.AppProxySelector
+import com.lanraragi.reader.module.AppProxySelector
 import com.lanraragi.reader.Settings
 
 /**

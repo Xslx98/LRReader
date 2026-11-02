@@ -2,7 +2,6 @@ package com.lanraragi.reader.module
 
 import android.content.Context
 import android.util.Log
-import com.lanraragi.reader.AppProxySelector
 import okhttp3.Cache
 import okhttp3.ConnectionPool
 import okhttp3.CookieJar

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lanraragi.reader
+package com.lanraragi.reader.module
 
 import android.text.TextUtils
 import com.lanraragi.reader.settings.NetworkSettings
