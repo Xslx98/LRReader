@@ -123,8 +123,6 @@ class HistoryScene : ToolbarScene(),
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        viewModel = ViewModelProvider(requireActivity())[HistoryViewModel::class.java]
-
         val view = inflater.inflate(R.layout.scene_history, container, false)
         val content = ViewUtils.requireView(view, R.id.content)
         mRecyclerView = ViewUtils.requireView(content, R.id.recycler_view) as EasyRecyclerView
@@ -237,7 +235,8 @@ class HistoryScene : ToolbarScene(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel = ViewModelProvider(requireActivity())[HistoryViewModel::class.java]
+        // The scene's own instance: onCreate runs before every view creation.
+        viewModel = ViewModelProvider(this)[HistoryViewModel::class.java]
         // Rating saved on the detail page: whole-lifetime collection, since
         // this list is covered by the detail page when the save lands.
         collectFlowWhileCreated(this, AppEventBus.archiveRatingChangedEvent) { event ->
