@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.widget.Toast
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.LRRUrlOpener
 import com.lanraragi.reader.client.api.LRRAuthManager
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.settings.AppearanceSettings
@@ -65,15 +64,8 @@ class MainIntentRouter(private val activity: MainActivity) {
                 // from the reader returns to the main list.
                 false
             }
-            Intent.ACTION_VIEW -> {
-                val announcer = intent.data?.let { LRRUrlOpener.parseUrl(it.toString()) }
-                if (announcer != null) {
-                    activity.startScene(processAnnouncer(announcer))
-                    true
-                } else {
-                    false
-                }
-            }
+            // No LANraragi URL maps to a scene (the E-Hentai URL parser is gone).
+            Intent.ACTION_VIEW -> false
             // Shared images used to launch the EhViewer image search; LANraragi
             // has no image-search API, so only shared text becomes a keyword search.
             Intent.ACTION_SEND -> if ("text/plain" == intent.type) {
