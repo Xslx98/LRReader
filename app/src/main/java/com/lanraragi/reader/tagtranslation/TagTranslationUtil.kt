@@ -1,7 +1,6 @@
-package com.lanraragi.reader.util
+package com.lanraragi.reader.tagtranslation
 
 import com.lanraragi.reader.domain.splitNamespace
-import com.lanraragi.reader.client.TagTranslationDatabase
 
 /**
  * Display formatting for `namespace:value` tags on top of

@@ -20,7 +20,6 @@ D2 com/lanraragi/reader/util/ClipboardUtil.kt
 D2 com/lanraragi/reader/util/EntitySerializer.kt
 D2 com/lanraragi/reader/util/ExceptionUtils.kt
 D2 com/lanraragi/reader/util/FlowBridge.kt
-D2 com/lanraragi/reader/util/TagTranslationUtil.kt
 D3 com/lanraragi/reader/client/api/LRRApiUtils.kt
 D3 com/lanraragi/reader/client/api/LRRArchiveApi.kt
 D3 com/lanraragi/reader/client/api/LRRArchivePagingSource.kt

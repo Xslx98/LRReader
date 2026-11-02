@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 
 /**
  * Audit SEC-01: the tag dataset download is size-capped, both on the

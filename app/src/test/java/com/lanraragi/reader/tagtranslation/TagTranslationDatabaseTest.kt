@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client
+package com.lanraragi.reader.tagtranslation
 
 import android.util.Base64
 import okio.Buffer

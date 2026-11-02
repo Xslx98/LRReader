@@ -1,7 +1,6 @@
-package com.lanraragi.reader.util
+package com.lanraragi.reader.tagtranslation
 
 import android.util.Base64
-import com.lanraragi.reader.client.TagTranslationDatabase
 import okio.Buffer
 import org.junit.Assert.assertEquals
 import org.junit.Test

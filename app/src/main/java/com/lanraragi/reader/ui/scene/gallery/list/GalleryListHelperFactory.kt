@@ -10,7 +10,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.TagTranslationDatabase
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tankoubon.TankBrowse
 import com.lanraragi.reader.domain.Archive

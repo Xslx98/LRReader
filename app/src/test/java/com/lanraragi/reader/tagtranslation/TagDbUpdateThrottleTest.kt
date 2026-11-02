@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client
+package com.lanraragi.reader.tagtranslation
 
 import android.content.Context
 import android.content.SharedPreferences

@@ -18,14 +18,14 @@ import androidx.viewpager.widget.ViewPager
 import com.lanraragi.reader.ui.dialog.CheckBoxDialogBuilder
 import com.lanraragi.reader.ui.dialog.EditTextDialogBuilder
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.TagTranslationDatabase
+import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.client.data.ListUrlBuilder
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.ui.scene.BaseScene
-import com.lanraragi.reader.util.TagTranslationUtil
+import com.lanraragi.reader.tagtranslation.TagTranslationUtil
 import kotlinx.coroutines.launch
 
 /**
