@@ -198,6 +198,8 @@ class GalleryListViewModel : ViewModel() {
             var stagingDir: File? = null
             try {
                 _uploadState.value = UploadUiState.Preparing
+                // Both calls go to the server that was active when the upload started.
+                val conn = ServerConnections.active() ?: throw IOException("No server configured")
 
                 val arcid = (req.openStream() ?: throw IOException("Cannot open file"))
                     .use { LRRArchiveApi.computeArchiveId(it) }
@@ -205,7 +207,7 @@ class GalleryListViewModel : ViewModel() {
                 // Best-effort: an inconclusive probe (network/proxy error) is
                 // treated as "not a confirmed duplicate" so the upload still runs
                 // and the server's own check remains the backstop.
-                val isDuplicate = suspendRunCatching { LRRArchiveApi.archiveExists(arcid) }
+                val isDuplicate = suspendRunCatching { LRRArchiveApi.archiveExists(conn.client, conn.baseUrl, arcid) }
                     .getOrDefault(false)
                 if (isDuplicate) {
                     _uploadState.value = UploadUiState.DuplicateSkipped(arcid)
@@ -228,6 +230,8 @@ class GalleryListViewModel : ViewModel() {
                 val checksum = LRRArchiveApi.computeFileChecksum(target)
                 var lastPercent = -1
                 val arcidUploaded = LRRArchiveApi.uploadArchive(
+                    ServiceRegistry.networkModule.uploadClient,
+                    conn.baseUrl,
                     target,
                     fileChecksum = checksum,
                     progressListener = { written, total ->
