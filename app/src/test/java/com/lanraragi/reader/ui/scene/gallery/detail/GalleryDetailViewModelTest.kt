@@ -265,4 +265,24 @@ class GalleryDetailViewModelTest {
         assertNotNull(vm.localReadingPage)
         assertEquals(ReadingProgressTracker.NO_LOCAL_PROGRESS, vm.localReadingPage.value)
     }
+
+    /**
+     * The request outcomes are kept for a late subscriber
+     * ([DetailRequestEvents]). The VM outlives one archive, and an archive
+     * that opens from the detail cache sends no request, so without this
+     * reset the previous archive's failure would replay onto the new page.
+     */
+    @Test
+    fun resetForNewEntry_dropsThePreviousArchivesRequestOutcomes() {
+        val vm = GalleryDetailViewModel()
+        vm.detailRequestEvents.loaded(archiveDetail("tokA"))
+        vm.detailRequestEvents.failed(RuntimeException("A offline"))
+        vm.detailRequestEvents.failedWithContent(RuntimeException("A banner"))
+
+        vm.resetForNewEntry()
+
+        assertTrue(vm.detailLoaded.replayCache.isEmpty())
+        assertTrue(vm.detailError.replayCache.isEmpty())
+        assertTrue(vm.detailErrorBanner.replayCache.isEmpty())
+    }
 }

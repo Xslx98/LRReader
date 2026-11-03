@@ -1,5 +1,6 @@
 package com.lanraragi.reader.benchmark
 
+import android.util.Log
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -52,7 +53,9 @@ object LrrScenario {
         val card = device.wait(Until.findObject(By.text("Mock Big Archive 1")), UI_TIMEOUT_MS)
             ?: device.findObject(By.res(PKG, "thumb_new"))
         card.click()
-        device.wait(Until.findObject(By.res(PKG, "read")), UI_TIMEOUT_MS).click()
+        val read = device.wait(Until.findObject(By.res(PKG, "read")), UI_TIMEOUT_MS)
+            ?: failWithScreenState("read button not found on the detail page")
+        read.click()
         Thread.sleep(PAGE_TURN_SETTLE_MS * 4)
         // GL surface: tap the left edge, the "next" side of the default
         // right-to-left direction.
@@ -67,4 +70,20 @@ object LrrScenario {
         device.pressBack()
         device.wait(Until.hasObject(By.res(PKG, "thumb_new")), UI_TIMEOUT_MS)
     }
+
+    /**
+     * Fails with what the screen held: the window hierarchy and the app's view
+     * tree (visibility and bounds of every view) go to logcat under
+     * [DIAG_TAG], which the managed-device run keeps per test. A bare null
+     * click left nothing to go on when the detail page hung on its spinner.
+     */
+    private fun MacrobenchmarkScope.failWithScreenState(message: String): Nothing {
+        val hierarchy = java.io.ByteArrayOutputStream()
+        device.dumpWindowHierarchy(hierarchy)
+        hierarchy.toString().lineSequence().forEach { Log.e(DIAG_TAG, it) }
+        device.executeShellCommand("dumpsys activity top").lineSequence().forEach { Log.e(DIAG_TAG, it) }
+        error(message)
+    }
+
+    private const val DIAG_TAG = "LrrDiag"
 }
