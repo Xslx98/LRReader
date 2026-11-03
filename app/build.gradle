@@ -446,7 +446,12 @@ dependencies {
 // Robolectric loads app classes through its own sandbox class loader, which
 // JaCoCo treats as "no location" and skips by default: without this, most
 // Robolectric-tested code (dao, download) reported near-zero coverage.
+// Unit tests run in one JVM per two cores, at most four: 173 s -> 87 s on 16
+// cores, two forks on a 4-vCPU CI runner. Each fork reuses its Robolectric
+// sandbox across test classes, so cross-class state leaks still apply within
+// a fork (docs/testing-and-ci.md).
 tasks.withType(Test).configureEach {
+    maxParallelForks = Math.min(4, Math.max(1, Runtime.runtime.availableProcessors().intdiv(2)))
     jacoco {
         includeNoLocationClasses = true
         excludes = ['jdk.internal.*']
