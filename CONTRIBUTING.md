@@ -75,7 +75,8 @@ One Gradle module, `app/`:
 
 ### Language and style
 
-- New code is Kotlin. 4-space indent, braces on the same line, `CamelCase`
+- All code, tests included, is Kotlin: `verifyArchitecture` fails on any
+  `.java` file under a module's `src/`. 4-space indent, braces on the same line, `CamelCase`
   types and `camelCase` members.
 - JSON uses `kotlinx-serialization` `@Serializable` classes. Gson is not allowed.
 - Build LANraragi URLs with `parseBaseUrl()`, not `toHttpUrlOrNull()!!`.

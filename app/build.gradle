@@ -247,7 +247,8 @@ afterEvaluate {
 // leave the allowlist in the same commit, so a stale line fails too. Import rules
 // also see fully qualified references in code (string literals and comments are
 // skipped); same-package references need no import and are not seen. Every source
-// package must sit under a top-level package listed in packages.txt.
+// package must sit under a top-level package listed in packages.txt. The project is
+// Kotlin only: a .java file under any module's src/ (main or test) fails too.
 // -ParchWriteAllowlist rewrites the allowlist from the current violations; it
 // exists for the initial seed, and CI rejects any growth it would cause.
 tasks.register("verifyArchitecture") {
@@ -259,13 +260,22 @@ tasks.register("verifyArchitecture") {
     def allowFile = rootProject.file("config/architecture/allowlist.txt")
     def packagesFile = rootProject.file("config/architecture/packages.txt")
     def writeAllowlist = project.hasProperty("archWriteAllowlist")
+    def javaFiles = files(rootProject.subprojects.collect { p ->
+        fileTree(p.file("src")) { include "**/*.java" }
+    })
     inputs.dir(srcDir)
+    inputs.files(javaFiles)
     inputs.files(rulesFile, allowFile, packagesFile)
     inputs.property("writeAllowlist", writeAllowlist)
     def marker = layout.buildDirectory.file("architecture/verified")
     outputs.file(marker)
 
     doLast {
+        def javaPaths = javaFiles.files.collect { rootProject.relativePath(it).replace('\\', '/') }.sort()
+        if (javaPaths) {
+            throw new GradleException("Java sources are not allowed (the project is Kotlin only); convert these:\n  " +
+                javaPaths.join("\n  "))
+        }
         def rules = rulesFile.readLines()
             .findAll { it.trim() && !it.trim().startsWith('#') }
             .collect { String line ->
