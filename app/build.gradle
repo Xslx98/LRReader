@@ -382,6 +382,9 @@ def archiveReleaseMapping = tasks.register('archiveReleaseMapping', Copy) {
     from(layout.buildDirectory.file('outputs/mapping/appReleaseRelease/mapping.txt'))
     into(rootProject.layout.buildDirectory.dir('release-mapping'))
     rename { releaseMappingName }
+    // The rename is not an input: a build with the same mapping under another
+    // version was UP-TO-DATE and archived nothing (v2.4.0 release, 2026-11-03).
+    inputs.property('mappingName', releaseMappingName)
 }
 tasks.matching { it.name == 'minifyAppReleaseReleaseWithR8' }.configureEach {
     finalizedBy archiveReleaseMapping
