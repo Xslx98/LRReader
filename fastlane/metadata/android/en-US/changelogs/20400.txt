@@ -1,0 +1,5 @@
+2.4: tankoubons are easier to browse and manage.
+- Tankoubons page works like the library: grid/list, search, sort, long-press to batch download, sort members or delete.
+- Adding to a tankoubon opens a searchable sheet: recent ones first, "2/3 already in it" marks, create from the typed name.
+- New cover loader; the old cover cache is cleared once.
+Fixed: vertical reading not resuming where you left off; a detail page that could keep loading forever.
