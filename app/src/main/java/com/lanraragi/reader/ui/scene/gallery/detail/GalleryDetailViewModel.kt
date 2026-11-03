@@ -269,6 +269,7 @@ class GalleryDetailViewModel : ViewModel() {
         detailPreloadJob = null
         requestJob?.cancel()
         requestJob = null
+        detailRequestEvents.clear()
         _action.value = null
         _arcid.value = null
         _archive.value = null
@@ -443,8 +444,8 @@ class GalleryDetailViewModel : ViewModel() {
      * gets a chance to skip the first-page decode on next reader open.
      *
      * [archive] is the freshly fetched detail's archive, passed in: the
-     * trigger used to read `_detailLoaded.replayCache`, which is always
-     * empty (replay 0), so the preload never ran (audit C18 ruling R9).
+     * trigger used to read the load event's replay cache, which was always
+     * empty (replay 0 then), so the preload never ran (audit C18 ruling R9).
      */
     private fun triggerReadingPreload(arcId: String, archive: Archive) {
         detailPreloadJob?.cancel()
@@ -501,16 +502,14 @@ class GalleryDetailViewModel : ViewModel() {
     // Detail request events (one-shot)
     // -------------------------------------------------------------------------
 
-    private val _detailError = MutableSharedFlow<Exception>(extraBufferCapacity = 1)
+    internal val detailRequestEvents = DetailRequestEvents()
 
     /**
      * Emitted when a gallery detail fetch fails AND there is no usable
      * fallback content to render — the Scene shows the full-screen
-     * `mTip` error pane.
+     * `mTip` error pane. Kept for a late subscriber ([DetailRequestEvents]).
      */
-    val detailError: SharedFlow<Exception> = _detailError.asSharedFlow()
-
-    private val _detailErrorBanner = MutableSharedFlow<Exception>(extraBufferCapacity = 1)
+    val detailError: SharedFlow<Exception> = detailRequestEvents.failed
 
     /**
      * Emitted when a gallery detail fetch fails BUT we already have
@@ -520,18 +519,18 @@ class GalleryDetailViewModel : ViewModel() {
      * the page stays useful when the source server is offline / orphan
      * / has deleted the archive.
      */
-    val detailErrorBanner: SharedFlow<Exception> = _detailErrorBanner.asSharedFlow()
-
-    private val _detailLoaded = MutableSharedFlow<ArchiveDetail>(extraBufferCapacity = 1)
+    val detailErrorBanner: SharedFlow<Exception> = detailRequestEvents.failedWithContent
 
     /**
      * Emitted every time a fresh detail-page response lands successfully.
      * Independent of [archiveDetail] — that StateFlow deduplicates by
      * value, so a refresh that returns identical content would not re-fire
      * `collect`. Observers that drive REFRESH→NORMAL state transitions
-     * (the spinner) must use this event flow instead.
+     * (the spinner) must use this event flow instead. Kept for a late
+     * subscriber: the request can finish before the view's collectors
+     * subscribe ([DetailRequestEvents]).
      */
-    val detailLoaded: SharedFlow<ArchiveDetail> = _detailLoaded.asSharedFlow()
+    val detailLoaded: SharedFlow<ArchiveDetail> = detailRequestEvents.loaded
 
     private val _ratingError = MutableSharedFlow<Exception>(extraBufferCapacity = 1)
 
@@ -647,8 +646,8 @@ class GalleryDetailViewModel : ViewModel() {
     /**
      * Fetches archive metadata from LANraragi and queries categories for
      * favorite status. On success, updates [_archiveDetail],
-     * [_currentRating] and [_favoriteState]; emits to [_detailLoaded].
-     * On failure, emits to [_detailError].
+     * [_currentRating] and [_favoriteState]; emits to [detailLoaded].
+     * On failure, emits to [detailError] or [detailErrorBanner].
      *
      * Subsequent calls cancel the in-flight job — the user should always
      * see "last-write-wins" behaviour even when tapping refresh
@@ -675,12 +674,13 @@ class GalleryDetailViewModel : ViewModel() {
         // Cancel any previous in-flight fetch so its late response cannot
         // overwrite the freshly issued one's result.
         requestJob?.cancel()
+        detailRequestEvents.clear()
         requestJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Resolve inside the coroutine: ProfileLookupCache may be
                 // cold on first launch and resolveSourceBaseUrl suspends
                 // until it hydrates. OrphanProfileException is surfaced
-                // through _detailError just like any other fetch failure.
+                // through detailError just like any other fetch failure.
                 val serverUrl = resolveSourceServerUrl()
                 val archive = LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
                 // Tag the converted Archive with the *source* profile id
@@ -749,7 +749,7 @@ class GalleryDetailViewModel : ViewModel() {
                 // fresh content. Distinct from archiveDetail itself —
                 // refresh-with-no-change still fires this event so the
                 // REFRESH→NORMAL spinner transition can complete.
-                _detailLoaded.tryEmit(ad)
+                detailRequestEvents.loaded(ad)
 
                 loadArchiveTankoubons()
 
@@ -820,9 +820,9 @@ class GalleryDetailViewModel : ViewModel() {
             }
         }
         if (_archiveDetail.value != null) {
-            _detailErrorBanner.tryEmit(e)
+            detailRequestEvents.failedWithContent(e)
         } else {
-            _detailError.tryEmit(e)
+            detailRequestEvents.failed(e)
         }
     }
 
