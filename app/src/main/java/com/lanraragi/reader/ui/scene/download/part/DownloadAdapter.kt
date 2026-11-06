@@ -227,7 +227,7 @@ class DownloadAdapter(
             return listSize
         }
         val count = listSize - mCallback.pageSize * (mCallback.indexPage - 1)
-        return count.coerceAtMost(mCallback.pageSize)
+        return count.coerceIn(0, mCallback.pageSize)
     }
 
     /**

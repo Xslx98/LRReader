@@ -17,77 +17,61 @@
 package com.lanraragi.reader.ui.scene.download.part
 
 import androidx.recyclerview.widget.RecyclerView
-import com.sxj.paginationlib.PaginationIndicator
+import com.lanraragi.reader.widget.PaginationIndicator
 
 /**
- * 分页指示器的页面变化监听器
+ * Applies page changes: publishes them through [pageChangeCallback], then
+ * tells the adapter how its rows changed. The user's own choices also go back
+ * to the top of the list; [moveToPage] leaves the scroll position to the caller.
  */
-class MyPageChangeListener @JvmOverloads constructor(
-    var indexPage: Int = 1,
-    var pageSize: Int = 1,
-    var isNeedInitPage: Boolean = false,
-    var isDoNotScroll: Boolean = false,
-    var adapter: RecyclerView.Adapter<*>? = null,
-    var recyclerView: RecyclerView? = null
+class MyPageChangeListener(
+    private var indexPage: Int,
+    private var pageSize: Int,
+    private val adapter: RecyclerView.Adapter<*>?,
+    private val recyclerView: RecyclerView?
 ) : PaginationIndicator.OnChangedListener {
 
     var pageChangeCallback: PageChangeCallback? = null
 
-    override fun onPageSelectedChanged(currentPagePos: Int, lastPagePos: Int, totalPageCount: Int, total: Int) {
-        if (indexPage == currentPagePos) {
-            isNeedInitPage = false
-        }
-        if (isNeedInitPage) {
-            // 注意：这里需要外部传入 PaginationIndicator 实例
-            // 或者通过回调方法处理
-            return
-        }
-        if (indexPage == currentPagePos) {
-            return
-        }
-
-        val oldItemCount = adapter?.itemCount ?: 0
-        indexPage = currentPagePos
-
-        // 通过回调更新主类的状态
-        pageChangeCallback?.onPageChanged(indexPage)
-
-        notifyAdapter(oldItemCount)
+    override fun onPageSelected(page: Int) {
+        if (moveToPage(page)) recyclerView?.scrollToPosition(0)
     }
 
-    override fun onPerPageCountChanged(perPageCount: Int) {
-        if (pageSize == perPageCount) {
-            return
-        }
-
+    override fun onPageSizeSelected(pageSize: Int) {
+        if (this.pageSize == pageSize) return
         val oldItemCount = adapter?.itemCount ?: 0
-        pageSize = perPageCount
-
-        // 通过回调更新主类的状态
+        // Both before the adapter hears anything: it reads them for its item count.
+        this.pageSize = pageSize
         pageChangeCallback?.onPageSizeChanged(pageSize)
-
+        if (indexPage != 1) {
+            indexPage = 1
+            pageChangeCallback?.onPageChanged(1)
+        }
         notifyAdapter(oldItemCount)
+        recyclerView?.scrollToPosition(0)
     }
 
-    fun notifyAdapter(oldItemCount: Int = adapter?.itemCount ?: 0) {
-        adapter?.let { a ->
-            val newItemCount = a.itemCount
-            val commonCount = minOf(oldItemCount, newItemCount)
-            if (commonCount > 0) {
-                a.notifyItemRangeChanged(0, commonCount)
-            }
-            if (newItemCount > oldItemCount) {
-                a.notifyItemRangeInserted(oldItemCount, newItemCount - oldItemCount)
-            } else if (oldItemCount > newItemCount) {
-                a.notifyItemRangeRemoved(newItemCount, oldItemCount - newItemCount)
-            }
+    /** Turns to [page]; returns false when already there. */
+    fun moveToPage(page: Int): Boolean {
+        if (indexPage == page) return false
+        val oldItemCount = adapter?.itemCount ?: 0
+        indexPage = page
+        pageChangeCallback?.onPageChanged(page)
+        notifyAdapter(oldItemCount)
+        return true
+    }
+
+    private fun notifyAdapter(oldItemCount: Int) {
+        val a = adapter ?: return
+        val newItemCount = a.itemCount
+        val commonCount = minOf(oldItemCount, newItemCount)
+        if (commonCount > 0) {
+            a.notifyItemRangeChanged(0, commonCount)
         }
-        recyclerView?.let {
-            if (isDoNotScroll) {
-                isDoNotScroll = false
-                return
-            }
-            it.scrollToPosition(0)
+        if (newItemCount > oldItemCount) {
+            a.notifyItemRangeInserted(oldItemCount, newItemCount - oldItemCount)
+        } else if (oldItemCount > newItemCount) {
+            a.notifyItemRangeRemoved(newItemCount, oldItemCount - newItemCount)
         }
     }
 

@@ -183,7 +183,6 @@
     <ID>MaxLineLength:BasePreference.kt$BasePreference$constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes)</ID>
     <ID>MaxLineLength:DownloadManager.kt$DownloadManager$val list = repo.getInfoListForLabel(info.label) ?: run { Log.e(TAG, "Can't find download info list with label: $label"); return }</ID>
     <ID>MaxLineLength:DownloadManager.kt$DownloadManager.Companion$const val DOWNLOAD_INFO_HEADER = "gid,token,title,title_jpn,thumb,category,posted,uploader,rating,rated,simple_lang,simple_tags,thumb_width,thumb_height,span_size,span_index,span_group_index,favorite_slot,favorite_name,pages"</ID>
-    <ID>MaxLineLength:DownloadsScene.kt$DownloadsScene$mPaginationIndicator?.setPerPageCountChoices(viewModel.perPageCountChoices, mPaginationHelper?.getPageSizePos(viewModel.pageSize.value) ?: 0)</ID>
     <ID>MaxLineLength:DownloadsScene.kt$DownloadsScene.BatchOpsHelperCallback$override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null</ID>
     <ID>MaxLineLength:DownloadsScene.kt$DownloadsScene.SelectionHelperCallback$override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null</ID>
     <ID>MaxLineLength:EntityMapper.kt$*</ID>

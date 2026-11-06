@@ -38,6 +38,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import android.view.ContextThemeWrapper
+import android.view.View
+import com.lanraragi.reader.R
+import com.lanraragi.reader.ui.scene.download.part.MyPageChangeListener
+import com.lanraragi.reader.widget.PaginationIndicator
 import org.robolectric.shadows.ShadowLooper
 import com.lanraragi.reader.dao.DownloadState
 
@@ -190,6 +195,32 @@ class DownloadsViewModelTest {
         assertEquals(50, vm.adapterPositionForListIndex(150))
         assertNull(vm.adapterPositionForListIndex(50))
         assertNull(vm.adapterPositionForListIndex(250))
+    }
+
+    @Test
+    fun updatePaginationIndicator_listShrankUnderThePage_movesToTheLastPage() = runBlocking {
+        val infos = (0 until 501).map { i ->
+            DownloadInfo().apply {
+                arcid = "shrink_$i"; title = "S$i"; label = null
+                state = DownloadState.NONE; time = i.toLong()
+            }
+        }
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infos)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        vm.setPageSize(100)
+        vm.setIndexPage(9)
+        val listener = MyPageChangeListener(9, 100, null, null).apply {
+            pageChangeCallback = object : MyPageChangeListener.PageChangeCallback {
+                override fun onPageChanged(newIndexPage: Int) = vm.setIndexPage(newIndexPage)
+                override fun onPageSizeChanged(newPageSize: Int) = vm.setPageSize(newPageSize)
+            }
+        }
+        val indicator = PaginationIndicator(ContextThemeWrapper(context, R.style.AppTheme))
+
+        DownloadPaginationHelper(vm).updatePaginationIndicator(indicator, vm.downloadList.value, listener)
+
+        assertEquals(6, vm.indexPage.value)
+        assertEquals(View.VISIBLE, indicator.visibility)
     }
 
     // ═══════════════════════════════════════════════════════════

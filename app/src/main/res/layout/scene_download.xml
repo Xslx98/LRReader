@@ -51,19 +51,12 @@
                     android:layout_height="0dp"
                     android:layout_weight="1" />
 
-                <com.sxj.paginationlib.PaginationIndicator
+                <com.lanraragi.reader.widget.PaginationIndicator
                     android:id="@+id/indicator"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="40dp"
-                    android:visibility="gone"
-                    app:number_tip_count="5"
-                    app:count_text="@string/pagination_count"
-                    app:page_and_item="@string/pagination_page_and_item"
-                    app:rect_size="30dp"
-                    app:selected_color="?attr/drawableColorThemePrimary"
-                    app:text_size="14sp"
-                    app:unselected_color="?attr/drawableColorSecondary" />
+                    android:visibility="gone" />
             </LinearLayout>
 
             <com.lanraragi.reader.widget.list.FastScroller

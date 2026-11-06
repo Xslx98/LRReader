@@ -43,6 +43,7 @@ import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.scene.download.part.DownloadAdapter
 import com.lanraragi.reader.ui.scene.download.part.MyPageChangeListener
 import com.lanraragi.reader.widget.MyEasyRecyclerView
+import com.lanraragi.reader.widget.PaginationIndicator
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.util.AssertUtils
 import com.lanraragi.reader.util.ViewUtils
@@ -54,7 +55,6 @@ import com.lanraragi.framework.widget.ProgressView
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
-import com.sxj.paginationlib.PaginationIndicator
 import java.util.concurrent.CompletableFuture
 
 class DownloadsScene : ToolbarScene(),
@@ -160,7 +160,7 @@ class DownloadsScene : ToolbarScene(),
 
     /** Turns the pagination to the page of list [position], and scrolls to it when [scroll]. */
     internal fun showListPosition(position: Int, scroll: Boolean) {
-        mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator)
+        mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator, myPageChangeListener)
         if (scroll) mRecyclerView.scrollToPosition(listIndexInPage(position))
     }
 
@@ -268,12 +268,7 @@ class DownloadsScene : ToolbarScene(),
         mPaginationHelper = DownloadPaginationHelper(viewModel)
         mDragDropHelper = DownloadDragDropHelper()
 
-        if (mPaginationIndicator != null) {
-            mPaginationHelper?.needInitPage = true
-        }
         mPaginationIndicator = ViewUtils.requireView(view, R.id.indicator) as PaginationIndicator
-
-        mPaginationIndicator?.setPerPageCountChoices(viewModel.perPageCountChoices, mPaginationHelper?.getPageSizePos(viewModel.pageSize.value) ?: 0)
 
         mViewTransition = ViewTransition(content, tip)
         mTip = tip
@@ -291,10 +286,8 @@ class DownloadsScene : ToolbarScene(),
         mRecyclerView.adapter = mAdapter
 
         // Initialize pagination listener
-        val paginationHelper = mPaginationHelper ?: return null
         myPageChangeListener = MyPageChangeListener(
             viewModel.indexPage.value, viewModel.pageSize.value,
-            paginationHelper.needInitPage, paginationHelper.doNotScroll,
             mOriginalAdapter, mRecyclerView
         )
 
