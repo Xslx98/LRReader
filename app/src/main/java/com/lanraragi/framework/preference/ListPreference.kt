@@ -25,7 +25,7 @@ import android.text.TextUtils
 import android.util.AttributeSet
 import androidx.annotation.ArrayRes
 import androidx.appcompat.app.AlertDialog
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 
 class ListPreference : DialogPreference {
 

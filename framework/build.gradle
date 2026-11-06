@@ -29,6 +29,7 @@ android {
         // :app's lint runs on the release path; this module has no release APK.
         checkReleaseBuilds false
         disable 'ExtraTranslation', 'PropertyEscape'
+        baseline = file('lint-baseline.xml')
     }
 }
 

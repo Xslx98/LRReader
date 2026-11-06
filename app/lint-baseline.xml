@@ -266,13 +266,6 @@
     </issue>
 
     <issue
-        id="PrivateResource"
-        message="Overriding `@layout/preference_widget_seekbar` which is marked as private in androidx.preference:preference:1.2.1. If deliberate, use tools:override=&quot;true&quot;, otherwise pick a different name.">
-        <location
-            file="src/main/res/layout/preference_widget_seekbar.xml"/>
-    </issue>
-
-    <issue
         id="UseCompatLoadingForDrawables"
         message="Use `ResourcesCompat.getDrawable()`"
         errorLine1="                context.resources.getDrawable(R.drawable.shadow_8dp) as NinePatchDrawable"
@@ -576,17 +569,6 @@
         <location
             file="src/main/res/layout-land/activity_set_security.xml"
             line="18"
-            column="2"/>
-    </issue>
-
-    <issue
-        id="DisableBaselineAlignment"
-        message="Set `android:baselineAligned=&quot;false&quot;` on this element for better performance"
-        errorLine1="&lt;LinearLayout"
-        errorLine2=" ~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/preference_widget_seekbar.xml"
-            line="19"
             column="2"/>
     </issue>
 

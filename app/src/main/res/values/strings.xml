@@ -108,7 +108,6 @@
     <string name="error_redirection">Too many redirections</string>
     <string name="error_socket">Network error</string>
     <string name="error_unknown">Weird</string>
-    <string name="error_cant_find_activity">Can\'t find the application</string>
     <string name="error_cannot_parse_the_url">Can\'t parse the url</string>
     <string name="error_not_folder_path">Not folder path</string>
     <string name="error_decoding_failed">Decoding failed</string>

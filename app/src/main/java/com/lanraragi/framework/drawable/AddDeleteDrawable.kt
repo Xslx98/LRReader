@@ -25,7 +25,7 @@ import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import android.util.FloatProperty
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import com.lanraragi.framework.util.MathUtils
 
 class AddDeleteDrawable(context: Context, color: Int) : Drawable() {

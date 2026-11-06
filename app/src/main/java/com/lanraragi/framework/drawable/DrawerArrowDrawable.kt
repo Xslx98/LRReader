@@ -26,7 +26,7 @@ import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import android.util.FloatProperty
 import androidx.annotation.ColorInt
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import com.lanraragi.framework.util.MathUtils
 
 /**

@@ -22,7 +22,7 @@ import android.util.AttributeSet
 import android.view.ViewGroup
 import androidx.core.content.withStyledAttributes
 import androidx.core.view.isGone
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import kotlin.math.max
 import kotlin.math.min
 

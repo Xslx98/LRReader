@@ -185,7 +185,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
             importFileLauncher.launch(intent)
         } catch (e: Throwable) {
             ExceptionUtils.throwIfFatal(e)
-            Toast.makeText(activity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, com.lanraragi.framework.R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
         }
     }
 

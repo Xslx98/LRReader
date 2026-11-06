@@ -32,7 +32,7 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.preference.Preference
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 
 /**
  * A base class for [Preference] objects that are

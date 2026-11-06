@@ -34,7 +34,7 @@ import androidx.core.content.withStyledAttributes
 import androidx.core.graphics.withRotation
 import androidx.core.view.animation.PathInterpolatorCompat
 import androidx.core.view.isVisible
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import com.lanraragi.framework.util.ViewUtils
 import kotlin.math.min
 

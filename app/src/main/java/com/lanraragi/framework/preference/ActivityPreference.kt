@@ -22,7 +22,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.widget.Toast
 import androidx.preference.Preference
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import com.lanraragi.framework.util.ExceptionUtils
 
 class ActivityPreference : Preference {

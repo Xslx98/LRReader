@@ -20,7 +20,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.annotation.IntDef
 import androidx.fragment.app.Fragment
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import com.lanraragi.framework.util.IntList
 import com.lanraragi.framework.util.attrDrawable
 import kotlin.math.min

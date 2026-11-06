@@ -146,7 +146,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
                 )
             } catch (e: Throwable) {
                 ExceptionUtils.throwIfFatal(e)
-                Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+                Toast.makeText(mActivity, com.lanraragi.framework.R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -288,7 +288,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
                 saveToLauncher?.launch(intent)
             } catch (e: Throwable) {
                 ExceptionUtils.throwIfFatal(e)
-                Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+                Toast.makeText(mActivity, com.lanraragi.framework.R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
             }
         }
     }

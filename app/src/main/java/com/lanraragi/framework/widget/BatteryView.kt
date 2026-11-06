@@ -27,7 +27,7 @@ import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.withStyledAttributes
 import com.lanraragi.framework.drawable.BatteryDrawable
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 
 class BatteryView : AppCompatTextView {
 

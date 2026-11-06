@@ -31,7 +31,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import com.lanraragi.framework.util.AssertUtils
 import com.lanraragi.framework.util.IntIdGenerator
 import java.util.concurrent.atomic.AtomicInteger

@@ -25,7 +25,7 @@ import android.util.AttributeSet
 import android.widget.ScrollView
 import androidx.core.content.withStyledAttributes
 import androidx.core.graphics.withTranslation
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 
 class IndicatingScrollView : ScrollView {
 

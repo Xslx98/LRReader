@@ -24,7 +24,7 @@ import android.util.AttributeSet
 import android.widget.SeekBar
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 
 class SeekBarPreference : Preference, SeekBar.OnSeekBarChangeListener {
 

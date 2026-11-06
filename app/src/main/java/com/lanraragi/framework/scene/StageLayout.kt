@@ -24,7 +24,7 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import java.lang.reflect.Field
 
 open class StageLayout : FrameLayout {

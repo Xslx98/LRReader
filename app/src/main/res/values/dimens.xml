@@ -74,16 +74,8 @@
     <dimen name="search_layout_margin_v">4dp</dimen>
 
     <!-- DrawerArrowDrawable -->
-    <dimen name="dad_drawable_size">24dp</dimen>
-    <dimen name="dad_bar_size">18dp</dimen>
-    <dimen name="dad_top_bottom_bar_arrow_size">11.31dp</dimen>
-    <dimen name="dad_thickness">2dp</dimen>
-    <dimen name="dad_gap_between_bars">3dp</dimen>
-    <dimen name="dad_middle_bar_arrow_size">16dp</dimen>
 
     <!-- AddDeleteDrawable -->
-    <dimen name="add_size">20dp</dimen>
-    <dimen name="add_thickness">2dp</dimen>
 
 
     <!-- AdvanceSearchTable -->
@@ -98,14 +90,8 @@
     <!-- Switch padding -->
 
     <!-- FabLayout -->
-    <dimen name="fab_layout_primary_margin">24dp</dimen>
-    <dimen name="fab_layout_secondary_margin">16dp</dimen>
-    <dimen name="fab_size">56dp</dimen>
-    <dimen name="fab_min_size">40dp</dimen>
 
     <!-- Slider -->
-    <dimen name="slider_bubble_width">26dp</dimen>
-    <dimen name="slider_bubble_height">32dp</dimen>
 
     <dimen name="corner_fab_margin">16dp</dimen>
     <dimen name="corner_fab_margin_download_bottom">70dp</dimen>
@@ -137,12 +123,8 @@
     <dimen name="gallery_guide_divider_width">3dp</dimen>
 
     <!-- Lock pattern view -->
-    <dimen name="lock_pattern_dot_line_width">3dp</dimen>
-    <dimen name="lock_pattern_dot_size">12dp</dimen>
-    <dimen name="lock_pattern_dot_size_activated">28dp</dimen>
 
     <!-- Custom preference -->
-    <dimen name="preference_widget_width">48dp</dimen>
 
     <!-- Gallery -->
     <dimen name="gallery_pager_interval">48dp</dimen>

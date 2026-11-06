@@ -22,7 +22,7 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.withStyledAttributes
 import com.google.android.material.imageview.ShapeableImageView
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 import com.lanraragi.framework.util.MathUtils
 import kotlin.math.abs
 import kotlin.math.max

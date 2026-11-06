@@ -14,7 +14,7 @@
   ~ limitations under the License.
   -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- primary_drawable_light     54% -->
     <!-- secondary_drawable_light   26% -->
@@ -120,10 +120,8 @@
     <color name="guide_bg">#e5009688</color>
 
     <!-- Lock pattern view -->
-    <color name="lock_pattern_view_regular_color_light">#8a000000</color>
-    <color name="lock_pattern_view_regular_color_dark">#8affffff</color>
-    <color name="lock_pattern_view_success_color">@color/colorPrimary</color>
-    <color name="lock_pattern_view_error_color">@color/red_500</color>
+    <!-- Overrides :framework's default so colorPrimary keeps one owner; lint cannot see the library read it. -->
+    <color name="lock_pattern_view_success_color" tools:ignore="UnusedResources">@color/colorPrimary</color>
 
     <!--Shortcut background-->
     <color name="shortcut_bg">#F5F5F5</color>

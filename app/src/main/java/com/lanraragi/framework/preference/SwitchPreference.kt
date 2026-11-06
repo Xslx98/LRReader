@@ -24,7 +24,7 @@ import androidx.annotation.StringRes
 import androidx.appcompat.widget.SwitchCompat
 import androidx.preference.PreferenceViewHolder
 import androidx.preference.TwoStatePreference
-import com.lanraragi.reader.R
+import com.lanraragi.framework.R
 
 class SwitchPreference : TwoStatePreference {
 
