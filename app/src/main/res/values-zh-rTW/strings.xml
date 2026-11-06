@@ -681,6 +681,8 @@
 
     <string name="pagination_count">計數</string>
     <string name="pagination_page_and_item">r/p</string>
+    <string name="pagination_previous_page">上一頁</string>
+    <string name="pagination_next_page">下一頁</string>
     <string name="have_new_version">點擊查看新圖庫版本</string>
     <string name="archiver_downloading">歸檔下載中 %s</string>
 

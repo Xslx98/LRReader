@@ -17,31 +17,24 @@ package com.lanraragi.reader.ui.scene.download
 
 import android.view.View
 import com.lanraragi.reader.ui.scene.download.part.MyPageChangeListener
-import com.sxj.paginationlib.PaginationIndicator
+import com.lanraragi.reader.widget.PageWindow
+import com.lanraragi.reader.widget.PaginationIndicator
 
 /**
  * Manages the pagination indicator and page navigation for the downloads list.
  *
- * Extracted from [DownloadsScene] to reduce its line count. Operates on
- * the [PaginationIndicator] view and synchronizes state with the ViewModel
- * via the [MyPageChangeListener] callback.
+ * Extracted from [DownloadsScene] to reduce its line count. The ViewModel owns
+ * the page state, [MyPageChangeListener] is its only writer, and the indicator
+ * only shows what this helper binds.
  */
 internal class DownloadPaginationHelper(
     private val viewModel: DownloadsViewModel
 ) {
 
-    /** Whether the next pagination init should restore the current page. */
-    var needInitPage = false
-
-    /** Whether the next pagination init should restore the page size. */
-    var needInitPageSize = false
-
-    /** Whether to suppress scroll-to-top on next page change. */
-    var doNotScroll = false
-
     /**
      * Updates the pagination indicator visibility and state based on the
-     * current download list size and pagination settings.
+     * current download list size and pagination settings. A list that shrank
+     * under the current page moves the page back to its new end.
      *
      * @param indicator the [PaginationIndicator] view
      * @param list the current download list (may be null)
@@ -54,26 +47,16 @@ internal class DownloadPaginationHelper(
     ) {
         val ind = indicator ?: return
         val lst = list ?: return
-        val paginationSize = viewModel.paginationSize
-        val canPagination = viewModel.canPagination
-        val pageSize = viewModel.pageSize.value
-        val indexPage = viewModel.indexPage.value
-        if (lst.size < paginationSize || !canPagination) {
+        if (lst.size < viewModel.paginationSize || !viewModel.canPagination) {
             ind.visibility = View.GONE
             return
         }
         ind.visibility = View.VISIBLE
-        needInitPageSize = true
-        ind.initPaginationIndicator(pageSize, viewModel.perPageCountChoices, lst.size, indexPage)
-        ind.setListener(pageChangeListener)
-
-        // Synchronize page listener state
-        pageChangeListener?.let {
-            it.indexPage = indexPage
-            it.pageSize = pageSize
-            it.isNeedInitPage = needInitPage
-            it.isDoNotScroll = doNotScroll
-        }
+        val pageSize = viewModel.pageSize.value
+        val pageCount = PageWindow.pageCount(lst.size, pageSize)
+        pageChangeListener?.moveToPage(PageWindow.clampPage(viewModel.indexPage.value, pageCount))
+        ind.listener = pageChangeListener
+        ind.bind(lst.size, pageSize, viewModel.indexPage.value, viewModel.perPageCountChoices)
     }
 
     /**
@@ -84,33 +67,19 @@ internal class DownloadPaginationHelper(
      * @param list the current download list
      * @param recyclerView the RecyclerView to scroll
      * @param indicator the pagination indicator to update
+     * @param pageChangeListener turns the page
      */
     fun initPage(
         position: Int,
         list: List<*>?,
         recyclerView: androidx.recyclerview.widget.RecyclerView?,
-        indicator: PaginationIndicator?
+        indicator: PaginationIndicator?,
+        pageChangeListener: MyPageChangeListener?
     ) {
         if (list != null && list.size > viewModel.paginationSize && viewModel.canPagination) {
-            viewModel.setIndexPage(position / viewModel.pageSize.value + 1)
+            pageChangeListener?.moveToPage(PageWindow.pageOf(position, viewModel.pageSize.value))
         }
-        doNotScroll = true
-        indicator?.skip2Pos(viewModel.indexPage.value)
+        updatePaginationIndicator(indicator, list, pageChangeListener)
         recyclerView?.scrollToPosition(viewModel.listIndexInPage(position))
-    }
-
-    /**
-     * Returns the spinner position for the given [pageSize] within
-     * the per-page-count choices array.
-     */
-    fun getPageSizePos(pageSize: Int): Int {
-        var index = 0
-        for (i in viewModel.perPageCountChoices.indices) {
-            if (pageSize == viewModel.perPageCountChoices[i]) {
-                index = i
-                break
-            }
-        }
-        return index
     }
 }

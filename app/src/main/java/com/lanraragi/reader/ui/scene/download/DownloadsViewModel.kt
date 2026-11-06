@@ -243,7 +243,7 @@ class DownloadsViewModel(
     /** Current page index (1-based). */
     val indexPage: StateFlow<Int> = _indexPage.asStateFlow()
 
-    private val _pageSize = MutableStateFlow(1)
+    private val _pageSize = MutableStateFlow(PER_PAGE_COUNT_CHOICES[0])
 
     /** Number of items per page. */
     val pageSize: StateFlow<Int> = _pageSize.asStateFlow()

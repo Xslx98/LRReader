@@ -35,6 +35,7 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
 import com.lanraragi.reader.util.isLightTheme
+import com.lanraragi.reader.widget.PageWindow
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.R
@@ -226,8 +227,7 @@ class DownloadAdapter(
         if (listSize < mCallback.paginationSize || !mCallback.isCanPagination) {
             return listSize
         }
-        val count = listSize - mCallback.pageSize * (mCallback.indexPage - 1)
-        return count.coerceAtMost(mCallback.pageSize)
+        return PageWindow.itemsOnPage(listSize, mCallback.pageSize, mCallback.indexPage)
     }
 
     /**

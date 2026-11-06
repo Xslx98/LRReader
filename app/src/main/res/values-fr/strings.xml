@@ -828,6 +828,8 @@ Cette action est irréversible.</string>
     <string name="lrr_url_download_title">Téléchargement URL</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
+    <string name="pagination_previous_page">Page précédente</string>
+    <string name="pagination_next_page">Page suivante</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="search_sp_suffix" />
     <string name="settings_download_clean_invalid_download">Nettoyer les téléchargements invalides</string>

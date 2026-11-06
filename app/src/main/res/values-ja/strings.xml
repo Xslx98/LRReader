@@ -607,6 +607,8 @@
     <!--  limits  -->
     <string name="pagination_count">カウント</string>
     <string name="pagination_page_and_item">r/p</string>
+    <string name="pagination_previous_page">前のページ</string>
+    <string name="pagination_next_page">次のページ</string>
     <string name="have_new_version">タップで新しいギャラリーのバージョンを表示</string>
     <string name="archiver_downloading">アーカイブをダウンロード中 %s</string>
     <string name="settings_eh_theme_auto_switch">システムのダークモードに従う</string>
