@@ -796,6 +796,10 @@
 
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
+    <string name="pagination_previous_symbol" translatable="false">&lt;</string>
+    <string name="pagination_next_symbol" translatable="false">&gt;</string>
+    <string name="pagination_previous_page">Previous page</string>
+    <string name="pagination_next_page">Next page</string>
     <string name="have_new_version">Click to see new gallery version</string>
     <string name="archiver_downloading">Arc Downloading %s</string>
     <string name="settings_eh_theme_auto_switch">Follow system dark mode</string>

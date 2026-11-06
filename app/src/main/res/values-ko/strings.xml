@@ -781,6 +781,8 @@
     <string name="lrr_url_download_title">URL 다운로드</string>
     <string name="pagination_count">count</string>
     <string name="pagination_page_and_item">r/p</string>
+    <string name="pagination_previous_page">이전 페이지</string>
+    <string name="pagination_next_page">다음 페이지</string>
     <string name="scene_download_title_new">%s(%s)</string>
     <string name="settings_download_clean_invalid_download">잘못된 다운로드 정리</string>
     <string name="settings_download_clean_invalid_download_summary">잘못된 다운로드 항목 삭제</string>

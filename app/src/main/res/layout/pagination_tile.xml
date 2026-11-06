@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="1dp"
+    android:background="@drawable/pagination_tile_bg"
+    android:gravity="center"
+    android:maxLines="1"
+    android:minWidth="30dp"
+    android:minHeight="30dp"
+    android:paddingHorizontal="4dp"
+    android:textColor="@color/pagination_tile_text"
+    android:textSize="14sp" />

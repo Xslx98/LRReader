@@ -686,6 +686,8 @@
 
     <string name="pagination_count">共</string>
     <string name="pagination_page_and_item">条/页</string>
+    <string name="pagination_previous_page">上一页</string>
+    <string name="pagination_next_page">下一页</string>
     <string name="have_new_version">点击查看新的画廊版本</string>
     <string name="archiver_downloading">档案下载中 %s</string>
     <string name="settings_eh_theme_auto_switch">深色跟随系统</string>

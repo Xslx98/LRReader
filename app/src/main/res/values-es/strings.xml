@@ -720,6 +720,8 @@
     <!--  订阅服务  -->
     <string name="pagination_count">contar</string>
     <string name="pagination_page_and_item">r/p</string>
+    <string name="pagination_previous_page">Página anterior</string>
+    <string name="pagination_next_page">Página siguiente</string>
     <!--  wifi server -->
     <!--  wifi server  -->
     <!--  limits  -->
