@@ -209,18 +209,38 @@ class DownloadsViewModelTest {
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
         vm.setPageSize(100)
         vm.setIndexPage(9)
-        val listener = MyPageChangeListener(9, 100, null, null).apply {
-            pageChangeCallback = object : MyPageChangeListener.PageChangeCallback {
-                override fun onPageChanged(newIndexPage: Int) = vm.setIndexPage(newIndexPage)
-                override fun onPageSizeChanged(newPageSize: Int) = vm.setPageSize(newPageSize)
-            }
-        }
         val indicator = PaginationIndicator(ContextThemeWrapper(context, R.style.AppTheme))
 
-        DownloadPaginationHelper(vm).updatePaginationIndicator(indicator, vm.downloadList.value, listener)
+        DownloadPaginationHelper(vm).updatePaginationIndicator(indicator, vm.downloadList.value, pageListener(9))
 
         assertEquals(6, vm.indexPage.value)
         assertEquals(View.VISIBLE, indicator.visibility)
+    }
+
+    @Test
+    fun initPage_turnsToThePageHoldingThePosition() = runBlocking {
+        val infos = (0 until 501).map { i ->
+            DownloadInfo().apply {
+                arcid = "jump_$i"; title = "J$i"; label = null
+                state = DownloadState.NONE; time = i.toLong()
+            }
+        }
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infos)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        vm.setPageSize(100)
+        val indicator = PaginationIndicator(ContextThemeWrapper(context, R.style.AppTheme))
+
+        DownloadPaginationHelper(vm).initPage(350, vm.downloadList.value, null, indicator, pageListener(1))
+
+        assertEquals(4, vm.indexPage.value)
+        assertEquals(350, vm.positionInList(50))
+    }
+
+    private fun pageListener(startPage: Int) = MyPageChangeListener(startPage, 100, null, null).apply {
+        pageChangeCallback = object : MyPageChangeListener.PageChangeCallback {
+            override fun onPageChanged(newIndexPage: Int) = vm.setIndexPage(newIndexPage)
+            override fun onPageSizeChanged(newPageSize: Int) = vm.setPageSize(newPageSize)
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
