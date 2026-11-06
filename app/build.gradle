@@ -417,8 +417,6 @@ dependencies {
 
     implementation libs.spinkit
 
-    implementation libs.pagination.sxj
-
     implementation libs.advrecyclerview
 
     implementation libs.okhttp
