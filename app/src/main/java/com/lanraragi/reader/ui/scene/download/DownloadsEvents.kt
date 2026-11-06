@@ -30,6 +30,7 @@ class DownloadsEvents(
             scene.updateTitle()
             scene.updatePaginationIndicator()
             scene.updateView()
+            scene.deepLink.onListShown()
         }
 
         // Subscribe to the live progress map. For each arcid whose snapshot

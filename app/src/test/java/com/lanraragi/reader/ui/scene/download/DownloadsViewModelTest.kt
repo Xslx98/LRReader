@@ -174,7 +174,7 @@ class DownloadsViewModelTest {
 
     @Test
     fun adapterPositionForListIndex_paginated_mapsOnlyOnPageIndices() = runBlocking {
-        // Above PAGINATION_SIZE (500) the list pages; listIndexInPage alone is a
+        // From PAGINATION_SIZE (500) the list pages; listIndexInPage alone is a
         // bare modulo, so an off-page index must map to null, not collide with
         // a visible row.
         val infos = (0 until 501).map { i ->
@@ -214,6 +214,52 @@ class DownloadsViewModelTest {
 
         assertEquals(150, vm.positionInList(50))
         assertEquals(50, vm.listIndexInPage(150))
+    }
+
+    @Test
+    fun listIndexOfArchive_findsTheRowByArcidNotByObject() = runBlocking {
+        val infos = (0 until 3).map { i ->
+            DownloadInfo().apply {
+                arcid = "find_$i"; title = "F$i"; label = null
+                state = DownloadState.NONE; time = i.toLong()
+            }
+        }
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infos)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        val list = vm.downloadList.value
+        val wanted = list[1].arcid!!
+
+        // A deep link holds the manager's object, never the list's own decode.
+        assertEquals(-1, list.indexOf(infos.single { it.arcid == wanted }))
+        assertEquals(1, vm.listIndexOfArchive(wanted))
+        assertEquals(-1, vm.listIndexOfArchive("not_there"))
+    }
+
+    @Test
+    fun listIndexOfArchive_tankMemberFindsItsTankCard() = runBlocking {
+        val infos = listOf("solo", "member_a", "member_b").mapIndexed { i, id ->
+            DownloadInfo().apply {
+                arcid = id; title = id; label = null
+                state = DownloadState.FINISH; time = i.toLong()
+            }
+        }
+        val repository = ServiceRegistry.dataModule.downloadDbRepository
+        repository.putDownloadInfoBatch(infos)
+        repository.putTankGroup("TANK_1", 0L, "Tank", listOf("member_a", "member_b"))
+        awaitUntil { vm.tankCardIdFor("member_a") == "TANK_1" }
+
+        val cardIndex = vm.downloadList.value.indexOfFirst { it.arcid == "TANK_1" }
+        assertTrue(cardIndex >= 0)
+        assertEquals(cardIndex, vm.listIndexOfArchive("member_b"))
+    }
+
+    @Test
+    fun labelListingArchive_tankMemberIsOnTheDefaultList() = runBlocking {
+        ServiceRegistry.dataModule.downloadDbRepository.putTankGroup("TANK_2", 0L, "Tank", listOf("member"))
+        awaitUntil { vm.downloadManager.tankGroupFor("member") != null }
+
+        assertNull(vm.labelListingArchive("member", "Comics"))
+        assertEquals("Comics", vm.labelListingArchive("solo", "Comics"))
     }
 
     @Test

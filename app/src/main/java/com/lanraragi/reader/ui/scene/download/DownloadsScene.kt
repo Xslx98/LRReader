@@ -134,7 +134,7 @@ class DownloadsScene : ToolbarScene(),
         get() = viewModel.searchKey.value
         set(value) { viewModel.setSearchKey(value) }
 
-    private val deepLink by lazy { DownloadDeepLink(this, viewModel) }
+    internal val deepLink by lazy { DownloadDeepLink(this, viewModel) }
 
     var searching: Boolean
         get() = viewModel.searching.value
@@ -158,10 +158,9 @@ class DownloadsScene : ToolbarScene(),
     /** True once onCreateView3 has created the list view. */
     internal val isListViewCreated: Boolean get() = ::mRecyclerView.isInitialized
 
-    /** Turns the pagination to the page of list [position], and scrolls to it when [scroll]. */
-    internal fun showListPosition(position: Int, scroll: Boolean) {
+    /** Turns the pagination to the page of list [position] and scrolls to it. */
+    internal fun showListPosition(position: Int) {
         mPaginationHelper?.initPage(position, mList, mRecyclerView, mPaginationIndicator, myPageChangeListener)
-        if (scroll) mRecyclerView.scrollToPosition(listIndexInPage(position))
     }
 
     override fun onNewArguments(args: Bundle) {
@@ -304,8 +303,6 @@ class DownloadsScene : ToolbarScene(),
         mLayoutManager = DownloadListViews.configureList(
             this, context, mRecyclerView, mSelectionHelper, mDragDropHelper
         )
-
-        deepLink.restorePendingPosition()
 
         DownloadListViews.configureFastScroller(context, fastScroller, mRecyclerView, this)
 

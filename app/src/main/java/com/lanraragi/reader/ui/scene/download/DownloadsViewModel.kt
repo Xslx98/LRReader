@@ -427,6 +427,20 @@ class DownloadsViewModel(
     }
 
     /**
+     * Index in the full list of the row showing [arcid], or -1. Rows are matched
+     * by arcid because the list holds its own Room decodes, not the manager's
+     * objects; a tagged tank member shows as its tank's card.
+     */
+    fun listIndexOfArchive(arcid: String): Int {
+        val rowId = tankCardIdFor(arcid) ?: arcid
+        return _downloadList.value.indexOfFirst { it.arcid == rowId }
+    }
+
+    /** The label whose list shows [arcid]: a tank's card, and so its members, are on the default list. */
+    fun labelListingArchive(arcid: String, label: String?): String? =
+        if (downloadManager.tankGroupFor(arcid) != null) null else label
+
+    /**
      * Adapter position for a full-list [index], or null when pagination is on
      * and the index is not on the currently-displayed page. With pagination,
      * [listIndexInPage] is a bare modulo — an off-page index collides with a
