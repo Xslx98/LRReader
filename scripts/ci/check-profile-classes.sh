@@ -19,6 +19,23 @@ PROFILE=app/src/main/baseline-prof.txt
 MIN_PERCENT=95
 KOTLIN_DIR=app/build/tmp/kotlin-classes/appReleaseDebug
 JAVAC_DIR=app/build/intermediates/javac/appReleaseDebug/compileAppReleaseDebugJavaWithJavac/classes
+MODULE=app_appReleaseRelease
+MAPPING=app/build/outputs/mapping/appReleaseRelease/mapping.txt
+
+# Internal members carry the Kotlin module name, so a rule is only live if it
+# names the shipped module (app/build.gradle pins the :benchmark build types to
+# it). Any other suffix matches nothing in the release build: R8 drops the rule.
+WRONG_MODULE=$(grep -E '\$app_[A-Za-z0-9]+' "$PROFILE" | grep -vE "\\\$${MODULE}([^A-Za-z0-9]|\$)" || true)
+if [ -n "$WRONG_MODULE" ]; then
+  echo "::error::baseline-prof.txt has $(wc -l <<< "$WRONG_MODULE") rules whose internal members are not named for module $MODULE, e.g.: $(head -n1 <<< "$WRONG_MODULE")"
+  exit 1
+fi
+# The pin above is a literal: catch the shipped module being renamed from under
+# it. Only a release build has a mapping, so the debug-only CI job skips this.
+if [ -f "$MAPPING" ] && ! grep -qF "\$$MODULE" "$MAPPING"; then
+  echo "::error::$MAPPING names no \$$MODULE member; the shipped module was renamed, update app/build.gradle and baseline-prof.txt"
+  exit 1
+fi
 
 if [ ! -d "$KOTLIN_DIR/com/lanraragi" ]; then
   echo "::error::$KOTLIN_DIR is missing; run ./gradlew app:assembleAppReleaseDebug first"
