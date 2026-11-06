@@ -11,8 +11,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * Arguments the Downloads page is opened with — a notification's "clear the
- * download service" action, or one archive to show — and the list position
- * held until the list view exists.
+ * download service" action, or one archive to show once the list has it.
  */
 class DownloadDeepLink(
     private val scene: DownloadsScene,
@@ -20,7 +19,7 @@ class DownloadDeepLink(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
 
-    private var initPosition = -1
+    private val pendingJump = PendingArchiveJump()
 
     fun handle(args: Bundle?) {
         if (args == null) return
@@ -35,8 +34,8 @@ class DownloadDeepLink(
         // that completes returns null and the deep link — e.g. tapping the
         // "download complete" notification — silently no-ops. Await init first,
         // then do the lookup on the main thread (where the manager's mutators
-        // are asserted to run). isListViewCreated already guards the case where
-        // the view isn't built yet (stashes initPosition).
+        // are asserted to run). A list view that isn't built yet leaves the jump
+        // pending for the first list it shows.
         scene.lifecycleScope.launch {
             try {
                 // awaitInitAsync asserts it is NOT on the main thread when init
@@ -50,28 +49,26 @@ class DownloadDeepLink(
                 return@launch
             }
             val info = viewModel.downloadManager.getDownloadInfo(arcid) ?: return@launch
-            viewModel.selectLabel(info.label)
+            viewModel.selectLabel(viewModel.labelListingArchive(arcid, info.label))
             scene.updateForLabel()
             scene.updateView()
 
-            val list = scene.list
-            if (list != null) {
-                val position = list.indexOf(info)
-                if (position >= 0 && scene.isListViewCreated) {
-                    scene.showListPosition(position, scroll = false)
-                } else {
-                    initPosition = position
-                }
+            pendingJump.request(arcid)
+            if (scene.isListViewCreated) {
+                pendingJump.resolveNow(viewModel::listIndexOfArchive)?.let(::show)
             }
         }
     }
 
-    /** Applies a position that arrived before the list view existed; called from onCreateView3. */
-    fun restorePendingPosition() {
-        if (initPosition >= 0 && viewModel.indexPage.value != 1) {
-            scene.showListPosition(initPosition, scroll = true)
-            initPosition = -1
-        }
+    /** Called for each list the page shows. */
+    fun onListShown() {
+        val isEmpty = viewModel.downloadList.value.isEmpty()
+        pendingJump.resolveOnNewList(isEmpty, viewModel::listIndexOfArchive)?.let(::show)
+    }
+
+    /** Checked rows are positions on the current page, so a selection keeps its page. */
+    private fun show(position: Int) {
+        if (scene.recyclerView?.isInCustomChoice != true) scene.showListPosition(position)
     }
 
     private companion object {
