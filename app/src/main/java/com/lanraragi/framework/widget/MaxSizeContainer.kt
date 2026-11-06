@@ -22,7 +22,7 @@ import android.view.ViewGroup
 import androidx.core.content.withStyledAttributes
 import androidx.core.view.isGone
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.framework.util.AssertUtils
 import kotlin.math.min
 
 class MaxSizeContainer : ViewGroup {

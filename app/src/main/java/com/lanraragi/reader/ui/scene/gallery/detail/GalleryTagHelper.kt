@@ -21,7 +21,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase

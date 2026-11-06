@@ -19,8 +19,8 @@ import android.os.Build
 import android.util.Log
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
-import com.lanraragi.reader.util.TraceSections
-import com.lanraragi.reader.util.traceSection
+import com.lanraragi.framework.util.TraceSections
+import com.lanraragi.framework.util.traceSection
 import java.io.FileInputStream
 import java.nio.channels.FileChannel
 import java.util.concurrent.atomic.AtomicReference

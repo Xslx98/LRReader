@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lanraragi.reader.util
+package com.lanraragi.framework.util
 
 /**
  * A growable list of primitive ints (no boxing), ported from yorozuya's

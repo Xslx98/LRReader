@@ -27,7 +27,7 @@ import androidx.core.view.ViewCompat
 import com.google.android.material.snackbar.Snackbar
 import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.AnimationUtils
+import com.lanraragi.framework.util.AnimationUtils
 
 @CoordinatorLayout.DefaultBehavior(AppDrawerLayout.Behavior::class)
 class AppDrawerLayout @JvmOverloads constructor(

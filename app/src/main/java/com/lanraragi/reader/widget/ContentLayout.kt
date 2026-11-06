@@ -35,10 +35,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.util.IntIdGenerator
-import com.lanraragi.reader.util.IntList
-import com.lanraragi.reader.util.ViewUtils
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.IntIdGenerator
+import com.lanraragi.framework.util.IntList
+import com.lanraragi.framework.util.ViewUtils
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.widget.list.HandlerDrawable

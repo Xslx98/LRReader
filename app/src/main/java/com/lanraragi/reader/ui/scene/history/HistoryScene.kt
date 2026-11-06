@@ -45,8 +45,8 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultActionRemoveItem
 import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractSwipeableItemViewHolder
-import com.lanraragi.reader.util.attrColor
-import com.lanraragi.reader.util.isLightTheme
+import com.lanraragi.framework.util.attrColor
+import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.widget.list.HandlerDrawable
@@ -76,8 +76,8 @@ import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.LoadImageView
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive

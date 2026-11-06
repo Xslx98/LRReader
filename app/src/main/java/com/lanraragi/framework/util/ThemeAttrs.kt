@@ -1,6 +1,6 @@
 @file:JvmName("ThemeAttrs")
 
-package com.lanraragi.reader.util
+package com.lanraragi.framework.util
 
 import android.content.Context
 import android.content.res.Resources

@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import android.app.Activity
 import android.view.View
 import com.lanraragi.reader.widget.list.EasyRecyclerView
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.reader.R
 import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.isTankoubonId

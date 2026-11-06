@@ -34,7 +34,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
-import com.lanraragi.reader.util.isLightTheme
+import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.reader.widget.PageWindow
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.diagnostics.Analytics
@@ -51,7 +51,7 @@ import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.ui.scene.gallery.detail.GalleryDetailScene
 import com.lanraragi.reader.ui.scene.gallery.list.EnterGalleryDetailTransaction
 import com.lanraragi.reader.widget.SimpleRatingView
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.storage.StorageFile

@@ -27,7 +27,7 @@ import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 import com.lanraragi.framework.lib.glview.glrenderer.NativeTexture
 import com.lanraragi.framework.lib.glview.glrenderer.Texture
 import com.lanraragi.framework.lib.glview.view.GLRoot
-import com.lanraragi.reader.util.TraceSections
+import com.lanraragi.framework.util.TraceSections
 import java.lang.ref.WeakReference
 import java.util.ArrayDeque
 import java.util.concurrent.Executor
@@ -288,7 +288,7 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
     }
 
     private fun uploadNextTile(canvas: GLCanvas): Boolean {
-        // Perf trace section (see com.lanraragi.reader.util.TraceSections).
+        // Perf trace section (see com.lanraragi.framework.util.TraceSections).
         Trace.beginSection(TraceSections.READER_UPLOAD)
         try {
             return uploadNextTileTraced(canvas)

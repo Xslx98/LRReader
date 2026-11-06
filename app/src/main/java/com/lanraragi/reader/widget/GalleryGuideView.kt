@@ -24,10 +24,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.GuideSettings
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 
 class GalleryGuideView @JvmOverloads constructor(
     context: Context,

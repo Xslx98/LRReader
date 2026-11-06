@@ -10,7 +10,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.appbar.MaterialToolbar
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.framework.drawable.RoundSideRectDrawable
 import com.lanraragi.reader.R
 import com.lanraragi.reader.stats.ReadingStatsCalculator

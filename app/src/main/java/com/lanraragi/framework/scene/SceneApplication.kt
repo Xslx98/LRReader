@@ -18,7 +18,7 @@ package com.lanraragi.framework.scene
 
 import android.app.Application
 import android.util.SparseArray
-import com.lanraragi.reader.util.IntIdGenerator
+import com.lanraragi.framework.util.IntIdGenerator
 
 open class SceneApplication : Application() {
 

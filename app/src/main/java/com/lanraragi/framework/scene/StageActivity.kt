@@ -32,8 +32,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.IntIdGenerator
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.IntIdGenerator
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 import kotlin.math.min

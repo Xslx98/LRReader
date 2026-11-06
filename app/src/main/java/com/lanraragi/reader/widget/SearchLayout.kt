@@ -36,7 +36,7 @@ import com.lanraragi.reader.widget.list.MarginItemDecoration
 import com.lanraragi.reader.R
 import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.client.exception.AppException
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 
 /**
  * The search-options page shown behind the search bar. LANraragi only

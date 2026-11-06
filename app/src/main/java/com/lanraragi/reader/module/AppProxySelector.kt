@@ -18,7 +18,7 @@ package com.lanraragi.reader.module
 
 import android.text.TextUtils
 import com.lanraragi.reader.settings.NetworkSettings
-import com.lanraragi.reader.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress

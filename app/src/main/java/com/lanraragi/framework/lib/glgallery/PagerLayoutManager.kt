@@ -28,9 +28,9 @@ import com.lanraragi.framework.lib.glview.view.GLView
 import com.lanraragi.framework.lib.glview.widget.GLEdgeView
 import com.lanraragi.framework.lib.glview.widget.GLProgressView
 import com.lanraragi.framework.lib.glview.widget.GLTextureView
-import com.lanraragi.reader.util.AnimationUtils
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.AnimationUtils
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.MathUtils
 import kotlin.math.abs
 import kotlin.math.max
 

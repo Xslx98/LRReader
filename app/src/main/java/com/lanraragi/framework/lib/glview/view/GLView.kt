@@ -27,7 +27,7 @@ import androidx.annotation.IntDef
 import com.lanraragi.framework.lib.glview.anim.CanvasAnimation
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 import com.lanraragi.framework.lib.glview.glrenderer.GLPaint
-import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.framework.util.AssertUtils
 import kotlin.math.max
 import kotlin.math.min
 

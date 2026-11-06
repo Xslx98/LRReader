@@ -29,8 +29,8 @@ import androidx.core.os.BundleCompat
 import androidx.core.view.isGone
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.AnimationUtils
-import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.framework.util.AnimationUtils
+import com.lanraragi.framework.util.AssertUtils
 import kotlin.math.max
 
 class FabLayout : ViewGroup, View.OnClickListener {

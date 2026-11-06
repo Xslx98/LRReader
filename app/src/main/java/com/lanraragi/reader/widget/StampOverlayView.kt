@@ -9,7 +9,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.reader.StampGeometry
 import com.lanraragi.framework.lib.glgallery.PageTransform

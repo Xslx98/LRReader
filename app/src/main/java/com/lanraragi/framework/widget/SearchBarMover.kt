@@ -21,8 +21,8 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.lanraragi.reader.util.MathUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.MathUtils
+import com.lanraragi.framework.util.ViewUtils
 
 class SearchBarMover(
     private val helper: Helper,

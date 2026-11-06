@@ -17,7 +17,7 @@
 package com.lanraragi.framework.lib.glview.anim
 
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.MathUtils
 
 class AlphaAnimation(
     private val startAlpha: Float,

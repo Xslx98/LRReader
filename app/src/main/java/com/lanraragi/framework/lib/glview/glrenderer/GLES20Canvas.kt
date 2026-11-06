@@ -24,8 +24,8 @@ import android.opengl.GLES20
 import android.opengl.GLUtils
 import android.opengl.Matrix
 import android.util.Log
-import com.lanraragi.reader.util.IntList
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.IntList
+import com.lanraragi.framework.util.MathUtils
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

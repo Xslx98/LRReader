@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lanraragi.reader.util
+package com.lanraragi.framework.util
 
 /**
  * Invariant checks that fail with an [AssertionError] (an [Error], so a

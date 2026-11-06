@@ -20,7 +20,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.DrawableWrapper
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.MathUtils
 
 /**
  * Show a part of the original drawable

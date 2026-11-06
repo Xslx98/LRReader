@@ -1,4 +1,4 @@
-package com.lanraragi.reader.util
+package com.lanraragi.framework.util
 
 import android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND
 import android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE

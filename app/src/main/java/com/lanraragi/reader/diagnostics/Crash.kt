@@ -22,7 +22,7 @@ import android.os.Build
 import android.os.Debug
 import android.util.Log
 import com.lanraragi.reader.util.FileUtils
-import com.lanraragi.reader.util.OSUtils
+import com.lanraragi.framework.util.OSUtils
 import com.lanraragi.framework.scene.StageActivity
 import com.lanraragi.reader.settings.PrivacySettings
 import java.security.MessageDigest

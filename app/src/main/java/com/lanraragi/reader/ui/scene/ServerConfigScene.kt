@@ -24,7 +24,7 @@ import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 

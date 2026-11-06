@@ -27,7 +27,7 @@ import android.graphics.drawable.Drawable
 import android.util.FloatProperty
 import androidx.annotation.ColorInt
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.MathUtils
 
 /**
  * A drawable that can draw a "Drawer hamburger" menu or an Arrow and animate between them.

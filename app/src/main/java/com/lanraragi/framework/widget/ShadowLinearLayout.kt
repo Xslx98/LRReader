@@ -20,7 +20,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.ViewOutlineProvider
 import android.widget.LinearLayout
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 
 class ShadowLinearLayout : LinearLayout {
 

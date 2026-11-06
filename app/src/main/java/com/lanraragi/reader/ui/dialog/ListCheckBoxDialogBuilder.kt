@@ -24,7 +24,7 @@ import android.widget.CheckBox
 import android.widget.ListView
 import androidx.appcompat.app.AlertDialog
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 
 class ListCheckBoxDialogBuilder @SuppressLint("InflateParams") constructor(
     context: Context?, items: Array<CharSequence>?,

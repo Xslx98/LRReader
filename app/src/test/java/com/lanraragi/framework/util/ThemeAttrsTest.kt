@@ -1,4 +1,4 @@
-package com.lanraragi.reader.util
+package com.lanraragi.framework.util
 
 import android.content.res.Resources
 import android.graphics.drawable.ColorDrawable

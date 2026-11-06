@@ -26,7 +26,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
-import com.lanraragi.reader.util.isLightTheme
+import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
@@ -34,8 +34,8 @@ import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.reader.widget.Ripples
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition

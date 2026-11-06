@@ -37,7 +37,7 @@ import android.view.animation.Interpolator
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.isLightTheme
+import com.lanraragi.framework.util.isLightTheme
 
 /**
  * Displays and detects the user's unlock attempt, which is a drag of a finger

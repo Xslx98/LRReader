@@ -8,7 +8,7 @@ import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.diagnostics.Redactor
 import com.lanraragi.reader.storage.StorageFile
-import com.lanraragi.reader.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import com.lanraragi.reader.storage.NoMediaFiles
 
 /**

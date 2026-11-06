@@ -37,4 +37,5 @@ com.lanraragi.framework.drawable   | generic drawables
 com.lanraragi.framework.lib        | GL reader engine (glgallery, glview) and image decoding; no per-frame allocation
 com.lanraragi.framework.preference | generic Preference widgets
 com.lanraragi.framework.scene      | Scene stack and StageActivity
+com.lanraragi.framework.util       | leaf helpers the framework itself uses; the app may use them too
 com.lanraragi.framework.widget     | generic views

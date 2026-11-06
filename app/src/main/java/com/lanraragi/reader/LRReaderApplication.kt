@@ -57,7 +57,7 @@ import android.os.Handler
 import android.os.Looper
 import com.lanraragi.reader.util.FileUtils
 import com.lanraragi.reader.storage.StorageFile
-import com.lanraragi.reader.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.Locale
@@ -599,7 +599,7 @@ class LRReaderApplication : SceneApplication() {
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        com.lanraragi.reader.util.MemoryTrim.dispatch(level)
+        com.lanraragi.framework.util.MemoryTrim.dispatch(level)
         if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             ServiceRegistry.clientModule.clearMemoryCache()
             ServiceRegistry.dataModule.clearArchiveDetailCache()

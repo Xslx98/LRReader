@@ -18,7 +18,7 @@ package com.lanraragi.framework.lib.glview.image
 
 import android.graphics.RectF
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
-import com.lanraragi.reader.util.AssertUtils
+import com.lanraragi.framework.util.AssertUtils
 
 open class ImageSpriteTexture(image: ImageWrapper, count: Int, private val rects: IntArray) : ImageTexture(image) {
 

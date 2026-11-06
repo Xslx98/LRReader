@@ -29,7 +29,7 @@ import com.lanraragi.reader.widget.ReversibleSeekBar
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import android.os.Handler
 import android.os.Looper
-import com.lanraragi.reader.util.AnimationUtils
+import com.lanraragi.framework.util.AnimationUtils
 import android.animation.AnimatorListenerAdapter
 
 /**

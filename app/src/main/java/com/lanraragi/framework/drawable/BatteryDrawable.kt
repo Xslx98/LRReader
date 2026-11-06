@@ -23,7 +23,7 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.MathUtils
 
 class BatteryDrawable : Drawable() {
 

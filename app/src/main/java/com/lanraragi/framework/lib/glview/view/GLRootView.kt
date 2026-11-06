@@ -38,8 +38,8 @@ import com.lanraragi.framework.lib.glview.glrenderer.UploadedTexture
 import com.lanraragi.framework.lib.glview.util.GalleryUtils
 import com.lanraragi.framework.lib.glview.util.MotionEventHelper
 import com.lanraragi.framework.lib.glview.view.GLRoot.OnGLIdleListener
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.TraceSections
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.TraceSections
 import java.util.ArrayDeque
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
@@ -516,7 +516,7 @@ class GLRootView(context: Context, attrs: AttributeSet?) : GLSurfaceView(context
             }
 
             // Perf trace section: GLSurfaceView frames never reach HWUI's
-            // frame stats (see com.lanraragi.reader.util.TraceSections).
+            // frame stats (see com.lanraragi.framework.util.TraceSections).
             Trace.beginSection(TraceSections.READER_GL_FRAME)
             try {
                 onDrawFrameLocked()

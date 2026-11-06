@@ -21,7 +21,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
-import com.lanraragi.reader.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import java.lang.reflect.Field
 
 // Avoid crash on some Meizu devices

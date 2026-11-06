@@ -39,9 +39,9 @@ import androidx.core.content.withStyledAttributes
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.graphics.withTranslation
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.AnimationUtils
-import com.lanraragi.reader.util.MathUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.AnimationUtils
+import com.lanraragi.framework.util.MathUtils
+import com.lanraragi.framework.util.ViewUtils
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min

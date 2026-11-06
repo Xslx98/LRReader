@@ -18,7 +18,7 @@ package com.lanraragi.framework.lib.glview.glrenderer
 
 import android.graphics.RectF
 import android.util.Log
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.MathUtils
 import java.util.WeakHashMap
 
 // BasicTexture is a Texture corresponds to a real GL texture.

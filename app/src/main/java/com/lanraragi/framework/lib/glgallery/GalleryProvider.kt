@@ -26,9 +26,9 @@ import com.lanraragi.framework.lib.glview.image.ImageTexture
 import com.lanraragi.framework.lib.glview.image.ImageWrapper
 import com.lanraragi.framework.lib.glview.view.GLRoot
 import com.lanraragi.framework.lib.image.Image
-import com.lanraragi.reader.util.MemoryTrim
-import com.lanraragi.reader.util.MemoryTrimmable
-import com.lanraragi.reader.util.OSUtils
+import com.lanraragi.framework.util.MemoryTrim
+import com.lanraragi.framework.util.MemoryTrimmable
+import com.lanraragi.framework.util.OSUtils
 
 /**
  * @param cacheMaxBytes budget of the decoded-page memory cache. The app-side

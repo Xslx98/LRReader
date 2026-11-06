@@ -2,9 +2,9 @@ package com.lanraragi.reader.ui.reader
 
 import android.content.Context
 import android.graphics.Typeface
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.ReadingSettings
 import javax.microedition.khronos.egl.EGL10

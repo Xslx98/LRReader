@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene
 
 import android.view.ContextThemeWrapper
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals

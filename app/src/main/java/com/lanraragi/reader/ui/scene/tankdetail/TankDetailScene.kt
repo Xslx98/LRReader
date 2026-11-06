@@ -19,9 +19,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.lanraragi.reader.util.isLightTheme
+import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.reader.widget.Ripples
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition

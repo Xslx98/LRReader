@@ -24,8 +24,8 @@ import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 import com.lanraragi.framework.lib.glview.image.ImageTexture
 import com.lanraragi.framework.lib.glview.image.TileRegions
 import com.lanraragi.framework.lib.glview.view.GLView
-import com.lanraragi.reader.util.AnimationUtils
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.AnimationUtils
+import com.lanraragi.framework.util.MathUtils
 import java.util.Arrays
 import kotlin.math.max
 import kotlin.math.min

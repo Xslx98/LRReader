@@ -16,7 +16,7 @@
 
 package com.lanraragi.framework.lib.glview.anim
 
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.MathUtils
 
 open class FloatAnimation : Animation() {
 

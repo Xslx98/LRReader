@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lanraragi.reader.util
+package com.lanraragi.framework.util
 
 object ExceptionUtils {
     private val TAG: String = ExceptionUtils::class.java.getSimpleName()

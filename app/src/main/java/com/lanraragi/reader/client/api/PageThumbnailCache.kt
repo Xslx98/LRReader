@@ -68,7 +68,7 @@ import com.lanraragi.reader.module.Cacheable
  * LruCache, any pending coroutine result) releases it — small
  * memory cost for a sizeable correctness win.
  */
-object PageThumbnailCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
+object PageThumbnailCache : Cacheable, com.lanraragi.framework.util.MemoryTrimmable {
 
     private const val MB: Long = 1024L * 1024
 
@@ -106,7 +106,7 @@ object PageThumbnailCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable
 
     private val lru = object : LruCache<String, Bitmap>(
         budgetBytesFor(
-            com.lanraragi.reader.util.OSUtils.getTotalMemory(),
+            com.lanraragi.framework.util.OSUtils.getTotalMemory(),
             com.lanraragi.reader.DeviceMemory.isLowRamDevice(),
         )
     ) {
@@ -152,9 +152,9 @@ object PageThumbnailCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable
     }
 
     /** Audit C12: half under pressure, all when the process may be killed. */
-    override fun onTrimMemory(action: com.lanraragi.reader.util.MemoryTrim.Action) {
+    override fun onTrimMemory(action: com.lanraragi.framework.util.MemoryTrim.Action) {
         synchronized(lru) {
-            if (action == com.lanraragi.reader.util.MemoryTrim.Action.CLEAR) {
+            if (action == com.lanraragi.framework.util.MemoryTrim.Action.CLEAR) {
                 lru.evictAll()
             } else {
                 lru.trimToSize(lru.maxSize() / 2)

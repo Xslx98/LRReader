@@ -41,8 +41,8 @@ import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.ViewUtils
 
 class DownloadLabelsScene : ToolbarScene() {
 

@@ -17,8 +17,8 @@ import com.lanraragi.reader.settings.GuideSettings
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.tagtranslation.TagTranslationUtil
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 
 class BookmarksDraw(

@@ -23,7 +23,7 @@ import android.view.MotionEvent
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 
 class SeekBarPanel @JvmOverloads constructor(
     context: Context,

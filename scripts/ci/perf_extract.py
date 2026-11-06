@@ -9,7 +9,7 @@ Trace-section metrics (count, p50, p99 in ms) come from the Perfetto trace
 via the trace processor (pip package `perfetto`, run with
 `uv run --with perfetto` / `pip install perfetto`); the shell passes every
 metric it measured itself with --set. Section names: see
-com.lanraragi.reader.util.TraceSections.
+com.lanraragi.framework.util.TraceSections.
 
 --median combines the perf.json of several measurement passes: every numeric
 metric becomes the median over the passes (what check-perf.sh gates on, so a
