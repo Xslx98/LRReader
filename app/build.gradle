@@ -466,8 +466,10 @@ tasks.withType(Test).configureEach {
     }
 }
 
+// One report over both modules, so scripts/ci/coverage-floor.txt reads one file.
+// App tests exercise framework classes too: both exec files count.
 tasks.register('jacocoTestReport', JacocoReport) {
-    dependsOn 'testAppReleaseDebugUnitTest'
+    dependsOn 'testAppReleaseDebugUnitTest', ':framework:testDebugUnitTest'
     reports {
         xml.required = true
         html.required = true
@@ -483,7 +485,10 @@ tasks.register('jacocoTestReport', JacocoReport) {
     def javaTree = fileTree(
         dir: "${buildDir}/intermediates/javac/appReleaseDebug/compileAppReleaseDebugJavaWithJavac/classes",
         excludes: classExcludes)
-    sourceDirectories.setFrom(files(mainSrc))
-    classDirectories.setFrom(files(debugTree, javaTree))
-    executionData.setFrom(fileTree(dir: buildDir, includes: ['jacoco/testAppReleaseDebugUnitTest.exec']))
+    def frameworkBuild = project(':framework').layout.buildDirectory.get().asFile
+    def frameworkTree = fileTree(dir: "${frameworkBuild}/tmp/kotlin-classes/debug", excludes: classExcludes)
+    sourceDirectories.setFrom(files(mainSrc, rootProject.file('framework/src/main/java')))
+    classDirectories.setFrom(files(debugTree, javaTree, frameworkTree))
+    executionData.setFrom(fileTree(dir: buildDir, includes: ['jacoco/testAppReleaseDebugUnitTest.exec']),
+        fileTree(dir: frameworkBuild, includes: ['jacoco/testDebugUnitTest.exec']))
 }

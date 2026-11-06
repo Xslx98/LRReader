@@ -24,17 +24,6 @@
     </issue>
 
     <issue
-        id="SuspiciousImport"
-        message="Don&apos;t include `android.R` here; use a fully qualified name for each usage instead"
-        errorLine1="import android.R"
-        errorLine2="~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/DrawerView.kt"
-            line="18"
-            column="1"/>
-    </issue>
-
-    <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
         errorLine1="            ratingText.text = String.format(&quot;%.0f★&quot;, archive.rating)"
@@ -449,50 +438,6 @@
         <location
             file="src/main/java/com/lanraragi/reader/ui/scene/history/HistoryScene.kt"
             line="522"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
-            line="54"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        animated = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
-            line="140"
-            column="24"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
-            line="159"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 28"
-        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
-            line="262"
             column="17"/>
     </issue>
 
@@ -943,39 +888,6 @@
             file="src/main/res/layout/widget_advance_search_table.xml"
             line="179"
             column="10"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Context.withStyledAttributes` instead?"
-        errorLine1="        val a = context.obtainStyledAttributes(attrs, SIZE_ATTRS)"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/widget/DrawerView.kt"
-            line="45"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Bitmap.toDrawable` instead?"
-        errorLine1="                        BitmapDrawable(Resources.getSystem(), bitmap)"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/lib/image/Image.kt"
-            line="123"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Canvas.withClip` instead?"
-        errorLine1="                val saveCount = canvas.save()"
-        errorLine2="                                ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/lanraragi/framework/drawable/PreciselyClipDrawable.kt"
-            line="95"
-            column="33"/>
     </issue>
 
     <issue

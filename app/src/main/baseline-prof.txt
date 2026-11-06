@@ -8512,7 +8512,7 @@ PLcom/lanraragi/framework/lib/glview/view/GLView;-><init>()V
 PLcom/lanraragi/framework/lib/glview/view/GLView;->addComponent(Lcom/lanraragi/framework/lib/glview/view/GLView;)V
 PLcom/lanraragi/framework/lib/glview/view/GLView;->addComponent(Lcom/lanraragi/framework/lib/glview/view/GLView;ILcom/lanraragi/framework/lib/glview/view/GLView$LayoutParams;)V
 PLcom/lanraragi/framework/lib/glview/view/GLView;->addComponent(Lcom/lanraragi/framework/lib/glview/view/GLView;Lcom/lanraragi/framework/lib/glview/view/GLView$LayoutParams;)V
-PLcom/lanraragi/framework/lib/glview/view/GLView;->attachToRoot$app_appReleaseRelease(Lcom/lanraragi/framework/lib/glview/view/GLRoot;)V
+PLcom/lanraragi/framework/lib/glview/view/GLView;->attachToRoot$framework_release(Lcom/lanraragi/framework/lib/glview/view/GLRoot;)V
 PLcom/lanraragi/framework/lib/glview/view/GLView;->bounds()Landroid/graphics/Rect;
 PLcom/lanraragi/framework/lib/glview/view/GLView;->dispatchNotifyPositionInRoot()V
 PLcom/lanraragi/framework/lib/glview/view/GLView;->generateDefaultLayoutParams()Lcom/lanraragi/framework/lib/glview/view/GLView$LayoutParams;
@@ -8668,7 +8668,7 @@ PLcom/lanraragi/framework/lib/image/Image$Companion;->$r8$lambda$oeOZnknzo3MoAXl
 HSPLcom/lanraragi/framework/lib/image/Image$Companion;-><init>()V
 HSPLcom/lanraragi/framework/lib/image/Image$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 PLcom/lanraragi/framework/lib/image/Image$Companion;->access$nativeTexImage(Lcom/lanraragi/framework/lib/image/Image$Companion;Landroid/graphics/Bitmap;ZIIII)V
-PLcom/lanraragi/framework/lib/image/Image$Companion;->computeDecodeSampleSize$app_appReleaseRelease(IIIIILcom/lanraragi/framework/lib/image/PageFit;)I
+PLcom/lanraragi/framework/lib/image/Image$Companion;->computeDecodeSampleSize$framework_release(IIIIILcom/lanraragi/framework/lib/image/PageFit;)I
 PLcom/lanraragi/framework/lib/image/Image$Companion;->create(Landroid/graphics/Bitmap;)Lcom/lanraragi/framework/lib/image/Image;
 PLcom/lanraragi/framework/lib/image/Image$Companion;->decode$lambda$0$1(Ljava/io/FileInputStream;ZLcom/lanraragi/framework/lib/image/PageFit;I)Lcom/lanraragi/framework/lib/image/Image;
 PLcom/lanraragi/framework/lib/image/Image$Companion;->decode(Ljava/io/FileInputStream;Z)Lcom/lanraragi/framework/lib/image/Image;
@@ -8679,10 +8679,10 @@ PLcom/lanraragi/framework/lib/image/Image$Companion;->getScreenHeight()I
 PLcom/lanraragi/framework/lib/image/Image$Companion;->getScreenWidth()I
 HSPLcom/lanraragi/framework/lib/image/Image$Companion;->initialize(Landroid/content/Context;)V
 PLcom/lanraragi/framework/lib/image/Image$Companion;->nativeTexImage(Landroid/graphics/Bitmap;ZIIII)V
-PLcom/lanraragi/framework/lib/image/Image$Companion;->needsArgb8888Copy$app_appReleaseRelease(Landroid/graphics/Bitmap$Config;)Z
-PLcom/lanraragi/framework/lib/image/Image$Companion;->readerSampleSize$app_appReleaseRelease(IIIILcom/lanraragi/framework/lib/image/PageFit;)I
-PLcom/lanraragi/framework/lib/image/Image$Companion;->residentBytes$app_appReleaseRelease(IIILandroid/graphics/Bitmap$Config;)I
-PLcom/lanraragi/framework/lib/image/Image$Companion;->retryOnOutOfMemory$app_appReleaseRelease(Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+PLcom/lanraragi/framework/lib/image/Image$Companion;->needsArgb8888Copy$framework_release(Landroid/graphics/Bitmap$Config;)Z
+PLcom/lanraragi/framework/lib/image/Image$Companion;->readerSampleSize$framework_release(IIIILcom/lanraragi/framework/lib/image/PageFit;)I
+PLcom/lanraragi/framework/lib/image/Image$Companion;->residentBytes$framework_release(IIILandroid/graphics/Bitmap$Config;)I
+PLcom/lanraragi/framework/lib/image/Image$Companion;->retryOnOutOfMemory$framework_release(Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 HSPLcom/lanraragi/framework/lib/image/Image$Companion;->setPageFitSource(Lkotlin/jvm/functions/Function0;)V
 HSPLcom/lanraragi/framework/lib/image/Image$Companion;->setScreenHeight(I)V
 HSPLcom/lanraragi/framework/lib/image/Image$Companion;->setScreenWidth(I)V
@@ -8708,9 +8708,9 @@ Lcom/lanraragi/framework/scene/Announcer;
 HSPLcom/lanraragi/framework/scene/Announcer;-><init>(Ljava/lang/Class;)V
 HSPLcom/lanraragi/framework/scene/Announcer;->getArgs()Landroid/os/Bundle;
 HSPLcom/lanraragi/framework/scene/Announcer;->getClazz()Ljava/lang/Class;
-PLcom/lanraragi/framework/scene/Announcer;->getRequestCode$app_appReleaseRelease()I
-HSPLcom/lanraragi/framework/scene/Announcer;->getRequestFrom$app_appReleaseRelease()Lcom/lanraragi/framework/scene/SceneFragment;
-HSPLcom/lanraragi/framework/scene/Announcer;->getTranHelper$app_appReleaseRelease()Lcom/lanraragi/framework/scene/TransitionHelper;
+PLcom/lanraragi/framework/scene/Announcer;->getRequestCode$framework_release()I
+HSPLcom/lanraragi/framework/scene/Announcer;->getRequestFrom$framework_release()Lcom/lanraragi/framework/scene/SceneFragment;
+HSPLcom/lanraragi/framework/scene/Announcer;->getTranHelper$framework_release()Lcom/lanraragi/framework/scene/TransitionHelper;
 HSPLcom/lanraragi/framework/scene/Announcer;->setArgs(Landroid/os/Bundle;)Lcom/lanraragi/framework/scene/Announcer;
 PLcom/lanraragi/framework/scene/Announcer;->setRequestCode(Lcom/lanraragi/framework/scene/SceneFragment;I)Lcom/lanraragi/framework/scene/Announcer;
 Lcom/lanraragi/framework/scene/SceneApplication;

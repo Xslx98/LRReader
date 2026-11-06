@@ -201,7 +201,6 @@
     <ID>NestedBlockDepth:DownloadFragment.kt$DownloadFragment$private fun saveCleanLog(downloadDir: StorageFile, logs: List&lt;String&gt;)</ID>
     <ID>NestedBlockDepth:FileUtils.kt$FileUtils.Companion$@JvmStatic fun getFileName(context: Context, uri: Uri): String?</ID>
     <ID>NestedBlockDepth:GalleryInputHandler.kt$GalleryInputHandler$fun handleGenericMotion(view: View?, motionEvent: MotionEvent): Boolean</ID>
-    <ID>NestedBlockDepth:Image.kt$Image$@Synchronized fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int)</ID>
     <ID>NestedBlockDepth:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
     <ID>NestedBlockDepth:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
     <ID>NestedBlockDepth:LRRDownloadWorker.kt$LRRDownloadWorker$@Throws(IOException::class) private fun downloadPage( client: OkHttpClient, pagePath: String, outFile: File, index: Int, total: Int )</ID>
@@ -216,14 +215,12 @@
     <ID>NestedBlockDepth:TagTranslationDatabase.kt$TagTranslationDatabase.Companion$private suspend fun save(client: OkHttpClient, url: String, file: File): Boolean</ID>
     <ID>NoNameShadowing:DownloadService.kt$DownloadService$arcid</ID>
     <ID>NoNameShadowing:DownloadService.kt$DownloadService$title</ID>
-    <ID>NoNameShadowing:DrawerView.kt$DrawerView$widthSpec</ID>
     <ID>NoNameShadowing:LRRUtils.kt$LRRUtils$title</ID>
     <ID>NoNameShadowing:ListCheckBoxDialogBuilder.kt$ListCheckBoxDialogBuilder$view</ID>
     <ID>NoNameShadowing:NaturalComparator.kt$NaturalComparator.Companion$index</ID>
     <ID>NoNameShadowing:Pipe.kt$Pipe.&lt;no name provided&gt;$len</ID>
     <ID>NoNameShadowing:Pipe.kt$Pipe.&lt;no name provided&gt;$off</ID>
     <ID>PrintStackTrace:FileUtils.kt$FileUtils.Companion$e</ID>
-    <ID>PrintStackTrace:Image.kt$Image.Companion$e</ID>
     <ID>PrintStackTrace:LogCat.kt$LogCat$e</ID>
     <ID>PrintStackTrace:ThumbDataContainer.kt$ThumbDataContainer$e</ID>
     <ID>PrintStackTrace:VersionPreference.kt$VersionPreference$e</ID>
@@ -244,7 +241,6 @@
     <ID>ReturnCount:DownloadDirMigration.kt$DownloadDirMigration$suspend fun migrateRow(info: DownloadInfo): RowResult</ID>
     <ID>ReturnCount:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$fun onItemClick(position: Int): Boolean</ID>
     <ID>ReturnCount:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$fun updateReadProcess(result: ActivityResult)</ID>
-    <ID>ReturnCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun getReadableString(e: Throwable): String</ID>
     <ID>ReturnCount:GalleryInputHandler.kt$GalleryInputHandler$fun handleKeyDown(keyCode: Int, event: KeyEvent?): Boolean</ID>
     <ID>ReturnCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPattern(input: String?): Boolean</ID>
     <ID>ReturnCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic fun verifyPatternWithCipher(input: String?, authenticatedCipher: Cipher): Boolean</ID>
@@ -278,7 +274,6 @@
     <ID>SwallowedException:GalleryImageOperations.kt$GalleryImageOperations$e: IllegalArgumentException</ID>
     <ID>SwallowedException:GalleryUploadHelper.kt$GalleryUploadHelper$e: Exception</ID>
     <ID>SwallowedException:HistoryTankRedirect.kt$HistoryTankRedirect$e: Exception</ID>
-    <ID>SwallowedException:Image.kt$Image.Companion$e: UnsatisfiedLinkError</ID>
     <ID>SwallowedException:LRRCategoriesViewModel.kt$LRRCategoriesViewModel$e: Exception</ID>
     <ID>SwallowedException:LRRDownloadWorker.kt$LRRDownloadWorker$e: CancellationException</ID>
     <ID>SwallowedException:LRReaderApplication.kt$LRReaderApplication$e: Exception</ID>
@@ -300,7 +295,6 @@
     <ID>SwallowedException:TankoubonsViewModel.kt$TankoubonsViewModel$e: Exception</ID>
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: ExecutionException</ID>
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: TimeoutException</ID>
-    <ID>ThrowsCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun throwIfFatal(t: Throwable)</ID>
     <ID>ThrowsCount:GalleryListViewModel.kt$GalleryListViewModel$fun uploadArchive(req: UploadRequest)</ID>
     <ID>ThrowsCount:LRRAuthInterceptor.kt$internal fun matchesConfiguredServer( requestUrl: HttpUrl, serverUrlString: String ): ServerMatchResult</ID>
     <ID>ThrowsCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
@@ -311,7 +305,6 @@
     <ID>ThrowsCount:ReaderPageCache.kt$ReaderPageCache$@Throws(IOException::class) fun downloadToFile( client: OkHttpClient, url: String, cacheFile: File, pageIndex: Int = 0, progressCallback: ProgressCallback? = null, onCallCreated: ((Call) -&gt; Unit)? = null )</ID>
     <ID>ThrowsCount:TankGalleryProvider.kt$TankGalleryProvider$private suspend fun countedSourceFor(memberIndex: Int): TankMemberSource</ID>
     <ID>ThrowsCount:TankMemberSource.kt$LrrTankMemberSource$@Throws(IOException::class) private suspend fun downloadPage(page0: Int, onPercent: ((Float) -&gt; Unit)?)</ID>
-    <ID>TooGenericExceptionThrown:Image.kt$Image$throw Exception("Android 9 解码失败", e)</ID>
     <ID>TooGenericExceptionThrown:AppLockCredentials.kt$AppLockCredentials$throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)</ID>
     <ID>TooGenericExceptionThrown:AppLockCredentials.kt$AppLockCredentials$throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)</ID>
     <ID>UnnecessaryAbstractClass:BaseScene.kt$BaseScene$BaseScene</ID>
@@ -496,8 +489,6 @@
     <ID>UnreachableCode:ReadingStatsCalculator.kt$ReadingStatsCalculator$CompletedEntry( title = archive.title, arcid = row.arcid, serverProfileId = row.serverProfileId, lastActivityMs = row.lastActivityMs(), )</ID>
     <ID>UnreachableCode:ReadingStatsCalculator.kt$ReadingStatsCalculator$historyTime ?: archive?.lastreadtime?.let { ReadingProgressReconciler.normalizeEpochSeconds(it) * MS_PER_SECOND } ?: 0L</ID>
     <ID>UnreachableCode:ReadingStatsCalculator.kt$ReadingStatsCalculator$val archive = row.archive ?: return@mapNotNull null</ID>
-    <ID>UnreachableCode:SceneFactory.kt$SceneFactory$return factory()</ID>
-    <ID>UnreachableCode:SceneFactory.kt$SceneFactory$val factory = factories[className] ?: throw IllegalArgumentException( "Unknown scene class: $className. Did you forget to register it?" )</ID>
     <ID>UnreachableCode:SourceBadgeBinder.kt$ServerSession.getActiveProfileId() ?: 0L</ID>
     <ID>UnreachableCode:StampGeometry.kt$StampGeometry$return x.coerceIn(0f, 100f) to y.coerceIn(0f, 100f)</ID>
     <ID>UnreachableCode:StampGeometry.kt$StampGeometry$val x = parts[0].trim().toFloatOrNull() ?: return null</ID>
@@ -556,7 +547,6 @@
     <ID>UnsafeCallOnNullableType:DownloadsScene.kt$DownloadsScene$ehContext!!</ID>
     <ID>UnsafeCallOnNullableType:EditTextDialogBuilder.kt$EditTextDialogBuilder$context!!</ID>
     <ID>UnsafeCallOnNullableType:EditTextDialogBuilder.kt$EditTextDialogBuilder$mDialog!!</ID>
-    <ID>UnsafeCallOnNullableType:ExceptionUtils.kt$ExceptionUtils$e.message!!</ID>
     <ID>UnsafeCallOnNullableType:FileUtils.kt$FileUtils.Companion$uri!!</ID>
     <ID>UnsafeCallOnNullableType:GalleryAdapterNew.kt$GalleryAdapterNew$mGirdDecoration!!</ID>
     <ID>UnsafeCallOnNullableType:GalleryAdapterNew.kt$GalleryAdapterNew$mListDecoration!!</ID>
@@ -605,7 +595,6 @@
     <ID>UnusedPrivateProperty:DownloadGalleryOpenHelper.kt$DownloadGalleryOpenHelper$val context = callback.ehContext ?: return false</ID>
     <ID>UnusedPrivateProperty:DownloadRepository.kt$DownloadRepository$private val context: Context</ID>
     <ID>UnusedPrivateProperty:DownloadScheduler.kt$DownloadScheduler$private val scope: CoroutineScope</ID>
-    <ID>UnusedPrivateProperty:ExceptionUtils.kt$ExceptionUtils$private val TAG: String = ExceptionUtils::class.java.getSimpleName()</ID>
     <ID>UnusedPrivateProperty:GalleryAdapterNew.kt$GalleryAdapterNew$private var mShowFavourite: Boolean</ID>
     <ID>UnusedPrivateProperty:GalleryDetailScene.kt$GalleryDetailScene.Companion$private const val REQUEST_CODE_COMMENT_GALLERY = 0</ID>
     <ID>UnusedPrivateProperty:GalleryListScene.kt$GalleryListScene.Companion$private const val TAG = "GalleryListScene"</ID>
@@ -647,7 +636,6 @@
     <ID>UseOrEmpty:TagTranslationUtil.kt$TagTranslationUtil$tag ?: ""</ID>
     <ID>UtilityClassWithPublicConstructor:FileUtils.kt$FileUtils</ID>
     <ID>VarCouldBeVal:FileUtils.kt$FileUtils.Companion$var `is`: InputStream? = null</ID>
-    <ID>VarCouldBeVal:Image.kt$Image$private var started = false</ID>
     <ID>VarCouldBeVal:SimpleRatingView.kt$SimpleRatingView$var ratingInt = mRatingInt</ID>
     <ID>VarCouldBeVal:TankPageMap.kt$TankPageMap$private var counts: MutableList&lt;Int&gt; = pagecounts.mapTo(ArrayList(pagecounts.size)) { it.coerceAtLeast(0) }</ID>
     <ID>VariableNaming:DownloadListInfosExecutor.kt$DownloadListInfosExecutor$@Suppress("unused") private val TAG = "DownloadSearchingExecutor"</ID>
