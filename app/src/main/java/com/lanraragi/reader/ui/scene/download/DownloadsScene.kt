@@ -486,11 +486,7 @@ class DownloadsScene : ToolbarScene(),
     override val pageSize: Int
         get() = viewModel.pageSize.value
 
-    override val paginationSize: Int
-        get() = viewModel.paginationSize
-
-    override val isCanPagination: Boolean
-        get() = viewModel.canPagination
+    override fun isPaginated(size: Int): Boolean = viewModel.isPaginated(size)
 
     override fun positionInList(position: Int): Int = viewModel.positionInList(position)
 

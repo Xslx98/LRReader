@@ -198,6 +198,25 @@ class DownloadsViewModelTest {
     }
 
     @Test
+    fun positionInList_exactlyAtTheThreshold_pagesLikeTheAdapter() = runBlocking {
+        val infos = (0 until 500).map { i ->
+            DownloadInfo().apply {
+                arcid = "edge_$i"; title = "E$i"; label = null
+                state = DownloadState.NONE; time = i.toLong()
+            }
+        }
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfoBatch(infos)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        assertEquals(500, vm.downloadList.value.size)
+
+        vm.setPageSize(100)
+        vm.setIndexPage(2)
+
+        assertEquals(150, vm.positionInList(50))
+        assertEquals(50, vm.listIndexInPage(150))
+    }
+
+    @Test
     fun updatePaginationIndicator_listShrankUnderThePage_movesToTheLastPage() = runBlocking {
         val infos = (0 until 501).map { i ->
             DownloadInfo().apply {

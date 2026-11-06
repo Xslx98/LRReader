@@ -47,7 +47,7 @@ internal class DownloadPaginationHelper(
     ) {
         val ind = indicator ?: return
         val lst = list ?: return
-        if (lst.size < viewModel.paginationSize || !viewModel.canPagination) {
+        if (!viewModel.isPaginated(lst.size)) {
             ind.visibility = View.GONE
             return
         }
@@ -76,7 +76,7 @@ internal class DownloadPaginationHelper(
         indicator: PaginationIndicator?,
         pageChangeListener: MyPageChangeListener?
     ) {
-        if (list != null && list.size > viewModel.paginationSize && viewModel.canPagination) {
+        if (list != null && viewModel.isPaginated(list.size)) {
             pageChangeListener?.moveToPage(PageWindow.pageOf(position, viewModel.pageSize.value))
         }
         updatePaginationIndicator(indicator, list, pageChangeListener)

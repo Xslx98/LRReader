@@ -249,10 +249,10 @@ class DownloadsViewModel(
     val pageSize: StateFlow<Int> = _pageSize.asStateFlow()
 
     /** Whether pagination is enabled (from settings). */
-    val canPagination: Boolean = DownloadSettings.getDownloadPagination()
+    private val canPagination: Boolean = DownloadSettings.getDownloadPagination()
 
-    /** Threshold above which pagination activates. */
-    val paginationSize: Int = PAGINATION_SIZE
+    /** Whether a list of [size] rows is shown page by page: the one home for this rule. */
+    fun isPaginated(size: Int): Boolean = canPagination && size >= PAGINATION_SIZE
 
     /** Available per-page count choices. */
     val perPageCountChoices: IntArray = PER_PAGE_COUNT_CHOICES
@@ -410,8 +410,7 @@ class DownloadsViewModel(
      * Calculates the position within the full list for a given in-page position.
      */
     fun positionInList(position: Int): Int {
-        val list = _downloadList.value
-        if (list.size > PAGINATION_SIZE && canPagination) {
+        if (isPaginated(_downloadList.value.size)) {
             return position + _pageSize.value * (_indexPage.value - 1)
         }
         return position
@@ -421,8 +420,7 @@ class DownloadsViewModel(
      * Calculates the in-page index for a given position in the full list.
      */
     fun listIndexInPage(position: Int): Int {
-        val list = _downloadList.value
-        if (list.size > PAGINATION_SIZE && canPagination) {
+        if (isPaginated(_downloadList.value.size)) {
             return position % _pageSize.value
         }
         return position
@@ -558,7 +556,7 @@ class DownloadsViewModel(
     }
 
     companion object {
-        /** Threshold above which pagination activates. */
+        /** The row count from which pagination activates. */
         private const val PAGINATION_SIZE = 500
 
         /** Available per-page count choices for the pagination indicator. */

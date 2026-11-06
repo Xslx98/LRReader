@@ -83,8 +83,7 @@ class DownloadAdapter(
     interface DownloadAdapterCallback {
         val indexPage: Int
         val pageSize: Int
-        val paginationSize: Int
-        val isCanPagination: Boolean
+        fun isPaginated(size: Int): Boolean
         fun positionInList(position: Int): Int
         fun listIndexInPage(position: Int): Int
         val list: List<DownloadInfo>?
@@ -224,7 +223,7 @@ class DownloadAdapter(
     override fun getItemCount(): Int {
         val list = mCallback.list ?: return 0
         val listSize = list.size
-        if (listSize < mCallback.paginationSize || !mCallback.isCanPagination) {
+        if (!mCallback.isPaginated(listSize)) {
             return listSize
         }
         return PageWindow.itemsOnPage(listSize, mCallback.pageSize, mCallback.indexPage)
