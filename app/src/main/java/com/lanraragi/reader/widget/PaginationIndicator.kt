@@ -136,14 +136,15 @@ class PaginationIndicator @JvmOverloads constructor(
                 tip.tag = number
                 tip.text = String.format(Locale.getDefault(), "%d", number)
                 tip.isSelected = number == page
+                tip.isActivated = number == page
             }
         }
     }
 
-    /** The tile drawable and text color key on "selected", which for an arrow means "can move". */
+    /** The tile drawable and text color key on "activated", which for an arrow means "can move". */
     private fun bindArrow(arrow: TextView, canMove: Boolean) {
         arrow.isEnabled = canMove
-        arrow.isSelected = canMove
+        arrow.isActivated = canMove
     }
 
     private companion object {

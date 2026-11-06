@@ -1,41 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Children of PaginationIndicator. The total takes what the controls leave,
-     so at a large font scale it ellipsizes instead of pushing them off screen. -->
+<!-- Children of PaginationIndicator, which centres this row. The row wraps its
+     content, so the total's weight only comes into play when the row does not
+     fit: at a large font scale the total ellipsizes instead of pushing the
+     controls off screen. -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <TextView
-        android:id="@+id/pagination_total"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:ellipsize="end"
-        android:gravity="center"
-        android:maxLines="1"
-        android:textSize="14sp" />
-
-    <include
-        android:id="@+id/pagination_previous"
-        layout="@layout/pagination_tile" />
-
     <LinearLayout
-        android:id="@+id/pagination_tips"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <include
-        android:id="@+id/pagination_next"
-        layout="@layout/pagination_tile" />
+        <TextView
+            android:id="@+id/pagination_total"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textSize="14sp" />
 
-    <Spinner
-        android:id="@+id/pagination_page_size"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="2dp"
-        android:background="@drawable/pagination_page_size_bg"
-        android:minHeight="30dp"
-        android:paddingEnd="20dp"
-        android:spinnerMode="dropdown"
-        tools:ignore="RtlSymmetry" />
+        <include
+            android:id="@+id/pagination_previous"
+            layout="@layout/pagination_tile" />
+
+        <LinearLayout
+            android:id="@+id/pagination_tips"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+
+        <include
+            android:id="@+id/pagination_next"
+            layout="@layout/pagination_tile" />
+
+        <Spinner
+            android:id="@+id/pagination_page_size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="2dp"
+            android:background="@drawable/pagination_page_size_bg"
+            android:minHeight="30dp"
+            android:paddingEnd="20dp"
+            android:spinnerMode="dropdown"
+            tools:ignore="RtlSymmetry" />
+    </LinearLayout>
 </merge>
