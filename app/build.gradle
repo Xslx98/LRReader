@@ -184,6 +184,18 @@ detekt {
     baseline = file("$rootDir/config/detekt/baseline.xml")
 }
 
+// Kotlin mangles internal members with the module name, which defaults to the
+// variant name. The generated baseline profile comes from nonMinifiedRelease, so
+// without this its rules name foo$app_appReleaseNonMinifiedRelease, which does
+// not exist in the shipped build, and R8 silently drops them. Give the :benchmark
+// build types the shipped module name; appReleaseRelease itself keeps its default
+// so the shipped DEX does not change. scripts/ci/check-profile-classes.sh gates it.
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { t ->
+    if (t.name ==~ /compileAppRelease(BenchmarkRelease|NonMinifiedRelease)Kotlin/) {
+        t.compilerOptions.moduleName.set('app_appReleaseRelease')
+    }
+}
+
 // The :benchmark build types compile the same sources as appReleaseRelease,
 // which detektAppReleaseRelease already covers against its baseline; their
 // auto-created detekt tasks would need duplicate baselines, and merely
