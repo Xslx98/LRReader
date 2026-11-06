@@ -408,6 +408,7 @@ tasks.matching { it.name == 'minifyAppReleaseReleaseWithR8' }.configureEach {
 }
 
 dependencies {
+    implementation project(':framework')
     implementation libs.material
 
     implementation libs.activity
