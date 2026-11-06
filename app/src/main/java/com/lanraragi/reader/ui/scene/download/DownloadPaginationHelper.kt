@@ -77,7 +77,7 @@ internal class DownloadPaginationHelper(
         pageChangeListener: MyPageChangeListener?
     ) {
         if (list != null && list.size > viewModel.paginationSize && viewModel.canPagination) {
-            pageChangeListener?.moveToPage(position / viewModel.pageSize.value + 1)
+            pageChangeListener?.moveToPage(PageWindow.pageOf(position, viewModel.pageSize.value))
         }
         updatePaginationIndicator(indicator, list, pageChangeListener)
         recyclerView?.scrollToPosition(viewModel.listIndexInPage(position))

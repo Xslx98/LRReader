@@ -22,6 +22,14 @@ class PageWindowTest {
     }
 
     @Test
+    fun `itemsOnPage is a full page, then the rest, then nothing past the end`() {
+        assertEquals(50, PageWindow.itemsOnPage(120, 50, 1))
+        assertEquals(20, PageWindow.itemsOnPage(120, 50, 3))
+        assertEquals(0, PageWindow.itemsOnPage(120, 50, 4))
+        assertEquals(0, PageWindow.itemsOnPage(120, 50, 9))
+    }
+
+    @Test
     fun `visiblePages centres on the page and slides at both ends`() {
         assertEquals(1..5, PageWindow.visiblePages(1, 11, 5))
         assertEquals(1..5, PageWindow.visiblePages(3, 11, 5))

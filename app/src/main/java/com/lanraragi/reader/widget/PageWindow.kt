@@ -15,6 +15,13 @@ internal object PageWindow {
     /** [page] moved into the valid range; page 1 when there are no pages. */
     fun clampPage(page: Int, pageCount: Int): Int = page.coerceIn(1, max(pageCount, 1))
 
+    /** The page holding the item at 0-based [position]. */
+    fun pageOf(position: Int, pageSize: Int): Int = position / pageSize + 1
+
+    /** Rows on [page]: none past the end, which a list can be for a moment after it shrank. */
+    fun itemsOnPage(total: Int, pageSize: Int, page: Int): Int =
+        (total - pageSize * (page - 1)).coerceIn(0, pageSize)
+
     /**
      * The [maxTips] consecutive page numbers to show around [page]: centred on
      * it where possible, sliding at either end, fewer when there are fewer pages.

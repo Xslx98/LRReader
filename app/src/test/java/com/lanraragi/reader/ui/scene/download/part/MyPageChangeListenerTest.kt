@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.download.part
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.lanraragi.reader.widget.PageWindow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -15,8 +16,7 @@ class MyPageChangeListenerTest {
 
     /** Item count follows the page state the way DownloadAdapter's does. */
     private inner class PagedAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        override fun getItemCount() =
-            (TOTAL - pageSize * (page - 1)).coerceIn(0, pageSize)
+        override fun getItemCount() = PageWindow.itemsOnPage(TOTAL, pageSize, page)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
             error("not laid out")
