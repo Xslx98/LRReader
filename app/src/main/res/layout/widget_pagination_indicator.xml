@@ -32,7 +32,7 @@
         android:id="@+id/pagination_page_size"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
+        android:layout_marginHorizontal="2dp"
         android:background="@drawable/pagination_page_size_bg"
         android:minHeight="30dp"
         android:paddingEnd="20dp"
