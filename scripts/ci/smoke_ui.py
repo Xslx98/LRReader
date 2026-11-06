@@ -54,6 +54,16 @@ def dump():
     return out.decode("utf-8", "replace")
 
 
+def print_raw_dump():
+    """For a failure report: what a parsed dump hides, such as an empty hierarchy
+    or uiautomator's own error, which otherwise read as "nothing visible"."""
+    out = subprocess.run([ADB, "exec-out", "uiautomator", "dump", "/dev/tty"], capture_output=True)
+    print(f"smoke_ui: raw uiautomator dump (exit {out.returncode}):", file=sys.stderr)
+    print(out.stdout.decode("utf-8", "replace"), file=sys.stderr)
+    if out.stderr:
+        print(out.stderr.decode("utf-8", "replace"), file=sys.stderr)
+
+
 def nodes(xml):
     for m in re.finditer(r"<node ([^>]*)>", xml):
         yield dict(re.findall(r'([\w-]+)="([^"]*)"', m.group(1)))
@@ -95,6 +105,7 @@ def connect(pkg, url):
     field = wait("resource-id", field_id, 30)
     if not field:
         print("smoke_ui: server form not shown", file=sys.stderr)
+        print_raw_dump()
         return 1
     imes = shell("ime", "list", "-s").stdout.split()
     for ime in imes:
@@ -116,6 +127,7 @@ def connect(pkg, url):
                   f"(attempt {attempt} of {CONNECT_TYPE_ATTEMPTS})", file=sys.stderr)
         else:
             print(f"smoke_ui: URL field does not read {url}; visible: " + visible(), file=sys.stderr)
+            print_raw_dump()
             return 1
     finally:
         for ime in imes:
@@ -128,6 +140,7 @@ def connect(pkg, url):
     if not wait("resource-id", f"{pkg}:id/thumb_new", 60):
         print("smoke_ui: gallery list did not appear after Connect; visible: "
               + " | ".join(n["text"] for n in nodes(dump()) if n.get("text")), file=sys.stderr)
+        print_raw_dump()
         return 1
     print("smoke_ui: connected, list shown")
     return 0
@@ -965,6 +978,7 @@ def shots(pkg, out, themes):
         Shots(pkg, out).run_themes(themes)
     except SmokeFailure as e:
         print(f"smoke_ui shots: FAILED: {e}", file=sys.stderr)
+        print_raw_dump()
         return 1
     print(f"smoke_ui shots: {', '.join(themes)} captured under {out}")
     return 0
@@ -975,6 +989,7 @@ def widgets(pkg, only):
         Widgets(pkg).run(only)
     except SmokeFailure as e:
         print(f"smoke_ui widgets: FAILED: {e}", file=sys.stderr)
+        print_raw_dump()
         return 1
     print("smoke_ui widgets: all journeys passed")
     return 0
@@ -1001,6 +1016,7 @@ def main(argv):
     if not hit:
         print(f"smoke_ui: {attr}={value!r} not found within {seconds:.0f}s; visible: "
               + " | ".join(n["text"] for n in nodes(dump()) if n.get("text")), file=sys.stderr)
+        print_raw_dump()
         return 1
     if cmd == "wait":
         print(f"smoke_ui: found {attr}={value!r}")
