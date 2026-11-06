@@ -19,6 +19,7 @@ PROFILE=app/src/main/baseline-prof.txt
 MIN_PERCENT=95
 KOTLIN_DIR=app/build/tmp/kotlin-classes/appReleaseDebug
 JAVAC_DIR=app/build/intermediates/javac/appReleaseDebug/compileAppReleaseDebugJavaWithJavac/classes
+FRAMEWORK_DIR=framework/build/tmp/kotlin-classes/debug
 MODULE=app_appReleaseRelease
 MAPPING=app/build/outputs/mapping/appReleaseRelease/mapping.txt
 
@@ -44,7 +45,7 @@ fi
 
 CLASSES=$(mktemp)
 trap 'rm -f "$CLASSES"' EXIT
-for dir in "$KOTLIN_DIR" "$JAVAC_DIR"; do
+for dir in "$KOTLIN_DIR" "$JAVAC_DIR" "$FRAMEWORK_DIR"; do
   [ -d "$dir" ] || continue
   (cd "$dir" && find com -name '*.class') | sed 's/\.class$//'
 done | sort -u > "$CLASSES"

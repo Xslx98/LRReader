@@ -268,6 +268,7 @@ tasks.register("verifyArchitecture") {
     description = "Fails on package-dependency violations not in config/architecture/allowlist.txt."
 
     def srcDir = file("src/main/java")
+    def frameworkSrcDir = rootProject.file("framework/src/main/java")
     def rulesFile = rootProject.file("config/architecture/rules.txt")
     def allowFile = rootProject.file("config/architecture/allowlist.txt")
     def packagesFile = rootProject.file("config/architecture/packages.txt")
@@ -276,6 +277,7 @@ tasks.register("verifyArchitecture") {
         fileTree(p.file("src")) { include "**/*.java" }
     })
     inputs.dir(srcDir)
+    inputs.files(fileTree(frameworkSrcDir))
     inputs.files(javaFiles)
     inputs.files(rulesFile, allowFile, packagesFile)
     inputs.property("writeAllowlist", writeAllowlist)
@@ -305,13 +307,16 @@ tasks.register("verifyArchitecture") {
             .collect { it.split(/\s+\|\s+/)[0].trim() } as Set
         def unknownPackages = new TreeSet<String>()
         def found = new TreeSet<String>()
-        def srcPath = srcDir.toPath()
-        fileTree(srcDir) { include "**/*.kt" }.each { File f ->
+        def kotlinSources = [srcDir, frameworkSrcDir].findAll { it.exists() }.collectMany { File root ->
+            fileTree(root) { include "**/*.kt" }.collect { File f ->
+                [root.toPath().relativize(f.toPath()).toString().replace('\\', '/'), f]
+            }
+        }
+        kotlinSources.each { String rel, File f ->
             def text = f.getText('UTF-8')
             def pm = text =~ /(?m)^package\s+([\w.]+)/
             if (!pm.find()) return
             def pkg = pm.group(1)
-            def rel = srcPath.relativize(f.toPath()).toString().replace('\\', '/')
             def top = pkg.split(/\./).take(4).join('.')
             if (!knownPackages.contains(top)) unknownPackages << "${top} (${rel})".toString()
             def imports = (text =~ /(?m)^import\s+([\w.]+(?:\.\*)?)/).collect { it[1] }

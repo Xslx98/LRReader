@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fails when a crash-class lint issue is hidden instead of fixed (audit
 # 2026-10-06d STAB-11, 2026-10-06e STAB-02/STAB-03):
-#  1. app/lint-baseline.xml holds one of the ids below. Lint matches baseline
+#  1. A module's lint-baseline.xml holds one of the ids below. Lint matches baseline
 #     entries by id, message and file, so a baselined NewApi hid an API 30
 #     call that crashed Android 9/10 (STAB-01) while CI stayed green, and a
 #     baselined AnimatorKeep hid icon animations that R8 broke in release.
@@ -17,8 +17,12 @@
 # check, typed animator property) or suppress one call site with a reason.
 set -euo pipefail
 
-BASELINE=app/lint-baseline.xml
-SOURCES=app/src
+BASELINES=(app/lint-baseline.xml)
+SOURCES=(app/src)
+if [ -d framework/src ]; then
+  BASELINES+=(framework/lint-baseline.xml)
+  SOURCES+=(framework/src)
+fi
 IDS=(
   NewApi
   InlinedApi
@@ -37,18 +41,21 @@ IDS=(
   MissingClass
 )
 
-if [ ! -f "$BASELINE" ] || [ ! -d "$SOURCES/main" ]; then
-  echo "::error::Run from the repo root: $BASELINE or $SOURCES/main not found"
+if [ ! -f app/lint-baseline.xml ] || [ ! -d app/src/main ]; then
+  echo "::error::Run from the repo root: app/lint-baseline.xml or app/src/main not found"
   exit 1
 fi
 
 fail=0
-for id in "${IDS[@]}"; do
-  count=$(grep -c "id=\"$id\"" "$BASELINE" || true)
-  if [ "$count" -gt 0 ]; then
-    echo "::error::$BASELINE holds $count '$id' entr(y/ies): crash-class lint issues must be fixed, not baselined"
-    fail=1
-  fi
+for BASELINE in "${BASELINES[@]}"; do
+  [ -f "$BASELINE" ] || continue
+  for id in "${IDS[@]}"; do
+    count=$(grep -c "id=\"$id\"" "$BASELINE" || true)
+    if [ "$count" -gt 0 ]; then
+      echo "::error::$BASELINE holds $count '$id' entr(y/ies): crash-class lint issues must be fixed, not baselined"
+      fail=1
+    fi
+  done
 done
 
 # Suppressions in shipped sources (unit/instrumented tests are exempt).
@@ -59,7 +66,7 @@ MARKER='@Suppress(Lint|Warnings)?\(|@file:Suppress\(|noinspection|tools:ignore='
 # parentheses do not close on its line is joined with the following lines
 # (up to 10) so ids on continuation lines are seen.
 set +e
-HITS=$(find "$SOURCES" \( -name test -o -name androidTest \) -prune -o -type f \
+HITS=$(find "${SOURCES[@]}" \( -name test -o -name androidTest \) -prune -o -type f \
     \( -name '*.kt' -o -name '*.java' -o -name '*.xml' \) -print0 |
   M="$MARKER" xargs -0 awk '
     function balanced(s,   o, c) { o = gsub(/\(/, "(", s); c = gsub(/\)/, ")", s); return o <= c }
@@ -80,7 +87,7 @@ HITS=$(find "$SOURCES" \( -name test -o -name androidTest \) -prune -o -type f \
 status=$?
 set -e
 if [ "$status" -gt 1 ]; then
-  echo "::error::Scanning $SOURCES for lint suppressions failed (grep exit $status)"
+  echo "::error::Scanning ${SOURCES[*]} for lint suppressions failed (grep exit $status)"
   exit 1
 fi
 UNREASONED=""
