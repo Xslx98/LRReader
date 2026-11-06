@@ -8,8 +8,7 @@
 set -euo pipefail
 
 MAX=34
-ROOTS=(app/src/main/java)
-[ -d framework/src/main/java ] && ROOTS+=(framework/src/main/java)
+ROOTS=(app/src/main/java framework/src/main/java)
 COUNT=$(grep -rhoE "(^|[^A-Za-z.])runCatching[ ({<]" "${ROOTS[@]}" --include=*.kt | wc -l | tr -d ' ')
 if [ "$COUNT" -gt "$MAX" ]; then
   echo "::error::$COUNT plain runCatching uses in main sources (max $MAX). Use suspendRunCatching around suspend calls, or raise MAX in $0 for non-suspend code."

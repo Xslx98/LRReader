@@ -17,12 +17,8 @@
 # check, typed animator property) or suppress one call site with a reason.
 set -euo pipefail
 
-BASELINES=(app/lint-baseline.xml)
-SOURCES=(app/src)
-if [ -d framework/src ]; then
-  BASELINES+=(framework/lint-baseline.xml)
-  SOURCES+=(framework/src)
-fi
+BASELINES=(app/lint-baseline.xml framework/lint-baseline.xml)
+SOURCES=(app/src framework/src)
 IDS=(
   NewApi
   InlinedApi
@@ -41,14 +37,15 @@ IDS=(
   MissingClass
 )
 
-if [ ! -f app/lint-baseline.xml ] || [ ! -d app/src/main ]; then
-  echo "::error::Run from the repo root: app/lint-baseline.xml or app/src/main not found"
-  exit 1
-fi
+for module in app framework; do
+  if [ ! -f "$module/lint-baseline.xml" ] || [ ! -d "$module/src/main" ]; then
+    echo "::error::Run from the repo root: $module/lint-baseline.xml or $module/src/main not found"
+    exit 1
+  fi
+done
 
 fail=0
 for BASELINE in "${BASELINES[@]}"; do
-  [ -f "$BASELINE" ] || continue
   for id in "${IDS[@]}"; do
     count=$(grep -c "id=\"$id\"" "$BASELINE" || true)
     if [ "$count" -gt 0 ]; then
