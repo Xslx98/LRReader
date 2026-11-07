@@ -14,6 +14,7 @@ import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.widget.StampOverlayView
 import com.lanraragi.reader.reading.LRRStampsBackend
 import com.lanraragi.reader.reading.StampsBackend
+import com.lanraragi.reader.reading.TankStampsBackend
 
 /**
  * The reader's stamp overlay: picks the stamps backend for the session, owns
