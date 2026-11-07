@@ -4,8 +4,8 @@ import com.lanraragi.reader.client.api.data.LRRServerInfo
 
 /**
  * What a connect attempt learned about a server, for the code above transport.
- * [LRRServerInfo] stays the wire DTO; the UI sees only this. Null fields mean the
- * server did not send them, and the caller picks the fallback.
+ * [LRRServerInfo] stays the wire DTO; the UI sees only this. A null field means the
+ * server did not send it.
  */
 data class ServerIdentity(
     val name: String?,
@@ -15,4 +15,9 @@ data class ServerIdentity(
 )
 
 internal fun LRRServerInfo.toServerIdentity(): ServerIdentity =
-    ServerIdentity(name, version, versionName, archivesPerPage)
+    ServerIdentity(
+        name = name,
+        version = version,
+        versionName = versionName,
+        archivesPerPage = archivesPerPage,
+    )
