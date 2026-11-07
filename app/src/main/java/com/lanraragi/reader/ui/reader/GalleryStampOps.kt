@@ -19,7 +19,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.widget.StampOverlayView
 import com.lanraragi.reader.client.api.LRRHttpException
-import com.lanraragi.reader.client.api.LRRStampApi.StampData
+import com.lanraragi.reader.domain.ReaderStamp
 import kotlin.math.roundToInt
 
 /**
@@ -121,7 +121,7 @@ class GalleryStampOps(
             .show()
     }
 
-    override fun onStampTapped(stamp: StampData, page0: Int, screenX: Float, screenY: Float) {
+    override fun onStampTapped(stamp: ReaderStamp, page0: Int, screenX: Float, screenY: Float) {
         card?.dismiss()
         // Inflate with the activity root as parent (never null: InflateParams lint).
         val root = activity.findViewById<ViewGroup>(R.id.main)
@@ -163,7 +163,7 @@ class GalleryStampOps(
         card = popup
     }
 
-    private fun showEditDialog(stamp: StampData, page0: Int) {
+    private fun showEditDialog(stamp: ReaderStamp, page0: Int) {
         val edit = EditText(activity).apply {
             setText(stamp.content)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -182,7 +182,7 @@ class GalleryStampOps(
             .show()
     }
 
-    private fun showDeleteConfirm(stamp: StampData, page0: Int) {
+    private fun showDeleteConfirm(stamp: ReaderStamp, page0: Int) {
         AlertDialog.Builder(activity)
             .setMessage(R.string.stamps_delete_confirm)
             .setNegativeButton(android.R.string.cancel, null)
@@ -199,7 +199,7 @@ class GalleryStampOps(
         card = null
     }
 
-    override fun onStampDropped(stamp: StampData, page0: Int, normX: Float, normY: Float) {
+    override fun onStampDropped(stamp: ReaderStamp, page0: Int, normX: Float, normY: Float) {
         val position = StampGeometry.formatPosition(normX, normY)
         controller.updateStamp(page0 + 1, stamp.id, position = position) { error ->
             // Defensive: the view already resets its own drag state on ACTION_UP.
