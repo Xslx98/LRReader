@@ -198,6 +198,12 @@ class TankMembersViewModel : ViewModel() {
     internal var categoryDissolve: suspend (OkHttpClient, String, String, String) -> Boolean =
         { client, url, id, name -> TankCategorySyncer.onDissolve(client, url, id, name) }
 
+    /** Downloaded-tank grouping follow-ups (ADR-004); replaceable for tests. */
+    internal var untagDownloadMember: (String, String) -> Unit =
+        { id, arcid -> ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(id, arcid) }
+    internal var dissolveDownloadGroup: (String) -> Unit =
+        { id -> ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(id) }
+
     internal var baseUrlResolver: suspend (Long) -> String = { id ->
         resolveSourceBaseUrl(id, ServiceRegistry.dataModule.profileLookupCache)
     }
@@ -309,7 +315,7 @@ class TankMembersViewModel : ViewModel() {
                 LRRTankoubonApi.removeFromTankoubon(client, url, tankId, arcid)
                 // Downloaded-tank grouping follows: the member's download row (if
                 // any) reappears as a standalone download.
-                ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(tankId, arcid)
+                untagDownloadMember(tankId, arcid)
             }
             if (before != null) {
                 tagSyncAfterRemove(client, url, before, arcids)
@@ -380,7 +386,7 @@ class TankMembersViewModel : ViewModel() {
                 // Dissolve the downloaded-tank grouping (files/rows stay:
                 // deleting a tank never deletes its archives — the member
                 // downloads reappear standalone).
-                ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(tankId)
+                dissolveDownloadGroup(tankId)
                 _uiEvent.tryEmit(TankDetailUiEvent.Deleted)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
