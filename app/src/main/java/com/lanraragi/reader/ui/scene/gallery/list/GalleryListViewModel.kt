@@ -4,17 +4,11 @@ import android.os.Parcelable
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lanraragi.reader.R
 import com.lanraragi.reader.archive.ArchiveUploadService
 import com.lanraragi.reader.archive.BatchOp
+import com.lanraragi.reader.archive.ListBatchOps
 import com.lanraragi.reader.archive.ListBatchWrites
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.download.TankFillDispatcher
-import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.event.ArchiveDeletedEvent
-import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRCategoryApi
-import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.domain.Archive
@@ -436,13 +430,7 @@ class GalleryListViewModel : ViewModel() {
         val profileId = archives.firstOrNull { it.arcid == firstAdded }?.serverProfileId ?: return
         try {
             withContext(Dispatchers.IO) {
-                val conn = connectionFor(profileId)
-                LRRTankoubonApi.updateTankThumbnail(
-                    conn.client,
-                    conn.baseUrl,
-                    op.tankId,
-                    globalPage1 = 1,
-                )
+                ListBatchOps.seedTankCover(connectionFor(profileId), op.tankId)
             }
         } catch (ce: CancellationException) {
             throw ce
@@ -519,43 +507,12 @@ class GalleryListViewModel : ViewModel() {
         }
     }
 
+    /** One item of a batch, on the archive's own server; throws when its write fails. */
     private suspend fun executeOne(
         op: BatchOp,
         archive: Archive,
         undoOrders: MutableMap<String, List<String>> = mutableMapOf(),
-    ) {
-        val conn = connectionFor(archive.serverProfileId)
-        val client = conn.client
-        val baseUrl = conn.baseUrl
-        when (op) {
-            is BatchOp.AddToCategory ->
-                LRRCategoryApi.addToCategory(client, baseUrl, op.categoryId, archive.arcid)
-            is BatchOp.AddToTankoubon ->
-                LRRTankoubonApi.addToTankoubon(client, baseUrl, op.tankId, archive.arcid)
-            BatchOp.ClearNew -> LRRArchiveApi.clearNewFlag(client, baseUrl, archive.arcid)
-            BatchOp.DeleteArchives -> {
-                LRRArchiveApi.deleteArchive(client, baseUrl, archive.arcid)
-                AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(archive.arcid))
-            }
-            BatchOp.DownloadTanks -> {
-                // Resolve the members, then fire the fill on the main thread
-                // (download-manager state lookups are main-thread only).
-                val m = tanks.members(conn, archive.arcid)
-                val context = ServiceRegistry.appModule.getContext()
-                if (m.members.isEmpty()) throw IOException(context.getString(R.string.error_empty))
-                withContext(Dispatchers.Main) {
-                    val plan = TankFillDispatcher.plan(m.members) { downloadManager.getDownloadState(it) }
-                    TankFillDispatcher.dispatch(
-                        context, downloadManager, plan, m.tankId, m.name, archive.serverProfileId, m.memberIdsInOrder,
-                    )
-                }
-            }
-            BatchOp.SortTanks ->
-                tanks.autoSort(conn, archive.arcid)?.let { undoOrders[archive.arcid] = it }
-            BatchOp.DeleteTanks -> tanks.delete(conn, archive.arcid)
-            BatchOp.Download -> error("use runBatchDownload")
-        }
-    }
+    ) = ListBatchOps.execute(op, connectionFor(archive.serverProfileId), archive, tanks, undoOrders)
 
     // -------------------------------------------------------------------------
     // Lifecycle
