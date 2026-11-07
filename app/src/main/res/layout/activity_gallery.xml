@@ -121,6 +121,16 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
+        <!-- Shown once the session has chapters; ReaderChaptersController. -->
+        <ImageButton
+            android:id="@+id/reader_top_bar_toc"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/reader_chapters"
+            android:src="@drawable/v_toc_x24"
+            android:visibility="gone" />
+
         <ImageButton
             android:id="@+id/reader_top_bar_direction"
             android:layout_width="48dp"

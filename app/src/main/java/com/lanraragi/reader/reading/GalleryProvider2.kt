@@ -22,8 +22,12 @@ import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.reader.DeviceMemory
 import com.lanraragi.reader.diagnostics.DiagLog
+import com.lanraragi.reader.domain.ReaderChapterList
 import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -97,6 +101,18 @@ abstract class GalleryProvider2 : GalleryProvider(DeviceMemory.readerCacheBytes(
         super.start()
         userInteracted = false
     }
+
+    private val chapterList = MutableStateFlow(ReaderChapterList())
+
+    /** The session's chapters; empty (no entry point) unless the provider publishes some. */
+    val chapters: StateFlow<ReaderChapterList> = chapterList.asStateFlow()
+
+    protected fun publishChapters(list: ReaderChapterList) {
+        chapterList.value = list
+    }
+
+    /** The chapter list was opened: a provider that loads chapters lazily starts now. */
+    open fun requestChapters() {}
 
     open fun getStartPage(): Int = 0
 

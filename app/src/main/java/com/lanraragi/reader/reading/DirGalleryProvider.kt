@@ -19,6 +19,7 @@ import android.content.Context
 import android.util.Log
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.diagnostics.DiagLog
+import com.lanraragi.reader.domain.ReaderChapterList
 import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
@@ -432,6 +433,14 @@ class DirGalleryProvider : GalleryProvider2 {
                     } else {
                         null
                     }
+                }
+                // Chapters need the page-space size, which the file listing below
+                // sets; it completes this signal on every path.
+                val pageSpaceKnown = notifyDataChangedEnqueued
+                launch {
+                    val toc = metadataDeferred.await()?.toc ?: return@launch
+                    pageSpaceKnown.await()
+                    publishChapters(ReaderChapterList(ChapterIndex.fromToc(toc, sizeValue)))
                 }
                 try {
                     val savedFraction = fractionDeferred.await()

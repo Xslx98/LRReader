@@ -47,6 +47,7 @@ import com.lanraragi.reader.ui.reader.GalleryImageOperations
 import com.lanraragi.reader.ui.reader.GalleryInputHandler
 import com.lanraragi.reader.ui.reader.GalleryMenuHelper
 import com.lanraragi.reader.ui.reader.GallerySliderController
+import com.lanraragi.reader.ui.reader.ReaderChaptersController
 import com.lanraragi.reader.ui.reader.ReaderChromeController
 import com.lanraragi.reader.ui.reader.ReaderContinuationController
 import com.lanraragi.reader.ui.reader.ReaderGalleryViews
@@ -124,6 +125,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     private var mContinuation: ReaderContinuationController? = null
 
     private var mTankProgress: TankoubonProgressSync? = null
+
+    private var mChapters: ReaderChaptersController? = null
 
     private val mStampsCoordinator = ReaderStampsCoordinator(this) { mGalleryView }
 
@@ -328,6 +331,11 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mChrome.bindTopBar(mSliderController, this, mLaunch.displayTitle()) { page0 ->
             mLaunch.tankMemberTitle(mGalleryProvider, page0)
         }
+        mChapters = ReaderChaptersController(
+            this, galleryProvider, { mSliderController.currentIndex }, mImageOps::applyImmersiveToDialog
+        ).also {
+            it.bind(ViewUtils.requireView(this, R.id.reader_top_bar_toc), mSliderController::hideMenu)
+        }
 
         val size = galleryProvider.size()
         mSliderController.size = size
@@ -375,6 +383,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         mChrome.clear()
         mContinuation = null
         mStampsCoordinator.clear()
+        mChapters?.clear()
+        mChapters = null
 
         super.onDestroy()
     }
