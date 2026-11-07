@@ -24,7 +24,8 @@ import kotlinx.coroutines.sync.withPermit
 /**
  * Server-side tankoubon list operations (docs/plan-2.4.0-tank-ux.md, PR-B):
  * the full list load with its side effects, the missing-cover probe,
- * auto-sort, the member fetch a download needs, the reverse lookup, create and delete. Every call
+ * auto-sort, the member fetch a download needs, the reverse lookup, create and delete,
+ * plus the single-tank reads and writes of the member management page. Every call
  * names its server with a [ServerConnection]. Plain suspend functions —
  * callers own feedback; failures propagate as exceptions.
  *
@@ -72,6 +73,54 @@ class TankRepository(
         TankListCache.put(conn.baseUrl, all)
         syncMembership(conn.profileId, conn.baseUrl, all)
         return ArrayList(all)
+    }
+
+    /**
+     * The tank and its members (in tank order) for the member management page. Member ORDER
+     * is `archives` (the same list a reorder PUTs); `full_data` is only the
+     * metadata lookup, never trusted for order, and members it holds that
+     * `archives` lacks follow at the end. Members are mapped with [conn] as
+     * their EXPLICIT source (multi-profile red line: the tank may belong to a
+     * non-active profile). Success marks the server supported in
+     * [TankoubonSupportGate].
+     */
+    suspend fun detail(conn: ServerConnection, tankId: String): Pair<Tankoubon, List<Archive>> {
+        val full = LRRTankoubonApi.getTankoubonFull(conn.client, conn.baseUrl, tankId).result
+        TankoubonSupportGate.markSupported(conn.baseUrl)
+        val byId = full.fullData.associateBy { it.arcid }
+        val ordered = full.archives.mapNotNull { byId[it] } +
+            full.fullData.filter { it.arcid !in full.archives }
+        val members = ordered.map {
+            it.toArchive(sourceProfileId = conn.profileId, sourceBaseUrl = conn.baseUrl)
+        }
+        return Tankoubon(full.id, full.name, full.archives, full.summary, full.tags, full.progress) to members
+    }
+
+    /**
+     * Whether the tank has a generated cover. False (202) also queues its
+     * generation server-side, so never ask for an EMPTY tank.
+     */
+    suspend fun hasCover(conn: ServerConnection, tankId: String): Boolean =
+        LRRTankoubonApi.hasTankThumbnail(conn.client, conn.baseUrl, tankId)
+
+    /** Renames the tank through the metadata PUT. */
+    suspend fun rename(conn: ServerConnection, tankId: String, name: String) {
+        LRRTankoubonApi.renameTankoubon(conn.client, conn.baseUrl, tankId, name)
+    }
+
+    /** Writes summary and tags. The member list is never sent: an empty one would WIPE the tank. */
+    suspend fun updateMeta(conn: ServerConnection, tankId: String, summary: String, tags: String) {
+        LRRTankoubonApi.updateTankoubon(conn.client, conn.baseUrl, tankId, summary = summary, tags = tags)
+    }
+
+    /** Makes the 1-indexed [globalPage1] the tank's cover. Only the server write: no stamp, no choice. */
+    suspend fun setCover(conn: ServerConnection, tankId: String, globalPage1: Int) {
+        LRRTankoubonApi.updateTankThumbnail(conn.client, conn.baseUrl, tankId, globalPage1)
+    }
+
+    /** Removes [arcid] from the tank. Only the membership call: the caller runs the follow-ups. */
+    suspend fun removeMember(conn: ServerConnection, tankId: String, arcid: String) {
+        LRRTankoubonApi.removeFromTankoubon(conn.client, conn.baseUrl, tankId, arcid)
     }
 
     /** What the tank picker sheet shows: every tank, and the tanks one archive is in. */
@@ -209,9 +258,9 @@ class TankRepository(
         return full.archives
     }
 
-    /** Undo of [autoSort]: PUT [previousOrder] back. */
-    suspend fun restoreOrder(conn: ServerConnection, tankId: String, previousOrder: List<String>) {
-        LRRTankoubonApi.updateTankoubon(conn.client, conn.baseUrl, tankId, archives = previousOrder)
+    /** PUTs [order] as the tank's whole member order: a reorder, or the undo of [autoSort]. */
+    suspend fun putOrder(conn: ServerConnection, tankId: String, order: List<String>) {
+        LRRTankoubonApi.updateTankoubon(conn.client, conn.baseUrl, tankId, archives = order)
     }
 
     /** Current membership in tank order, mapped for a download fill. */
@@ -271,6 +320,14 @@ class TankRepository(
             TankListCache.invalidate(serverUrl)
             ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(tankId)
         }.await()
+    }
+
+    /**
+     * Only the server DELETE, without [delete]'s follow-ups, for a caller
+     * that runs its own sequence around it (the member management page).
+     */
+    suspend fun deleteOnly(conn: ServerConnection, tankId: String) {
+        LRRTankoubonApi.deleteTankoubon(conn.client, conn.baseUrl, tankId)
     }
 
     private companion object {

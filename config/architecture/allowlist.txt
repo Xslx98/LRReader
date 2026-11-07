@@ -6,5 +6,4 @@ D3 com/lanraragi/reader/client/api/LRRApiUtils.kt
 D3 com/lanraragi/reader/client/api/LRRAuthInterceptor.kt
 D3 com/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor.kt
 D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt
-D8b com/lanraragi/reader/ui/scene/tankdetail/TankMembersViewModel.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankDetailViewModel.kt

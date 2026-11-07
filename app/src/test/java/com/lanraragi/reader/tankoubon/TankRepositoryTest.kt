@@ -235,6 +235,31 @@ class TankRepositoryTest {
     }
 
     @Test
+    fun detail_ordersByArchives_appendsMembersOnlyInFullData_andMarksSupport() = runBlocking {
+        TankoubonSupportGate.clear()
+        val data = listOf(arcId(1) to "A", arcId(3) to "C", arcId(2) to "B").joinToString(",") { (arcid, title) ->
+            """{"arcid":"$arcid","title":"$title","tags":"","pagecount":3}"""
+        }
+        server.enqueue(
+            MockResponse().setBody(
+                """{"result":{"id":"TANK_0000000114","name":"Alpha","archives":["${arcId(2)}","${arcId(1)}"],""" +
+                    """"full_data":[$data],"summary":"s","tags":"artist:x","progress":4},"total":1,"filtered":1}"""
+            )
+        )
+
+        val (tank, members) = service.detail(conn(3L), "TANK_0000000114")
+
+        assertEquals(listOf(arcId(2), arcId(1), arcId(3)), members.map { it.arcid })
+        assertTrue(members.all { it.serverProfileId == 3L })
+        assertEquals(
+            Tankoubon("TANK_0000000114", "Alpha", listOf(arcId(2), arcId(1)), "s", "artist:x", 4),
+            tank,
+        )
+        assertEquals(TankoubonSupportGate.Support.SUPPORTED, TankoubonSupportGate.support(baseUrl))
+        TankoubonSupportGate.clear()
+    }
+
+    @Test
     fun autoSort_putsEpisodeOrder_andReturnsThePreviousOrder() = runBlocking {
         val id = "TANK_0000000110"
         server.enqueue(MockResponse().setBody(fullJson(id, arcId(1) to "第2话", arcId(2) to "番外", arcId(3) to "第1话")))
@@ -259,10 +284,10 @@ class TankRepositoryTest {
     }
 
     @Test
-    fun restoreOrder_putsThePreviousOrderBack() = runBlocking {
+    fun putOrder_putsTheWholeOrder() = runBlocking {
         server.enqueue(MockResponse().setBody("""{"success":1}"""))
 
-        service.restoreOrder(conn(), "TANK_0000000112", listOf(arcId(2), arcId(1)))
+        service.putOrder(conn(), "TANK_0000000112", listOf(arcId(2), arcId(1)))
 
         val put = server.awaitRequest()
         assertEquals("PUT", put.method)
