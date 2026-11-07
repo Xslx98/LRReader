@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.archive.BatchOp
 import android.app.Activity
 import android.os.CountDownTimer
 import android.view.View
@@ -58,7 +59,7 @@ internal class GalleryBatchOpsHelper(
          * nothing to animate). Feedback for the batch waits for it.
          */
         fun animateTankMerge(
-            op: GalleryListViewModel.BatchOp.AddToTankoubon,
+            op: BatchOp.AddToTankoubon,
             succeeded: List<String>,
             onDone: () -> Unit,
         )
@@ -158,7 +159,7 @@ internal class GalleryBatchOpsHelper(
 
     fun onBatchResult(result: GalleryListViewModel.BatchResult) {
         val op = result.op
-        if (op is GalleryListViewModel.BatchOp.AddToTankoubon && result.succeeded.isNotEmpty()) {
+        if (op is BatchOp.AddToTankoubon && result.succeeded.isNotEmpty()) {
             // The list first shows the archives merging into the tank; the
             // Snackbar (with "Open") or the failure dialog follows the animation.
             callback.animateTankMerge(op, result.succeeded) { showFeedback(result) }
@@ -182,11 +183,11 @@ internal class GalleryBatchOpsHelper(
                 )
             }
             val op = result.op
-            if (op is GalleryListViewModel.BatchOp.AddToTankoubon) {
+            if (op is BatchOp.AddToTankoubon) {
                 callback.showTipWithAction(text, activity.getString(R.string.tank_merge_open)) {
                     callback.openTankoubon(op.tankId, op.tankName)
                 }
-            } else if (op == GalleryListViewModel.BatchOp.SortTanks && result.tankUndoOrders.isNotEmpty()) {
+            } else if (op == BatchOp.SortTanks && result.tankUndoOrders.isNotEmpty()) {
                 val profileId = callback.activeProfileId()
                 callback.showTipWithAction(text, activity.getString(R.string.tank_undo)) {
                     callback.viewModel.restoreTankOrders(result.tankUndoOrders, profileId)
@@ -198,8 +199,8 @@ internal class GalleryBatchOpsHelper(
             BatchFeedbackPresenter.dialogFor(result)?.let { showFailureDialog(activity, it) }
         }
 
-        if (result.op == GalleryListViewModel.BatchOp.ClearNew ||
-            result.op == GalleryListViewModel.BatchOp.DeleteTanks
+        if (result.op == BatchOp.ClearNew ||
+            result.op == BatchOp.DeleteTanks
         ) {
             // NEW badges render from server data; reload so they disappear.
             callback.refreshList()
@@ -237,7 +238,7 @@ internal class GalleryBatchOpsHelper(
     private fun onDownloadClick() {
         val selected = takeSelection() ?: return
         if (callback.isTankMode()) {
-            runAndExit(GalleryListViewModel.BatchOp.DownloadTanks, selected)
+            runAndExit(BatchOp.DownloadTanks, selected)
             return
         }
         callback.viewModel.runBatchDownload(selected, callback.downloadManager)
@@ -254,7 +255,7 @@ internal class GalleryBatchOpsHelper(
             callback.activity, callback.activeProfileId()
         ) { categoryId ->
             callback.viewModel.runBatch(
-                GalleryListViewModel.BatchOp.AddToCategory(categoryId), selected
+                BatchOp.AddToCategory(categoryId), selected
             )
             callback.exitSelection()
         }
@@ -268,7 +269,7 @@ internal class GalleryBatchOpsHelper(
             callback.activity, callback.activeProfileId(), selected.map { it.arcid }, selected.map { it.title }
         ) { tank ->
             callback.viewModel.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(
+                BatchOp.AddToTankoubon(
                     tankId = tank.id,
                     wasEmpty = tank.archives.isEmpty(),
                     tankName = tank.name,
@@ -282,17 +283,17 @@ internal class GalleryBatchOpsHelper(
 
     private fun onTankSortClick() {
         val selected = takeSelection() ?: return
-        runAndExit(GalleryListViewModel.BatchOp.SortTanks, selected)
+        runAndExit(BatchOp.SortTanks, selected)
     }
 
-    private fun runAndExit(op: GalleryListViewModel.BatchOp, selected: List<Archive>) {
+    private fun runAndExit(op: BatchOp, selected: List<Archive>) {
         callback.viewModel.runBatch(op, selected)
         callback.exitSelection()
     }
 
     private fun onClearNewClick() {
         val selected = takeSelection() ?: return
-        callback.viewModel.runBatch(GalleryListViewModel.BatchOp.ClearNew, selected)
+        callback.viewModel.runBatch(BatchOp.ClearNew, selected)
         callback.exitSelection()
     }
 
@@ -314,7 +315,7 @@ internal class GalleryBatchOpsHelper(
     private fun showDeleteConfirmDialog(activity: Activity, selected: List<Archive>) {
         val tanks = callback.isTankMode()
         val messageRes = if (tanks) R.plurals.batch_tank_delete_confirm_message else R.plurals.batch_delete_confirm_message
-        val op = if (tanks) GalleryListViewModel.BatchOp.DeleteTanks else GalleryListViewModel.BatchOp.DeleteArchives
+        val op = if (tanks) BatchOp.DeleteTanks else BatchOp.DeleteArchives
         val dialog = AlertDialog.Builder(activity)
             .setTitle(if (tanks) R.string.tank_delete else R.string.lrr_delete_confirm_title)
             .setMessage(activity.resources.getQuantityString(messageRes, selected.size, selected.size))

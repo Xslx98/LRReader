@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.archive.BatchOp
 import com.lanraragi.reader.ui.RowHighlight
 
 /**
@@ -18,7 +19,7 @@ class GalleryRowHighlighter(private val scene: GalleryListScene) {
 
     fun onBatchResult(result: GalleryListViewModel.BatchResult) {
         val op = result.op
-        if (op is GalleryListViewModel.BatchOp.Download || op is GalleryListViewModel.BatchOp.AddToCategory) {
+        if (op is BatchOp.Download || op is BatchOp.AddToCategory) {
             result.succeeded.forEach(::mark)
             flush(0L)
         }

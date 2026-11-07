@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListViewModel.BatchFailure
-import com.lanraragi.reader.ui.scene.gallery.list.GalleryListViewModel.BatchOp
+import com.lanraragi.reader.archive.BatchOp
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListViewModel.BatchResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

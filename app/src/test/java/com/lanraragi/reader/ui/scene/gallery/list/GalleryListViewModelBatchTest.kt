@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.archive.BatchOp
 import android.content.Context
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -171,12 +172,12 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.ClearNew,
+                BatchOp.ClearNew,
                 listOf(archiveOf(ARC_A), archiveOf(ARC_B), archiveOf(ARC_C)),
             )
         }
 
-        assertEquals(GalleryListViewModel.BatchOp.ClearNew, result.op)
+        assertEquals(BatchOp.ClearNew, result.op)
         assertEquals(listOf(ARC_A, ARC_C), result.succeeded)
         assertEquals(1, result.failed.size)
         assertEquals(ARC_B, result.failed[0].arcid)
@@ -209,7 +210,7 @@ class GalleryListViewModelBatchTest {
             val vm = newVm()
             val result = awaitBatchResult(vm) {
                 vm.runBatch(
-                    GalleryListViewModel.BatchOp.DeleteArchives,
+                    BatchOp.DeleteArchives,
                     listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
                 )
             }
@@ -247,7 +248,7 @@ class GalleryListViewModelBatchTest {
         val archives = (0 until 12).map { archiveOf(it.toString().padStart(40, '0')) }
         val vm = newVm()
         val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.ClearNew, archives)
+            vm.runBatch(BatchOp.ClearNew, archives)
         }
 
         assertEquals(12, result.succeeded.size)
@@ -286,7 +287,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
                 listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
             )
         }
@@ -308,12 +309,12 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false, tankName = "Vol. 1"),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false, tankName = "Vol. 1"),
                 listOf(archiveOf(ARC_A)),
             )
         }
 
-        val op = result.op as GalleryListViewModel.BatchOp.AddToTankoubon
+        val op = result.op as BatchOp.AddToTankoubon
         assertEquals(TANK_ID, op.tankId)
         assertEquals("Vol. 1", op.tankName)
     }
@@ -326,7 +327,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, knownMembers = setOf(ARC_A)),
+                BatchOp.AddToTankoubon(TANK_ID, knownMembers = setOf(ARC_A)),
                 listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
             )
         }
@@ -360,7 +361,7 @@ class GalleryListViewModelBatchTest {
 
         val vm = newVm()
         val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
+            vm.runBatch(BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
         }
 
         assertEquals(listOf(TANK_ID), result.succeeded)
@@ -375,7 +376,7 @@ class GalleryListViewModelBatchTest {
 
         val vm = newVm()
         val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
+            vm.runBatch(BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
         }
 
         assertEquals(listOf(TANK_ID), result.succeeded)
@@ -391,7 +392,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false),
                 listOf(archiveOf(ARC_A)),
             )
         }
@@ -407,7 +408,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
                 listOf(archiveOf(ARC_A)),
             )
         }
@@ -430,7 +431,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
                 listOf(archiveOf(ARC_A)),
             )
         }
@@ -458,7 +459,7 @@ class GalleryListViewModelBatchTest {
 
         // Sequential op: the second append only starts after the first returns.
         vm.runBatch(
-            GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID),
+            BatchOp.AddToTankoubon(TANK_ID),
             listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
         )
         assertTrue("first append never reached the server", firstHeld.await(RESULT_TIMEOUT_MS, TimeUnit.MILLISECONDS))
@@ -480,7 +481,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToCategory(CATEGORY_ID),
+                BatchOp.AddToCategory(CATEGORY_ID),
                 listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
             )
         }
@@ -501,7 +502,7 @@ class GalleryListViewModelBatchTest {
 
         val vm = newVm()
         val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.DownloadTanks, listOf(archiveOf(TANK_ID)))
+            vm.runBatch(BatchOp.DownloadTanks, listOf(archiveOf(TANK_ID)))
         }
 
         assertTrue(result.succeeded.isEmpty())
