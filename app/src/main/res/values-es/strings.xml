@@ -983,6 +983,10 @@ Esta acción no se puede deshacer.</string>
     <string name="cd_stop_download">Detener descarga</string>
     <string name="cd_start_auto_read">Iniciar transferencia automática</string>
     <string name="cd_reader_settings">Ajustes de lectura</string>
+    <string name="reader_chapters">Índice</string>
+    <string name="reader_chapters_untitled">Capítulo sin título</string>
+    <string name="reader_chapters_loading">Cargando capítulos…</string>
+    <string name="reader_chapters_failed">No se pudieron cargar los capítulos. Toca para reintentar.</string>
     <string name="reader_top_bar_page">Página %1$d / %2$d</string>
     <string name="cd_stop_auto_read">Detener transferencia automática</string>
     <string name="cd_downloaded">Descargado</string>

@@ -933,6 +933,10 @@
     <string name="cd_stop_download">다운로드 중지</string>
     <string name="cd_start_auto_read">자동 전환 시작</string>
     <string name="cd_reader_settings">읽기 설정</string>
+    <string name="reader_chapters">목차</string>
+    <string name="reader_chapters_untitled">제목 없는 챕터</string>
+    <string name="reader_chapters_loading">챕터를 불러오는 중…</string>
+    <string name="reader_chapters_failed">챕터를 불러올 수 없습니다. 탭하여 다시 시도</string>
     <string name="reader_top_bar_page">%1$d / %2$d 페이지</string>
     <string name="cd_stop_auto_read">자동 전환 중지</string>
     <string name="cd_downloaded">다운로드됨</string>

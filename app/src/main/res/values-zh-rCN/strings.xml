@@ -949,6 +949,10 @@
     <string name="cd_stop_download">停止下载</string>
     <string name="cd_start_auto_read">开始自动翻页</string>
     <string name="cd_reader_settings">阅读设置</string>
+    <string name="reader_chapters">目录</string>
+    <string name="reader_chapters_untitled">未命名章节</string>
+    <string name="reader_chapters_loading">正在加载章节…</string>
+    <string name="reader_chapters_failed">无法加载章节，点按重试</string>
     <string name="reader_top_bar_page">第 %1$d / %2$d 页</string>
     <string name="cd_stop_auto_read">停止自动翻页</string>
     <string name="cd_downloaded">已下载</string>
