@@ -73,11 +73,13 @@ def _wait_for_info(client, deadline_s):
 def _start_container(image, content_dir, port):
     _run("docker", "rm", "-f", CONTAINER, check=False)
     _run("docker", "pull", image)
+    # Windows has no uid to hand over, and the image's defaults work there.
+    owner = ["-e", f"LRR_UID={os.getuid()}", "-e", f"LRR_GID={os.getgid()}"] if hasattr(os, "getuid") else []
     _run(
         "docker", "run", "-d", "--name", CONTAINER,
         # Loopback only: this server has the default password until the key is set.
         "-p", f"127.0.0.1:{port}:3000",
-        "-e", f"LRR_UID={os.getuid()}", "-e", f"LRR_GID={os.getgid()}",
+        *owner,
         "-v", f"{content_dir}:/home/koyomi/lanraragi/content",
         image,
     )
@@ -104,7 +106,7 @@ def boot(args):
         except subprocess.CalledProcessError as err:
             print(f"attempt {attempt}: {err.cmd} failed: {err.stderr}", file=sys.stderr)
     else:
-        print(f"::error title=Infrastructure, not a contract failure::{args.image} did not boot")
+        print(f"::error title=Infrastructure (not a contract failure)::{args.image} did not boot")
         sys.exit(1)
 
     key = secrets.token_urlsafe(32)

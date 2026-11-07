@@ -4,10 +4,11 @@
 
 ## Run it locally
 
-Any machine with Docker works. The API key is random, and the container only listens on loopback.
+Any machine with Docker works. The API key is random, and the container only listens on loopback. Every test run needs a freshly seeded container and an empty content folder, because the tests assert what a new server answers, such as a page thumbnail not generated yet.
 
 ```bash
-rm -f /tmp/lrr-env
+docker rm -f lrr-contract
+rm -rf /tmp/lrr-env /tmp/lrr-content /tmp/lrr-seed
 python3 scripts/ci/contract/seed.py --env-file /tmp/lrr-env boot \
   --image difegue/lanraragi:nightly --content-dir /tmp/lrr-content
 source /tmp/lrr-env
