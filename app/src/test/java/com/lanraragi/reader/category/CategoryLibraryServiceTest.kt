@@ -111,11 +111,12 @@ class CategoryLibraryServiceTest {
 
     /**
      * The server applies `search || old` and treats an omitted `pinned` as
-     * unpinned, so an edit has to send back what it loaded: dropping the pinned
-     * state on the way would unpin a category on a plain rename.
+     * unpinned, so what an edit builds from a loaded category has to survive to
+     * the wire. Argument choice mirrors the Scene's pin toggle and rename, which
+     * cannot run on the JVM; this owns the mapper plus the form encoding.
      */
     @Test
-    fun edit_ofALoadedCategory_sendsBackItsPredicateAndPinnedState() = runBlocking {
+    fun editBuiltFromALoadedCategory_carriesItsLoadedValuesToTheWire() = runBlocking {
         val service = CategoryLibraryService({ conn }, writeScope)
         val loaded = service.load()!!.associateBy { it.name }
         val dyn = loaded.getValue("Dyn")
