@@ -1,10 +1,13 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.archive.BatchOp
 import android.content.Context
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.test.core.app.ApplicationProvider
+import com.lanraragi.reader.R
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
@@ -169,12 +172,12 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.ClearNew,
+                BatchOp.ClearNew,
                 listOf(archiveOf(ARC_A), archiveOf(ARC_B), archiveOf(ARC_C)),
             )
         }
 
-        assertEquals(GalleryListViewModel.BatchOp.ClearNew, result.op)
+        assertEquals(BatchOp.ClearNew, result.op)
         assertEquals(listOf(ARC_A, ARC_C), result.succeeded)
         assertEquals(1, result.failed.size)
         assertEquals(ARC_B, result.failed[0].arcid)
@@ -207,7 +210,7 @@ class GalleryListViewModelBatchTest {
             val vm = newVm()
             val result = awaitBatchResult(vm) {
                 vm.runBatch(
-                    GalleryListViewModel.BatchOp.DeleteArchives,
+                    BatchOp.DeleteArchives,
                     listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
                 )
             }
@@ -245,7 +248,7 @@ class GalleryListViewModelBatchTest {
         val archives = (0 until 12).map { archiveOf(it.toString().padStart(40, '0')) }
         val vm = newVm()
         val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.ClearNew, archives)
+            vm.runBatch(BatchOp.ClearNew, archives)
         }
 
         assertEquals(12, result.succeeded.size)
@@ -284,7 +287,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
                 listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
             )
         }
@@ -306,12 +309,12 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false, tankName = "Vol. 1"),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false, tankName = "Vol. 1"),
                 listOf(archiveOf(ARC_A)),
             )
         }
 
-        val op = result.op as GalleryListViewModel.BatchOp.AddToTankoubon
+        val op = result.op as BatchOp.AddToTankoubon
         assertEquals(TANK_ID, op.tankId)
         assertEquals("Vol. 1", op.tankName)
     }
@@ -324,7 +327,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, knownMembers = setOf(ARC_A)),
+                BatchOp.AddToTankoubon(TANK_ID, knownMembers = setOf(ARC_A)),
                 listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
             )
         }
@@ -358,7 +361,7 @@ class GalleryListViewModelBatchTest {
 
         val vm = newVm()
         val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
+            vm.runBatch(BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
         }
 
         assertEquals(listOf(TANK_ID), result.succeeded)
@@ -373,7 +376,7 @@ class GalleryListViewModelBatchTest {
 
         val vm = newVm()
         val result = awaitBatchResult(vm) {
-            vm.runBatch(GalleryListViewModel.BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
+            vm.runBatch(BatchOp.SortTanks, listOf(archiveOf(TANK_ID)))
         }
 
         assertEquals(listOf(TANK_ID), result.succeeded)
@@ -389,7 +392,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = false),
                 listOf(archiveOf(ARC_A)),
             )
         }
@@ -405,7 +408,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
                 listOf(archiveOf(ARC_A)),
             )
         }
@@ -428,7 +431,7 @@ class GalleryListViewModelBatchTest {
         val vm = newVm()
         val result = awaitBatchResult(vm) {
             vm.runBatch(
-                GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
+                BatchOp.AddToTankoubon(TANK_ID, wasEmpty = true),
                 listOf(archiveOf(ARC_A)),
             )
         }
@@ -456,7 +459,7 @@ class GalleryListViewModelBatchTest {
 
         // Sequential op: the second append only starts after the first returns.
         vm.runBatch(
-            GalleryListViewModel.BatchOp.AddToTankoubon(TANK_ID),
+            BatchOp.AddToTankoubon(TANK_ID),
             listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
         )
         assertTrue("first append never reached the server", firstHeld.await(RESULT_TIMEOUT_MS, TimeUnit.MILLISECONDS))
@@ -468,7 +471,66 @@ class GalleryListViewModelBatchTest {
         }
     }
 
+    // ─── category, tank download, undo ───────────────────────────────────
+
+    @Test
+    fun `addToCategory batch puts each archive into the category`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = recordingDispatcher(paths)
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(
+                BatchOp.AddToCategory(CATEGORY_ID),
+                listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
+            )
+        }
+
+        assertEquals(setOf(ARC_A, ARC_B), result.succeeded.toSet())
+        assertEquals(
+            setOf("PUT /api/categories/$CATEGORY_ID/$ARC_A", "PUT /api/categories/$CATEGORY_ID/$ARC_B"),
+            paths.toSet(),
+        )
+    }
+
+    @Test
+    fun `downloadTanks on an empty tank fails that tank with the empty reason`() = runTest {
+        ServiceRegistry.initializeForTest(app = stubAppModule(ctx))
+        server.dispatcher = recordingDispatcher(CopyOnWriteArrayList()) {
+            jsonResponse(200, """{"result":{"id":"$TANK_ID","name":"T","archives":[],"full_data":[]},"total":0,"filtered":0}""")
+        }
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(BatchOp.DownloadTanks, listOf(archiveOf(TANK_ID)))
+        }
+
+        assertTrue(result.succeeded.isEmpty())
+        assertEquals(listOf(TANK_ID), result.failed.map { it.arcid })
+        assertEquals(ctx.getString(R.string.error_empty), result.failed[0].reason)
+    }
+
+    @Test
+    fun `restoreTankOrders puts each previous order back`() {
+        val bodies = CopyOnWriteArrayList<String>()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                bodies += "${request.method} ${request.path} ${request.body.readUtf8()}"
+                return jsonResponse(200, """{"success":1}""")
+            }
+        }
+
+        newVm().restoreTankOrders(mapOf(TANK_ID to listOf(ARC_C, ARC_A, ARC_B)), profileId = 0L)
+
+        awaitUntil(message = "no order PUT: $bodies") { bodies.isNotEmpty() }
+        assertEquals(
+            listOf("PUT /api/tankoubons/$TANK_ID {\"archives\":[\"$ARC_C\",\"$ARC_A\",\"$ARC_B\"]}"),
+            bodies,
+        )
+    }
+
     private companion object {
+        const val CATEGORY_ID = "SET_1700000000"
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)
         val ARC_C = "c".repeat(40)

@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import androidx.annotation.PluralsRes
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ui.scene.gallery.list.GalleryListViewModel.BatchOp
+import com.lanraragi.reader.archive.BatchOp
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListViewModel.BatchResult
 
 /**

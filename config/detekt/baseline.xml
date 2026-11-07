@@ -219,7 +219,6 @@
     <ID>SwallowedException:TankoubonsViewModel.kt$TankoubonsViewModel$e: Exception</ID>
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: ExecutionException</ID>
     <ID>SwallowedException:ThumbDataContainer.kt$ThumbDataContainer$e: TimeoutException</ID>
-    <ID>ThrowsCount:GalleryListViewModel.kt$GalleryListViewModel$fun uploadArchive(req: UploadRequest)</ID>
     <ID>ThrowsCount:LRRAuthInterceptor.kt$internal fun matchesConfiguredServer( requestUrl: HttpUrl, serverUrlString: String ): ServerMatchResult</ID>
     <ID>ThrowsCount:AppLockCredentials.kt$AppLockCredentials$@JvmStatic @Throws(GeneralSecurityException::class) fun getDecryptCipher(): Cipher</ID>
     <ID>ThrowsCount:LRRCleartextRejectionInterceptor.kt$LRRCleartextRejectionInterceptor$private fun enforceActiveBased( chain: Interceptor.Chain, request: okhttp3.Request, url: HttpUrl, ): Response</ID>

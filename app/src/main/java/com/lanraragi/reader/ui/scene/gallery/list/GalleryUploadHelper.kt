@@ -12,6 +12,7 @@ import com.lanraragi.reader.ui.dialog.EditTextDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.server.ServerConnections
 import java.io.IOException
+import com.lanraragi.reader.archive.ArchiveUploadService
 import com.lanraragi.reader.archive.UrlDownloads
 import com.lanraragi.reader.ui.scene.BaseScene
 import kotlinx.coroutines.CancellationException
@@ -85,7 +86,7 @@ class GalleryUploadHelper(private val mCallback: Callback) {
         // then build the request and start the upload back on main.
         owner.lifecycleScope.launch {
             val fileName = withContext(Dispatchers.IO) { getFileNameFromUri(context, uri) }
-                ?: GalleryListViewModel.FALLBACK_UPLOAD_NAME
+                ?: ArchiveUploadService.FALLBACK_UPLOAD_NAME
             val request = GalleryListViewModel.UploadRequest(
                 displayName = fileName,
                 cacheDir = context.cacheDir,

@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.archive.BatchOp
 import android.app.Activity
 import android.view.View
 import com.lanraragi.reader.widget.list.EasyRecyclerView
@@ -68,7 +69,7 @@ object GalleryListSelection {
                 scene.showTip(message, BaseScene.LENGTH_LONG, actionText, action)
             }
             override fun animateTankMerge(
-                op: GalleryListViewModel.BatchOp.AddToTankoubon,
+                op: BatchOp.AddToTankoubon,
                 succeeded: List<String>,
                 onDone: () -> Unit,
             ) {
