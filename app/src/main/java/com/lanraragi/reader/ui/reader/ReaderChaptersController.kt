@@ -38,6 +38,8 @@ class ReaderChaptersController(
 
     fun bind(button: View, onOpen: () -> Unit) {
         button.setOnClickListener {
+            // A double tap lands before the dialog takes focus.
+            if (dialog?.isShowing == true) return@setOnClickListener
             onOpen()
             show()
         }
