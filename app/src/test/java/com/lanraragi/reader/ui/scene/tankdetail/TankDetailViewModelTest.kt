@@ -8,6 +8,7 @@ import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.TankoubonSupportGate
@@ -85,6 +86,21 @@ class TankDetailViewModelTest {
     /** `metadata.tags` of every PUT /api/tankoubons/{id} the mock received. */
     private val putTags = CopyOnWriteArrayList<String>()
 
+    /** Body of every PUT /api/tankoubons/{id}, to check what else it sends. */
+    private val putBodies = CopyOnWriteArrayList<String>()
+
+    /** Status of the cover probe (HEAD /thumbnail): 202 = no generated cover yet. */
+    @Volatile
+    private var thumbStatus = 200
+
+    /** When true, `full_data` holds a fourth member that `archives` does not list. */
+    @Volatile
+    private var extraMember = false
+
+    @Volatile
+    private var archiveCategoriesJson =
+        """[{"id":"SET_STATIC","name":"Favs","archives":["$TANK"],"pinned":"0","search":""}]"""
+
     /** GET /api/categories requests (the full list; the heart should not need it). */
     private val fullCategoryListRequests = AtomicInteger(0)
 
@@ -108,7 +124,9 @@ class TankDetailViewModelTest {
                 val path = request.path.orEmpty()
                 return when {
                     request.method == "PUT" && path == "/api/tankoubons/$TANK" -> {
-                        val body = Json.parseToJsonElement(request.body.readUtf8()).jsonObject
+                        val raw = request.body.readUtf8()
+                        putBodies.add(raw)
+                        val body = Json.parseToJsonElement(raw).jsonObject
                         putTags.add(body.getValue("metadata").jsonObject.getValue("tags").jsonPrimitive.content)
                         if (putStatus == 200) {
                             MockResponse().setBody("""{"success":1}""")
@@ -132,12 +150,15 @@ class TankDetailViewModelTest {
                         }
                     // HEAD (cover probes) must not carry a body, or it corrupts the connection.
                     path.startsWith("/api/tankoubons/$TANK/thumbnail") ->
-                        if (request.method == "HEAD") MockResponse() else MockResponse().setBody("x")
+                        if (request.method == "HEAD") {
+                            MockResponse().setResponseCode(thumbStatus)
+                        } else {
+                            MockResponse().setBody("x")
+                        }
                     path.startsWith("/api/archives/$TANK/categories") ->
                         if (archiveCategoriesStatus == 200) {
                             MockResponse().setBody(
-                                """{"operation":"find_arc_categories","success":1,"categories":[""" +
-                                    """{"id":"SET_STATIC","name":"Favs","archives":["$TANK"],"pinned":"0","search":""}]}"""
+                                """{"operation":"find_arc_categories","success":1,"categories":$archiveCategoriesJson}"""
                             )
                         } else {
                             MockResponse().setResponseCode(archiveCategoriesStatus)
@@ -187,7 +208,8 @@ class TankDetailViewModelTest {
         val tags = tankTags?.let { "\"$it\"" } ?: "null"
         return """{"result":{"id":"$TANK","name":"My Tank","summary":"s","tags":$tags,"progress":12,""" +
             """"archives":["$ID_A","$ID_B","$ID_C"],""" +
-            """"full_data":[${member(ID_C, "c", 30)},${member(ID_A, "a", 10)},${member(ID_B, "b", 20)}]},""" +
+            """"full_data":[${member(ID_C, "c", 30)},${member(ID_A, "a", 10)},${member(ID_B, "b", 20)}""" +
+            (if (extraMember) ",${member(ID_D, "d", 5)}" else "") + "]}," +
             """"total":1,"filtered":1}"""
     }
 
@@ -199,7 +221,7 @@ class TankDetailViewModelTest {
         vm.forgetCoverChoice = { forgotten.add(it) }
         vm.dissolveDownloadGroup = { dissolved.add(it) }
         // Category promotion has its own wire tests (TankCategorySyncerTest); record the calls here.
-        vm.categoryDissolve = { _, _, id, name -> categoryCalls.add("dissolve $id $name"); true }
+        vm.categoryDissolve = { _, _, id, name -> categoryCalls.add("dissolve $id $name deletes=${deletes.get()}"); true }
         vm.resetCategoriesOp = { _, _, id, _, members -> categoryCalls.add("reset $id ${members.size}"); true }
         vm.init(TANK, "Seed Name", profileId = 0L)
         return vm
@@ -395,6 +417,74 @@ class TankDetailViewModelTest {
     }
 
     @Test
+    fun load_appendsFullDataMembersThatArchivesDoesNotList() {
+        extraMember = true
+        val vm = loadedVm()
+
+        assertEquals(listOf(ID_A, ID_B, ID_C, ID_D), vm.state.value!!.memberIds)
+        assertEquals(65, vm.state.value!!.totalPages)
+    }
+
+    @Test
+    fun load_successMarksTheServerSupportedAndRevalidatesTheCover() {
+        val before = TankCoverCacheStamp.generation
+        val vm = loadedVm()
+
+        assertEquals(TankoubonSupportGate.Support.SUPPORTED, TankoubonSupportGate.support(ServerSession.getServerUrl()!!))
+        assertTrue("fresh server truth re-keys the cover", TankCoverCacheStamp.generation > before)
+        assertFalse(vm.state.value!!.offline)
+    }
+
+    @Test
+    fun load_missingGeneratedCoverElectsTheFirstMember() {
+        thumbStatus = 202
+        val vm = loadedVm()
+
+        assertEquals(ID_A, vm.state.value!!.coverFallbackMember?.arcid)
+    }
+
+    @Test
+    fun load_generatedCoverOrFailedProbeKeepsTheTankCover() {
+        assertNull(loadedVm().state.value!!.coverFallbackMember)
+
+        thumbStatus = 500
+        val vm = loadedVm()
+        assertTrue(vm.loadState.value is LoadState.Loaded)
+        assertNull("a probe failure is not a missing cover", vm.state.value!!.coverFallbackMember)
+    }
+
+    @Test
+    fun load_failedAutoFillKeepsTheServerTags() {
+        tankTags = null
+        putStatus = 500
+        val vm = loadedVm()
+
+        assertEquals(1, putTags.size)
+        assertTrue(vm.loadState.value is LoadState.Loaded)
+        assertEquals("", vm.state.value!!.tags)
+    }
+
+    @Test
+    fun load_heartSkipsDynamicCategoriesTheServerReports() {
+        archiveCategoriesJson = """[{"id":"SET_DYN","name":"Dyn","archives":[],"pinned":"0","search":"foo"},""" +
+            """{"id":"SET_STATIC","name":"Favs","archives":["$TANK"],"pinned":"0","search":""}]"""
+        val vm = loadedVm()
+        awaitUntil { vm.favoriteState.value != null }
+
+        assertEquals("Favs", vm.favoriteState.value!!.name)
+    }
+
+    @Test
+    fun load_heartIsEmptyWhenNoStaticCategoryHoldsTheTank() {
+        archiveCategoriesJson = "[]"
+        val vm = loadedVm()
+        awaitUntil { vm.favoriteState.value != null }
+
+        assertFalse(vm.favoriteState.value!!.isFavorited)
+        assertNull(vm.favoriteState.value!!.name)
+    }
+
+    @Test
     fun init_isIdempotent() {
         val vm = newVm()
         vm.init("TANK_other", "Other", profileId = 9L)
@@ -426,6 +516,12 @@ class TankDetailViewModelTest {
         assertEquals(2f, vm.state.value!!.rating, 0f)
         awaitUntil { putTags.size == 1 }
         assertEquals("artist:foo, language:english, rating:⭐⭐", putTags.single())
+        assertEquals(
+            "a rating PUT sends the tag string only",
+            setOf("tags"),
+            Json.parseToJsonElement(putBodies.single()).jsonObject.getValue("metadata").jsonObject.keys,
+        )
+        assertFalse(Json.parseToJsonElement(putBodies.single()).jsonObject.containsKey("archives"))
         assertEquals(listOf("artist", "language", "rating"), vm.state.value!!.tagGroups.map { it.namespace })
         // The saved rating is announced to covered list scenes.
         awaitUntil { ratingEvents.isNotEmpty() }
@@ -494,7 +590,7 @@ class TankDetailViewModelTest {
         assertEquals(1, deletes.get())
         assertEquals(listOf(TANK), forgotten)
         assertEquals(listOf(TANK), dissolved)
-        assertEquals("categories cleared before the DELETE", listOf("dissolve $TANK My Tank"), categoryCalls)
+        assertEquals("categories cleared before the DELETE", listOf("dissolve $TANK My Tank deletes=0"), categoryCalls)
     }
 
     @Test
@@ -535,5 +631,6 @@ class TankDetailViewModelTest {
         val ID_A = "a".repeat(40)
         val ID_B = "b".repeat(40)
         val ID_C = "c".repeat(40)
+        val ID_D = "d".repeat(40)
     }
 }

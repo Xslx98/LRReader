@@ -4,6 +4,7 @@ import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.domain.Archive
@@ -25,7 +26,7 @@ import kotlinx.coroutines.sync.withPermit
  * Server-side tankoubon list operations (docs/plan-2.4.0-tank-ux.md, PR-B):
  * the full list load with its side effects, the missing-cover probe,
  * auto-sort, the member fetch a download needs, the reverse lookup, create and delete,
- * plus the single-tank reads and writes of the member management page. Every call
+ * plus the single-tank reads and writes of the tank detail and member management pages. Every call
  * names its server with a [ServerConnection]. Plain suspend functions —
  * callers own feedback; failures propagate as exceptions.
  *
@@ -76,24 +77,35 @@ class TankRepository(
     }
 
     /**
-     * The tank and its members (in tank order) for the member management page. Member ORDER
+     * The tank and its members (in tank order) for the tank detail and member management pages. Member ORDER
      * is `archives` (the same list a reorder PUTs); `full_data` is only the
      * metadata lookup, never trusted for order, and members it holds that
      * `archives` lacks follow at the end. Members are mapped with [conn] as
      * their EXPLICIT source (multi-profile red line: the tank may belong to a
      * non-active profile). Success marks the server supported in
      * [TankoubonSupportGate].
+     *
+     * @param autoFillTags the detail page's first-open auto-fill (spec
+     *   2026-09-22 §4.5): a tank with no tags of its own gets the members'
+     *   union written once, silently, from this same fetch
+     *   ([TankTagSyncer.autoFillIfNeeded]); the returned tank then carries
+     *   the written string
      */
-    suspend fun detail(conn: ServerConnection, tankId: String): Pair<Tankoubon, List<Archive>> {
+    suspend fun detail(
+        conn: ServerConnection,
+        tankId: String,
+        autoFillTags: Boolean = false,
+    ): Pair<Tankoubon, List<Archive>> {
         val full = LRRTankoubonApi.getTankoubonFull(conn.client, conn.baseUrl, tankId).result
         TankoubonSupportGate.markSupported(conn.baseUrl)
+        val tags = if (autoFillTags) TankTagSyncer.autoFillIfNeeded(conn.client, conn.baseUrl, full) ?: full.tags else full.tags
         val byId = full.fullData.associateBy { it.arcid }
         val ordered = full.archives.mapNotNull { byId[it] } +
             full.fullData.filter { it.arcid !in full.archives }
         val members = ordered.map {
             it.toArchive(sourceProfileId = conn.profileId, sourceBaseUrl = conn.baseUrl)
         }
-        return Tankoubon(full.id, full.name, full.archives, full.summary, full.tags, full.progress) to members
+        return Tankoubon(full.id, full.name, full.archives, full.summary, tags, full.progress) to members
     }
 
     /**
@@ -112,6 +124,17 @@ class TankRepository(
     suspend fun updateMeta(conn: ServerConnection, tankId: String, summary: String, tags: String) {
         LRRTankoubonApi.updateTankoubon(conn.client, conn.baseUrl, tankId, summary = summary, tags = tags)
     }
+
+    /** Writes the tank's whole tag string, and nothing else. */
+    suspend fun setTags(conn: ServerConnection, tankId: String, tags: String) {
+        LRRTankoubonApi.updateTankoubon(conn.client, conn.baseUrl, tankId, tags = tags)
+    }
+
+    /** Names of the STATIC categories holding the tank, in server order; dynamic ones never count. */
+    suspend fun staticCategoryNames(conn: ServerConnection, tankId: String): List<String> =
+        LRRCategoryApi.categoriesContaining(conn.client, conn.baseUrl, tankId)
+            .filter { !it.isDynamic() }
+            .mapNotNull { it.name }
 
     /** Makes the 1-indexed [globalPage1] the tank's cover. Only the server write: no stamp, no choice. */
     suspend fun setCover(conn: ServerConnection, tankId: String, globalPage1: Int) {
@@ -324,7 +347,7 @@ class TankRepository(
 
     /**
      * Only the server DELETE, without [delete]'s follow-ups, for a caller
-     * that runs its own sequence around it (the member management page).
+     * that runs its own sequence around it (the tank detail and member management pages).
      */
     suspend fun deleteOnly(conn: ServerConnection, tankId: String) {
         LRRTankoubonApi.deleteTankoubon(conn.client, conn.baseUrl, tankId)
