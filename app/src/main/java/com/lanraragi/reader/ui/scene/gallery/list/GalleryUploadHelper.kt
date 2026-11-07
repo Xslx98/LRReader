@@ -12,7 +12,7 @@ import com.lanraragi.reader.ui.dialog.EditTextDialogBuilder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.server.ServerConnections
 import java.io.IOException
-import com.lanraragi.reader.client.api.LRRMiscApi
+import com.lanraragi.reader.archive.UrlDownloads
 import com.lanraragi.reader.ui.scene.BaseScene
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -116,7 +116,7 @@ class GalleryUploadHelper(private val mCallback: Callback) {
             owner.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val conn = ServerConnections.active() ?: throw IOException("No server configured")
-                    val jobId = LRRMiscApi.downloadUrl(conn.client, conn.baseUrl, url, null)
+                    val jobId = UrlDownloads.enqueue(conn, url)
 
                     val activity = mCallback.getHostActivity()
                     activity?.runOnUiThread {

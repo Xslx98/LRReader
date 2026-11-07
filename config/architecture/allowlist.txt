@@ -24,6 +24,5 @@ D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailViewModel.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/TankPickerSheet.kt
 D8b com/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel.kt
-D8b com/lanraragi/reader/ui/scene/gallery/list/GalleryUploadHelper.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankDetailScene.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankDetailViewModel.kt
