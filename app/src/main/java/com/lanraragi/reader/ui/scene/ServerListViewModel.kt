@@ -8,7 +8,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.server.ServerCertificate
 import com.lanraragi.reader.server.ServerProfileService
-import com.lanraragi.reader.client.api.data.LRRServerInfo
+import com.lanraragi.reader.server.ServerIdentity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -68,7 +68,7 @@ class ServerListViewModel(
         data class ProfileAdded(
             val profile: ServerProfile,
             val newId: Long,
-            val info: LRRServerInfo,
+            val info: ServerIdentity,
             val resolvedUrl: String,
             val usedHttpFallback: Boolean
         ) : ServerListUiEvent

@@ -30,6 +30,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.util.concurrent.TimeUnit
+import com.lanraragi.reader.server.ServerIdentity
 import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 
@@ -102,6 +103,19 @@ class LRRUrlHelperConnectTest {
         val result = LRRUrlHelper.connectWithFallback(client, baseUrl(), null)
         assertEquals(baseUrl(), result.asSuccess().resolvedUrl)
         assertNull(server.awaitRequest().getHeader("Authorization"))
+    }
+
+    @Test
+    fun success_carriesTheIdentityTheServerReported() = runBlocking {
+        server.enqueue(
+            MockResponse().setResponseCode(200).setBody(
+                """{"name":"Shelf","version":"0.9.8","version_name":"Ainsi","archives_per_page":50}"""
+            )
+        )
+
+        val result = LRRUrlHelper.connectWithFallback(client, baseUrl(), null).asSuccess()
+
+        assertEquals(ServerIdentity("Shelf", "0.9.8", "Ainsi", 50), result.info)
     }
 
     @Test

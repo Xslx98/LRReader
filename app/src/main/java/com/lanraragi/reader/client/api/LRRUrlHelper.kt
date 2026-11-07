@@ -1,7 +1,6 @@
 package com.lanraragi.reader.client.api
 
 import android.util.Log
-import com.lanraragi.reader.client.api.data.LRRServerInfo
 import kotlinx.coroutines.CancellationException
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
@@ -9,6 +8,8 @@ import java.net.URI
 import java.util.concurrent.TimeUnit
 import com.lanraragi.reader.server.ServerTrust
 import com.lanraragi.reader.server.ServerCertificate
+import com.lanraragi.reader.server.ServerIdentity
+import com.lanraragi.reader.server.toServerIdentity
 import com.lanraragi.reader.server.untrustedCertificateIn
 import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 
@@ -236,7 +237,7 @@ object LRRUrlHelper {
         /** Connection succeeded on [resolvedUrl]. */
         data class Success(
             val resolvedUrl: String,
-            val info: LRRServerInfo,
+            val info: ServerIdentity,
             val usedHttpFallback: Boolean,
         ) : ConnectResult
 
@@ -330,7 +331,7 @@ object LRRUrlHelper {
                 }
                 try {
                     val info = LRRServerApi.getServerInfo(testClient, rawInput, apiKey)
-                    return ConnectResult.Success(rawInput, info, usedHttpFallback = false)
+                    return ConnectResult.Success(rawInput, info.toServerIdentity(), usedHttpFallback = false)
                 } catch (ce: CancellationException) {
                     throw ce
                 } catch (e: Exception) {
@@ -349,7 +350,7 @@ object LRRUrlHelper {
             try {
                 Log.d(TAG, "Trying HTTPS: $httpsUrl")
                 val info = LRRServerApi.getServerInfo(testClient, httpsUrl, apiKey)
-                return ConnectResult.Success(httpsUrl, info, usedHttpFallback = false)
+                return ConnectResult.Success(httpsUrl, info.toServerIdentity(), usedHttpFallback = false)
             } catch (ce: CancellationException) {
                 throw ce
             } catch (e1: Exception) {
@@ -397,7 +398,7 @@ object LRRUrlHelper {
         return try {
             Log.d(TAG, "Trying HTTP fallback: $httpUrl")
             val info = LRRServerApi.getServerInfo(testClient, httpUrl, apiKey)
-            ConnectResult.Success(httpUrl, info, usedHttpFallback = true)
+            ConnectResult.Success(httpUrl, info.toServerIdentity(), usedHttpFallback = true)
         } catch (ce: CancellationException) {
             throw ce
         } catch (e: Exception) {

@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.server.ServerCertificate
 import com.lanraragi.reader.server.ServerProfileService
-import com.lanraragi.reader.client.api.data.LRRServerInfo
+import com.lanraragi.reader.server.ServerIdentity
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,7 +46,7 @@ class ServerConfigViewModel(
      */
     data class ConnectSuccess(
         val resolvedUrl: String,
-        val serverInfo: LRRServerInfo,
+        val serverInfo: ServerIdentity,
         val navigateOnSuccess: Boolean
     )
 

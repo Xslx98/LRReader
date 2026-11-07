@@ -3,7 +3,6 @@ package com.lanraragi.reader.server
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRUrlHelper
-import com.lanraragi.reader.client.api.data.LRRServerInfo
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.reading.ArchiveProgressOutbox
@@ -52,7 +51,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
     }
 
     /** The onboarding connect committed: [resolvedUrl] is now the active server. */
-    data class Onboarded(val resolvedUrl: String, val info: LRRServerInfo)
+    data class Onboarded(val resolvedUrl: String, val info: ServerIdentity)
 
     /**
      * Onboarding connect: tests [rawInput] (scheme detection, HTTPS->HTTP
@@ -76,7 +75,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
 
     private suspend fun commitOnboarding(
         resolvedUrl: String,
-        info: LRRServerInfo,
+        info: ServerIdentity,
         apiKey: String?,
         allowCleartext: Boolean,
     ): Outcome<Onboarded> {
@@ -355,7 +354,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
     /** A new profile was added as [profile] and is now the active server. */
     data class Added(
         val profile: ServerProfile,
-        val info: LRRServerInfo,
+        val info: ServerIdentity,
         val resolvedUrl: String,
         val usedHttpFallback: Boolean,
     )
