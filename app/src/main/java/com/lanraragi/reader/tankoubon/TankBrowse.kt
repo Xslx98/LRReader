@@ -1,8 +1,8 @@
 package com.lanraragi.reader.tankoubon
 
 import com.lanraragi.reader.client.api.LRRTankoubonApi
-import com.lanraragi.reader.client.api.LRRTankoubonApi.Tankoubon
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.domain.parseLrrTagString
 import com.lanraragi.reader.domain.parseRatingFromTags
 import com.lanraragi.reader.settings.AppearanceSettings

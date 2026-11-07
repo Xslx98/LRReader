@@ -5,7 +5,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.domain.Tankoubon
 
 /**
  * Binds the detail page's "belongs to Tankoubons" section. Passive like the
@@ -19,7 +19,7 @@ internal class DetailTankoubonBinder(
     private val section: View,
     private val container: LinearLayout,
     edit: TextView,
-    private val onTankClick: (LRRTankoubonApi.Tankoubon) -> Unit,
+    private val onTankClick: (Tankoubon) -> Unit,
     onEditClick: () -> Unit,
 ) {
 
@@ -27,7 +27,7 @@ internal class DetailTankoubonBinder(
         edit.setOnClickListener { onEditClick() }
     }
 
-    fun bind(tanks: List<LRRTankoubonApi.Tankoubon>?) {
+    fun bind(tanks: List<Tankoubon>?) {
         container.removeAllViews()
         if (tanks == null) {
             section.visibility = View.GONE

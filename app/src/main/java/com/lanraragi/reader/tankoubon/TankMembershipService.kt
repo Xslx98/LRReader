@@ -2,6 +2,7 @@ package com.lanraragi.reader.tankoubon
 
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.server.ServerConnection
@@ -31,7 +32,7 @@ class TankMembershipService(
     fun applyAsync(
         conn: ServerConnection,
         arcid: String,
-        tanks: List<LRRTankoubonApi.Tankoubon>,
+        tanks: List<Tankoubon>,
         originalIds: Set<String>,
         checkedIds: Set<String>,
         onResult: (Result<List<String>>) -> Unit,
@@ -55,7 +56,7 @@ class TankMembershipService(
     suspend fun apply(
         conn: ServerConnection,
         arcid: String,
-        tanks: List<LRRTankoubonApi.Tankoubon>,
+        tanks: List<Tankoubon>,
         originalIds: Set<String>,
         checkedIds: Set<String>,
     ): List<String> {
