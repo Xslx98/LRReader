@@ -79,7 +79,7 @@ class CategoryLibraryService(
     }
 }
 
-private fun LRRCategory.toCategory(): Category =
+internal fun LRRCategory.toCategory(): Category =
     Category(
         id = id,
         name = name,

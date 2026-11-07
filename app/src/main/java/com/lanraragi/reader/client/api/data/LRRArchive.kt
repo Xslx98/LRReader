@@ -51,7 +51,7 @@ class LRRArchive() : Parcelable {
      * @param sourceProfileId id of the profile this metadata was fetched
      *   against. Defaults to the active profile, which is correct for
      *   search results / paging / any "browse the active server" path.
-     *   The detail view-model passes the archive's pinned source profile
+     *   ArchiveDetailLoader passes the archive's pinned source profile
      *   id explicitly so a cross-server detail fetch (e.g. while active
      *   is profile A but the archive belongs to profile B) does NOT
      *   corrupt the in-memory Archive's `serverProfileId` to the active
