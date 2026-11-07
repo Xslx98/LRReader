@@ -13,6 +13,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
+import com.lanraragi.reader.reading.StampsBackend
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReaderStampsControllerTest {

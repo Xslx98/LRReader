@@ -7,6 +7,7 @@ import com.lanraragi.reader.domain.ReaderStamp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import com.lanraragi.reader.reading.StampsBackend
 
 /**
  * Per-archive stamps state: support probing, lazy cache, pessimistic CRUD.

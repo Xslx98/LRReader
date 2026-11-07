@@ -1,4 +1,4 @@
-package com.lanraragi.reader.ui.reader
+package com.lanraragi.reader.reading
 
 import com.lanraragi.reader.client.api.LRRStampApi
 import com.lanraragi.reader.domain.ReaderStamp
@@ -15,7 +15,7 @@ interface StampsBackend {
 
 /**
  * Real backend. Routes every call by the archive's SOURCE profile
- * (multi-profile red line), same as [com.lanraragi.reader.ui.scene.gallery.detail.DeleteArchiveHelper].
+ * (multi-profile red line), same as `DeleteArchiveHelper`.
  */
 class LRRStampsBackend(
     private val arcid: String,

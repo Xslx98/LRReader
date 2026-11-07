@@ -9,6 +9,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import com.lanraragi.reader.reading.LRRStampsBackend
+import com.lanraragi.reader.reading.StampsBackend
 
 /**
  * Stamps backend for a whole-tank composite session: the controller keeps

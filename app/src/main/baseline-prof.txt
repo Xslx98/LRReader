@@ -12057,7 +12057,7 @@ PLcom/lanraragi/reader/ui/reader/ImmersiveSystemUi;-><init>(Landroid/app/Activit
 PLcom/lanraragi/reader/ui/reader/ImmersiveSystemUi;->hide()V
 PLcom/lanraragi/reader/ui/reader/ImmersiveSystemUi$Companion;-><init>()V
 PLcom/lanraragi/reader/ui/reader/ImmersiveSystemUi$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-PLcom/lanraragi/reader/ui/reader/LRRStampsBackend;-><init>(Ljava/lang/String;J)V
+PLcom/lanraragi/reader/reading/LRRStampsBackend;-><init>(Ljava/lang/String;J)V
 PLcom/lanraragi/reader/ui/reader/ReaderChromeController;->$r8$lambda$Uad8KMvNph-DzRIA7CGEZa0bVlQ(Lcom/lanraragi/reader/widget/GalleryHeader;Landroid/view/View;Landroid/view/WindowInsets;)Landroid/view/WindowInsets;
 PLcom/lanraragi/reader/ui/reader/ReaderChromeController;-><clinit>()V
 PLcom/lanraragi/reader/ui/reader/ReaderChromeController;-><init>(Landroid/app/Activity;)V
@@ -12119,7 +12119,7 @@ PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup;->createProvider(Landroid/co
 PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup;->recordHistory(Lcom/lanraragi/reader/domain/Archive;Lcom/lanraragi/reader/reading/TankSessionSeed;)V
 PLcom/lanraragi/reader/ui/reader/ReaderSessionSetup;->startReadingSession(Lcom/lanraragi/reader/reading/ReadingSessionTracker;Lcom/lanraragi/reader/domain/Archive;Lcom/lanraragi/reader/reading/TankSessionSeed;ILkotlin/jvm/functions/Function0;)V
 PLcom/lanraragi/reader/ui/reader/ReaderStampsController;-><clinit>()V
-PLcom/lanraragi/reader/ui/reader/ReaderStampsController;-><init>(Lkotlinx/coroutines/CoroutineScope;Lcom/lanraragi/reader/ui/reader/StampsBackend;Lkotlin/jvm/functions/Function0;)V
+PLcom/lanraragi/reader/ui/reader/ReaderStampsController;-><init>(Lkotlinx/coroutines/CoroutineScope;Lcom/lanraragi/reader/reading/StampsBackend;Lkotlin/jvm/functions/Function0;)V
 PLcom/lanraragi/reader/ui/reader/ReaderStampsController;->getSessionVisible()Z
 PLcom/lanraragi/reader/ui/reader/ReaderStampsController;->getSupport()Lcom/lanraragi/reader/ui/reader/ReaderStampsController$Support;
 PLcom/lanraragi/reader/ui/reader/ReaderStampsController$Companion;-><init>()V
