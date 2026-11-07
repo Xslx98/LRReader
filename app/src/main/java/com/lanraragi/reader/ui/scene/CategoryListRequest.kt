@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import com.lanraragi.reader.archive.ListUrlBuilder
-import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.domain.Category
 
 /**
  * Turns a tapped category into the gallery-list request that opens it.
@@ -13,7 +13,7 @@ import com.lanraragi.reader.client.api.data.LRRCategory
  * when the category carries no usable id (never expected from a real server;
  * defensive only). Pure so it stays unit-testable without inflating the Scene.
  */
-internal fun categoryListBuilder(category: LRRCategory): ListUrlBuilder? {
+internal fun categoryListBuilder(category: Category): ListUrlBuilder? {
     val id = category.id?.trim()?.takeIf { it.isNotEmpty() } ?: return null
     return ListUrlBuilder().apply {
         mode = ListUrlBuilder.MODE_NORMAL

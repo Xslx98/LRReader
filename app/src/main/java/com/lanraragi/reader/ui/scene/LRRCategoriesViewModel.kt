@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.category.CategoryLibraryService
-import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.domain.Category
 import com.lanraragi.reader.client.api.friendlyError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +35,7 @@ class LRRCategoriesViewModel(
      * registry — and tests that don't care (no data module installed) still
      * construct the VM without pinning this parameter.
      */
-    private val categoryNameSync: suspend (List<LRRCategory>) -> Unit = { categories ->
+    private val categoryNameSync: suspend (List<Category>) -> Unit = { categories ->
         ServiceRegistry.dataModule.quickSearchRepository.syncCategoryNames(categories.map { it.id to it.name })
     },
     private val library: CategoryLibraryService = CategoryLibraryService.default,
@@ -45,10 +45,10 @@ class LRRCategoriesViewModel(
     // Category list state
     // -------------------------------------------------------------------------
 
-    private val _categories = MutableStateFlow<List<LRRCategory>>(emptyList())
+    private val _categories = MutableStateFlow<List<Category>>(emptyList())
 
     /** Sorted category list (pinned first, then by name). */
-    val categories: StateFlow<List<LRRCategory>> = _categories.asStateFlow()
+    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Loading state
@@ -157,7 +157,7 @@ class LRRCategoriesViewModel(
         }
     }
 
-    private suspend fun publish(categories: List<LRRCategory>) {
+    private suspend fun publish(categories: List<Category>) {
         _categories.value = ArrayList(categories)
         syncNames(categories)
     }
@@ -172,7 +172,7 @@ class LRRCategoriesViewModel(
      * list. Display-only data: a failure must never surface as a categories
      * error, so it is logged and swallowed (cancellation still propagates).
      */
-    private suspend fun syncNames(categories: List<LRRCategory>) {
+    private suspend fun syncNames(categories: List<Category>) {
         try {
             categoryNameSync(categories)
         } catch (e: CancellationException) {

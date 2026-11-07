@@ -4,6 +4,7 @@ import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.domain.Category
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.ServerConnections
 import kotlinx.coroutines.CancellationException
@@ -30,9 +31,9 @@ class CategoryLibraryService(
 ) {
 
     /** Named categories of the active server, pinned first; null when no server is configured. */
-    suspend fun load(): List<LRRCategory>? {
+    suspend fun load(): List<Category>? {
         val conn = connection() ?: return null
-        return pinnedFirst(LRRCategoryApi.getCategories(conn.client, conn.baseUrl))
+        return pinnedFirst(LRRCategoryApi.getCategories(conn.client, conn.baseUrl).map { it.toCategory() })
     }
 
     /** Creates a category; false when no server is configured (nothing was sent). */
@@ -71,9 +72,18 @@ class CategoryLibraryService(
         val default: CategoryLibraryService by lazy { CategoryLibraryService() }
 
         /** Drops nameless entries and puts pinned categories first, keeping server order within each group. */
-        fun pinnedFirst(categories: List<LRRCategory>): List<LRRCategory> {
+        fun pinnedFirst(categories: List<Category>): List<Category> {
             val named = categories.filter { !it.name.isNullOrEmpty() }
             return named.filter { it.isPinned() } + named.filterNot { it.isPinned() }
         }
     }
 }
+
+private fun LRRCategory.toCategory(): Category =
+    Category(
+        id = id,
+        name = name,
+        archives = archives,
+        search = search,
+        pinned = isPinned(),
+    )
