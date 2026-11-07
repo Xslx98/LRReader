@@ -75,8 +75,8 @@ class TankContractTest {
             assertEquals(listOf(second, first), named.archives)
             assertEquals(
                 "a rename must not create a second tank",
-                1,
-                LRRTankoubonApi.getTankoubons(client, url).result.count { it.name.startsWith("Contract r") },
+                setOf(seed.tank.id, tankId),
+                LRRTankoubonApi.getTankoubons(client, url).result.map { it.id }.toSet(),
             )
 
             LRRTankoubonApi.updateTankProgress(client, url, tankId, seed.big.pages + 2)

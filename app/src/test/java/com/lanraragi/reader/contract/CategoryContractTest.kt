@@ -35,9 +35,13 @@ class CategoryContractTest {
         assertEquals(emptyList<String?>(), LRRCategoryApi.getArchiveCategories(client, url, seed.bravo.id).map { it.id })
     }
 
-    /** 0.9.81 started accepting a TANK_ id here; the client falls back to the full list before that. */
+    /**
+     * 0.9.81 started accepting a TANK_ id here; the client falls back to the full
+     * list before that. The default legs only reach the direct route: the 400 and
+     * the fallback need a dispatch with an older image tag.
+     */
     @Test
-    fun tankAsCategoryMember_directRouteByVersion_andTheFallbackEitherWay() = contractTest {
+    fun tankAsCategoryMember_isFoundOnTheRouteItsVersionSupports() = contractTest {
         val version = LRRServerApi.getServerInfo(client, url).version.orEmpty()
         if (isAtLeast0981(version)) {
             val direct = LRRCategoryApi.getArchiveCategories(client, url, seed.tank.id)
