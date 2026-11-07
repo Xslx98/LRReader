@@ -70,11 +70,11 @@ class ArchiveContractTest {
 
     @Test
     fun pageThumbnail_notYetGenerated_answersPendingWithAJob() = contractTest {
-        // Page 20 is requested nowhere else, so the first answer here is the queueing one.
+        // Uploads only generate the cover and nothing else asks for page 20, so on the
+        // fresh container each run uses, the first answer must be the queueing one.
         val first = LRRArchiveApi.fetchPageThumbnail(client, url, seed.big.id, 20)
-        if (first is LRRArchiveApi.PageThumbnailFetchResult.Pending) {
-            assertNotNull("202 must name its job", first.jobId)
-        }
+        assertTrue("first answer: $first", first is LRRArchiveApi.PageThumbnailFetchResult.Pending)
+        assertNotNull("202 must name its job", (first as LRRArchiveApi.PageThumbnailFetchResult.Pending).jobId)
         val ready = awaitValue {
             LRRArchiveApi.fetchPageThumbnail(client, url, seed.big.id, 20)
                 as? LRRArchiveApi.PageThumbnailFetchResult.Ready
