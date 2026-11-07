@@ -6,15 +6,16 @@ import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.server.resolveSourceBaseUrl
+import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.reading.TankMemberSeed
 import com.lanraragi.reader.reading.TankSeedStore
 import com.lanraragi.reader.reading.TankSessionSeed
+import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.ui.GalleryOpenHelper
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -29,6 +30,9 @@ class DownloadTankCards(
     private val launchGallery: (Intent) -> Unit,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
+
+    /** The fill's member metadata fetch (it never calls [TankRepository.loadAll]). */
+    private val tanks by lazy { TankRepository(TankMembershipSyncFactory.runnerSafely()::sync) }
 
     /**
      * Open a tank card: rebuild the whole-tank composite session from the
@@ -78,18 +82,14 @@ class DownloadTankCards(
                 val (ids, resolved) = withContext(ioDispatcher) {
                     val ids = data.downloadDbRepository.getTankGroupMemberIds(tankId)
                     val present = data.downloadDbRepository.getTankMemberArchives(tankId)
-                    val url = suspendRunCatching {
-                        resolveSourceBaseUrl(profileId, data.profileLookupCache)
+                    val conn = suspendRunCatching {
+                        ServerConnections.forProfile(profileId, data.profileLookupCache)
                     }.getOrNull()
-                    val client = ServiceRegistry.networkModule.okHttpClient
                     ids to TankFillDispatcher.resolveMembers(ids, present) { id ->
-                        if (url == null) {
+                        if (conn == null) {
                             null
                         } else {
-                            suspendRunCatching {
-                                LRRArchiveApi.getArchiveMetadata(client, url, id)
-                                    .toArchive(sourceProfileId = profileId, sourceBaseUrl = url)
-                            }.getOrNull()
+                            suspendRunCatching { tanks.memberArchive(conn, id) }.getOrNull()
                         }
                     }
                 }

@@ -3,6 +3,7 @@ package com.lanraragi.reader.tankoubon
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.TankCoverCacheStamp
+import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.domain.Archive
@@ -193,6 +194,11 @@ class TankRepository(
         }
         return Members(tankId, full.name, members, full.archives)
     }
+
+    /** One member's metadata from its source server, for a fill whose group id has no download row. */
+    suspend fun memberArchive(conn: ServerConnection, arcid: String): Archive =
+        LRRArchiveApi.getArchiveMetadata(conn.client, conn.baseUrl, arcid)
+            .toArchive(sourceProfileId = conn.profileId, sourceBaseUrl = conn.baseUrl)
 
     /** Creates an empty tank named [name]; returns its id. */
     suspend fun create(conn: ServerConnection, name: String): String {
