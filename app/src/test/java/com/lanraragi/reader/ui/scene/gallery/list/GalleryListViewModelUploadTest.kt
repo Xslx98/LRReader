@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.archive.ArchiveUploadService
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.server.ServerSession
@@ -245,12 +246,12 @@ class GalleryListViewModelUploadTest {
 
     @Test
     fun safeUploadFileName_keepsOneSafeSegment() {
-        assertEquals("a.zip", GalleryListViewModel.safeUploadFileName("a.zip"))
-        assertEquals("eh.db", GalleryListViewModel.safeUploadFileName("../databases/eh.db"))
-        assertEquals("x.cbz", GalleryListViewModel.safeUploadFileName("..\\..\\x.cbz"))
-        assertEquals("ab.zip", GalleryListViewModel.safeUploadFileName("a\u0000b.zip"))
+        assertEquals("a.zip", ArchiveUploadService.safeUploadFileName("a.zip"))
+        assertEquals("eh.db", ArchiveUploadService.safeUploadFileName("../databases/eh.db"))
+        assertEquals("x.cbz", ArchiveUploadService.safeUploadFileName("..\\..\\x.cbz"))
+        assertEquals("ab.zip", ArchiveUploadService.safeUploadFileName("a\u0000b.zip"))
         for (bad in listOf(null, "", "  ", ".", "..", "dir/", "../..")) {
-            assertEquals(GalleryListViewModel.FALLBACK_UPLOAD_NAME, GalleryListViewModel.safeUploadFileName(bad))
+            assertEquals(ArchiveUploadService.FALLBACK_UPLOAD_NAME, ArchiveUploadService.safeUploadFileName(bad))
         }
     }
 }

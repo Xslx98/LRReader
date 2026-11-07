@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.R
+import com.lanraragi.reader.archive.ArchiveUploadService
 import com.lanraragi.reader.archive.BatchOp
 import com.lanraragi.reader.archive.ListBatchWrites
 import com.lanraragi.reader.ServiceRegistry
@@ -25,7 +26,6 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadRequests
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,10 +44,8 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.parcelize.Parcelize
@@ -187,73 +185,31 @@ class GalleryListViewModel : ViewModel() {
     private var uploadJob: Job? = null
 
     /**
-     * Upload an archive with a cheap pre-upload duplicate check. The archive id
-     * (SHA-1 of the first 512 KB) is computed locally and probed against the
-     * server; an existing archive short-circuits to [UploadUiState.DuplicateSkipped]
-     * without transferring — or even fully copying — the file. Otherwise the file
-     * is uploaded with byte-level [UploadUiState.Uploading] progress.
+     * Upload an archive through [ArchiveUploadService]: a confirmed duplicate
+     * ends in [UploadUiState.DuplicateSkipped] without a transfer; otherwise
+     * the file is uploaded with byte-level [UploadUiState.Uploading] progress.
      */
     fun uploadArchive(req: UploadRequest) {
         if (uploadJob?.isActive == true) return // ignore re-entrant taps while busy
         uploadJob = viewModelScope.launch(Dispatchers.IO) {
-            var stagingDir: File? = null
             try {
                 _uploadState.value = UploadUiState.Preparing
                 // Both calls go to the server that was active when the upload started.
                 val conn = ServerConnections.active() ?: throw IOException("No server configured")
-
-                val arcid = (req.openStream() ?: throw IOException("Cannot open file"))
-                    .use { LRRArchiveApi.computeArchiveId(it) }
-
-                // Best-effort: an inconclusive probe (network/proxy error) is
-                // treated as "not a confirmed duplicate" so the upload still runs
-                // and the server's own check remains the backstop.
-                val isDuplicate = suspendRunCatching { LRRArchiveApi.archiveExists(conn.client, conn.baseUrl, arcid) }
-                    .getOrDefault(false)
-                if (isDuplicate) {
-                    _uploadState.value = UploadUiState.DuplicateSkipped(arcid)
-                    return@launch
+                val outcome = ArchiveUploadService.upload(conn, req.displayName, req.cacheDir, req.openStream) {
+                    _uploadState.value = UploadUiState.Uploading(it)
                 }
-
-                // The multipart filename becomes the archive's server-side
-                // name, so the copy keeps the picked name — but inside a fresh
-                // private directory and reduced to one safe path segment: a
-                // provider's DISPLAY_NAME is untrusted ("../databases/x.db").
-                val dir = Files.createTempDirectory(req.cacheDir.toPath(), "upload").toFile()
-                stagingDir = dir
-                val target = File(dir, safeUploadFileName(req.displayName))
-                req.openStream().use { input ->
-                    if (input == null) throw IOException("Cannot open file")
-                    FileOutputStream(target).use { fos -> input.copyTo(fos) }
+                _uploadState.value = if (outcome.duplicate) {
+                    UploadUiState.DuplicateSkipped(outcome.arcid)
+                } else {
+                    UploadUiState.Success(outcome.arcid)
                 }
-
-                _uploadState.value = UploadUiState.Uploading(0)
-                val checksum = LRRArchiveApi.computeFileChecksum(target)
-                var lastPercent = -1
-                val arcidUploaded = LRRArchiveApi.uploadArchive(
-                    ServiceRegistry.networkModule.uploadClient,
-                    conn.baseUrl,
-                    target,
-                    fileChecksum = checksum,
-                    progressListener = { written, total ->
-                        if (total > 0) {
-                            val pct = (written * PERCENT_MAX / total).toInt().coerceIn(0, PERCENT_MAX)
-                            if (pct != lastPercent) {
-                                lastPercent = pct
-                                _uploadState.value = UploadUiState.Uploading(pct)
-                            }
-                        }
-                    }
-                )
-                _uploadState.value = UploadUiState.Success(arcidUploaded.ifEmpty { arcid })
             } catch (e: CancellationException) {
                 _uploadState.value = UploadUiState.Idle
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Upload failed", e)
                 _uploadState.value = UploadUiState.Failed(e)
-            } finally {
-                stagingDir?.deleteRecursively()
             }
         }
     }
@@ -612,26 +568,6 @@ class GalleryListViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "GalleryListViewModel"
-
-        /** Upload progress is reported on a 0..100 scale. */
-        private const val PERCENT_MAX = 100
-
-        /** Name used when the picked document's name is unusable. */
-        internal const val FALLBACK_UPLOAD_NAME = "upload_archive"
-
-        /** Upper bound on the staged file name, below common 255-byte filesystem limits. */
-        private const val MAX_UPLOAD_NAME_CHARS = 120
-
-        /**
-         * Reduce an untrusted display name to one plain path segment: keep the
-         * part after the last `/` or `\`, drop control characters, and fall back
-         * to [FALLBACK_UPLOAD_NAME] for blank, `.` or `..` names.
-         */
-        internal fun safeUploadFileName(raw: String?): String {
-            val lastSegment = raw.orEmpty().substringAfterLast('/').substringAfterLast('\\')
-            val cleaned = lastSegment.filterNot { it.isISOControl() }.trim().takeLast(MAX_UPLOAD_NAME_CHARS)
-            return if (cleaned.isEmpty() || cleaned == "." || cleaned == "..") FALLBACK_UPLOAD_NAME else cleaned
-        }
 
         /** Max archives processed in parallel by [runBatch]. */
         private const val BATCH_CONCURRENCY = 4
