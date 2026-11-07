@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.DownloadInfo
+import kotlinx.coroutines.awaitCancellation
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -22,6 +23,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -60,6 +62,10 @@ class LRRDownloadWorkerTest {
 
     /** Answer for the page-list request on its k-th hit (1-based); null = the list. */
     private var filesAnswer: (hit: Int) -> MockResponse? = { null }
+
+    /** The worker's best-effort chapter fetch; counts its calls by default. */
+    private val chapterFetches = AtomicInteger()
+    private var storeChapters: suspend () -> Unit = {}
 
     /** Arrival time (ms) of each page-list request. */
     private val filesHitTimes = java.util.Collections.synchronizedList(mutableListOf<Long>())
@@ -123,6 +129,10 @@ class LRRDownloadWorkerTest {
             override val listClient = client
             override val pageClient = client
             override fun usableBytes(dir: File) = usable
+            override suspend fun storeChapters(info: DownloadInfo, serverUrl: String) {
+                chapterFetches.incrementAndGet()
+                this@LRRDownloadWorkerTest.storeChapters()
+            }
         }
         worker = LRRDownloadWorker(ApplicationProvider.getApplicationContext(), info, env)
         worker.listener = object : DownloadWorkerListener {
@@ -153,6 +163,44 @@ class LRRDownloadWorkerTest {
         assertEquals(3, dir.listFiles()!!.count { it.name.endsWith(".jpg") })
         assertEquals(ARCID, DownloadDirMarker.read(com.lanraragi.reader.storage.StorageFile(dir))?.arcid)
         assertEquals(null, worker.failureReason)
+    }
+
+    @Test
+    fun chapterFetch_runsOncePerRun() {
+        val r = run()
+
+        assertEquals(3, r.finished)
+        com.lanraragi.reader.awaitUntil { chapterFetches.get() > 0 }
+        assertEquals(1, chapterFetches.get())
+    }
+
+    @Test
+    fun chapterFetchFailure_doesNotAffectTheDownload() {
+        storeChapters = { throw IOException("metadata refused") }
+
+        val r = run()
+
+        assertEquals(3, r.finished)
+        assertEquals(null, worker.failureReason)
+    }
+
+    @Test
+    fun chapterFetchThatNeverAnswers_doesNotDelayTheDownload() {
+        storeChapters = { awaitCancellation() }
+
+        val r = run()
+
+        assertEquals(3, r.finished)
+        assertEquals(3, dir.listFiles()!!.count { it.name.endsWith(".jpg") })
+    }
+
+    @Test
+    fun noChapterFetch_whenThePageListIsRefused() {
+        filesAnswer = { MockResponse().setResponseCode(404) }
+
+        run()
+
+        assertEquals(0, chapterFetches.get())
     }
 
     @Test

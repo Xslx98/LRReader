@@ -35,6 +35,13 @@ ARCHIVES = [
     ("charlie", 5, False, "artist:contract charlie,date_added:1700000000,series:contract"),
     ("big", 40, True, "artist:contract big,date_added:1700000000"),
 ]
+# Chapters as (page, title), added in this order: last page first, so the server
+# has to sort them. `bravo` stays without any: it is `alpha`'s tank neighbour, and
+# `charlie` is the archive with none.
+TOCS = {
+    "big": [(21, "Chapter two"), (1, "Chapter one")],
+    "alpha": [(3, "Alpha ending"), (1, "Alpha opening")],
+}
 # Generated but never uploaded: the upload contract test owns its lifecycle.
 SPARE = ("spare", 6, False)
 
@@ -212,8 +219,10 @@ def seed(args):
         "PUT", f"/api/archives/{big}/stamps/{stamp['page']}",
         query={"content": stamp["content"], "position": stamp["position"]},
     )["stamp_id"]
-    client.json("PUT", f"/api/archives/{big}/toc", query={"page": 1, "title": "Chapter one"})
-    client.json("PUT", f"/api/archives/{big}/toc", query={"page": 21, "title": "Chapter two"})
+    for name, chapters in TOCS.items():
+        for page, title in chapters:
+            client.json("PUT", f"/api/archives/{archives[name]['id']}/toc", query={"page": page, "title": title})
+        archives[name]["toc"] = [{"page": page, "name": title} for page, title in chapters]
 
     every_id = {alpha, bravo, charlie, big}
     _poll("all archives in search", lambda: every_id <= _ids_in_search(client, False))

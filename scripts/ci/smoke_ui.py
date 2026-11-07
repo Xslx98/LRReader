@@ -22,13 +22,18 @@ fresh install connected to `MOCK_SEED=1 MOCK_CHAPTERS=1 MOCK_BIG_PAGES=40
 scripts/ci/mock_lrr.py`, and optionally SMOKE_MOCK_LOG=<the mock's stdout
 log> so a pull-to-refresh must reach the server. It restores the navigation
 mode and rotation it changes. The `chapters` journey runs only when named and
-also needs MOCK_TOC=1 on the mock.
+also needs MOCK_TOC=1 on the mock. So does `chapters_offline`, on the debug
+package with an empty downloads list, a mock also started with
+MOCK_METADATA_FAIL="Mock Big Archive 3", and the server at 10.0.2.2 so airplane
+mode cuts it off (`adb reverse` would not be cut off).
 """
+import json
 import os
 import re
 import subprocess
 import sys
 import time
+import urllib.request
 
 
 def adb_path():
@@ -745,6 +750,169 @@ class Widgets:
         self.need("read", 10)
         self.back()
 
+    # -- offline chapters --
+    def mock_request(self, method, path):
+        url = os.environ.get("SMOKE_MOCK_URL", "http://127.0.0.1:3939") + path
+        request = urllib.request.Request(url, method=method, data=b"" if method == "PUT" else None)
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.load(response)
+
+    def arcid(self, title):
+        rows = self.mock_request("GET", "/api/search?groupby_tanks=false")["data"]
+        return next(a["arcid"] for a in rows if a["title"] == title)
+
+    def await_kept(self, arcid, kept, step):
+        """Waits for the chapter store's file to hold, or not hold, [arcid] (debug package only)."""
+        command = f"run-as {self.pkg} cat shared_prefs/reader_chapters.xml"
+        deadline = time.monotonic() + 15
+        while True:
+            xml = subprocess.run([ADB, "shell", command], capture_output=True, text=True,
+                                 encoding="utf-8", errors="replace").stdout
+            if (f":{arcid}" in xml) == kept:
+                break
+            if time.monotonic() > deadline:
+                raise SmokeFailure(f"chapters offline: {step}: {arcid} kept={not kept}; file: {xml}")
+            time.sleep(1)
+        self.check(f"chapters offline: {step}")
+
+    def airplane(self, on):
+        shell("cmd", "connectivity", "airplane-mode", "enable" if on else "disable", check=True)
+        time.sleep(5)
+
+    def open_download(self, title):
+        self.need("action_start_all")
+        self.press(*centre(self.need_text(title)))
+        self.need("progress", 20)
+
+    def close_reader(self):
+        self.back(2)
+        self.need("action_start_all", 10)
+
+    def expect_no_chapter_entry(self, step):
+        time.sleep(5)                           # a late /metadata would still add the icon
+        if any(n.get("resource-id") == self.rid("reader_top_bar_toc") for n in self.reader_menu_nodes()):
+            raise SmokeFailure(f"chapters offline: {step}: entry point shown")
+        self.check(f"chapters offline: {step}")
+
+    def delete_download(self, title):
+        self.long_press_into(title, ("content-desc", "Delete"), then=lambda: self.tap_id("fab_layout"))
+        tap_node(wait("content-desc", "Delete", 5), "Delete")
+        self.tap_id("android:id/button1")
+
+    def chapters_offline(self):
+        """Chapters of downloads, with airplane mode for offline: stored when a
+        download starts (also when that fetch fails), shown and jumped to offline
+        for an archive and a tank, replaced by a server edit, dropped with the row.
+        A streamed read stores chapters too."""
+        big1, big2, big3, big4 = (self.arcid(f"Mock Big Archive {n}") for n in (1, 2, 3, 4))
+        members = [self.arcid("Mock Archive 2"), self.arcid("Mock Archive 3")]
+
+        self.home_list()
+        self.tap(*centre(self.need_text("Mock Big Archive 4")))
+        self.tap_id("read", 20)
+        self.need("progress", 20)
+        self.await_kept(big4, True, "a streamed read stores chapters")
+        self.back(2)
+        self.need("read", 10)
+        self.back()
+
+        self.home_list()
+        self.long_press_into("Mock Big Archive 1", ("resource-id", self.rid("batch_action_bar")))
+        self.tap(*centre(self.need_text("Mock Big Archive 2")))
+        self.tap(*centre(self.need_text("Mock Big Archive 3")))
+        self.tap_id("batch_download")
+        self.check("chapters offline: queue three archives", 3)
+        self.nav("nav_tankoubons", "search_title")
+        self.press(*centre(self.need_text("Mock Tank")))
+        self.need("read", 20)
+        self.tap(*centre(self.need_text("DOWNLOAD")))
+        self.check("chapters offline: queue the tank", 3)
+        self.nav("nav_downloads", "action_start_all")
+        deadline = time.monotonic() + 180
+        while True:
+            states = [n.get("text", "") for n in self.all_id("state")]
+            if len(states) == 4 and all(s.startswith("Done") for s in states):
+                break
+            if time.monotonic() > deadline:
+                raise SmokeFailure(f"chapters offline: downloads never finished: {states}")
+            time.sleep(2)
+        self.check("chapters offline: all finished, including the archive whose /metadata fails")
+        for arcid in [big1, big2, *members]:
+            self.await_kept(arcid, True, "never opened, chapters stored at download start")
+        self.await_kept(big3, False, "nothing stored when the fetch failed")
+
+        try:
+            self.airplane(True)
+            self.open_download("Mock Big Archive 1")
+            self.tap_menu_button("reader_top_bar_toc")
+            self.need_text("Opening")
+            self.tap(*centre(self.need_text("Part Two")))
+            self.expect_page(11, "offline jump in a download never opened online")
+            self.close_reader()
+
+            self.open_download("Mock Big Archive 3")
+            self.expect_no_chapter_entry("no entry point offline when nothing was stored")
+            self.close_reader()
+
+            self.open_download("Mock Tank")
+            self.tap_menu_button("reader_top_bar_toc")
+            self.need_text("Mock Archive 2")
+            self.need_text("Two Start")
+            self.need_text("Three Middle")
+            time.sleep(3)                       # the /full request fails meanwhile
+            if find("text", "Couldn't load chapters. Tap to retry."):
+                raise SmokeFailure("chapters offline: a failure shown over stored chapters")
+            self.check("chapters offline: tank list shows stored member chapters")
+            self.tap(*centre(self.need_text("Three Middle")))
+            self.expect_page(5, "offline jump into a tank member")
+            self.close_reader()
+            self.airplane(False)
+
+            self.mock_request("PUT", f"/api/archives/{big1}/toc?page=5&title=Edited%20Chapter")
+            self.mock_request("PUT", f"/api/archives/{members[1]}/toc?page=3&title=Edited%20Member")
+            for page in (1, 11, 21, 31, 9999):
+                self.mock_request("DELETE", f"/api/archives/{big2}/toc?page={page}")
+            self.open_download("Mock Big Archive 1")
+            self.tap_menu_button("reader_top_bar_toc")
+            self.need_text("Edited Chapter", 20)
+            self.back()
+            self.close_reader()
+            self.open_download("Mock Big Archive 2")
+            self.expect_no_chapter_entry("a server that removed every chapter removes the entry point")
+            self.close_reader()
+            self.await_kept(big2, False, "the emptied archive's entry is gone")
+            self.open_download("Mock Tank")
+            self.tap_menu_button("reader_top_bar_toc")
+            self.need_text("Edited Member", 20)
+            self.back()
+            self.close_reader()
+
+            self.airplane(True)
+            self.open_download("Mock Tank")
+            self.tap_menu_button("reader_top_bar_toc")
+            self.need_text("Edited Member")
+            self.check("chapters offline: a member's server edit stays offline")
+            self.back()
+            self.close_reader()
+            self.open_download("Mock Big Archive 1")
+            self.tap_menu_button("reader_top_bar_toc")
+            self.tap(*centre(self.need_text("Edited Chapter")))
+            self.expect_page(5, "the server's edit stays offline")
+            self.close_reader()
+            self.open_download("Mock Big Archive 2")
+            self.expect_no_chapter_entry("the removal stays offline")
+            self.close_reader()
+        finally:
+            self.airplane(False)
+
+        self.delete_download("Mock Big Archive 1")
+        self.await_kept(big1, False, "deleting a download clears its entry")
+        for arcid in members:
+            self.await_kept(arcid, True, "other entries stay")
+        self.delete_download("Mock Tank")
+        for arcid in members:
+            self.await_kept(arcid, False, "deleting a downloaded tank clears its members' entries")
+
     def downloads(self):
         """Queue every archive (multi-select, Download), then drive the list:
         scroll, fast scroller, press opens the reader (filling history),
@@ -949,8 +1117,8 @@ class Widgets:
 # In order: downloads opens a dozen archives, which fills History.
 WIDGET_JOURNEYS = ["home", "drawer", "reader", "downloads", "history", "favourites",
                    "tanks", "settings", "lock"]
-# Run only when named: `chapters` also needs MOCK_TOC=1 on the mock.
-NAMED_ONLY_JOURNEYS = ["chapters"]
+# Run only when named: these need more of the mock (see the module docstring).
+NAMED_ONLY_JOURNEYS = ["chapters", "chapters_offline"]
 
 
 class Shots(Widgets):

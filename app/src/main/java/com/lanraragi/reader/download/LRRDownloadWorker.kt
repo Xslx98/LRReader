@@ -13,7 +13,9 @@ import com.lanraragi.reader.server.OrphanProfileException
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.dao.DownloadInfo
+import com.lanraragi.reader.reading.ChapterStore
 import com.lanraragi.reader.reading.ForegroundReading
+import com.lanraragi.reader.reading.LocalReadingProgress
 import com.lanraragi.reader.reading.ReaderPageCache
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.CancellationException
@@ -38,6 +40,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import com.lanraragi.reader.dao.DownloadFailureReason
@@ -69,6 +72,9 @@ class LRRDownloadWorker(
         /** Bytes that can still be allocated on the volume holding [dir]. */
         fun usableBytes(dir: File): Long
 
+        /** Keeps the archive's chapters for offline reading; see [storeChaptersInBackground]. */
+        suspend fun storeChapters(info: DownloadInfo, serverUrl: String)
+
         object Production : Env {
             override suspend fun serverUrl(info: DownloadInfo): String =
                 resolveSourceBaseUrl(info.serverProfileId, ServiceRegistry.dataModule.profileLookupCache)
@@ -91,6 +97,15 @@ class LRRDownloadWorker(
             } catch (e: IOException) {
                 Log.w(TAG, "Free-space query failed", e)
                 Long.MAX_VALUE
+            }
+
+            override suspend fun storeChapters(info: DownloadInfo, serverUrl: String) {
+                val client = ServiceRegistry.networkModule.okHttpClient.newBuilder()
+                    .callTimeout(CHAPTERS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                    .build()
+                val toc = LRRArchiveApi.getArchiveMetadata(client, serverUrl, info.arcid).toc
+                ChapterStore.of(ServiceRegistry.appModule.getContext())
+                    .update(LocalReadingProgress.sourceProfile(info.serverProfileId), info.arcid, toc)
             }
         }
     }
@@ -200,6 +215,24 @@ class LRRDownloadWorker(
         activeCalls.clear()
     }
 
+    /**
+     * One best-effort metadata fetch per run, so an archive downloaded but never
+     * opened online still has its chapters. Its own coroutine, so it can neither
+     * delay nor fail the download. It waits for the page list because that is
+     * what proves the server is reachable, including after a network wait.
+     */
+    private fun storeChaptersInBackground() {
+        scope.launch {
+            try {
+                env.storeChapters(info, serverUrl)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Chapters not stored for $arcId", e)
+            }
+        }
+    }
+
     private suspend fun doDownload() {
         waitBudget = NetworkWaitBudget.fromMinutes(DownloadSettings.getNetworkResumeTimeoutMinutes())
 
@@ -281,6 +314,8 @@ class LRRDownloadWorker(
         }
         if (cancelled) return
         val resolvedPagePaths = pagePaths ?: return
+
+        storeChaptersInBackground()
 
         val total = resolvedPagePaths.size
         listener?.onGetPages(total)
@@ -732,6 +767,7 @@ class LRRDownloadWorker(
 
     companion object {
         private const val TAG = "LRRDownloadWorker"
+        private const val CHAPTERS_TIMEOUT_MS = 15_000L
 
         /**
          * The archive's download directory, allocated (with its pointer) on

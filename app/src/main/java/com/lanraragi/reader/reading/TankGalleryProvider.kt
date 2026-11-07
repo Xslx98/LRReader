@@ -114,14 +114,23 @@ class TankGalleryProvider(
         TankProgress.markSynced(appContext, seed.tankId, page0)
     }
 
+    private val chapterStore = ChapterStore.of(appContext)
+    private val chapterProfileId = LocalReadingProgress.sourceProfile(seed.profileId)
+
     private val tankChapters = TankChapters(
         snapshot = { tocs ->
             synchronized(slotsLock) { ChapterIndex.forTank(slots.map { it.seed }, pageMap, tocs) }
         },
+        stored = {
+            synchronized(slotsLock) { slots.map { it.seed.arcid } }
+                .associateWith { chapterStore.read(chapterProfileId, it) }
+        },
         fetch = {
             val url = serverUrlDeferred.await() ?: throw IOException("No server for tank ${seed.tankId}")
-            LRRTankoubonApi.getTankoubonFull(ServiceRegistry.networkModule.longReadClient, url, seed.tankId)
+            val tocs = LRRTankoubonApi.getTankoubonFull(ServiceRegistry.networkModule.longReadClient, url, seed.tankId)
                 .result.fullData.associate { it.arcid to it.toc }
+            tocs.forEach { (arcid, toc) -> chapterStore.update(chapterProfileId, arcid, toc) }
+            tocs
         },
         publish = ::publishChapters,
     )

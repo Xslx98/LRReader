@@ -93,7 +93,11 @@ internal data class SeededArchive(
     val pages: Int,
     val tags: String = "",
     @SerialName("page_rgb") val pageRgb: List<List<Int>>,
+    val toc: List<SeededToc> = emptyList(),
 )
+
+@Serializable
+internal data class SeededToc(val page: Int, val name: String)
 
 @Serializable
 internal data class SeededTank(val id: String, val name: String, val members: List<String>)

@@ -12,7 +12,8 @@ import kotlinx.coroutines.launch
  * level works at once and without a network. Member chapters come from one
  * heavy `/full` request, made only when the list is first opened (and again
  * after a failure when it is reopened), so a session that never opens it pays
- * nothing.
+ * nothing. Until it answers, or if it cannot, the list shows [stored] chapters;
+ * a failed request is only reported when there are none to show.
  *
  * Chapters are stored by arcid with member-local pages; [snapshot] turns them
  * into global pages against the live page map, and [refresh] must run after
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
  */
 internal class TankChapters(
     private val snapshot: (Map<String, List<LRRTocEntry>>) -> List<ReaderChapter>,
+    private val stored: () -> Map<String, List<LRRTocEntry>>,
     private val fetch: suspend () -> Map<String, List<LRRTocEntry>>,
     private val publish: (ReaderChapterList) -> Unit,
 ) {
@@ -36,7 +38,7 @@ internal class TankChapters(
                 entries = snapshot(tocs),
                 alwaysOffered = true,
                 loading = load == Load.LOADING,
-                failed = load == Load.FAILED,
+                failed = load == Load.FAILED && tocs.values.all { it.isEmpty() },
             )
         )
     }
@@ -49,7 +51,12 @@ internal class TankChapters(
         }
         refresh()
         scope.launch {
-            val result = suspendRunCatching { fetch() }
+            val result = suspendRunCatching {
+                val kept = stored()
+                synchronized(lock) { if (tocs.isEmpty()) tocs = kept }
+                refresh()
+                fetch()
+            }
             synchronized(lock) {
                 result.onSuccess { tocs = it }
                 load = if (result.isSuccess) Load.LOADED else Load.FAILED
