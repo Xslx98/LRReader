@@ -12,14 +12,13 @@ package com.lanraragi.reader.ui.scene.gallery.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.archive.ArchivePageList
 import com.lanraragi.reader.client.api.LRRHttpException
-import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.server.OrphanProfileException
+import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.client.api.PageThumbnailCache
 import com.lanraragi.reader.client.api.PageThumbnailRepository
 import com.lanraragi.reader.server.probeSourceHealthy
-import com.lanraragi.reader.server.resolveSourceBaseUrl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -128,20 +127,10 @@ class PageThumbnailsViewModel : ViewModel() {
             _state.value = State.Loading
             val client = ServiceRegistry.networkModule.okHttpClient
             try {
-                val baseUrl = resolveSourceBaseUrl(
-                    sourceProfileId,
-                    ServiceRegistry.dataModule.profileLookupCache
-                )
-                currentBaseUrl = baseUrl
+                val conn = ServerConnections.forProfile(sourceProfileId)
+                currentBaseUrl = conn.baseUrl
 
-                // Best-effort warm path. LrrFileListCache is keyed by the
-                // source server URL, so a cross-server read hits the entry
-                // stored for that server (not the active profile's). We
-                // always fall through to a fresh fetch on miss.
-                val cached = LrrFileListCache.get(baseUrl, arcid)
-                val pages = cached ?: LRRArchiveApi.getFileList(client, baseUrl, arcid).also {
-                    LrrFileListCache.put(baseUrl, arcid, it)
-                }
+                val pages = ArchivePageList.load(conn, arcid)
 
                 // Race-guard: if the user navigated away (resetForNewEntry
                 // wiped currentArcid) while the fetch was in flight, do
