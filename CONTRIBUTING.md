@@ -53,7 +53,8 @@ Two Gradle modules. `app/` depends on `framework/`, and the framework cannot see
 app:
 
 - `app/`: `com.lanraragi.reader.*` — application code, 100% Kotlin.
-  - `client/api/` — every LANraragi REST call and its `@Serializable` DTOs.
+  - `client/api/` — every LANraragi REST call and its `@Serializable` DTOs;
+    `@Serializable` types the UI uses unchanged live in `domain` (`ReaderStamp`, `Tankoubon`).
   - `dao/` — Room entities, DAOs and migrations (`AppDatabase` is the only database).
   - `download/` — the download engine; other packages go through `DownloadManager`
     and never use `DownloadRepository`, `DownloadScheduler` or `DownloadEventBus`.
