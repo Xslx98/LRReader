@@ -229,7 +229,7 @@ class LRRDownloadWorker(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (BuildConfig.DEBUG) Log.w(TAG, "Chapters not stored for $arcId: ${e.message}")
+                Log.e(TAG, "Chapters not stored for $arcId", e)
             }
         }
     }

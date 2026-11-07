@@ -446,8 +446,13 @@ class DirGalleryProvider : GalleryProvider2 {
                         publishChapters(ReaderChapterList(ChapterIndex.fromToc(kept, sizeValue)))
                     }
                     val toc = metadataDeferred.await()?.toc ?: return@launch
-                    store.update(progressProfileId, arcId, toc)
                     publishChapters(ReaderChapterList(ChapterIndex.fromToc(toc, sizeValue)))
+                    // A failed write must not cancel the restore this launch is a child of.
+                    try {
+                        store.update(progressProfileId, arcId, toc)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Chapters not stored for $arcId", e)
+                    }
                 }
                 try {
                     val savedFraction = fractionDeferred.await()
