@@ -158,6 +158,7 @@ class ArchiveContractTest {
             title = seed.spare.title,
             fileChecksum = LRRArchiveApi.computeFileChecksum(spare),
         )
+        var deleted = false
         try {
             assertEquals(expectedId, id)
             assertTrue(LRRArchiveApi.archiveExists(client, url, id))
@@ -170,9 +171,13 @@ class ArchiveContractTest {
 
             val duplicate = assertHttpFailure(409) { LRRArchiveApi.uploadArchive(client, url, spare) }
             assertTrue("serverError: ${duplicate.serverError}", !duplicate.serverError.isNullOrBlank())
+
+            val deletedName = LRRArchiveApi.deleteArchive(client, url, id)
+            deleted = true
+            assertTrue(deletedName, "contract-spare" in deletedName)
+            assertFalse(LRRArchiveApi.archiveExists(client, url, id))
         } finally {
-            assertTrue(LRRArchiveApi.deleteArchive(client, url, id).startsWith("contract-spare"))
+            if (!deleted) LRRArchiveApi.deleteArchive(client, url, id)
         }
-        assertFalse(LRRArchiveApi.archiveExists(client, url, id))
     }
 }

@@ -4,7 +4,9 @@ import com.lanraragi.reader.client.api.LRRStampApi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
+import java.io.IOException
 
 /** Stamp endpoints: 1-indexed pages, opaque ids, and the in-body error path. */
 class StampContractTest {
@@ -45,11 +47,15 @@ class StampContractTest {
         }
     }
 
+    /** The server answers this one 200 with `success: 0`, so only the body says it failed. */
     @Test
-    fun pageOutOfRange_isRefusedWithTheServerMessage() = contractTest {
-        val failure = assertHttpFailure(400) {
-            LRRStampApi.addStamp(client, url, seed.charlie.id, seed.charlie.pages + 1, "nope", "10,20")
+    fun pageOutOfRange_surfacesTheErrorFromA200Envelope() = contractTest {
+        val page = seed.charlie.pages + 1
+        try {
+            LRRStampApi.addStamp(client, url, seed.charlie.id, page, "nope", "10,20")
+            fail("expected the out-of-range page to be refused")
+        } catch (e: IOException) {
+            assertTrue(e.message.orEmpty(), "out of range" in e.message.orEmpty())
         }
-        assertTrue("serverError: ${failure.serverError}", !failure.serverError.isNullOrBlank())
     }
 }
