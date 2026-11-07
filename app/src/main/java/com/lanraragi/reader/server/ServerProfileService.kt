@@ -3,7 +3,6 @@ package com.lanraragi.reader.server
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRUrlHelper
-import com.lanraragi.reader.client.api.data.LRRServerInfo
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.reading.ArchiveProgressOutbox
@@ -76,7 +75,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
 
     private suspend fun commitOnboarding(
         resolvedUrl: String,
-        info: LRRServerInfo,
+        info: ServerIdentity,
         apiKey: String?,
         allowCleartext: Boolean,
     ): Outcome<Onboarded> {
@@ -132,7 +131,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             Log.e(TAG, "Failed to persist profile on connect success", e)
             return Outcome.Failed(e)
         }
-        return Outcome.Done(Onboarded(resolvedUrl, info.toServerIdentity()))
+        return Outcome.Done(Onboarded(resolvedUrl, info))
     }
 
     /** How a server switch ended. */
@@ -379,7 +378,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
                 // The persisted cleartext flag is the user's consent (audit
                 // C27, ruling R11), not the resolved scheme; LAN hosts need none.
                 add(ServerProfile(0, name, r.resolvedUrl, false, allowCleartext), finalKey)
-                    .map { Added(it, r.info.toServerIdentity(), r.resolvedUrl, r.usedHttpFallback) }
+                    .map { Added(it, r.info, r.resolvedUrl, r.usedHttpFallback) }
         }
     }
 
