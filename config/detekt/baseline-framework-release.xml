@@ -9,8 +9,6 @@
     <ID>SwallowedException:Image.kt$Image.Companion$e: UnsatisfiedLinkError</ID>
     <ID>ThrowsCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun throwIfFatal(t: Throwable)</ID>
     <ID>TooGenericExceptionThrown:Image.kt$Image$throw Exception("Android 9 解码失败", e)</ID>
-    <ID>UnreachableCode:SceneFactory.kt$SceneFactory$return factory()</ID>
-    <ID>UnreachableCode:SceneFactory.kt$SceneFactory$val factory = factories[className] ?: throw IllegalArgumentException( "Unknown scene class: $className. Did you forget to register it?" )</ID>
     <ID>UnsafeCallOnNullableType:ExceptionUtils.kt$ExceptionUtils$e.message!!</ID>
     <ID>UnusedPrivateProperty:ExceptionUtils.kt$ExceptionUtils$private val TAG: String = ExceptionUtils::class.java.getSimpleName()</ID>
     <ID>VarCouldBeVal:Image.kt$Image$private var started = false</ID>
