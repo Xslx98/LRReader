@@ -114,7 +114,23 @@ class TankGalleryProvider(
         TankProgress.markSynced(appContext, seed.tankId, page0)
     }
 
+    private val tankChapters = TankChapters(
+        snapshot = { tocs ->
+            synchronized(slotsLock) { ChapterIndex.forTank(slots.map { it.seed }, pageMap, tocs) }
+        },
+        fetch = {
+            val url = serverUrlDeferred.await() ?: throw IOException("No server for tank ${seed.tankId}")
+            LRRTankoubonApi.getTankoubonFull(ServiceRegistry.networkModule.longReadClient, url, seed.tankId)
+                .result.fullData.associate { it.arcid to it.toc }
+        },
+        publish = ::publishChapters,
+    )
+
     // ==================== Lifecycle ====================
+
+    override fun requestChapters() {
+        providerScope?.let(tankChapters::request)
+    }
 
     override fun start() {
         super.start()
@@ -134,6 +150,7 @@ class TankGalleryProvider(
             SupervisorJob() + Dispatchers.IO + ServiceRegistry.coroutineModule.exceptionHandler
         )
         providerScope = scope
+        tankChapters.refresh()
 
         // Resolve the tank's source-profile base URL once, app-scoped so a
         // quick stop() can't strand the progress syncer awaiting it.
@@ -442,6 +459,7 @@ class TankGalleryProvider(
             removeCache(i)
         }
         notifyDataChanged()
+        tankChapters.refresh()
     }
 
     private fun slotAt(memberIndex: Int): MemberSlot? =
