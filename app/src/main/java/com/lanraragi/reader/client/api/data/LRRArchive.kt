@@ -28,7 +28,7 @@ class LRRArchive() : Parcelable {
     @JvmField @SerialName("isnew") @Serializable(with = FlexibleStringSerializer::class) var isnew: String = "false"
     @JvmField @SerialName("extension") var extension: String = ""
     @JvmField @SerialName("filename") var filename: String = ""
-    @JvmField @SerialName("pagecount") var pagecount: Int = 0
+    @JvmField @SerialName("pagecount_mutated") var pagecount: Int = 0
     @JvmField @SerialName("progress") var progress: Int = 0
     @JvmField @SerialName("lastreadtime") var lastreadtime: Long = 0
     @JvmField @SerialName("summary") var summary: String? = null
