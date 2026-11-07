@@ -393,7 +393,7 @@ class LRRCategoriesScene : BaseScene() {
      * onBindViewHolder reads so the row repaints when name/pinned/search/
      * archive count change.
      */
-    private class LRRCategoryDiffCallback(
+    internal class LRRCategoryDiffCallback(
         private val oldList: List<LRRCategory>,
         private val newList: List<LRRCategory>
     ) : DiffUtil.Callback() {
