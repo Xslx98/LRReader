@@ -39,23 +39,23 @@ class CoverWriterTest {
     @Volatile
     private var responseCode = 200
 
-    /** [TankCoverCacheStamp.generation] when the PUT reached the server. */
+    /** This tank's [TankCoverCacheStamp] when the PUT reached the server. */
     @Volatile
-    private var generationAtPut = -1L
+    private var stampAtPut = -1L
 
     private lateinit var server: MockWebServer
     private lateinit var conn: ServerConnection
     private lateinit var eventScope: CoroutineScope
 
-    /** A choice slot that notes [TankCoverCacheStamp.generation] at each write. */
-    private class RecordingStorage : TankCoverChoiceStore.Storage {
+    /** A choice slot that notes this tank's [TankCoverCacheStamp] at each write. */
+    private inner class RecordingStorage : TankCoverChoiceStore.Storage {
         private var value: String? = null
-        var generationAtWrite = -1L
+        var stampAtWrite = -1L
 
         override fun read() = value
 
         override fun write(value: String?) {
-            generationAtWrite = TankCoverCacheStamp.generation
+            stampAtWrite = TankCoverCacheStamp.get(tankId)
             this.value = value
         }
     }
@@ -67,7 +67,7 @@ class CoverWriterTest {
         server = MockWebServer()
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
-                generationAtPut = TankCoverCacheStamp.generation
+                stampAtPut = TankCoverCacheStamp.get(tankId)
                 return MockResponse().setResponseCode(responseCode).setBody("{}")
             }
         }
@@ -106,16 +106,29 @@ class CoverWriterTest {
     fun `tank cover goes to the server, then the stamp, then the choice store`() = runTest {
         val storage = RecordingStorage()
         val choices = TankCoverChoiceStore(storage)
-        val before = TankCoverCacheStamp.generation
+        val before = TankCoverCacheStamp.get(tankId)
 
         CoverWriter.setTankCover(conn, tankId, globalPage1 = 21, choices = choices) { member to 3 }
 
         val put = server.awaitRequest()
         assertEquals("PUT", put.method)
         assertEquals("/api/tankoubons/$tankId/thumbnail?page=21", put.path)
-        assertEquals("the stamp must not move before the server has the cover", before, generationAtPut)
-        assertTrue("the stamp must move before the choice is stored", storage.generationAtWrite > before)
+        assertEquals("the stamp must not move before the server has the cover", before, stampAtPut)
+        assertTrue("the stamp must move before the choice is stored", storage.stampAtWrite > before)
         assertEquals(TankCoverChoiceStore.Choice(member, 3, profileId), choices.get(tankId))
+    }
+
+    @Test
+    fun `tank cover on a page with no known member stamps and keeps the old choice`() = runTest {
+        val choices = TankCoverChoiceStore(RecordingStorage())
+        val previous = TankCoverChoiceStore.Choice(member, 1, profileId)
+        choices.put(tankId, previous)
+        val before = TankCoverCacheStamp.get(tankId)
+
+        CoverWriter.setTankCover(conn, tankId, globalPage1 = 21, choices = choices) { null }
+
+        assertTrue(TankCoverCacheStamp.get(tankId) > before)
+        assertEquals(previous, choices.get(tankId))
     }
 
     @Test
