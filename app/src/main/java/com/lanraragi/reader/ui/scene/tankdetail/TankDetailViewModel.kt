@@ -7,8 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.TankCoverCacheStamp
-import com.lanraragi.reader.client.api.LRRCategoryApi
-import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.server.resolveSourceBaseUrl
@@ -22,6 +21,7 @@ import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.reading.TankPageMath
 import com.lanraragi.reader.tankoubon.TankCategorySyncer
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
+import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.domain.FavoriteState
@@ -192,10 +192,6 @@ class TankDetailViewModel : ViewModel() {
     /** Membership follow seam (spec 2026-09-21 §1/§3), fed after a successful online load. */
     internal var membershipSync: TankMembershipSyncFactory.Runner = TankMembershipSyncFactory.runnerSafely()
 
-    /** First-open auto-fill seam (spec 2026-09-22 §4.5): returns the written tag string, or null. */
-    internal var autoFill: suspend (OkHttpClient, String, LRRTankoubonApi.TankoubonFull) -> String? =
-        { client, url, full -> TankTagSyncer.autoFillIfNeeded(client, url, full) }
-
     /** 「重置为成员并集」 seam (spec 2026-09-22 §5.4). */
     internal var resetTagsOp: suspend (OkHttpClient, String, String) -> Boolean =
         { client, url, id -> TankTagSyncer.reset(client, url, id) }
@@ -213,6 +209,16 @@ class TankDetailViewModel : ViewModel() {
     internal var dissolveDownloadGroup: (String) -> Unit = {
         ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(it)
     }
+
+    /** The tank's server reads and writes. Its list-load membership sync is unused here. */
+    private val tanks = TankRepository(TankMembershipSyncFactory.runnerSafely()::sync)
+
+    /**
+     * The tank's source server: [profileId] at [url]. Built from the
+     * [baseUrlResolver] result rather than `ServerConnections.forProfile`,
+     * so tests can point the resolver at a mock.
+     */
+    private fun connection(url: String) = ServerConnection(profileId, url, ServiceRegistry.networkModule.okHttpClient)
 
     // -------------------------------------------------------------------------
     // API
@@ -245,12 +251,12 @@ class TankDetailViewModel : ViewModel() {
             var url: String? = null
             try {
                 url = baseUrlResolver(profileId)
-                val client = ServiceRegistry.networkModule.okHttpClient
-                val online = fetchOnline(client, url)
+                val conn = connection(url)
+                val online = fetchOnline(conn)
                 _state.value = online
                 _loadState.value = LoadState.Loaded
                 syncMembership(url, online)
-                resolveFavorite(client, url)
+                resolveFavorite(conn)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -314,8 +320,7 @@ class TankDetailViewModel : ViewModel() {
         ratingJob?.cancel()
         ratingJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                val client = ServiceRegistry.networkModule.okHttpClient
-                LRRTankoubonApi.updateTankoubon(client, url, tankId, tags = merged)
+                tanks.setTags(connection(url), tankId, merged)
                 AppEventBus.postArchiveRatingChangedEvent(ArchiveRatingChangedEvent(tankId, next))
             } catch (e: CancellationException) {
                 throw e
@@ -368,7 +373,7 @@ class TankDetailViewModel : ViewModel() {
                 // Upstream leaves the deleted id dangling in static categories
                 // (spec 2026-09-22 §6): clear it first, while the tank still exists.
                 categoryDissolve(client, url, tankId, current.name)
-                LRRTankoubonApi.deleteTankoubon(client, url, tankId)
+                tanks.deleteOnly(connection(url), tankId)
                 forgetCoverChoice(tankId)
                 dissolveDownloadGroup(tankId)
                 _events.tryEmit(Event.Deleted)
@@ -385,32 +390,24 @@ class TankDetailViewModel : ViewModel() {
     // Internals
     // -------------------------------------------------------------------------
 
-    private suspend fun fetchOnline(client: OkHttpClient, url: String): TankDetailState {
-        val full = LRRTankoubonApi.getTankoubonFull(client, url, tankId).result
-        TankoubonSupportGate.markSupported(url)
-        // First-open auto-fill (spec 2026-09-22 §4.5): a legacy tank with no
+    private suspend fun fetchOnline(conn: ServerConnection): TankDetailState {
+        // Members in `archives` order with this tank's source context, and the
+        // first-open auto-fill (spec 2026-09-22 §4.5): a legacy tank with no
         // tags of its own gets the members' union written once, silently.
-        val tags = autoFill(client, url, full) ?: full.tags.orEmpty()
-        // Member ORDER is `archives` (the list a reorder PUTs); full_data is
-        // only the metadata lookup — never trust its order. Multi-profile red
-        // line: explicit source context for the mapper.
-        val byId = full.fullData.associateBy { it.arcid }
-        val ordered = full.archives.mapNotNull { byId[it] } +
-            full.fullData.filter { it.arcid !in full.archives }
-        val members = ordered.map { it.toArchive(sourceProfileId = profileId, sourceBaseUrl = url) }
-        val fallback = resolveCoverFallback(client, url, members)
+        val (tank, members) = tanks.detail(conn, tankId, autoFillTags = true)
+        val fallback = resolveCoverFallback(conn, members)
         // Fresh server truth — revalidate the cover before publishing so the
         // header bind already sees the new stamp.
-        TankCoverCacheStamp.revalidate(tankId, full.archives)
+        TankCoverCacheStamp.revalidate(tankId, tank.archives)
         return TankDetailState(
             tankId = tankId,
             profileId = profileId,
-            baseUrl = url,
-            name = full.name,
-            summary = full.summary,
-            tags = tags,
+            baseUrl = conn.baseUrl,
+            name = tank.name,
+            summary = tank.summary,
+            tags = tank.tags.orEmpty(),
             members = members,
-            progress = full.progress,
+            progress = tank.progress,
             offline = false,
             coverFallbackMember = fallback,
         )
@@ -421,11 +418,9 @@ class TankDetailViewModel : ViewModel() {
      * ones are skipped, as for archives). Failure is non-fatal: the prior
      * state is kept rather than blinking to "not favorited".
      */
-    private suspend fun resolveFavorite(client: OkHttpClient, url: String) {
+    private suspend fun resolveFavorite(conn: ServerConnection) {
         try {
-            val names = LRRCategoryApi.categoriesContaining(client, url, tankId)
-                .filter { !it.isDynamic() }
-                .mapNotNull { it.name }
+            val names = tanks.staticCategoryNames(conn, tankId)
             _favoriteState.value = if (names.isEmpty()) {
                 FavoriteState(isFavorited = false, name = null)
             } else {
@@ -452,10 +447,10 @@ class TankDetailViewModel : ViewModel() {
      * server-side generation) elects the first member as the stand-in.
      * Probe failure or an empty tank keep the normal tank route.
      */
-    private suspend fun resolveCoverFallback(client: OkHttpClient, url: String, members: List<Archive>): Archive? {
+    private suspend fun resolveCoverFallback(conn: ServerConnection, members: List<Archive>): Archive? {
         val first = members.firstOrNull() ?: return null
         val hasCover = try {
-            LRRTankoubonApi.hasTankThumbnail(client, url, tankId)
+            tanks.hasCover(conn, tankId)
         } catch (ce: CancellationException) {
             throw ce
         } catch (ignored: Exception) {
