@@ -661,6 +661,23 @@ class ServerListViewModelTest {
         }
     }
 
+    @Test
+    fun deleteProfile_dropsTheProfilesKeptChapters() {
+        // The cascade's earlier tank-cover step reads Settings.
+        com.lanraragi.reader.Settings.initialize(ctx)
+        val gone = insertProfile("Gone", "https://gone.example")
+        val kept = insertProfile("Kept", "https://kept.example")
+        val store = com.lanraragi.reader.reading.ChapterStore.of(ctx)
+        val toc = listOf(com.lanraragi.reader.client.api.data.LRRTocEntry(1, "One"))
+        store.update(gone, "arc", toc)
+        store.update(kept, "arc", toc)
+
+        newVm().deleteProfile(ServerProfile(id = gone, name = "Gone", url = "https://gone.example"))
+
+        awaitUntil { store.read(gone, "arc").isEmpty() }
+        assertEquals(toc, store.read(kept, "arc"))
+    }
+
     /** Audit 2026-10-06 C37: the deleted profile's `<id>:*` local reading positions go with it. */
     @Test
     fun deleteProfile_dropsTheProfilesLocalReadingProgress() {

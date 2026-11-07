@@ -435,11 +435,18 @@ class DirGalleryProvider : GalleryProvider2 {
                     }
                 }
                 // Chapters need the page-space size, which the file listing below
-                // sets; it completes this signal on every path.
+                // sets; it completes this signal on every path. The kept chapters
+                // show first, so offline they stay; a server answer replaces them.
                 val pageSpaceKnown = notifyDataChangedEnqueued
                 launch {
-                    val toc = metadataDeferred.await()?.toc ?: return@launch
+                    val store = ChapterStore.of(context)
                     pageSpaceKnown.await()
+                    val kept = store.read(progressProfileId, arcId)
+                    if (kept.isNotEmpty()) {
+                        publishChapters(ReaderChapterList(ChapterIndex.fromToc(kept, sizeValue)))
+                    }
+                    val toc = metadataDeferred.await()?.toc ?: return@launch
+                    store.update(progressProfileId, arcId, toc)
                     publishChapters(ReaderChapterList(ChapterIndex.fromToc(toc, sizeValue)))
                 }
                 try {

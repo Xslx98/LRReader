@@ -7,6 +7,7 @@ import com.lanraragi.reader.client.api.data.LRRServerInfo
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.appwidget.ContinueReadingWidget
 import com.lanraragi.reader.reading.ArchiveProgressOutbox
+import com.lanraragi.reader.reading.ChapterStore
 import com.lanraragi.reader.reading.LocalReadingProgress
 import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
@@ -250,7 +251,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
      * Per-server state outside Room that a deleted profile leaves behind
      * (audit SEC-16): capability facts, pending progress PUTs, pending tank
      * tag retries, tank cover choices, local reading positions (audit
-     * 2026-10-06 C37). Base URLs are stored without a trailing slash.
+     * 2026-10-06 C37), kept chapters. Base URLs are stored without a trailing slash.
      */
     private fun purgeServerState(profile: ServerProfile) {
         val baseUrl = profile.url.removeSuffix("/")
@@ -260,6 +261,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
         TankCoverChoiceStore.default.removeProfile(profile.id)
         TankRecentStore.default.removeProfile(profile.id)
         LocalReadingProgress.removeProfile(ServiceRegistry.appModule.getContext(), profile.id)
+        ChapterStore.of(ServiceRegistry.appModule.getContext()).removeProfile(profile.id)
     }
 
     /**

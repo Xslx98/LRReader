@@ -24,9 +24,15 @@ class TankChaptersTest {
     private var fetches = 0
     private var nextFetch: suspend () -> Map<String, List<LRRTocEntry>> = { emptyMap() }
     private var published = ReaderChapterList()
+    private var kept: Map<String, List<LRRTocEntry>> = emptyMap()
+    private var storeReads = 0
 
     private val chapters = TankChapters(
         snapshot = { ChapterIndex.forTank(seeds, map, it) },
+        stored = {
+            storeReads++
+            kept
+        },
         fetch = {
             fetches++
             nextFetch()
@@ -48,6 +54,7 @@ class TankChaptersTest {
     fun `the entry point stays offered before any member has a page count`() {
         val uncounted = TankChapters(
             snapshot = { ChapterIndex.forTank(seeds, TankPageMap(listOf(0, 0)), it) },
+            stored = { emptyMap() },
             fetch = { emptyMap() },
             publish = { published = it },
         )
@@ -101,6 +108,51 @@ class TankChaptersTest {
         assertEquals(2, fetches)
         assertFalse(published.failed)
         assertEquals(ReaderChapter("a2", 1, depth = 1), published.entries[1])
+    }
+
+    @Test
+    fun `offline, the kept chapters show and the failed request is not reported`() {
+        kept = mapOf("b" to listOf(LRRTocEntry(3, "kept")), "a" to emptyList())
+        nextFetch = { throw IOException("offline") }
+
+        chapters.request(scope)
+        scope.runCurrent()
+
+        assertFalse(published.failed)
+        assertFalse(published.loading)
+        assertEquals(memberRows + ReaderChapter("kept", 12, depth = 1), published.entries)
+    }
+
+    @Test
+    fun `kept chapters show while loading and the server's answer replaces them`() {
+        kept = mapOf("a" to listOf(LRRTocEntry(1, "old")), "b" to listOf(LRRTocEntry(1, "removed upstream")))
+        val gate = CompletableDeferred<Map<String, List<LRRTocEntry>>>()
+        nextFetch = { gate.await() }
+
+        chapters.request(scope)
+        assertTrue(published.loading)
+        assertEquals(ReaderChapter("old", 0, depth = 1), published.entries[1])
+
+        gate.complete(mapOf("a" to listOf(LRRTocEntry(2, "edited")), "b" to emptyList()))
+        scope.runCurrent()
+        assertEquals(
+            listOf(
+                ReaderChapter("A", 0),
+                ReaderChapter("edited", 1, depth = 1),
+                ReaderChapter("B", 10),
+            ),
+            published.entries,
+        )
+    }
+
+    @Test
+    fun `a session that never opens the list does not read the store`() {
+        kept = mapOf("a" to listOf(LRRTocEntry(1, "kept")))
+
+        chapters.refresh()
+
+        assertEquals(0, storeReads)
+        assertEquals(memberRows, published.entries)
     }
 
     @Test

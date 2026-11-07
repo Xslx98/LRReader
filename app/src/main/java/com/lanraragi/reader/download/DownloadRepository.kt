@@ -25,6 +25,8 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.dao.DownloadLabel
 import com.lanraragi.reader.dao.toDownloadInfoView
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.reading.ChapterStore
+import com.lanraragi.reader.reading.LocalReadingProgress
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -528,6 +530,7 @@ class DownloadRepository(
             idx
         } else -1
         removeInfoFromDbByArcid(arcid)
+        forgetChapters(listOf(info))
         return Triple(info, list ?: ArrayList(), index)
     }
 
@@ -547,14 +550,17 @@ class DownloadRepository(
     ) {
         assertMainThread()
         val arcidsToRemove = mutableListOf<String>()
+        val removed = mutableListOf<DownloadInfo>()
         for (arcid in arcidSet) {
             val info = allInfoMap.remove(arcid)
             if (info != null) {
                 arcidsToRemove.add(arcid)
+                removed.add(info)
                 getInfoListForLabel(info.label)?.remove(info)
             }
         }
         allInfoList.removeAll { it.arcid in arcidSet }
+        forgetChapters(removed)
         if (dissolveTankIds.isNotEmpty()) {
             val tankIds = dissolveTankIds.toList()
             enqueueDbWrite("Failed to delete tank downloads", onTankWriteFailed) {
@@ -564,6 +570,13 @@ class DownloadRepository(
         } else if (arcidsToRemove.isNotEmpty()) {
             removeInfoBatchFromDbByArcids(arcidsToRemove)
         }
+    }
+
+    /** Removed rows give up their kept chapters; an online read brings them back. */
+    private fun forgetChapters(removed: List<DownloadInfo>) {
+        ChapterStore.of(context).remove(
+            removed.map { LocalReadingProgress.sourceProfile(it.serverProfileId) to it.arcid }
+        )
     }
 
     /**

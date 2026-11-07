@@ -354,6 +354,7 @@ class LRRGalleryProvider(
                 // Resolve reading progress from server metadata (may already be available)
                 val metadata = metadataDeferred.await()
                 metadata?.let {
+                    ChapterStore.of(context).update(progressProfileId, arcId, it.toc)
                     publishChapters(ReaderChapterList(ChapterIndex.fromToc(it.toc, pages.size)))
                 }
                 var serverPage = startPageValue

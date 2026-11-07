@@ -1093,6 +1093,25 @@ class DownloadManagerTest {
     }
 
     @Test
+    fun deletingARow_dropsItsKeptChapters_andNoOtherArchives() {
+        val store = com.lanraragi.reader.reading.ChapterStore.of(context)
+        val toc = listOf(com.lanraragi.reader.client.api.data.LRRTocEntry(1, "One"))
+        val rows = listOf("ch_a", "ch_b", "ch_c").map { finishedRow(it, 100L) }
+        manager.addDownload(rows)
+        rows.forEach { store.update(1L, it.arcid, toc) }
+        store.update(2L, "ch_a", toc)
+
+        manager.deleteDownload("ch_a")
+        assertTrue(store.read(1L, "ch_a").isEmpty())
+        assertEquals(toc, store.read(1L, "ch_b"))
+        assertEquals("the same archive on another server keeps its entry", toc, store.read(2L, "ch_a"))
+
+        manager.deleteRangeDownload(listOf("ch_b"))
+        assertTrue(store.read(1L, "ch_b").isEmpty())
+        assertEquals(toc, store.read(1L, "ch_c"))
+    }
+
+    @Test
     fun deleteRangeDownloadAndFiles_removesRowsAndEachDir() {
         val deleted = recordDirDeletes()
         val rows = listOf(
