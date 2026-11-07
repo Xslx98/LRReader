@@ -3,8 +3,8 @@
 
 The client ignores unknown keys, and its DTOs have defaults, so a new or removed
 field cannot fail a contract test. It is still worth reading, so it becomes a
-`::warning::` and a line in the step summary. HTTP errors are warnings too: the
-contract tests own those. Only a bug in this script exits non-zero.
+`::warning::` and a line in the step summary. HTTP errors and reshaped responses
+are warnings too: the contract tests own those, and must still get to run.
 
     key_drift.py --leg nightly --openapi-container lrr-contract --write-observed out.json
     key_drift.py --update --leg nightly --observed out.json
@@ -46,8 +46,10 @@ def observe(client, seed):
     def sample(name, path, shape, query=None):
         try:
             observed.update(shape(client.json("GET", path, query=query)))
-        except ApiError as err:
-            warn("Contract key drift", f"{name}: {err}")
+        except (ApiError, KeyError, TypeError, AttributeError, OSError) as err:
+            # A missing or reshaped field is exactly what this reports, and the
+            # contract tests must still run after it.
+            warn("Contract key drift", f"{name}: {err!r}")
 
     sample("info", "/api/info", lambda d: {"info": _keys([d])})
     sample(
@@ -100,7 +102,10 @@ def compare(leg, known, observed):
 
 
 def openapi_hash(container):
-    spec = subprocess.run(["docker", "exec", container, "cat", OPENAPI_PATH], check=True, capture_output=True)
+    spec = subprocess.run(["docker", "exec", container, "cat", OPENAPI_PATH], check=False, capture_output=True)
+    if spec.returncode != 0:
+        warn("openapi.yaml changed", f"could not read {OPENAPI_PATH}: {spec.stderr.decode(errors='replace')}")
+        return None
     return hashlib.sha256(spec.stdout).hexdigest()
 
 
