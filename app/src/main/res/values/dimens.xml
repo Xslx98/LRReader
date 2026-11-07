@@ -17,6 +17,8 @@
 <resources>
 
     <dimen name="keyline_margin">16dp</dimen>
+    <dimen name="reader_chapter_padding">20dp</dimen>
+    <dimen name="reader_chapter_indent">20dp</dimen>
     <dimen name="progress_padding">18dp</dimen>
     <dimen name="drawer_max_width">280dp</dimen>
 

@@ -33,6 +33,15 @@ class LRRArchive() : Parcelable {
     @JvmField @SerialName("lastreadtime") var lastreadtime: Long = 0
     @JvmField @SerialName("summary") var summary: String? = null
 
+    /**
+     * Server chapters; empty when the server has none or predates 0.9.70. Left
+     * out of the Parcel: nothing passes it through an intent.
+     */
+    @JvmField
+    @SerialName("toc")
+    @Serializable(with = LenientTocSerializer::class)
+    var toc: List<LRRTocEntry> = emptyList()
+
     // ----- Domain model conversion -----
 
     /**

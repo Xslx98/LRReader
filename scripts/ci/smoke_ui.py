@@ -21,7 +21,8 @@ pinch and double tap go through the emulator console), an en-US locale, a
 fresh install connected to `MOCK_SEED=1 MOCK_CHAPTERS=1 MOCK_BIG_PAGES=40
 scripts/ci/mock_lrr.py`, and optionally SMOKE_MOCK_LOG=<the mock's stdout
 log> so a pull-to-refresh must reach the server. It restores the navigation
-mode and rotation it changes.
+mode and rotation it changes. The `chapters` journey runs only when named and
+also needs MOCK_TOC=1 on the mock.
 """
 import os
 import re
@@ -636,6 +637,114 @@ class Widgets:
         self.need("read", 10)
         self.check("reader: back to detail")
 
+    def reader_menu_nodes(self):
+        """The nodes on screen with the reader's menu open. Each result comes
+        from one dump: the menu hides itself within seconds, and a dump can
+        take as long."""
+        for _ in range(6):
+            found = list(nodes(dump()))
+            if any(n.get("resource-id") == self.rid("reader_top_bar_settings") for n in found):
+                return found
+            self.tap(self.w // 2, self.h * 3 // 4)   # also dismisses the first-run hint
+            time.sleep(1)
+        raise SmokeFailure(f"reader menu did not open; visible: {visible()}")
+
+    def tap_menu_button(self, name):
+        for _ in range(8):                          # the chapter icon follows /metadata
+            found = self.reader_menu_nodes()
+            hit = next((n for n in found if n.get("resource-id") == self.rid(name)), None)
+            if hit:
+                self.tap(*centre(hit))
+                return
+            time.sleep(2)
+        raise SmokeFailure(f"{name} not in the reader menu; visible: {visible()}")
+
+    def expect_page(self, page, step):
+        deadline = time.monotonic() + 10
+        while not self.page().startswith(f"{page}/"):
+            if time.monotonic() > deadline:
+                raise SmokeFailure(f"chapters: {step}: on {self.page()}, wanted page {page}")
+            time.sleep(0.5)
+        self.check(f"chapters: {step}")
+
+    def jump_to_chapter(self, title, page, step):
+        self.tap_menu_button("reader_top_bar_toc")
+        self.tap(*centre(self.need_text(title)))
+        self.expect_page(page, step)
+
+    def set_direction(self, label):
+        self.tap_menu_button("reader_top_bar_direction")
+        self.tap(*centre(self.need_text(label)))
+        time.sleep(2)
+
+    def chapters(self):
+        """The chapter list against MOCK_TOC=1 (see mock_lrr.py): an archive's
+        chapters in every reading direction, rotation with the list open, no
+        entry point on an empty toc, and a tank's members and nested chapters."""
+        self.home_list()
+        self.tap(*centre(self.need_text("Mock Big Archive 1")))
+        self.tap_id("read", 20)
+        self.need("progress", 20)
+        self.tap_menu_button("reader_top_bar_toc")
+        self.need_text("Opening")
+        self.need_text("Untitled chapter")
+        if find("text", "Past The End"):
+            raise SmokeFailure("chapters: an entry past the last page is listed")
+        self.check("chapters: list shows the chapters, a fallback title, no out-of-range entry")
+        self.back()
+
+        self.jump_to_chapter("Part Two", 11, "jump right-to-left")
+        self.set_direction("Left to right")
+        self.jump_to_chapter("Part Four", 31, "jump left-to-right")
+        self.set_direction("Top to bottom")
+        self.jump_to_chapter("Opening", 1, "jump vertical")
+        self.set_direction("Right to left")
+
+        self.tap_menu_button("reader_top_bar_toc")
+        self.need_text("Part Two")
+        auto = shell("settings", "get", "system", "accelerometer_rotation").stdout.strip()
+        shell("settings", "put", "system", "accelerometer_rotation", "0")
+        shell("settings", "put", "system", "user_rotation", "1")
+        time.sleep(4)
+        self.need_text("Part Two")
+        self.check("chapters: the open list survives a rotation")
+        shell("settings", "put", "system", "user_rotation", "0")
+        shell("settings", "put", "system", "accelerometer_rotation", auto or "1")
+        time.sleep(4)
+        self.tap(*centre(self.need_text("Part Two")))
+        self.expect_page(11, "jump after a rotation")
+        self.back(2)
+        self.need("read", 10)
+        self.back()
+
+        self.home_list()
+        self.tap(*centre(self.need_text("Mock Archive 1")))
+        self.tap_id("read", 20)
+        self.need("progress", 20)
+        time.sleep(3)                           # a late /metadata would still add the icon
+        if any(n.get("resource-id") == self.rid("reader_top_bar_toc") for n in self.reader_menu_nodes()):
+            raise SmokeFailure("chapters: entry point shown for an empty toc")
+        self.check("chapters: no entry point for an empty toc")
+        self.back(2)
+        self.need("read", 10)
+        self.back()
+
+        self.nav("nav_tankoubons", "search_title")
+        self.press(*centre(self.need_text("Mock Tank")))
+        self.tap_id("read", 20)
+        self.need("progress", 20)
+        self.tap_menu_button("reader_top_bar_toc")
+        self.need_text("Mock Archive 2")
+        self.need_text("Mock Archive 3")
+        self.need_text("Three Middle")
+        self.check("chapters: tank list shows members and nested chapters")
+        self.tap(*centre(self.need_text("Three Middle")))
+        self.expect_page(5, "tank jump into the second member")
+        self.jump_to_chapter("Mock Archive 2", 1, "tank jump back to the first member")
+        self.back(2)
+        self.need("read", 10)
+        self.back()
+
     def downloads(self):
         """Queue every archive (multi-select, Download), then drive the list:
         scroll, fast scroller, press opens the reader (filling history),
@@ -830,8 +939,8 @@ class Widgets:
 
     def run(self, only):
         subprocess.run([ADB, "logcat", "-b", "crash", "-c"])
-        for name in WIDGET_JOURNEYS:
-            if only and name not in only:
+        for name in WIDGET_JOURNEYS + NAMED_ONLY_JOURNEYS:
+            if (only and name not in only) or (not only and name in NAMED_ONLY_JOURNEYS):
                 continue
             print(f"== {name}", flush=True)
             getattr(self, name)()
@@ -840,6 +949,8 @@ class Widgets:
 # In order: downloads opens a dozen archives, which fills History.
 WIDGET_JOURNEYS = ["home", "drawer", "reader", "downloads", "history", "favourites",
                    "tanks", "settings", "lock"]
+# Run only when named: `chapters` also needs MOCK_TOC=1 on the mock.
+NAMED_ONLY_JOURNEYS = ["chapters"]
 
 
 class Shots(Widgets):

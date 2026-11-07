@@ -63,6 +63,20 @@ if os.environ.get("MOCK_CHAPTERS"):
             "progress": 0, "pagecount": 3, "isnew": "false",
             "extension": "zip", "filename": f"chapter{k}.zip", "size": 9, "summary": ""})
 
+#   MOCK_TOC=1         -> archives report `toc` as LANraragi 0.9.70+ does (without it, as an
+#                         older server: no field). Mock Archive 1 has an empty list; the big
+#                         archives have four chapters, one untitled, plus one past the last
+#                         page; the MOCK_SEED tank's members (archives 2 and 3) have chapters.
+if os.environ.get("MOCK_TOC"):
+    for arc in ARCHIVES:
+        arc["toc"] = []
+        if arc["title"].startswith("Mock Big Archive"):
+            arc["toc"] = [{"page": 1, "name": "Opening"}, {"page": 11, "name": "Part Two"},
+                          {"page": 21, "name": ""}, {"page": 31, "name": "Part Four"},
+                          {"page": 9999, "name": "Past The End"}]
+    ARCHIVES[1]["toc"] = [{"page": 1, "name": "Two Start"}, {"page": 3, "name": "Two End"}]
+    ARCHIVES[2]["toc"] = [{"page": 2, "name": "Three Middle"}]
+
 # Stateful categories (real-server semantics: create/update use `param || old`,
 # so an empty/omitted `search` NEVER clears a dynamic predicate; `pinned`
 # omitted -> 0).
