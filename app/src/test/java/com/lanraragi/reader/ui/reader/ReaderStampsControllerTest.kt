@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.reader
 
 import com.lanraragi.reader.client.api.LRRHttpException
-import com.lanraragi.reader.client.api.LRRStampApi.StampData
+import com.lanraragi.reader.domain.ReaderStamp
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -19,7 +19,7 @@ class ReaderStampsControllerTest {
 
     private class FakeBackend : StampsBackend {
         var pages: List<Int> = emptyList()
-        var stamps: MutableMap<Int, MutableList<StampData>> = mutableMapOf()
+        var stamps: MutableMap<Int, MutableList<ReaderStamp>> = mutableMapOf()
         var failWith: Throwable? = null
         var indexCalls = 0
         var pageCalls = 0
@@ -33,7 +33,7 @@ class ReaderStampsControllerTest {
             indexGate?.let { return it.await() }
             return pages
         }
-        override suspend fun stampsByPage(page1: Int): List<StampData> {
+        override suspend fun stampsByPage(page1: Int): List<ReaderStamp> {
             pageCalls++
             failWith?.let { throw it }
             return stamps[page1].orEmpty()
@@ -41,7 +41,7 @@ class ReaderStampsControllerTest {
         override suspend fun add(page1: Int, content: String, position: String): String {
             failWith?.let { throw it }
             val id = "STAMPS_${page1}_${1000 + pageCalls}"
-            stamps.getOrPut(page1) { mutableListOf() }.add(StampData(id, position, content))
+            stamps.getOrPut(page1) { mutableListOf() }.add(ReaderStamp(id, position, content))
             return id
         }
         override suspend fun update(stampId: String, content: String?, position: String?) {
@@ -92,7 +92,7 @@ class ReaderStampsControllerTest {
     fun ensureVisiblePagesLoaded_loadsOnlyStampedPages() = runTest {
         val backend = FakeBackend().apply {
             pages = listOf(3)
-            stamps[3] = mutableListOf(StampData("STAMPS_3_1", "10,10", "hi"))
+            stamps[3] = mutableListOf(ReaderStamp("STAMPS_3_1", "10,10", "hi"))
         }
         val c = ReaderStampsController(this, backend) {}
         c.refreshIndex()
@@ -123,7 +123,7 @@ class ReaderStampsControllerTest {
     fun updateStamp_rewritesCachedEntry() = runTest {
         val backend = FakeBackend().apply {
             pages = listOf(1)
-            stamps[1] = mutableListOf(StampData("STAMPS_1_1", "10,10", "old"))
+            stamps[1] = mutableListOf(ReaderStamp("STAMPS_1_1", "10,10", "old"))
         }
         val c = ReaderStampsController(this, backend) {}
         c.refreshIndex(); advanceUntilIdle()
@@ -138,7 +138,7 @@ class ReaderStampsControllerTest {
     fun deleteStamp_prunesEmptyPageFromIndex() = runTest {
         val backend = FakeBackend().apply {
             pages = listOf(1)
-            stamps[1] = mutableListOf(StampData("STAMPS_1_1", "10,10", "x"))
+            stamps[1] = mutableListOf(ReaderStamp("STAMPS_1_1", "10,10", "x"))
         }
         val c = ReaderStampsController(this, backend) {}
         c.refreshIndex(); advanceUntilIdle()
@@ -170,7 +170,7 @@ class ReaderStampsControllerTest {
     fun refreshIndex_staleSnapshot_respectsInterleavedDelete() = runTest {
         val backend = FakeBackend().apply {
             pages = listOf(1)
-            stamps[1] = mutableListOf(StampData("STAMPS_1_1", "10,10", "x"))
+            stamps[1] = mutableListOf(ReaderStamp("STAMPS_1_1", "10,10", "x"))
         }
         val c = ReaderStampsController(this, backend) {}
         c.refreshIndex(); advanceUntilIdle()
@@ -211,7 +211,7 @@ class ReaderStampsControllerTest {
     fun writeFailure_propagatesAndKeepsCache() = runTest {
         val backend = FakeBackend().apply {
             pages = listOf(1)
-            stamps[1] = mutableListOf(StampData("STAMPS_1_1", "10,10", "x"))
+            stamps[1] = mutableListOf(ReaderStamp("STAMPS_1_1", "10,10", "x"))
         }
         val c = ReaderStampsController(this, backend) {}
         c.refreshIndex(); advanceUntilIdle()

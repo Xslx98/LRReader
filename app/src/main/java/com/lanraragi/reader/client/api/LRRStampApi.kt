@@ -1,5 +1,6 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.domain.ReaderStamp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -28,18 +29,10 @@ import java.io.IOException
 object LRRStampApi {
 
     @Serializable
-    data class StampData(
-        val id: String = "",
-        /** Raw "x,y" percentage string (0-100, floats); may be malformed. */
-        val position: String = "",
-        val content: String = ""
-    )
-
-    @Serializable
     private data class StampedPagesResult(val result: List<String> = emptyList())
 
     @Serializable
-    private data class PageStampsResult(val result: List<StampData> = emptyList())
+    private data class PageStampsResult(val result: List<ReaderStamp> = emptyList())
 
     /**
      * GET /api/archives/:id/stamps — 1-indexed pages that contain stamps.
@@ -80,7 +73,7 @@ object LRRStampApi {
         baseUrl: String,
         arcid: String,
         page1: Int
-    ): List<StampData> = withContext(Dispatchers.IO) {
+    ): List<ReaderStamp> = withContext(Dispatchers.IO) {
         val url = parseBaseUrl(baseUrl).newBuilder()
             .addPathSegments("api/archives")
             .addPathSegment(requireValidArcid(arcid))

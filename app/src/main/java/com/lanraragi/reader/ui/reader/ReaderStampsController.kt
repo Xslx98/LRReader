@@ -3,7 +3,7 @@ package com.lanraragi.reader.ui.reader
 import android.util.Log
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.client.api.LRRHttpException
-import com.lanraragi.reader.client.api.LRRStampApi
+import com.lanraragi.reader.domain.ReaderStamp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -35,14 +35,14 @@ class ReaderStampsController(
     var sessionVisible: Boolean = false
 
     private var stampedPages: MutableSet<Int>? = null
-    private val pageStamps = mutableMapOf<Int, List<LRRStampApi.StampData>>()
+    private val pageStamps = mutableMapOf<Int, List<ReaderStamp>>()
     private val loadingPages = mutableSetOf<Int>()
     private var loadingIndex = false
     private val pendingIndexCallbacks = mutableListOf<(Boolean) -> Unit>()
 
     fun stampedPagesSorted(): List<Int>? = stampedPages?.sorted()
 
-    fun stampsForDisplayPage(page0: Int): List<LRRStampApi.StampData> =
+    fun stampsForDisplayPage(page0: Int): List<ReaderStamp> =
         pageStamps[page0 + 1].orEmpty()
 
     fun previewForPage(page1: Int): String? =
@@ -164,7 +164,7 @@ class ReaderStampsController(
             try {
                 val id = backend.add(page1, content, position)
                 pageStamps[page1] = pageStamps[page1].orEmpty() +
-                    LRRStampApi.StampData(id = id, position = position, content = content)
+                    ReaderStamp(id = id, position = position, content = content)
                 stampedPages?.add(page1)
                 onDataChanged()
                 onResult(null)

@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.reader
 
 import com.lanraragi.reader.reading.TankGalleryProvider
-import com.lanraragi.reader.client.api.LRRStampApi
+import com.lanraragi.reader.domain.ReaderStamp
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.async
@@ -54,7 +54,7 @@ internal class TankStampsBackend(
             }
     }
 
-    override suspend fun stampsByPage(page1: Int): List<LRRStampApi.StampData> {
+    override suspend fun stampsByPage(page1: Int): List<ReaderStamp> {
         val (arcid, local0) = provider.locateMember(page1 - 1) ?: return emptyList()
         return backendFor(arcid).stampsByPage(local0 + 1)
     }
