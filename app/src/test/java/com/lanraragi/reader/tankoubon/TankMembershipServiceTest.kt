@@ -1,7 +1,7 @@
 package com.lanraragi.reader.tankoubon
 
 import com.lanraragi.reader.client.api.LRRHttpException
-import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.TankMembershipChangedEvent
 import com.lanraragi.reader.server.ServerConnection
@@ -97,7 +97,7 @@ class TankMembershipServiceTest {
             """"total":1,"filtered":1}"""
 
     private fun tank(id: String, vararg members: String) =
-        LRRTankoubonApi.Tankoubon(id = id, name = "name-$id", archives = members.toList())
+        Tankoubon(id = id, name = "name-$id", archives = members.toList())
 
     @Test
     fun apply_snapshotsLeftTanksFirst_writesSequentially_seedsEmptyCover() = runTest {

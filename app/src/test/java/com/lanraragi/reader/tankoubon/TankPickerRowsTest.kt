@@ -1,6 +1,6 @@
 package com.lanraragi.reader.tankoubon
 
-import com.lanraragi.reader.client.api.LRRTankoubonApi.Tankoubon
+import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.tankoubon.TankPickerRows.Section
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

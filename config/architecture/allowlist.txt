@@ -7,8 +7,6 @@ D3 com/lanraragi/reader/client/api/LRRAuthInterceptor.kt
 D3 com/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor.kt
 D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankMembersViewModel.kt
-D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions.kt
-D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailViewModel.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/TankPickerSheet.kt
 D8b com/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel.kt

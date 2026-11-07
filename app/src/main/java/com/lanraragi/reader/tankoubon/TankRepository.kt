@@ -7,6 +7,7 @@ import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.TankoubonSupportGate
@@ -65,7 +66,7 @@ class TankRepository(
      * server truth re-keys the covers of tanks whose member list changed,
      * refreshes [TankListCache] and starts the membership sync.
      */
-    suspend fun loadAll(conn: ServerConnection): List<LRRTankoubonApi.Tankoubon> {
+    suspend fun loadAll(conn: ServerConnection): List<Tankoubon> {
         val all = fetchPages(conn)
         for (tank in all) TankCoverCacheStamp.observe(tank.id, tank.archives)
         TankListCache.put(conn.baseUrl, all)
@@ -74,7 +75,7 @@ class TankRepository(
     }
 
     /** What the tank picker sheet shows: every tank, and the tanks one archive is in. */
-    data class PickerList(val tanks: List<LRRTankoubonApi.Tankoubon>, val memberIds: Set<String>)
+    data class PickerList(val tanks: List<Tankoubon>, val memberIds: Set<String>)
 
     /**
      * The picker sheet's load: [arcid]'s current tanks (reverse lookup, when
@@ -96,8 +97,8 @@ class TankRepository(
     }
 
     /** GET /api/tankoubons page by page (0-based) until all `total` entries are held. */
-    private suspend fun fetchPages(conn: ServerConnection): List<LRRTankoubonApi.Tankoubon> {
-        val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
+    private suspend fun fetchPages(conn: ServerConnection): List<Tankoubon> {
+        val all = mutableListOf<Tankoubon>()
         var page = 0
         while (page < MAX_PAGES) {
             val r = LRRTankoubonApi.getTankoubons(conn.client, conn.baseUrl, page)
@@ -108,7 +109,7 @@ class TankRepository(
         return all
     }
 
-    private fun syncMembership(profileId: Long, serverUrl: String, tanks: List<LRRTankoubonApi.Tankoubon>) {
+    private fun syncMembership(profileId: Long, serverUrl: String, tanks: List<Tankoubon>) {
         val truth = tanks.map {
             TankMembershipSync.TankTruth(it.id, it.name, it.archives, it.progress, pagecount = 0)
         }
@@ -134,7 +135,7 @@ class TankRepository(
      */
     suspend fun probeCoverFallbacks(
         conn: ServerConnection,
-        tanks: List<LRRTankoubonApi.Tankoubon>,
+        tanks: List<Tankoubon>,
     ): Map<String, CoverFallback> = coroutineScope {
         val serverUrl = conn.baseUrl
         val gate = Semaphore(PROBE_PARALLELISM)

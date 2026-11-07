@@ -1,6 +1,7 @@
 package com.lanraragi.reader.tankoubon
 
 import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.domain.Tankoubon
 import okhttp3.OkHttpClient
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,7 +19,7 @@ object TankListCache {
     const val TTL_MS = 2 * 60 * 1000L
     private const val MAX_PAGES = 100
 
-    private data class Entry(val loadedAt: Long, val tanks: List<LRRTankoubonApi.Tankoubon>)
+    private data class Entry(val loadedAt: Long, val tanks: List<Tankoubon>)
 
     private val entries = ConcurrentHashMap<String, Entry>()
 
@@ -27,9 +28,9 @@ object TankListCache {
         client: OkHttpClient,
         baseUrl: String,
         now: Long = System.currentTimeMillis(),
-    ): List<LRRTankoubonApi.Tankoubon> {
+    ): List<Tankoubon> {
         entries[baseUrl]?.let { if (now - it.loadedAt < TTL_MS) return it.tanks }
-        val all = mutableListOf<LRRTankoubonApi.Tankoubon>()
+        val all = mutableListOf<Tankoubon>()
         var page = 0
         while (page < MAX_PAGES) {
             val r = LRRTankoubonApi.getTankoubons(client, baseUrl, page)
@@ -42,7 +43,7 @@ object TankListCache {
     }
 
     /** Record a complete list just loaded elsewhere. */
-    fun put(baseUrl: String, tanks: List<LRRTankoubonApi.Tankoubon>, now: Long = System.currentTimeMillis()) {
+    fun put(baseUrl: String, tanks: List<Tankoubon>, now: Long = System.currentTimeMillis()) {
         entries[baseUrl] = Entry(now, tanks.toList())
     }
 

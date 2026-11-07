@@ -1,6 +1,6 @@
 package com.lanraragi.reader.tankoubon
 
-import com.lanraragi.reader.client.api.LRRTankoubonApi.Tankoubon
+import com.lanraragi.reader.domain.Tankoubon
 
 /**
  * Row model of the tank picker sheet (docs/plan-2.4.0-tank-ux.md, PR-A).

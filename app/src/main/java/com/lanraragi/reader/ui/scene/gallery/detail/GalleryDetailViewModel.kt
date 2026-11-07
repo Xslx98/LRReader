@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
 import com.lanraragi.reader.archive.ArchiveRatingWriter
+import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.tankoubon.TankListCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -124,7 +125,7 @@ class GalleryDetailViewModel : ViewModel() {
      */
     val currentRating: StateFlow<Float?> = _currentRating.asStateFlow()
 
-    private val _archiveTankoubons = MutableStateFlow<List<LRRTankoubonApi.Tankoubon>?>(null)
+    private val _archiveTankoubons = MutableStateFlow<List<Tankoubon>?>(null)
 
     /**
      * Tankoubons on the source server that contain this archive. `null` =
@@ -133,7 +134,7 @@ class GalleryDetailViewModel : ViewModel() {
      * is in no tank, which still shows the section so its Edit entry can
      * add the archive to one (spec 2026-09-22 §6).
      */
-    val archiveTankoubons: StateFlow<List<LRRTankoubonApi.Tankoubon>?> = _archiveTankoubons.asStateFlow()
+    val archiveTankoubons: StateFlow<List<Tankoubon>?> = _archiveTankoubons.asStateFlow()
 
     // -------------------------------------------------------------------------
     // Loading state

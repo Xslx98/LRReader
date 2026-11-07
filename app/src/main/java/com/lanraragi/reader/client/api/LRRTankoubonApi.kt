@@ -1,6 +1,7 @@
 package com.lanraragi.reader.client.api
 
 import com.lanraragi.reader.client.api.data.LRRArchive
+import com.lanraragi.reader.domain.Tankoubon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -52,16 +53,6 @@ import com.lanraragi.reader.server.ServerCapabilityCache
  * that field).
  */
 object LRRTankoubonApi {
-
-    @Serializable
-    data class Tankoubon(
-        val id: String = "",
-        val name: String = "",
-        val archives: List<String> = emptyList(),
-        val summary: String? = null,
-        val tags: String? = null,
-        val progress: Int = 0,
-    )
 
     @Serializable
     data class TankoubonListResult(

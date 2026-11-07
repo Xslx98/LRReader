@@ -4,8 +4,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import com.lanraragi.framework.scene.Announcer
+import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.server.ServerSession
-import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.ui.scene.tankdetail.TankMembersScene
 
 /**
@@ -36,7 +36,7 @@ class DetailEditActions(
         }
     }
 
-    fun openTankoubonDetail(tank: LRRTankoubonApi.Tankoubon) {
+    fun openTankoubonDetail(tank: Tankoubon) {
         val args = Bundle().apply {
             putString(TankMembersScene.KEY_TANK_ID, tank.id)
             putString(TankMembersScene.KEY_TANK_NAME, tank.name)
