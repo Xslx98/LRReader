@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.detail
 
+import com.lanraragi.reader.archive.ArchiveDetailLoader
 import com.lanraragi.reader.archive.ArchiveRatingWriter
 import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.tankoubon.TankRepository
@@ -8,8 +9,6 @@ import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.toDegradedArchiveDetail
-import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.server.TankoubonSupportGate
@@ -665,32 +664,20 @@ class GalleryDetailViewModel : ViewModel() {
                 // cold on first launch and resolveSourceBaseUrl suspends
                 // until it hydrates. OrphanProfileException is surfaced
                 // through detailError just like any other fetch failure.
-                val serverUrl = resolveSourceServerUrl()
-                val archive = LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid)
-                // Tag the converted Archive with the *source* profile id
-                // and *source* base URL — not the active profile. Without
-                // this, every cross-server detail fetch overwrites the
-                // archive's serverProfileId in `_archiveDetail` and
-                // `archiveDetailCache` with the active profile id, which
-                // (a) flips the source-server badge to the active profile,
-                // and (b) routes the next refresh to the active server,
-                // 400-ing in a perpetual loop until the LRU cache evicts.
                 //
                 // Read the source id from `_archive` (Room nav arg), not
                 // from `getEffectiveArchive` — the latter would echo a
                 // 1.12.7-era polluted LRU entry back into the freshly
                 // built ArchiveDetail, perpetuating the wrong sid.
-                val ad = archive.toArchiveDetail(
-                    sourceProfileId = getSourceProfileId(),
-                    sourceBaseUrl = serverUrl,
-                )
+                val conn = ServerConnections.forProfile(getSourceProfileId())
+                val ad = ArchiveDetailLoader.detail(conn, arcid)
 
                 // Query the categories holding this archive (per-archive
                 // endpoint, not the full list) for the favourite heart.
                 // Failure here is non-fatal — keep the previously known
                 // favorite state rather than blanking it.
                 try {
-                    val categories = LRRCategoryApi.getArchiveCategories(client, serverUrl, arcid)
+                    val categories = ArchiveDetailLoader.categories(conn, arcid)
                     val matchedNames = mutableListOf<String>()
                     for (cat in categories) {
                         if (!cat.isDynamic() && cat.archives.contains(arcid)) {
