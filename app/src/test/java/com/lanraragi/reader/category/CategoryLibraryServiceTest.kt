@@ -42,6 +42,7 @@ class CategoryLibraryServiceTest {
     private lateinit var conn: ServerConnection
     private lateinit var writeScope: CoroutineScope
     private val writes = CopyOnWriteArrayList<String>()
+    private val writeBodies = CopyOnWriteArrayList<String>()
 
     /** When set, write responses wait for it (lets a test cancel the caller mid-write). */
     @Volatile
@@ -57,14 +58,15 @@ class CategoryLibraryServiceTest {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 if (request.method == "GET") {
                     return MockResponse().setBody(
-                        """[{"id":"SET_1000000001","name":"Plain","archives":[],"pinned":"0","search":""},""" +
+                        """[{"id":"SET_1000000001","name":"Plain","archives":["a1","a2"],"pinned":"0","search":""},""" +
                             """{"id":"SET_1000000002","name":"","archives":[],"pinned":"1","search":""},""" +
-                            """{"id":"SET_1000000003","name":"Top","archives":[],"pinned":"1","search":""},""" +
+                            """{"id":"SET_1000000003","name":"Top","archives":[],"pinned":1,"search":""},""" +
                             """{"id":"SET_1000000004","name":"Dyn","archives":[],"pinned":"0","search":"artist:x"}]"""
                     )
                 }
                 holdWrites?.await(5, TimeUnit.SECONDS)
                 writes.add("${request.method} ${request.path}")
+                writeBodies.add(request.body.readUtf8())
                 if (failWrites) return MockResponse().setResponseCode(423)
                 return MockResponse().setBody("""{"success":1,"category_id":"SET_1000000009"}""")
             }
@@ -87,6 +89,46 @@ class CategoryLibraryServiceTest {
         val loaded = CategoryLibraryService({ conn }, writeScope).load()!!
 
         assertEquals(listOf("Top", "Plain", "Dyn"), loaded.map { it.name })
+    }
+
+    @Test
+    fun load_keepsEveryFieldTheScreenReads() = runBlocking {
+        val loaded = CategoryLibraryService({ conn }, writeScope).load()!!.associateBy { it.name }
+
+        val top = loaded.getValue("Top")
+        assertEquals("SET_1000000003", top.id)
+        assertTrue("numeric pinned from the server", top.isPinned())
+        assertFalse(top.isDynamic())
+
+        val plain = loaded.getValue("Plain")
+        assertEquals(listOf("a1", "a2"), plain.archives)
+        assertFalse(plain.isPinned())
+
+        val dyn = loaded.getValue("Dyn")
+        assertEquals("artist:x", dyn.search)
+        assertTrue(dyn.isDynamic())
+    }
+
+    /**
+     * The server applies `search || old` and treats an omitted `pinned` as
+     * unpinned, so an edit has to send back what it loaded: dropping the pinned
+     * state on the way would unpin a category on a plain rename.
+     */
+    @Test
+    fun edit_ofALoadedCategory_sendsBackItsPredicateAndPinnedState() = runBlocking {
+        val service = CategoryLibraryService({ conn }, writeScope)
+        val loaded = service.load()!!.associateBy { it.name }
+        val dyn = loaded.getValue("Dyn")
+        val top = loaded.getValue("Top")
+
+        service.update(dyn.id!!, dyn.name!!, dyn.search, !dyn.isPinned())
+        service.update(top.id!!, "Renamed", top.search, top.isPinned())
+        service.update(top.id!!, top.name!!, top.search, !top.isPinned())
+
+        assertEquals(
+            listOf("name=Dyn&search=artist%3Ax&pinned=true", "name=Renamed&pinned=true", "name=Top"),
+            writeBodies,
+        )
     }
 
     @Test
