@@ -1,0 +1,301 @@
+{
+  "legs": {
+    "nightly": {
+      "archive/categories": [
+        "categories",
+        "operation",
+        "success"
+      ],
+      "archive/stamps": [
+        "result"
+      ],
+      "archive/stamps/page": [
+        "result"
+      ],
+      "archive/stamps/page.result[]": [
+        "content",
+        "id",
+        "position"
+      ],
+      "archive/tankoubons": [
+        "operation",
+        "success",
+        "tankoubons"
+      ],
+      "categories[]": [
+        "archives",
+        "id",
+        "name",
+        "pinned",
+        "search"
+      ],
+      "database/stats[]": [
+        "namespace",
+        "text",
+        "weight"
+      ],
+      "files": [
+        "pages"
+      ],
+      "info": [
+        "archives_per_page",
+        "authenticated_progress",
+        "cache_last_cleared",
+        "debug_mode",
+        "excluded_namespaces",
+        "has_password",
+        "motd",
+        "name",
+        "nofun_mode",
+        "server_resizes_images",
+        "server_tracks_progress",
+        "total_archives",
+        "total_pages_read",
+        "version",
+        "version_desc",
+        "version_name"
+      ],
+      "metadata": [
+        "arcid",
+        "extension",
+        "filename",
+        "isnew",
+        "lastreadtime",
+        "pagecount",
+        "progress",
+        "size",
+        "summary",
+        "tags",
+        "title",
+        "toc"
+      ],
+      "search": [
+        "data",
+        "recordsFiltered",
+        "recordsTotal"
+      ],
+      "search.data[]": [
+        "arcid",
+        "extension",
+        "filename",
+        "isnew",
+        "lastreadtime",
+        "pagecount",
+        "progress",
+        "size",
+        "summary",
+        "tags",
+        "title",
+        "toc"
+      ],
+      "search/random": [
+        "data",
+        "recordsTotal"
+      ],
+      "search/random.data[]": [
+        "arcid",
+        "extension",
+        "filename",
+        "isnew",
+        "lastreadtime",
+        "pagecount",
+        "progress",
+        "size",
+        "summary",
+        "tags",
+        "title",
+        "toc"
+      ],
+      "tankoubons": [
+        "filtered",
+        "result",
+        "total"
+      ],
+      "tankoubons.result[]": [
+        "archives",
+        "id",
+        "name",
+        "progress",
+        "summary",
+        "tags"
+      ],
+      "tankoubons/full": [
+        "filtered",
+        "result",
+        "total"
+      ],
+      "tankoubons/full.result": [
+        "archives",
+        "full_data",
+        "id",
+        "name",
+        "progress",
+        "summary",
+        "tags"
+      ],
+      "tankoubons/full.result.full_data[]": [
+        "arcid",
+        "extension",
+        "filename",
+        "isnew",
+        "lastreadtime",
+        "pagecount",
+        "progress",
+        "size",
+        "summary",
+        "tags",
+        "title",
+        "toc"
+      ]
+    },
+    "v.0.9.81": {
+      "archive/categories": [
+        "categories",
+        "operation",
+        "success"
+      ],
+      "archive/stamps": [
+        "result"
+      ],
+      "archive/stamps/page": [
+        "result"
+      ],
+      "archive/stamps/page.result[]": [
+        "content",
+        "id",
+        "position"
+      ],
+      "archive/tankoubons": [
+        "operation",
+        "success",
+        "tankoubons"
+      ],
+      "categories[]": [
+        "archives",
+        "id",
+        "name",
+        "pinned",
+        "search"
+      ],
+      "database/stats[]": [
+        "namespace",
+        "text",
+        "weight"
+      ],
+      "files": [
+        "pages"
+      ],
+      "info": [
+        "archives_per_page",
+        "authenticated_progress",
+        "cache_last_cleared",
+        "debug_mode",
+        "excluded_namespaces",
+        "has_password",
+        "motd",
+        "name",
+        "nofun_mode",
+        "server_resizes_images",
+        "server_tracks_progress",
+        "total_archives",
+        "total_pages_read",
+        "version",
+        "version_desc",
+        "version_name"
+      ],
+      "metadata": [
+        "arcid",
+        "extension",
+        "filename",
+        "isnew",
+        "lastreadtime",
+        "pagecount",
+        "progress",
+        "size",
+        "summary",
+        "tags",
+        "title",
+        "toc"
+      ],
+      "search": [
+        "data",
+        "recordsFiltered",
+        "recordsTotal"
+      ],
+      "search.data[]": [
+        "arcid",
+        "extension",
+        "filename",
+        "isnew",
+        "lastreadtime",
+        "pagecount",
+        "progress",
+        "size",
+        "summary",
+        "tags",
+        "title",
+        "toc"
+      ],
+      "search/random": [
+        "data",
+        "recordsTotal"
+      ],
+      "search/random.data[]": [
+        "arcid",
+        "extension",
+        "filename",
+        "isnew",
+        "lastreadtime",
+        "pagecount",
+        "progress",
+        "size",
+        "summary",
+        "tags",
+        "title",
+        "toc"
+      ],
+      "tankoubons": [
+        "filtered",
+        "result",
+        "total"
+      ],
+      "tankoubons.result[]": [
+        "archives",
+        "id",
+        "name",
+        "progress",
+        "summary",
+        "tags"
+      ],
+      "tankoubons/full": [
+        "filtered",
+        "result",
+        "total"
+      ],
+      "tankoubons/full.result": [
+        "archives",
+        "full_data",
+        "id",
+        "name",
+        "progress",
+        "summary",
+        "tags"
+      ],
+      "tankoubons/full.result.full_data[]": [
+        "arcid",
+        "extension",
+        "filename",
+        "isnew",
+        "lastreadtime",
+        "pagecount",
+        "progress",
+        "size",
+        "summary",
+        "tags",
+        "title",
+        "toc"
+      ]
+    }
+  },
+  "openapi_sha256": "1380d1063bad96a6c819413771cbd261d8a16d5528556796efcf2194e489ec7a"
+}

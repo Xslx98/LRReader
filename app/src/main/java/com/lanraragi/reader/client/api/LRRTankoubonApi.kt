@@ -202,11 +202,14 @@ object LRRTankoubonApi {
         // the whole cover image, then Conaco fetched it again to display.
         val request = Request.Builder().url(url).head().build()
         client.newCall(request).await().use { response ->
-            if (response.code == HTTP_ACCEPTED) {
-                false
-            } else {
-                ensureSuccess(response)
-                true
+            // Not ensureSuccess: a generated cover answers with an image type, not JSON.
+            when {
+                response.code == HTTP_ACCEPTED -> false
+                response.isSuccessful -> true
+                else -> throw LRRHttpException(
+                    response.code,
+                    retryAfterMillis = parseRetryAfterMillis(response.header("Retry-After")),
+                )
             }
         }
     }

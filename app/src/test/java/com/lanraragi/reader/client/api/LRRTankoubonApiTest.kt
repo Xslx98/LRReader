@@ -171,7 +171,12 @@ class LRRTankoubonApiTest {
 
     @Test
     fun hasTankThumbnail_200_returnsTrue_andSendsNoFallback() = runTest {
-        server.enqueue(MockResponse().setBody("fake-image-bytes"))
+        // The real server's answer for a generated cover: an image type, never JSON.
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/x-download;name=\"$tankId.jpg\"")
+                .setBody("fake-image-bytes")
+        )
 
         assertTrue(LRRTankoubonApi.hasTankThumbnail(client, baseUrl, tankId))
         assertEquals(

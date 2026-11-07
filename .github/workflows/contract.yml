@@ -1,0 +1,97 @@
+name: Contract (real LANraragi)
+
+# Runs the client's own API classes and DTOs against real servers, so an upstream
+# break is seen before a user reports it. A signal to read, not a merge gate:
+# nothing requires this check, and a red nightly blocks nothing.
+# scripts/ci/contract/README.md says what each signal means.
+
+on:
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'One difegue/lanraragi tag to test (empty: v.0.9.81 and nightly)'
+        required: false
+        default: ''
+  # Only for changes to the job itself: a dispatch cannot run until this file is
+  # on main, and PRs must not depend on Docker Hub or a moving nightly.
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/contract.yml'
+      - 'scripts/ci/contract/**'
+      - '**/contract/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    name: contract (${{ matrix.tag }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      # A red nightly must not cancel the release leg, or the other way round.
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJSON(inputs.image_tag && format('["{0}"]', inputs.image_tag) || '["v.0.9.81","nightly"]') }}
+    env:
+      IMAGE_TAG: ${{ matrix.tag }}
+      CONTRACT_DIR: ${{ github.workspace }}/build/contract
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup JDK
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: 'temurin'
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Boot the server (infrastructure, one retry inside)
+        run: python3 scripts/ci/contract/seed.py boot --image "difegue/lanraragi:$IMAGE_TAG" --content-dir "$RUNNER_TEMP/lrr-content"
+
+      - name: Seed the server
+        run: python3 scripts/ci/contract/seed.py seed --out-dir "$CONTRACT_DIR"
+
+      - name: Report response key drift (warnings only)
+        run: |
+          openapi_args=()
+          if [ "$IMAGE_TAG" = nightly ]; then
+            openapi_args=(--openapi-container lrr-contract)
+          fi
+          python3 scripts/ci/contract/key_drift.py --leg "$IMAGE_TAG" "${openapi_args[@]}" \
+            --write-observed "$CONTRACT_DIR/observed-keys.json"
+
+      - name: Run the contract tests
+        run: |
+          chmod +x ./gradlew
+          ./gradlew app:testAppReleaseDebugUnitTest -PlrrContract
+
+      - name: Save the server log
+        if: always()
+        run: |
+          mkdir -p "$CONTRACT_DIR"
+          docker logs lrr-contract > "$CONTRACT_DIR/docker.log" 2>&1 || true
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: contract-${{ matrix.tag }}
+          path: |
+            build/contract/docker.log
+            build/contract/seed.json
+            build/contract/observed-keys.json
+            app/build/reports/tests/testAppReleaseDebugUnitTest/
+            app/build/test-results/testAppReleaseDebugUnitTest/
+          if-no-files-found: warn
+          retention-days: 30
