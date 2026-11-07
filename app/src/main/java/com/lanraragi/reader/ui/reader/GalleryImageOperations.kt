@@ -38,20 +38,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.lanraragi.reader.AppConfig
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.cover.ArchiveCoverStamps
-import com.lanraragi.reader.cover.TankCoverCacheStamp
-import com.lanraragi.reader.client.api.LRRArchiveApi
-import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.cover.CoverWriter
 import com.lanraragi.reader.client.api.friendlyError
-import com.lanraragi.reader.server.resolveSourceBaseUrl
-import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.event.ArchiveCoverChangedEvent
+import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.reading.GalleryProvider2
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.reading.TankGalleryProvider
 import com.lanraragi.reader.settings.ReadingSettings
-import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.framework.util.ExceptionUtils
@@ -404,24 +397,14 @@ class GalleryImageOperations(private val mActivity: Activity) {
         (mActivity as ComponentActivity).lifecycleScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    val url = resolveSourceBaseUrl(target.profileId, ServiceRegistry.dataModule.profileLookupCache)
-                    val client = ServiceRegistry.networkModule.okHttpClient
+                    val conn = ServerConnections.forProfile(target.profileId)
                     when (target) {
-                        is CoverTarget.Tank -> {
-                            LRRTankoubonApi.updateTankThumbnail(client, url, target.tankId, globalPage1 = page + 1)
-                            TankCoverCacheStamp.bump(target.tankId)
-                            (provider as? TankGalleryProvider)?.locateMember(page)?.let { (arcid, page0) ->
-                                TankCoverChoiceStore.default.put(
-                                    target.tankId,
-                                    TankCoverChoiceStore.Choice(arcid, page0, target.profileId),
-                                )
+                        is CoverTarget.Tank ->
+                            CoverWriter.setTankCover(conn, target.tankId, globalPage1 = page + 1) {
+                                (provider as? TankGalleryProvider)?.locateMember(page)
                             }
-                        }
-                        is CoverTarget.Archive -> {
-                            LRRArchiveApi.updateThumbnail(client, url, target.arcid, page1 = page + 1)
-                            ArchiveCoverStamps.bump(target.arcid)
-                            AppEventBus.postArchiveCoverChangedEvent(ArchiveCoverChangedEvent(target.arcid))
-                        }
+                        is CoverTarget.Archive ->
+                            CoverWriter.setArchiveCover(conn, target.arcid, page1 = page + 1)
                     }
                 }
                 Toast.makeText(mActivity, R.string.tank_cover_updated, Toast.LENGTH_SHORT).show()
