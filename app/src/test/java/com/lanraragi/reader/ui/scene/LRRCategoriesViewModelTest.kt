@@ -10,7 +10,7 @@ import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
-import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.domain.Category
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -122,7 +122,7 @@ class LRRCategoriesViewModelTest {
             {"id":"SET_aaaaaaaaaa","name":"Favorites","archives":["a1"],"pinned":"1","search":""},
             {"id":"c2","name":"Dynamic","archives":[],"pinned":"0","search":"artist:foo"}
         ]"""))
-        val synced = CopyOnWriteArrayList<List<LRRCategory>>()
+        val synced = CopyOnWriteArrayList<List<Category>>()
 
         val vm = LRRCategoriesViewModel(categoryNameSync = { synced.add(it) })
         vm.loadCategories()

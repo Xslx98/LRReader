@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene
 
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
-import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.domain.Category
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -19,15 +19,9 @@ class LRRCategoryDiffCallbackTest {
         pinned: Boolean = false,
         search: String? = "",
         archives: List<String> = emptyList(),
-    ) = LRRCategory().also {
-        it.id = id
-        it.name = name
-        it.pinned = if (pinned) "1" else "0"
-        it.search = search
-        it.archives = archives
-    }
+    ) = Category(id, name, archives, search, pinned)
 
-    private fun updates(old: List<LRRCategory>, new: List<LRRCategory>): List<String> {
+    private fun updates(old: List<Category>, new: List<Category>): List<String> {
         val seen = ArrayList<String>()
         DiffUtil.calculateDiff(LRRCategoriesScene.LRRCategoryDiffCallback(old, new))
             .dispatchUpdatesTo(object : ListUpdateCallback {

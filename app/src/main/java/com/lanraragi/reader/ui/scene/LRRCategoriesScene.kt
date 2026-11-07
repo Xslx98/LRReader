@@ -19,7 +19,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.scene.LRRCategoriesViewModel.CategoriesUiEvent
 import com.lanraragi.reader.ui.collectFlow
-import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.domain.Category
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.framework.scene.Announcer
 
@@ -42,7 +42,7 @@ class LRRCategoriesScene : BaseScene() {
     private var mErrorRetry: TextView? = null
     private var mToolbar: MaterialToolbar? = null
 
-    private val mCategories: MutableList<LRRCategory> = mutableListOf()
+    private val mCategories: MutableList<Category> = mutableListOf()
     private var mAdapter: CategoryAdapter? = null
 
     private lateinit var viewModel: LRRCategoriesViewModel
@@ -50,7 +50,7 @@ class LRRCategoriesScene : BaseScene() {
     // Snapshot of the list last dispatched to the adapter. Read/written ONLY by
     // the categories observer (the single dispatch path — every CRUD op re-fetches).
     // See docs/diffutil-root-cause-analysis.md for the snapshot ownership rule.
-    private var mLastSnapshot: List<LRRCategory> = emptyList()
+    private var mLastSnapshot: List<Category> = emptyList()
 
     override fun getNavCheckedItem(): Int = R.id.nav_favourite
 
@@ -175,7 +175,7 @@ class LRRCategoriesScene : BaseScene() {
      * Show create/edit category dialog.
      * @param category null for create, non-null for edit.
      */
-    private fun showCategoryDialog(category: LRRCategory?) {
+    private fun showCategoryDialog(category: Category?) {
         val ctx = ehContext ?: return
         val isEdit = category != null
 
@@ -230,7 +230,7 @@ class LRRCategoriesScene : BaseScene() {
             .show()
     }
 
-    private fun deleteCategory(category: LRRCategory) {
+    private fun deleteCategory(category: Category) {
         val ctx = ehContext ?: return
         AlertDialog.Builder(ctx)
             .setTitle(R.string.lrr_category_action_delete)
@@ -245,7 +245,7 @@ class LRRCategoriesScene : BaseScene() {
     /**
      * Show long-press action menu for a category item.
      */
-    private fun showCategoryActions(category: LRRCategory) {
+    private fun showCategoryActions(category: Category) {
         val ctx = ehContext ?: return
 
         val pinAction = if (category.isPinned()) {
@@ -321,7 +321,7 @@ class LRRCategoriesScene : BaseScene() {
         }
     }
 
-    private fun onCategoryClick(category: LRRCategory) {
+    private fun onCategoryClick(category: Category) {
         val args = Bundle().apply {
             putString(GalleryListScene.KEY_ACTION, GalleryListScene.ACTION_LIST_URL_BUILDER)
         }
@@ -388,14 +388,14 @@ class LRRCategoriesScene : BaseScene() {
     }
 
     /**
-     * DiffUtil callback for LRRCategory lists. Identity is the category `id`
+     * DiffUtil callback for Category lists. Identity is the category `id`
      * (LANraragi's CAT-prefixed string id). Content compares everything that
      * onBindViewHolder reads so the row repaints when name/pinned/search/
      * archive count change.
      */
     internal class LRRCategoryDiffCallback(
-        private val oldList: List<LRRCategory>,
-        private val newList: List<LRRCategory>
+        private val oldList: List<Category>,
+        private val newList: List<Category>
     ) : DiffUtil.Callback() {
 
         override fun getOldListSize(): Int = oldList.size

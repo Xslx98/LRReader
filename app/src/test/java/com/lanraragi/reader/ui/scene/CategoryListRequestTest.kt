@@ -1,7 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import com.lanraragi.reader.archive.ListUrlBuilder
-import com.lanraragi.reader.client.api.data.LRRCategory
+import com.lanraragi.reader.domain.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
 class CategoryListRequestTest {
 
     private fun category(id: String?, name: String?, search: String? = null) =
-        LRRCategory().also { it.id = id; it.name = name; it.search = search }
+        Category(id, name, archives = emptyList(), search, pinned = false)
 
     @Test
     fun `static category maps to id and name with an empty keyword`() {
