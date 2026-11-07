@@ -21,7 +21,7 @@ import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.reader.R
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.cover.TankCoverCacheStamp
-import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.cover.TankCovers
 import com.lanraragi.reader.tankoubon.TankPickerRows
 import com.lanraragi.reader.tankoubon.TankPickerRows.Section
 import com.lanraragi.reader.ui.scene.TankDialogs
@@ -222,7 +222,7 @@ internal class TankPickerSheet(
             val stamp = TankCoverCacheStamp.get(tank.id)
             holder.thumb.load(
                 LRRCacheKeyFactory.getThumbKey("${tank.id}#$stamp"),
-                LRRTankoubonApi.getTankoubonThumbnailUrl(serverUrl, tank.id, cacheBust = stamp),
+                TankCovers.url(serverUrl, tank.id, cacheBust = stamp),
             )
             holder.name.text = tank.name
             val res = holder.itemView.resources
