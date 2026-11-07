@@ -149,6 +149,10 @@ app:
 - Line coverage of the `dao`, `download` and `gallery` packages must not drop
   below the floor in `scripts/ci/coverage-floor.txt`. Raise the floor when your
   change raises coverage.
+- Tests in `app/src/test/java/com/lanraragi/reader/contract/` run the client
+  against a real LANraragi in Docker, weekly and on changes to that job. The
+  default test run leaves them out. A new endpoint in `client/api` gets one; see
+  `scripts/ci/contract/README.md`.
 
 ## Commits and pull requests
 
