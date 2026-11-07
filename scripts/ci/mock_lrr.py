@@ -77,6 +77,10 @@ if os.environ.get("MOCK_TOC"):
     ARCHIVES[1]["toc"] = [{"page": 1, "name": "Two Start"}, {"page": 3, "name": "Two End"}]
     ARCHIVES[2]["toc"] = [{"page": 2, "name": "Three Middle"}]
 
+#   MOCK_METADATA_FAIL=<title> -> GET /metadata of that archive answers 500: a download
+#                         must still finish without the chapter fetch it tries there.
+METADATA_FAIL_TITLE = os.environ.get("MOCK_METADATA_FAIL")
+
 # Stateful categories (real-server semantics: create/update use `param || old`,
 # so an empty/omitted `search` NEVER clears a dynamic predicate; `pinned`
 # omitted -> 0).
@@ -257,6 +261,17 @@ class H(BaseHTTPRequestHandler):
                         arc[k] = f[k]
                 print("METADATA PUT %s tags=%r" % (parts[2][:8], f.get("tags")), flush=True)
                 self._json({"operation": "update_metadata", "success": 1})
+        elif len(parts) == 4 and parts[:2] == ["api", "archives"] and parts[3] == "toc":
+            # PUT /api/archives/{id}/toc?page=N&title=T: adds a chapter, kept in page order.
+            q = parse_qs(u.query)
+            arc = next((a for a in ARCHIVES if a["arcid"] == parts[2]), None)
+            if arc is None:
+                self._json({"error": "no such archive"}, 400)
+            else:
+                page = int(q["page"][0])
+                kept = [e for e in arc.get("toc", []) if e["page"] != page]
+                arc["toc"] = sorted(kept + [{"page": page, "name": q["title"][0]}], key=lambda e: e["page"])
+                self._json({"operation": "update_toc", "success": 1})
         elif len(parts) == 4 and parts[:2] == ["api", "archives"] and parts[3] == "thumbnail":
             # PUT /api/archives/{id}/thumbnail?page=N (archive cover from any page)
             q = parse_qs(u.query)
@@ -337,6 +352,15 @@ class H(BaseHTTPRequestHandler):
                 t = TANKS[parts[2]]
                 t["archives"] = [a for a in t["archives"] if a != parts[3]]
             self._json({"operation": "tankoubon_delete", "success": 1})
+        elif len(parts) == 4 and parts[:2] == ["api", "archives"] and parts[3] == "toc":
+            # DELETE /api/archives/{id}/toc?page=N
+            page = int(parse_qs(u.query)["page"][0])
+            arc = next((a for a in ARCHIVES if a["arcid"] == parts[2]), None)
+            if arc is None:
+                self._json({"error": "no such archive"}, 400)
+            else:
+                arc["toc"] = [e for e in arc.get("toc", []) if e["page"] != page]
+                self._json({"operation": "remove_toc", "success": 1})
         else:
             self._json({"operation": "clear_new", "success": 1})
 
@@ -434,7 +458,10 @@ class H(BaseHTTPRequestHandler):
                 self._json({"tankoubons": [tid for tid, t in TANKS.items()
                                            if arcid in t["archives"]]})
             elif leaf == "metadata":
-                self._json(arc)
+                if arc["title"] == METADATA_FAIL_TITLE:
+                    self._json({"error": "MOCK_METADATA_FAIL"}, 500)
+                else:
+                    self._json(arc)
             elif leaf == "thumbnail":
                 self._img(THUMB)
             elif leaf == "files":
