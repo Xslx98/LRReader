@@ -13,7 +13,7 @@ import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.reader.StampGeometry
 import com.lanraragi.framework.lib.glgallery.PageTransform
-import com.lanraragi.reader.client.api.LRRStampApi.StampData
+import com.lanraragi.reader.domain.ReaderStamp
 import kotlin.math.hypot
 
 /**
@@ -31,9 +31,9 @@ class StampOverlayView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     interface Callback {
-        fun onStampTapped(stamp: StampData, page0: Int, screenX: Float, screenY: Float)
+        fun onStampTapped(stamp: ReaderStamp, page0: Int, screenX: Float, screenY: Float)
         fun onPlaceRequested(page0: Int, normX: Float, normY: Float)
-        fun onStampDropped(stamp: StampData, page0: Int, normX: Float, normY: Float)
+        fun onStampDropped(stamp: ReaderStamp, page0: Int, normX: Float, normY: Float)
     }
 
     var callback: Callback? = null
@@ -46,7 +46,7 @@ class StampOverlayView @JvmOverloads constructor(
      * page on every animation frame. Must never emit stamps with an empty id:
      * the drag-skip in [onDraw] matches on id, so empty ids would collide.
      */
-    var stampsProvider: ((page0: Int) -> List<StampData>)? = null
+    var stampsProvider: ((page0: Int) -> List<ReaderStamp>)? = null
 
     var transforms: List<PageTransform> = emptyList()
         set(value) {
@@ -75,7 +75,7 @@ class StampOverlayView @JvmOverloads constructor(
     }
 
     // Active-touch state
-    private var touchStamp: StampData? = null
+    private var touchStamp: ReaderStamp? = null
     private var touchPage0 = 0
     private var touchRect: RectF? = null
     private var downX = 0f
@@ -102,7 +102,7 @@ class StampOverlayView @JvmOverloads constructor(
         canvas.drawCircle(cx, cy, markerRadius - ringWidth, fillPaint)
     }
 
-    private fun markerCenter(stamp: StampData, rect: RectF): Pair<Float, Float> {
+    private fun markerCenter(stamp: ReaderStamp, rect: RectF): Pair<Float, Float> {
         val norm = StampGeometry.parsePosition(stamp.position)
             ?: (StampGeometry.FALLBACK_NORM to StampGeometry.FALLBACK_NORM)
         return StampGeometry.normToScreen(norm.first, rect.left, rect.width()) to
@@ -205,7 +205,7 @@ class StampOverlayView @JvmOverloads constructor(
         invalidate()
     }
 
-    private fun hitTest(x: Float, y: Float): Pair<StampData, PageTransform>? {
+    private fun hitTest(x: Float, y: Float): Pair<ReaderStamp, PageTransform>? {
         val provider = stampsProvider ?: return null
         val hitRadius = markerRadius * HIT_SLOP_FACTOR
         // Last transform drawn last = topmost; iterate in reverse for hits.

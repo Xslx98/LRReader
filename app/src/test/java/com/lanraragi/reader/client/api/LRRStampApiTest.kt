@@ -1,6 +1,7 @@
 package com.lanraragi.reader.client.api
 
 import com.lanraragi.reader.awaitRequest
+import com.lanraragi.reader.domain.ReaderStamp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -82,7 +83,7 @@ class LRRStampApiTest {
     @Test
     fun getStampsByPage_emptyResult() = runTest {
         server.enqueue(MockResponse().setBody("""{"result":[]}"""))
-        assertEquals(emptyList<LRRStampApi.StampData>(), LRRStampApi.getStampsByPage(client, baseUrl, arcid, 1))
+        assertEquals(emptyList<ReaderStamp>(), LRRStampApi.getStampsByPage(client, baseUrl, arcid, 1))
     }
 
     @Test
