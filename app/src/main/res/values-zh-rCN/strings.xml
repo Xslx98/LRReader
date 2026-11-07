@@ -989,4 +989,17 @@
     <string name="restore_done_message">已恢复 %1$d 个档案，重新关联 %2$d 个下载（%3$d 个在本设备上未找到），新增 %4$d 个服务器。</string>
     <string name="restore_done_keys">请在服务器列表中为新增的服务器输入 API 密钥。</string>
     <string name="restore_done_restart">应用即将重启。</string>
+    <string name="plugin_tags_fetch">用插件获取标签</string>
+    <string name="plugin_tags_key_required">此服务器需要 API Key 才能运行插件。</string>
+    <string name="plugin_tags_unsupported">此服务器不支持运行插件。</string>
+    <string name="plugin_tags_none">此服务器没有安装元数据插件。</string>
+    <string name="plugin_tags_login_hint">使用服务器上配置的登录信息</string>
+    <string name="plugin_tags_running">正在运行 %1$s…</string>
+    <string name="plugin_tags_running_hint">现在还没有写入任何内容，可以随时离开此页面。</string>
+    <string name="plugin_tags_failed">插件运行失败。</string>
+    <string name="plugin_tags_no_new">插件没有找到新标签。</string>
+    <string name="plugin_tags_title_row">标题</string>
+    <string name="plugin_tags_apply">应用更改（%1$d）</string>
+    <string name="plugin_tags_busy">服务器正忙于处理此档案，请重试。</string>
+    <string name="plugin_tags_applied">更改已应用</string>
 </resources>

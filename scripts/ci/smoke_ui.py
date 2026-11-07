@@ -25,7 +25,9 @@ mode and rotation it changes. The `chapters` journey runs only when named and
 also needs MOCK_TOC=1 on the mock. So does `chapters_offline`, on the debug
 package with an empty downloads list, a mock also started with
 MOCK_METADATA_FAIL="Mock Big Archive 3", and the server at 10.0.2.2 so airplane
-mode cuts it off (`adb reverse` would not be cut off).
+mode cuts it off (`adb reverse` would not be cut off). The `plugin_tags` journey
+also runs only when named, once per mock start, with MOCK_SEED=1 (SMOKE_MOCK_URL if
+the mock is not on 127.0.0.1:3939).
 """
 import json
 import os
@@ -750,6 +752,117 @@ class Widgets:
         self.need("read", 10)
         self.back()
 
+    # -- metadata plugins --
+    def plugin_row(self, name):
+        """Opens the plugin screen's row called [name] from the chooser."""
+        self.tap(*centre(self.need_text(name)))
+
+    def rows_starting(self, text):
+        return [n for n in nodes(dump()) if n.get("text", "").startswith(text)]
+
+    def need_row_starting(self, text, seconds=15):
+        deadline = time.monotonic() + seconds
+        while not self.rows_starting(text):
+            if time.monotonic() > deadline:
+                raise SmokeFailure(f"nothing starts with {text!r}; visible: {visible()}")
+            time.sleep(0.5)
+
+    def archive_tags(self, arcid):
+        return self.mock_request("GET", f"/api/archives/{arcid}/metadata")["tags"]
+
+    def expect_checked(self, node, checked, step):
+        if node.get("checked") != str(checked).lower():
+            raise SmokeFailure(f"plugin tags: {step}: checked={node.get('checked')}, wanted {checked}")
+
+    def plugin_tags(self):
+        """The plugin flow against a fresh mock: each plugin once, since an applied
+        tag is not offered again. The archive's tags must only change on Apply."""
+        arcid = self.arcid("Mock Archive 1")
+        before = self.archive_tags(arcid)
+        self.home_list()
+        self.tap(*centre(self.need_text("Mock Archive 1")))
+        self.need("read", 20)
+        self.tap_id("plugin_tags_btn")
+        self.need_text("Mock Tags 1.0")
+        self.need_text("Mock Oneshot 2")
+        self.need_text("Signs in with a login set up on the server")
+        self.check("plugin tags: the chooser lists the server's plugins")
+
+        self.plugin_row("Mock Slow 1.0")
+        self.need_row_starting("Running Mock Slow")
+        self.back()
+        self.need_text("Mock Tags 1.0")
+        self.check("plugin tags: back abandons a running plugin")
+
+        self.plugin_row("Mock Fail 1.0")
+        self.need_row_starting("The plugin failed.")
+        self.need("plugin_tag_retry")
+        self.back()
+        self.plugin_row("Mock None 1.0")
+        self.need_text("The plugin found no new tags.")
+        self.back()
+        self.check("plugin tags: a failure and an empty result")
+
+        self.plugin_row("Mock Tags 1.0")
+        self.need_text("APPLY CHANGES (2)", 20)
+        self.expect_checked(self.need_text("mock plugin"), True, "new tag")
+        self.expect_checked(self.rows_starting("Title:")[0], False, "title")
+        self.expect_checked(self.rows_starting("Summary:")[0], False, "summary")
+        self.check("plugin tags: new tags checked, title and summary not")
+        self.tap(*centre(self.need_text("mock series")))
+        self.need_text("APPLY CHANGES (1)")
+        self.tap(*centre(self.rows_starting("Title:")[0]))
+        self.need_text("APPLY CHANGES (2)")
+        self.tap(*centre(self.rows_starting("Title:")[0]))
+        self.need_text("APPLY CHANGES (1)")
+        self.check("plugin tags: unchecking and checking change the count")
+
+        auto = shell("settings", "get", "system", "accelerometer_rotation").stdout.strip()
+        shell("settings", "put", "system", "accelerometer_rotation", "0")
+        shell("settings", "put", "system", "user_rotation", "1")
+        time.sleep(4)
+        self.need_text("APPLY CHANGES (1)")
+        self.expect_checked(self.need_text("mock series"), False, "unchecked row after rotating")
+        shell("settings", "put", "system", "user_rotation", "0")
+        shell("settings", "put", "system", "accelerometer_rotation", auto or "1")
+        time.sleep(4)
+        self.need_text("APPLY CHANGES (1)")
+        self.check("plugin tags: the review survives a rotation")
+
+        self.back()
+        self.need_text("Mock Tags 1.0")
+        if self.archive_tags(arcid) != before:
+            raise SmokeFailure("plugin tags: leaving the review wrote to the server")
+        self.check("plugin tags: going back from the review writes nothing")
+
+        self.plugin_row("Mock Locked 1.0")
+        self.need_text("APPLY CHANGES (1)", 20)
+        self.tap(*centre(self.need_text("APPLY CHANGES (1)")))
+        self.need_text("The server is busy with this archive. Try again.")
+        self.need_text("APPLY CHANGES (1)")
+        if self.archive_tags(arcid) != before:
+            raise SmokeFailure("plugin tags: a refused write changed the tags")
+        self.check("plugin tags: a 423 keeps the review")
+        self.tap(*centre(self.need_text("APPLY CHANGES (1)")))
+        self.need("read", 20)
+        self.need_text("locked", 20)
+        if "mock:locked" not in self.archive_tags(arcid):
+            raise SmokeFailure("plugin tags: the retried apply did not reach the server")
+        self.check("plugin tags: applying writes and refreshes the detail page")
+
+        self.tap_id("plugin_tags_btn")
+        self.plugin_row("Mock Oneshot 2")
+        self.need_text("Gallery URL:")
+        shell("input", "text", "x", check=True)
+        self.tap(*centre(self.need_text("OK")))
+        self.need_text("APPLY CHANGES (1)", 20)
+        self.back()
+        self.need_text("Mock Tags 1.0")
+        self.back()
+        self.need("read", 10)
+        self.check("plugin tags: a one-shot argument runs")
+        self.back()
+
     # -- offline chapters --
     def mock_request(self, method, path):
         url = os.environ.get("SMOKE_MOCK_URL", "http://127.0.0.1:3939") + path
@@ -1118,7 +1231,7 @@ class Widgets:
 WIDGET_JOURNEYS = ["home", "drawer", "reader", "downloads", "history", "favourites",
                    "tanks", "settings", "lock"]
 # Run only when named: these need more of the mock (see the module docstring).
-NAMED_ONLY_JOURNEYS = ["chapters", "chapters_offline"]
+NAMED_ONLY_JOURNEYS = ["chapters", "chapters_offline", "plugin_tags"]
 
 
 class Shots(Widgets):

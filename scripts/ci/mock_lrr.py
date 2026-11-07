@@ -1,7 +1,8 @@
 """Minimal mock LANraragi for AVD release smoke (AVD reaches host via 10.0.2.2:3939).
 
 Endpoints: /api/info, /api/search, /api/categories, /api/archives/{id}/categories, /api/tankoubons,
-/api/archives/:id/{metadata,thumbnail,files,page}, progress PUT. MOCK_SEED=1 seeds
+/api/archives/:id/{metadata,thumbnail,files,page}, progress PUT, metadata plugins
+(/api/plugins/metadata, /api/plugins/queue, /api/minion/{id}/detail). MOCK_SEED=1 seeds
 categories and a tank (see below). MOCK_TRACK_PROGRESS=1 makes an archive's
 progress PUT stick like a real server's: metadata then reports that page and
 lastreadtime = the server's clock at the PUT.
@@ -179,6 +180,60 @@ def fold_tanks(archives):
     return out
 
 
+#   MOCK_REQUIRE_KEY=1 -> /api/info reports has_password, and the plugin routes and the metadata
+#                         PUT answer 401 without an Authorization header.
+REQUIRE_KEY = os.environ.get("MOCK_REQUIRE_KEY") == "1"
+
+# Metadata plugins, run through /api/plugins/queue and read from /api/minion/{id}/detail as
+# on a real server: a job is inactive, then active, then finished. A finished job's new_tags
+# leave out what the archive has by the server's substring test, in its " a, b" form, and
+# nothing is written until a metadata PUT. A PUT holding `mock:locked` answers 423 once.
+PLUGIN_RESULTS = {
+    "mock-tags": {"tags": ["artist:mock plugin", "series:mock series", "language:english"],
+                  "title": "Mock Plugin Title", "summary": "Mock plugin summary"},
+    "mock-oneshot": {"tags": ["mock:oneshot"]},
+    "mock-locked": {"tags": ["mock:locked"]},
+    "mock-none": {"tags": []},
+    "mock-fail": {"error": "Mock plugin failure"},
+    "mock-slow": {"tags": ["mock:slow"], "polls": 40},
+}
+PLUGIN_INFO = [
+    {"name": "Mock Tags", "namespace": "mock-tags", "version": "1.0", "origin": "builtin",
+     "description": "Proposes tags, a title and a summary.<br>With <b>HTML</b>.",
+     "icon": "data:image/png;base64,AAAA",
+     "parameters": [{"type": "string", "desc": "Saved setting", "value": "not for the client"}]},
+    {"name": "Mock Oneshot", "namespace": "mock-oneshot", "version": 2,
+     "description": "Takes an argument.", "oneshot_arg": "<b>Gallery</b> URL:",
+     "parameters": {"named": {"type": "bool", "desc": "Named shape"}}},
+    {"name": "Mock Locked", "namespace": "mock-locked", "version": "1.0",
+     "description": "Its tag makes the first PUT answer 423.", "login_from": "mock-login", "parameters": []},
+    {"name": "Mock None", "namespace": "mock-none", "version": "1.0", "description": "", "parameters": []},
+    {"name": "Mock Fail", "namespace": "mock-fail", "version": "1.0", "description": "", "parameters": []},
+    {"name": "Mock Slow", "namespace": "mock-slow", "version": "1.0", "description": "", "parameters": []},
+]
+JOBS = {}
+LOCK_ONCE = {"mock:locked"}
+
+
+def plugin_job_detail(job):
+    job["polls"] += 1
+    spec = PLUGIN_RESULTS.get(job["plugin"], {"error": "Plugin not found on system."})
+    if job["polls"] == 1:
+        return {"id": job["id"], "state": "inactive", "result": None}
+    if job["polls"] <= spec.get("polls", 3) - 1:
+        return {"id": job["id"], "state": "active", "result": None}
+    if "error" in spec:
+        result = {"type": "metadata", "success": 0, "error": spec["error"], "data": {"error": spec["error"]}}
+    else:
+        have = job["arc"]["tags"].upper()
+        data = {"new_tags": ",".join(" " + t for t in spec["tags"] if t.upper() not in have)}
+        for key in ("title", "summary"):
+            if key in spec:
+                data[key] = spec[key]
+        result = {"type": "metadata", "success": 1, "error": None, "data": data}
+    return {"id": job["id"], "state": "finished", "task": "run_plugin", "args": [job["plugin"]], "result": result}
+
+
 class H(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -207,9 +262,38 @@ class H(BaseHTTPRequestHandler):
         sys.stdout.write("%s%s\n" % (fmt % args, auth))
         sys.stdout.flush()
 
+    def _refuses_key(self, parts):
+        """With MOCK_REQUIRE_KEY=1, answers 401 to a keyless call of a route that needs the key."""
+        protected = parts[:2] in (['api', 'plugins'], ['api', 'minion']) or (
+            len(parts) == 4 and parts[:2] == ['api', 'archives'] and parts[3] == 'metadata'
+            and self.command == 'PUT')
+        if REQUIRE_KEY and protected and not self.headers.get('Authorization'):
+            self._json({'error': 'This API is protected and requires login or an API Key.'}, 401)
+            return True
+        return False
+
+    def do_POST(self):
+        u = urlparse(self.path)
+        parts = [p for p in u.path.split('/') if p]
+        if self._refuses_key(parts):
+            return
+        if parts == ['api', 'plugins', 'queue']:
+            q = parse_qs(u.query)
+            arc = next((a for a in ARCHIVES if a['arcid'] == q.get('id', [''])[0]), None)
+            if arc is None:
+                self._json({'error': 'no such archive'}, 400)
+                return
+            job_id = len(JOBS) + 1
+            JOBS[job_id] = {'id': job_id, 'plugin': q.get('plugin', [''])[0], 'arc': arc, 'polls': 0}
+            self._json({'operation': 'queue_plugin_exec', 'success': 1, 'job': job_id})
+        else:
+            self._json({'error': 'unhandled ' + u.path}, 400)
+
     def do_PUT(self):
         u = urlparse(self.path)
         parts = [p for p in u.path.split("/") if p]
+        if self._refuses_key(parts):
+            return
         if (os.environ.get("MOCK_TRACK_PROGRESS") == "1" and len(parts) == 5
                 and parts[:2] == ["api", "archives"] and parts[3] == "progress"):
             arc = next((a for a in ARCHIVES if a["arcid"] == parts[2]), None)
@@ -253,8 +337,14 @@ class H(BaseHTTPRequestHandler):
             f = {k: v[0] for k, v in parse_qs(u.query).items()}
             f.update(form_body(self))
             arc = next((a for a in ARCHIVES if a["arcid"] == parts[2]), None)
+            locked = next((t for t in LOCK_ONCE if t in f.get("tags", "")), None)
             if arc is None:
                 self._json({"error": "no such archive"}, 400)
+            elif locked:
+                LOCK_ONCE.discard(locked)
+                print("METADATA PUT %s refused: 423" % parts[2][:8], flush=True)
+                self._json({"operation": "update_metadata", "success": 0,
+                            "error": "Locked"}, 423)
             else:
                 for k in ("title", "tags", "summary"):
                     if k in f:
@@ -383,10 +473,22 @@ class H(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         q = parse_qs(u.query)
         parts = [p for p in u.path.split("/") if p]
-        if u.path == "/api/info":
+        if self._refuses_key(parts):
+            return
+        if parts == ["api", "plugins", "metadata"]:
+            self._json(PLUGIN_INFO)
+        elif len(parts) == 4 and parts[:2] == ["api", "minion"] and parts[3] == "detail":
+            job = JOBS.get(int(parts[2]))
+            if job is None:
+                self._json({"operation": "minion_job_detail", "success": 0,
+                            "error": "No job with this ID."}, 400)
+            else:
+                self._json(plugin_job_detail(job))
+        elif u.path == "/api/info":
             self._json({
                 "name": "MockLRR", "motd": "", "version": "0.9.8",
-                "version_name": "mock", "version_desc": "", "has_password": "0",
+                "version_name": "mock", "version_desc": "",
+                "has_password": "1" if REQUIRE_KEY else "0",
                 "debug_mode": "0", "nofun_mode": "0", "archives_per_page": "50",
                 "server_resizes_images": "0", "server_tracks_progress": "1",
                 "total_tags_stored": "3", "total_pages_read": "0",

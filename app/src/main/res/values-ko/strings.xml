@@ -973,4 +973,17 @@
     <string name="restore_done_message">아카이브 %1$d개 복원, 다운로드 %2$d개 다시 연결(이 기기에서 찾지 못함 %3$d개), 서버 %4$d개 추가.</string>
     <string name="restore_done_keys">추가된 서버의 API 키를 서버 목록에서 입력하세요.</string>
     <string name="restore_done_restart">앱을 다시 시작합니다.</string>
+    <string name="plugin_tags_fetch">플러그인으로 태그 가져오기</string>
+    <string name="plugin_tags_key_required">이 서버에서 플러그인을 실행하려면 API 키가 필요합니다.</string>
+    <string name="plugin_tags_unsupported">이 서버는 플러그인 실행을 지원하지 않습니다.</string>
+    <string name="plugin_tags_none">이 서버에 설치된 메타데이터 플러그인이 없습니다.</string>
+    <string name="plugin_tags_login_hint">서버에 설정된 로그인 정보를 사용합니다</string>
+    <string name="plugin_tags_running">%1$s 실행 중…</string>
+    <string name="plugin_tags_running_hint">아직 아무것도 저장되지 않았습니다. 언제든지 이 페이지를 나갈 수 있습니다.</string>
+    <string name="plugin_tags_failed">플러그인 실행에 실패했습니다.</string>
+    <string name="plugin_tags_no_new">플러그인이 새 태그를 찾지 못했습니다.</string>
+    <string name="plugin_tags_title_row">제목</string>
+    <string name="plugin_tags_apply">변경 사항 적용 (%1$d)</string>
+    <string name="plugin_tags_busy">서버가 이 아카이브를 처리 중입니다. 다시 시도하세요.</string>
+    <string name="plugin_tags_applied">변경 사항을 적용했습니다</string>
 </resources>

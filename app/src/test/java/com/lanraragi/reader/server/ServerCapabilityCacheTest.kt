@@ -89,6 +89,17 @@ class ServerCapabilityCacheTest {
     }
 
     @Test
+    fun hasPassword_isUnknownUntilInfoIsSeen_andForgottenWithTheServer() {
+        assertNull(ServerCapabilityCache.hasPassword("http://a"))
+        val info = com.lanraragi.reader.client.api.data.LRRServerInfo().apply { hasPassword = true }
+        ServerCapabilityCache.recordServerInfo("http://a", info)
+        assertEquals(true, ServerCapabilityCache.hasPassword("http://a"))
+        assertNull(ServerCapabilityCache.hasPassword("http://b"))
+        ServerCapabilityCache.forget("http://a")
+        assertNull(ServerCapabilityCache.hasPassword("http://a"))
+    }
+
+    @Test
     fun forget_dropsMemoryAndPersistedFactsForThatServerOnly() {
         val store = FakeStore()
         ServerCapabilityCache.attachStore(store)

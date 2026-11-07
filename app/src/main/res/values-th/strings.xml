@@ -966,4 +966,17 @@
     <string name="restore_done_message">กู้คืนอาร์ไคฟ์ %1$d รายการ เชื่อมโยงการดาวน์โหลดใหม่ %2$d รายการ (ไม่พบในอุปกรณ์นี้ %3$d รายการ) เพิ่มเซิร์ฟเวอร์ %4$d รายการ</string>
     <string name="restore_done_keys">ป้อนคีย์ API ของเซิร์ฟเวอร์ที่เพิ่มในรายการเซิร์ฟเวอร์</string>
     <string name="restore_done_restart">แอปจะเริ่มใหม่ตอนนี้</string>
+    <string name="plugin_tags_fetch">ดึงแท็กด้วยปลั๊กอิน</string>
+    <string name="plugin_tags_key_required">เซิร์ฟเวอร์นี้ต้องใช้ API Key เพื่อเรียกใช้ปลั๊กอิน</string>
+    <string name="plugin_tags_unsupported">เซิร์ฟเวอร์นี้ไม่รองรับการเรียกใช้ปลั๊กอิน</string>
+    <string name="plugin_tags_none">เซิร์ฟเวอร์นี้ไม่ได้ติดตั้งปลั๊กอินเมทาดาตา</string>
+    <string name="plugin_tags_login_hint">ใช้การเข้าสู่ระบบที่ตั้งค่าไว้บนเซิร์ฟเวอร์</string>
+    <string name="plugin_tags_running">กำลังเรียกใช้ %1$s…</string>
+    <string name="plugin_tags_running_hint">ยังไม่มีการเขียนข้อมูลใด ๆ คุณออกจากหน้านี้ได้ทุกเมื่อ</string>
+    <string name="plugin_tags_failed">ปลั๊กอินทำงานล้มเหลว</string>
+    <string name="plugin_tags_no_new">ปลั๊กอินไม่พบแท็กใหม่</string>
+    <string name="plugin_tags_title_row">ชื่อเรื่อง</string>
+    <string name="plugin_tags_apply">ใช้การเปลี่ยนแปลง (%1$d)</string>
+    <string name="plugin_tags_busy">เซิร์ฟเวอร์กำลังประมวลผลคลังนี้อยู่ โปรดลองอีกครั้ง</string>
+    <string name="plugin_tags_applied">ใช้การเปลี่ยนแปลงแล้ว</string>
 </resources>

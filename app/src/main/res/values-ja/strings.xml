@@ -902,4 +902,17 @@
     <string name="restore_done_message">アーカイブ %1$d 件を復元、ダウンロード %2$d 件を再リンク（この端末で見つからないもの %3$d 件）、サーバー %4$d 件を追加しました。</string>
     <string name="restore_done_keys">追加したサーバーの API キーをサーバー一覧で入力してください。</string>
     <string name="restore_done_restart">アプリを再起動します。</string>
+    <string name="plugin_tags_fetch">プラグインでタグを取得</string>
+    <string name="plugin_tags_key_required">このサーバーでプラグインを実行するには API キーが必要です。</string>
+    <string name="plugin_tags_unsupported">このサーバーはプラグインの実行に対応していません。</string>
+    <string name="plugin_tags_none">このサーバーにはメタデータプラグインがインストールされていません。</string>
+    <string name="plugin_tags_login_hint">サーバーで設定されたログイン情報を使用します</string>
+    <string name="plugin_tags_running">%1$s を実行中…</string>
+    <string name="plugin_tags_running_hint">まだ何も書き込まれていません。いつでもこのページを離れられます。</string>
+    <string name="plugin_tags_failed">プラグインが失敗しました。</string>
+    <string name="plugin_tags_no_new">プラグインは新しいタグを見つけませんでした。</string>
+    <string name="plugin_tags_title_row">タイトル</string>
+    <string name="plugin_tags_apply">変更を適用（%1$d）</string>
+    <string name="plugin_tags_busy">サーバーはこのアーカイブを処理中です。もう一度お試しください。</string>
+    <string name="plugin_tags_applied">変更を適用しました</string>
 </resources>

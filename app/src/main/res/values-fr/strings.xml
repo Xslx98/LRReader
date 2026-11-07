@@ -1029,4 +1029,17 @@ Cette action est irréversible.</string>
     <string name="restore_done_message">%1$d archives restaurées, %2$d téléchargements reliés (%3$d introuvables sur cet appareil), %4$d serveurs ajoutés.</string>
     <string name="restore_done_keys">Saisissez la clé API de chaque serveur ajouté dans la liste des serveurs.</string>
     <string name="restore_done_restart">L\'application redémarre maintenant.</string>
+    <string name="plugin_tags_fetch">Récupérer les tags via un plugin</string>
+    <string name="plugin_tags_key_required">Ce serveur demande une clé API pour exécuter les plugins.</string>
+    <string name="plugin_tags_unsupported">Ce serveur ne permet pas d\'exécuter des plugins.</string>
+    <string name="plugin_tags_none">Aucun plugin de métadonnées n\'est installé sur ce serveur.</string>
+    <string name="plugin_tags_login_hint">Utilise une connexion configurée sur le serveur</string>
+    <string name="plugin_tags_running">Exécution de %1$s…</string>
+    <string name="plugin_tags_running_hint">Rien n\'est encore écrit. Vous pouvez quitter cette page à tout moment.</string>
+    <string name="plugin_tags_failed">Le plugin a échoué.</string>
+    <string name="plugin_tags_no_new">Le plugin n\'a trouvé aucun nouveau tag.</string>
+    <string name="plugin_tags_title_row">Titre</string>
+    <string name="plugin_tags_apply">Appliquer les modifications (%1$d)</string>
+    <string name="plugin_tags_busy">Le serveur est occupé avec cette archive. Réessayez.</string>
+    <string name="plugin_tags_applied">Modifications appliquées</string>
 </resources>

@@ -1025,4 +1025,17 @@ Esta acción no se puede deshacer.</string>
     <string name="restore_done_message">%1$d archivos restaurados, %2$d descargas vinculadas de nuevo (%3$d no encontradas en este dispositivo), %4$d servidores añadidos.</string>
     <string name="restore_done_keys">Introduce la clave API de cada servidor añadido en la lista de servidores.</string>
     <string name="restore_done_restart">La app se reinicia ahora.</string>
+    <string name="plugin_tags_fetch">Obtener etiquetas con un plugin</string>
+    <string name="plugin_tags_key_required">Este servidor necesita una clave API para ejecutar plugins.</string>
+    <string name="plugin_tags_unsupported">Este servidor no permite ejecutar plugins.</string>
+    <string name="plugin_tags_none">No hay plugins de metadatos instalados en este servidor.</string>
+    <string name="plugin_tags_login_hint">Usa un inicio de sesión configurado en el servidor</string>
+    <string name="plugin_tags_running">Ejecutando %1$s…</string>
+    <string name="plugin_tags_running_hint">Todavía no se ha escrito nada. Puedes salir de esta página en cualquier momento.</string>
+    <string name="plugin_tags_failed">El plugin ha fallado.</string>
+    <string name="plugin_tags_no_new">El plugin no encontró etiquetas nuevas.</string>
+    <string name="plugin_tags_title_row">Título</string>
+    <string name="plugin_tags_apply">Aplicar cambios (%1$d)</string>
+    <string name="plugin_tags_busy">El servidor está ocupado con este archivo. Inténtalo de nuevo.</string>
+    <string name="plugin_tags_applied">Cambios aplicados</string>
 </resources>
