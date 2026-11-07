@@ -355,7 +355,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
     /** A new profile was added as [profile] and is now the active server. */
     data class Added(
         val profile: ServerProfile,
-        val info: LRRServerInfo,
+        val info: ServerIdentity,
         val resolvedUrl: String,
         val usedHttpFallback: Boolean,
     )
@@ -379,7 +379,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
                 // The persisted cleartext flag is the user's consent (audit
                 // C27, ruling R11), not the resolved scheme; LAN hosts need none.
                 add(ServerProfile(0, name, r.resolvedUrl, false, allowCleartext), finalKey)
-                    .map { Added(it, r.info, r.resolvedUrl, r.usedHttpFallback) }
+                    .map { Added(it, r.info.toServerIdentity(), r.resolvedUrl, r.usedHttpFallback) }
         }
     }
 

@@ -9,7 +9,6 @@ D3 com/lanraragi/reader/client/api/PageThumbnailRepository.kt
 D8a com/lanraragi/reader/ui/scene/CategoryListRequest.kt
 D8a com/lanraragi/reader/ui/scene/LRRCategoriesScene.kt
 D8a com/lanraragi/reader/ui/scene/LRRCategoriesViewModel.kt
-D8a com/lanraragi/reader/ui/scene/ServerListViewModel.kt
 D8b com/lanraragi/reader/ui/reader/GalleryStampOps.kt
 D8b com/lanraragi/reader/ui/reader/ReaderStampsController.kt
 D8b com/lanraragi/reader/ui/reader/StampsBackend.kt
