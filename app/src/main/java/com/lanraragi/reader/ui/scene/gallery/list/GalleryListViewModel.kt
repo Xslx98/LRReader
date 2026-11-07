@@ -496,7 +496,7 @@ class GalleryListViewModel : ViewModel() {
                 val conn = connectionFor(profileId)
                 for ((tankId, order) in orders) {
                     try {
-                        tanks.restoreOrder(conn, tankId, order)
+                        tanks.putOrder(conn, tankId, order)
                     } catch (ce: CancellationException) {
                         throw ce
                     } catch (ignored: Exception) {
