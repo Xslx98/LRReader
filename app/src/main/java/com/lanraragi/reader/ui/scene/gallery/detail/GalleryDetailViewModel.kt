@@ -2,7 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.detail
 
 import com.lanraragi.reader.archive.ArchiveRatingWriter
 import com.lanraragi.reader.domain.Tankoubon
-import com.lanraragi.reader.tankoubon.TankListCache
+import com.lanraragi.reader.tankoubon.TankRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.BuildConfig
@@ -11,7 +11,7 @@ import com.lanraragi.reader.dao.toDegradedArchiveDetail
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.client.api.LRRCategoryApi
 import com.lanraragi.reader.client.api.LRRHttpException
-import com.lanraragi.reader.client.api.LRRTankoubonApi
+import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.server.OrphanProfileException
 import com.lanraragi.reader.server.probeSourceHealthy
@@ -25,6 +25,7 @@ import com.lanraragi.reader.reading.LocalReadingProgress
 import com.lanraragi.reader.reading.ReaderPageCache
 import com.lanraragi.reader.reading.ReadingProgressReconciler
 import com.lanraragi.reader.reading.ReadingProgressTracker
+import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.util.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -332,6 +333,9 @@ class GalleryDetailViewModel : ViewModel() {
         return resolveSourceBaseUrl(getSourceProfileId(), cache)
     }
 
+    /** The reverse lookup (it never calls [TankRepository.loadAll]). */
+    private val tanks by lazy { TankRepository(TankMembershipSyncFactory.runnerSafely()::sync) }
+
     /**
      * Reverse-lookup the tankoubons containing this archive, source-profile
      * routed. Silent by design: UNSUPPORTED/404/any failure leaves the list
@@ -342,30 +346,9 @@ class GalleryDetailViewModel : ViewModel() {
         val arcid = getEffectiveArcid() ?: return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val serverUrl = resolveSourceServerUrl()
-                if (TankoubonSupportGate.isUnsupported(serverUrl)) return@launch
-                val client = ServiceRegistry.networkModule.okHttpClient
-                val ids = LRRTankoubonApi.getArchiveTankoubons(client, serverUrl, arcid)
-                // The reverse lookup is a 0.9.8-only route: answering at all
-                // proves support, even with an empty membership.
-                TankoubonSupportGate.markSupported(serverUrl)
-                if (ids.isEmpty()) {
-                    _archiveTankoubons.value = emptyList()
-                    return@launch
-                }
-                // id → name/count via the list endpoint, through a short-lived
-                // per-server cache so each detail open doesn't page the whole
-                // tank list again.
-                val idSet = ids.toSet()
-                val all = TankListCache.get(client, serverUrl)
-                val found = all.filter { it.id in idSet }
-                // A tank created since the cached copy: refresh once.
-                _archiveTankoubons.value = if (found.size < idSet.size) {
-                    TankListCache.invalidate(serverUrl)
-                    TankListCache.get(client, serverUrl).filter { it.id in idSet }
-                } else {
-                    found
-                }
+                val conn = ServerConnections.forProfile(getSourceProfileId())
+                if (TankoubonSupportGate.isUnsupported(conn.baseUrl)) return@launch
+                _archiveTankoubons.value = tanks.tanksContaining(conn, arcid)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {

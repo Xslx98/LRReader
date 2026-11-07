@@ -24,7 +24,7 @@ import kotlinx.coroutines.sync.withPermit
 /**
  * Server-side tankoubon list operations (docs/plan-2.4.0-tank-ux.md, PR-B):
  * the full list load with its side effects, the missing-cover probe,
- * auto-sort, the member fetch a download needs, create and delete. Every call
+ * auto-sort, the member fetch a download needs, the reverse lookup, create and delete. Every call
  * names its server with a [ServerConnection]. Plain suspend functions —
  * callers own feedback; failures propagate as exceptions.
  *
@@ -94,6 +94,34 @@ class TankRepository(
         if (arcid != null) TankoubonSupportGate.markSupported(conn.baseUrl)
         TankListCache.put(conn.baseUrl, tanks)
         return PickerList(tanks, memberIds)
+    }
+
+    /**
+     * The tanks [arcid] is in, for the detail page's row; empty when the
+     * server answered and it is in none. Failures propagate, including the
+     * 404 of a server without the route: the caller decides what that means.
+     */
+    suspend fun tanksContaining(conn: ServerConnection, arcid: String): List<Tankoubon> {
+        val client = conn.client
+        val serverUrl = conn.baseUrl
+        val ids = LRRTankoubonApi.getArchiveTankoubons(client, serverUrl, arcid)
+        // The reverse lookup is a 0.9.8-only route: answering at all
+        // proves support, even with an empty membership.
+        TankoubonSupportGate.markSupported(serverUrl)
+        if (ids.isEmpty()) return emptyList()
+        // id → name/count via the list endpoint, through a short-lived
+        // per-server cache so each detail open doesn't page the whole
+        // tank list again.
+        val idSet = ids.toSet()
+        val all = TankListCache.get(client, serverUrl)
+        val found = all.filter { it.id in idSet }
+        // A tank created since the cached copy: refresh once.
+        return if (found.size < idSet.size) {
+            TankListCache.invalidate(serverUrl)
+            TankListCache.get(client, serverUrl).filter { it.id in idSet }
+        } else {
+            found
+        }
     }
 
     /** GET /api/tankoubons page by page (0-based) until all `total` entries are held. */

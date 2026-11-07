@@ -6,6 +6,7 @@ import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRHttpException
+import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.download.TankMembershipSync
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.TankoubonSupportGate
@@ -330,6 +331,64 @@ class TankRepositoryTest {
         assertTrue(loaded.memberIds.isEmpty())
         assertEquals("/api/tankoubons", server.awaitRequest().path)
         assertEquals(1, server.requestCount)
+        assertEquals(TankoubonSupportGate.Support.UNKNOWN, TankoubonSupportGate.support(baseUrl))
+    }
+
+    // ── reverse lookup ─────────────────────────────────────────────
+
+    private fun reverseJson(vararg ids: String) =
+        """{"tankoubons":[${ids.joinToString(",") { "\"$it\"" }}],"success":1}"""
+
+    @Test
+    fun tanksContaining_inNoTank_isEmptyAndSupported_withoutPagingTheList() = runBlocking {
+        TankoubonSupportGate.clear()
+        server.enqueue(MockResponse().setBody(reverseJson()))
+
+        assertEquals(emptyList<String>(), service.tanksContaining(conn(), arcId(1)).map { it.id })
+
+        assertEquals("/api/archives/${arcId(1)}/tankoubons", server.awaitRequest().path)
+        assertEquals(1, server.requestCount)
+        assertEquals(TankoubonSupportGate.Support.SUPPORTED, TankoubonSupportGate.support(baseUrl))
+    }
+
+    @Test
+    fun tanksContaining_keepsOnlyTheArchivesTanks_andReusesTheCachedList() = runBlocking {
+        val mine = "TANK_0000000115"
+        server.enqueue(MockResponse().setBody(reverseJson(mine)))
+        server.enqueue(MockResponse().setBody(pageJson(2, tankJson(mine, "Mine"), tankJson("TANK_0000000116", "Other"))))
+        server.enqueue(MockResponse().setBody(reverseJson(mine)))
+
+        assertEquals(listOf("Mine"), service.tanksContaining(conn(), arcId(1)).map { it.name })
+        assertEquals(listOf("Mine"), service.tanksContaining(conn(), arcId(1)).map { it.name })
+
+        assertEquals(3, server.requestCount)
+    }
+
+    @Test
+    fun tanksContaining_aTankNewerThanTheCachedList_refreshesTheListOnce() = runBlocking {
+        val old = "TANK_0000000117"
+        val new = "TANK_0000000118"
+        TankListCache.put(baseUrl, listOf(Tankoubon(id = old, name = "Old")))
+        server.enqueue(MockResponse().setBody(reverseJson(old, new)))
+        server.enqueue(MockResponse().setBody(pageJson(2, tankJson(old, "Old"), tankJson(new, "New"))))
+
+        assertEquals(listOf("Old", "New"), service.tanksContaining(conn(), arcId(1)).map { it.name })
+
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun tanksContaining_aMissingRoute_propagatesAndDoesNotClaimSupport() = runBlocking {
+        TankoubonSupportGate.clear()
+        server.enqueue(MockResponse().setResponseCode(404).setBody("{}"))
+
+        try {
+            service.tanksContaining(conn(), arcId(1))
+            fail("a 404 must propagate")
+        } catch (e: LRRHttpException) {
+            assertEquals(404, e.code)
+        }
+
         assertEquals(TankoubonSupportGate.Support.UNKNOWN, TankoubonSupportGate.support(baseUrl))
     }
 
