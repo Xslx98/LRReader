@@ -12,7 +12,7 @@ com.lanraragi.reader.archive       | archive rules and services: search source, 
 com.lanraragi.reader.backup        | backup export/import and download-list relinking
 com.lanraragi.reader.category      | LANraragi category rules and membership service
 com.lanraragi.reader.client        | transport: client.api (LRR*Api, interceptors, DTOs) and client.exception
-com.lanraragi.reader.cover         | cover loading, storage and cache stamps
+com.lanraragi.reader.cover         | cover loading, writing, storage and cache stamps
 com.lanraragi.reader.dao           | Room database, repositories, entity mapping, persisted types
 com.lanraragi.reader.diagnostics   | crash log, diagnostic ring buffer, telemetry
 com.lanraragi.reader.domain        | Archive and other models with pure parsing (no I/O)
