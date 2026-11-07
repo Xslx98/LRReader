@@ -52,7 +52,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
     }
 
     /** The onboarding connect committed: [resolvedUrl] is now the active server. */
-    data class Onboarded(val resolvedUrl: String, val info: LRRServerInfo)
+    data class Onboarded(val resolvedUrl: String, val info: ServerIdentity)
 
     /**
      * Onboarding connect: tests [rawInput] (scheme detection, HTTPS->HTTP
@@ -132,7 +132,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             Log.e(TAG, "Failed to persist profile on connect success", e)
             return Outcome.Failed(e)
         }
-        return Outcome.Done(Onboarded(resolvedUrl, info))
+        return Outcome.Done(Onboarded(resolvedUrl, info.toServerIdentity()))
     }
 
     /** How a server switch ended. */
