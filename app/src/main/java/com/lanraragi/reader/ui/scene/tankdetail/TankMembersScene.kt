@@ -24,6 +24,7 @@ import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.download.TankFillDispatcher
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.cover.TankCoverCacheStamp
+import com.lanraragi.reader.cover.TankCovers
 import com.lanraragi.reader.reading.TankMemberSeed
 import com.lanraragi.reader.reading.GalleryProvider2
 import com.lanraragi.reader.reading.TankPageMath
@@ -37,7 +38,6 @@ import com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.ui.collectFlowWhileCreated
 import com.lanraragi.reader.widget.LoadImageViewNew
-import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import java.util.Collections
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -715,7 +715,7 @@ class TankMembersScene : BaseScene() {
         } else {
             val bust = TankCoverCacheStamp.get(tankId)
             key = LRRCacheKeyFactory.getThumbKey("$tankId#$bust")
-            url = LRRTankoubonApi.getTankoubonThumbnailUrl(baseUrl, tankId, cacheBust = bust)
+            url = TankCovers.url(baseUrl, tankId, cacheBust = bust)
         }
         val binding = "$key|$url"
         if (binding == mCoverBoundUrl) return

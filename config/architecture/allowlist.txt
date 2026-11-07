@@ -16,7 +16,6 @@ D8b com/lanraragi/reader/ui/reader/GalleryStampOps.kt
 D8b com/lanraragi/reader/ui/reader/ReaderStampsController.kt
 D8b com/lanraragi/reader/ui/reader/StampsBackend.kt
 D8b com/lanraragi/reader/ui/reader/TankStampsBackend.kt
-D8b com/lanraragi/reader/ui/scene/tankdetail/TankMembersScene.kt
 D8b com/lanraragi/reader/ui/scene/tankdetail/TankMembersViewModel.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions.kt
 D8b com/lanraragi/reader/ui/scene/gallery/detail/DetailTankoubonBinder.kt
