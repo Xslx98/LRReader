@@ -36,6 +36,25 @@ class DetailEditActions(
         }
     }
 
+    /** Same visibility as the tag editor. The scene explains a missing key; a confirmed apply refreshes the page. */
+    fun bindPluginTagsButton(button: ImageButton?) {
+        button?.let { btn ->
+            btn.visibility = if (ServerSession.getServerUrl() != null) View.VISIBLE else View.GONE
+            btn.setOnClickListener { openPluginTags() }
+        }
+    }
+
+    private fun openPluginTags() {
+        val archive = viewModel.getEffectiveArchive() ?: return
+        // The source profile comes from the nav arg, not the possibly cached detail;
+        // the scene has no use for the tag map.
+        val args = PluginTagScene.args(
+            archive.copy(tags = emptyMap(), serverProfileId = viewModel.getSourceProfileId()),
+            PluginTagScene.resultKey(scene.tag),
+        )
+        scene.startScene(Announcer(PluginTagScene::class.java).setArgs(args))
+    }
+
     fun openTankoubonDetail(tank: Tankoubon) {
         val args = Bundle().apply {
             putString(TankMembersScene.KEY_TANK_ID, tank.id)

@@ -931,4 +931,17 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="restore_done_message">%1$d Archive wiederhergestellt, %2$d Downloads neu verknüpft (%3$d auf diesem Gerät nicht gefunden), %4$d Server hinzugefügt.</string>
     <string name="restore_done_keys">Gib in der Serverliste den API-Schlüssel jedes hinzugefügten Servers ein.</string>
     <string name="restore_done_restart">Die App startet jetzt neu.</string>
+    <string name="plugin_tags_fetch">Tags per Plugin abrufen</string>
+    <string name="plugin_tags_key_required">Dieser Server verlangt einen API-Schlüssel, um Plugins auszuführen.</string>
+    <string name="plugin_tags_unsupported">Dieser Server unterstützt das Ausführen von Plugins nicht.</string>
+    <string name="plugin_tags_none">Auf diesem Server sind keine Metadaten-Plugins installiert.</string>
+    <string name="plugin_tags_login_hint">Verwendet eine auf dem Server eingerichtete Anmeldung</string>
+    <string name="plugin_tags_running">%1$s wird ausgeführt…</string>
+    <string name="plugin_tags_running_hint">Noch wurde nichts geschrieben. Du kannst diese Seite jederzeit verlassen.</string>
+    <string name="plugin_tags_failed">Das Plugin ist fehlgeschlagen.</string>
+    <string name="plugin_tags_no_new">Das Plugin hat keine neuen Tags gefunden.</string>
+    <string name="plugin_tags_title_row">Titel</string>
+    <string name="plugin_tags_apply">Änderungen anwenden (%1$d)</string>
+    <string name="plugin_tags_busy">Der Server ist mit diesem Archiv beschäftigt. Versuche es erneut.</string>
+    <string name="plugin_tags_applied">Änderungen angewendet</string>
 </resources>

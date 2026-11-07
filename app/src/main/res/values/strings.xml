@@ -1055,4 +1055,17 @@
     <string name="restore_done_message">Archives restored: %1$d\nDownloads re-linked: %2$d\nDownloads not found on this device: %3$d\nServers added: %4$d</string>
     <string name="restore_done_keys">Enter the API key of each added server in the server list.</string>
     <string name="restore_done_restart">The app restarts now.</string>
+    <string name="plugin_tags_fetch">Fetch tags from plugin</string>
+    <string name="plugin_tags_key_required">This server needs an API key to run plugins.</string>
+    <string name="plugin_tags_unsupported">This server does not support running plugins.</string>
+    <string name="plugin_tags_none">No metadata plugins are installed on this server.</string>
+    <string name="plugin_tags_login_hint">Signs in with a login set up on the server</string>
+    <string name="plugin_tags_running">Running %1$s…</string>
+    <string name="plugin_tags_running_hint">Nothing is written yet. You can leave this page at any time.</string>
+    <string name="plugin_tags_failed">The plugin failed.</string>
+    <string name="plugin_tags_no_new">The plugin found no new tags.</string>
+    <string name="plugin_tags_title_row">Title</string>
+    <string name="plugin_tags_apply">Apply changes (%1$d)</string>
+    <string name="plugin_tags_busy">The server is busy with this archive. Try again.</string>
+    <string name="plugin_tags_applied">Changes applied</string>
 </resources>
