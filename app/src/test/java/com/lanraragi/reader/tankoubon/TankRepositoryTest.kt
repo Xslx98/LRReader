@@ -260,6 +260,23 @@ class TankRepositoryTest {
     }
 
     @Test
+    fun detail_neverWritesTheTanksTags() = runBlocking {
+        // An untagged tank with tagged members: only the tank detail page auto-fills (spec 2026-09-22 §4.5).
+        server.enqueue(
+            MockResponse().setBody(
+                """{"result":{"id":"TANK_0000000115","name":"Alpha","archives":["${arcId(1)}"],""" +
+                    """"full_data":[{"arcid":"${arcId(1)}","title":"A","tags":"artist:x","pagecount":3}],""" +
+                    """"summary":null,"tags":null,"progress":0},"total":1,"filtered":1}"""
+            )
+        )
+
+        val (tank, _) = service.detail(conn(), "TANK_0000000115")
+
+        assertNull(tank.tags)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     fun autoSort_putsEpisodeOrder_andReturnsThePreviousOrder() = runBlocking {
         val id = "TANK_0000000110"
         server.enqueue(MockResponse().setBody(fullJson(id, arcId(1) to "第2话", arcId(2) to "番外", arcId(3) to "第1话")))
