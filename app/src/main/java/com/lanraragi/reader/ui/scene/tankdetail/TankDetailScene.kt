@@ -30,8 +30,8 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
+import com.lanraragi.reader.cover.TankCovers
 import com.lanraragi.reader.server.ServerSession
-import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.buildRatingEmoji
 import com.lanraragi.reader.dao.DownloadState
@@ -403,7 +403,7 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         } else {
             val base = s.baseUrl ?: return
             key = LRRCacheKeyFactory.getThumbKey(s.tankId)
-            url = ArchiveCoverStamps.bust(LRRTankoubonApi.getTankoubonThumbnailUrl(base, s.tankId), s.tankId)
+            url = ArchiveCoverStamps.bust(TankCovers.url(base, s.tankId), s.tankId)
         }
         val binding = "$key|$url"
         if (binding == mCoverBinding) return
