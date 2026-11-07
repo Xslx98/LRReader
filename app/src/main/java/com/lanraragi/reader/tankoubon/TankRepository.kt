@@ -26,7 +26,7 @@ import kotlinx.coroutines.sync.withPermit
  * Server-side tankoubon list operations (docs/plan-2.4.0-tank-ux.md, PR-B):
  * the full list load with its side effects, the missing-cover probe,
  * auto-sort, the member fetch a download needs, the reverse lookup, create and delete,
- * plus the single-tank reads and writes of the member management page. Every call
+ * plus the single-tank reads and writes of the tank detail and member management pages. Every call
  * names its server with a [ServerConnection]. Plain suspend functions —
  * callers own feedback; failures propagate as exceptions.
  *
@@ -77,7 +77,7 @@ class TankRepository(
     }
 
     /**
-     * The tank and its members (in tank order) for the member management page. Member ORDER
+     * The tank and its members (in tank order) for the tank detail and member management pages. Member ORDER
      * is `archives` (the same list a reorder PUTs); `full_data` is only the
      * metadata lookup, never trusted for order, and members it holds that
      * `archives` lacks follow at the end. Members are mapped with [conn] as
@@ -347,7 +347,7 @@ class TankRepository(
 
     /**
      * Only the server DELETE, without [delete]'s follow-ups, for a caller
-     * that runs its own sequence around it (the member management page).
+     * that runs its own sequence around it (the tank detail and member management pages).
      */
     suspend fun deleteOnly(conn: ServerConnection, tankId: String) {
         LRRTankoubonApi.deleteTankoubon(conn.client, conn.baseUrl, tankId)
