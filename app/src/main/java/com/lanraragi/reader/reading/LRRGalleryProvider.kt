@@ -8,6 +8,7 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.LRRArchiveApi
 import com.lanraragi.reader.diagnostics.DiagLog
+import com.lanraragi.reader.domain.ReaderChapterList
 import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.server.resolveSourceBaseUrl
@@ -352,6 +353,9 @@ class LRRGalleryProvider(
 
                 // Resolve reading progress from server metadata (may already be available)
                 val metadata = metadataDeferred.await()
+                metadata?.let {
+                    publishChapters(ReaderChapterList(ChapterIndex.fromToc(it.toc, pages.size)))
+                }
                 var serverPage = startPageValue
                 Log.i(TAG, "[PROGRESS] Local SP page=$startPageValue for arcid=$arcId")
 
