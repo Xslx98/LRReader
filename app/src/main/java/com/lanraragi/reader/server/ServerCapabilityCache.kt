@@ -19,6 +19,9 @@ import java.util.concurrent.ConcurrentHashMap
  *   copy lets the offline reading-stats page apply the same exclusions to
  *   locally stored tag snapshots. Backed by an optional [Store] so the value
  *   survives process death (an `/api/info` round-trip only happens on connect).
+ * - `has_password`: whether the server asks for a key at all, which decides
+ *   if a key-only feature can run on a profile without one. In-memory only:
+ *   unknown means "try it", and a 401 answers that.
  *
  * Keyed by base URL so multi-server setups stay correct; populated by
  * [LRRServerApi.getServerInfo].
@@ -35,6 +38,7 @@ object ServerCapabilityCache {
     }
 
     private val tracksProgress = ConcurrentHashMap<String, Boolean>()
+    private val hasPassword = ConcurrentHashMap<String, Boolean>()
     private val excludedNamespaces = ConcurrentHashMap<String, Set<String>>()
     private val serverSummaries = ConcurrentHashMap<String, String>()
 
@@ -49,6 +53,7 @@ object ServerCapabilityCache {
     /** Single entry point for everything `/api/info` teaches us about [baseUrl]. */
     fun recordServerInfo(baseUrl: String, info: LRRServerInfo) {
         setTracksProgress(baseUrl, info.serverTracksProgress)
+        hasPassword[baseUrl] = info.hasPassword
         serverSummaries[baseUrl] = com.lanraragi.reader.diagnostics.Redactor.redact(summarize(info))
         setExcludedNamespaces(baseUrl, info.excludedNamespaces)
     }
@@ -77,6 +82,12 @@ object ServerCapabilityCache {
      */
     fun tracksProgress(baseUrl: String): Boolean? = tracksProgress[baseUrl]
 
+    /**
+     * @return whether the server at [baseUrl] asks for a key, or null if no
+     *   `/api/info` has been observed for it in this process.
+     */
+    fun hasPassword(baseUrl: String): Boolean? = hasPassword[baseUrl]
+
     /** Normalizes to trimmed lowercase (LANraragi tag namespaces are lowercase). */
     fun setExcludedNamespaces(baseUrl: String, namespaces: Collection<String>) {
         val normalized = namespaces.mapTo(LinkedHashSet()) { it.trim().lowercase() }
@@ -97,6 +108,7 @@ object ServerCapabilityCache {
     /** Drops every fact about [baseUrl], persisted ones included (audit SEC-16). */
     fun forget(baseUrl: String) {
         tracksProgress.remove(baseUrl)
+        hasPassword.remove(baseUrl)
         serverSummaries.remove(baseUrl)
         excludedNamespaces.remove(baseUrl)
         store?.forget(baseUrl)
@@ -105,6 +117,7 @@ object ServerCapabilityCache {
     /** Drops in-memory facts only; an attached [Store] keeps its contents. */
     fun clear() {
         tracksProgress.clear()
+        hasPassword.clear()
         serverSummaries.clear()
         excludedNamespaces.clear()
     }
