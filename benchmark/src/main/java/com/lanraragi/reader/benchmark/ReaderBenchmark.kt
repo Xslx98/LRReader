@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 
 /**
  * Twenty page turns in the reader: decode, GL frame and tile-upload sections
- * (com.lanraragi.reader.util.TraceSections) plus peak memory. GLSurfaceView
+ * (com.lanraragi.framework.util.TraceSections) plus peak memory. GLSurfaceView
  * frames are invisible to FrameTimingMetric, hence the glFrame section.
  */
 @OptIn(ExperimentalMetricApi::class)

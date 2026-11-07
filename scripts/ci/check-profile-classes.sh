@@ -19,6 +19,7 @@ PROFILE=app/src/main/baseline-prof.txt
 MIN_PERCENT=95
 KOTLIN_DIR=app/build/tmp/kotlin-classes/appReleaseDebug
 JAVAC_DIR=app/build/intermediates/javac/appReleaseDebug/compileAppReleaseDebugJavaWithJavac/classes
+FRAMEWORK_DIR=framework/build/tmp/kotlin-classes/debug
 MODULE=app_appReleaseRelease
 MAPPING=app/build/outputs/mapping/appReleaseRelease/mapping.txt
 
@@ -30,10 +31,27 @@ if [ -n "$WRONG_MODULE" ]; then
   echo "::error::baseline-prof.txt has $(wc -l <<< "$WRONG_MODULE") rules whose internal members are not named for module $MODULE, e.g.: $(head -n1 <<< "$WRONG_MODULE")"
   exit 1
 fi
+# :framework has one module name for every release-like variant of :app. A rule on
+# a framework class must carry it, and a rule on an app class must not.
+FRAMEWORK_MODULE=framework_release
+WRONG_OWNER=$(grep -E "^[A-Z]*Lcom/lanraragi/framework/[^;]*;->[^(]*\\\$app_|^[A-Z]*Lcom/lanraragi/reader/[^;]*;->[^(]*\\\$framework_" "$PROFILE" || true)
+if [ -n "$WRONG_OWNER" ]; then
+  echo "::error::baseline-prof.txt has $(wc -l <<< "$WRONG_OWNER") rules whose internal members name the wrong module, e.g.: $(head -n1 <<< "$WRONG_OWNER")"
+  exit 1
+fi
+WRONG_FRAMEWORK=$(grep -E '\$framework_[A-Za-z0-9]+' "$PROFILE" | grep -vE "\\\$${FRAMEWORK_MODULE}([^A-Za-z0-9]|\$)" || true)
+if [ -n "$WRONG_FRAMEWORK" ]; then
+  echo "::error::baseline-prof.txt has $(wc -l <<< "$WRONG_FRAMEWORK") rules not named for module $FRAMEWORK_MODULE, e.g.: $(head -n1 <<< "$WRONG_FRAMEWORK")"
+  exit 1
+fi
 # The pin above is a literal: catch the shipped module being renamed from under
 # it. Only a release build has a mapping, so the debug-only CI job skips this.
 if [ -f "$MAPPING" ] && ! grep -qF "\$$MODULE" "$MAPPING"; then
   echo "::error::$MAPPING names no \$$MODULE member; the shipped module was renamed, update app/build.gradle and baseline-prof.txt"
+  exit 1
+fi
+if [ -f "$MAPPING" ] && ! grep -qF "\$$FRAMEWORK_MODULE" "$MAPPING"; then
+  echo "::error::$MAPPING names no \$$FRAMEWORK_MODULE member; update baseline-prof.txt"
   exit 1
 fi
 
@@ -44,7 +62,7 @@ fi
 
 CLASSES=$(mktemp)
 trap 'rm -f "$CLASSES"' EXIT
-for dir in "$KOTLIN_DIR" "$JAVAC_DIR"; do
+for dir in "$KOTLIN_DIR" "$JAVAC_DIR" "$FRAMEWORK_DIR"; do
   [ -d "$dir" ] || continue
   (cd "$dir" && find com -name '*.class') | sed 's/\.class$//'
 done | sort -u > "$CLASSES"

@@ -164,23 +164,25 @@ The Debug APK lands in `app/build/outputs/apk/appRelease/debug/`. A signed relea
 LRReader/
 ├── app/src/main/
 │   ├── java/
-│   │   ├── com/lanraragi/reader/       # Business code (Kotlin)
-│   │   │   ├── client/api/             # LANraragi REST client (LRRArchiveApi, LRRTankoubonApi, …)
-│   │   │   ├── dao/                    # Room Database (AppDatabase.kt, schema v31)
-│   │   │   ├── domain/                 # Domain models (Archive, …)
-│   │   │   ├── download/               # Download subsystem (DownloadManager facade, worker)
-│   │   │   ├── gallery/                # Reader providers (streaming / local dir / hybrid / tankoubon)
-│   │   │   ├── tankoubon/              # Tankoubon rules: member sorting, tag/category sync, retries
-│   │   │   ├── backup/                 # Backup export / restore (JSON, merge)
-│   │   │   ├── diagnostics/            # Local crash reports + share-diagnostics zip
-│   │   │   ├── settings/               # Modular settings (Privacy, Network, Reading, …)
-│   │   │   ├── stats/                  # Reading statistics + daily aggregate
-│   │   │   ├── ui/                     # Activities, Scenes, ViewModels
-│   │   │   └── ServiceRegistry.kt      # Module registry (network / data / coroutine …)
-│   │   └── com/lanraragi/framework/    # Reader GL view system, scene stack, widgets (Kotlin, from EhViewer)
-│   ├── cpp/                            # Minimal JNI helper (GL texture upload)
+│   │   └── com/lanraragi/reader/       # Business code (Kotlin)
+│   │       ├── client/api/             # LANraragi REST client (LRRArchiveApi, LRRTankoubonApi, …)
+│   │       ├── dao/                    # Room Database (AppDatabase.kt, schema v31)
+│   │       ├── domain/                 # Domain models (Archive, …)
+│   │       ├── download/               # Download subsystem (DownloadManager facade, worker)
+│   │       ├── gallery/                # Reader providers (streaming / local dir / hybrid / tankoubon)
+│   │       ├── tankoubon/              # Tankoubon rules: member sorting, tag/category sync, retries
+│   │       ├── backup/                 # Backup export / restore (JSON, merge)
+│   │       ├── diagnostics/            # Local crash reports + share-diagnostics zip
+│   │       ├── settings/               # Modular settings (Privacy, Network, Reading, …)
+│   │       ├── stats/                  # Reading statistics + daily aggregate
+│   │       ├── ui/                     # Activities, Scenes, ViewModels
+│   │       └── ServiceRegistry.kt      # Module registry (network / data / coroutine …)
 │   ├── res/                            # Resources (10 languages)
 │   └── assets/                         # Open-source license page
+├── framework/src/main/
+│   ├── java/com/lanraragi/framework/   # Reader GL view system, scene stack, widgets (Kotlin, from EhViewer)
+│   ├── cpp/                            # Minimal JNI helper (GL texture upload)
+│   └── res/                            # Resources the framework itself reads
 ├── fastlane/metadata/android/          # Store metadata + per-release changelogs
 ├── scripts/                            # ci-check.sh and the CI gate scripts
 ├── .github/                            # Workflows, issue / PR templates, Dependabot

@@ -26,7 +26,7 @@ import android.util.Log
 import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.dao.*
 import com.lanraragi.reader.dao.toArchiveJson
-import com.lanraragi.reader.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import com.lanraragi.reader.domain.Archive
 
 /**

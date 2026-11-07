@@ -9,7 +9,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 BASE="${1:-origin/main}"
-./gradlew app:assembleAppReleaseDebug app:testAppReleaseDebugUnitTest app:lintAppReleaseDebug \
+./gradlew app:assembleAppReleaseDebug app:testAppReleaseDebugUnitTest :framework:testDebugUnitTest \
+  app:lintAppReleaseDebug :framework:lintDebug \
   detektMain :app:assembleAppReleaseRelease app:jacocoTestReport
 bash scripts/ci/check-schemas.sh
 bash scripts/ci/check-baselines.sh "$BASE"

@@ -11,8 +11,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.lanraragi.framework.lib.glgallery.GalleryView
-import com.lanraragi.reader.util.MathUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.MathUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.framework.widget.ColorView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.ReadingSettings

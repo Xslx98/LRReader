@@ -54,7 +54,7 @@ import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.ui.GalleryActivity
 import com.lanraragi.reader.storage.StorageFile
-import com.lanraragi.reader.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -146,7 +146,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
                 )
             } catch (e: Throwable) {
                 ExceptionUtils.throwIfFatal(e)
-                Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+                Toast.makeText(mActivity, com.lanraragi.framework.R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -288,7 +288,7 @@ class GalleryImageOperations(private val mActivity: Activity) {
                 saveToLauncher?.launch(intent)
             } catch (e: Throwable) {
                 ExceptionUtils.throwIfFatal(e)
-                Toast.makeText(mActivity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+                Toast.makeText(mActivity, com.lanraragi.framework.R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -40,7 +40,7 @@ import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.backup.readDownloadCsv
 import com.lanraragi.reader.backup.toCSV
 import com.lanraragi.reader.storage.StorageFile
-import com.lanraragi.reader.util.ExceptionUtils
+import com.lanraragi.framework.util.ExceptionUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -185,7 +185,7 @@ class DownloadFragment : PreferenceFragmentCompat(),
             importFileLauncher.launch(intent)
         } catch (e: Throwable) {
             ExceptionUtils.throwIfFatal(e)
-            Toast.makeText(activity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, com.lanraragi.framework.R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
         }
     }
 

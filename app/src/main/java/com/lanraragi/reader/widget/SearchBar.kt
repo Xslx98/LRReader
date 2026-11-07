@@ -31,7 +31,7 @@ import android.content.res.ColorStateList
 import androidx.core.graphics.withSave
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -62,10 +62,10 @@ import com.lanraragi.reader.tagtranslation.TagTranslationDatabase.Companion.NAME
 import com.lanraragi.reader.client.api.LRRTagCache
 import com.lanraragi.reader.settings.AppearanceSettings
 import kotlinx.coroutines.launch
-import com.lanraragi.reader.util.AnimationUtils
-import com.lanraragi.reader.util.MathUtils
+import com.lanraragi.framework.util.AnimationUtils
+import com.lanraragi.framework.util.MathUtils
 import android.animation.AnimatorListenerAdapter
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 
 class SearchBar : CardView,
     View.OnClickListener,

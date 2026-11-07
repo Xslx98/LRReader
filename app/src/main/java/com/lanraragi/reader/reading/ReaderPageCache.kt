@@ -48,7 +48,7 @@ import java.io.IOException
  * will open next. Bounded to one entry with a 10-second TTL — the slot
  * is the bridge across an Activity launch, not a general image cache.
  */
-object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
+object ReaderPageCache : Cacheable, com.lanraragi.framework.util.MemoryTrimmable {
 
     private const val TAG = "ReaderPageCache"
     private const val CACHE_PARENT = "lrr_pages"
@@ -596,7 +596,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.reader.util.MemoryTrimmable {
     }
 
     /** Audit C12: the decoded warm-up slot (10-30 MB) is the first thing to go. */
-    override fun onTrimMemory(action: com.lanraragi.reader.util.MemoryTrim.Action) = clearCache()
+    override fun onTrimMemory(action: com.lanraragi.framework.util.MemoryTrim.Action) = clearCache()
 
     // ---- Directory-source warmup ----
 

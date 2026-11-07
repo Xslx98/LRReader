@@ -6,7 +6,7 @@ import android.graphics.Color
 import android.util.SparseArray
 import android.view.View
 import android.widget.TextView
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.server.ServerSession

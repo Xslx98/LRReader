@@ -36,7 +36,7 @@ import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 import com.lanraragi.reader.settings.AppLockGate
 import com.lanraragi.reader.settings.PatternConfirmFlow
 import com.lanraragi.reader.settings.SecuritySettings
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.framework.widget.lockpattern.LockPatternView
 import com.lanraragi.reader.shortcuts.ContinueReadingShortcut
 

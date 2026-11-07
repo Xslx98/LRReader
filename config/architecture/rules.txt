@@ -12,12 +12,12 @@
 #            about the app. The reader (GalleryActivity + providers) has no ViewModel
 #            on purpose.
 
-# D1 The framework (GL reader engine, scene stack, generic views) does not know the app:
-#    only the app's R class and the leaf util package.
-D1  | ^com\.lanraragi\.framework(\.|$)       | import | ^com\.lanraragi\.reader\.             | ^com\.lanraragi\.reader\.(R|util\..+)$
+# D1 The framework (GL reader engine, scene stack, generic views) does not know the app.
+#    :framework cannot see :app, so the compiler enforces this too; the rule still reads
+#    fully qualified references and keeps the reason next to the others.
+D1  | ^com\.lanraragi\.framework(\.|$)       | import | ^com\.lanraragi\.reader(\.|$)         | -
 
-# D2 reader.util is a leaf: anything it imports from the app would make the framework
-#    depend on the app through it.
+# D2 reader.util is a leaf, usable from anywhere in the app.
 D2  | ^com\.lanraragi\.reader\.util$           | import | ^com\.lanraragi\.reader\.             | ^com\.lanraragi\.reader\.(R|util\..+)$
 
 # D3 client.api is transport only (LRR*Api objects, interceptors, DTOs): no UI, no
@@ -55,3 +55,6 @@ D10b | ^com\.lanraragi\.reader\.ui(\.|$)       | text   | ViewModelProvider\(req
 #    Scene args or keep it on a ViewModel. Only the module that implements it is exempt; the
 #    Application's forwarders and their one caller are in the allowlist until both go.
 D11 | ^com\.lanraragi\.reader(\.(?!module$)\w+|$) | text | \b(put|remove)GlobalStuff\( | -
+
+# D12 framework.util is a leaf: the rest of the framework and the app build on it.
+D12 | ^com\.lanraragi\.framework\.util$       | import | ^com\.lanraragi\.                     | ^com\.lanraragi\.framework\.util\..+$

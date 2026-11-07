@@ -46,7 +46,6 @@
     <string name="error_redirection">太多重定向</string>
     <string name="error_socket">网络错误</string>
     <string name="error_unknown">奇怪的错误</string>
-    <string name="error_cant_find_activity">找不到相应的应用</string>
     <string name="error_cannot_parse_the_url">无法解析链接</string>
     <string name="error_not_folder_path">非文件夹路径</string>
     <string name="error_decoding_failed">解码失败</string>

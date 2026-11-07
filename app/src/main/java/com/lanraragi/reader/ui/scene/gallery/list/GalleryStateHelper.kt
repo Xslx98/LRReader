@@ -11,7 +11,7 @@ import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.SearchLayout
-import com.lanraragi.reader.util.AnimationUtils
+import com.lanraragi.framework.util.AnimationUtils
 import android.animation.AnimatorListenerAdapter
 
 /**

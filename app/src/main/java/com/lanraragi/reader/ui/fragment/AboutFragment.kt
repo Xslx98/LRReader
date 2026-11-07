@@ -101,7 +101,7 @@ class AboutFragment : BasePreferenceFragmentCompat(),
         try {
             activity.startActivity(intent)
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(activity, R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, com.lanraragi.framework.R.string.error_cant_find_activity, Toast.LENGTH_SHORT).show()
         }
     }
 

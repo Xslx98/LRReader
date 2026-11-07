@@ -5,8 +5,8 @@ import android.graphics.Color
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.lanraragi.reader.util.attrColor
-import com.lanraragi.reader.util.isLightTheme
+import com.lanraragi.framework.util.attrColor
+import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.widget.list.HandlerDrawable

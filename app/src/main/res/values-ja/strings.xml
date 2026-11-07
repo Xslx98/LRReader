@@ -39,7 +39,6 @@
     <string name="error_redirection">リダイレクトが多すぎます</string>
     <string name="error_socket">ネットワーク接続エラー</string>
     <string name="error_unknown">不明なエラー</string>
-    <string name="error_cant_find_activity">アクティビティが見つかりません</string>
     <string name="error_cannot_parse_the_url">リンクを解析できません</string>
     <string name="error_not_folder_path">フォルダが見つかりません</string>
     <string name="error_decoding_failed">デコードに失敗しました</string>

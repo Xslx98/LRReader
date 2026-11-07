@@ -21,8 +21,8 @@ them from `build.gradle` as `libs.<alias>`; never hard-code a version.
 git clone https://github.com/Xslx98/LRReader.git
 cd LRReader
 ./gradlew :app:assembleAppReleaseDebug          # debug APK (arm64 + x86_64)
-./gradlew app:testAppReleaseDebugUnitTest       # unit tests (Robolectric)
-./gradlew app:lintAppReleaseDebug               # Android lint
+./gradlew app:testAppReleaseDebugUnitTest :framework:testDebugUnitTest   # unit tests (Robolectric)
+./gradlew app:lintAppReleaseDebug :framework:lintDebug                   # Android lint
 ./gradlew detekt detektMain                     # static analysis
 bash scripts/ci-check.sh                        # every CI gate, locally
 ```
@@ -49,18 +49,20 @@ command-line tools.
 
 ## Project layout
 
-One Gradle module, `app/`:
+Two Gradle modules. `app/` depends on `framework/`, and the framework cannot see the
+app:
 
-- `com.lanraragi.reader.*` — application code, 100% Kotlin.
+- `app/`: `com.lanraragi.reader.*` — application code, 100% Kotlin.
   - `client/api/` — every LANraragi REST call and its `@Serializable` DTOs.
   - `dao/` — Room entities, DAOs and migrations (`AppDatabase` is the only database).
   - `download/` — the download engine; other packages go through `DownloadManager`
     and never use `DownloadRepository`, `DownloadScheduler` or `DownloadEventBus`.
   - `ui/scene/` — screens (scenes) and their ViewModels.
-- `com.lanraragi.framework.*` — the reader's OpenGL ES view system and page
-  gallery (`lib/glview`, `lib/glgallery`), the scene stack (`scene`) and a few
-  widgets, inherited from EhViewer and converted to Kotlin. Its render, layout
-  and touch paths run every frame: no allocations, boxing or lambdas there.
+- `framework/`: `com.lanraragi.framework.*` — the reader's OpenGL ES view system
+  and page gallery (`lib/glview`, `lib/glgallery`), the scene stack (`scene`), a few
+  widgets and the helpers they use (`util`), inherited from EhViewer and converted
+  to Kotlin, with their resources and the JNI library. Its render, layout and touch
+  paths run every frame: no allocations, boxing or lambdas there.
 - `app/schemas/` — exported Room schemas; CI fails when they drift.
 - `config/architecture/packages.txt` — every top-level package and what it
   holds. A source file outside these packages fails the build: a new package
@@ -134,7 +136,7 @@ One Gradle module, `app/`:
 ### Static analysis
 
 - detekt runs with `maxIssues: 0` and a baseline. Fix new findings; do not add
-  entries to `config/detekt/baseline*.xml` or to the lint baseline.
+  entries to `config/detekt/baseline*.xml` or to a module's lint baseline.
 
 ## Tests
 

@@ -39,8 +39,8 @@ class ClientModule(
         ServiceRegistry.registerCacheable(ReaderPageCache)
         ServiceRegistry.registerCacheable(PageThumbnailCache)
         // Memory pressure (audit C12); the reader GalleryProvider registers itself.
-        com.lanraragi.reader.util.MemoryTrim.register(ReaderPageCache)
-        com.lanraragi.reader.util.MemoryTrim.register(PageThumbnailCache)
+        com.lanraragi.framework.util.MemoryTrim.register(ReaderPageCache)
+        com.lanraragi.framework.util.MemoryTrim.register(PageThumbnailCache)
     }
 
     override val coverImageLoader: ImageLoader by lazy {
@@ -88,7 +88,7 @@ class ClientModule(
         private const val DISK_HIGH = 320 * MB
 
         internal fun memoryCacheMaxSize(): Int = thumbMemoryCacheSize(
-            com.lanraragi.reader.util.OSUtils.getTotalMemory(),
+            com.lanraragi.framework.util.OSUtils.getTotalMemory(),
             com.lanraragi.reader.DeviceMemory.isLowRamDevice(),
         ).toInt()
 
@@ -108,7 +108,7 @@ class ClientModule(
             .thumbs(
                 context,
                 tieredDiskCacheSize(
-                    com.lanraragi.reader.util.OSUtils.getTotalMemory(),
+                    com.lanraragi.framework.util.OSUtils.getTotalMemory(),
                     com.lanraragi.reader.DeviceMemory.isLowRamDevice(),
                 ),
             ).toInt()

@@ -4,6 +4,9 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import com.lanraragi.framework.util.IntIdGenerator
+import com.lanraragi.framework.util.IntList
+import com.lanraragi.framework.util.MathUtils
 
 /**
  * The yorozuya helpers ported to reader.util (2.4 P3) keep their results:

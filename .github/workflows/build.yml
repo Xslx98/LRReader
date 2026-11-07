@@ -72,7 +72,7 @@ jobs:
         run: bash scripts/ci/check-schemas.sh
 
       - name: Lint
-        run: ./gradlew app:lintAppReleaseDebug
+        run: ./gradlew app:lintAppReleaseDebug :framework:lintDebug
 
       - name: Lint and detekt baselines must not grow
         # New findings are fixed, not appended to a baseline. A push compares
@@ -101,14 +101,18 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lint-reports
-          path: app/build/reports/lint-results-*.html
+          path: |
+            app/build/reports/lint-results-*.html
+            framework/build/reports/lint-results-*.html
 
       - name: Upload Detekt Reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: detekt-reports
-          path: app/build/reports/detekt/
+          path: |
+            app/build/reports/detekt/
+            framework/build/reports/detekt/
 
       - name: Upload debug APK
         if: always()
@@ -135,7 +139,7 @@ jobs:
       - name: Unit Tests
         run: |
           chmod +x ./gradlew
-          ./gradlew app:testAppReleaseDebugUnitTest
+          ./gradlew app:testAppReleaseDebugUnitTest :framework:testDebugUnitTest
 
       - name: Coverage must not drop below the floor
         # Line coverage of dao / download / gallery and the framework against
@@ -149,7 +153,9 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-reports
-          path: app/build/reports/tests/
+          path: |
+            app/build/reports/tests/
+            framework/build/reports/tests/
 
       - name: Upload Coverage Report
         if: always()

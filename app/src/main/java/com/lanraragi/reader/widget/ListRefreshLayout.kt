@@ -12,7 +12,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.lanraragi.reader.R
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import kotlin.math.max
 import kotlin.math.min
 

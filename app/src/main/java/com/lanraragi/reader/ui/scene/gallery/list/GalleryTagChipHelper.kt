@@ -11,7 +11,7 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import com.lanraragi.reader.util.attrColor
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.tagtranslation.TagTranslationDatabase
 import com.lanraragi.reader.domain.Archive

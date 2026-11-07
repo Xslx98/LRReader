@@ -7,7 +7,7 @@ import android.view.View
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.domain.buildRatingEmoji

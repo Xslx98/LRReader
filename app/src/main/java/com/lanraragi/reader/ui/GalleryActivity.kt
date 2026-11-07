@@ -60,7 +60,7 @@ import com.lanraragi.reader.ui.scene.download.DownloadsScene
 import com.lanraragi.reader.widget.GalleryGuideView
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import androidx.core.util.Pools
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 import com.lanraragi.framework.scene.BackDispatch

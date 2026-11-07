@@ -35,6 +35,10 @@ check app/lint-baseline.xml '<issue'
 check config/detekt/baseline.xml '<ID>'
 check config/detekt/baseline-appReleaseDebug.xml '<ID>'
 check config/detekt/baseline-appReleaseRelease.xml '<ID>'
+check framework/lint-baseline.xml '<issue'
+check config/detekt/baseline-framework.xml '<ID>'
+check config/detekt/baseline-framework-debug.xml '<ID>'
+check config/detekt/baseline-framework-release.xml '<ID>'
 
 RULES=config/architecture/rules.txt
 if git cat-file -e "$BASE:$RULES" 2>/dev/null; then

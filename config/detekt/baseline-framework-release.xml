@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>NestedBlockDepth:Image.kt$Image$@Synchronized fun texImage(init: Boolean, offsetX: Int, offsetY: Int, width: Int, height: Int)</ID>
+    <ID>NoNameShadowing:DrawerView.kt$DrawerView$widthSpec</ID>
+    <ID>PrintStackTrace:Image.kt$Image.Companion$e</ID>
+    <ID>ReturnCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun getReadableString(e: Throwable): String</ID>
+    <ID>SwallowedException:Image.kt$Image.Companion$e: UnsatisfiedLinkError</ID>
+    <ID>ThrowsCount:ExceptionUtils.kt$ExceptionUtils$@JvmStatic fun throwIfFatal(t: Throwable)</ID>
+    <ID>TooGenericExceptionThrown:Image.kt$Image$throw Exception("Android 9 解码失败", e)</ID>
+    <ID>UnreachableCode:SceneFactory.kt$SceneFactory$return factory()</ID>
+    <ID>UnreachableCode:SceneFactory.kt$SceneFactory$val factory = factories[className] ?: throw IllegalArgumentException( "Unknown scene class: $className. Did you forget to register it?" )</ID>
+    <ID>UnsafeCallOnNullableType:ExceptionUtils.kt$ExceptionUtils$e.message!!</ID>
+    <ID>UnusedPrivateProperty:ExceptionUtils.kt$ExceptionUtils$private val TAG: String = ExceptionUtils::class.java.getSimpleName()</ID>
+    <ID>VarCouldBeVal:Image.kt$Image$private var started = false</ID>
+  </CurrentIssues>
+</SmellBaseline>

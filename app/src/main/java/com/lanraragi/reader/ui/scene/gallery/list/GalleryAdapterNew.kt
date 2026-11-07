@@ -37,11 +37,11 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.ui.scene.TransitionNameFactory
-import com.lanraragi.reader.util.TraceSections
-import com.lanraragi.reader.util.traceSection
+import com.lanraragi.framework.util.TraceSections
+import com.lanraragi.framework.util.traceSection
 import com.lanraragi.reader.widget.SimpleRatingView
 import com.lanraragi.reader.widget.TileThumbNew
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.framework.widget.recyclerview.AutoStaggeredGridLayoutManager
 import com.lanraragi.reader.client.api.isTankoubonId

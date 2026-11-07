@@ -51,7 +51,6 @@
     <string name="error_redirection">มีการเปลี่ยนทางเยอะเกินไป</string>
     <string name="error_socket">เน็ตเวิร์คเกิดข้อผิดพลาด</string>
     <string name="error_unknown">มันแปลกๆนะ</string>
-    <string name="error_cant_find_activity">หาแอปพลิเคชั่นไม่เจอ</string>
     <string name="error_cannot_parse_the_url">ไม่สามารถวิเคราะห์ URL </string> 
     <string name="error_not_folder_path">ไม่พบโฟลเดอร์ปลายทาง</string>
     <string name="error_decoding_failed">การถอดรหัสล้มเหลว</string>

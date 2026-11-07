@@ -2,8 +2,8 @@ package com.lanraragi.reader
 
 import android.app.ActivityManager
 import android.util.Log
-import com.lanraragi.reader.util.MemoryTrim
-import com.lanraragi.reader.util.OSUtils
+import com.lanraragi.framework.util.MemoryTrim
+import com.lanraragi.framework.util.OSUtils
 
 /**
  * Memory facts of the running device that need the Application. They live in

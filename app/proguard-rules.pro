@@ -71,14 +71,7 @@
 # === Settings fragments (instantiated via PreferenceActivity headers reflection) ===
 -keep class com.lanraragi.reader.ui.fragment.** { <init>(); }
 
-# === Scene classes ===
-# Scene NAMES and no-arg constructors must survive: intents/saved state carry
-# class-name strings resolved via Class.forName (StageActivity, SolidScene),
-# and FragmentManager re-instantiates fragments reflectively by name on state
-# restore. Only actual SceneFragment subclasses need this — the old package
-# keep pinned all ~550 scene-package classes (ViewModels, adapters, helpers)
-# with original names into the release DEX.
--keep class * extends com.lanraragi.framework.scene.SceneFragment { <init>(); }
+# Scene classes: the keep rule lives in framework/consumer-rules.pro.
 
 # === LRRDownloadWorker: preserve volatile semantics for cancellation flag ===
 -keepclassmembers class com.lanraragi.reader.download.LRRDownloadWorker {

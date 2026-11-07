@@ -45,8 +45,8 @@ import com.lanraragi.reader.ui.scene.download.part.MyPageChangeListener
 import com.lanraragi.reader.widget.MyEasyRecyclerView
 import com.lanraragi.reader.widget.PaginationIndicator
 import com.lanraragi.reader.widget.SearchBar
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.framework.scene.Announcer
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition

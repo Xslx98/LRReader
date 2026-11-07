@@ -47,7 +47,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.lanraragi.reader.util.isLightTheme
+import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.reader.widget.list.EasyRecyclerView
@@ -64,8 +64,8 @@ import com.lanraragi.reader.ui.scene.ListMultiSelectHelper
 import com.lanraragi.reader.widget.SearchBar
 import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.reader.widget.SkeletonView
-import com.lanraragi.reader.util.AssertUtils
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.AssertUtils
+import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.reader.widget.ListRefreshLayout
 import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer

@@ -66,8 +66,8 @@ import com.lanraragi.framework.scene.StageActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.lanraragi.reader.util.attrColor
-import com.lanraragi.reader.util.ViewUtils
+import com.lanraragi.framework.util.attrColor
+import com.lanraragi.framework.util.ViewUtils
 import java.io.File
 
 class MainActivity : StageActivity(), AppUnlockHost,

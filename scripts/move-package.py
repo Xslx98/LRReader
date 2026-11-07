@@ -12,10 +12,12 @@ Usage (from the repo root, through scripts/move-package.sh):
       File mode with a rename: as above, plus the simple name (and <Name>Test) is
       renamed as a whole word everywhere it is referenced.
 
+A move stays inside its Gradle module (:app or :framework).
+
 Besides the sources it rewrites, in the same pass, everything that names classes by
 package or path: layout/manifest/prefs XML, app/proguard-rules.pro,
-app/src/main/baseline-prof.txt descriptors, app/lint-baseline.xml paths, the detekt
-baselines, scripts/ci/coverage-floor.txt and config/architecture/*.txt.
+app/src/main/baseline-prof.txt descriptors, each module's lint-baseline.xml paths, the
+detekt baselines, scripts/ci/coverage-floor.txt and config/architecture/*.txt.
 
 It does not commit and does not build. Afterwards run
   ./gradlew :app:assembleAppReleaseDebug app:testAppReleaseDebugUnitTest detekt
@@ -30,7 +32,9 @@ import sys
 
 ROOT = os.getcwd()
 APP_NAMESPACE = "com.lanraragi.reader"
-SRC_SETS = ["app/src/main/java", "app/src/test/java"]
+# A move stays inside its module: a class in :app stays in :app.
+MODULES = ["app", "framework"]
+SRC_SETS = [f"{m}/src/{s}/java" for m in MODULES for s in ("main", "test")]
 EXTRA_FILES = [
     "app/proguard-rules.pro",
     "app/lint-baseline.xml",
@@ -39,6 +43,11 @@ EXTRA_FILES = [
     "config/detekt/baseline.xml",
     "config/detekt/baseline-appReleaseDebug.xml",
     "config/detekt/baseline-appReleaseRelease.xml",
+    "framework/lint-baseline.xml",
+    "framework/consumer-rules.pro",
+    "config/detekt/baseline-framework.xml",
+    "config/detekt/baseline-framework-debug.xml",
+    "config/detekt/baseline-framework-release.xml",
 ]
 EXTRA_DIRS = ["config/architecture"]
 TEXT_EXT = (".kt", ".java", ".xml", ".pro", ".txt")
@@ -75,7 +84,7 @@ def pkg_dir(src_set, pkg):
 
 def all_text_files():
     out = []
-    for base in ["app/src", "benchmark/src"]:
+    for base in ["app/src", "framework/src", "benchmark/src"]:
         for dp, _, fs in os.walk(base):
             for f in fs:
                 if f.endswith(TEXT_EXT):
@@ -207,10 +216,13 @@ def move_file(old_fqn, new_fqn):
     old_pkg, old_name = old_fqn.rsplit(".", 1)
     new_pkg, new_name = new_fqn.rsplit(".", 1)
     rename = old_name != new_name
-    src_main = "app/src/main/java"
+    module = next((m for m in MODULES
+                   if os.path.isfile(os.path.join(pkg_dir(f"{m}/src/main/java", old_pkg), old_name + ".kt"))), None)
+    if module is None:
+        sys.exit(f"{old_fqn}: no source file in any module")
+    src_main = f"{module}/src/main/java"
+    src_test = f"{module}/src/test/java"
     old_path = os.path.join(pkg_dir(src_main, old_pkg), old_name + ".kt")
-    if not os.path.isfile(old_path):
-        sys.exit(f"{old_path} not found")
     text = read(old_path)
     moved_names = top_level_names(text)
     if old_name not in moved_names:
@@ -226,9 +238,9 @@ def move_file(old_fqn, new_fqn):
         old_pkg_names |= {"R", "BuildConfig"}  # generated, not in the sources
 
     moves = [(old_path, os.path.join(pkg_dir(src_main, new_pkg), new_name + ".kt"))]
-    test_old = os.path.join(pkg_dir("app/src/test/java", old_pkg), old_name + "Test.kt")
+    test_old = os.path.join(pkg_dir(src_test, old_pkg), old_name + "Test.kt")
     if os.path.isfile(test_old):
-        moves.append((test_old, os.path.join(pkg_dir("app/src/test/java", new_pkg), new_name + "Test.kt")))
+        moves.append((test_old, os.path.join(pkg_dir(src_test, new_pkg), new_name + "Test.kt")))
     for a, b in moves:
         if os.path.exists(b):
             sys.exit(f"refusing to overwrite {b}")
@@ -315,7 +327,7 @@ def main():
     old, new = sys.argv[1], sys.argv[2]
     if not os.path.isdir("app/src/main/java"):
         sys.exit("run from the repo root")
-    if os.path.isdir(pkg_dir("app/src/main/java", old)):
+    if any(os.path.isdir(pkg_dir(f"{m}/src/main/java", old)) for m in MODULES):
         move_package(old, new)
     else:
         move_file(old, new)

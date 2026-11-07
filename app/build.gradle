@@ -43,11 +43,6 @@ android {
                 abiFilters "x86_64"
             }
         }
-        externalNativeBuild {
-            cmake {
-                cppFlags ''
-            }
-        }
     }
 
     lint {
@@ -112,12 +107,6 @@ android {
             ndk {
                 abiFilters "arm64-v8a", "x86_64"
             }
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path file('src/main/cpp/CMakeLists.txt')
         }
     }
 
@@ -268,6 +257,7 @@ tasks.register("verifyArchitecture") {
     description = "Fails on package-dependency violations not in config/architecture/allowlist.txt."
 
     def srcDir = file("src/main/java")
+    def frameworkSrcDir = rootProject.file("framework/src/main/java")
     def rulesFile = rootProject.file("config/architecture/rules.txt")
     def allowFile = rootProject.file("config/architecture/allowlist.txt")
     def packagesFile = rootProject.file("config/architecture/packages.txt")
@@ -276,6 +266,7 @@ tasks.register("verifyArchitecture") {
         fileTree(p.file("src")) { include "**/*.java" }
     })
     inputs.dir(srcDir)
+    inputs.dir(frameworkSrcDir)
     inputs.files(javaFiles)
     inputs.files(rulesFile, allowFile, packagesFile)
     inputs.property("writeAllowlist", writeAllowlist)
@@ -305,13 +296,16 @@ tasks.register("verifyArchitecture") {
             .collect { it.split(/\s+\|\s+/)[0].trim() } as Set
         def unknownPackages = new TreeSet<String>()
         def found = new TreeSet<String>()
-        def srcPath = srcDir.toPath()
-        fileTree(srcDir) { include "**/*.kt" }.each { File f ->
+        def kotlinSources = [srcDir, frameworkSrcDir].collectMany { File root ->
+            fileTree(root) { include "**/*.kt" }.collect { File f ->
+                [root.toPath().relativize(f.toPath()).toString().replace('\\', '/'), f]
+            }
+        }
+        kotlinSources.each { String rel, File f ->
             def text = f.getText('UTF-8')
             def pm = text =~ /(?m)^package\s+([\w.]+)/
             if (!pm.find()) return
             def pkg = pm.group(1)
-            def rel = srcPath.relativize(f.toPath()).toString().replace('\\', '/')
             def top = pkg.split(/\./).take(4).join('.')
             if (!knownPackages.contains(top)) unknownPackages << "${top} (${rel})".toString()
             def imports = (text =~ /(?m)^import\s+([\w.]+(?:\.\*)?)/).collect { it[1] }
@@ -403,6 +397,7 @@ tasks.matching { it.name == 'minifyAppReleaseReleaseWithR8' }.configureEach {
 }
 
 dependencies {
+    implementation project(':framework')
     implementation libs.material
 
     implementation libs.activity
@@ -471,8 +466,10 @@ tasks.withType(Test).configureEach {
     }
 }
 
+// One report over both modules, so scripts/ci/coverage-floor.txt reads one file.
+// App tests exercise framework classes too: both exec files count.
 tasks.register('jacocoTestReport', JacocoReport) {
-    dependsOn 'testAppReleaseDebugUnitTest'
+    dependsOn 'testAppReleaseDebugUnitTest', ':framework:testDebugUnitTest'
     reports {
         xml.required = true
         html.required = true
@@ -488,7 +485,10 @@ tasks.register('jacocoTestReport', JacocoReport) {
     def javaTree = fileTree(
         dir: "${buildDir}/intermediates/javac/appReleaseDebug/compileAppReleaseDebugJavaWithJavac/classes",
         excludes: classExcludes)
-    sourceDirectories.setFrom(files(mainSrc))
-    classDirectories.setFrom(files(debugTree, javaTree))
-    executionData.setFrom(fileTree(dir: buildDir, includes: ['jacoco/testAppReleaseDebugUnitTest.exec']))
+    def frameworkBuild = project(':framework').layout.buildDirectory.get().asFile
+    def frameworkTree = fileTree(dir: "${frameworkBuild}/tmp/kotlin-classes/debug", excludes: classExcludes)
+    sourceDirectories.setFrom(files(mainSrc, rootProject.file('framework/src/main/java')))
+    classDirectories.setFrom(files(debugTree, javaTree, frameworkTree))
+    executionData.setFrom(fileTree(dir: buildDir, includes: ['jacoco/testAppReleaseDebugUnitTest.exec']),
+        fileTree(dir: frameworkBuild, includes: ['jacoco/testDebugUnitTest.exec']))
 }
