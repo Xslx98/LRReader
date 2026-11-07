@@ -40,14 +40,16 @@ class ChapterStore(private val prefs: SharedPreferences) {
 
     /** Drops the entries of [rows], given as `(profileId, arcid)`. */
     fun remove(rows: Collection<Pair<Long, String>>) {
-        val keys = rows.map { (profileId, arcid) -> key(profileId, arcid) }.filter(prefs::contains)
-        if (keys.isNotEmpty()) prefs.edit { keys.forEach { remove(it) } }
+        drop(rows.map { (profileId, arcid) -> key(profileId, arcid) }.filter(prefs::contains))
     }
 
     /** Drops every entry of [profileId] (the profile was deleted, audit SEC-16). */
     fun removeProfile(profileId: Long) {
         val prefix = key(profileId, "")
-        val keys = prefs.all.keys.filter { it.startsWith(prefix) }
+        drop(prefs.all.keys.filter { it.startsWith(prefix) })
+    }
+
+    private fun drop(keys: List<String>) {
         if (keys.isNotEmpty()) prefs.edit { keys.forEach { remove(it) } }
     }
 

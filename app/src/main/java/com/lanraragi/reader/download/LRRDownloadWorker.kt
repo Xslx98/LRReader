@@ -73,7 +73,7 @@ class LRRDownloadWorker(
         fun usableBytes(dir: File): Long
 
         /** Keeps the archive's chapters for offline reading; see [storeChaptersInBackground]. */
-        suspend fun storeChapters(info: DownloadInfo, serverUrl: String) {}
+        suspend fun storeChapters(info: DownloadInfo, serverUrl: String)
 
         object Production : Env {
             override suspend fun serverUrl(info: DownloadInfo): String =
@@ -100,13 +100,12 @@ class LRRDownloadWorker(
             }
 
             override suspend fun storeChapters(info: DownloadInfo, serverUrl: String) {
-                val arcid = info.arcid ?: return
                 val client = ServiceRegistry.networkModule.okHttpClient.newBuilder()
                     .callTimeout(CHAPTERS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                     .build()
-                val toc = LRRArchiveApi.getArchiveMetadata(client, serverUrl, arcid).toc
+                val toc = LRRArchiveApi.getArchiveMetadata(client, serverUrl, info.arcid).toc
                 ChapterStore.of(ServiceRegistry.appModule.getContext())
-                    .update(LocalReadingProgress.sourceProfile(info.serverProfileId), arcid, toc)
+                    .update(LocalReadingProgress.sourceProfile(info.serverProfileId), info.arcid, toc)
             }
         }
     }
