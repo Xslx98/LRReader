@@ -3,14 +3,11 @@ package com.lanraragi.reader.ui.scene.stats
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.server.ServerConnections
-import com.lanraragi.reader.client.api.LRRServerApi
-import com.lanraragi.reader.server.ServerCapabilityCache
+import com.lanraragi.reader.server.excludedNamespaces
 import com.lanraragi.reader.stats.ReadingStatsCalculator
 import com.lanraragi.reader.stats.TagPreferenceCalculator
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -72,28 +69,10 @@ class ReadingStatsViewModel(
     companion object {
         private const val TAG = "ReadingStatsViewModel"
 
-        /**
-         * Cached `/api/info` exclusions for the active server, or one
-         * best-effort fetch when none were ever observed (populates
-         * [ServerCapabilityCache] and its store for next time). Any failure —
-         * no active server, offline, old server — yields the empty set.
-         */
+        /** [excludedNamespaces] of the active server; no active server yields the empty set. */
         private suspend fun defaultServerExcludedNamespaces(): Set<String> {
             val conn = ServerConnections.active() ?: return emptySet()
-            val baseUrl = conn.baseUrl
-            if (baseUrl.isEmpty()) return emptySet()
-            ServerCapabilityCache.excludedNamespaces(baseUrl)?.let { return it }
-            return try {
-                LRRServerApi.getServerInfo(conn.client, baseUrl)
-                ServerCapabilityCache.excludedNamespaces(baseUrl) ?: emptySet()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Guarded so R8 drops the whole call: the message template keeps
-                // the line alive in release otherwise (docs/log-strip-cleanup.md).
-                if (BuildConfig.DEBUG) Log.w(TAG, "excluded_namespaces unavailable, using built-in set: ${e.message}")
-                emptySet()
-            }
+            return excludedNamespaces(conn)
         }
     }
 }
