@@ -18,8 +18,10 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -196,6 +198,48 @@ class GalleryListViewModelUploadTest {
         server.awaitRequest()
         val upload = server.awaitRequest().body.readUtf8()
         assertTrue("multipart filename should be the last segment", upload.contains("filename=\"victim.db\""))
+        awaitUntil(message = "staging dir must be removed") { cacheDir.listFiles()!!.isEmpty() }
+    }
+
+    @Test
+    fun uploadArchive_whenProbeFails_stillUploads() {
+        // An inconclusive probe (server error, after the client's own retries)
+        // is not a confirmed duplicate.
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse = when (request.method) {
+                "PUT" -> MockResponse().setBody("""{"success":1,"id":"newarcid"}""")
+                "HEAD" -> MockResponse()
+                else -> MockResponse().setResponseCode(502)
+            }
+        }
+
+        val vm = GalleryListViewModel()
+        vm.uploadArchive(requestOf(ByteArray(100) { it.toByte() }))
+
+        val terminal = awaitTerminal(vm)
+        assertEquals(GalleryListViewModel.UploadUiState.Success("newarcid"), terminal)
+    }
+
+    @Test
+    fun uploadArchive_whenUploadFails_reportsFailureAndRemovesStagingDir() {
+        server.enqueue(
+            MockResponse().setResponseCode(400)
+                .setBody("""{"success":0,"error":"This ID does not exist"}""")
+        )
+        server.enqueue(MockResponse().setBody("""{"success":0,"error":"disk full"}"""))
+        val cacheDir = File(ctx.cacheDir, "upload-failure").apply { deleteRecursively(); mkdirs() }
+
+        val vm = GalleryListViewModel()
+        vm.uploadArchive(
+            GalleryListViewModel.UploadRequest(
+                displayName = "a.zip",
+                cacheDir = cacheDir,
+                openStream = { ByteArrayInputStream(ByteArray(100) { it.toByte() }) }
+            )
+        )
+
+        val terminal = awaitTerminal(vm)
+        assertTrue("expected Failed, was $terminal", terminal is GalleryListViewModel.UploadUiState.Failed)
         awaitUntil(message = "staging dir must be removed") { cacheDir.listFiles()!!.isEmpty() }
     }
 

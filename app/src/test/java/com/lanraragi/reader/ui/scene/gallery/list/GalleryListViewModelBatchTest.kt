@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.test.core.app.ApplicationProvider
+import com.lanraragi.reader.R
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
@@ -468,7 +470,66 @@ class GalleryListViewModelBatchTest {
         }
     }
 
+    // ─── category, tank download, undo ───────────────────────────────────
+
+    @Test
+    fun `addToCategory batch puts each archive into the category`() = runTest {
+        val paths = CopyOnWriteArrayList<String>()
+        server.dispatcher = recordingDispatcher(paths)
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(
+                GalleryListViewModel.BatchOp.AddToCategory(CATEGORY_ID),
+                listOf(archiveOf(ARC_A), archiveOf(ARC_B)),
+            )
+        }
+
+        assertEquals(setOf(ARC_A, ARC_B), result.succeeded.toSet())
+        assertEquals(
+            setOf("PUT /api/categories/$CATEGORY_ID/$ARC_A", "PUT /api/categories/$CATEGORY_ID/$ARC_B"),
+            paths.toSet(),
+        )
+    }
+
+    @Test
+    fun `downloadTanks on an empty tank fails that tank with the empty reason`() = runTest {
+        ServiceRegistry.initializeForTest(app = stubAppModule(ctx))
+        server.dispatcher = recordingDispatcher(CopyOnWriteArrayList()) {
+            jsonResponse(200, """{"result":{"id":"$TANK_ID","name":"T","archives":[],"full_data":[]},"total":0,"filtered":0}""")
+        }
+
+        val vm = newVm()
+        val result = awaitBatchResult(vm) {
+            vm.runBatch(GalleryListViewModel.BatchOp.DownloadTanks, listOf(archiveOf(TANK_ID)))
+        }
+
+        assertTrue(result.succeeded.isEmpty())
+        assertEquals(listOf(TANK_ID), result.failed.map { it.arcid })
+        assertEquals(ctx.getString(R.string.error_empty), result.failed[0].reason)
+    }
+
+    @Test
+    fun `restoreTankOrders puts each previous order back`() {
+        val bodies = CopyOnWriteArrayList<String>()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                bodies += "${request.method} ${request.path} ${request.body.readUtf8()}"
+                return jsonResponse(200, """{"success":1}""")
+            }
+        }
+
+        newVm().restoreTankOrders(mapOf(TANK_ID to listOf(ARC_C, ARC_A, ARC_B)), profileId = 0L)
+
+        awaitUntil(message = "no order PUT: $bodies") { bodies.isNotEmpty() }
+        assertEquals(
+            listOf("PUT /api/tankoubons/$TANK_ID {\"archives\":[\"$ARC_C\",\"$ARC_A\",\"$ARC_B\"]}"),
+            bodies,
+        )
+    }
+
     private companion object {
+        const val CATEGORY_ID = "SET_1700000000"
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)
         val ARC_C = "c".repeat(40)
