@@ -931,6 +931,7 @@
     <string name="reader_chapters_loading">กำลังโหลดบท…</string>
     <string name="reader_chapters_failed">โหลดบทไม่สำเร็จ แตะเพื่อลองอีกครั้ง</string>
     <string name="reader_top_bar_page">หน้า %1$d / %2$d</string>
+    <string name="reader_top_bar_pages">หน้า %1$d-%2$d / %3$d</string>
     <string name="cd_stop_auto_read">Stop auto page-turn</string>
     <string name="cd_downloaded">ดาวน์โหลดแล้ว</string>
     <string name="cd_random">สุ่ม</string>

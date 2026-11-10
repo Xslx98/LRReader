@@ -895,6 +895,7 @@ Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="reader_chapters_loading">Kapitel werden geladen…</string>
     <string name="reader_chapters_failed">Kapitel konnten nicht geladen werden. Zum Wiederholen tippen.</string>
     <string name="reader_top_bar_page">Seite %1$d / %2$d</string>
+    <string name="reader_top_bar_pages">Seite %1$d-%2$d / %3$d</string>
     <string name="cd_stop_auto_read">Automatische Übertragung stoppen</string>
     <string name="cd_downloaded">Heruntergeladen</string>
     <string name="cd_random">Zufällig</string>

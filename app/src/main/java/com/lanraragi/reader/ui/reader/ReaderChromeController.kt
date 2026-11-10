@@ -128,7 +128,7 @@ class ReaderChromeController(private val activity: Activity) {
         val root = ViewUtils.requireView(activity, R.id.reader_top_bar)
         val topBar = ReaderTopBar(root, callback, memberTitleAt)
         topBar.setTitle(title)
-        topBar.setPage(slider.currentIndex, slider.size)
+        topBar.setPage(slider.currentIndex, slider.currentIndex, slider.size)
         slider.setTopBar(root)
         slider.onPageChanged = topBar::setPage
         // The menu brings back the system status bar, which would sit on top

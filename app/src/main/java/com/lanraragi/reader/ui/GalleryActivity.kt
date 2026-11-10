@@ -105,6 +105,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         private const val NOTIFY_KEY_TAP_ERROR_TEXT = 5
         private const val NOTIFY_KEY_LONG_PRESS_PAGE = 6
         private const val NOTIFY_KEY_PAGE_TRANSFORMS = 7
+        private const val NOTIFY_KEY_CURRENT_SPREAD = 8
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -544,6 +545,10 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         postNotify(NOTIFY_KEY_CURRENT_INDEX, index)
     }
 
+    override fun onUpdateCurrentSpread(first: Int, last: Int) {
+        postNotify(NOTIFY_KEY_CURRENT_SPREAD, first, last)
+    }
+
     override fun onTapSliderArea() {
         postNotify(NOTIFY_KEY_TAP_SLIDER_AREA, 0)
     }
@@ -684,9 +689,9 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     // ======== NotifyTask (UI-thread dispatch) ========
 
     /** Runs [key] with [value] on the UI thread through a pooled [NotifyTask]. */
-    private fun postNotify(key: Int, value: Int) {
+    private fun postNotify(key: Int, value: Int, value2: Int = 0) {
         val task = mNotifyTaskPool.acquire() ?: NotifyTask()
-        task.setData(key, value)
+        task.setData(key, value, value2)
         mainHandler.post(task)
     }
 
@@ -694,10 +699,12 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
         private var mKey = 0
         private var mValue = 0
+        private var mValue2 = 0
 
-        fun setData(key: Int, value: Int) {
+        fun setData(key: Int, value: Int, value2: Int) {
             mKey = key
             mValue = value
+            mValue2 = value2
         }
 
         override fun run() {
@@ -721,6 +728,11 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                     // attempt instead of showing a loading state.
                     mContinuation?.onPageShown(mValue, mGalleryProvider?.size() ?: 0)
                     mTankProgress?.onPageShown(mValue)
+                }
+                NOTIFY_KEY_CURRENT_SPREAD -> {
+                    mSliderController.setShownPages(mValue, mValue2)
+                    // The last spread reports its first page as the index.
+                    mContinuation?.onPageShown(mValue2, mGalleryProvider?.size() ?: 0)
                 }
                 // GalleryView still splits the centre column into a menu and
                 // a slider area; both halves (and the menu keys) toggle the

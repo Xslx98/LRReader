@@ -67,14 +67,18 @@ class ReaderTopBar(
         title.text = text
     }
 
-    /** "Page 3 / 40", with the tank member's title in tank sessions. */
-    fun setPage(index: Int, size: Int) {
+    /** "Page 3 / 40" ("Page 3-4 / 40" for a spread), with the tank member's title in tank sessions. */
+    fun setPage(index: Int, last: Int, size: Int) {
         if (size <= 0 || index < 0) {
             subtitle.text = null
             return
         }
         val res = subtitle.resources
-        val page = res.getString(R.string.reader_top_bar_page, index + 1, size)
+        val page = if (last > index) {
+            res.getString(R.string.reader_top_bar_pages, index + 1, last + 1, size)
+        } else {
+            res.getString(R.string.reader_top_bar_page, index + 1, size)
+        }
         val member = memberTitleAt(index)
         subtitle.text = if (member.isNullOrEmpty()) {
             page
