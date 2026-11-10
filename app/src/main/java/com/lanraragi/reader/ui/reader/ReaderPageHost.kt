@@ -10,6 +10,7 @@ import com.lanraragi.framework.lib.glview.image.ImageWrapper
 import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.lib.image.PageFit
 import com.lanraragi.framework.util.ViewUtils
+import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.reading.GalleryProvider2
@@ -57,6 +58,7 @@ class ReaderPageHost(private val activity: Activity) {
         provider.galleryView = galleryView
         provider.setListener(adapter)
         provider.setGLRoot(glRootView)
+        if (BuildConfig.DEBUG) galleryView.setSpreadMode(SpreadDebugToggle.read(activity))
         return galleryView
     }
 
@@ -76,6 +78,7 @@ class ReaderPageHost(private val activity: Activity) {
             provider?.onTrimMemory(MemoryTrim.Action.CLEAR)
         }
         gv.layoutMode = layoutMode
+        if (BuildConfig.DEBUG) gv.setSpreadMode(SpreadDebugToggle.read(activity))
         gv.setScaleMode(scaleMode)
         gv.setStartPosition(startPosition)
 
