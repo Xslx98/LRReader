@@ -67,7 +67,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             viewModel,
             context = { getEHContext() },
             onRetry = { requestRefresh() },
-            keepPageNormal = { if (mState != STATE_NORMAL) adjustViewVisibility(STATE_NORMAL, true) },
+            // The degraded detail seeded on failure has not been bound yet:
+            // bind it, or both heart labels stay visible over each other (#94).
+            keepPageNormal = {
+                if (mState != STATE_NORMAL) {
+                    adjustViewVisibility(STATE_NORMAL, true)
+                    bindViewSecond()
+                }
+            },
         )
     }
 
