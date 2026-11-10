@@ -224,6 +224,22 @@ class PagerNavigationTest(private val layoutMode: Int) {
     }
 
     @Test
+    fun `pulling past the last page ends the transfer`() {
+        view.setCurrentPage(SIZE - 1)
+        view.render(canvas)
+
+        // The next page would come in from the left right-to-left: the finger moves right.
+        val dx = if (rtl) -SHORT_DRAG else SHORT_DRAG
+        view.onDown(WIDTH / 2f, HEIGHT / 2f)
+        view.onScroll(dx, 0f, dx, 0f, WIDTH / 2f - dx, HEIGHT / 2f)
+        view.onUp()
+        settle()
+
+        assertShowing(SIZE - 1)
+        assertEquals("transfer end", 1, listener.transferDone)
+    }
+
+    @Test
     fun `turning back from the first page stays there`() {
         view.setCurrentPage(0)
         view.render(canvas)
