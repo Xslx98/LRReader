@@ -162,7 +162,7 @@ class GalleryDetailViewModelTest {
 
         vm.setArchiveDetail(archiveDetail("favTok"))
         vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "Reading"))
-        detailCache.put("favTok", archiveDetail("favTok"))
+        detailCache.put(GalleryDetailViewModel.detailCacheKey(0L, "favTok"), archiveDetail("favTok"))
 
         vm.resetForNewEntry()
         vm.setArchive(archive("favTok"))
@@ -180,13 +180,42 @@ class GalleryDetailViewModelTest {
         val earlier = GalleryDetailViewModel()
         earlier.setArchiveDetail(archiveDetail("favTok"))
         earlier.updateFavoriteState(FavoriteState(isFavorited = true, name = "Reading"))
-        detailCache.put("favTok", archiveDetail("favTok"))
+        detailCache.put(GalleryDetailViewModel.detailCacheKey(0L, "favTok"), archiveDetail("favTok"))
 
         val next = GalleryDetailViewModel()
         next.setArchive(archive("favTok"))
 
         assertTrue(next.tryLoadFromCache())
         assertEquals(FavoriteState(isFavorited = true, name = "Reading"), next.favoriteState.value)
+    }
+
+    @Test
+    fun tryLoadFromCache_ignoresTheSameArcidCachedFromAnotherServer() {
+        // An arcid is a content hash: the same file on servers 7 and 9 shares
+        // it. Server 7's cached detail and heart must not paint server 9's page
+        // (#94); server 7's own page still hits the cache.
+        val detailCache = LruCache<String, ArchiveDetail>(4)
+        ServiceRegistry.initializeForTest(coroutine = null, data = detailCacheOnly(detailCache))
+        val onSeven = archive("dupTok").copy(serverProfileId = 7L, title = "on seven")
+        val earlier = GalleryDetailViewModel()
+        earlier.setArchive(onSeven)
+        earlier.updateFavoriteState(FavoriteState(isFavorited = true, name = "Seven's"))
+        detailCache.put(
+            GalleryDetailViewModel.detailCacheKey(7L, "dupTok"),
+            archiveDetail("dupTok").copy(archive = onSeven),
+        )
+
+        val otherServer = GalleryDetailViewModel()
+        otherServer.setArchive(archive("dupTok").copy(serverProfileId = 9L))
+        assertTrue(otherServer.tryLoadFromCache())
+        assertNull(otherServer.archiveDetail.value)
+        assertNull(otherServer.favoriteState.value)
+
+        val sameServer = GalleryDetailViewModel()
+        sameServer.setArchive(archive("dupTok").copy(serverProfileId = 7L))
+        assertTrue(sameServer.tryLoadFromCache())
+        assertEquals("on seven", sameServer.archiveDetail.value?.archive?.title)
+        assertEquals(FavoriteState(isFavorited = true, name = "Seven's"), sameServer.favoriteState.value)
     }
 
     /** Only [IDataModule.archiveDetailCache] is live; everything else is unreachable here. */
