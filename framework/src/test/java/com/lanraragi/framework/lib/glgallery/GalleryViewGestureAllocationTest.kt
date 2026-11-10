@@ -73,6 +73,43 @@ class GalleryViewGestureAllocationTest {
         assertEquals("fewest bytes allocated by $FRAMES pinch frames in $RUNS runs", 0L, bytes)
     }
 
+    // A turn moves the page views between the previous, current and next
+    // slots, recycles one through the page pool and binds another.
+    @Test
+    fun keyTurnsAllocateNothing() {
+        keyTurns(FRAMES) // warm up
+        val bytes = minAllocatedBytes(RUNS) { keyTurns(FRAMES) }
+
+        assertEquals("fewest bytes allocated by $FRAMES key turns in $RUNS runs", 0L, bytes)
+    }
+
+    @Test
+    fun dragTurnsAllocateNothing() {
+        view.onDown(540f, 1200f)
+        view.render(canvas)
+        dragTurns(FRAMES) // warm up
+        val bytes = minAllocatedBytes(RUNS) { dragTurns(FRAMES) }
+
+        assertEquals("fewest bytes allocated by $FRAMES drag turns in $RUNS runs", 0L, bytes)
+    }
+
+    private fun keyTurns(turns: Int) {
+        for (i in 0 until turns) {
+            if (i % 2 == 0) view.pageLeft() else view.pageRight()
+            view.render(canvas)
+        }
+    }
+
+    // Each move is longer than a page plus the pager interval, so every frame
+    // turns the page, alternately forward and back.
+    private fun dragTurns(turns: Int) {
+        for (i in 0 until turns) {
+            val dx = if (i % 2 == 0) -TURN_DX else TURN_DX
+            view.onScroll(dx, 0f, dx, 0f, 540f - dx, 1200f)
+            view.render(canvas)
+        }
+    }
+
     // Small moves back and forth: the page is pulled a little and returned, so
     // the scroll reaches the layout manager without ever turning the page.
     private fun drag(frames: Int) {
@@ -93,5 +130,8 @@ class GalleryViewGestureAllocationTest {
     private companion object {
         const val FRAMES = 200
         const val RUNS = 5
+
+        // Page width 1080 plus the default pager interval 48, plus one pixel.
+        const val TURN_DX = 1129f
     }
 }

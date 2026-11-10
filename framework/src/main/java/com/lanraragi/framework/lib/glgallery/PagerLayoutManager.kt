@@ -263,6 +263,12 @@ internal class PagerLayoutManager(
         return page
     }
 
+    // A page view from the pool keeps the default layout params of its last
+    // add; handing them back saves a LayoutParams allocation on every turn.
+    private fun addPage(page: GalleryPageView) {
+        galleryView.addComponent(page, page.layoutParams)
+    }
+
     private fun layoutPage(
         page: GalleryPageView,
         widthSpec: Int,
@@ -372,14 +378,14 @@ internal class PagerLayoutManager(
         if (current == null) {
             current = obtainPage()
             this.current = current
-            galleryView.addComponent(current)
+            addPage(current)
             adapter.bind(current, index)
         }
         val previous = this.previous
         if (previous == null && index > 0) {
             val page = obtainPage()
             this.previous = page
-            galleryView.addComponent(page)
+            addPage(page)
             adapter.bind(page, index - 1)
         } else if (previous != null && index == 0) {
             removePage(previous)
@@ -389,7 +395,7 @@ internal class PagerLayoutManager(
         if (next == null && index < size - 1) {
             val page = obtainPage()
             this.next = page
-            galleryView.addComponent(page)
+            addPage(page)
             adapter.bind(page, index + 1)
         } else if (next != null && index == size - 1) {
             removePage(next)
@@ -519,7 +525,7 @@ internal class PagerLayoutManager(
         if (index > 0) {
             val page = obtainPage()
             previous = page
-            galleryView.addComponent(page)
+            addPage(page)
             (adapter ?: throw AssertionError(NOT_ATTACHED)).bind(page, index - 1)
         }
     }
@@ -543,7 +549,7 @@ internal class PagerLayoutManager(
         if (index < size - 1) {
             val page = obtainPage()
             next = page
-            galleryView.addComponent(page)
+            addPage(page)
             adapter.bind(page, index + 1)
         }
     }
