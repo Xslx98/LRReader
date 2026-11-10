@@ -219,9 +219,12 @@ open class ImageTexture(private val image: ImageWrapper) : Texture, Animatable {
         }
     }
 
+    // Runs whenever a page moves while off screen (every frame of a page
+    // drag). Plain volatile writes: lazySet (a VarHandle release store) cost
+    // one allocation per call here on API 35 (debug build, measured).
     override fun stop() {
-        running.lazySet(false)
-        requestAnimation.lazySet(false)
+        running.set(false)
+        requestAnimation.set(false)
     }
 
     override fun isRunning(): Boolean = running.get()
