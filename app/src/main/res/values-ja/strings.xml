@@ -507,6 +507,13 @@
     <string name="settings_read_page_scaling_fit_to_screen">画面に合わせる</string>
     <string name="settings_read_page_scaling_fixed_scale">固定した大きさ</string>
     <string name="settings_read_start_position">ページを開く位置</string>
+    <string name="settings_read_two_page">見開き表示</string>
+    <string name="settings_read_two_page_off">オフ</string>
+    <string name="settings_read_two_page_landscape">横向きのみ</string>
+    <string name="settings_read_two_page_always">常に</string>
+    <string name="settings_read_first_page_alone">最初のページを単独で表示</string>
+    <string name="reader_shift_pairing">ペアを1ページずらす</string>
+    <string name="settings_read_two_page_summary">%s\n拡大と開く位置は1ページ表示のみ有効です。</string>
     <string name="settings_read_start_position_top_left">左上隅</string>
     <string name="settings_read_start_position_top_right">右上隅</string>
     <string name="settings_read_start_position_bottom_left">左下隅</string>

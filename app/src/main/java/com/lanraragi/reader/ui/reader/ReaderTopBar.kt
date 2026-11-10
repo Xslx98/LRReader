@@ -7,6 +7,7 @@ import androidx.annotation.ArrayRes
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.ReadingSettings
@@ -34,14 +35,19 @@ class ReaderTopBar(
 
         /** A choice popup opened (true) or closed (false); the menu must stay up meanwhile. */
         fun onTopBarPopup(open: Boolean)
+
+        /** "Shift pairing by one", offered while two pages can share the screen. */
+        fun onTopBarShiftPairing()
     }
 
     private val title: TextView = root.findViewById(R.id.reader_top_bar_title)
     private val subtitle: TextView = root.findViewById(R.id.reader_top_bar_subtitle)
+    private val shift: View = root.findViewById(R.id.reader_top_bar_shift)
 
     init {
         root.findViewById<View>(R.id.reader_top_bar_back).setOnClickListener { callback.onTopBarBack() }
         root.findViewById<View>(R.id.reader_top_bar_settings).setOnClickListener { callback.onTopBarSettings() }
+        shift.setOnClickListener { callback.onTopBarShiftPairing() }
         root.findViewById<View>(R.id.reader_top_bar_direction).setOnClickListener { anchor ->
             showChoices(anchor, R.array.reading_direction_entries, ReadingSettings.getReadingDirection()) {
                 ReadingSettings.putReadingDirection(GalleryView.sanitizeLayoutMode(it))
@@ -61,6 +67,11 @@ class ReaderTopBar(
             v.setPadding(bars.left, bars.top, bars.right, 0)
             insets
         }
+    }
+
+    /** The shift action shows only while two-page spreads are on. */
+    fun setShiftShown(shown: Boolean) {
+        shift.isVisible = shown
     }
 
     fun setTitle(text: CharSequence?) {

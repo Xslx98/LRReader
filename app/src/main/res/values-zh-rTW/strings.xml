@@ -551,6 +551,13 @@
     <string name="settings_read_page_scaling_fit_to_screen">以螢幕大小縮放</string>
     <string name="settings_read_page_scaling_fixed_scale">固定尺寸</string>
     <string name="settings_read_start_position">開始位置</string>
+    <string name="settings_read_two_page">雙頁閱讀</string>
+    <string name="settings_read_two_page_off">關閉</string>
+    <string name="settings_read_two_page_landscape">僅橫向</string>
+    <string name="settings_read_two_page_always">一律</string>
+    <string name="settings_read_first_page_alone">首頁單獨顯示</string>
+    <string name="reader_shift_pairing">配對錯開一頁</string>
+    <string name="settings_read_two_page_summary">%s\n頁面縮放和開始位置只對單頁生效。</string>
     <string name="settings_read_start_position_top_left">左上角</string>
     <string name="settings_read_start_position_top_right">右上角</string>
     <string name="settings_read_start_position_bottom_left">左下角</string>

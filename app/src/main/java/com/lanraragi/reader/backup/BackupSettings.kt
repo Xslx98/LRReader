@@ -29,6 +29,7 @@ object BackupSettings {
         "delete_confirm_countdown", "enable_secure",
         // Reader
         "screen_rotation", "reading_direction", "page_scaling", "start_position", "start_transfer_time",
+        "spread_reading", "spread_first_page_alone",
         "keep_screen_on", "reader_continuation", "reader_continuation_swipe", "reader_stamps",
         "gallery_show_clock", "gallery_show_progress", "gallery_show_battery", "gallery_show_page_interval",
         "volume_page", "reverse_volume_page", "reading_fullscreen", "custom_screen_lightness",

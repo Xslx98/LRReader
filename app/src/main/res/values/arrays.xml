@@ -129,6 +129,13 @@
         <item>4</item>
     </string-array>
 
+    <!-- Positions are GalleryView.SPREAD_OFF, SPREAD_LANDSCAPE, SPREAD_ALWAYS. -->
+    <string-array name="two_page_entries">
+        <item>@string/settings_read_two_page_off</item>
+        <item>@string/settings_read_two_page_landscape</item>
+        <item>@string/settings_read_two_page_always</item>
+    </string-array>
+
     <string-array name="start_position_entries">
         <item>@string/settings_read_start_position_top_left</item>
         <item>@string/settings_read_start_position_top_right</item>

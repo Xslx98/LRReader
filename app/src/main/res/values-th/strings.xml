@@ -550,6 +550,13 @@
     <string name="settings_read_page_scaling_fit_to_screen">พอดีกับขนาดหน้าจอ</string>
     <string name="settings_read_page_scaling_fixed_scale">ขนาดตายตัว</string>
     <string name="settings_read_start_position">ตำแหน่งเริ่มต้น</string>
+    <string name="settings_read_two_page">อ่านแบบสองหน้า</string>
+    <string name="settings_read_two_page_off">ปิด</string>
+    <string name="settings_read_two_page_landscape">แนวนอนเท่านั้น</string>
+    <string name="settings_read_two_page_always">ตลอด</string>
+    <string name="settings_read_first_page_alone">แสดงหน้าแรกเดี่ยว</string>
+    <string name="reader_shift_pairing">เลื่อนการจับคู่ไปหนึ่งหน้า</string>
+    <string name="settings_read_two_page_summary">%s\nขนาดหน้าและตำแหน่งเริ่มต้นใช้กับหน้าเดี่ยวเท่านั้น</string>
     <string name="settings_read_start_position_top_left">บนซ้าย</string>
     <string name="settings_read_start_position_top_right">บนขวา</string>
     <string name="settings_read_start_position_bottom_left">ล่างซ้าย</string>

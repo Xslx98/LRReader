@@ -515,6 +515,13 @@
     <string name="settings_read_page_scaling_fit_to_screen">Nach dem Bildschirm anpassen</string>
     <string name="settings_read_page_scaling_fixed_scale">Festgesetzte Größe</string>
     <string name="settings_read_start_position">Seiten umblättern von</string>
+    <string name="settings_read_two_page">Doppelseiten</string>
+    <string name="settings_read_two_page_off">Aus</string>
+    <string name="settings_read_two_page_landscape">Nur im Querformat</string>
+    <string name="settings_read_two_page_always">Immer</string>
+    <string name="settings_read_first_page_alone">Erste Seite einzeln</string>
+    <string name="reader_shift_pairing">Paarung um eine Seite verschieben</string>
+    <string name="settings_read_two_page_summary">%s\nSeitenskalierung und „Seiten umblättern von“ gelten nur für einzelne Seiten.</string>
     <string name="settings_read_start_position_top_left">Oben links</string>
     <string name="settings_read_start_position_top_right">Oben rechts</string>
     <string name="settings_read_start_position_bottom_left">Unter links</string>

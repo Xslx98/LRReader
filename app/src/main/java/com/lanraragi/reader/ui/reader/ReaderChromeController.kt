@@ -117,13 +117,15 @@ class ReaderChromeController(private val activity: Activity) {
 
     /**
      * Wires the top bar into the menu [slider] shows and hides; it shows
-     * [title] and follows the slider's page.
+     * [title] and follows the slider's page. [spreadShown] says, each time
+     * the menu opens, whether to offer the shift.
      */
     fun bindTopBar(
         slider: GallerySliderController,
         callback: ReaderTopBar.Callback,
         title: CharSequence?,
         memberTitleAt: (Int) -> String?,
+        spreadShown: () -> Boolean,
     ) {
         val root = ViewUtils.requireView(activity, R.id.reader_top_bar)
         val topBar = ReaderTopBar(root, callback, memberTitleAt)
@@ -135,6 +137,7 @@ class ReaderChromeController(private val activity: Activity) {
         // of the reader's own clock and battery; the top bar shows the page.
         val header = ViewUtils.requireView(activity, R.id.gallery_header)
         slider.onMenuVisibilityChanged = { shown ->
+            if (shown) topBar.setShiftShown(spreadShown())
             header.animate().cancel()
             header.animate()
                 .alpha(if (shown) 0f else 1f)
