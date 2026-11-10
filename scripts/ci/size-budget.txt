@@ -17,9 +17,14 @@
 # grew dex by 7440 B (SpreadPlanner is no longer R8-stripped, plus the slot
 # layout and joint viewport). apk.download +4610 B and apk.file +480 B are
 # PR C's measured growth (arm64 release vs 0ab76d56), pre-approved 2026-11-09.
+# 2026-11-10 (item 20 PR D, the two-page reading setting; pre-approved
+# 2026-11-09): apk.file +20568 B and apk.download +2597 B, the measured growth
+# of the arm64 release vs 929045bf (dex +2568 B, resources.arsc +4.7 KB for the
+# strings in 10 locales; most of apk.file is the 16 KB zip alignment of the
+# native library moving with the entries before it). dex and res stay.
 tolerance.percent 1.5
-apk.file        5221880
-apk.download    2498410
+apk.file        5242448
+apk.download    2501007
 dex             3771184
 lib                6400
 res             1350000
