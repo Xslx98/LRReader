@@ -41,6 +41,7 @@ class GalleryViewGestureAllocationTest {
         view = GalleryView.Builder(RuntimeEnvironment.getApplication(), FakeAdapter())
             .setLayoutMode(GalleryView.LAYOUT_RIGHT_TO_LEFT)
             .setStartPage(6)
+            .setPagerInterval(PAGER_INTERVAL)
             .build()
         view.onAttachToRootInternal()
         view.measure(
@@ -87,11 +88,21 @@ class GalleryViewGestureAllocationTest {
     fun dragTurnsAllocateNothing() {
         view.onDown(540f, 1200f)
         view.render(canvas)
+        // Right-to-left, the finger moving right brings in the next page.
+        dragTurns(1)
+        assertEquals("the first drag frame turned the page", 7, currentIndex())
+        view.onScroll(TURN_DX, 0f, TURN_DX, 0f, 540f - TURN_DX, 1200f)
+        view.render(canvas)
+        assertEquals("the second drag frame turned back", 6, currentIndex())
         dragTurns(FRAMES) // warm up
         val bytes = minAllocatedBytes(RUNS) { dragTurns(FRAMES) }
 
         assertEquals("fewest bytes allocated by $FRAMES drag turns in $RUNS runs", 0L, bytes)
     }
+
+    /** The page under the screen centre (the turning frame leaves it pulled by a pixel). */
+    private fun currentIndex(): Int =
+        (6..7).first { view.findPageByIndex(it)?.bounds()?.contains(540, 1200) == true }
 
     private fun keyTurns(turns: Int) {
         for (i in 0 until turns) {
@@ -131,7 +142,9 @@ class GalleryViewGestureAllocationTest {
         const val FRAMES = 200
         const val RUNS = 5
 
-        // Page width 1080 plus the default pager interval 48, plus one pixel.
-        const val TURN_DX = 1129f
+        const val PAGER_INTERVAL = 48
+
+        // Page width 1080 plus the pager interval, plus one pixel.
+        const val TURN_DX = 1080f + PAGER_INTERVAL + 1f
     }
 }

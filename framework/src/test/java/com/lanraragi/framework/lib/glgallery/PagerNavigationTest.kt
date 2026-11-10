@@ -22,8 +22,7 @@ import java.time.Duration
  * The pager's page-turn contract as the reader sees it, in both reading
  * directions: which page is current, where its neighbours sit, what a key,
  * a tap zone, a drag or a jump turns to, what the ends do, and which page a
- * long press hits. Pins the behaviour the page-slot refactor (item 20, PR A)
- * must keep.
+ * long press hits.
  */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
@@ -201,6 +200,16 @@ class PagerNavigationTest(private val layoutMode: Int) {
         }
         AnimationTime.update()
         view.render(canvas)
+    }
+
+    @Test
+    fun `a jump to a neighbour turns one page`() {
+        view.setCurrentPage(START + 1)
+        view.render(canvas)
+        assertShowing(START + 1)
+        view.setCurrentPage(START)
+        view.render(canvas)
+        assertShowing(START)
     }
 
     @Test
