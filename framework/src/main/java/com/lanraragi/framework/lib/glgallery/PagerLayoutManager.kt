@@ -121,6 +121,14 @@ internal class PagerLayoutManager(
     private val firstPageSide: Int
         get() = if (mode == MODE_LEFT_TO_RIGHT) SpreadViewport.LEFT else SpreadViewport.RIGHT
 
+    // The stored parity for the next landing only (open or resume); later
+    // landings pair from what the planner knows.
+    private var landingParity = SpreadPlanner.PARITY_UNKNOWN
+
+    // currentSpreadParity for parityIndex, so a frame costs no planner walk.
+    private var parityIndex = GalleryPageView.INVALID_INDEX
+    private var parity = SpreadPlanner.PARITY_UNKNOWN
+
     fun setSpreadMode(spreadMode: Int) {
         if (this.spreadMode == spreadMode) {
             return
@@ -130,6 +138,37 @@ internal class PagerLayoutManager(
             galleryView.requestFill()
         }
     }
+
+    /** See [GalleryView.setSpreadPairing]; a change re-pairs the current spread. */
+    fun setSpreadPairing(firstPageAlone: Boolean, shifted: Boolean, parity: Int) {
+        if (planner.firstPageAlone == firstPageAlone && planner.shifted == shifted &&
+            landingParity == parity
+        ) {
+            return
+        }
+        planner.firstPageAlone = firstPageAlone
+        planner.shifted = shifted
+        landingParity = parity
+        parityIndex = GalleryPageView.INVALID_INDEX
+        if (spreadActive && adapter != null) {
+            cancelAllAnimations()
+            removeAllPages()
+            resetParameters()
+            galleryView.requestFill()
+        }
+    }
+
+    override val currentSpreadParity: Int
+        get() {
+            if (!spreadActive || current.first == null) {
+                return SpreadPlanner.PARITY_UNKNOWN
+            }
+            if (parityIndex != index) {
+                parityIndex = index
+                parity = planner.parityOf(plannerPages, index)
+            }
+            return parity
+        }
 
     // Spreads follow the view's shape; switching rebuilds the slots around
     // index, the first page the reader sees.
@@ -518,7 +557,8 @@ internal class PagerLayoutManager(
         if (current.first == null) {
             // Open, resume, a jump, rotation, a data change or switching
             // spreads on: index is the page asked for, landing finds its spread.
-            val landing = planner.spreadForLanding(plannerPages, index)
+            val landing = planner.spreadForLanding(plannerPages, index, landingParity)
+            landingParity = SpreadPlanner.PARITY_UNKNOWN
             index = landing.first
             fillSpreadSlot(current, landing)
         }
@@ -948,6 +988,8 @@ internal class PagerLayoutManager(
         removeAllPages()
         // Reset parameters
         resetParameters()
+        // Pair breaks may have moved.
+        parityIndex = GalleryPageView.INVALID_INDEX
         galleryView.requestFill()
     }
 

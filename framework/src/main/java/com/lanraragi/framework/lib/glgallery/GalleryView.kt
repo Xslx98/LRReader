@@ -146,6 +146,10 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     @SpreadMode
     private var spreadMode = SPREAD_OFF
 
+    // Render-thread only: setSpreadPairing's packed argument, kept for a
+    // pager made later. First page alone, not shifted, no parity.
+    private var spreadPairing = 1
+
     /**
      * Latest intra-page scroll fraction, published from the render
      * thread after each fill. Read by UI-thread callers to persist a
@@ -154,6 +158,19 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
      */
     @Volatile
     var currentScrollFraction = 0f
+        private set
+
+    /**
+     * While two-page spreads are on, the pairing parity of the spread on
+     * screen (0 or 1: its first page's distance from the last pair break, mod
+     * 2), for the app to store with the book and hand back through
+     * [setSpreadPairing]. A wide page shown alone has one too; -1 only while
+     * spreads are off (setting, shape or long-strip mode). Published after
+     * each render, before the listener hears of a new index; safe to read
+     * from any thread.
+     */
+    @Volatile
+    var currentSpreadParity = PARITY_UNKNOWN
         private set
 
     init {
@@ -320,6 +337,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                 scaleMode, startPosition, 1.0f, pagerInterval,
             )
             pagerLayoutManager.setSpreadMode(spreadMode)
+            applySpreadPairing(pagerLayoutManager)
             this.pagerLayoutManager = pagerLayoutManager
         }
         return pagerLayoutManager
@@ -552,6 +570,32 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
      */
     fun setSpreadMode(@SpreadMode spreadMode: Int) {
         postMethod(METHOD_SET_SPREAD_MODE, spreadMode)
+    }
+
+    /**
+     * How spreads pair: [firstPageAlone] shows the cover (and every pair
+     * break) alone, [shifted] is the book's "shift pairing by one" and flips
+     * that. [parity] (see [currentSpreadParity]) is the pairing the reader saw
+     * last time with these two in effect, used for the next landing only;
+     * [PARITY_UNKNOWN] when none is stored. Changing any of them re-pairs the
+     * spread on screen around its first page.
+     */
+    fun setSpreadPairing(firstPageAlone: Boolean, shifted: Boolean, parity: Int) {
+        // One int argument: bit 0, bit 1, then parity + 1.
+        val packed = (if (firstPageAlone) 1 else 0) or (if (shifted) 2 else 0) or ((parity + 1) shl 2)
+        postMethod(METHOD_SET_SPREAD_PAIRING, packed)
+    }
+
+    private fun setSpreadPairingInternal(packed: Int) {
+        spreadPairing = packed
+        pagerLayoutManager?.let(::applySpreadPairing)
+    }
+
+    private fun applySpreadPairing(manager: PagerLayoutManager) {
+        val packed = spreadPairing
+        manager.setSpreadPairing(packed and 1 != 0, packed and 2 != 0, (packed shr 2) - 1)
+        // The parity is for one landing: a later pager starts without it.
+        spreadPairing = packed and 3
     }
 
     override fun onSingleTapUp(x: Float, y: Float): Boolean {
@@ -936,6 +980,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                     METHOD_SET_PAGER_INTERVAL -> setPagerIntervalInternal(calls.intArg(i, 0))
                     METHOD_SET_SCROLL_INTERVAL -> setScrollIntervalInternal(calls.intArg(i, 0))
                     METHOD_SET_SPREAD_MODE -> setSpreadModeInternal(calls.intArg(i, 0))
+                    METHOD_SET_SPREAD_PAIRING -> setSpreadPairingInternal(calls.intArg(i, 0))
                 }
             }
         } finally {
@@ -969,10 +1014,12 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
             newCurrentIndex = layoutManager.getCurrentIndex()
             newLastIndex = layoutManager.currentLastIndex
             currentScrollFraction = layoutManager.currentScrollFraction
+            currentSpreadParity = layoutManager.currentSpreadParity
         } else {
             newCurrentIndex = GalleryPageView.INVALID_INDEX
             newLastIndex = GalleryPageView.INVALID_INDEX
             currentScrollFraction = 0f
+            currentSpreadParity = PARITY_UNKNOWN
         }
         currentIndex = newCurrentIndex
         val oldLastIndex = currentLastIndex
@@ -1235,6 +1282,10 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         internal open val currentLastIndex: Int
             get() = getCurrentIndex()
 
+        /** See [GalleryView.currentSpreadParity]; -1 without spreads. Called every frame, so cheap. */
+        internal open val currentSpreadParity: Int
+            get() = SpreadPlanner.PARITY_UNKNOWN
+
         /** Page [index]'s aspect became known; only spreads care. */
         internal open fun onPageAspectKnown(index: Int) {
             // Single pages do not depend on it
@@ -1388,6 +1439,10 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         private const val METHOD_SET_SCROLL_INTERVAL = 22
         private const val METHOD_SET_CURRENT_PAGE_WITH_FRACTION = 23
         private const val METHOD_SET_SPREAD_MODE = 24
+        private const val METHOD_SET_SPREAD_PAIRING = 25
+
+        /** [currentSpreadParity] while single pages are shown; [setSpreadPairing] with no stored parity. */
+        const val PARITY_UNKNOWN = SpreadPlanner.PARITY_UNKNOWN
 
         @LayoutMode
         fun sanitizeLayoutMode(layoutMode: Int): Int = when (layoutMode) {
