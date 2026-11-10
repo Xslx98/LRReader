@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 import java.io.IOException
+import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -138,6 +139,12 @@ class DirGalleryProvider : GalleryProvider2 {
      * re-request from the GalleryView).
      */
     private val pendingIndices: MutableSet<Int> = ConcurrentHashMap.newKeySet()
+
+    // Header-only size reads of the pages around the reader, for two-page
+    // pairing. Every page is on disk here; a page's decode also records it.
+    private val aspectProbe = PageAspectProbe(::hasPageAspect, ::recordPageBounds)
+    private val openPageFile: (Int) -> InputStream? = { index -> fileAt(index)?.openInputStream() }
+    private val probeActive: () -> Boolean = { fileList.get() != null }
 
     @Volatile
     private var providerScope: CoroutineScope? = null
@@ -839,6 +846,9 @@ class DirGalleryProvider : GalleryProvider2 {
             val image = decodePage(file)
             if (image != null) {
                 notifyPageSucceed(index, image)
+                if (request.priority == PRIO_CURRENT) {
+                    providerScope?.launch { aspectProbe.probeAround(index, totalPages, openPageFile, probeActive) }
+                }
                 // Reader-anchored preload window — never marches past
                 // readAnchor + PRELOAD_RADIUS, skips cached pages.
                 DirPreloadPolicy.preloadTargets(
