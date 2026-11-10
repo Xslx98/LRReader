@@ -34,7 +34,9 @@ object TileRegions {
         texW: Int,
         texH: Int,
     ) {
-        if (dst.isEmpty || minOf(rootW, rootH, texW, texH) <= 0) {
+        // Runs on every frame that moves the page: plain comparisons, as the
+        // four-argument minOf is a vararg call that allocates an IntArray.
+        if (dst.isEmpty || !hasArea(rootW, rootH) || !hasArea(texW, texH)) {
             out.setEmpty()
             return
         }
@@ -47,6 +49,8 @@ object TileRegions {
             (-viewY + rootH - dst.top) * sy,
         )
     }
+
+    private fun hasArea(width: Int, height: Int): Boolean = width > 0 && height > 0
 
     /** [screen] grown by [margin] of its own size on every side, into [out]. */
     @JvmStatic

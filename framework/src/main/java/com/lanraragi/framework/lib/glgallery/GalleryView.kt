@@ -128,10 +128,8 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     private var startPosition: Int = build.startPosition
     private var index: Int = MathUtils.clamp(build.startPage, 0, Int.MAX_VALUE)
 
-    private val methodList: MutableList<Int> = ArrayList(5)
-    private val argsList: MutableList<Array<out Any>> = ArrayList(5)
-    private val methodListTemp: MutableList<Int> = ArrayList(5)
-    private val argsListTemp: MutableList<Array<out Any>> = ArrayList(5)
+    // Calls posted from the UI thread for the render thread; see RenderCallQueue.
+    private val renderCalls = RenderCallQueue()
 
     // Render-thread only: the last index reported to onUpdateCurrentIndex.
     private var currentIndex = GalleryPageView.INVALID_INDEX
@@ -455,13 +453,36 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         return firstScroll
     }
 
-    // Make sure method run in render thread to ensure thread safe
-    private fun postMethod(method: Int, vararg args: Any) {
-        synchronized(this) {
-            methodList.add(method)
-            argsList.add(args)
-        }
+    // Make sure method run in render thread to ensure thread safe. One overload
+    // per argument shape, so a touch event posts without boxing (no vararg).
+    private fun postMethod(method: Int) {
+        renderCalls.post(method)
+        invalidate()
+    }
 
+    private fun postMethod(method: Int, a: Int) {
+        renderCalls.post(method, a)
+        invalidate()
+    }
+
+    private fun postMethod(method: Int, a: Int, b: Float) {
+        renderCalls.post(method, a, b)
+        invalidate()
+    }
+
+    private fun postMethod(method: Int, a: Float, b: Float) {
+        renderCalls.post(method, a, b)
+        invalidate()
+    }
+
+    private fun postMethod(method: Int, a: Float, b: Float, c: Float) {
+        renderCalls.post(method, a, b, c)
+        invalidate()
+    }
+
+    @Suppress("LongParameterList") // a scroll event carries six floats
+    private fun postMethod(method: Int, a: Float, b: Float, c: Float, d: Float, e: Float, f: Float) {
+        renderCalls.post(method, a, b, c, d, e, f)
         invalidate()
     }
 
@@ -840,76 +861,48 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         fillRequested = false
     }
 
-    // Java's (Float) / (Integer) casts of the posted arguments. The smart
-    // cast after an is-check compiles to instanceof + checkcast + unboxing,
-    // without the null check an as-cast adds for every argument.
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun Array<out Any>.floatAt(index: Int): Float {
-        val value = this[index]
-        if (value !is Float) throw ClassCastException()
-        return value
-    }
-
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun Array<out Any>.intAt(index: Int): Int {
-        val value = this[index]
-        if (value !is Int) throw ClassCastException()
-        return value
-    }
-
     @Suppress("CyclomaticComplexMethod") // one branch per posted method id; a table would need a lambda each
     private fun dispatchMethod() {
-        val methodListTemp = this.methodListTemp
-        val argsListTemp = this.argsListTemp
-
-        synchronized(this) {
-            if (methodList.isEmpty()) {
-                return
-            }
-
-            methodListTemp.addAll(methodList)
-            argsListTemp.addAll(argsList)
-            methodList.clear()
-            argsList.clear()
+        val calls = renderCalls
+        val count = calls.beginDrain()
+        if (count == 0) {
+            return
         }
-
-        for (i in 0 until methodListTemp.size) {
-            val method = methodListTemp[i]
-            val args = argsListTemp[i]
-
-            when (method) {
-                METHOD_ON_SINGLE_TAP_CONFIRMED -> onSingleTapConfirmedInternal(args.floatAt(0), args.floatAt(1))
-                METHOD_ON_DOUBLE_TAP_CONFIRMED -> onDoubleTapConfirmedInternal(args.floatAt(0), args.floatAt(1))
-                METHOD_ON_LONG_PRESS -> onLongPressInternal(args.floatAt(0), args.floatAt(1))
-                METHOD_ON_SCROLL -> onScrollInternal(
-                    args.floatAt(0), args.floatAt(1), args.floatAt(2),
-                    args.floatAt(3), args.floatAt(4), args.floatAt(5),
-                )
-                METHOD_ON_FLING -> onFlingInternal(args.floatAt(0), args.floatAt(1))
-                METHOD_ON_SCALE_BEGIN -> onScaleBeginInternal(args.floatAt(0), args.floatAt(1))
-                METHOD_ON_SCALE -> onScaleInternal(args.floatAt(0), args.floatAt(1), args.floatAt(2))
-                METHOD_ON_DOWN -> onDownInternal()
-                METHOD_ON_UP -> onUpInternal()
-                METHOD_ON_POINTER_DOWN -> onPointerDownInternal()
-                // Posted only for the render they request: single tap up, double
-                // tap (acted on when confirmed), scale end and pointer up.
-                METHOD_ON_SINGLE_TAP_UP, METHOD_ON_DOUBLE_TAP, METHOD_ON_SCALE_END, METHOD_ON_POINTER_UP -> Unit
-                METHOD_SET_LAYOUT_MODE -> setLayoutModeInternal(args.intAt(0))
-                METHOD_SET_CURRENT_PAGE -> setCurrentPageInternal(args.intAt(0))
-                METHOD_SET_CURRENT_PAGE_WITH_FRACTION ->
-                    setCurrentPageWithFractionInternal(args.intAt(0), args.floatAt(1))
-                METHOD_PAGE_LEFT -> pageLeftInternal()
-                METHOD_PAGE_RIGHT -> pageRightInternal()
-                METHOD_SET_SCALE_MODE -> setScaleModeInternal(args.intAt(0))
-                METHOD_SET_START_POSITION -> setStartPositionInternal(args.intAt(0))
-                METHOD_ON_ATTACH_TO_ROOT -> onAttachToRootInternal()
-                METHOD_SET_PAGER_INTERVAL -> setPagerIntervalInternal(args.intAt(0))
-                METHOD_SET_SCROLL_INTERVAL -> setScrollIntervalInternal(args.intAt(0))
+        try {
+            for (i in 0 until count) {
+                when (calls.method(i)) {
+                    METHOD_ON_SINGLE_TAP_CONFIRMED -> onSingleTapConfirmedInternal(calls.floatArg(i, 0), calls.floatArg(i, 1))
+                    METHOD_ON_DOUBLE_TAP_CONFIRMED -> onDoubleTapConfirmedInternal(calls.floatArg(i, 0), calls.floatArg(i, 1))
+                    METHOD_ON_LONG_PRESS -> onLongPressInternal(calls.floatArg(i, 0), calls.floatArg(i, 1))
+                    METHOD_ON_SCROLL -> onScrollInternal(
+                        calls.floatArg(i, 0), calls.floatArg(i, 1), calls.floatArg(i, 2),
+                        calls.floatArg(i, 3), calls.floatArg(i, 4), calls.floatArg(i, 5),
+                    )
+                    METHOD_ON_FLING -> onFlingInternal(calls.floatArg(i, 0), calls.floatArg(i, 1))
+                    METHOD_ON_SCALE_BEGIN -> onScaleBeginInternal(calls.floatArg(i, 0), calls.floatArg(i, 1))
+                    METHOD_ON_SCALE -> onScaleInternal(calls.floatArg(i, 0), calls.floatArg(i, 1), calls.floatArg(i, 2))
+                    METHOD_ON_DOWN -> onDownInternal()
+                    METHOD_ON_UP -> onUpInternal()
+                    METHOD_ON_POINTER_DOWN -> onPointerDownInternal()
+                    // Posted only for the render they request: single tap up, double
+                    // tap (acted on when confirmed), scale end and pointer up.
+                    METHOD_ON_SINGLE_TAP_UP, METHOD_ON_DOUBLE_TAP, METHOD_ON_SCALE_END, METHOD_ON_POINTER_UP -> Unit
+                    METHOD_SET_LAYOUT_MODE -> setLayoutModeInternal(calls.intArg(i, 0))
+                    METHOD_SET_CURRENT_PAGE -> setCurrentPageInternal(calls.intArg(i, 0))
+                    METHOD_SET_CURRENT_PAGE_WITH_FRACTION ->
+                        setCurrentPageWithFractionInternal(calls.intArg(i, 0), calls.floatArg(i, 1))
+                    METHOD_PAGE_LEFT -> pageLeftInternal()
+                    METHOD_PAGE_RIGHT -> pageRightInternal()
+                    METHOD_SET_SCALE_MODE -> setScaleModeInternal(calls.intArg(i, 0))
+                    METHOD_SET_START_POSITION -> setStartPositionInternal(calls.intArg(i, 0))
+                    METHOD_ON_ATTACH_TO_ROOT -> onAttachToRootInternal()
+                    METHOD_SET_PAGER_INTERVAL -> setPagerIntervalInternal(calls.intArg(i, 0))
+                    METHOD_SET_SCROLL_INTERVAL -> setScrollIntervalInternal(calls.intArg(i, 0))
+                }
             }
+        } finally {
+            calls.endDrain()
         }
-
-        methodListTemp.clear()
-        argsListTemp.clear()
     }
 
     override fun render(canvas: GLCanvas) {

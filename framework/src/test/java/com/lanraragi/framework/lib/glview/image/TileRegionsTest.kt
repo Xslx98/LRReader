@@ -1,6 +1,7 @@
 package com.lanraragi.framework.lib.glview.image
 
 import android.graphics.RectF
+import com.lanraragi.framework.util.minAllocatedBytes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,6 +38,23 @@ class TileRegionsTest {
         TileRegions.screenInTexture(out, RectF(), 0, 0, 400, 800, 400, 6000)
 
         assertTrue(out.isEmpty)
+    }
+
+    @Test
+    fun screenInTexture_allocatesNothing() {
+        // ImageView calls it on every frame that moves the page (drag, fling, pinch).
+        val dst = RectF(-300f, -500f, 1300f, 1900f)
+        screenInTextureFrames(dst) // warm up
+        val bytes = minAllocatedBytes(5) { screenInTextureFrames(dst) }
+
+        assertEquals("fewest bytes allocated by 200 calls in 5 runs", 0L, bytes)
+    }
+
+    private fun screenInTextureFrames(dst: RectF) {
+        for (i in 0 until 200) {
+            dst.offset(if (i % 2 == 0) 3f else -3f, 0f)
+            TileRegions.screenInTexture(out, dst, 0, 0, 1080, 2400, 800, 1200)
+        }
     }
 
     @Test
