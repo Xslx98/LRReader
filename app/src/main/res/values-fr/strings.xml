@@ -992,6 +992,7 @@ Cette action est irréversible.</string>
     <string name="reader_chapters_loading">Chargement des chapitres…</string>
     <string name="reader_chapters_failed">Impossible de charger les chapitres. Appuyez pour réessayer.</string>
     <string name="reader_top_bar_page">Page %1$d / %2$d</string>
+    <string name="reader_top_bar_pages">Page %1$d-%2$d / %3$d</string>
     <string name="cd_stop_auto_read">Arrêter le défilement automatique</string>
     <string name="cd_downloaded">Téléchargé</string>
     <string name="cd_random">Aléatoire</string>

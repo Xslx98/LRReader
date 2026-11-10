@@ -867,6 +867,7 @@
     <string name="reader_chapters_loading">章を読み込み中…</string>
     <string name="reader_chapters_failed">章を読み込めませんでした。タップして再試行</string>
     <string name="reader_top_bar_page">%1$d / %2$d ページ</string>
+    <string name="reader_top_bar_pages">%1$d-%2$d / %3$d ページ</string>
     <string name="cd_stop_auto_read">自動送りを停止</string>
     <string name="cd_downloaded">ダウンロード済み</string>
     <string name="cd_random">ランダム</string>

@@ -12,10 +12,15 @@
 # #101 (tank delete closes the detail page and notifies the list, +292 B) and
 # the two-page reading PRs that follow (plan item 20). main had 365 B of dex
 # headroom left after #100/#102/#103. Only dex moves; the other budgets stay.
+# 2026-11-10 (item 20 PR C, two-page spreads): the owner approved dex +8192 B
+# (3762992 -> 3771184) once more, covering item 20 PRs C, D and E; PR C alone
+# grew dex by 7440 B (SpreadPlanner is no longer R8-stripped, plus the slot
+# layout and joint viewport). apk.download +4610 B and apk.file +480 B are
+# PR C's measured growth (arm64 release vs 0ab76d56), pre-approved 2026-11-09.
 tolerance.percent 1.5
-apk.file        5221400
-apk.download    2493800
-dex             3762992
+apk.file        5221880
+apk.download    2498410
+dex             3771184
 lib                6400
 res             1350000
 assets            14000

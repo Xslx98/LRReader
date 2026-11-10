@@ -30,7 +30,7 @@ import java.util.Arrays
 import kotlin.math.max
 import kotlin.math.min
 
-internal class ImageView : GLView(), ImageTexture.Callback {
+internal class ImageView : GLView(), ImageTexture.Callback, PanTarget {
 
     var imageTexture: ImageTexture? = null
         set(imageTexture) {
@@ -70,6 +70,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
                 textureWidth = 1
                 textureHeight = 1
             }
+            spread?.setPage(spreadSide, spreadTextureWidth(), spreadTextureHeight())
 
             scaleOffsetDirty = true
             positionInRootDirty = true
@@ -93,8 +94,49 @@ internal class ImageView : GLView(), ImageTexture.Callback {
     private var startPosition = START_POSITION_TOP_RIGHT
     private var scaleValue = 1.0f
 
-    var scale = 1.0f
+    override var scale = 1.0f
         private set
+
+    // Set while this page is one half of a two-page spread: the viewport then
+    // owns dstRect, and the scale mode and start position do not apply.
+    private var spread: SpreadViewport? = null
+    private var spreadSide = SpreadViewport.LEFT
+    private var spreadVersion = 0
+
+    private fun spreadTextureWidth(): Int = if (imageTexture == null) 0 else textureWidth
+
+    private fun spreadTextureHeight(): Int = if (imageTexture == null) 0 else textureHeight
+
+    /** Shows this page on [side] of [viewport]'s spread until [detachSpread]. */
+    fun attachSpread(viewport: SpreadViewport, side: Int) {
+        spread = viewport
+        spreadSide = side
+        viewport.setPage(side, spreadTextureWidth(), spreadTextureHeight())
+        scaleOffsetDirty = true
+        positionInRootDirty = true
+    }
+
+    /** Back to a page of its own, laid out by the scale mode. */
+    fun detachSpread() {
+        if (spread == null) {
+            return
+        }
+        spread = null
+        scaleOffsetDirty = true
+        positionInRootDirty = true
+    }
+
+    private fun applySpread(viewport: SpreadViewport) {
+        if (width == 0 || height == 0) {
+            scaleOffsetDirty = true
+            return
+        }
+        viewport.layout(width, height)
+        viewport.dst(spreadSide, dstRect)
+        spreadVersion = viewport.version
+        scaleOffsetDirty = false
+        positionInRootDirty = true
+    }
 
     private var scaleOffsetDirty = true
     private var positionInRootDirty = true
@@ -170,7 +212,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         }
     }
 
-    fun getScaleDefault(scaleDefault: FloatArray) {
+    override fun getScaleDefault(scaleDefault: FloatArray) {
         if (imageTexture == null) {
             return
         }
@@ -188,10 +230,10 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         Arrays.sort(scaleDefault)
     }
 
-    val isLoaded: Boolean
+    override val isLoaded: Boolean
         get() = imageTexture != null
 
-    fun canFlingVertically(): Boolean {
+    override fun canFlingVertically(): Boolean {
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
             if (scaleOffsetDirty) {
@@ -202,7 +244,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         return dstRect.top < 0.0f || dstRect.bottom > height
     }
 
-    fun canFlingHorizontally(): Boolean {
+    override fun canFlingHorizontally(): Boolean {
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
             if (scaleOffsetDirty) {
@@ -213,7 +255,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         return dstRect.left < 0.0f || dstRect.right > width
     }
 
-    fun canFling(): Boolean {
+    override fun canFling(): Boolean {
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
             if (scaleOffsetDirty) {
@@ -224,7 +266,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         return dstRect.left < 0.0f || dstRect.top < 0.0f || dstRect.right > width || dstRect.bottom > height
     }
 
-    fun getMaxDx(): Int {
+    override fun getMaxDx(): Int {
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
             if (scaleOffsetDirty) {
@@ -234,7 +276,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         return max(0, -dstRect.left.toInt())
     }
 
-    fun getMinDx(): Int {
+    override fun getMinDx(): Int {
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
             if (scaleOffsetDirty) {
@@ -244,7 +286,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         return min(0, width - dstRect.right.toInt())
     }
 
-    fun getMaxDy(): Int {
+    override fun getMaxDy(): Int {
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
             if (scaleOffsetDirty) {
@@ -254,7 +296,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         return max(0, -dstRect.top.toInt())
     }
 
-    fun getMinDy(): Int {
+    override fun getMinDy(): Int {
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
             if (scaleOffsetDirty) {
@@ -330,6 +372,12 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         this.scaleMode = scaleMode
         this.startPosition = startPosition
         this.scaleValue = scaleValue
+
+        val viewport = spread
+        if (viewport != null) {
+            applySpread(viewport)
+            return
+        }
 
         val screenWidth = width
         val screenHeight = height
@@ -435,7 +483,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         dst.bottom = dst.top + targetHeight
     }
 
-    fun scroll(dx: Int, dy: Int, remain: IntArray) {
+    override fun scroll(dx: Int, dy: Int, remain: IntArray) {
         // Only work after layout
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
@@ -503,7 +551,7 @@ internal class ImageView : GLView(), ImageTexture.Callback {
         }
     }
 
-    fun scale(focusX: Float, focusY: Float, scale: Float) {
+    override fun scale(focusX: Float, focusY: Float, scale: Float) {
         // Only work after layout
         if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
@@ -605,7 +653,13 @@ internal class ImageView : GLView(), ImageTexture.Callback {
     override fun onRender(canvas: GLCanvas) {
         val texture = imageTexture ?: return
 
-        if (scaleOffsetDirty) {
+        val viewport = spread
+        if (viewport != null) {
+            // The partner page or a gesture moved the shared viewport.
+            if (scaleOffsetDirty || viewport.version != spreadVersion) {
+                applySpread(viewport)
+            }
+        } else if (scaleOffsetDirty) {
             setScaleOffset(scaleMode, startPosition, scaleValue)
         }
 

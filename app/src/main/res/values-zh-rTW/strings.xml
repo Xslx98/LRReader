@@ -938,6 +938,7 @@
     <string name="reader_chapters_loading">正在載入章節…</string>
     <string name="reader_chapters_failed">無法載入章節，輕觸重試</string>
     <string name="reader_top_bar_page">第 %1$d / %2$d 頁</string>
+    <string name="reader_top_bar_pages">第 %1$d-%2$d / %3$d 頁</string>
     <string name="cd_stop_auto_read">停止自動翻頁</string>
     <string name="cd_downloaded">已下載</string>
     <string name="cd_random">隨機</string>

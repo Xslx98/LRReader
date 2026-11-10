@@ -81,8 +81,12 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     /** Told when the menu starts showing (true) or hiding (false). */
     var onMenuVisibilityChanged: ((Boolean) -> Unit)? = null
 
-    /** Told the current 0-indexed page and the page count whenever either changes. */
-    var onPageChanged: ((index: Int, size: Int) -> Unit)? = null
+    /**
+     * Told the current 0-indexed page, the last page on screen (the second
+     * page of a two-page spread, else the same page) and the page count
+     * whenever any of them changes.
+     */
+    var onPageChanged: ((index: Int, last: Int, size: Int) -> Unit)? = null
 
     var layoutMode: Int = 0
         set(value) {
@@ -99,10 +103,23 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
     var currentIndex: Int = 0
         set(value) {
+            if (value != field) {
+                lastIndex = value
+            }
             field = value
             updateSlider()
             updateProgress()
         }
+
+    /** The last page on screen; past [currentIndex] only while a spread shows two pages. */
+    private var lastIndex: Int = 0
+
+    /** A two-page spread (or a page alone after one) shows [first]..[last]. */
+    fun setShownPages(first: Int, last: Int) {
+        currentIndex = first
+        lastIndex = last
+        updateProgress()
+    }
 
     var isShowSystemUi: Boolean = false
 
@@ -150,10 +167,13 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
     @SuppressLint("SetTextI18n")
     fun updateProgress() {
-        onPageChanged?.invoke(currentIndex, size)
+        val last = maxOf(lastIndex, currentIndex)
+        onPageChanged?.invoke(currentIndex, last, size)
         val progress = mProgress ?: return
         if (size <= 0 || currentIndex < 0) {
             progress.text = null
+        } else if (last > currentIndex) {
+            progress.text = "${currentIndex + 1}-${last + 1}/$size"
         } else {
             progress.text = "${currentIndex + 1}/$size"
         }

@@ -988,6 +988,7 @@ Esta acción no se puede deshacer.</string>
     <string name="reader_chapters_loading">Cargando capítulos…</string>
     <string name="reader_chapters_failed">No se pudieron cargar los capítulos. Toca para reintentar.</string>
     <string name="reader_top_bar_page">Página %1$d / %2$d</string>
+    <string name="reader_top_bar_pages">Página %1$d-%2$d / %3$d</string>
     <string name="cd_stop_auto_read">Detener transferencia automática</string>
     <string name="cd_downloaded">Descargado</string>
     <string name="cd_random">Aleatorio</string>

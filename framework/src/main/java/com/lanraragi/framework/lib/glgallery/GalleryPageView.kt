@@ -89,6 +89,31 @@ class GalleryPageView(
     // For PageLayoutManager, min height is useless.
     override fun getSuggestedMinimumHeight(): Int = if (imageView.visibility == VISIBLE) 0 else minHeight
 
+    // The half of a two-page spread this page is shown in (SpreadViewport.LEFT
+    // or RIGHT), or INFO_CENTRED for a page of its own. The page view spans
+    // the whole slot either way, so the number, spinner and error move to the
+    // centre of the page's half.
+    private var infoSide = INFO_CENTRED
+
+    internal fun setInfoSide(side: Int) {
+        if (infoSide != side) {
+            infoSide = side
+            requestLayout()
+        }
+    }
+
+    override fun onLayout(changeSize: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changeSize, left, top, right, bottom)
+        val side = infoSide
+        if (side != INFO_CENTRED && info.visibility != GONE) {
+            val infoWidth = info.measuredWidth
+            val centre = if (side == SpreadViewport.LEFT) width / 4 else width * 3 / 4
+            val infoLeft = centre - infoWidth / 2
+            val infoTop = info.bounds().top
+            info.layout(infoLeft, infoTop, infoLeft + infoWidth, infoTop + info.measuredHeight)
+        }
+    }
+
     fun showImage() {
         imageView.visibility = VISIBLE
         info.visibility = GONE
@@ -169,6 +194,8 @@ class GalleryPageView(
 
     companion object {
         const val INVALID_INDEX = -1
+
+        internal const val INFO_CENTRED = -1
 
         const val PROGRESS_GONE = -1.0f
         const val PROGRESS_INDETERMINATE = -2.0f
