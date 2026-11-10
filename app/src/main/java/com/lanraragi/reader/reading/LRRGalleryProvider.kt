@@ -103,6 +103,13 @@ class LRRGalleryProvider(
     // PRELOAD_PARALLELISM downloads (effective concurrency ≈ 2 × batches).
     private val preloadSemaphore = Semaphore(PRELOAD_PARALLELISM)
 
+    // Header-only size reads of pages on disk, for two-page pairing.
+    private val aspectProbe = PageAspectProbe(::hasPageAspect, ::recordPageBounds)
+    private val openPageOnDisk: (Int) -> FileInputStream? = { index ->
+        getCacheFile(index).takeIf { it.length() > ReaderPageCache.MIN_IMAGE_SIZE }?.let(::FileInputStream)
+    }
+    private val probeActive: () -> Boolean = { !stateRef.get().stopped }
+
     /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
     private val progressSyncer = ReadingProgressSyncer(
         ServiceRegistry.coroutineModule.ioScope
@@ -779,6 +786,8 @@ class LRRGalleryProvider(
      * Preload adjacent pages (download only, no decode).
      * Uses a semaphore to allow [PRELOAD_PARALLELISM] concurrent downloads,
      * utilizing more of the available bandwidth without overloading the server.
+     * Pages on disk ahead (once downloaded) and behind also get their header
+     * read for two-page pairing ([PageAspectProbe]).
      */
     private fun preloadPages(currentIndex: Int) {
         val paths = stateRef.get().paths ?: return
@@ -795,6 +804,7 @@ class LRRGalleryProvider(
                     try {
                         if (!stateRef.get().stopped) {
                             downloadPageToCache(preloadIndex)
+                            aspectProbe.probe(preloadIndex, openPageOnDisk)
                             Log.d(TAG, "Preloaded page $preloadIndex")
                         }
                     } catch (e: Exception) {
@@ -804,6 +814,8 @@ class LRRGalleryProvider(
                     }
                 }
             }
+            // After the downloads are launched, so header reads never delay them.
+            aspectProbe.probeAround(currentIndex, paths.size, openPageOnDisk, probeActive)
         }
     }
 

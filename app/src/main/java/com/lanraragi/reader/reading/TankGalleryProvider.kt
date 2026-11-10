@@ -467,6 +467,8 @@ class TankGalleryProvider(
         for (i in 0 until ceiling) {
             removeCache(i)
         }
+        // Learnt page sizes are keyed by the old global indices too.
+        forgetPageAspects()
         notifyDataChanged()
         tankChapters.refresh()
     }

@@ -56,6 +56,12 @@ abstract class GalleryProvider protected constructor(
     @Volatile
     private var stopped = false
 
+    // Page aspects learnt so far (see pageAspect). Copy-on-grow: written under
+    // the lock from decoder and IO threads, read without it.
+    @Volatile
+    private var aspects = FloatArray(0)
+    private val aspectsLock = Any()
+
     @UiThread
     open fun start() {
         OSUtils.checkMainLoop()
@@ -185,7 +191,49 @@ abstract class GalleryProvider protected constructor(
         notify(NotifyTask.TYPE_PERCENT, index, percent, null, null)
     }
 
+    /**
+     * Width / height of page [index] for the spread planner, or
+     * [SpreadPlanner.UNKNOWN_ASPECT] until the page has been decoded or its
+     * file header read ([recordPageBounds]). Lock-free, for the render thread.
+     */
+    fun pageAspect(index: Int): Float {
+        val a = aspects
+        return if (index >= 0 && index < a.size) a[index] else SpreadPlanner.UNKNOWN_ASPECT
+    }
+
+    /** Whether [pageAspect] knows page [index]. */
+    fun hasPageAspect(index: Int): Boolean = pageAspect(index) > SpreadPlanner.UNKNOWN_ASPECT
+
+    /**
+     * Learn page [index]'s size from a header-only bounds read of its file,
+     * so pairing knows a wide page before it is decoded. A decode records the
+     * decoded size again, which wins if the header disagreed.
+     */
+    @AnyThread
+    protected fun recordPageBounds(index: Int, width: Int, height: Int) {
+        if (index < 0 || width <= 0 || height <= 0) return
+        synchronized(aspectsLock) {
+            var a = aspects
+            if (index >= a.size) {
+                a = a.copyOf(maxOf(index + 1, a.size * 2, MIN_ASPECTS))
+            }
+            a[index] = width.toFloat() / height
+            // Re-publish through the volatile field so the render thread sees
+            // the element written into an array it may already hold.
+            aspects = a
+        }
+    }
+
+    /** Drop every learnt aspect: page indices now mean other pages (a tank remap). */
+    @AnyThread
+    protected fun forgetPageAspects() {
+        synchronized(aspectsLock) {
+            aspects = FloatArray(0)
+        }
+    }
+
     fun notifyPageSucceed(index: Int, image: Image) {
+        recordPageBounds(index, image.width, image.height)
         val imageWrapper = ImageWrapper(image)
         if (stopped) {
             // A decode completing after stop() must not repopulate the
@@ -341,5 +389,7 @@ abstract class GalleryProvider protected constructor(
     companion object {
         const val STATE_WAIT = -1
         const val STATE_ERROR = -2
+
+        private const val MIN_ASPECTS = 64
     }
 }
