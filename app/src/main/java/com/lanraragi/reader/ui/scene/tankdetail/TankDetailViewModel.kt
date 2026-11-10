@@ -374,6 +374,7 @@ class TankDetailViewModel : ViewModel() {
                 // (spec 2026-09-22 §6): clear it first, while the tank still exists.
                 categoryDissolve(client, url, tankId, current.name)
                 tanks.deleteOnly(connection(url), tankId)
+                tanks.deleted(url, tankId)
                 forgetCoverChoice(tankId)
                 dissolveDownloadGroup(tankId)
                 _events.tryEmit(Event.Deleted)

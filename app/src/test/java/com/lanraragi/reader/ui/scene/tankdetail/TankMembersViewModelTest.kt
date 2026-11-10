@@ -3,6 +3,8 @@ package com.lanraragi.reader.ui.scene.tankdetail
 import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
 import com.lanraragi.reader.awaitViewModelIdle
@@ -584,6 +586,25 @@ class TankMembersViewModelTest {
         awaitViewModelIdle(vm)
         assertEquals(listOf("dissolve categories $TANK Tank", "DELETE /api/tankoubons/$TANK"), log.toList())
         assertEquals(TankCoverChoiceStore.Choice(ID_EP1, 0, 5L), store.get(TANK))
+    }
+
+    @Test
+    fun deleteTank_tellsTheListAndThePageUnderneath_onlyOnceTheDeleteSucceeded() {
+        // The tank detail page waiting underneath closes on this event, and the
+        // gallery list drops the tank's row (#98).
+        val deleted = AppEventBus.archiveDeletedEvent.collectInto(eventScope)
+        val vm = quietVm()
+        val events = vm.uiEvent.collectInto(eventScope)
+        deleteStatus = 423
+        vm.deleteTank()
+        awaitUntil { events.isNotEmpty() }
+
+        deleteStatus = 200
+        vm.deleteTank()
+
+        awaitUntil { events.contains(TankDetailUiEvent.Deleted) }
+        awaitUntil(message = "no deletion event") { deleted.isNotEmpty() }
+        assertEquals(listOf(ArchiveDeletedEvent(TANK)), deleted.toList())
     }
 
     private companion object {

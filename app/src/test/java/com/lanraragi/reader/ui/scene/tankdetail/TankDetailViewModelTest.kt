@@ -3,6 +3,8 @@ package com.lanraragi.reader.ui.scene.tankdetail
 import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
@@ -605,6 +607,24 @@ class TankDetailViewModelTest {
         assertTrue(events.none { it is TankDetailViewModel.Event.Deleted })
         assertTrue(forgotten.isEmpty())
         assertTrue(dissolved.isEmpty())
+    }
+
+    @Test
+    fun deleteTank_tellsTheListsTheTankIsGone_onlyOnceTheDeleteSucceeded() {
+        // The gallery list drops the tank's row on this event (#98).
+        val deleted = AppEventBus.archiveDeletedEvent.collectInto(eventScope)
+        deleteStatus = 500
+        val vm = loadedVm()
+        val events = vm.events.collectInto(eventScope)
+        vm.deleteTank()
+        awaitUntil { events.any { it is TankDetailViewModel.Event.Error } }
+
+        deleteStatus = 200
+        vm.deleteTank()
+
+        awaitUntil { events.any { it is TankDetailViewModel.Event.Deleted } }
+        awaitUntil(message = "no deletion event") { deleted.isNotEmpty() }
+        assertEquals(listOf(ArchiveDeletedEvent(TANK)), deleted.toList())
     }
 
     @Test

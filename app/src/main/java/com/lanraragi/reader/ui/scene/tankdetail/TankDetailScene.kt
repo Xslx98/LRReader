@@ -36,6 +36,7 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.buildRatingEmoji
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.download.TankFillDispatcher
+import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.reading.GalleryProvider2
 import com.lanraragi.reader.reading.TankMemberSeed
 import com.lanraragi.reader.reading.TankPageMath
@@ -121,6 +122,17 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
 
     private var mCoverBinding: String? = null
     private var mRevealed = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Deleted on the members page while this page waits underneath: close
+        // too (#98). Fragment-scoped, as a covered scene has no view; a delete
+        // made here (resumed) closes through the ViewModel's Deleted event.
+        val tankId = arguments?.getString(KEY_TANK_ID)
+        collectFlowWhileCreated(this, AppEventBus.archiveDeletedEvent) { event ->
+            if (event.arcid == tankId && !isResumed) finish()
+        }
+    }
 
     override fun onCreateView2(
         inflater: LayoutInflater,

@@ -10,6 +10,8 @@ import com.lanraragi.reader.client.api.archiveThumbnailUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.TankoubonSupportGate
 import kotlinx.coroutines.CancellationException
@@ -351,6 +353,16 @@ class TankRepository(
      */
     suspend fun deleteOnly(conn: ServerConnection, tankId: String) {
         LRRTankoubonApi.deleteTankoubon(conn.client, conn.baseUrl, tankId)
+    }
+
+    /**
+     * After a successful [deleteOnly]: drops [baseUrl]'s [TankListCache] and
+     * posts [ArchiveDeletedEvent] with the tank id, so the gallery list and a
+     * tank detail page left underneath stop showing the tank (#98).
+     */
+    fun deleted(baseUrl: String, tankId: String) {
+        TankListCache.invalidate(baseUrl)
+        AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(tankId))
     }
 
     private companion object {

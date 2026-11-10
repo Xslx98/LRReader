@@ -383,6 +383,7 @@ class TankMembersViewModel : ViewModel() {
                 // (spec 2026-09-22 §6): clear it first, while the tank still exists.
                 categoryDissolve(conn.client, url, tankId, _tankName.value)
                 tanks.deleteOnly(conn, tankId)
+                tanks.deleted(url, tankId)
                 coverChoices.remove(tankId)
                 // Dissolve the downloaded-tank grouping (files/rows stay:
                 // deleting a tank never deletes its archives — the member
