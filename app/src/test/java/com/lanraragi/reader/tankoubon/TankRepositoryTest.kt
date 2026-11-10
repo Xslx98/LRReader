@@ -437,6 +437,17 @@ class TankRepositoryTest {
     // ── delete ─────────────────────────────────────────────────────
 
     @Test
+    fun deleted_dropsTheCachedTankList() = runBlocking {
+        val gone = "TANK_0000000119"
+        TankListCache.put(baseUrl, listOf(Tankoubon(id = gone, name = "Gone")))
+        server.enqueue(MockResponse().setBody(pageJson(0)))
+
+        service.deleted(baseUrl, gone)
+
+        assertEquals(emptyList<String>(), TankListCache.get(client, baseUrl).map { it.id })
+    }
+
+    @Test
     fun delete_aCallerThatGoesAwayMidWay_doesNotStopTheDelete() = runBlocking {
         val id = "TANK_0000000114"
         val paths = CopyOnWriteArrayList<String>()
