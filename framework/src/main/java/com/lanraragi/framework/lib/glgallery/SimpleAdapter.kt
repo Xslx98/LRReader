@@ -50,6 +50,8 @@ open class SimpleAdapter(
 
     override fun size(): Int = provider.size()
 
+    override fun pageAspect(index: Int): Float = provider.pageAspect(index)
+
     override fun onDataChanged() {
         galleryView?.onDataChanged()
     }
@@ -102,6 +104,8 @@ open class SimpleAdapter(
                 page.setPage(index + 1)
                 page.setProgress(GalleryPageView.PROGRESS_GONE)
                 page.clearError()
+                // The decode recorded the page's size (GalleryProvider.pageAspect).
+                galleryView?.onPageAspectKnown(index)
             } else {
                 // The image is recycled, request again.
                 // UPSTREAM-LEGACY: potential infinite request loop if adapter keeps returning RESULT_ERROR

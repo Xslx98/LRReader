@@ -81,6 +81,73 @@ internal class PagerLayoutManager(
 
     private val tempRect = Rect()
 
+    // Two-page spreads (plan item 20). While they are inactive, every spread
+    // branch below is skipped and this is the single-page pager. While they
+    // are active, index is the first page (reading order) of the current slot.
+    private var spreadMode = GalleryView.SPREAD_OFF
+    private var spreadActive = false
+    private val planner = SpreadPlanner()
+    private val plannerPages = object : SpreadPlanner.Pages {
+        override fun pageCount(): Int {
+            val adapter = this@PagerLayoutManager.adapter ?: return 0
+            return adapter.size()
+        }
+
+        override fun pageAspect(index: Int): Float {
+            val adapter = this@PagerLayoutManager.adapter ?: return SpreadPlanner.UNKNOWN_ASPECT
+            return adapter.pageAspect(index)
+        }
+
+        override fun isPairBreak(index: Int): Boolean {
+            val adapter = this@PagerLayoutManager.adapter ?: return false
+            return adapter.isPairBreak(index)
+        }
+    }
+
+    /** What gestures move: the spread's shared viewport, or the single page's image. */
+    private val currentTarget: PanTarget?
+        get() {
+            val first = current.first ?: return null
+            return if (current.partner != null) current.viewport else first.imageView
+        }
+
+    /** The last page on screen in reading order; [index] for a single page. */
+    private val lastShownIndex: Int
+        get() {
+            val partner = current.partner ?: return index
+            return partner.index
+        }
+
+    private val firstPageSide: Int
+        get() = if (mode == MODE_LEFT_TO_RIGHT) SpreadViewport.LEFT else SpreadViewport.RIGHT
+
+    fun setSpreadMode(spreadMode: Int) {
+        if (this.spreadMode == spreadMode) {
+            return
+        }
+        this.spreadMode = spreadMode
+        if (adapter != null) {
+            galleryView.requestFill()
+        }
+    }
+
+    // Spreads follow the view's shape; switching rebuilds the slots around
+    // index, the first page the reader sees.
+    private fun updateSpreadActive(width: Int, height: Int) {
+        val active = when (spreadMode) {
+            GalleryView.SPREAD_ALWAYS -> true
+            GalleryView.SPREAD_LANDSCAPE -> width > height
+            else -> false
+        }
+        if (active == spreadActive) {
+            return
+        }
+        spreadActive = active
+        cancelAllAnimations()
+        removeAllPages()
+        resetParameters()
+    }
+
     fun setInterval(interval: Int) {
         if (this.interval == interval) {
             return
@@ -188,6 +255,7 @@ internal class PagerLayoutManager(
     }
 
     private fun removePage(page: GalleryPageView) {
+        unpair(page)
         galleryView.removeComponent(page)
         (adapter ?: throw AssertionError(NOT_ATTACHED)).unbind(page)
         galleryView.releasePage(page)
@@ -229,17 +297,23 @@ internal class PagerLayoutManager(
         return adapter
     }
 
-    private val leftPage: GalleryPageView?
+    private val leftSlot: PageSlot
         get() = when (mode) {
-            MODE_LEFT_TO_RIGHT -> previous.first
-            else -> next.first
+            MODE_LEFT_TO_RIGHT -> previous
+            else -> next
         }
 
-    private val rightPage: GalleryPageView?
+    private val rightSlot: PageSlot
         get() = when (mode) {
-            MODE_LEFT_TO_RIGHT -> next.first
-            else -> previous.first
+            MODE_LEFT_TO_RIGHT -> next
+            else -> previous
         }
+
+    private val leftPage: GalleryPageView?
+        get() = leftSlot.first
+
+    private val rightPage: GalleryPageView?
+        get() = rightSlot.first
 
     private fun obtainPage(): GalleryPageView {
         val page = galleryView.obtainPage()
@@ -260,6 +334,50 @@ internal class PagerLayoutManager(
         addPage(page)
         (adapter ?: throw AssertionError(NOT_ATTACHED)).bind(page, index)
         return page
+    }
+
+    /** Shows [spread] in the empty [slot]: its first page, and the second as the partner. */
+    private fun fillSpreadSlot(slot: PageSlot, spread: Spread) {
+        fillSlot(slot, spread.first)
+        if (spread.isPair) {
+            addPartner(slot, spread.last)
+        }
+    }
+
+    private fun addPartner(slot: PageSlot, index: Int) {
+        val first = slot.first ?: return
+        val partner = obtainPage()
+        slot.partner = partner
+        addPage(partner)
+        (adapter ?: throw AssertionError(NOT_ATTACHED)).bind(partner, index)
+        // Right to left, the first page in reading order is on the right.
+        val viewport = slot.viewport
+        viewport.reset()
+        val firstSide = firstPageSide
+        val partnerSide = 1 - firstSide
+        first.imageView.attachSpread(viewport, firstSide)
+        first.setInfoSide(firstSide)
+        partner.imageView.attachSpread(viewport, partnerSide)
+        partner.setInfoSide(partnerSide)
+    }
+
+    private fun unpair(page: GalleryPageView) {
+        page.imageView.detachSpread()
+        page.setInfoSide(GalleryPageView.INFO_CENTRED)
+    }
+
+    /** Re-pairs [slot] as [spread], which starts with the slot's first page. */
+    private fun repair(slot: PageSlot, spread: Spread) {
+        val first = slot.first ?: return
+        val partner = slot.partner
+        if (partner != null) {
+            removePage(partner)
+            slot.partner = null
+            unpair(first)
+        }
+        if (spread.isPair) {
+            addPartner(slot, spread.last)
+        }
     }
 
     private fun layoutPage(
@@ -366,8 +484,18 @@ internal class PagerLayoutManager(
             Log.e(TAG, "index >= size, index = $index, size = $size")
         }
 
+        updateSpreadActive(width, height)
+        if (spreadActive) {
+            fillSpreadPages(size)
+            layoutSlots(width, height)
+            return
+        }
+
         // Ensure pages
-        val current = this.current.first ?: fillSlot(this.current, index)
+        val current = this.current
+        if (current.first == null) {
+            fillSlot(current, index)
+        }
         val previous = this.previous
         if (previous.first == null && index > 0) {
             fillSlot(previous, index - 1)
@@ -381,6 +509,37 @@ internal class PagerLayoutManager(
             clearSlot(next)
         }
 
+        layoutSlots(width, height)
+    }
+
+    // The spread path of fillPages: the current spread and its neighbours.
+    private fun fillSpreadPages(size: Int) {
+        val current = this.current
+        if (current.first == null) {
+            // Open, resume, a jump, rotation, a data change or switching
+            // spreads on: index is the page asked for, landing finds its spread.
+            val landing = planner.spreadForLanding(plannerPages, index)
+            index = landing.first
+            fillSpreadSlot(current, landing)
+        }
+        val previous = this.previous
+        if (previous.first == null && index > 0) {
+            fillSpreadSlot(previous, planner.spreadBefore(plannerPages, index))
+        } else if (previous.first != null && index == 0) {
+            clearSlot(previous)
+        }
+        val last = current.lastIndex()
+        val next = this.next
+        if (next.first == null && last < size - 1) {
+            fillSpreadSlot(next, planner.spreadAfter(plannerPages, last))
+        } else if (next.first != null && last >= size - 1) {
+            clearSlot(next)
+        }
+    }
+
+    // Lays the slots out around the drag offset; a spread's two page views
+    // both span their slot.
+    private fun layoutSlots(width: Int, height: Int) {
         val leftPage = this.leftPage
         val rightPage = this.rightPage
 
@@ -393,22 +552,23 @@ internal class PagerLayoutManager(
         val offset = this.offset
         val widthSpec = GLView.MeasureSpec.makeMeasureSpec(width, GLView.MeasureSpec.EXACTLY)
         val heightSpec = GLView.MeasureSpec.makeMeasureSpec(height, GLView.MeasureSpec.EXACTLY)
-        layoutPage(
-            current, widthSpec, heightSpec,
-            offset, 0, width + offset, height,
-        )
+        layoutSlot(current, widthSpec, heightSpec, offset, width, height)
         if (leftPage != null) {
-            layoutPage(
-                leftPage, widthSpec, heightSpec,
-                -interval - width + offset, 0, -interval + offset, height,
-            )
+            layoutSlot(leftSlot, widthSpec, heightSpec, -interval - width + offset, width, height)
         }
         if (rightPage != null) {
-            layoutPage(
-                rightPage, widthSpec, heightSpec,
-                width + interval + offset, 0, width + interval + width + offset, height,
-            )
+            layoutSlot(rightSlot, widthSpec, heightSpec, width + interval + offset, width, height)
         }
+    }
+
+    @Suppress("LongParameterList") // a slot's measure specs and its rect
+    private fun layoutSlot(slot: PageSlot, widthSpec: Int, heightSpec: Int, left: Int, width: Int, height: Int) {
+        val first = slot.first ?: return
+        layoutPage(first, widthSpec, heightSpec, left, 0, left + width, height)
+        val partner = slot.partner ?: return
+        layoutPage(partner, widthSpec, heightSpec, left, 0, left + width, height)
+        // Before any image arrives too: tap lookup reads the halves from it.
+        slot.viewport.layout(width, height)
     }
 
     override fun onDown() {
@@ -464,13 +624,12 @@ internal class PagerLayoutManager(
     }
 
     override fun onDoubleTapConfirmed(x: Float, y: Float) {
-        val current = this.current.first
-        if (current == null || !current.imageView.isLoaded) {
+        val image = currentTarget
+        if (image == null || !image.isLoaded) {
             return
         }
 
         val scales = scaleDefault
-        val image = current.imageView
         image.getScaleDefault(scales)
         val scale = image.scale
         var endScale = scales[0]
@@ -491,6 +650,10 @@ internal class PagerLayoutManager(
         if (index <= 0) {
             return
         }
+        if (spreadActive) {
+            spreadPagePrevious()
+            return
+        }
         index--
 
         // The next slot falls off the end and wraps around to previous.
@@ -505,9 +668,48 @@ internal class PagerLayoutManager(
         }
     }
 
+    // pagePrevious over spreads: the previous slot becomes current.
+    private fun spreadPagePrevious() {
+        val recycled = next
+        clearSlot(recycled)
+        next = current
+        current = previous
+        previous = recycled
+
+        val first = current.first
+        index = if (first != null) first.index else index - 1
+        if (first != null && index > 0) {
+            fillSpreadSlot(recycled, planner.spreadBefore(plannerPages, index))
+        }
+    }
+
+    // pageNext over spreads: the next slot becomes current.
+    private fun spreadPageNext(size: Int) {
+        val last = lastShownIndex
+        if (last >= size - 1) {
+            return
+        }
+        val recycled = previous
+        clearSlot(recycled)
+        previous = current
+        current = next
+        next = recycled
+
+        val first = current.first
+        index = if (first != null) first.index else last + 1
+        val newLast = current.lastIndex()
+        if (first != null && newLast < size - 1) {
+            fillSpreadSlot(recycled, planner.spreadAfter(plannerPages, newLast))
+        }
+    }
+
     private fun pageNext() {
         val adapter = this.adapter ?: throw AssertionError(NOT_ATTACHED)
         val size = adapter.size()
+        if (spreadActive) {
+            spreadPageNext(size)
+            return
+        }
         if (index >= size - 1) {
             return
         }
@@ -606,8 +808,8 @@ internal class PagerLayoutManager(
             }
         }
 
-        val current = this.current.first
-        if (current != null && current.imageView.canFlingVertically()) {
+        val target = currentTarget
+        if (target != null && target.canFlingVertically()) {
             if (deltaY < 0) {
                 edgeView.onPull((-deltaY).toFloat(), x, GLEdgeView.TOP)
                 if (!edgeView.isFinished(GLEdgeView.BOTTOM)) {
@@ -639,8 +841,9 @@ internal class PagerLayoutManager(
         while (remainX != 0 || remainY != 0) {
             if (offset == 0 && canImageScroll) {
                 // A page turn earlier in this loop replaced the current page.
-                val image = (current.first ?: break).imageView
+                val image = currentTarget ?: break
                 image.scroll(remainX, remainY, scrollRemain)
+                invalidateSpread()
                 remainX = scrollRemain[0]
                 remainY = scrollRemain[1]
                 canImageScroll = false
@@ -679,12 +882,18 @@ internal class PagerLayoutManager(
         scrollInternal(dx, dy, x, y)
     }
 
+    // An ImageView invalidates itself when it moves; a viewport has no view.
+    private fun invalidateSpread() {
+        if (current.partner != null) {
+            galleryView.invalidate()
+        }
+    }
+
     override fun onFling(velocityX: Float, velocityY: Float) {
-        val current = this.current.first
-        if (current == null || offset != 0) {
+        val image = currentTarget
+        if (image == null || offset != 0) {
             return
         }
-        val image = current.imageView
         if (!image.isLoaded || !image.canFling()) {
             return
         }
@@ -696,18 +905,28 @@ internal class PagerLayoutManager(
     }
 
     override fun canScale(): Boolean {
-        val current = this.current.first
-        return current != null && offset == 0 && current.imageView.isLoaded
+        val target = currentTarget
+        return target != null && offset == 0 && target.isLoaded
     }
 
     override fun onScale(focusX: Float, focusY: Float, scale: Float) {
-        val current = this.current.first
-        if (current == null || !current.imageView.isLoaded) {
+        val target = currentTarget
+        if (target == null || !target.isLoaded) {
             return
         }
 
-        current.imageView.scale(focusX, focusY, scale)
-        scaleValue = current.imageView.scale
+        target.scale(focusX, focusY, scale)
+        updateScaleValue(target.scale)
+    }
+
+    // A single page's zoom carries over to the next page in SCALE_FIXED; a
+    // spread's joint zoom does not.
+    private fun updateScaleValue(scale: Float) {
+        if (current.partner == null) {
+            scaleValue = scale
+        } else {
+            galleryView.invalidate()
+        }
     }
 
     override fun onUpdateAnimation(time: Long): Boolean {
@@ -732,6 +951,39 @@ internal class PagerLayoutManager(
         galleryView.requestFill()
     }
 
+    /**
+     * A decode told the planner page [page]'s aspect. Re-plan from the
+     * current spread onward; of what lies behind, only the previous slot
+     * may change, and only while it is off screen. The pages the reader
+     * already passed never move.
+     */
+    override fun onPageAspectKnown(page: Int) {
+        if (!spreadActive || current.first == null) {
+            return
+        }
+        if (page < index) {
+            val previous = this.previous
+            if (offset == 0 && page in previous && !previous.holds(planner.spreadBefore(plannerPages, index))) {
+                clearSlot(previous)
+                galleryView.requestFill()
+            }
+            return
+        }
+        val planned = planner.spreadFrom(plannerPages, index)
+        if (!current.holds(planned)) {
+            // Only a wide page can turn up, so the partner moves on to the
+            // next spread. The gestures' target changes with it.
+            pageFling.cancel()
+            smoothScaler.cancel()
+            repair(current, planned)
+            clearSlot(next)
+            galleryView.requestFill()
+        } else if (next.first != null && !next.holds(planner.spreadAfter(plannerPages, planned.last))) {
+            clearSlot(next)
+            galleryView.requestFill()
+        }
+    }
+
     override fun onPageLeft() {
         val size = (adapter ?: throw AssertionError(NOT_ATTACHED)).size()
         if (size <= 0 || current.first == null) {
@@ -745,11 +997,11 @@ internal class PagerLayoutManager(
                 setCurrentIndex(index - 1)
             }
         } else {
-            if (index >= size - 1) {
+            if (lastShownIndex >= size - 1) {
                 overScroller.overScroll(GLEdgeView.LEFT)
                 galleryView.onTransferEnd()
             } else {
-                setCurrentIndex(index + 1)
+                setCurrentIndex(lastShownIndex + 1)
             }
         }
     }
@@ -761,11 +1013,11 @@ internal class PagerLayoutManager(
         }
 
         if (mode == MODE_LEFT_TO_RIGHT) {
-            if (index >= size - 1) {
+            if (lastShownIndex >= size - 1) {
                 overScroller.overScroll(GLEdgeView.RIGHT)
                 galleryView.onTransferEnd()
             } else {
-                setCurrentIndex(index + 1)
+                setCurrentIndex(lastShownIndex + 1)
             }
         } else {
             if (index == 0) {
@@ -792,6 +1044,22 @@ internal class PagerLayoutManager(
         if (next != null && next.index == index) {
             return next
         }
+        return findPartnerByIndex(index)
+    }
+
+    private fun findPartnerByIndex(index: Int): GalleryPageView? {
+        val current = this.current.partner
+        if (current != null && current.index == index) {
+            return current
+        }
+        val previous = this.previous.partner
+        if (previous != null && previous.index == index) {
+            return previous
+        }
+        val next = this.next.partner
+        if (next != null && next.index == index) {
+            return next
+        }
         return null
     }
 
@@ -812,13 +1080,22 @@ internal class PagerLayoutManager(
             }
             val size = adapter.size()
             // size <= 0 means empty or not-yet-known: no meaningful end.
-            return size > 0 && index >= size - 1
+            return size > 0 && lastShownIndex >= size - 1
+        }
+
+    override val currentLastIndex: Int
+        get() {
+            val partner = current.partner ?: return getCurrentIndex()
+            return partner.index
         }
 
     override fun collectPageTransforms(out: MutableList<PageTransform>) {
         collectPageTransform(out, previous.first)
         collectPageTransform(out, current.first)
         collectPageTransform(out, next.first)
+        collectPageTransform(out, previous.partner)
+        collectPageTransform(out, current.partner)
+        collectPageTransform(out, next.partner)
     }
 
     override fun setCurrentIndex(index: Int) {
@@ -828,6 +1105,10 @@ internal class PagerLayoutManager(
             size = Int.MAX_VALUE
         }
         if (index == this.index || index < 0 || index >= size) {
+            return
+        }
+        if (spreadActive && current.first != null) {
+            setCurrentSpread(index)
             return
         }
         if (current.first == null) {
@@ -866,25 +1147,52 @@ internal class PagerLayoutManager(
         }
     }
 
-    override fun getIndexUnder(x: Float, y: Float): Int {
-        val current = this.current.first
-        if (current == null) {
-            return GalleryPageView.INVALID_INDEX
-        } else {
-            val intX = x.toInt()
-            val intY = y.toInt()
-            val previous = this.previous.first
-            val next = this.next.first
-            if (current.bounds().contains(intX, intY)) {
-                return current.index
-            } else if (previous != null && previous.bounds().contains(intX, intY)) {
-                return previous.index
-            } else if (next != null && next.bounds().contains(intX, intY)) {
-                return next.index
-            } else {
-                return GalleryPageView.INVALID_INDEX
-            }
+    // setCurrentIndex over spreads: lands on the spread holding [index]. A
+    // neighbour turns like a page turn; anything else lands afresh.
+    private fun setCurrentSpread(index: Int) {
+        if (index in current) {
+            return
         }
+        cancelAllAnimations()
+        resetParameters()
+        if (index in previous) {
+            pagePrevious()
+        } else if (index in next) {
+            pageNext()
+        } else {
+            this.index = index
+            removeProgress()
+            removeErrorView()
+            removeAllPages()
+        }
+        galleryView.requestFill()
+    }
+
+    override fun getIndexUnder(x: Float, y: Float): Int {
+        if (current.first == null) {
+            return GalleryPageView.INVALID_INDEX
+        }
+        val intX = x.toInt()
+        val intY = y.toInt()
+        var index = indexUnder(current, x, intX, intY)
+        if (index == GalleryPageView.INVALID_INDEX) {
+            index = indexUnder(previous, x, intX, intY)
+        }
+        if (index == GalleryPageView.INVALID_INDEX) {
+            index = indexUnder(next, x, intX, intY)
+        }
+        return index
+    }
+
+    // The page of [slot] under the point; for a spread, the half it falls in.
+    private fun indexUnder(slot: PageSlot, x: Float, intX: Int, intY: Int): Int {
+        val first = slot.first ?: return GalleryPageView.INVALID_INDEX
+        val bounds = first.bounds()
+        if (!bounds.contains(intX, intY)) {
+            return GalleryPageView.INVALID_INDEX
+        }
+        val partner = slot.partner ?: return first.index
+        return if (slot.viewport.sideAt(x - bounds.left) == firstPageSide) first.index else partner.index
     }
 
     override val internalCurrentIndex: Int
@@ -1002,19 +1310,19 @@ internal class PagerLayoutManager(
             val y = (dy * progress).toInt()
             val offsetX = x - lastX
             val offsetY = y - lastY
-            val current = this@PagerLayoutManager.current.first
-            if (current != null && (offsetX != 0 || offsetY != 0)) {
-                current.imageView.scroll(-offsetX, -offsetY, temp)
+            val target = currentTarget
+            if (target != null && (offsetX != 0 || offsetY != 0)) {
+                target.scroll(-offsetX, -offsetY, temp)
+                invalidateSpread()
             }
             lastX = x
             lastY = y
         }
 
         override fun onFinish() {
-            val current = this@PagerLayoutManager.current.first ?: return
+            val imageView = currentTarget ?: return
 
             val edgeView = galleryView.edgeView
-            val imageView = current.imageView
             if (imageView.canFlingHorizontally()) {
                 if (velocityX > 0) {
                     if (leftPage == null && imageView.getMaxDx() == 0 && edgeView.isFinished(GLEdgeView.LEFT)) {
@@ -1070,12 +1378,12 @@ internal class PagerLayoutManager(
         }
 
         override fun onCalculate(progress: Float) {
-            val current = this@PagerLayoutManager.current.first ?: return
+            val target = currentTarget ?: return
 
             val scale = MathUtils.lerp(startScale, endScale, progress)
-            current.imageView.scale(focusX, focusY, scale / lastScale)
+            target.scale(focusX, focusY, scale / lastScale)
             lastScale = scale
-            scaleValue = scale
+            updateScaleValue(scale)
         }
     }
 

@@ -47,6 +47,10 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     @Retention(AnnotationRetention.SOURCE)
     annotation class LayoutMode
 
+    @IntDef(SPREAD_OFF, SPREAD_LANDSCAPE, SPREAD_ALWAYS)
+    @Retention(AnnotationRetention.SOURCE)
+    annotation class SpreadMode
+
     @IntDef(SCALE_ORIGIN, SCALE_FIT_WIDTH, SCALE_FIT_HEIGHT, SCALE_FIT, SCALE_FIXED)
     @Retention(AnnotationRetention.SOURCE)
     annotation class ScaleMode
@@ -133,6 +137,14 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     // Render-thread only: the last index reported to onUpdateCurrentIndex.
     private var currentIndex = GalleryPageView.INVALID_INDEX
+
+    // Render-thread only: the last page of the spread last reported to
+    // onUpdateCurrentSpread, or currentIndex while one page is shown.
+    private var currentLastIndex = GalleryPageView.INVALID_INDEX
+
+    // Render-thread only: two-page spreads in the pager modes.
+    @SpreadMode
+    private var spreadMode = SPREAD_OFF
 
     /**
      * Latest intra-page scroll fraction, published from the render
@@ -307,6 +319,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                 context, this,
                 scaleMode, startPosition, 1.0f, pagerInterval,
             )
+            pagerLayoutManager.setSpreadMode(spreadMode)
             this.pagerLayoutManager = pagerLayoutManager
         }
         return pagerLayoutManager
@@ -381,6 +394,11 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     private fun setPagerIntervalInternal(interval: Int) {
         pagerInterval = interval
         pagerLayoutManager?.setInterval(interval)
+    }
+
+    private fun setSpreadModeInternal(@SpreadMode spreadMode: Int) {
+        this.spreadMode = spreadMode
+        pagerLayoutManager?.setSpreadMode(spreadMode)
     }
 
     private fun setScrollIntervalInternal(interval: Int) {
@@ -525,6 +543,17 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         postMethod(METHOD_SET_SCROLL_INTERVAL, interval)
     }
 
+    /**
+     * Two-page spreads in the pager modes: [SPREAD_OFF], [SPREAD_LANDSCAPE]
+     * (while the view is wider than tall) or [SPREAD_ALWAYS]. A spread fits
+     * each page to its half and zooms both as one image; the scale mode and
+     * start position apply to pages shown alone. Long-strip mode is never
+     * paired.
+     */
+    fun setSpreadMode(@SpreadMode spreadMode: Int) {
+        postMethod(METHOD_SET_SPREAD_MODE, spreadMode)
+    }
+
     override fun onSingleTapUp(x: Float, y: Float): Boolean {
         postMethod(METHOD_ON_SINGLE_TAP_UP)
         return true
@@ -638,10 +667,18 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         }
     }
 
-    private fun findPageUnder(x: Float, y: Float): GalleryPageView? {
+    /** A decode told page [index]'s size: the pager re-plans its spreads. */
+    @RenderThread
+    internal fun onPageAspectKnown(index: Int) {
+        layoutManager?.onPageAspectKnown(index)
+    }
+
+    // The two pages of a spread share their bounds, so look for the one
+    // whose error text is under the point.
+    private fun findErrorPageUnder(x: Float, y: Float): GalleryPageView? {
         for (i in 0 until componentCount) {
             val view = getComponent(i)
-            if (view is GalleryPageView && view.bounds().contains(x.toInt(), y.toInt())) {
+            if (view is GalleryPageView && view.bounds().contains(x.toInt(), y.toInt()) && isErrorTextTap(view, x, y)) {
                 return view
             }
         }
@@ -666,8 +703,8 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                 " viewSize=" + width + "x" + height,
         )
 
-        val page = findPageUnder(x, y)
-        if (page != null && isErrorTextTap(page, x, y)) {
+        val page = findErrorPageUnder(x, y)
+        if (page != null) {
             listener?.onTapErrorText(page.index)
         } else if (sliderArea.contains(x.toInt(), y.toInt())) {
             listener?.onTapSliderArea()
@@ -898,6 +935,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
                     METHOD_ON_ATTACH_TO_ROOT -> onAttachToRootInternal()
                     METHOD_SET_PAGER_INTERVAL -> setPagerIntervalInternal(calls.intArg(i, 0))
                     METHOD_SET_SCROLL_INTERVAL -> setScrollIntervalInternal(calls.intArg(i, 0))
+                    METHOD_SET_SPREAD_MODE -> setSpreadModeInternal(calls.intArg(i, 0))
                 }
             }
         } finally {
@@ -925,21 +963,37 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         edgeView.render(canvas)
 
         val newCurrentIndex: Int
+        val newLastIndex: Int
         val layoutManager = this.layoutManager
         if (layoutManager != null) {
             newCurrentIndex = layoutManager.getCurrentIndex()
+            newLastIndex = layoutManager.currentLastIndex
             currentScrollFraction = layoutManager.currentScrollFraction
         } else {
             newCurrentIndex = GalleryPageView.INVALID_INDEX
+            newLastIndex = GalleryPageView.INVALID_INDEX
             currentScrollFraction = 0f
         }
         currentIndex = newCurrentIndex
+        val oldLastIndex = currentLastIndex
+        currentLastIndex = newLastIndex
 
+        // Before the index, so a listener never pairs a new first page with
+        // the old spread's last one.
+        if (spreadChanged(oldCurrentIndex, oldLastIndex, newCurrentIndex, newLastIndex) && listener != null) {
+            listener.onUpdateCurrentSpread(newCurrentIndex, newLastIndex)
+        }
         if (oldCurrentIndex != newCurrentIndex && listener != null) {
             listener.onUpdateCurrentIndex(newCurrentIndex)
         }
 
         updatePageTransforms()
+    }
+
+    // Only while a spread is or was on screen: single pages report the index alone.
+    private fun spreadChanged(oldFirst: Int, oldLast: Int, newFirst: Int, newLast: Int): Boolean {
+        val spreadShown = oldLast != oldFirst || newLast != newFirst
+        return spreadShown && (oldLast != newLast || oldFirst != newFirst)
     }
 
     /**
@@ -1109,6 +1163,12 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         abstract fun getError(): String?
 
         abstract fun size(): Int
+
+        /** Width / height of page [index] for spread pairing; [SpreadPlanner.UNKNOWN_ASPECT] when not known. */
+        open fun pageAspect(index: Int): Float = SpreadPlanner.UNKNOWN_ASPECT
+
+        /** True when spread pairing restarts at page [index]; page 0 always restarts it. */
+        open fun isPairBreak(index: Int): Boolean = false
     }
 
     abstract class LayoutManager(@JvmField protected val galleryView: GalleryView) {
@@ -1170,6 +1230,15 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         abstract fun getIndexUnder(x: Float, y: Float): Int
 
         internal abstract val internalCurrentIndex: Int
+
+        /** The last page shown in reading order: the current index, or the second page of a spread. */
+        internal open val currentLastIndex: Int
+            get() = getCurrentIndex()
+
+        /** Page [index]'s aspect became known; only spreads care. */
+        internal open fun onPageAspectKnown(index: Int) {
+            // Single pages do not depend on it
+        }
 
         /**
          * Set a pending intra-page scroll fraction (0.0 ~ 1.0) on
@@ -1235,6 +1304,16 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         @RenderThread
         fun onUpdateCurrentIndex(index: Int)
 
+        /**
+         * The pages on screen are now [first]..[last] in reading order. Fires
+         * only while a two-page spread is or was shown, just before
+         * [onUpdateCurrentIndex]; single pages report the index alone.
+         */
+        @RenderThread
+        fun onUpdateCurrentSpread(first: Int, last: Int) {
+            // Only listeners that show the page range need it
+        }
+
         @RenderThread
         fun onTapSliderArea()
 
@@ -1262,6 +1341,10 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         const val LAYOUT_LEFT_TO_RIGHT = 0
         const val LAYOUT_RIGHT_TO_LEFT = 1
         const val LAYOUT_TOP_TO_BOTTOM = 2
+
+        const val SPREAD_OFF = 0
+        const val SPREAD_LANDSCAPE = 1
+        const val SPREAD_ALWAYS = 2
 
         const val SCALE_ORIGIN = ImageView.SCALE_ORIGIN
         const val SCALE_FIT_WIDTH = ImageView.SCALE_FIT_WIDTH
@@ -1304,6 +1387,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
         private const val METHOD_SET_PAGER_INTERVAL = 21
         private const val METHOD_SET_SCROLL_INTERVAL = 22
         private const val METHOD_SET_CURRENT_PAGE_WITH_FRACTION = 23
+        private const val METHOD_SET_SPREAD_MODE = 24
 
         @LayoutMode
         fun sanitizeLayoutMode(layoutMode: Int): Int = when (layoutMode) {
