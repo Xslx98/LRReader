@@ -68,6 +68,13 @@ class GalleryDetailViewModel : ViewModel() {
         const val STATE_FAILED = 3
         private const val HTTP_BAD_REQUEST = 400
         private const val HTTP_NOT_FOUND = 404
+
+        /**
+         * Key of the process-wide detail and favorite caches. An arcid is a
+         * content hash, so the same file on two servers shares it; keying by
+         * arcid alone replayed one server's detail on the other's page (#94).
+         */
+        internal fun detailCacheKey(profileId: Long, arcid: String) = "$profileId/$arcid"
     }
 
     // -------------------------------------------------------------------------
@@ -182,7 +189,7 @@ class GalleryDetailViewModel : ViewModel() {
         _favoriteState.value = state
         val arcid = getEffectiveArcid()
         if (arcid != null && state != null) {
-            favoriteStateCache.put(arcid, state)
+            favoriteStateCache.put(cacheKey(arcid), state)
         }
     }
 
@@ -205,6 +212,7 @@ class GalleryDetailViewModel : ViewModel() {
         val arcid = getEffectiveArcid() ?: return
         val previousRating = _currentRating.value
         val previousAd = _archiveDetail.value
+        val key = cacheKey(arcid)
 
         // No-op if the user lifts their finger on the same value the
         // server already has; saves a round-trip and prevents needless
@@ -220,7 +228,7 @@ class GalleryDetailViewModel : ViewModel() {
                 archive = previousAd.archive.copy(rating = rating)
             )
             _archiveDetail.value = updatedAd
-            ServiceRegistry.dataModule.archiveDetailCache.put(arcid, updatedAd)
+            ServiceRegistry.dataModule.archiveDetailCache.put(key, updatedAd)
         }
 
         // The write runs in ArchiveRatingWriter's process scope, keyed by
@@ -233,7 +241,7 @@ class GalleryDetailViewModel : ViewModel() {
                 // always, this screen's state only if it still shows
                 // the same archive.
                 if (previousAd != null) {
-                    ServiceRegistry.dataModule.archiveDetailCache.put(arcid, previousAd)
+                    ServiceRegistry.dataModule.archiveDetailCache.put(key, previousAd)
                 }
                 if (getEffectiveArcid() == arcid) {
                     _currentRating.value = previousRating
@@ -317,6 +325,8 @@ class GalleryDetailViewModel : ViewModel() {
      * underlying mapper bug was fixed.
      */
     fun getSourceProfileId(): Long = _archive.value?.serverProfileId ?: 0L
+
+    private fun cacheKey(arcid: String) = detailCacheKey(getSourceProfileId(), arcid)
 
     /**
      * Resolve the LANraragi base URL that owns this archive. Routes by
@@ -531,7 +541,7 @@ class GalleryDetailViewModel : ViewModel() {
     internal var ratingWriter: ArchiveRatingWriter = ArchiveRatingWriter.default
 
     /**
-     * Per-arcid favorite-state cache (process-wide, next to `archiveDetailCache`,
+     * Per-archive favorite-state cache (process-wide, next to `archiveDetailCache`,
  * cleared with it) so that cache-hit detail navigations
      * (LRU `archiveDetailCache` already remembered the metadata) restore
      * the heart icon instead of momentarily showing "no category" until
@@ -697,7 +707,7 @@ class GalleryDetailViewModel : ViewModel() {
                     } else {
                         FavoriteState(isFavorited = false, name = null)
                     }
-                    favoriteStateCache.put(arcid, newState)
+                    favoriteStateCache.put(cacheKey(arcid), newState)
                     _favoriteState.value = newState
                 } catch (catEx: Exception) {
                     if (catEx is kotlinx.coroutines.CancellationException) throw catEx
@@ -711,7 +721,7 @@ class GalleryDetailViewModel : ViewModel() {
                 }
 
                 // Cache the detail
-                ServiceRegistry.dataModule.archiveDetailCache.put(arcid, ad)
+                ServiceRegistry.dataModule.archiveDetailCache.put(cacheKey(arcid), ad)
 
                 _archiveDetail.value = ad
                 _currentRating.value = ad.archive.rating
@@ -811,14 +821,15 @@ class GalleryDetailViewModel : ViewModel() {
 
         val arcid = getEffectiveArcid() ?: return false
 
-        val cached = ServiceRegistry.dataModule.archiveDetailCache.get(arcid)
+        val key = cacheKey(arcid)
+        val cached = ServiceRegistry.dataModule.archiveDetailCache.get(key)
         if (cached != null) {
             _archiveDetail.value = cached
             _currentRating.value = cached.archive.rating
             // Restore the heart-icon state if we resolved it on a prior
             // visit; otherwise the binder briefly shows "not favorited"
             // until the next requestGalleryDetail finishes.
-            favoriteStateCache[arcid]?.let { _favoriteState.value = it }
+            favoriteStateCache[key]?.let { _favoriteState.value = it }
             // Cache hits skip requestGalleryDetail, so the tank row needs
             // its own kick here.
             loadArchiveTankoubons()

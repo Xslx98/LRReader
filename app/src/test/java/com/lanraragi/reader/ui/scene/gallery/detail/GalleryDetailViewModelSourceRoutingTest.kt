@@ -216,7 +216,7 @@ class GalleryDetailViewModelSourceRoutingTest {
         val archive = vm.archiveDetail.value!!.archive
         assertEquals(sourceProfileId, archive.serverProfileId)
         assertTrue(archive.thumbnailUrl, archive.thumbnailUrl.startsWith(sourceUrl))
-        assertEquals(sourceProfileId, detailCache.get(ARCID)!!.archive.serverProfileId)
+        assertEquals(sourceProfileId, detailCache.get(GalleryDetailViewModel.detailCacheKey(sourceProfileId, ARCID))!!.archive.serverProfileId)
         assertEquals(archive, vm.detailLoaded.replayCache.single().archive)
         assertEquals(listOf(TANK_ID), vm.archiveTankoubons.value!!.map { it.id })
         assertEquals(TankoubonSupportGate.Support.SUPPORTED, TankoubonSupportGate.support(sourceUrl))
