@@ -10,6 +10,9 @@ import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
@@ -129,6 +132,12 @@ internal class TankPickerSheet(
         render()
 
         sheet.setContentView(view)
+        // The sheet has a fixed height, so the keyboard would cover Cancel and
+        // Apply (#92): its inset becomes bottom padding and the list shrinks.
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom)
+            insets
+        }
         val screenH = activity.resources.displayMetrics.heightPixels
         view.layoutParams = view.layoutParams.apply { height = (screenH * FULL_FRACTION).toInt() }
         sheet.behavior.peekHeight = (screenH * PEEK_FRACTION).toInt()

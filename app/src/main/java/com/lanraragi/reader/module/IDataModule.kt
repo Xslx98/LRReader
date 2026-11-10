@@ -51,14 +51,14 @@ interface IDataModule {
     /** Download domain repository backed by [com.lanraragi.reader.dao.DownloadRoomDao]. */
     val downloadDbRepository: DownloadDbRepository
 
-    /** LRU cache for [ArchiveDetail] objects keyed by arcid. */
+    /** LRU cache for [ArchiveDetail] objects keyed by source profile and arcid. */
     val archiveDetailCache: LruCache<String, ArchiveDetail>
 
     /** Evicts every entry from [archiveDetailCache]. */
     fun clearArchiveDetailCache()
 
     /**
-     * Favorite indicator per arcid for the detail page, kept next to
+     * Favorite indicator per source profile and arcid for the detail page, kept next to
      * [archiveDetailCache] and evicted with it. Test doubles that never reach
      * the detail page can leave the default.
      */

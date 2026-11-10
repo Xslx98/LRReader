@@ -67,7 +67,14 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             viewModel,
             context = { getEHContext() },
             onRetry = { requestRefresh() },
-            keepPageNormal = { if (mState != STATE_NORMAL) adjustViewVisibility(STATE_NORMAL, true) },
+            // The degraded detail seeded on failure has not been bound yet:
+            // bind it, or both heart labels stay visible over each other (#94).
+            keepPageNormal = {
+                if (mState != STATE_NORMAL) {
+                    adjustViewVisibility(STATE_NORMAL, true)
+                    bindViewSecond()
+                }
+            },
         )
     }
 
@@ -580,7 +587,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             // Refresh the cached download row's thumb if the freshly fetched
             // detail carries a different one. Snapshot lookup — the row is
             // only read here, so we do not need a long-lived StateFlow.
+            // The same arcid on another server is another server's row (#94).
             val di = ServiceRegistry.dataModule.downloadManager.getDownloadInfo(result.archive.arcid)
+                ?.takeIf { it.serverProfileId == viewModel.getSourceProfileId() }
             if (di != null && di.thumb != null &&
                 di.thumb != result.archive.thumbnailUrl && di.arcid == result.archive.arcid
             ) {
