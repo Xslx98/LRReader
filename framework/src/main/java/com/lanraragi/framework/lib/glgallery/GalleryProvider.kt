@@ -62,6 +62,14 @@ abstract class GalleryProvider protected constructor(
     private var aspects = FloatArray(0)
     private val aspectsLock = Any()
 
+    /**
+     * Bumped by [forgetPageAspects]: a page size or decode taken under an
+     * older value belongs to what an index meant before a remap.
+     */
+    @Volatile
+    protected var pageGeneration = 0
+        private set
+
     @UiThread
     open fun start() {
         OSUtils.checkMainLoop()
@@ -205,14 +213,23 @@ abstract class GalleryProvider protected constructor(
     fun hasPageAspect(index: Int): Boolean = pageAspect(index) > SpreadPlanner.UNKNOWN_ASPECT
 
     /**
+     * True when two-page pairing restarts at page [index], so that page
+     * starts a spread (a tank member's first page). Lock-free and
+     * allocation-free: the render thread asks while planning.
+     */
+    open fun isPairBreak(index: Int): Boolean = false
+
+    /**
      * Learn page [index]'s size from a header-only bounds read of its file,
      * so pairing knows a wide page before it is decoded. A decode records the
-     * decoded size again, which wins if the header disagreed.
+     * decoded size again, which wins if the header disagreed. Ignored when
+     * the file was located under an older [generation].
      */
     @AnyThread
-    protected fun recordPageBounds(index: Int, width: Int, height: Int) {
+    protected fun recordPageBounds(index: Int, width: Int, height: Int, generation: Int = pageGeneration) {
         if (index < 0 || width <= 0 || height <= 0) return
         synchronized(aspectsLock) {
+            if (generation != pageGeneration) return
             var a = aspects
             if (index >= a.size) {
                 a = a.copyOf(maxOf(index + 1, a.size * 2, MIN_ASPECTS))
@@ -229,23 +246,36 @@ abstract class GalleryProvider protected constructor(
     protected fun forgetPageAspects() {
         synchronized(aspectsLock) {
             aspects = FloatArray(0)
+            pageGeneration++
         }
     }
 
-    fun notifyPageSucceed(index: Int, image: Image) {
-        recordPageBounds(index, image.width, image.height)
-        val imageWrapper = ImageWrapper(image)
-        if (stopped) {
-            // A decode completing after stop() must not repopulate the
-            // already-evicted cache — nothing would evict the entry again and
-            // the page would be retained until the provider graph is GC'd.
-            // Recycle it instead (release at zero references recycles the
-            // underlying Image, animated or not).
-            imageWrapper.release()
-            return
+    /**
+     * Publish page [index]'s decoded [image]. Returns false, and leaves
+     * [image] to the caller, when the page was located under an older
+     * [generation]: [index] now means another page. The check and the cache
+     * entry share one lock hold with [forgetPageAspects], so a remap that
+     * then empties the cache cannot miss an entry from before it.
+     */
+    fun notifyPageSucceed(index: Int, image: Image, generation: Int = pageGeneration): Boolean {
+        val imageWrapper: ImageWrapper
+        synchronized(aspectsLock) {
+            if (generation != pageGeneration) return false
+            recordPageBounds(index, image.width, image.height)
+            imageWrapper = ImageWrapper(image)
+            if (stopped) {
+                // A decode completing after stop() must not repopulate the
+                // already-evicted cache — nothing would evict the entry again and
+                // the page would be retained until the provider graph is GC'd.
+                // Recycle it instead (release at zero references recycles the
+                // underlying Image, animated or not).
+                imageWrapper.release()
+                return true
+            }
+            imageCache.add(index, imageWrapper)
         }
-        imageCache.add(index, imageWrapper)
         notifyPageSucceed(index, imageWrapper)
+        return true
     }
 
     fun notifyPageSucceed(index: Int, image: ImageWrapper) {

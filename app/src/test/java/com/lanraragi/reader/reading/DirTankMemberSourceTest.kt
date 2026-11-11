@@ -11,7 +11,9 @@ import java.io.FileOutputStream
 import java.io.IOException
 import kotlin.random.Random
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -110,6 +112,16 @@ class DirTankMemberSourceTest {
     fun `expected count below the dir never shrinks the page space`() = runBlocking {
         val source = DirTankMemberSource(ctx, "f".repeat(40), StorageFile(workerNamedDir(3)), 2)
         assertEquals(3, source.ensurePageCount())
+    }
+
+    @Test
+    fun `openPageOnDisk opens the file of the real page number, null for a missing page`() = runBlocking {
+        val dir = workerNamedDir(3)
+        val source = DirTankMemberSource(ctx, "f".repeat(40), StorageFile(dir), 5)
+        source.ensurePageCount()
+
+        assertArrayEquals(File(dir, "0002.png").readBytes(), source.openPageOnDisk(1)!!.use { it.readBytes() })
+        assertNull(source.openPageOnDisk(4))
     }
 
     @Test

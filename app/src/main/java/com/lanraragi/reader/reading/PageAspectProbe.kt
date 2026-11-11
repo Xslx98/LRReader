@@ -38,11 +38,17 @@ internal class PageAspectProbe(
     }
 
     /**
-     * Probe the [AHEAD] pages after [current] (of [size]) and then the
+     * Probe the [ahead] pages after [current] (of [size]) and then the
      * [BEHIND] pages before it, nearest first, until [active] turns false.
      */
-    fun probeAround(current: Int, size: Int, open: (Int) -> InputStream?, active: () -> Boolean) {
-        for (i in 1..AHEAD) {
+    fun probeAround(
+        current: Int,
+        size: Int,
+        open: (Int) -> InputStream?,
+        active: () -> Boolean,
+        ahead: Int = AHEAD,
+    ) {
+        for (i in 1..ahead) {
             val index = current + i
             if (index >= size || !active()) break
             probe(index, open, rememberMissing = false)
@@ -99,7 +105,7 @@ internal class PageAspectProbe(
     }
 
     companion object {
-        /** Pages ahead: the online reader's preload window. */
+        /** Pages ahead: the online reader's preload window for single pages (spreads pass theirs). */
         const val AHEAD = 5
 
         /**

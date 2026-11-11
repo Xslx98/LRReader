@@ -17,6 +17,7 @@ import okhttp3.OkHttpClient
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -63,6 +64,9 @@ internal interface TankMemberSource {
 
     /** Copy [page0]'s bytes into [dest] for the save/share path. */
     fun savePage(page0: Int, dest: StorageFile): Boolean
+
+    /** [page0]'s file when it is already on disk, for a header-only size read ([PageAspectProbe]); no IO otherwise. */
+    fun openPageOnDisk(page0: Int): InputStream?
 
     /** Sever any in-flight network work for [page0]. */
     fun cancelPage(page0: Int)
@@ -181,6 +185,9 @@ internal class LrrTankMemberSource(
             false
         }
     }
+
+    override fun openPageOnDisk(page0: Int): InputStream? =
+        cacheFile(page0).takeIf { it.length() > ReaderPageCache.MIN_IMAGE_SIZE }?.let(::FileInputStream)
 
     override fun cancelPage(page0: Int) {
         inflightCalls[page0]?.cancel()

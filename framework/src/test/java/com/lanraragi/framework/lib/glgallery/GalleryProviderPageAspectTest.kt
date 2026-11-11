@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import com.lanraragi.framework.lib.image.Image
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -22,9 +24,12 @@ class GalleryProviderPageAspectTest {
         override fun onCancelRequest(index: Int) = Unit
         override fun getError(): String? = null
 
-        fun header(index: Int, width: Int, height: Int) = recordPageBounds(index, width, height)
+        fun header(index: Int, width: Int, height: Int, generation: Int = pageGeneration) =
+            recordPageBounds(index, width, height, generation)
 
         fun remap() = forgetPageAspects()
+
+        val generation get() = pageGeneration
     }
 
     private val provider = TestProvider()
@@ -61,5 +66,28 @@ class GalleryProviderPageAspectTest {
         provider.header(4, 70, -1)
 
         for (p in 0..4) assertEquals("page $p", SpreadPlanner.UNKNOWN_ASPECT, provider.pageAspect(p), 0f)
+    }
+
+    @Test
+    fun aDecodeOrHeaderLocatedBeforeARemapIsTurnedAway() {
+        // A tank page located under the old map lands after the remap: the
+        // index now means another page, so neither its size nor its image count.
+        val before = provider.generation
+        provider.remap()
+        val late = image(160, 100)
+
+        assertFalse(provider.notifyPageSucceed(7, late, before))
+        provider.header(8, 160, 100, before)
+
+        assertEquals(SpreadPlanner.UNKNOWN_ASPECT, provider.pageAspect(7), 0f)
+        assertEquals(SpreadPlanner.UNKNOWN_ASPECT, provider.pageAspect(8), 0f)
+        assertFalse("not cached at the new meaning of the index", provider.hasCache(7))
+        assertFalse("left to the caller", late.isRecycled)
+        late.recycle()
+
+        // Located under the current map: published as usual.
+        assertTrue(provider.notifyPageSucceed(7, image(70, 100), provider.generation))
+        assertEquals(0.7f, provider.pageAspect(7), 1e-4f)
+        assertTrue(provider.hasCache(7))
     }
 }

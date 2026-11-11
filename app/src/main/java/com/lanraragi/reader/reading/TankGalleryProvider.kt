@@ -14,6 +14,7 @@ import com.lanraragi.reader.server.probeSourceHealthy
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.util.suspendRunCatching
 import java.io.IOException
+import java.io.InputStream
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -92,6 +93,16 @@ class TankGalleryProvider(
 
     /** Global cap on concurrent prefetch downloads (mirrors LRRGalleryProvider). */
     private val prefetchSemaphore = Semaphore(PREFETCH_PARALLELISM)
+
+    // Header-only size reads of member pages on disk, for two-page pairing.
+    // Replaced on every remap: its "read once" memory and its records are
+    // keyed by global indices, which then mean other pages.
+    @Volatile
+    private var aspectProbe = newAspectProbe()
+    private val openPageOnDisk: (Int) -> InputStream? = { global0 ->
+        pageMap.locate(global0)?.let { (member, local) -> slotAt(member)?.source?.openPageOnDisk(local) }
+    }
+    private val probeActive: () -> Boolean = { !stopped }
 
     /** Global 0-indexed start page: see [TankProgress] (server first, unsynced local page wins). */
     @Volatile
@@ -225,6 +236,9 @@ class TankGalleryProvider(
 
     override fun size(): Int = if (errorState) GalleryProvider.STATE_ERROR else pageMap.total
 
+    /** Each member starts its own spreads: its cover stands alone and no pair spans two members. */
+    override fun isPairBreak(index: Int): Boolean = pageMap.isMemberStart(index)
+
     override fun getError(): String = errorMessage ?: "Unknown error"
 
     // ==================== Progress (tank-only) ====================
@@ -306,6 +320,8 @@ class TankGalleryProvider(
                 return
             }
         var source = countedSourceFor(located.first)
+        // A remap from here on makes global0 another page: the decode is then dropped.
+        val generation = pageGeneration
         // The correction may have shifted this global page onto a different
         // member (or out of range). Re-locate once against the fresh map.
         pageMap.locate(global0)?.let { fresh ->
@@ -326,7 +342,11 @@ class TankGalleryProvider(
             return
         }
         if (image != null) {
-            notifyPageSucceed(global0, image)
+            if (!notifyPageSucceed(global0, image, generation)) {
+                // The map moved while decoding; the remap's rebind asks again.
+                image.recycle()
+                throw TankPageCancelledException(IOException("remapped"))
+            }
             prefetchAround(global0)
         } else {
             notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
@@ -338,13 +358,16 @@ class TankGalleryProvider(
      * boundaries: resolving a neighbour's counted source is exactly the
      * boundary file-list prefetch (spec decision 5), and page-byte warms
      * ride the same walk. Downloads are bounded by [prefetchSemaphore];
-     * every step is best-effort.
+     * every step is best-effort. Pages on disk get their header read for
+     * two-page pairing, like the standalone reader's ([PageAspectProbe]).
      */
     private fun prefetchAround(global0: Int) {
         val scope = providerScope ?: return
+        val forward = pagesAhead(PREFETCH_FORWARD)
+        val probe = aspectProbe
         scope.launch {
             val targets =
-                (global0 + 1..global0 + PREFETCH_FORWARD) + (global0 - PREFETCH_BACKWARD until global0)
+                (global0 + 1..global0 + forward) + (global0 - PREFETCH_BACKWARD until global0)
             for (target in targets) {
                 if (stopped) break
                 val (member, local) = pageMap.locate(target) ?: continue
@@ -354,6 +377,7 @@ class TankGalleryProvider(
                         if (stopped) return@withPermit
                         try {
                             countedSourceFor(member).prefetchPage(local)
+                            probe.probe(target, openPageOnDisk)
                         } catch (ce: CancellationException) {
                             throw ce
                         } catch (e: Exception) {
@@ -364,6 +388,16 @@ class TankGalleryProvider(
                     }
                 }
             }
+            // After the downloads are launched, so header reads never delay them.
+            probe.probeAround(global0, pageMap.total, openPageOnDisk, probeActive, forward)
+        }
+    }
+
+    /** A probe whose header sizes count only while the map stays as it is now. */
+    private fun newAspectProbe(): PageAspectProbe {
+        val generation = pageGeneration
+        return PageAspectProbe(::hasPageAspect) { index, width, height ->
+            recordPageBounds(index, width, height, generation)
         }
     }
 
@@ -463,12 +497,15 @@ class TankGalleryProvider(
      * re-notify the GL layer so layout picks up the new size.
      */
     private fun onMapRemapped(oldTotal: Int) {
+        // Learnt page sizes are keyed by the old global indices too. Forget
+        // them first: that also turns away decodes located under the old map
+        // (notifyPageSucceed), so the cache emptied below stays empty of them.
+        forgetPageAspects()
+        aspectProbe = newAspectProbe()
         val ceiling = maxOf(oldTotal, pageMap.total)
         for (i in 0 until ceiling) {
             removeCache(i)
         }
-        // Learnt page sizes are keyed by the old global indices too.
-        forgetPageAspects()
         notifyDataChanged()
         tankChapters.refresh()
     }
@@ -543,9 +580,10 @@ class TankGalleryProvider(
         private const val ARCID_PREFIX_LEN = 8
 
         /**
-         * Forward warm distance (pages). Matches LRRGalleryProvider's
-         * PRELOAD_COUNT; near a member's tail it necessarily reaches into
-         * the next member, which is what makes the crossing seamless.
+         * Forward warm distance (pages), doubled while spreads show. Matches
+         * LRRGalleryProvider's PRELOAD_COUNT; near a member's tail it
+         * necessarily reaches into the next member, which is what makes the
+         * crossing seamless.
          */
         private const val PREFETCH_FORWARD = 5
 

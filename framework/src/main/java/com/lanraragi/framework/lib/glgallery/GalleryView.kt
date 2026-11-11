@@ -91,7 +91,12 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     @get:JvmName("getEdgeView")
     internal val edgeView: GLEdgeView
-    private val galleryPageViewPool = Pools.SimplePool<GalleryPageView>(5)
+    private val galleryPageViewPool = Pools.SimplePool<GalleryPageView>(PAGE_POOL_SPREAD)
+
+    // Render-thread only: page views in the pool. Single pages keep the old
+    // pool of PAGE_POOL; spreads bind up to six pages, so a full rebind (a
+    // data change) recycles them all instead of allocating.
+    private var pooledPages = 0
     private var progressCache: GLProgressView? = null
     private var errorViewCache: GLTextureView? = null
 
@@ -1092,7 +1097,9 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     @JvmName("obtainPage")
     internal fun obtainPage(): GalleryPageView {
         var page = galleryPageViewPool.acquire()
-        if (page == null) {
+        if (page != null) {
+            pooledPages--
+        } else {
             page = GalleryPageView(
                 pageTextTexture,
                 progressColor, pageBackgroundColor, progressSize,
@@ -1104,7 +1111,10 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     @JvmName("releasePage")
     internal fun releasePage(page: GalleryPageView) {
-        galleryPageViewPool.release(page)
+        val limit = if (spreadMode == SPREAD_OFF) PAGE_POOL else PAGE_POOL_SPREAD
+        if (pooledPages < limit && galleryPageViewPool.release(page)) {
+            pooledPages++
+        }
     }
 
     /**
@@ -1443,6 +1453,9 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
         /** [currentSpreadParity] while single pages are shown; [setSpreadPairing] with no stored parity. */
         const val PARITY_UNKNOWN = SpreadPlanner.PARITY_UNKNOWN
+
+        private const val PAGE_POOL = 5
+        private const val PAGE_POOL_SPREAD = 7
 
         @LayoutMode
         fun sanitizeLayoutMode(layoutMode: Int): Int = when (layoutMode) {

@@ -6,6 +6,7 @@ import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.reader.util.FileUtils
 import com.lanraragi.reader.storage.StorageFile
 import java.io.IOException
+import java.io.InputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -81,6 +82,8 @@ internal class DirTankMemberSource(
             false
         }
     }
+
+    override fun openPageOnDisk(page0: Int): InputStream? = fileAt(page0)?.openInputStream()
 
     /** Extension of the underlying file for [page0] (save path), or null. */
     fun pageExtension(page0: Int): String? =

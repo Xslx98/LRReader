@@ -54,6 +54,16 @@ class PageAspectProbeTest {
     }
 
     @Test
+    fun probeAround_readsAsFarAheadAsTheSpreadPreload() {
+        val portrait = png(70, 100)
+        for (p in 0 until 40) disk[p] = portrait
+
+        probe.probeAround(10, 40, open, always, ahead = 10)
+
+        assertEquals((0 until 10).toSet() + (11..20).toSet(), recorded.keys)
+    }
+
+    @Test
     fun probeAround_stopsAtTheBookEdges() {
         val portrait = png(70, 100)
         for (p in 0 until 6) disk[p] = portrait

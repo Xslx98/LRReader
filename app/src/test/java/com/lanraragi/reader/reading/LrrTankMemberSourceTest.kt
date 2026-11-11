@@ -22,6 +22,7 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -312,6 +313,29 @@ class LrrTankMemberSourceTest {
         assertArrayEquals("only the download pipeline replaces it", PageFixtures.damagedPng, page.readBytes())
         assertTrue("marked for the worker", DownloadPageRepair.isMarked(page))
         assertTrue(java.io.File(ReaderPageCache.ensureCacheDir(ctx, ARCID), "page_0").exists())
+        downloadDir.deleteRecursively()
+    }
+
+    @Test
+    fun `openPageOnDisk reads a fetched page and nothing for one not fetched`(): Unit = runBlocking {
+        val source = newSource()
+        source.ensurePageCount()
+        source.obtainImage(1)?.recycle()
+
+        assertArrayEquals(pngBytes, source.openPageOnDisk(1)!!.use { it.readBytes() })
+        assertNull(source.openPageOnDisk(0))
+        assertEquals("a disk probe never fetches", 1, pageRequests.get())
+    }
+
+    @Test
+    fun `openPageOnDisk reads a hybrid member's download dir`(): Unit = runBlocking {
+        val (store, downloadDir) = newStore()
+        downloadDir.mkdirs()
+        java.io.File(downloadDir, "0003.png").writeBytes(pngBytes)
+        val source = newSource(store)
+        source.ensurePageCount()
+
+        assertArrayEquals(pngBytes, source.openPageOnDisk(2)!!.use { it.readBytes() })
         downloadDir.deleteRecursively()
     }
 

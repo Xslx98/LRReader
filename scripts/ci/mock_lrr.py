@@ -78,6 +78,21 @@ if os.environ.get("MOCK_TOC"):
     ARCHIVES[1]["toc"] = [{"page": 1, "name": "Two Start"}, {"page": 3, "name": "Two End"}]
     ARCHIVES[2]["toc"] = [{"page": 2, "name": "Three Middle"}]
 
+#   MOCK_SPREAD=1      -> two-page reading smokes (smoke_ui.py `spreads`): adds "Mock HiDPI 600"
+#                         (arcid 0090eeee…, 24 pages of 4960x7016 = A4 at 600 dpi, wide 1600x1100
+#                         pages at 7, 18 and 19), and the MOCK_SEED tank's second member (archive 3)
+#                         lists 5 files while its metadata says 3, so the reader remaps the tank
+#                         mid-read. MOCK_SPREAD_FILES_DELAY=<s> answers that file list late.
+SPREAD = bool(os.environ.get("MOCK_SPREAD"))
+SPREAD_FILES_DELAY = float(os.environ.get("MOCK_SPREAD_FILES_DELAY", "0") or 0)
+HIDPI_ARCID = "0090" + "e" * 36
+HIDPI_WIDE = {7, 18, 19}
+if SPREAD:
+    ARCHIVES.append({
+        "arcid": HIDPI_ARCID, "title": "Mock HiDPI 600", "tags": "artist:mockhidpi", "lastreadtime": 0,
+        "progress": 0, "pagecount": 24, "isnew": "false", "extension": "zip",
+        "filename": "hidpi.zip", "size": 99999, "summary": "", "toc": []})
+
 #   MOCK_METADATA_FAIL=<title> -> GET /metadata of that archive answers 500: a download
 #                         must still finish without the chapter fetch it tries there.
 METADATA_FAIL_TITLE = os.environ.get("MOCK_METADATA_FAIL")
@@ -123,6 +138,17 @@ COLORS = [(200, 80, 80), (80, 200, 80), (80, 80, 200), (200, 200, 80)]
 PAGES = {i: png(800, 1200, COLORS[i % len(COLORS)], 40 if os.environ.get("MOCK_SEED") else 0)
          for i in range(4)}
 THUMB = png(250, 350, (120, 120, 220))
+
+# MOCK_SPREAD pages, built on first use (a 4960x7016 page takes a second).
+SPREAD_PAGES = {}
+
+
+def spread_page(n):
+    key = ("wide" if n in HIDPI_WIDE else "hidpi", n % len(COLORS))
+    if key not in SPREAD_PAGES:
+        size = (1600, 1100) if key[0] == "wide" else (4960, 7016)
+        SPREAD_PAGES[key] = png(*size, COLORS[key[1]])
+    return SPREAD_PAGES[key]
 TANK_THUMB = png(250, 350, (220, 140, 60))
 NO_THUMB = png(250, 350, (90, 70, 60))  # stands in for the server's noThumb.png
 
@@ -568,8 +594,12 @@ class H(BaseHTTPRequestHandler):
                 self._img(THUMB)
             elif leaf == "files":
                 base = f"/api/archives/{arcid}/page?path="
+                count = arc["pagecount"]
+                if SPREAD and arc is ARCHIVES[2]:
+                    time.sleep(SPREAD_FILES_DELAY)
+                    count = 5
                 self._json({"job": -1,
-                            "pages": [base + f"mock/{n:03d}.png" for n in range(1, arc["pagecount"] + 1)]})
+                            "pages": [base + f"mock/{n:03d}.png" for n in range(1, count + 1)]})
             elif leaf == "page":
                 path = q.get("path", ["mock/001.png"])[0]
                 n = int("".join(c for c in path.split("/")[-1] if c.isdigit()) or 1)
@@ -577,6 +607,9 @@ class H(BaseHTTPRequestHandler):
                     time.sleep(PAGE_DELAY)
                 if n == 1 and ANIMATED_PAGE:
                     self._img(ANIMATED_PAGE, "image/gif")
+                    return
+                if arcid == HIDPI_ARCID:
+                    self._img(spread_page(n))
                     return
                 self._img(PAGES[n % 4])
             else:

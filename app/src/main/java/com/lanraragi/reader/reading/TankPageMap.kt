@@ -1,5 +1,7 @@
 package com.lanraragi.reader.reading
 
+import java.util.Arrays
+
 /**
  * Mutable global ↔ (member, local) page mapping for the tank composite
  * reader ([TankGalleryProvider]). All pages are READER 0-indexed here —
@@ -22,6 +24,10 @@ class TankPageMap(pagecounts: List<Int>) {
 
     /** offsets[i] = first global page of member i; offsets[size] = total. */
     private var offsets: List<Int> = TankPageMath.pageOffsets(counts)
+
+    /** [offsets] unboxed, ascending, republished on each mutation: read lock-free by [isMemberStart]. */
+    @Volatile
+    private var starts: IntArray = offsets.toIntArray()
 
     val total: Int
         @Synchronized get() = offsets.last()
@@ -48,6 +54,16 @@ class TankPageMap(pagecounts: List<Int>) {
         return TankPageMath.locate(offsets, global0 + 1)
     }
 
+    /**
+     * True when global [global0] is a member's first page. Lock-free and
+     * allocation-free, for the reader's render thread (two-page pairing
+     * restarts at each member).
+     */
+    fun isMemberStart(global0: Int): Boolean {
+        val s = starts
+        return global0 < s[s.size - 1] && Arrays.binarySearch(s, global0) >= 0
+    }
+
     /** Global 0-indexed page of ([memberIndex], local [page0]). */
     @Synchronized
     fun globalOf(memberIndex: Int, page0: Int): Int = offsets[memberIndex] + page0
@@ -62,6 +78,7 @@ class TankPageMap(pagecounts: List<Int>) {
         if (counts[memberIndex] == clamped) return false
         counts[memberIndex] = clamped
         offsets = TankPageMath.pageOffsets(counts)
+        starts = offsets.toIntArray()
         return true
     }
 
@@ -70,5 +87,6 @@ class TankPageMap(pagecounts: List<Int>) {
     fun removeMember(memberIndex: Int) {
         counts.removeAt(memberIndex)
         offsets = TankPageMath.pageOffsets(counts)
+        starts = offsets.toIntArray()
     }
 }

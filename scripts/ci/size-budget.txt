@@ -22,9 +22,13 @@
 # of the arm64 release vs 929045bf (dex +2568 B, resources.arsc +4.7 KB for the
 # strings in 10 locales; most of apk.file is the 16 KB zip alignment of the
 # native library moving with the entries before it). dex and res stay.
+# 2026-11-10 (item 20 PR E, tank pair breaks, member header probes, spread
+# preload and page pool; pre-approved 2026-11-09): apk.download +1863 B, the
+# measured growth of the arm64 release vs 8cab43b9 (dex +3068 B of the
+# 8192 B approved for PRs C-E; apk.file unchanged). dex and res stay.
 tolerance.percent 1.5
 apk.file        5242448
-apk.download    2501007
+apk.download    2502870
 dex             3771184
 lib                6400
 res             1350000
