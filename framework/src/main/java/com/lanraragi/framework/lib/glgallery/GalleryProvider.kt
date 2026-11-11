@@ -205,6 +205,13 @@ abstract class GalleryProvider protected constructor(
     fun hasPageAspect(index: Int): Boolean = pageAspect(index) > SpreadPlanner.UNKNOWN_ASPECT
 
     /**
+     * True when two-page pairing restarts at page [index], so that page
+     * starts a spread (a tank member's first page). Lock-free and
+     * allocation-free: the render thread asks while planning.
+     */
+    open fun isPairBreak(index: Int): Boolean = false
+
+    /**
      * Learn page [index]'s size from a header-only bounds read of its file,
      * so pairing knows a wide page before it is decoded. A decode records the
      * decoded size again, which wins if the header disagreed.

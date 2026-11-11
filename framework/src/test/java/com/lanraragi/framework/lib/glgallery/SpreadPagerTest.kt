@@ -33,6 +33,9 @@ class SpreadPagerTest(private val layoutMode: Int) {
         // Off in the allocation tests: the set itself allocates a node per bind.
         var record = true
         val aspects = FloatArray(SIZE) { PORTRAIT }
+
+        // Tank member starts; an array, as a set would box the index.
+        val breaks = BooleanArray(SIZE)
         override fun onBind(view: GalleryPageView, index: Int) {
             // A page view starts out showing its error text, which takes taps.
             view.clearError()
@@ -44,6 +47,7 @@ class SpreadPagerTest(private val layoutMode: Int) {
         override fun getError(): String? = null
         override fun size(): Int = SIZE
         override fun pageAspect(index: Int): Float = aspects[index]
+        override fun isPairBreak(index: Int): Boolean = breaks[index]
     }
 
     private class RecordingListener : GalleryView.Listener {
@@ -212,6 +216,57 @@ class SpreadPagerTest(private val layoutMode: Int) {
         assertShowing(19, 20)
         keyPrevious()
         assertShowing(18)
+    }
+
+    @Test
+    fun `tank members start their own spreads, and the page a spread reports lands on it again`() {
+        adapter.breaks[10] = true
+        adapter.breaks[21] = true
+        jump(0)
+        val walked = ArrayList<String>()
+        while (true) {
+            val first = listener.currentIndex
+            // A single page after a single page reports no spread at all.
+            val last = if (listener.spreadFirst == first) listener.spreadLast else first
+            walked += if (last > first) "$first-$last" else "$first"
+            if (view.isReachEnd) break
+            keyNext()
+        }
+        // Covers 10 and 21 alone, 9 and 20 alone before them, 11 alone before the wide 12.
+        assertEquals(
+            "0 1-2 3-4 5-6 7-8 9 10 11 12 13-14 15-16 17-18 19-20 21 22-23 24-25 26-27 28-29 30-31 32-33 34-35 " +
+                "36-37 38",
+            walked.joinToString(" "),
+        )
+        // Progress stores the page a spread reports; resuming there shows the same spread.
+        for (shown in walked) {
+            val first = shown.substringBefore('-').toInt()
+            val last = shown.substringAfter('-').toInt()
+            jump(if (first < SIZE / 2) SIZE - 1 else 0)
+            jump(first)
+            assertShowing(first, last)
+        }
+    }
+
+    @Test
+    fun `a tank remap keeps the page on screen and re-pairs around the moved member start`() {
+        adapter.breaks[20] = true
+        jump(23)
+        assertShowing(23, 24)
+
+        // The member before grew by three pages: its successor now starts at 23
+        // and the page sizes learnt so far are forgotten.
+        adapter.breaks[20] = false
+        adapter.breaks[23] = true
+        adapter.aspects.fill(SpreadPlanner.UNKNOWN_ASPECT)
+        render { view.onDataChanged() }
+
+        assertShowing(23)
+        keyNext()
+        assertShowing(24, 25)
+        keyPrevious()
+        keyPrevious()
+        assertShowing(21, 22)
     }
 
     @Test

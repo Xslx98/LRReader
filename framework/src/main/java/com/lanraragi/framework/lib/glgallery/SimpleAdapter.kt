@@ -52,6 +52,8 @@ open class SimpleAdapter(
 
     override fun pageAspect(index: Int): Float = provider.pageAspect(index)
 
+    override fun isPairBreak(index: Int): Boolean = provider.isPairBreak(index)
+
     override fun onDataChanged() {
         galleryView?.onDataChanged()
     }

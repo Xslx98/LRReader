@@ -145,4 +145,19 @@ class TankPageMapTest {
         assertEquals(20, m.memberStart(1))
         assertEquals(45, m.memberStart(2))
     }
+
+    // ── isMemberStart: two-page pairing restarts at each member ───────
+
+    @Test
+    fun `isMemberStart follows corrections and removals`() {
+        val m = map(3, 0, 4, 2)
+        assertEquals(listOf(0, 3, 7), (0 until m.total).filter(m::isMemberStart))
+        assertFalse("past the end", m.isMemberStart(m.total))
+
+        m.correct(0, 5)
+        assertEquals(listOf(0, 5, 9), (0 until m.total).filter(m::isMemberStart))
+
+        m.removeMember(2)
+        assertEquals(listOf(0, 5), (0 until m.total).filter(m::isMemberStart))
+    }
 }

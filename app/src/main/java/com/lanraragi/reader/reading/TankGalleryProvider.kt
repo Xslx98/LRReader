@@ -225,6 +225,9 @@ class TankGalleryProvider(
 
     override fun size(): Int = if (errorState) GalleryProvider.STATE_ERROR else pageMap.total
 
+    /** Each member starts its own spreads: its cover stands alone and no pair spans two members. */
+    override fun isPairBreak(index: Int): Boolean = pageMap.isMemberStart(index)
+
     override fun getError(): String = errorMessage ?: "Unknown error"
 
     // ==================== Progress (tank-only) ====================
