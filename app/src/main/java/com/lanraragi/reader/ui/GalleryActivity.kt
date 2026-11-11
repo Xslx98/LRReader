@@ -506,7 +506,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
     // ======== Input delegation ========
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (mInputHandler.isReaderKey(keyCode) && mContinuation?.hideForKey() == true) {
+        if (mContinuation?.onKeyDown(keyCode, event, mInputHandler.isReaderKey(keyCode)) == true) {
             return true
         }
         if (mInputHandler.handleKeyDown(keyCode, event)) {

@@ -1,6 +1,8 @@
 package com.lanraragi.reader.ui.reader
 
 import android.os.SystemClock
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -46,6 +48,11 @@ class ReaderContinuationController(
             if (inTouchMode && isShowing) root.requestFocus()
         }
         root.setOnClickListener { hide() }
+        // The scrim lies over the page, so a wheel reaches it first. Shown,
+        // the panel takes the wheel as a page key: it closes, nothing turns.
+        root.setOnGenericMotionListener { _, event ->
+            event.actionMasked == MotionEvent.ACTION_SCROLL && hideIfShowing()
+        }
         secondary.setOnClickListener { hide() }
         primary.setOnClickListener { onPrimary() }
     }
@@ -65,10 +72,36 @@ class ReaderContinuationController(
     }
 
     /**
-     * A reader key while the panel shows closes it, as Back does, instead of
-     * turning the page behind it (#110). Returns whether the key was used.
+     * Keys while the panel shows (#110), from GalleryActivity.onKeyDown:
+     * - DPAD_UP, DPAD_DOWN and Tab (Shift+Tab backwards) move the focus
+     *   between the panel's buttons, so D-pad users reach them without Tab.
+     *   From the scrim, DPAD_DOWN and Tab focus the primary button ("Read
+     *   next" or "Retry", else Back); DPAD_UP and Shift+Tab focus Back.
+     * - Enter, DPAD_CENTER and Space activate the focused button (or close the
+     *   panel while the scrim holds the focus); the focused view takes them
+     *   before this is called.
+     * - Any other reader key ([readerKey]: page keys, DPAD_LEFT/DPAD_RIGHT,
+     *   volume keys when volume paging is on, Menu) closes the panel, as Back
+     *   does, and turns no page.
+     * - Back closes it through the activity's back callback.
+     *
+     * Returns whether the key was used; false whenever the panel is hidden.
      */
-    fun hideForKey(): Boolean {
+    fun onKeyDown(keyCode: Int, event: KeyEvent, readerKey: Boolean): Boolean {
+        if (!isShowing) return false
+        val forward = when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_DOWN -> true
+            KeyEvent.KEYCODE_DPAD_UP -> false
+            KeyEvent.KEYCODE_TAB -> !event.isShiftPressed
+            else -> return readerKey && hideIfShowing()
+        }
+        // At most two buttons: either step from one reaches the other.
+        val toPrimary = secondary.isFocused || (forward && !primary.isFocused)
+        (if (toPrimary && primary.visibility == View.VISIBLE) primary else secondary).requestFocus()
+        return true
+    }
+
+    private fun hideIfShowing(): Boolean {
         if (!isShowing) return false
         hide()
         return true
