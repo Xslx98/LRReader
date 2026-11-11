@@ -37,10 +37,11 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter
 import java.time.Duration
 
 /**
- * Issue #110: while the end-of-book panel shows, a page key closes it, as
- * Back does, instead of turning the page behind it, and the first key after
- * a touch is not spent on moving focus. Keys go through the window's real
- * input pipeline, which is where leaving touch mode used to eat that key.
+ * Issue #110: while the end-of-book panel shows, a page key or the mouse
+ * wheel closes it, as Back does, instead of turning the page behind it, the
+ * first key after a touch is not spent on moving focus, and DPAD_UP/DOWN
+ * reach the panel's buttons. Events go through the window's real input
+ * pipeline, which is where leaving touch mode used to eat that key.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
@@ -54,12 +55,18 @@ class ReaderContinuationKeyTest {
             override fun onTapMenuArea() {}
         })
         var pageTurns = 0
+        val launched = mutableListOf<String>()
 
         override fun onCreate(savedInstanceState: Bundle?) {
             setTheme(R.style.AppTheme_Gallery_Dark)
             super.onCreate(savedInstanceState)
             val root = FrameLayout(this)
             page = View(this)
+            // The GL view's wheel listener: the mouse wheel turns pages.
+            page.setOnGenericMotionListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_SCROLL) pageTurns++
+                event.actionMasked == MotionEvent.ACTION_SCROLL
+            }
             root.addView(page)
             layoutInflater.inflate(R.layout.reader_continuation_panel, root, true)
             setContentView(root)
@@ -67,13 +74,13 @@ class ReaderContinuationKeyTest {
                 root = root.findViewById(R.id.continuation_scrim),
                 scope = lifecycleScope,
                 resolver = NextArchiveResolver(OkHttpClient()),
-                launchNext = {},
+                launchNext = { launched += it.arcid },
             )
             continuation.setCurrentArchive(ARCID)
         }
 
         override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-            if (input.isReaderKey(keyCode) && continuation.hideForKey()) return true
+            if (continuation.onKeyDown(keyCode, event, input.isReaderKey(keyCode))) return true
             if (input.isReaderKey(keyCode)) {
                 pageTurns++
                 return true
@@ -153,7 +160,92 @@ class ReaderContinuationKeyTest {
         assertFalse("the first tap closed the panel", host.continuation.isShowing)
     }
 
+    @Test
+    fun `the mouse wheel closes the panel without turning the page`() {
+        host.continuation.onEndOfBookEvent(atLastPage = true)
+        idle()
+        assertTrue("precondition: the panel shows", host.continuation.isShowing)
+
+        wheel()
+
+        assertFalse("the wheel closed the panel", host.continuation.isShowing)
+        assertEquals("no page turned behind the panel", 0, host.pageTurns)
+
+        wheel()
+        assertEquals("with the panel closed, the wheel turns pages again", 1, host.pageTurns)
+    }
+
+    @Test
+    fun `DPAD_DOWN focuses Read next and Enter on it opens the next archive`() {
+        publishNextArchive()
+        touchThePage()
+        host.continuation.onEndOfBookEvent(atLastPage = true)
+        idle()
+        val readNext = host.findViewById<Button>(R.id.continuation_primary)
+        val back = host.findViewById<Button>(R.id.continuation_secondary)
+        assertEquals("precondition: the panel offers the next archive", View.VISIBLE, readNext.visibility)
+
+        key(KeyEvent.KEYCODE_DPAD_DOWN)
+        assertTrue("the first DPAD_DOWN after a touch focused Read next", readNext.isFocused)
+        key(KeyEvent.KEYCODE_DPAD_DOWN)
+        assertTrue("DPAD_DOWN moved on to Back", back.isFocused)
+        key(KeyEvent.KEYCODE_DPAD_UP)
+        assertTrue("DPAD_UP moved back to Read next", readNext.isFocused)
+        assertTrue("moving the focus kept the panel open", host.continuation.isShowing)
+
+        key(KeyEvent.KEYCODE_ENTER)
+
+        assertEquals("Enter opened the next archive", listOf(NEXT_ARCID), host.launched)
+        assertEquals("no page turned behind the panel", 0, host.pageTurns)
+    }
+
+    @Test
+    fun `DPAD_LEFT on a focused button closes the panel without turning the page`() {
+        publishNextArchive()
+        host.continuation.onEndOfBookEvent(atLastPage = true)
+        idle()
+        key(KeyEvent.KEYCODE_DPAD_DOWN)
+        assertTrue(
+            "precondition: Read next has the focus",
+            host.findViewById<Button>(R.id.continuation_primary).isFocused,
+        )
+
+        key(KeyEvent.KEYCODE_DPAD_LEFT)
+
+        assertFalse("the page key closed the panel", host.continuation.isShowing)
+        assertEquals("no page turned behind the panel", 0, host.pageTurns)
+        assertTrue("the button did not act on the key", host.launched.isEmpty())
+    }
+
+    /** Two archives in the list: the panel offers the second one. */
+    private fun publishNextArchive() {
+        ReadingContextStore.publish(
+            ReadingContext.LocalList(
+                ReadingContext.LocalList.Kind.DOWNLOADS,
+                listOf(archive(), archive(NEXT_ARCID)),
+                ARCID,
+            ),
+        )
+    }
+
     private fun touchThePage() = touch(SCRIM_X, SCRIM_Y)
+
+    /** One notch of a mouse wheel over a corner of the screen. */
+    private fun wheel() {
+        val now = SystemClock.uptimeMillis()
+        val coords = MotionEvent.PointerCoords().apply {
+            x = SCRIM_X
+            y = SCRIM_Y
+            setAxisValue(MotionEvent.AXIS_VSCROLL, -1f)
+        }
+        val props = MotionEvent.PointerProperties().apply { toolType = MotionEvent.TOOL_TYPE_MOUSE }
+        dispatch(
+            MotionEvent.obtain(
+                now, now, MotionEvent.ACTION_SCROLL, 1, arrayOf(props), arrayOf(coords),
+                0, 0, 1f, 1f, 0, 0, InputDevice.SOURCE_MOUSE, 0,
+            ),
+        )
+    }
 
     private fun touch(x: Float, y: Float) {
         val now = SystemClock.uptimeMillis()
@@ -185,8 +277,8 @@ class ReaderContinuationKeyTest {
 
     private fun idle() = shadowOf(Looper.getMainLooper()).idle()
 
-    private fun archive() = Archive(
-        arcid = ARCID, title = "t", tags = emptyMap(), pagecount = 3, progress = 0,
+    private fun archive(arcid: String = ARCID) = Archive(
+        arcid = arcid, title = "t", tags = emptyMap(), pagecount = 3, progress = 0,
         extension = "zip", filename = "f", thumbnailUrl = "", rating = 0f,
         isnew = false, lastreadtime = 0L, summary = null, serverProfileId = 3L,
     )
@@ -196,5 +288,6 @@ class ReaderContinuationKeyTest {
         const val SCRIM_X = 10f
         const val SCRIM_Y = 10f
         const val ARCID = "0123456789abcdef0123456789abcdef01234567"
+        const val NEXT_ARCID = "1123456789abcdef0123456789abcdef01234567"
     }
 }
