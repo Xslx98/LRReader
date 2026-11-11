@@ -339,13 +339,15 @@ class DownloadDbRepository(
     }
 
     /**
-     * The downloaded tank group of [profileId] whose MEMBER ID LIST claims
+     * The downloaded tank group, on ANY profile, whose MEMBER ID LIST claims
      * [arcid], or null (spec 2026-09-21 §6: members of a downloaded tank
      * cannot be deleted one by one). Group-row truth, not the per-row tag.
+     * Profile-independent because the download row is one per arcid and
+     * shared by mirrors on other profiles (#104).
      */
-    suspend fun findTankGroupClaiming(arcid: String, profileId: Long): TankDownloadGroup? =
+    suspend fun findTankGroupClaiming(arcid: String): TankDownloadGroup? =
         tankGroupDao.getAll().firstOrNull { group ->
-            group.serverProfileId == profileId && arcid in TankGroupReconciler.decode(group.memberIdsJson)
+            arcid in TankGroupReconciler.decode(group.memberIdsJson)
         }
 
     /** Ordered member ids stored on the group row (empty when the row is gone). */

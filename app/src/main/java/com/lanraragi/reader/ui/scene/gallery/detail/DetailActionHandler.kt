@@ -24,6 +24,7 @@ import com.lanraragi.reader.ui.scene.download.DownloadLabelHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.util.ClipboardUtil
 import com.lanraragi.reader.util.suspendRunCatching
+import com.lanraragi.reader.widget.resolveSourceProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,18 +52,37 @@ internal class DetailActionHandler(
 
     /**
      * Updates the download button text based on the current download state
-     * from the ViewModel.
+     * from the ViewModel. A download row made through another server profile
+     * (one row per arcid, shared by mirrors — #104) carries that profile's
+     * name, so the state is not mistaken for this server's own download.
      */
     fun updateDownloadText() {
         val dl = download ?: return
-        when (viewModel.downloadState.value) {
-            DownloadState.NONE -> dl.setText(R.string.download_state_none)
-            DownloadState.WAIT -> dl.setText(R.string.download_state_wait)
-            DownloadState.DOWNLOAD -> dl.setText(R.string.download_state_downloading)
-            DownloadState.FINISH -> dl.setText(R.string.download_state_downloaded)
-            DownloadState.FAILED -> dl.setText(R.string.download_state_failed)
-            else -> dl.setText(R.string.download)
+        val stateRes = when (viewModel.downloadState.value) {
+            DownloadState.NONE -> R.string.download_state_none
+            DownloadState.WAIT -> R.string.download_state_wait
+            DownloadState.DOWNLOAD -> R.string.download_state_downloading
+            DownloadState.FINISH -> R.string.download_state_downloaded
+            DownloadState.FAILED -> R.string.download_state_failed
+            else -> {
+                dl.setText(R.string.download)
+                return
+            }
         }
+        val stateText = dl.context.getString(stateRes)
+        val label = currentSourceLabel(dl.context)
+        dl.text = if (label == null) stateText else "$stateText · $label"
+    }
+
+    private fun currentSourceLabel(context: Context): String? {
+        val arcid = viewModel.getEffectiveArcid() ?: return null
+        val row = viewModel.downloadManager.getDownloadInfo(arcid) ?: return null
+        return downloadSourceLabel(
+            row.serverProfileId,
+            viewModel.getSourceProfileId(),
+            ServerSession.getActiveProfileId(),
+            context.getString(R.string.lrr_download_source_deleted),
+        ) { resolveSourceProfile(it)?.name }
     }
 
     fun ensurePopMenu(context: Context) {
@@ -193,8 +213,11 @@ internal class DetailActionHandler(
      * delete dialog — unless the archive is a member of a DOWNLOADED
      * tankoubon (group-row truth, spec 2026-09-21 §6): a bound volume is
      * deleted as a whole from the downloads list, never one member at a
-     * time, so the click is blocked with a pointer instead. Starting a
-     * download (INVALID state) is always allowed — it just fills the tank.
+     * time, so the click is blocked with a pointer instead. The claim is
+     * checked on every profile: the download row is shared by mirrors, so
+     * this page must not delete a member of a tank downloaded through
+     * another profile (#104). Starting a download (INVALID
+     * state) is always allowed — it just fills the tank.
      */
     private fun onDownloadClick(context: Context, activity: MainActivity) {
         val archive = viewModel.getEffectiveArchive() ?: return
@@ -203,11 +226,10 @@ internal class DetailActionHandler(
             CommonOperations.startDownload(activity, archive, false)
             return
         }
-        val profileId = viewModel.getSourceProfileId()
         lifecycleOwner.lifecycleScope.launch {
             val claiming = withContext(Dispatchers.IO) {
                 suspendRunCatching {
-                    ServiceRegistry.dataModule.downloadDbRepository.findTankGroupClaiming(archive.arcid, profileId)
+                    ServiceRegistry.dataModule.downloadDbRepository.findTankGroupClaiming(archive.arcid)
                 }.getOrNull()
             }
             if (claiming != null) {
@@ -247,6 +269,29 @@ internal class DetailActionHandler(
 
     companion object {
         private const val TAG = "DetailActionHandler"
+
+        /**
+         * Source label for the download button (#104), or null for none.
+         * A row downloaded through the page's own profile needs no label;
+         * a legacy row (0) is attributed to the active profile, as
+         * [com.lanraragi.reader.widget.bindSourceServerBadge] does, and
+         * shows none either. A page without a source id (0) is the active
+         * profile's. [nameOf] gives a live profile's name; a deleted one
+         * reads [deletedText].
+         */
+        @JvmStatic
+        internal fun downloadSourceLabel(
+            rowProfileId: Long,
+            pageProfileId: Long,
+            activeProfileId: Long?,
+            deletedText: String,
+            nameOf: (Long) -> String?,
+        ): String? {
+            if (rowProfileId == 0L) return null
+            val pageId = if (pageProfileId == 0L) activeProfileId ?: 0L else pageProfileId
+            if (rowProfileId == pageId) return null
+            return nameOf(rowProfileId) ?: deletedText
+        }
 
         /**
          * Lands a finished server delete (audit 2026-10-06 N4). The DELETE runs
