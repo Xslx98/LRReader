@@ -270,6 +270,16 @@ class SpreadPagerTest(private val layoutMode: Int) {
     }
 
     @Test
+    fun `a data change rebinds a spread from the page pool`() {
+        adapter.record = false
+        render { view.onDataChanged() } // warm up
+        val bytes = minAllocatedBytes(RUNS) {
+            for (i in 0 until DATA_CHANGES) render { view.onDataChanged() }
+        }
+        assertEquals("fewest bytes allocated by $DATA_CHANGES rebinds of six pages in $RUNS runs", 0L, bytes)
+    }
+
+    @Test
     fun `rotation keeps the first page and re-pairs it`() {
         resize(HEIGHT, WIDTH)
         assertEquals("portrait shows the first page alone", 5, listener.currentIndex)
@@ -352,6 +362,7 @@ class SpreadPagerTest(private val layoutMode: Int) {
         private const val LEFT_ZONE_X = WIDTH / 6f
         private const val RIGHT_ZONE_X = WIDTH / 6f * 5f
         private const val TURNS = 200
+        private const val DATA_CHANGES = 20
         private const val RUNS = 5
 
         @JvmStatic
