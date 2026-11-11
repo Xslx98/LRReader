@@ -14,6 +14,7 @@ import com.lanraragi.reader.server.probeSourceHealthy
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.util.suspendRunCatching
 import java.io.IOException
+import java.io.InputStream
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -92,6 +93,16 @@ class TankGalleryProvider(
 
     /** Global cap on concurrent prefetch downloads (mirrors LRRGalleryProvider). */
     private val prefetchSemaphore = Semaphore(PREFETCH_PARALLELISM)
+
+    // Header-only size reads of member pages on disk, for two-page pairing.
+    // Replaced on every remap: its "read once" memory and its records are
+    // keyed by global indices, which then mean other pages.
+    @Volatile
+    private var aspectProbe = newAspectProbe()
+    private val openPageOnDisk: (Int) -> InputStream? = { global0 ->
+        pageMap.locate(global0)?.let { (member, local) -> slotAt(member)?.source?.openPageOnDisk(local) }
+    }
+    private val probeActive: () -> Boolean = { !stopped }
 
     /** Global 0-indexed start page: see [TankProgress] (server first, unsynced local page wins). */
     @Volatile
@@ -347,10 +358,12 @@ class TankGalleryProvider(
      * boundaries: resolving a neighbour's counted source is exactly the
      * boundary file-list prefetch (spec decision 5), and page-byte warms
      * ride the same walk. Downloads are bounded by [prefetchSemaphore];
-     * every step is best-effort.
+     * every step is best-effort. Pages on disk get their header read for
+     * two-page pairing, like the standalone reader's ([PageAspectProbe]).
      */
     private fun prefetchAround(global0: Int) {
         val scope = providerScope ?: return
+        val probe = aspectProbe
         scope.launch {
             val targets =
                 (global0 + 1..global0 + PREFETCH_FORWARD) + (global0 - PREFETCH_BACKWARD until global0)
@@ -363,6 +376,7 @@ class TankGalleryProvider(
                         if (stopped) return@withPermit
                         try {
                             countedSourceFor(member).prefetchPage(local)
+                            probe.probe(target, openPageOnDisk)
                         } catch (ce: CancellationException) {
                             throw ce
                         } catch (e: Exception) {
@@ -373,6 +387,16 @@ class TankGalleryProvider(
                     }
                 }
             }
+            // After the downloads are launched, so header reads never delay them.
+            probe.probeAround(global0, pageMap.total, openPageOnDisk, probeActive)
+        }
+    }
+
+    /** A probe whose header sizes count only while the map stays as it is now. */
+    private fun newAspectProbe(): PageAspectProbe {
+        val generation = pageGeneration
+        return PageAspectProbe(::hasPageAspect) { index, width, height ->
+            recordPageBounds(index, width, height, generation)
         }
     }
 
@@ -476,6 +500,7 @@ class TankGalleryProvider(
         // them first: that also turns away decodes located under the old map
         // (notifyPageSucceed), so the cache emptied below stays empty of them.
         forgetPageAspects()
+        aspectProbe = newAspectProbe()
         val ceiling = maxOf(oldTotal, pageMap.total)
         for (i in 0 until ceiling) {
             removeCache(i)
