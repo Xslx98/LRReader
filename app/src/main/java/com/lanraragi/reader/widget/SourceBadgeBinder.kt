@@ -6,11 +6,13 @@ import android.graphics.Color
 import android.util.SparseArray
 import android.view.View
 import android.widget.TextView
+import androidx.lifecycle.LifecycleOwner
 import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.ui.collectFlow
 
 /**
  * Bind a source-server origin badge onto a [TextView].
@@ -75,6 +77,26 @@ fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
     badge.setTextColor(fgColor)
     badge.visibility = View.VISIBLE
     return resolvedName
+}
+
+/**
+ * Keeps a page header's cross-server badge (the tank detail page) bound
+ * for [owner]'s started lifetime: re-binds on every profile snapshot
+ * emission, so a badge bound before the profiles loaded (cold start) shows
+ * once they do, and a rename or delete shows without a state change. The
+ * badge is shown only when [sourceProfileId], read the way
+ * [effectiveSourceProfileId] reads it, is not the active profile.
+ */
+fun collectCrossServerSourceBadge(owner: LifecycleOwner, badge: TextView, sourceProfileId: Long) {
+    collectFlow(owner, ServiceRegistry.dataModule.profileLookupCache.snapshot) {
+        val activeId = ServerSession.getActiveProfileId()
+        val sid = effectiveSourceProfileId(sourceProfileId, activeId)
+        if (sid != 0L && sid != activeId) {
+            bindSourceServerBadge(badge, sid)
+        } else {
+            badge.visibility = View.GONE
+        }
+    }
 }
 
 /**

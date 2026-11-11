@@ -31,7 +31,6 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps
 import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.cover.TankCovers
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.buildRatingEmoji
 import com.lanraragi.reader.dao.DownloadState
@@ -58,7 +57,7 @@ import com.lanraragi.reader.ui.scene.gallery.detail.TagEditDialog
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.LoadState
 import com.lanraragi.reader.ui.scene.tankdetail.TankDetailViewModel.TankDetailState
-import com.lanraragi.reader.widget.bindSourceServerBadge
+import com.lanraragi.reader.widget.collectCrossServerSourceBadge
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.ui.collectFlowWhileCreated
 import java.util.Locale
@@ -238,7 +237,6 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
 
         // Instant header from the nav arg while the fetch runs.
         mTitle?.text = viewModel.seedName
-        bindSourceBadge()
 
         observeViewModel()
         if (viewModel.loadState.value is LoadState.Idle) {
@@ -314,6 +312,10 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
             if (state != null) bindState(state)
         }
         collectFlow(viewLifecycleOwner, viewModel.favoriteState) { bindHeart() }
+        // Badge only for a tank whose source profile is not the active one,
+        // as for archives. It reads the profile snapshot, still empty at cold
+        // start: re-bound when it lands and after a profile rename or delete.
+        mSourceBadge?.let { collectCrossServerSourceBadge(viewLifecycleOwner, it, viewModel.profileId) }
         // Member download rows change while this page is up (the Download
         // button just enqueued them, or the worker finished): keep the button
         // text and the greyed members in step without waiting for a resume.
@@ -378,7 +380,6 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
 
     private fun bindState(s: TankDetailState) {
         mTitle?.text = s.name
-        bindSourceBadge()
         bindCover(s)
         val displayProgress = if (s.progress > 0) s.progress else 1
         mPages?.text = getString(R.string.tank_detail_pages, displayProgress, s.totalPages)
@@ -476,17 +477,6 @@ class TankDetailScene : BaseScene(), View.OnClickListener, View.OnLongClickListe
         } else {
             heart.visibility = View.GONE
             outline.visibility = View.VISIBLE
-        }
-    }
-
-    /** Badge only for a tank whose source profile is not the active one, as for archives. */
-    private fun bindSourceBadge() {
-        val badge = mSourceBadge ?: return
-        val sid = viewModel.profileId
-        if (sid != 0L && sid != ServerSession.getActiveProfileId()) {
-            bindSourceServerBadge(badge, sid)
-        } else {
-            badge.visibility = View.GONE
         }
     }
 

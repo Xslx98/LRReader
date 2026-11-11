@@ -307,8 +307,10 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
         setContentView(R.layout.activity_gallery)
         mPageHost.pairingKey = mLaunch.pairingKey()
+        // A wheel burst that closed the end-of-book panel does not turn pages.
         val galleryView = mPageHost.attach(
-            galleryProvider, this, startPage, mInputHandler::handleGenericMotion
+            galleryProvider, this, startPage,
+            { v, e -> mContinuation?.swallowsWheel(e) == true || mInputHandler.handleGenericMotion(v, e) },
         ) {
             mGalleryProvider?.let { postNotify(NOTIFY_KEY_SIZE, it.size()) }
         }
