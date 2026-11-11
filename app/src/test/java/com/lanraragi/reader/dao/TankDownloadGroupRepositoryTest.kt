@@ -231,12 +231,23 @@ class TankDownloadGroupRepositoryTest {
     // ── findTankGroupClaiming (spec 2026-09-21 §6) ──────────────
 
     @Test
-    fun findTankGroupClaiming_matchesGroupRowMembership_activeProfileOnly() = runTest {
+    fun findTankGroupClaiming_matchesGroupRowMembership() = runTest {
         repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A))
 
-        assertEquals("MyTank", repo.findTankGroupClaiming(ARC_A, 1L)!!.name)
-        assertNull(repo.findTankGroupClaiming(ARC_B, 1L))
-        assertNull(repo.findTankGroupClaiming(ARC_A, 2L))
+        assertEquals("MyTank", repo.findTankGroupClaiming(ARC_A)!!.name)
+        assertNull(repo.findTankGroupClaiming(ARC_B))
+    }
+
+    /**
+     * #104: the download row is one per arcid and shared by a mirror on
+     * another profile, so a tank downloaded through profile 2 must still
+     * claim its member when profile 1's detail page asks.
+     */
+    @Test
+    fun findTankGroupClaiming_findsAGroupOwnedByAnotherProfile() = runTest {
+        repo.putTankGroup(TANK, 2L, "OtherServerTank", listOf(ARC_A))
+
+        assertEquals("OtherServerTank", repo.findTankGroupClaiming(ARC_A)!!.name)
     }
 
     // ── pagecount persistence (tank card aggregate needs member totals) ──
@@ -345,6 +356,6 @@ class TankDownloadGroupRepositoryTest {
         val group = repo.getTankGroup(TANK)!!
         assertEquals(1L, group.serverProfileId)
         assertEquals("MyTank renamed", group.name)
-        assertEquals(group, repo.findTankGroupClaiming(ARC_A, 1L))
+        assertEquals(group, repo.findTankGroupClaiming(ARC_A))
     }
 }
