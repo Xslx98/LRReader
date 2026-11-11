@@ -2,7 +2,6 @@ package com.lanraragi.reader.tankoubon
 
 import android.util.Log
 import com.lanraragi.reader.client.api.LRRCategoryApi
-import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.client.api.data.LRRCategory
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.TankTagSyncFailedEvent
@@ -96,15 +95,6 @@ object TankCategorySyncer {
             )
             false
         }
-
-    /** Tank name lookup for callers that only know the id (best-effort, "" on failure). */
-    suspend fun nameOf(client: OkHttpClient, baseUrl: String, tankId: String): String = try {
-        LRRTankoubonApi.getTankoubonFull(client, baseUrl, tankId).result.name
-    } catch (e: CancellationException) {
-        throw e
-    } catch (ignored: Exception) {
-        ""
-    }
 
     private const val TAG = "TankCategorySyncer"
 }

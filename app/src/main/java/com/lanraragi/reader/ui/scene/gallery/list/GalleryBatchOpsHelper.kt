@@ -203,6 +203,8 @@ internal class GalleryBatchOpsHelper(
             result.op == BatchOp.DeleteTanks
         ) {
             // NEW badges render from server data; reload so they disappear.
+            // A deleted tank's row already fell out via archiveDeletedEvent,
+            // but its members come back as standalone rows only on a reload.
             callback.refreshList()
         }
         // DeleteArchives rows already fall out via AppEventBus.archiveDeletedEvent.

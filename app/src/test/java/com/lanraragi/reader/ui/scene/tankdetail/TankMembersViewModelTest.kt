@@ -7,6 +7,7 @@ import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.tankoubon.TankCoverChoiceStore
+import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.awaitViewModelIdle
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -207,10 +208,16 @@ class TankMembersViewModelTest {
         vm.coverReapplyDelayMs = 0L
         vm.membershipSync = TankMembershipSyncFactory.Runner { _, _, _ -> }
         vm.untagDownloadMember = { _, arcid -> log.add("untag $arcid") }
-        vm.dissolveDownloadGroup = { id -> log.add("dissolve group $id") }
         vm.tagSyncAfterRemove = { _, _, snap, removed -> log.add("tags ${snap.tankId} $removed"); true }
         vm.categorySyncAfterRemove = { _, _, snap, removed -> log.add("categories ${snap.tankId} $removed"); true }
-        vm.categoryDissolve = { _, _, id, name -> log.add("dissolve categories $id $name"); true }
+        vm.tanks = TankRepository(
+            { _, _, _ -> },
+            deleteSteps = TankRepository.DeleteSteps(
+                clearCategories = { _, _, id, name -> log.add("dissolve categories $id $name"); true },
+                forgetCoverChoice = { store.remove(it) },
+                dissolveDownloadGroup = { id -> log.add("dissolve group $id") },
+            ),
+        )
         vm.init(TANK, "Tank", profileId = 5L)
         vm.load()
         awaitUntil { vm.members.value.size == 3 && !vm.isLoading.value }
