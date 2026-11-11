@@ -27,7 +27,10 @@ package with an empty downloads list, a mock also started with
 MOCK_METADATA_FAIL="Mock Big Archive 3", and the server at 10.0.2.2 so airplane
 mode cuts it off (`adb reverse` would not be cut off). The `plugin_tags` journey
 also runs only when named, once per mock start, with MOCK_SEED=1 (SMOKE_MOCK_URL if
-the mock is not on 127.0.0.1:3939).
+the mock is not on 127.0.0.1:3939). The `spreads` journey (two-page reading in
+landscape) runs only when named, on a fresh install whose two-page setting is still
+off, against a mock started with MOCK_SEED=1 MOCK_BIG_PAGES=40 MOCK_TOC=1
+MOCK_SPREAD=1 MOCK_SPREAD_FILES_DELAY=20; it ends with the setting off and in portrait.
 """
 import json
 import os
@@ -752,6 +755,176 @@ class Widgets:
         self.need("read", 10)
         self.back()
 
+    # -- two-page spreads (item 20) --
+    def orient(self, landscape):
+        """Fixed rotation; self.w / self.h follow the screen."""
+        shell("settings", "put", "system", "accelerometer_rotation", "0")
+        shell("settings", "put", "system", "user_rotation", "1" if landscape else "0")
+        time.sleep(4)
+        short, long_ = sorted((self.w, self.h))
+        self.w, self.h = (long_, short) if landscape else (short, long_)
+
+    def expect_shown(self, want, step):
+        """The top bar's page label (`3-4/40` for a spread) settles on `want`."""
+        deadline = time.monotonic() + 15
+        got = self.page()
+        while got != want and time.monotonic() < deadline:
+            time.sleep(0.7)
+            got = self.page()
+        if got != want:
+            raise SmokeFailure(f"spreads: {step}: shows {got!r}, wanted {want!r}")
+        self.check(f"spreads: {step} ({got})")
+
+    def turn(self, forward, rtl=True):
+        left = forward == rtl                   # right to left: the left zone is "next"
+        self.tap(self.w // 10 if left else self.w * 9 // 10, self.h // 2)
+        time.sleep(1.2)
+
+    def turn_to(self, want, forward=True, rtl=True, limit=25):
+        for _ in range(limit):
+            if self.page() == want:
+                return
+            self.turn(forward, rtl)
+
+    def close_reader_menu(self):
+        if find("resource-id", self.rid("seek_bar_panel")):
+            self.tap(self.w // 2, self.h // 4)
+            time.sleep(1.5)
+
+    def two_page(self, label):
+        self.tap_menu_button("reader_top_bar_settings")
+        self.tap_id("two_page", 10)
+        self.tap(*centre(self.need_text(label)))
+        time.sleep(1.5)
+        self.back(2)
+        self.close_reader_menu()
+        self.check(f"spreads: two-page reading set to {label!r}")
+
+    def halves(self, first, last, rtl=True):
+        """The page menu of each half names the page shown there."""
+        def page_under(x):
+            self.long_press(x, self.h // 2)
+            time.sleep(1.5)
+            texts = visible()
+            self.back()
+            return texts
+        right, left = page_under(self.w * 3 // 4), page_under(self.w // 4)
+        want_right, want_left = (first, last) if rtl else (last, first)
+        if f"Page {want_right}" not in right or f"Page {want_left}" not in left:
+            raise SmokeFailure(f"spreads: halves of {first}-{last}: right {right!r}, left {left!r}")
+        self.check(f"spreads: page {first} on the {'right' if rtl else 'left'} half")
+
+    def open_titled(self, title):
+        """Opens [title] from the list in portrait (the drawer is cut short in
+        landscape), then turns the reader to landscape."""
+        self.orient(False)
+        self.nav("nav_homepage", "thumb_new")
+        self.to_home()
+        # The list keeps its scroll position: look towards the top, then down.
+        for up in [True] * 15 + [False] * 45:
+            if find("text", title):
+                break
+            y1, y2 = (self.h // 3, self.h * 3 // 4) if up else (self.h * 3 // 4, self.h // 3)
+            self.swipe(self.w // 2, y1, self.w // 2, y2, 400)
+            time.sleep(1.5)
+        self.tap(*centre(self.need_text(title)))
+        self.tap_id("read", 20)
+        self.need("progress", 20)
+        time.sleep(3)
+        self.close_reader_menu()
+        self.orient(True)
+
+    def leave_to_detail(self):
+        for _ in range(3):
+            if find("resource-id", self.rid("read")):
+                break
+            self.back(2)
+        self.need("read", 10)
+
+    def spreads(self):
+        """Two-page reading in landscape: pairs, wide pages alone, both reading
+        directions, the chapter mark on a spread's second page, and a tank
+        whose member covers stand alone and whose remap mid-read keeps the
+        page, then the resume."""
+        auto = shell("settings", "get", "system", "accelerometer_rotation").stdout.strip()
+        try:
+            self.open_titled("Mock Big Archive 1")
+            self.two_page("Landscape only")
+            self.turn_to("1/40", forward=False, limit=45)
+            self.turn_to("10-11/40")
+            self.expect_shown("10-11/40", "the spread holding the first page of Part Two")
+            self.tap_menu_button("reader_top_bar_toc")
+            # Only the current row's marker is visible (and so in the dump).
+            row_y = centre(self.need_text("Part Two"))[1]
+            marker = self.need("reader_chapter_marker", 5)
+            top, bottom = map(int, re.findall(r"\d+", marker["bounds"])[1::2])
+            if not top <= row_y <= bottom:
+                raise SmokeFailure(f"spreads: Part Two not marked on 10-11; visible: {visible()}")
+            self.check("spreads: the chapter starting on a spread's second page is marked")
+            self.back()
+            self.leave_to_detail()
+            self.back()
+
+            self.open_titled("Mock HiDPI 600")
+            self.turn_to("1/24", forward=False)
+            self.expect_shown("1/24", "the cover stands alone")
+            self.turn(True)
+            self.expect_shown("2-3/24", "a turn shows the next two pages")
+            self.halves(2, 3)
+            self.turn(True)
+            self.turn(True)
+            self.expect_shown("6/24", "the page before a wide page stands alone")
+            self.turn(True)
+            self.expect_shown("7/24", "a wide page stands alone")
+            self.turn(True)
+            self.expect_shown("8-9/24", "pairing goes on after the wide page")
+            self.set_direction("Left to right")
+            self.close_reader_menu()
+            self.expect_shown("8-9/24", "left to right keeps the spread")
+            self.halves(8, 9, rtl=False)
+            self.turn(False, rtl=False)
+            self.expect_shown("7/24", "left to right turns back with the left zone")
+            self.set_direction("Right to left")
+            self.close_reader_menu()
+            self.leave_to_detail()
+            self.back()
+
+            self.orient(False)
+            self.nav("nav_tankoubons", "search_title")
+            self.press(*centre(self.need_text("Mock Tank")))
+            self.tap_id("read", 20)
+            self.need("progress", 20)
+            time.sleep(2)
+            self.close_reader_menu()
+            self.orient(True)
+            self.turn_to("1/6", forward=False)
+            self.expect_shown("1/6", "the tank's first cover stands alone")
+            self.turn(True)
+            self.expect_shown("2-3/6", "the first member's pages pair")
+            self.expect_shown("2-3/8", "a late file list remaps the tank and keeps the spread")
+            self.turn(True)
+            self.expect_shown("4/8", "the second member's cover stands alone")
+            self.turn(True)
+            self.expect_shown("5-6/8", "pairs restart after the member cover")
+            self.turn(True)
+            self.expect_shown("7-8/8", "the tank ends on the second member's last pair")
+            self.turn(False)
+            self.expect_shown("5-6/8", "turning back stays inside the member")
+            self.leave_to_detail()
+            self.tap_id("read", 20)
+            self.need("progress", 20)
+            time.sleep(3)
+            self.close_reader_menu()
+            self.expect_shown("5-6/8", "the tank resumes on the same spread")
+            self.two_page("Off")
+            self.expect_shown("5/8", "setting off: one page")
+            self.leave_to_detail()
+            self.back()
+        finally:
+            self.orient(False)
+            shell("settings", "put", "system", "accelerometer_rotation", auto or "1")
+        self.check("spreads: back to portrait, two-page reading off")
+
     # -- metadata plugins --
     def plugin_row(self, name):
         """Opens the plugin screen's row called [name] from the chooser."""
@@ -1231,7 +1404,7 @@ class Widgets:
 WIDGET_JOURNEYS = ["home", "drawer", "reader", "downloads", "history", "favourites",
                    "tanks", "settings", "lock"]
 # Run only when named: these need more of the mock (see the module docstring).
-NAMED_ONLY_JOURNEYS = ["chapters", "chapters_offline", "plugin_tags"]
+NAMED_ONLY_JOURNEYS = ["chapters", "chapters_offline", "plugin_tags", "spreads"]
 
 
 class Shots(Widgets):
