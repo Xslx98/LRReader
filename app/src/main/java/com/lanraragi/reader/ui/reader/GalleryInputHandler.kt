@@ -115,7 +115,10 @@ class GalleryInputHandler(private val mCallback: Callback) {
      * Handle key-up events -- consume keys that were handled in key-down.
      * @return true if the event was consumed
      */
-    fun handleKeyUp(keyCode: Int): Boolean {
+    fun handleKeyUp(keyCode: Int): Boolean = isReaderKey(keyCode)
+
+    /** Whether [handleKeyDown] turns pages or opens the menu on [keyCode]. */
+    fun isReaderKey(keyCode: Int): Boolean {
         if (ReadingSettings.getVolumePage()) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
                 return true

@@ -36,6 +36,15 @@ class ReaderContinuationController(
     private var lastEventAt = 0L
 
     init {
+        // Shown, the panel holds the focus even in touch mode, so the first
+        // key after a touch reaches the reader instead of being spent on
+        // leaving touch mode and focusing the panel (#110).
+        root.isFocusableInTouchMode = true
+        // A touch after Tab moved the focus to a button clears that focus;
+        // without this the first tap on the scrim would only focus it.
+        root.viewTreeObserver.addOnTouchModeChangeListener { inTouchMode ->
+            if (inTouchMode && isShowing) root.requestFocus()
+        }
         root.setOnClickListener { hide() }
         secondary.setOnClickListener { hide() }
         primary.setOnClickListener { onPrimary() }
@@ -53,6 +62,16 @@ class ReaderContinuationController(
 
     fun hide() {
         root.visibility = View.GONE
+    }
+
+    /**
+     * A reader key while the panel shows closes it, as Back does, instead of
+     * turning the page behind it (#110). Returns whether the key was used.
+     */
+    fun hideForKey(): Boolean {
+        if (!isShowing) return false
+        hide()
+        return true
     }
 
     /**
@@ -114,6 +133,7 @@ class ReaderContinuationController(
 
     private fun show(known: NextArchiveResolver.NextResult?) {
         root.visibility = View.VISIBLE
+        root.requestFocus()
         if (known == null) {
             render(loading = true)
             resolveAsync()
