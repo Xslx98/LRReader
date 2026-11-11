@@ -114,6 +114,15 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
     /** The last page on screen; past [currentIndex] only while a spread shows two pages. */
     private var lastIndex: Int = 0
 
+    /**
+     * The last page on screen in reading order: [currentIndex], or a spread's
+     * second page. The chapter list marks the chapter holding it, so a
+     * chapter that starts on the second page of a spread is the
+     * current one (pairs never span tank members, see TankGalleryProvider.isPairBreak).
+     */
+    val lastShownIndex: Int
+        get() = maxOf(lastIndex, currentIndex)
+
     /** A two-page spread (or a page alone after one) shows [first]..[last]. */
     fun setShownPages(first: Int, last: Int) {
         currentIndex = first
@@ -167,7 +176,7 @@ class GallerySliderController : SeekBar.OnSeekBarChangeListener {
 
     @SuppressLint("SetTextI18n")
     fun updateProgress() {
-        val last = maxOf(lastIndex, currentIndex)
+        val last = lastShownIndex
         onPageChanged?.invoke(currentIndex, last, size)
         val progress = mProgress ?: return
         if (size <= 0 || currentIndex < 0) {

@@ -335,7 +335,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             { page0 -> mLaunch.tankMemberTitle(mGalleryProvider, page0) },
         ) { mPageHost.isSpreadShown }
         mChapters = ReaderChaptersController(
-            this, galleryProvider, { mSliderController.currentIndex }, mImageOps::applyImmersiveToDialog
+            this, galleryProvider, { mSliderController.lastShownIndex }, mImageOps::applyImmersiveToDialog
         ).also {
             it.bind(ViewUtils.requireView(this, R.id.reader_top_bar_toc), mSliderController::hideMenu)
         }

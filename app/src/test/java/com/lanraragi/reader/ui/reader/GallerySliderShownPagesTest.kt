@@ -43,6 +43,15 @@ class GallerySliderShownPagesTest {
     }
 
     @Test
+    fun `the last shown page is a spread's second page, else the current one`() {
+        slider.setShownPages(20, 21)
+        slider.currentIndex = 20
+        assertEquals("the chapter list marks the chapter holding page 21", 21, slider.lastShownIndex)
+        slider.currentIndex = 22
+        assertEquals(22, slider.lastShownIndex)
+    }
+
+    @Test
     fun `a spread that loses its partner reports the page alone`() {
         slider.setShownPages(2, 3)
         slider.setShownPages(2, 2)
