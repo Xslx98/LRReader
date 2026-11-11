@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.toDegradedArchiveDetail
+import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.server.TankoubonSupportGate
@@ -41,6 +42,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lanraragi.reader.dao.DownloadState
@@ -142,6 +144,16 @@ class GalleryDetailViewModel : ViewModel() {
      * add the archive to one (spec 2026-09-22 §6).
      */
     val archiveTankoubons: StateFlow<List<Tankoubon>?> = _archiveTankoubons.asStateFlow()
+
+    init {
+        // A tank deleted elsewhere (its pages opened from this row, a list
+        // batch) leaves the row at once; a reload would only find it gone (#105).
+        viewModelScope.launch {
+            AppEventBus.archiveDeletedEvent.collect { event ->
+                _archiveTankoubons.update { tanks -> tanks?.filterNot { it.id == event.arcid } }
+            }
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Loading state

@@ -9,6 +9,7 @@ import android.widget.TextView
 import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.server.ServerSession
 
 /**
@@ -39,17 +40,7 @@ import com.lanraragi.reader.server.ServerSession
 fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
     val context: Context = badge.context
 
-    // Legacy rows: best-effort attribute to the current active profile.
-    // If active profile is also unset (degenerate fresh-install state)
-    // effectiveId stays 0 and the cache lookup falls through to orphan.
-    val effectiveId = if (serverProfileId == 0L) {
-        ServerSession.getActiveProfileId() ?: 0L
-    } else {
-        serverProfileId
-    }
-
-    val cache = ServiceRegistry.dataModule.profileLookupCache
-    val profile = cache.findById(effectiveId)
+    val profile = resolveSourceProfile(serverProfileId)
     val bgColor: Int
     val fgColor: Int
     val resolvedName: String?
@@ -78,6 +69,23 @@ fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
     badge.setTextColor(fgColor)
     badge.visibility = View.VISIBLE
     return resolvedName
+}
+
+/**
+ * The profile a row's [serverProfileId] names, or null when that profile
+ * is gone. Shared by the badge and the detail page's download-button
+ * source label so both attribute a row the same way.
+ */
+fun resolveSourceProfile(serverProfileId: Long): ServerProfile? {
+    // Legacy rows: best-effort attribute to the current active profile.
+    // If active profile is also unset (degenerate fresh-install state)
+    // effectiveId stays 0 and the cache lookup falls through to orphan.
+    val effectiveId = if (serverProfileId == 0L) {
+        ServerSession.getActiveProfileId() ?: 0L
+    } else {
+        serverProfileId
+    }
+    return ServiceRegistry.dataModule.profileLookupCache.findById(effectiveId)
 }
 
 /**
