@@ -15,6 +15,8 @@ import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.domain.FavoriteState
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.server.OrphanProfileException
 import com.lanraragi.reader.server.ProfileLookupCache
@@ -223,6 +225,23 @@ class GalleryDetailViewModelSourceRoutingTest {
     }
 
     @Test
+    fun aTankDeletedElsewhere_leavesTheTankRow_butKeepsTheSection() {
+        // #105: the tank's pages opened from this row (or a list batch) delete
+        // it while this page waits underneath.
+        val vm = GalleryDetailViewModel()
+        vm.setArchive(navArchive(sourceProfileId))
+        request(vm)
+        awaitUntil { vm.archiveTankoubons.value != null }
+
+        // Main is unconfined here: each event is applied before the post returns.
+        AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(OTHER_ARCID))
+        assertEquals("another deletion took the tank", listOf(TANK_ID), vm.archiveTankoubons.value!!.map { it.id })
+        AppEventBus.postArchiveDeletedEvent(ArchiveDeletedEvent(TANK_ID))
+
+        awaitUntil(message = "the deleted tank is still shown") { vm.archiveTankoubons.value!!.isEmpty() }
+    }
+
+    @Test
     fun heart_countsOnlyStaticCategoriesHoldingTheArchive() {
         val vm = GalleryDetailViewModel()
         vm.setArchive(navArchive(sourceProfileId))
@@ -280,8 +299,9 @@ class GalleryDetailViewModelSourceRoutingTest {
 
         val asked = sourceLrr.paths.size
         vm.loadArchiveTankoubons()
-        // One child stays for good: localReadingPage's sharing coroutine.
-        awaitUntil { vm.viewModelScope.coroutineContext.job.children.count { !it.isCompleted } <= 1 }
+        // Two children stay for good: localReadingPage's sharing coroutine and
+        // the deleted-tank collector.
+        awaitUntil { vm.viewModelScope.coroutineContext.job.children.count { !it.isCompleted } <= 2 }
         assertEquals(asked, sourceLrr.paths.size)
     }
 

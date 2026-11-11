@@ -14,6 +14,7 @@ import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.TankoubonSupportGate
+import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.TagGroup
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
@@ -220,10 +221,15 @@ class TankDetailViewModelTest {
         vm.baseUrlResolver = { ServerSession.getServerUrl()!! }
         vm.offlineSource = { _, _ -> offline }
         vm.membershipSync = TankMembershipSyncFactory.Runner { _, _, _ -> }
-        vm.forgetCoverChoice = { forgotten.add(it) }
-        vm.dissolveDownloadGroup = { dissolved.add(it) }
         // Category promotion has its own wire tests (TankCategorySyncerTest); record the calls here.
-        vm.categoryDissolve = { _, _, id, name -> categoryCalls.add("dissolve $id $name deletes=${deletes.get()}"); true }
+        vm.tanks = TankRepository(
+            { _, _, _ -> },
+            deleteSteps = TankRepository.DeleteSteps(
+                clearCategories = { _, _, id, name -> categoryCalls.add("dissolve $id $name deletes=${deletes.get()}"); true },
+                forgetCoverChoice = { forgotten.add(it) },
+                dissolveDownloadGroup = { dissolved.add(it) },
+            ),
+        )
         vm.resetCategoriesOp = { _, _, id, _, members -> categoryCalls.add("reset $id ${members.size}"); true }
         vm.init(TANK, "Seed Name", profileId = 0L)
         return vm

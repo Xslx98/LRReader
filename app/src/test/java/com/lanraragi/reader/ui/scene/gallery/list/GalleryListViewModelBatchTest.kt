@@ -15,6 +15,7 @@ import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.tankoubon.TankRepository
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -230,6 +231,47 @@ class GalleryListViewModelBatchTest {
                 "failure reason should carry the server error, was '${result.failed[0].reason}'",
                 result.failed[0].reason.contains("locked"),
             )
+        }
+
+    @Test
+    fun `deleteTanks batch runs the tank delete sequence and posts ArchiveDeletedEvent per deleted tank`() =
+        runTest {
+            // #105: an open tank detail page closes on this event, so a tank the
+            // server refused to delete must not post one.
+            server.dispatcher = object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest): MockResponse =
+                    if (OTHER_TANK_ID in request.path.orEmpty()) {
+                        jsonResponse(500, """{"success":0,"error":"boom"}""")
+                    } else {
+                        jsonResponse(200, """{"success":1}""")
+                    }
+            }
+            val dissolved = CopyOnWriteArrayList<String>()
+            val deletedEvents = CopyOnWriteArrayList<String>()
+            val collectJob = launch(start = CoroutineStart.UNDISPATCHED) {
+                AppEventBus.archiveDeletedEvent.collect { deletedEvents += it.arcid }
+            }
+
+            val vm = newVm().apply {
+                tanks = TankRepository(
+                    { _, _, _ -> },
+                    deleteSteps = TankRepository.DeleteSteps(
+                        clearCategories = { _, _, _, _ -> true },
+                        forgetCoverChoice = {},
+                        dissolveDownloadGroup = { dissolved += it },
+                    ),
+                )
+            }
+            val result = awaitBatchResult(vm) {
+                vm.runBatch(BatchOp.DeleteTanks, listOf(archiveOf(TANK_ID), archiveOf(OTHER_TANK_ID)))
+            }
+            advanceUntilIdle() // drain pending collector resumptions before asserting
+            collectJob.cancel()
+
+            assertEquals(listOf(TANK_ID), result.succeeded)
+            assertEquals(listOf(OTHER_TANK_ID), result.failed.map { it.arcid })
+            assertEquals("exactly one delete event, for the deleted tank", listOf(TANK_ID), deletedEvents)
+            assertEquals(listOf(TANK_ID), dissolved)
         }
 
     @Test
@@ -540,6 +582,7 @@ class GalleryListViewModelBatchTest {
         val ARC_B = "b".repeat(40)
         val ARC_C = "c".repeat(40)
         const val TANK_ID = "TANK_1688616437"
+        const val OTHER_TANK_ID = "TANK_1688616438"
         const val RESULT_TIMEOUT_MS = 10_000L
     }
 }

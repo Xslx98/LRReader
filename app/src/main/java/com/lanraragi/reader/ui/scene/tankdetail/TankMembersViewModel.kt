@@ -193,24 +193,20 @@ class TankMembersViewModel : ViewModel() {
     internal var tagSyncAfterRemove: suspend (OkHttpClient, String, TankTagSyncer.Snapshot, List<String>) -> Boolean =
         { client, url, snap, removed -> TankTagSyncer.afterRemove(client, url, snap, removed) }
 
-    /** Static-category promotion seams (spec 2026-09-22 §6); replaceable for tests. */
+    /** Static-category promotion seam (spec 2026-09-22 §6); replaceable for tests. */
     internal var categorySyncAfterRemove: suspend (OkHttpClient, String, TankTagSyncer.Snapshot, List<String>) -> Boolean =
         { client, url, snap, removed -> TankCategorySyncer.afterRemove(client, url, snap, removed) }
-    internal var categoryDissolve: suspend (OkHttpClient, String, String, String) -> Boolean =
-        { client, url, id, name -> TankCategorySyncer.onDissolve(client, url, id, name) }
 
     /** Downloaded-tank grouping follow-ups (ADR-004); replaceable for tests. */
     internal var untagDownloadMember: (String, String) -> Unit =
         { id, arcid -> ServiceRegistry.dataModule.downloadManager.untagTankMemberAsync(id, arcid) }
-    internal var dissolveDownloadGroup: (String) -> Unit =
-        { id -> ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(id) }
 
     internal var baseUrlResolver: suspend (Long) -> String = { id ->
         resolveSourceBaseUrl(id, ServiceRegistry.dataModule.profileLookupCache)
     }
 
-    /** The tank's server reads and writes. Its list-load membership sync is unused here. */
-    private val tanks = TankRepository(TankMembershipSyncFactory.runnerSafely()::sync)
+    /** The tank's server reads and writes, and its delete sequence. Its list-load membership sync is unused here. */
+    internal var tanks = TankRepository(TankMembershipSyncFactory.runnerSafely()::sync)
 
     /**
      * The tank's source server: [profileId] at [url]. Built from the
@@ -378,17 +374,7 @@ class TankMembersViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             val url = requireBaseUrl() ?: return@launch
             try {
-                val conn = connection(url)
-                // Upstream leaves the deleted id dangling in static categories
-                // (spec 2026-09-22 §6): clear it first, while the tank still exists.
-                categoryDissolve(conn.client, url, tankId, _tankName.value)
-                tanks.deleteOnly(conn, tankId)
-                tanks.deleted(url, tankId)
-                coverChoices.remove(tankId)
-                // Dissolve the downloaded-tank grouping (files/rows stay:
-                // deleting a tank never deletes its archives — the member
-                // downloads reappear standalone).
-                dissolveDownloadGroup(tankId)
+                tanks.delete(connection(url), tankId, _tankName.value)
                 _uiEvent.tryEmit(TankDetailUiEvent.Deleted)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e

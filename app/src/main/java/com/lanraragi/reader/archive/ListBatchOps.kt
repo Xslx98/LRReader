@@ -24,8 +24,8 @@ object ListBatchOps {
 
     /**
      * Applies [op] to one selected row: an archive, or a tank in tank mode.
-     * Throws when the write fails. A deleted archive is announced with
-     * [ArchiveDeletedEvent]; a sorted tank's previous member order lands in
+     * Throws when the write fails. A deleted archive or tank is announced
+     * with [ArchiveDeletedEvent]; a sorted tank's previous member order lands in
      * [undoOrders] (absent when it was already sorted).
      */
     suspend fun execute(
@@ -63,7 +63,8 @@ object ListBatchOps {
             }
             BatchOp.SortTanks ->
                 tanks.autoSort(conn, archive.arcid)?.let { undoOrders[archive.arcid] = it }
-            BatchOp.DeleteTanks -> tanks.delete(conn, archive.arcid)
+            // A tank row's title is the tank name.
+            BatchOp.DeleteTanks -> tanks.delete(conn, archive.arcid, archive.title)
             BatchOp.Download -> error("use runBatchDownload")
         }
     }

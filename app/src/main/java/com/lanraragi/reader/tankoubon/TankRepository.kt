@@ -23,6 +23,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import okhttp3.OkHttpClient
 
 /**
  * Server-side tankoubon list operations (docs/plan-2.4.0-tank-ux.md, PR-B):
@@ -40,6 +41,7 @@ import kotlinx.coroutines.sync.withPermit
  *   membership sync after every load, and [delete]'s write sequence, which
  *   must not be cut in half by a closing screen; null = the app's ioScope,
  *   resolved at first use
+ * @param deleteSteps [delete]'s follow-ups around the server DELETE
  */
 class TankRepository(
     private val membershipSync: suspend (
@@ -48,6 +50,7 @@ class TankRepository(
         tanks: List<TankMembershipSync.TankTruth>,
     ) -> Unit,
     background: CoroutineScope? = null,
+    private val deleteSteps: DeleteSteps = DeleteSteps(),
 ) {
 
     private val background: CoroutineScope by lazy { background ?: ServiceRegistry.coroutineModule.ioScope }
@@ -329,34 +332,52 @@ class TankRepository(
         }
 
     /**
-     * Deletes the tank (never its archives). Upstream leaves the deleted id
-     * dangling in static categories (spec 2026-09-22 §6): cleared first,
-     * while the tank still exists. A downloaded-tank grouping dissolves;
-     * member downloads reappear standalone (files untouched). Runs on
-     * [background]: a caller that goes away mid-way never leaves the
-     * categories cleared but the tank alive.
+     * What [delete] does around the server DELETE: clear the tank from its
+     * static categories, forget the remembered cover choice, dissolve the
+     * downloaded-tank grouping. Production defaults; tests record the calls.
      */
-    suspend fun delete(conn: ServerConnection, tankId: String) {
+    class DeleteSteps(
+        val clearCategories: suspend (
+            client: OkHttpClient,
+            baseUrl: String,
+            tankId: String,
+            tankName: String,
+        ) -> Boolean =
+            { c, url, id, name -> TankCategorySyncer.onDissolve(c, url, id, name) },
+        val forgetCoverChoice: (String) -> Unit = { TankCoverChoiceStore.default.remove(it) },
+        val dissolveDownloadGroup: (String) -> Unit =
+            { ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(it) },
+    )
+
+    /**
+     * Deletes the tank (never its archives), the one sequence behind the
+     * tank detail page, the member management page and the list's batch
+     * delete. Upstream leaves the deleted id dangling in static categories
+     * (spec 2026-09-22 §6): cleared first, while the tank still exists. After
+     * the DELETE: [deleted] (the lists and any page left open on the tank
+     * drop it), the cover choice is forgotten and a downloaded-tank grouping
+     * dissolves; member downloads reappear standalone (files untouched).
+     * Runs on [background]: a caller that goes away mid-way never leaves the
+     * categories cleared but the tank alive, nor a deleted tank with its
+     * download group (#106). Throws when the DELETE fails; nothing local
+     * changes then.
+     *
+     * @param name the tank's display name, for a failed category write's report
+     */
+    suspend fun delete(conn: ServerConnection, tankId: String, name: String) {
         background.async {
             val c = conn.client
             val serverUrl = conn.baseUrl
-            TankCategorySyncer.onDissolve(c, serverUrl, tankId, TankCategorySyncer.nameOf(c, serverUrl, tankId))
+            deleteSteps.clearCategories(c, serverUrl, tankId, name)
             LRRTankoubonApi.deleteTankoubon(c, serverUrl, tankId)
-            TankListCache.invalidate(serverUrl)
-            ServiceRegistry.dataModule.downloadManager.dissolveTankGroupAsync(tankId)
+            deleted(serverUrl, tankId)
+            deleteSteps.forgetCoverChoice(tankId)
+            deleteSteps.dissolveDownloadGroup(tankId)
         }.await()
     }
 
     /**
-     * Only the server DELETE, without [delete]'s follow-ups, for a caller
-     * that runs its own sequence around it (the tank detail and member management pages).
-     */
-    suspend fun deleteOnly(conn: ServerConnection, tankId: String) {
-        LRRTankoubonApi.deleteTankoubon(conn.client, conn.baseUrl, tankId)
-    }
-
-    /**
-     * After a successful [deleteOnly]: drops [baseUrl]'s [TankListCache] and
+     * After a successful DELETE: drops [baseUrl]'s [TankListCache] and
      * posts [ArchiveDeletedEvent] with the tank id, so the gallery list and a
      * tank detail page left underneath stop showing the tank (#98).
      */

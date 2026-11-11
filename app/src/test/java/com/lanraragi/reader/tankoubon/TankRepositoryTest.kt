@@ -8,6 +8,9 @@ import com.lanraragi.reader.cover.TankCoverCacheStamp
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.domain.Tankoubon
 import com.lanraragi.reader.download.TankMembershipSync
+import com.lanraragi.reader.collectInto
+import com.lanraragi.reader.event.AppEventBus
+import com.lanraragi.reader.event.ArchiveDeletedEvent
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.TankoubonSupportGate
 import kotlinx.coroutines.CoroutineScope
@@ -447,29 +450,75 @@ class TankRepositoryTest {
         assertEquals(emptyList<String>(), TankListCache.get(client, baseUrl).map { it.id })
     }
 
+    /** [TankRepository.DeleteSteps] that log into [log]; [clearCategories] runs first. */
+    private fun recordingSteps(
+        log: MutableList<String>,
+        clearCategories: () -> Unit = {},
+    ) = TankRepository.DeleteSteps(
+        clearCategories = { _, _, id, name ->
+            log += "categories $id $name"
+            clearCategories()
+            true
+        },
+        forgetCoverChoice = { log += "cover $it" },
+        dissolveDownloadGroup = { log += "group $it" },
+    )
+
+    /** Answers DELETE with [deleteCode] and logs it into [log]. */
+    private fun deleteDispatcher(log: MutableList<String>, deleteCode: Int = 200) = object : Dispatcher() {
+        override fun dispatch(request: RecordedRequest): MockResponse {
+            log += "${request.method} ${request.path}"
+            return MockResponse().setResponseCode(deleteCode).setBody("""{"success":1}""")
+        }
+    }
+
     @Test
-    fun delete_aCallerThatGoesAwayMidWay_doesNotStopTheDelete() = runBlocking {
+    fun delete_aCallerThatGoesAwayMidWay_stillFinishesTheWholeSequence() = runBlocking {
+        // #106: the page that asked for the delete closes while the categories
+        // are being cleared; the DELETE and every follow-up still happen.
         val id = "TANK_0000000114"
-        val paths = CopyOnWriteArrayList<String>()
+        val log = CopyOnWriteArrayList<String>()
         val firstHeld = CountDownLatch(1)
         val release = CountDownLatch(1)
-        server.dispatcher = object : Dispatcher() {
-            override fun dispatch(request: RecordedRequest): MockResponse {
-                paths += "${request.method} ${request.path}"
-                if (request.path.orEmpty().contains("/full")) {
-                    firstHeld.countDown()
-                    release.await(5, TimeUnit.SECONDS)
-                    return MockResponse().setResponseCode(500)
-                }
-                return MockResponse().setBody(if (request.method == "DELETE") """{"success":1}""" else "[]")
-            }
-        }
+        server.dispatcher = deleteDispatcher(log)
+        val deleted = AppEventBus.archiveDeletedEvent.collectInto(background)
+        val repo = TankRepository({ _, _, _ -> }, background, recordingSteps(log) {
+            firstHeld.countDown()
+            release.await(5, TimeUnit.SECONDS)
+        })
 
-        val caller = launch(Dispatchers.Default) { service.delete(conn(), id) }
+        val caller = launch(Dispatchers.Default) { repo.delete(conn(), id, "Gone") }
         assertTrue("the delete never started", firstHeld.await(5, TimeUnit.SECONDS))
         caller.cancel() // the screen that asked for the delete is gone
         release.countDown()
 
-        awaitUntil(message = "the delete was cut off: $paths") { paths.contains("DELETE /api/tankoubons/$id") }
+        awaitUntil(message = "the delete was cut off: $log") { log.contains("group $id") }
+        assertEquals(
+            listOf("categories $id Gone", "DELETE /api/tankoubons/$id", "cover $id", "group $id"),
+            log.toList(),
+        )
+        awaitUntil(message = "no deletion event") { deleted.isNotEmpty() }
+        assertEquals(listOf(ArchiveDeletedEvent(id)), deleted.toList())
+    }
+
+    @Test
+    fun delete_aFailedDelete_throwsAndChangesNothingLocal() = runBlocking {
+        val id = "TANK_0000000115"
+        val log = CopyOnWriteArrayList<String>()
+        server.dispatcher = deleteDispatcher(log, deleteCode = 500)
+        val deleted = AppEventBus.archiveDeletedEvent.collectInto(background)
+        TankListCache.put(baseUrl, listOf(Tankoubon(id = id, name = "Kept")))
+        val repo = TankRepository({ _, _, _ -> }, background, recordingSteps(log))
+
+        try {
+            repo.delete(conn(), id, "Kept")
+            fail("a 500 must throw")
+        } catch (e: LRRHttpException) {
+            assertEquals(500, e.code)
+        }
+
+        assertEquals(listOf("categories $id Kept", "DELETE /api/tankoubons/$id"), log.toList())
+        assertEquals(listOf(id), TankListCache.get(client, baseUrl).map { it.id })
+        assertTrue("an event for a tank that still exists: $deleted", deleted.isEmpty())
     }
 }
