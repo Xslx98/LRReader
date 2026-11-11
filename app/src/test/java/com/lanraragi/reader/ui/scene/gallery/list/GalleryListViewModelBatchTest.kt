@@ -27,6 +27,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
@@ -183,7 +184,11 @@ class GalleryListViewModelBatchTest {
         assertEquals(ARC_B, result.failed[0].arcid)
         // The result is emitted inside the batch's try and progress resets in its
         // finally, so a collector may see the result first: wait for idle.
-        withTimeout(5_000) { vm.batchProgress.first { it == null } }
+        // The reset runs on an IO thread, so wait in real time: a withTimeout on
+        // the test scheduler fires at once when it idles before that reset (#84).
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { vm.batchProgress.first { it == null } }
+        }
     }
 
     @Test
