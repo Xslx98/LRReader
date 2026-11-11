@@ -62,6 +62,19 @@ class GalleryViewGestureAllocationTest {
         assertEquals("fewest bytes allocated by $FRAMES drag frames in $RUNS runs", 0L, bytes)
     }
 
+    // Issue #110: pulling past the last page and back keeps a running pull.
+    @Test
+    fun edgePullFramesAllocateNothing() {
+        view.setCurrentPage(39)
+        view.render(canvas)
+        view.onDown(540f, 1200f)
+        view.render(canvas)
+        edgePull(FRAMES) // warm up
+        val bytes = minAllocatedBytes(RUNS) { edgePull(FRAMES) }
+
+        assertEquals("fewest bytes allocated by $FRAMES edge pull frames in $RUNS runs", 0L, bytes)
+    }
+
     @Test
     fun pinchFramesAllocateNothing() {
         view.onDown(540f, 1000f)
@@ -126,6 +139,16 @@ class GalleryViewGestureAllocationTest {
     private fun drag(frames: Int) {
         for (i in 0 until frames) {
             val dx = if (i % 2 == 0) 6f else -6f
+            view.onScroll(dx, 0f, dx, 0f, 540f - dx, 1200f)
+            view.render(canvas)
+        }
+    }
+
+    // Right-to-left, the finger moving right pulls past the last page; each
+    // move back unwinds the pull without reaching the previous page.
+    private fun edgePull(frames: Int) {
+        for (i in 0 until frames) {
+            val dx = if (i % 2 == 0) -6f else 5f
             view.onScroll(dx, 0f, dx, 0f, 540f - dx, 1200f)
             view.render(canvas)
         }
