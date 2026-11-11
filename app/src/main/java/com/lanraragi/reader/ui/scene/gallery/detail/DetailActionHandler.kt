@@ -78,11 +78,18 @@ internal class DetailActionHandler(
     private fun currentSourceLabel(context: Context): String? {
         val arcid = viewModel.getEffectiveArcid() ?: return null
         val row = viewModel.downloadManager.getDownloadInfo(arcid) ?: return null
+        // Before the first profile snapshot a miss is not a deletion; the
+        // scene re-runs this when the snapshot lands.
+        val deletedText = if (ServiceRegistry.dataModule.profileLookupCache.isLoaded) {
+            context.getString(R.string.lrr_download_source_deleted)
+        } else {
+            null
+        }
         return downloadSourceLabel(
             row.serverProfileId,
             viewModel.getSourceProfileId(),
             ServerSession.getActiveProfileId(),
-            context.getString(R.string.lrr_download_source_deleted),
+            deletedText,
         ) { resolveSourceProfile(it)?.name }
     }
 
@@ -278,14 +285,15 @@ internal class DetailActionHandler(
          * [com.lanraragi.reader.widget.bindSourceServerBadge] does, and
          * shows none either. A page without a source id (0) is the active
          * profile's. [nameOf] gives a live profile's name; a deleted one
-         * reads [deletedText].
+         * reads [deletedText], which is null (no label) while the profiles
+         * have not loaded and a miss proves nothing.
          */
         @JvmStatic
         internal fun downloadSourceLabel(
             rowProfileId: Long,
             pageProfileId: Long,
             activeProfileId: Long?,
-            deletedText: String,
+            deletedText: String?,
             nameOf: (Long) -> String?,
         ): String? {
             if (rowProfileId == 0L) return null

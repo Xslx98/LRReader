@@ -71,7 +71,7 @@ class ArchiveSourceResolverTest {
 
     private suspend fun awaitSnapshotSize(cache: ProfileLookupCache, size: Int) {
         withTimeout(2_000) {
-            while (cache.snapshot.value.size != size) {
+            while (cache.snapshot.value?.size != size) {
                 kotlinx.coroutines.delay(20)
             }
         }

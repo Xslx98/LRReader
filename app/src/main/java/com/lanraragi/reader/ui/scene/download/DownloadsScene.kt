@@ -652,5 +652,8 @@ class DownloadsScene : ToolbarScene(),
          * this and skips the full rebind (image load, tag render, etc.).
          */
         const val PAYLOAD_PROGRESS = "progress"
+
+        /** Payload token: only the source-server badge changed. */
+        const val PAYLOAD_SOURCE = "source"
     }
 }

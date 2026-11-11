@@ -76,7 +76,7 @@ class ServerConnectionsTest {
         ServerSession.setServerUrl("http://active.local:3000")
         val id = repo.insert(ServerProfile(name = "B", url = "http://server-b.local:3000"))
         val cache = ProfileLookupCache(repo, scope)
-        withTimeout(2_000) { while (cache.snapshot.value.size != 1) kotlinx.coroutines.delay(20) }
+        withTimeout(2_000) { while (cache.snapshot.value?.size != 1) kotlinx.coroutines.delay(20) }
 
         val conn = ServerConnections.forProfile(id, cache)
 

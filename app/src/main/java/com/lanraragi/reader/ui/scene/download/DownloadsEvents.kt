@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene.download
 
 import androidx.lifecycle.LifecycleOwner
+import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.ui.collectFlow
 
 /**
@@ -41,6 +42,13 @@ class DownloadsEvents(
         collectFlow(owner, viewModel.progressMap) { progressMap ->
             if (!scene.hasAdapter || scene.searching) return@collectFlow
             scene.listDispatcher.dispatchProgressChanges(progressMap)
+        }
+
+        // Source badges read the profile snapshot, which is still empty when
+        // the list binds at cold start; re-bind them when it lands and after
+        // a profile rename or delete.
+        collectFlow(owner, ServiceRegistry.dataModule.profileLookupCache.snapshot) {
+            scene.listDispatcher.dispatchSourceBadges()
         }
 
         // Observe filter loading state

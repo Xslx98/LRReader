@@ -157,22 +157,23 @@ class DownloadAdapter(
      * [DownloadsScene.PAYLOAD_PROGRESS], only the progress / speed / percent
      * views are refreshed — no image reload, no tag rebuild. This path is
      * exercised on every progress-tracker tick via
-     * `DownloadsScene.dispatchProgressChanges`.
+     * `DownloadsScene.dispatchProgressChanges`. [DownloadsScene.PAYLOAD_SOURCE]
+     * likewise re-binds only the source badge after a profile snapshot change.
      */
     override fun onBindViewHolder(
         holder: DownloadHolder,
         position: Int,
         payloads: MutableList<Any>
     ) {
-        if (payloads.isNotEmpty() &&
-            payloads.any { it == DownloadsScene.PAYLOAD_PROGRESS }
-        ) {
+        val source = DownloadsScene.PAYLOAD_SOURCE in payloads
+        if (source || DownloadsScene.PAYLOAD_PROGRESS in payloads) {
             val list = mCallback.list ?: return
             val pos = mCallback.positionInList(position)
             if (pos !in list.indices) return
             val info = list[pos]
-            if (info.state == DownloadState.DOWNLOAD ||
-                info.state == DownloadState.WAIT
+            if (source) bindSourceBadge(holder, info)
+            if (DownloadsScene.PAYLOAD_PROGRESS in payloads && (info.state == DownloadState.DOWNLOAD ||
+                info.state == DownloadState.WAIT)
             ) {
                 // Same row ticking: animate the sub-page advance (80 ms
                 // system ease between the tracker's 2 s ticks).
@@ -230,8 +231,9 @@ class DownloadAdapter(
     }
 
     /**
-     * Render the source-server badge on a download row. Always visible —
-     * uniform layout regardless of which profile the row originates from.
+     * Render the source-server badge on a download row. Always visible once
+     * the profiles have loaded — uniform layout regardless of which profile
+     * the row originates from; hidden before that (cold start).
      *
      * Color scheme follows Material 3 "container / on-container" tonal
      * pairs (also: GitHub Issues labels, Linear project tags): each
@@ -255,8 +257,9 @@ class DownloadAdapter(
      *
      * Resolution goes through
      * [com.lanraragi.reader.server.ProfileLookupCache] which tracks
-     * SERVER_PROFILES via Room flow; profile rename / delete is picked
-     * up on the next bind because the cache snapshot is shared.
+     * SERVER_PROFILES via Room flow;
+     * [com.lanraragi.reader.ui.scene.download.DownloadsEvents] re-binds the shown
+     * badges with [DownloadsScene.PAYLOAD_SOURCE] on every snapshot change.
      */
     private fun bindSourceBadge(holder: DownloadHolder, info: DownloadInfo) {
         val badge = holder.sourceServer
@@ -284,10 +287,6 @@ class DownloadAdapter(
             params.bottomMargin = margin
             badge.layoutParams = params
         }
-        // bindSourceServerBadge already set visibility = VISIBLE; this
-        // re-assertion is a defence against a previous bind having
-        // hidden the view (e.g. category-switching codepaths upstream).
-        badge.visibility = View.VISIBLE
     }
 
     private fun bindForState(holder: DownloadHolder, info: DownloadInfo) {

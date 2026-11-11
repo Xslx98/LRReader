@@ -25,11 +25,13 @@ import com.lanraragi.reader.server.ServerSession
  *
  * Resolution goes through
  * [com.lanraragi.reader.server.ProfileLookupCache], the same in-
- * memory snapshot the auth interceptor consults — profile rename or
- * delete is reflected on the next bind without an explicit refresh.
+ * memory snapshot the auth interceptor consults. Callers collect its
+ * `snapshot` and re-bind, so a rename or delete shows without a state
+ * change. Until the first snapshot has loaded (cold start) a miss proves
+ * nothing, so the badge is hidden instead of reading "source deleted".
  *
  * @param badge target view; visibility is set to [View.VISIBLE] on
- *   success.
+ *   success, [View.GONE] while the profiles are not loaded yet.
  * @param serverProfileId archive's server profile id (0 = legacy row
  *   that pre-dates the multi-profile schema; falls back to the active
  *   profile, mirroring the download-list legacy attribution).
@@ -39,6 +41,10 @@ import com.lanraragi.reader.server.ServerSession
  */
 fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
     val context: Context = badge.context
+    if (!ServiceRegistry.dataModule.profileLookupCache.isLoaded) {
+        badge.visibility = View.GONE
+        return null
+    }
 
     val profile = resolveSourceProfile(serverProfileId)
     val bgColor: Int
@@ -73,8 +79,9 @@ fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
 
 /**
  * The profile a row's [serverProfileId] names, or null when that profile
- * is gone. Shared by the badge and the detail page's download-button
- * source label so both attribute a row the same way.
+ * is gone (or the profiles have not loaded yet). Shared by the badge and
+ * the detail page's download-button source label so both attribute a row
+ * the same way.
  */
 fun resolveSourceProfile(serverProfileId: Long): ServerProfile? =
     ServiceRegistry.dataModule.profileLookupCache.findById(

@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.detail
 
 import android.view.View
 import androidx.lifecycle.LifecycleOwner
+import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
 import com.lanraragi.reader.reading.ReadingProgressTracker
 import com.lanraragi.reader.ui.collectFlow
@@ -73,6 +74,13 @@ class GalleryDetailEvents(
         // Observe download state changes from ViewModel (replaces DownloadHelper listener)
         collectFlow(owner, viewModel.downloadState) {
             scene.actionHandler?.updateDownloadText()
+        }
+        // The download button's source label and the header's source badge
+        // read the profile snapshot, which is still empty at cold start:
+        // re-bind both when it lands and after a profile rename or delete.
+        collectFlow(owner, ServiceRegistry.dataModule.profileLookupCache.snapshot) {
+            scene.actionHandler?.updateDownloadText()
+            viewModel.archive.value?.let { scene.headerBinder?.bindSourceBadge(it) }
         }
         // Observe local reading progress so the header refreshes whenever the
         // reader writes a new page (StateFlow replays its current value to new
