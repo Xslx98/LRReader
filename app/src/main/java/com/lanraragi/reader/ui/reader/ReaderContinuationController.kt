@@ -37,6 +37,9 @@ class ReaderContinuationController(
     private var resolving = false
     private var lastEventAt = 0L
 
+    /** Event time (uptime ms) until which [swallowsWheel] eats the wheel. */
+    private var wheelQuietUntil = Long.MIN_VALUE
+
     init {
         // Shown, the panel holds the focus even in touch mode, so the first
         // key after a touch reaches the reader instead of being spent on
@@ -49,9 +52,12 @@ class ReaderContinuationController(
         }
         root.setOnClickListener { hide() }
         // The scrim lies over the page, so a wheel reaches it first. Shown,
-        // the panel takes the wheel as a page key: it closes, nothing turns.
+        // the panel takes the wheel as a page key: it closes, nothing turns,
+        // and the rest of the burst is swallowed (see [swallowsWheel]).
         root.setOnGenericMotionListener { _, event ->
-            event.actionMasked == MotionEvent.ACTION_SCROLL && hideIfShowing()
+            val closed = event.actionMasked == MotionEvent.ACTION_SCROLL && hideIfShowing()
+            if (closed) wheelQuietUntil = event.eventTime + WHEEL_QUIET_MS
+            closed
         }
         secondary.setOnClickListener { hide() }
         primary.setOnClickListener { onPrimary() }
@@ -84,6 +90,9 @@ class ReaderContinuationController(
      *   volume keys when volume paging is on, Menu) closes the panel, as Back
      *   does, and turns no page.
      * - Back closes it through the activity's back callback.
+     * - The mouse wheel (not a key, but mapped like the page keys) closes it
+     *   from the scrim, and [swallowsWheel] drops the rest of that burst.
+     *   Keys never start or end that quiet window.
      *
      * Returns whether the key was used; false whenever the panel is hidden.
      */
@@ -98,6 +107,22 @@ class ReaderContinuationController(
         // At most two buttons: either step from one reaches the other.
         val toPrimary = secondary.isFocused || (forward && !primary.isFocused)
         (if (toPrimary && primary.visibility == View.VISIBLE) primary else secondary).requestFocus()
+        return true
+    }
+
+    /**
+     * For the page's wheel listener, before it turns a page: whether this
+     * [MotionEvent.ACTION_SCROLL] belongs to the burst whose first event
+     * closed the panel. A trackpad or a free-spinning wheel sends many
+     * events per gesture; the first closes the panel and the rest, which
+     * then reach the page, would turn it. Each swallowed event extends the
+     * window, so it ends only once the wheel has been quiet for
+     * [WHEEL_QUIET_MS]; the next wheel event then turns pages normally.
+     * Timed by the events' own clock ([MotionEvent.getEventTime]).
+     */
+    fun swallowsWheel(event: MotionEvent): Boolean {
+        if (event.actionMasked != MotionEvent.ACTION_SCROLL || event.eventTime >= wheelQuietUntil) return false
+        wheelQuietUntil = event.eventTime + WHEEL_QUIET_MS
         return true
     }
 
@@ -212,5 +237,15 @@ class ReaderContinuationController(
 
     companion object {
         private const val DEBOUNCE_MS = 500L
+
+        /**
+         * Quiet gap that ends a wheel burst. Trackpad and kinetic-scroll
+         * events arrive every 8-16 ms (one per frame) and a spun notched
+         * wheel sends its notches well under 100 ms apart, so a burst never
+         * pauses this long; a deliberate new scroll after seeing the panel
+         * close takes a visual reaction (about 250 ms) plus the movement, so
+         * it lands after the gap and is not eaten.
+         */
+        internal const val WHEEL_QUIET_MS = 300L
     }
 }

@@ -40,7 +40,8 @@ import java.time.Duration
  * Issue #110: while the end-of-book panel shows, a page key or the mouse
  * wheel closes it, as Back does, instead of turning the page behind it, the
  * first key after a touch is not spent on moving focus, and DPAD_UP/DOWN
- * reach the panel's buttons. Events go through the window's real input
+ * reach the panel's buttons; the rest of a wheel burst that closed it turns
+ * no page either. Events go through the window's real input
  * pipeline, which is where leaving touch mode used to eat that key.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -62,8 +63,10 @@ class ReaderContinuationKeyTest {
             super.onCreate(savedInstanceState)
             val root = FrameLayout(this)
             page = View(this)
-            // The GL view's wheel listener: the mouse wheel turns pages.
+            // The GL view's wheel listener, as GalleryActivity wires it: the
+            // mouse wheel turns pages unless the panel swallows its burst.
             page.setOnGenericMotionListener { _, event ->
+                if (continuation.swallowsWheel(event)) return@setOnGenericMotionListener true
                 val wheel = event.actionMasked == MotionEvent.ACTION_SCROLL
                 if (wheel) pageTurns++
                 wheel
@@ -172,8 +175,46 @@ class ReaderContinuationKeyTest {
         assertFalse("the wheel closed the panel", host.continuation.isShowing)
         assertEquals("no page turned behind the panel", 0, host.pageTurns)
 
+        quietWheelGap()
         wheel()
         assertEquals("with the panel closed, the wheel turns pages again", 1, host.pageTurns)
+    }
+
+    @Test
+    fun `the rest of a wheel burst that closed the panel turns no page`() {
+        host.continuation.onEndOfBookEvent(atLastPage = true)
+        idle()
+        assertTrue("precondition: the panel shows", host.continuation.isShowing)
+
+        wheel()
+        assertFalse("the first event of the burst closed the panel", host.continuation.isShowing)
+        // A trackpad burst: one event per frame, then a slower tail whose
+        // events are each under the quiet gap apart but together span more.
+        repeat(5) {
+            ShadowSystemClock.advanceBy(Duration.ofMillis(16))
+            wheel()
+        }
+        repeat(3) {
+            ShadowSystemClock.advanceBy(Duration.ofMillis(ReaderContinuationController.WHEEL_QUIET_MS - 50))
+            wheel()
+        }
+        assertEquals("the burst turned no page", 0, host.pageTurns)
+
+        quietWheelGap()
+        wheel()
+        assertEquals("a wheel event after the quiet gap turns the page", 1, host.pageTurns)
+    }
+
+    @Test
+    fun `a page key right after the wheel closed the panel turns the page`() {
+        host.continuation.onEndOfBookEvent(atLastPage = true)
+        idle()
+        wheel()
+        assertFalse("precondition: the wheel closed the panel", host.continuation.isShowing)
+
+        key(KeyEvent.KEYCODE_PAGE_DOWN)
+
+        assertEquals("keys are not part of the wheel's quiet window", 1, host.pageTurns)
     }
 
     @Test
@@ -231,7 +272,11 @@ class ReaderContinuationKeyTest {
 
     private fun touchThePage() = touch(SCRIM_X, SCRIM_Y)
 
-    /** One notch of a mouse wheel over a corner of the screen. */
+    /** No wheel event for as long as the panel needs to end a burst. */
+    private fun quietWheelGap() =
+        ShadowSystemClock.advanceBy(Duration.ofMillis(ReaderContinuationController.WHEEL_QUIET_MS))
+
+    /** One notch of a mouse wheel over a corner of the screen, timed now. */
     private fun wheel() {
         val now = SystemClock.uptimeMillis()
         val coords = MotionEvent.PointerCoords().apply {
