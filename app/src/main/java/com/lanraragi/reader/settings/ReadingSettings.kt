@@ -78,6 +78,27 @@ object ReadingSettings {
         cachedStartPosition = GalleryView.sanitizeStartPosition(value)
     }
 
+    // --- Two-page reading (read when the reader opens and when settings apply) ---
+    const val KEY_SPREAD_READING = "spread_reading"
+    const val KEY_SPREAD_FIRST_PAGE_ALONE = "spread_first_page_alone"
+
+    /** [GalleryView.SPREAD_OFF] (the default), [GalleryView.SPREAD_LANDSCAPE] or [GalleryView.SPREAD_ALWAYS]. */
+    @JvmStatic
+    @GalleryView.SpreadMode
+    fun getSpreadReading(): Int = when (val mode = Settings.getIntFromStr(KEY_SPREAD_READING, GalleryView.SPREAD_OFF)) {
+        GalleryView.SPREAD_LANDSCAPE, GalleryView.SPREAD_ALWAYS -> mode
+        else -> GalleryView.SPREAD_OFF
+    }
+
+    @JvmStatic
+    fun putSpreadReading(value: Int) = Settings.putIntToStr(KEY_SPREAD_READING, value)
+
+    @JvmStatic
+    fun getSpreadFirstPageAlone(): Boolean = Settings.getBoolean(KEY_SPREAD_FIRST_PAGE_ALONE, true)
+
+    @JvmStatic
+    fun putSpreadFirstPageAlone(value: Boolean) = Settings.putBoolean(KEY_SPREAD_FIRST_PAGE_ALONE, value)
+
     // --- Page Turn Transfer Time ---
     const val KEY_START_TRANSFER_TIME = "start_transfer_time"
     private const val DEFAULT_START_TRANSFER_TIME = 2

@@ -651,6 +651,13 @@
     <string name="settings_read_page_scaling_fit_to_screen">Fit to screen</string>
     <string name="settings_read_page_scaling_fixed_scale">Fixed scale</string>
     <string name="settings_read_start_position">Start position</string>
+    <string name="settings_read_two_page">Two-page reading</string>
+    <string name="settings_read_two_page_off">Off</string>
+    <string name="settings_read_two_page_landscape">Landscape only</string>
+    <string name="settings_read_two_page_always">Always</string>
+    <string name="settings_read_first_page_alone">First page alone</string>
+    <string name="reader_shift_pairing">Shift pairing by one</string>
+    <string name="settings_read_two_page_summary">%s\nPage scaling and start position apply to single pages only.</string>
     <string name="settings_read_start_position_top_left">Top left</string>
     <string name="settings_read_start_position_top_right">Top right</string>
     <string name="settings_read_start_position_bottom_left">Bottom left</string>

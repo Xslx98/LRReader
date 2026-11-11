@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.LocalReadingProgress
 import com.lanraragi.reader.reading.TankGalleryProvider
 import com.lanraragi.reader.reading.TankSessionSeed
 import com.lanraragi.reader.ui.GalleryActivity
@@ -85,6 +86,15 @@ class ReaderLaunch {
         val arcid = (provider as? TankGalleryProvider)?.locateMember(page0)?.first
         return seed.members.firstOrNull { it.arcid == arcid }?.title
     }
+
+    /**
+     * Whose two-page pairing the session reads and stores (SpreadPairingStore):
+     * the whole tank, never a member; an archive under its source profile;
+     * null for a bare directory.
+     */
+    fun pairingKey(): Pair<Long, String>? =
+        tankSeed?.let { it.profileId to it.tankId }
+            ?: archive?.let { LocalReadingProgress.sourceProfile(it.serverProfileId) to it.arcid }
 
     fun createProvider(context: Context): GalleryProvider2? =
         ReaderSessionSetup.createProvider(context, action, filename, downloadDir, archive, tankSeed)

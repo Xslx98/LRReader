@@ -23,6 +23,7 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.SeekBar
 import android.widget.Spinner
+import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.ReadingSettings
@@ -85,6 +86,8 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
     private val mReadingDirection: Spinner
     private val mScaleMode: Spinner
     private val mStartPosition: Spinner
+    private val mTwoPage: Spinner
+    private val mFirstPageAlone: SwitchCompat
     private val mStartTransferTime: SeekBar
     private val mKeepScreenOn: SwitchCompat
     private val mReaderContinuation: SwitchCompat
@@ -111,6 +114,11 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         mReadingDirection = view.findViewById(R.id.reading_direction)
         mScaleMode = view.findViewById(R.id.page_scaling)
         mStartPosition = view.findViewById(R.id.start_position)
+        mTwoPage = view.findViewById(R.id.two_page)
+        mFirstPageAlone = view.findViewById(R.id.first_page_alone)
+        // The settings screen's summary is "<choice>\n<note>"; the dialog shows the choice in its spinner.
+        view.findViewById<TextView>(R.id.two_page_note).text =
+            context.getString(R.string.settings_read_two_page_summary, "").trim()
         mStartTransferTime = view.findViewById(R.id.start_transfer_time)
         mKeepScreenOn = view.findViewById(R.id.keep_screen_on)
         mReaderContinuation = view.findViewById(R.id.reader_continuation)
@@ -131,6 +139,8 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         mReadingDirection.setSelection(ReadingSettings.getReadingDirection())
         mScaleMode.setSelection(ReadingSettings.getPageScaling())
         mStartPosition.setSelection(ReadingSettings.getStartPosition())
+        mTwoPage.setSelection(ReadingSettings.getSpreadReading())
+        mFirstPageAlone.isChecked = ReadingSettings.getSpreadFirstPageAlone()
         mStartTransferTime.progress = ReadingSettings.getStartTransferTime()
         mKeepScreenOn.isChecked = ReadingSettings.getKeepScreenOn()
         mReaderContinuation.isChecked = ReadingSettings.getReaderContinuation()
@@ -161,6 +171,7 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         mReadingDirection.onItemSelectedListener = spinnerListener
         mScaleMode.onItemSelectedListener = spinnerListener
         mStartPosition.onItemSelectedListener = spinnerListener
+        mTwoPage.onItemSelectedListener = spinnerListener
 
         mStartTransferTime.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -184,6 +195,7 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
             if (initialized) applyCurrentSettings()
         }
         mKeepScreenOn.setOnCheckedChangeListener(switchListener)
+        mFirstPageAlone.setOnCheckedChangeListener(switchListener)
         mReaderContinuation.setOnCheckedChangeListener(switchListener)
         mReaderContinuationSwipe.setOnCheckedChangeListener(switchListener)
         mReaderStamps.setOnCheckedChangeListener(switchListener)
@@ -248,6 +260,9 @@ class GalleryMenuHelper @SuppressLint("InflateParams") constructor(
         ReadingSettings.putReadingDirection(layoutMode)
         ReadingSettings.putPageScaling(scaleMode)
         ReadingSettings.putStartPosition(startPosition)
+        // Read back by ReaderPageHost.applySettings; spinner positions are the SPREAD_* values.
+        ReadingSettings.putSpreadReading(mTwoPage.selectedItemPosition)
+        ReadingSettings.putSpreadFirstPageAlone(mFirstPageAlone.isChecked)
         ReadingSettings.putStartTransferTime(transferTime)
         ReadingSettings.putKeepScreenOn(keepScreenOn)
         ReadingSettings.putReaderContinuation(readerContinuation)

@@ -586,6 +586,13 @@
     <string name="settings_read_page_scaling_fit_to_screen">S\'adapter à l\'écran</string>
     <string name="settings_read_page_scaling_fixed_scale">Taille fixée</string>
     <string name="settings_read_start_position">Position de début</string>
+    <string name="settings_read_two_page">Lecture en double page</string>
+    <string name="settings_read_two_page_off">Désactivée</string>
+    <string name="settings_read_two_page_landscape">Paysage uniquement</string>
+    <string name="settings_read_two_page_always">Toujours</string>
+    <string name="settings_read_first_page_alone">Première page seule</string>
+    <string name="reader_shift_pairing">Décaler les paires d\'une page</string>
+    <string name="settings_read_two_page_summary">%s\nL\'échelle et la position de début ne s\'appliquent qu\'aux pages seules.</string>
     <string name="settings_read_start_position_top_left">En haut à gauche</string>
     <string name="settings_read_start_position_top_right">En haut à droite</string>
     <string name="settings_read_start_position_bottom_left">En bas à gauche</string>

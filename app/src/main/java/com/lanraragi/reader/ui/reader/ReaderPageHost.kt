@@ -10,10 +10,10 @@ import com.lanraragi.framework.lib.glview.image.ImageWrapper
 import com.lanraragi.framework.lib.glview.view.GLRootView
 import com.lanraragi.framework.lib.image.PageFit
 import com.lanraragi.framework.util.ViewUtils
-import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.R
 import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.reading.GalleryProvider2
+import com.lanraragi.reader.reading.SpreadPairingStore
 import com.lanraragi.reader.settings.ReadingSettings
 import com.lanraragi.framework.util.MemoryTrim
 
@@ -32,6 +32,21 @@ class ReaderPageHost(private val activity: Activity) {
 
     /** Scale-mode fit the cached decoded pages were sampled for (Image.readerSampleSize). */
     private var pageFit: PageFit? = null
+
+    /** The book whose pairing is stored ([ReaderLaunch.pairingKey]); set before [attach]. */
+    var pairingKey: Pair<Long, String>? = null
+    // Set in attach: this host is built with the activity, before it has a context.
+    private lateinit var pairingStore: SpreadPairingStore
+    private var firstPageAlone = true
+    private var shifted = false
+
+    /** The cover (and every pair break) stands alone. */
+    private val coverAlone: Boolean
+        get() = firstPageAlone != shifted
+
+    /** Two pages can share the screen now: the reader menu offers [shiftPairing]. */
+    val isSpreadShown: Boolean
+        get() = (galleryView?.currentSpreadParity ?: GalleryView.PARITY_UNKNOWN) != GalleryView.PARITY_UNKNOWN
 
     /**
      * Builds the page view over [provider] inside the already inflated
@@ -58,7 +73,13 @@ class ReaderPageHost(private val activity: Activity) {
         provider.galleryView = galleryView
         provider.setListener(adapter)
         provider.setGLRoot(glRootView)
-        if (BuildConfig.DEBUG) galleryView.setSpreadMode(SpreadDebugToggle.read(activity))
+        galleryView.setSpreadMode(ReadingSettings.getSpreadReading())
+        firstPageAlone = ReadingSettings.getSpreadFirstPageAlone()
+        pairingStore = SpreadPairingStore.of(activity)
+        val key = pairingKey
+        shifted = key != null && pairingStore.isShifted(key.first, key.second)
+        val parity = key?.let { pairingStore.parity(it.first, it.second, coverAlone) } ?: GalleryView.PARITY_UNKNOWN
+        galleryView.setSpreadPairing(firstPageAlone, shifted, parity)
         return galleryView
     }
 
@@ -78,7 +99,12 @@ class ReaderPageHost(private val activity: Activity) {
             provider?.onTrimMemory(MemoryTrim.Action.CLEAR)
         }
         gv.layoutMode = layoutMode
-        if (BuildConfig.DEBUG) gv.setSpreadMode(SpreadDebugToggle.read(activity))
+        gv.setSpreadMode(ReadingSettings.getSpreadReading())
+        val alone = ReadingSettings.getSpreadFirstPageAlone()
+        if (alone != firstPageAlone) {
+            firstPageAlone = alone
+            repair(gv)
+        }
         gv.setScaleMode(scaleMode)
         gv.setStartPosition(startPosition)
 
@@ -94,6 +120,29 @@ class ReaderPageHost(private val activity: Activity) {
         // showPageInterval choice (which governs only the pager mode's
         // discrete-page separator).
         gv.setScrollInterval(0)
+    }
+
+    /** The reader menu's "shift pairing by one": stored with the book (a tank as a whole). */
+    fun shiftPairing() {
+        val gv = galleryView ?: return
+        shifted = !shifted
+        pairingKey?.let { pairingStore.setShifted(it.first, it.second, shifted) }
+        repair(gv)
+    }
+
+    /** A spread of [parity] is on screen (-1: single pages); kept for the next resume. */
+    fun onSpreadShown(parity: Int) {
+        pairingKey?.let { pairingStore.putParity(it.first, it.second, parity, coverAlone) }
+    }
+
+    // The cover's pairing flipped: every pair on screen moves by one page.
+    // Lands with the flipped parity and stores it in the same step, since a
+    // stored parity outvotes the shift (SpreadPlanner.spreadForLanding).
+    private fun repair(gv: GalleryView) {
+        val now = gv.currentSpreadParity
+        val parity = if (now == GalleryView.PARITY_UNKNOWN) now else now xor 1
+        onSpreadShown(parity)
+        gv.setSpreadPairing(firstPageAlone, shifted, parity)
     }
 
     /**

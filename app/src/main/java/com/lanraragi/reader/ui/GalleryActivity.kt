@@ -306,6 +306,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         }
 
         setContentView(R.layout.activity_gallery)
+        mPageHost.pairingKey = mLaunch.pairingKey()
         val galleryView = mPageHost.attach(
             galleryProvider, this, startPage, mInputHandler::handleGenericMotion
         ) {
@@ -329,9 +330,10 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         val progress = mChrome.bindHeader()
 
         mChrome.bindSlider(mSliderController, mInputHandler, galleryView, progress)
-        mChrome.bindTopBar(mSliderController, this, mLaunch.displayTitle()) { page0 ->
-            mLaunch.tankMemberTitle(mGalleryProvider, page0)
-        }
+        mChrome.bindTopBar(
+            mSliderController, this, mLaunch.displayTitle(),
+            { page0 -> mLaunch.tankMemberTitle(mGalleryProvider, page0) },
+        ) { mPageHost.isSpreadShown }
         mChapters = ReaderChaptersController(
             this, galleryProvider, { mSliderController.currentIndex }, mImageOps::applyImmersiveToDialog
         ).also {
@@ -542,7 +544,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
             // crossed a page boundary.
             mPageHost.saveScrollFraction(provider)
         }
-        postNotify(NOTIFY_KEY_CURRENT_INDEX, index)
+        // Published by this render, before this call: the new index's pairing.
+        postNotify(NOTIFY_KEY_CURRENT_INDEX, index, mGalleryView?.currentSpreadParity ?: GalleryView.PARITY_UNKNOWN)
     }
 
     override fun onUpdateCurrentSpread(first: Int, last: Int) {
@@ -678,6 +681,8 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
     override fun onTopBarSettingChanged() = GalleryMenuHelper.applyStoredSettings(this)
 
+    override fun onTopBarShiftPairing() = mPageHost.shiftPairing()
+
     override fun onTopBarPopup(open: Boolean) {
         if (open) mSliderController.holdAutoHide() else mSliderController.resumeAutoHide()
     }
@@ -728,6 +733,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
                     // attempt instead of showing a loading state.
                     mContinuation?.onPageShown(mValue, mGalleryProvider?.size() ?: 0)
                     mTankProgress?.onPageShown(mValue)
+                    mPageHost.onSpreadShown(mValue2)
                 }
                 NOTIFY_KEY_CURRENT_SPREAD -> {
                     mSliderController.setShownPages(mValue, mValue2)

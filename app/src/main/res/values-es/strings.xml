@@ -590,6 +590,13 @@
     <string name="settings_read_page_scaling_fit_to_screen">Ajustar a pantalla</string>
     <string name="settings_read_page_scaling_fixed_scale">Escala fija</string>
     <string name="settings_read_start_position">Posición de inicio</string>
+    <string name="settings_read_two_page">Lectura a dos páginas</string>
+    <string name="settings_read_two_page_off">Desactivada</string>
+    <string name="settings_read_two_page_landscape">Solo en horizontal</string>
+    <string name="settings_read_two_page_always">Siempre</string>
+    <string name="settings_read_first_page_alone">Primera página sola</string>
+    <string name="reader_shift_pairing">Desplazar el emparejamiento una página</string>
+    <string name="settings_read_two_page_summary">%s\nLa escala y la posición de inicio solo se aplican a páginas sueltas.</string>
     <string name="settings_read_start_position_top_left">Arriba a la izquierda</string>
     <string name="settings_read_start_position_top_right">Abajo a la derecha</string>
     <string name="settings_read_start_position_bottom_left">Abajo a la izquierda</string>

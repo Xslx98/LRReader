@@ -555,6 +555,13 @@
     <string name="settings_read_page_scaling_fit_to_screen">화면에 맞춤</string>
     <string name="settings_read_page_scaling_fixed_scale">비율 고정</string>
     <string name="settings_read_start_position">시작 위치</string>
+    <string name="settings_read_two_page">두 쪽 보기</string>
+    <string name="settings_read_two_page_off">끄기</string>
+    <string name="settings_read_two_page_landscape">가로 모드에서만</string>
+    <string name="settings_read_two_page_always">항상</string>
+    <string name="settings_read_first_page_alone">첫 페이지 단독 표시</string>
+    <string name="reader_shift_pairing">짝을 한 쪽 밀기</string>
+    <string name="settings_read_two_page_summary">%s\n페이지 표시와 시작 위치는 한 쪽 보기에만 적용됩니다.</string>
     <string name="settings_read_start_position_top_left">왼쪽 상단</string>
     <string name="settings_read_start_position_top_right">오른쪽 상단</string>
     <string name="settings_read_start_position_bottom_left">왼쪽 하단</string>

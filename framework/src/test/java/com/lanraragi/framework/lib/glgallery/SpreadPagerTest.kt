@@ -225,6 +225,36 @@ class SpreadPagerTest(private val layoutMode: Int) {
     }
 
     @Test
+    fun `first page alone and the book's shift decide how the cover pairs`() {
+        render { view.setSpreadPairing(false, false, GalleryView.PARITY_UNKNOWN) }
+        jump(0)
+        assertShowing(0, 1)
+        // The shift flips "first page alone" back, and re-pairs what is on screen.
+        render { view.setSpreadPairing(false, true, GalleryView.PARITY_UNKNOWN) }
+        assertShowing(0)
+        render { view.setSpreadPairing(true, true, GalleryView.PARITY_UNKNOWN) }
+        assertShowing(0, 1)
+    }
+
+    @Test
+    fun `a stored parity repeats last time's pairs for one landing, and the screen reports its own`() {
+        // A cache clear: no aspect is known, so without a parity the page
+        // asked for would start its own spread.
+        adapter.aspects.fill(SpreadPlanner.UNKNOWN_ASPECT)
+        assertEquals(1, view.currentSpreadParity)
+        render { view.setSpreadPairing(true, false, 0) }
+        assertShowing(4, 5)
+        assertEquals(0, view.currentSpreadParity)
+
+        jump(9)
+        assertShowing(9, 10)
+        assertEquals(1, view.currentSpreadParity)
+
+        resize(HEIGHT, WIDTH)
+        assertEquals("single pages have no parity", GalleryView.PARITY_UNKNOWN, view.currentSpreadParity)
+    }
+
+    @Test
     fun `spread turns allocate nothing`() {
         adapter.record = false
         repeat(2) { keyNext() } // warm up
