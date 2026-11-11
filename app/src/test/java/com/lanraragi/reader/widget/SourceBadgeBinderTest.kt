@@ -1,9 +1,13 @@
 package com.lanraragi.reader.widget
 
 import android.content.Context
+import android.os.Looper
 import android.view.ContextThemeWrapper
 import android.view.View
 import android.widget.TextView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
@@ -32,6 +36,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -117,4 +122,38 @@ class SourceBadgeBinderTest {
         assertEquals(View.VISIBLE, badge.visibility)
         assertEquals(deletedText, badge.text.toString())
     }
+
+    /**
+     * The tank detail header collects the snapshot itself: bound at cold
+     * start it stays hidden, then shows the profile once it loads and its
+     * new name after a rename, with no other re-bind.
+     */
+    @Test(timeout = 10_000)
+    fun aCollectedHeaderBadge_followsTheSnapshot_fromColdStartToRename() {
+        val owner = object : LifecycleOwner {
+            val registry = LifecycleRegistry(this)
+            override val lifecycle: Lifecycle get() = registry
+        }
+        collectCrossServerSourceBadge(owner, badge, 2L)
+        try {
+            owner.registry.currentState = Lifecycle.State.STARTED
+            idleMain()
+            assertEquals("hidden while the profiles load", View.GONE, badge.visibility)
+
+            publish(ServerProfile(id = 2L, name = "Server B", url = "http://192.168.1.2:3000"))
+            idleMain()
+            assertEquals(View.VISIBLE, badge.visibility)
+            assertEquals("Server B", badge.text.toString())
+
+            publish(ServerProfile(id = 2L, name = "Renamed", url = "http://192.168.1.2:3000"))
+            idleMain()
+            assertEquals("Renamed", badge.text.toString())
+        } finally {
+            // Cancels the collector so it cannot outlive the test in the sandbox.
+            owner.registry.currentState = Lifecycle.State.DESTROYED
+            idleMain()
+        }
+    }
+
+    private fun idleMain() = shadowOf(Looper.getMainLooper()).idle()
 }
