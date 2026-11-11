@@ -193,8 +193,11 @@ internal class DetailActionHandler(
      * delete dialog — unless the archive is a member of a DOWNLOADED
      * tankoubon (group-row truth, spec 2026-09-21 §6): a bound volume is
      * deleted as a whole from the downloads list, never one member at a
-     * time, so the click is blocked with a pointer instead. Starting a
-     * download (INVALID state) is always allowed — it just fills the tank.
+     * time, so the click is blocked with a pointer instead. The claim is
+     * checked on every profile: the download row is shared by mirrors, so
+     * this page must not delete a member of a tank downloaded through
+     * another profile (#104). Starting a download (INVALID
+     * state) is always allowed — it just fills the tank.
      */
     private fun onDownloadClick(context: Context, activity: MainActivity) {
         val archive = viewModel.getEffectiveArchive() ?: return
@@ -203,11 +206,10 @@ internal class DetailActionHandler(
             CommonOperations.startDownload(activity, archive, false)
             return
         }
-        val profileId = viewModel.getSourceProfileId()
         lifecycleOwner.lifecycleScope.launch {
             val claiming = withContext(Dispatchers.IO) {
                 suspendRunCatching {
-                    ServiceRegistry.dataModule.downloadDbRepository.findTankGroupClaiming(archive.arcid, profileId)
+                    ServiceRegistry.dataModule.downloadDbRepository.findTankGroupClaiming(archive.arcid)
                 }.getOrNull()
             }
             if (claiming != null) {
