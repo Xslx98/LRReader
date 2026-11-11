@@ -363,10 +363,11 @@ class TankGalleryProvider(
      */
     private fun prefetchAround(global0: Int) {
         val scope = providerScope ?: return
+        val forward = pagesAhead(PREFETCH_FORWARD)
         val probe = aspectProbe
         scope.launch {
             val targets =
-                (global0 + 1..global0 + PREFETCH_FORWARD) + (global0 - PREFETCH_BACKWARD until global0)
+                (global0 + 1..global0 + forward) + (global0 - PREFETCH_BACKWARD until global0)
             for (target in targets) {
                 if (stopped) break
                 val (member, local) = pageMap.locate(target) ?: continue
@@ -388,7 +389,7 @@ class TankGalleryProvider(
                 }
             }
             // After the downloads are launched, so header reads never delay them.
-            probe.probeAround(global0, pageMap.total, openPageOnDisk, probeActive)
+            probe.probeAround(global0, pageMap.total, openPageOnDisk, probeActive, forward)
         }
     }
 
@@ -579,9 +580,10 @@ class TankGalleryProvider(
         private const val ARCID_PREFIX_LEN = 8
 
         /**
-         * Forward warm distance (pages). Matches LRRGalleryProvider's
-         * PRELOAD_COUNT; near a member's tail it necessarily reaches into
-         * the next member, which is what makes the crossing seamless.
+         * Forward warm distance (pages), doubled while spreads show. Matches
+         * LRRGalleryProvider's PRELOAD_COUNT; near a member's tail it
+         * necessarily reaches into the next member, which is what makes the
+         * crossing seamless.
          */
         private const val PREFETCH_FORWARD = 5
 

@@ -791,8 +791,9 @@ class LRRGalleryProvider(
      */
     private fun preloadPages(currentIndex: Int) {
         val paths = stateRef.get().paths ?: return
+        val count = pagesAhead(PRELOAD_COUNT)
         providerScope?.launch {
-            for (i in 1..PRELOAD_COUNT) {
+            for (i in 1..count) {
                 if (stateRef.get().stopped) break
                 val preloadIndex = currentIndex + i
                 if (preloadIndex >= paths.size) break
@@ -815,7 +816,7 @@ class LRRGalleryProvider(
                 }
             }
             // After the downloads are launched, so header reads never delay them.
-            aspectProbe.probeAround(currentIndex, paths.size, openPageOnDisk, probeActive)
+            aspectProbe.probeAround(currentIndex, paths.size, openPageOnDisk, probeActive, count)
         }
     }
 
@@ -836,7 +837,7 @@ class LRRGalleryProvider(
             pagePath: String?,
         ): File = store?.pageFile(index, pagePath) ?: File(cacheDir, "page_$index")
         private const val BUFFER_SIZE = 65536 // 64KB buffer for save()
-        private const val PRELOAD_COUNT = 5 // Preload next 5 pages (LAN is fast)
+        private const val PRELOAD_COUNT = 5 // Preload next 5 pages (LAN is fast); 10 while spreads show
         private const val PRELOAD_PARALLELISM = 2 // Concurrent preload downloads
         private const val RETRY_DELAY_MS = 1_000L // 1 second retry delay (suspending)
 

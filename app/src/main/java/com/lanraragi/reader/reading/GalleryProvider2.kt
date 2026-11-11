@@ -49,6 +49,10 @@ abstract class GalleryProvider2 : GalleryProvider(DeviceMemory.readerCacheBytes(
             if (value != null) galleryViewAttached.complete(value)
         }
 
+    /** Pages to download ahead of the reader, for the pages on screen now (see the companion's pagesAhead). */
+    protected fun pagesAhead(single: Int): Int =
+        pagesAhead(single, galleryView?.currentSpreadParity ?: GalleryView.PARITY_UNKNOWN)
+
     /**
      * The [galleryView], waiting up to [timeoutMs] for the reader to attach
      * it. GalleryActivity starts the provider before it builds the view, so a
@@ -159,6 +163,15 @@ abstract class GalleryProvider2 : GalleryProvider(DeviceMemory.readerCacheBytes(
     companion object {
         /** How long a start-position jump waits for the reader to attach its GalleryView. */
         private const val GALLERY_VIEW_ATTACH_TIMEOUT_MS = 5_000L
+
+        /**
+         * Pages to download ahead: [single] for single pages, twice as many
+         * while two-page spreads are on screen ([spreadParity] known), since
+         * each turn moves two pages on. Downloaded bytes only; decoding is
+         * unchanged.
+         */
+        internal fun pagesAhead(single: Int, spreadParity: Int): Int =
+            if (spreadParity == GalleryView.PARITY_UNKNOWN) single else single * 2
 
         // Single source of truth for "is this a local page file", shared by
         // routing (DownloadDirResolver.hasImageFiles) and the reader's dir
