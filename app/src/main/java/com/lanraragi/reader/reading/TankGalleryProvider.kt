@@ -309,6 +309,8 @@ class TankGalleryProvider(
                 return
             }
         var source = countedSourceFor(located.first)
+        // A remap from here on makes global0 another page: the decode is then dropped.
+        val generation = pageGeneration
         // The correction may have shifted this global page onto a different
         // member (or out of range). Re-locate once against the fresh map.
         pageMap.locate(global0)?.let { fresh ->
@@ -329,7 +331,11 @@ class TankGalleryProvider(
             return
         }
         if (image != null) {
-            notifyPageSucceed(global0, image)
+            if (!notifyPageSucceed(global0, image, generation)) {
+                // The map moved while decoding; the remap's rebind asks again.
+                image.recycle()
+                throw TankPageCancelledException(IOException("remapped"))
+            }
             prefetchAround(global0)
         } else {
             notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
@@ -466,12 +472,14 @@ class TankGalleryProvider(
      * re-notify the GL layer so layout picks up the new size.
      */
     private fun onMapRemapped(oldTotal: Int) {
+        // Learnt page sizes are keyed by the old global indices too. Forget
+        // them first: that also turns away decodes located under the old map
+        // (notifyPageSucceed), so the cache emptied below stays empty of them.
+        forgetPageAspects()
         val ceiling = maxOf(oldTotal, pageMap.total)
         for (i in 0 until ceiling) {
             removeCache(i)
         }
-        // Learnt page sizes are keyed by the old global indices too.
-        forgetPageAspects()
         notifyDataChanged()
         tankChapters.refresh()
     }
