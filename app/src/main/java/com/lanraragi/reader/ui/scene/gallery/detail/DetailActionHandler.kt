@@ -24,6 +24,7 @@ import com.lanraragi.reader.ui.scene.download.DownloadLabelHelper
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
 import com.lanraragi.reader.util.ClipboardUtil
 import com.lanraragi.reader.util.suspendRunCatching
+import com.lanraragi.reader.widget.effectiveSourceProfileId
 import com.lanraragi.reader.widget.resolveSourceProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -288,8 +289,7 @@ internal class DetailActionHandler(
             nameOf: (Long) -> String?,
         ): String? {
             if (rowProfileId == 0L) return null
-            val pageId = if (pageProfileId == 0L) activeProfileId ?: 0L else pageProfileId
-            if (rowProfileId == pageId) return null
+            if (rowProfileId == effectiveSourceProfileId(pageProfileId, activeProfileId)) return null
             return nameOf(rowProfileId) ?: deletedText
         }
 

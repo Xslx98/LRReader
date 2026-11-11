@@ -76,17 +76,19 @@ fun bindSourceServerBadge(badge: TextView, serverProfileId: Long): String? {
  * is gone. Shared by the badge and the detail page's download-button
  * source label so both attribute a row the same way.
  */
-fun resolveSourceProfile(serverProfileId: Long): ServerProfile? {
-    // Legacy rows: best-effort attribute to the current active profile.
-    // If active profile is also unset (degenerate fresh-install state)
-    // effectiveId stays 0 and the cache lookup falls through to orphan.
-    val effectiveId = if (serverProfileId == 0L) {
-        ServerSession.getActiveProfileId() ?: 0L
-    } else {
-        serverProfileId
-    }
-    return ServiceRegistry.dataModule.profileLookupCache.findById(effectiveId)
-}
+fun resolveSourceProfile(serverProfileId: Long): ServerProfile? =
+    ServiceRegistry.dataModule.profileLookupCache.findById(
+        effectiveSourceProfileId(serverProfileId, ServerSession.getActiveProfileId())
+    )
+
+/**
+ * The one place that says what a source id of 0 means: a legacy row (from
+ * before the multi-profile schema) or a page without a source belongs to
+ * the active profile, best effort. With no active profile either the id
+ * stays 0, which no profile has, so a lookup falls through to orphan.
+ */
+fun effectiveSourceProfileId(serverProfileId: Long, activeProfileId: Long?): Long =
+    if (serverProfileId == 0L) activeProfileId ?: 0L else serverProfileId
 
 /**
  * ColorStateList instances are immutable — cache one per colour int
