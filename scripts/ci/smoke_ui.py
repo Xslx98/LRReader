@@ -847,6 +847,7 @@ class Widgets:
         whose member covers stand alone and whose remap mid-read keeps the
         page, then the resume."""
         auto = shell("settings", "get", "system", "accelerometer_rotation").stdout.strip()
+        user = shell("settings", "get", "system", "user_rotation").stdout.strip()
         try:
             self.open_titled("Mock Big Archive 1")
             self.two_page("Landscape only")
@@ -923,6 +924,7 @@ class Widgets:
         finally:
             self.orient(False)
             shell("settings", "put", "system", "accelerometer_rotation", auto or "1")
+            shell("settings", "put", "system", "user_rotation", user or "0")
         self.check("spreads: back to portrait, two-page reading off")
 
     # -- metadata plugins --
