@@ -36,10 +36,24 @@ class ProfileLookupCache(
     repo: ProfileRepository,
     scope: CoroutineScope,
 ) {
-    private val _snapshot = MutableStateFlow<List<ServerProfile>>(emptyList())
+    private val _snapshot = MutableStateFlow<List<ServerProfile>?>(null)
 
-    /** Observable snapshot — UI layers consume this for downloads-list badges. */
-    val snapshot: StateFlow<List<ServerProfile>> = _snapshot.asStateFlow()
+    /**
+     * Observable snapshot, null until the first Room emission (or until the
+     * profile flow fails or stops without one). UI badges collect it so a
+     * row bound at cold start is re-bound once the profiles are known, and
+     * after every rename or delete.
+     */
+    val snapshot: StateFlow<List<ServerProfile>?> = _snapshot.asStateFlow()
+
+    /**
+     * Whether the first snapshot has landed. Until then a [findById] miss
+     * says nothing about whether the profile exists, so UI must not call it
+     * deleted. Also true once the profile flow has failed or stopped
+     * without an emission: the snapshot is then empty and every lookup
+     * misses, as [awaitInitialized] callers see it.
+     */
+    val isLoaded: Boolean get() = _snapshot.value != null
 
     /**
      * Profiles paired with their pre-parsed configured URL, refreshed once
@@ -74,6 +88,7 @@ class ProfileLookupCache(
                 // Release awaiters even when the flow ends without an emission
                 // (audit 2026-10-06 N8): they then see the current, possibly
                 // empty, snapshot instead of waiting forever.
+                if (_snapshot.value == null) _snapshot.value = emptyList()
                 initialized.complete(Unit)
             }
         }
@@ -89,7 +104,7 @@ class ProfileLookupCache(
 
     /** Returns the profile with the given id, or null if not present. */
     fun findById(id: Long): ServerProfile? =
-        _snapshot.value.firstOrNull { it.id == id }
+        _snapshot.value?.firstOrNull { it.id == id }
 
     /**
      * Every profile whose configured URL matches [host] + [port], regardless

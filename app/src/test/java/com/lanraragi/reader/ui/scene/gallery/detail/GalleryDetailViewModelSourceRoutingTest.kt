@@ -137,7 +137,7 @@ class GalleryDetailViewModelSourceRoutingTest {
             activeProfileId = repo.insert(ServerProfile(name = "A", url = activeUrl))
             sourceProfileId = repo.insert(ServerProfile(name = "B", url = sourceUrl))
         }
-        awaitUntil { lookup.snapshot.value.size == 2 }
+        awaitUntil { lookup.snapshot.value?.size == 2 }
         ServerSession.setServerUrl(activeUrl)
         ServerSession.setActiveProfileId(activeProfileId)
 

@@ -14,8 +14,8 @@ class DownloadSourceLabelTest {
 
     private val names = mapOf(1L to "Server B", 2L to "Server C")
 
-    private fun label(row: Long, page: Long, active: Long? = 2L): String? =
-        downloadSourceLabel(row, page, active, DELETED) { names[it] }
+    private fun label(row: Long, page: Long, active: Long? = 2L, deleted: String? = DELETED): String? =
+        downloadSourceLabel(row, page, active, deleted) { names[it] }
 
     @Test
     fun sameSourceAsThePage_hasNoLabel() {
@@ -30,6 +30,13 @@ class DownloadSourceLabelTest {
     @Test
     fun aDeletedSource_readsTheDeletedText() {
         assertEquals(DELETED, label(row = 9L, page = 2L))
+    }
+
+    /** Cold start: before the profiles load (no deleted text) a miss names nothing. */
+    @Test
+    fun aMissBeforeTheProfilesLoad_hasNoLabel() {
+        assertNull(label(row = 9L, page = 2L, deleted = null))
+        assertEquals("Server B", label(row = 1L, page = 2L, deleted = null))
     }
 
     @Test

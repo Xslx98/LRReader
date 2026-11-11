@@ -12,12 +12,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -71,7 +75,7 @@ class ProfileLookupCacheTest {
 
     private suspend fun awaitSnapshotSize(cache: ProfileLookupCache, size: Int) {
         withTimeout(2_000) {
-            while (cache.snapshot.value.size != size) {
+            while (cache.snapshot.value?.size != size) {
                 kotlinx.coroutines.delay(20)
             }
         }
@@ -125,7 +129,7 @@ class ProfileLookupCacheTest {
 
         // The raw snapshot still carries the row (UI badges), but lookups
         // never see it — identical to the old per-lookup `?: continue`.
-        assertEquals(1, cache.snapshot.value.size)
+        assertEquals(1, cache.snapshot.value?.size)
         assertTrue(cache.findParsedCandidatesByHostPort("not a url", 80).isEmpty())
     }
 
@@ -133,7 +137,7 @@ class ProfileLookupCacheTest {
     fun snapshot_reflectsLiveInsertsAndDeletes() = runBlocking {
         val cache = newCache()
         cache.awaitInitialized()
-        assertTrue(cache.snapshot.value.isEmpty())
+        assertEquals(emptyList<ServerProfile>(), cache.snapshot.value)
 
         val id1 = repo.insert(ServerProfile(name = "a", url = "http://a.local"))
         awaitSnapshotSize(cache, 1)
@@ -156,6 +160,27 @@ class ProfileLookupCacheTest {
     }
 
     /**
+     * Cold start (#104 follow-up): until Room's first emission a findById miss
+     * says nothing, so the cache must report "not loaded", and the snapshot
+     * flow must emit when the first list lands, even an empty one, so the UI
+     * collectors re-bind badges that bound too early.
+     */
+    @Test(timeout = 10_000)
+    fun isLoaded_staysFalseUntilTheFirstEmission_whichTheSnapshotEmits() = runBlocking {
+        val gate = MutableStateFlow<List<ServerProfile>?>(null)
+        val gatedDao = object : MiscRoomDao by db.miscDao() {
+            override fun observeAllProfiles(): Flow<List<ServerProfile>> = gate.filterNotNull()
+        }
+        val cache = ProfileLookupCache(ProfileRepository(gatedDao), scope)
+        assertFalse(cache.isLoaded)
+        assertNull(cache.snapshot.value)
+
+        gate.value = emptyList()
+        withTimeout(2_000) { cache.snapshot.first { it != null } }
+        assertTrue(cache.isLoaded)
+    }
+
+    /**
      * Audit 2026-10-06 N8: a profile flow that fails before its first emission
      * left awaitInitialized pending forever, and the download worker with it
      * (holding the foreground service and its locks).
@@ -168,7 +193,7 @@ class ProfileLookupCacheTest {
         }
         val cache = ProfileLookupCache(ProfileRepository(failingDao), scope)
         withTimeout(2_000) { cache.awaitInitialized() }
-        assertTrue(cache.snapshot.value.isEmpty())
+        assertEquals(emptyList<ServerProfile>(), cache.snapshot.value)
         // Callers see an unknown profile (their existing error path), not a hang.
         val resolved = runCatching { withTimeout(2_000) { resolveSourceBaseUrl(7L, cache) } }
         assertTrue(resolved.exceptionOrNull() is OrphanProfileException)

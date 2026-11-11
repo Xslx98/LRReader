@@ -33,6 +33,15 @@ class DownloadListDispatcher(
     }
 
     /**
+     * Re-binds only the source badges of the shown rows after the profile
+     * snapshot changed (first load at cold start, rename, delete). Rows off
+     * screen bind fresh when they scroll in.
+     */
+    fun dispatchSourceBadges() {
+        adapter()?.let { it.notifyItemRangeChanged(0, it.itemCount, DownloadsScene.PAYLOAD_SOURCE) }
+    }
+
+    /**
      * Dispatch targeted progress updates for any arcid whose [ProgressSnapshot]
      * changed since the last emission. Uses a payload so [DownloadAdapter]
      * can rebind only the progress / speed / percent views — no full item
