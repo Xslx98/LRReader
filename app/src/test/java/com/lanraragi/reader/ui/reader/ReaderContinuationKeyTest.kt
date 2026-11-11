@@ -64,8 +64,9 @@ class ReaderContinuationKeyTest {
             page = View(this)
             // The GL view's wheel listener: the mouse wheel turns pages.
             page.setOnGenericMotionListener { _, event ->
-                if (event.actionMasked == MotionEvent.ACTION_SCROLL) pageTurns++
-                event.actionMasked == MotionEvent.ACTION_SCROLL
+                val wheel = event.actionMasked == MotionEvent.ACTION_SCROLL
+                if (wheel) pageTurns++
+                wheel
             }
             root.addView(page)
             layoutInflater.inflate(R.layout.reader_continuation_panel, root, true)

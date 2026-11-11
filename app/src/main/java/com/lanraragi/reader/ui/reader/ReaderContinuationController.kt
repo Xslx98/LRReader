@@ -51,7 +51,7 @@ class ReaderContinuationController(
         // The scrim lies over the page, so a wheel reaches it first. Shown,
         // the panel takes the wheel as a page key: it closes, nothing turns.
         root.setOnGenericMotionListener { _, event ->
-            event.actionMasked == MotionEvent.ACTION_SCROLL && hideForKey()
+            event.actionMasked == MotionEvent.ACTION_SCROLL && hideIfShowing()
         }
         secondary.setOnClickListener { hide() }
         primary.setOnClickListener { onPrimary() }
@@ -74,8 +74,9 @@ class ReaderContinuationController(
     /**
      * Keys while the panel shows (#110), from GalleryActivity.onKeyDown:
      * - DPAD_UP, DPAD_DOWN and Tab (Shift+Tab backwards) move the focus
-     *   between the panel's buttons, primary ("Read next" or "Retry") first,
-     *   so D-pad users reach it without Tab.
+     *   between the panel's buttons, so D-pad users reach them without Tab.
+     *   From the scrim, DPAD_DOWN and Tab focus the primary button ("Read
+     *   next" or "Retry", else Back); DPAD_UP and Shift+Tab focus Back.
      * - Enter, DPAD_CENTER and Space activate the focused button (or close the
      *   panel while the scrim holds the focus); the focused view takes them
      *   before this is called.
@@ -92,7 +93,7 @@ class ReaderContinuationController(
             KeyEvent.KEYCODE_DPAD_DOWN -> true
             KeyEvent.KEYCODE_DPAD_UP -> false
             KeyEvent.KEYCODE_TAB -> !event.isShiftPressed
-            else -> return readerKey && hideForKey()
+            else -> return readerKey && hideIfShowing()
         }
         // At most two buttons: either step from one reaches the other.
         val toPrimary = secondary.isFocused || (forward && !primary.isFocused)
@@ -100,7 +101,7 @@ class ReaderContinuationController(
         return true
     }
 
-    private fun hideForKey(): Boolean {
+    private fun hideIfShowing(): Boolean {
         if (!isShowing) return false
         hide()
         return true
