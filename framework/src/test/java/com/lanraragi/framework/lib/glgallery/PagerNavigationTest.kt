@@ -1,6 +1,7 @@
 package com.lanraragi.framework.lib.glgallery
 
 import android.graphics.Rect
+import android.view.ViewConfiguration
 import com.lanraragi.framework.lib.glview.util.GalleryUtils
 import com.lanraragi.framework.lib.glview.view.AnimationTime
 import com.lanraragi.framework.lib.glview.view.GLView
@@ -246,6 +247,68 @@ class PagerNavigationTest(private val layoutMode: Int) {
 
         assertShowing(SIZE - 1)
         assertEquals("transfer end", 1, listener.transferDone)
+    }
+
+    /**
+     * Issue #110: the end is decided on the whole pull, not on the last move
+     * event. Each row is one gesture on the last page as finger moves (x
+     * forward in reading order, y down) in pixels, and whether lifting the
+     * finger ends the book.
+     */
+    @Test
+    fun `lifting after pulling past the last page ends the book unless the pull came back`() {
+        val slop = ViewConfiguration.get(RuntimeEnvironment.getApplication()).scaledTouchSlop.toFloat()
+        // Moves back stay under the pager interval, past which they turn back a page.
+        assertTrue(2.5f * slop < PAGER_INTERVAL)
+        val rows = listOf(
+            Gesture("one pull", listOf(3 * slop to 0f), true),
+            Gesture("pull, then hold still with a tremor", listOf(2 * slop to 0f, 2 * slop to 0f, 0f to 1f), true),
+            Gesture("pull, then a tiny drift back", listOf(2 * slop to 0f, 2 * slop to 0f, -2f to 0f), true),
+            Gesture("a pull under the touch slop", listOf(slop / 2 to 0f), false),
+            Gesture("pull, then back to the edge", listOf(2 * slop to 0f, -2 * slop to 0f), false),
+            Gesture("pull, then back to within the slop", listOf(1.5f * slop to 0f, -slop to 0f), false),
+            Gesture("pull, then back past the edge", listOf(slop to 0f, slop to 0f, -2.5f * slop to 0f), false),
+        )
+        for ((name, moves, ends) in rows) {
+            view.setCurrentPage(SIZE - 1)
+            view.render(canvas)
+            listener.transferDone = 0
+
+            pull(moves)
+
+            assertShowing(SIZE - 1)
+            assertEquals(name, if (ends) 1 else 0, listener.transferDone)
+        }
+    }
+
+    private data class Gesture(val name: String, val moves: List<Pair<Float, Float>>, val ends: Boolean)
+
+    @Test
+    fun `a move back after pulling past the last page moves the page at once`() {
+        view.setCurrentPage(SIZE - 1)
+        view.render(canvas)
+        val forward = if (rtl) -1f else 1f
+        view.onDown(WIDTH / 2f, HEIGHT / 2f)
+        for (dx in floatArrayOf(4 * SHORT_DRAG, -SHORT_DRAG)) {
+            view.onScroll(forward * dx, 0f, forward * dx, 0f, WIDTH / 2f, HEIGHT / 2f)
+            view.render(canvas)
+        }
+        val back = (forward * SHORT_DRAG).toInt()
+        assertEquals("page moved back", Rect(back, 0, WIDTH + back, HEIGHT), view.findPageByIndex(SIZE - 1)?.bounds())
+        view.onUp()
+        settle()
+    }
+
+    /** One gesture; a move's x is positive towards the next page. */
+    private fun pull(moves: List<Pair<Float, Float>>) {
+        val forward = if (rtl) -1f else 1f
+        view.onDown(WIDTH / 2f, HEIGHT / 2f)
+        for ((dx, dy) in moves) {
+            view.onScroll(forward * dx, dy, forward * dx, dy, WIDTH / 2f, HEIGHT / 2f)
+            view.render(canvas)
+        }
+        view.onUp()
+        settle()
     }
 
     @Test

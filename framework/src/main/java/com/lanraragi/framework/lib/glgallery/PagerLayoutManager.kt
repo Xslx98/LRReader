@@ -19,6 +19,7 @@ package com.lanraragi.framework.lib.glgallery
 import android.content.Context
 import android.graphics.Rect
 import android.util.Log
+import android.view.ViewConfiguration
 import android.view.animation.Interpolator
 import androidx.annotation.IntDef
 import com.lanraragi.framework.lib.glview.anim.Animation
@@ -65,6 +66,12 @@ internal class PagerLayoutManager(
     private var offset = 0
     private var deltaX = 0
     private var deltaY = 0
+
+    // Issue #110: how far this gesture is pulled past the forward edge, in
+    // pixels, net of the moves back since. Lifting the finger ends the book
+    // while it is beyond the touch slop and the page is within it of rest.
+    private var endPull = 0
+    private val endPullSlop = ViewConfiguration.get(context).scaledTouchSlop
     private var canScrollBetweenPages = false
     private var stopAnimationFinger = false
 
@@ -208,6 +215,7 @@ internal class PagerLayoutManager(
         offset = 0
         deltaX = 0
         deltaY = 0
+        endPull = 0
         canScrollBetweenPages = false
         stopAnimationFinger = false
     }
@@ -614,6 +622,7 @@ internal class PagerLayoutManager(
     override fun onDown() {
         deltaX = 0
         deltaY = 0
+        endPull = 0
         stopAnimationFinger = cancelAllAnimations()
     }
 
@@ -624,23 +633,19 @@ internal class PagerLayoutManager(
             return
         }
 
-        // A drag or fling that ends pulling the forward edge on the last page
-        // (empty next slot) is a page-turn attempt past the end, just like the
-        // boundary branches in onPageLeft()/onPageRight(). deltaX is only
-        // non-zero when the gesture ended in overScrollEdge(), and its sign
-        // tells which edge was pulled. Note deltaX reflects only the FINAL
-        // motion event's residual — the image-scroll branch in scrollInternal()
-        // re-zeroes it on every event while offset == 0 — which is what keeps
-        // a pull-then-retreat gesture from firing here. canScrollBetweenPages
-        // (horizontal-dominant gesture, set on first scroll) filters out
-        // vertical-dominant drags whose last event drifts a few pixels
+        // A drag or fling released while still pulled past the forward edge
+        // on the last page (empty next slot) is a page-turn attempt past the
+        // end, just like the boundary branches in onPageLeft()/onPageRight().
+        // The whole gesture decides (issue #110): endPull keeps the pull net
+        // of moves back, so a still or trembling finger at release still
+        // counts and a pull taken back to within the slop does not. A drift
+        // back drags the previous page by its length, so up to the slop of
+        // offset still counts as resting on the last page.
+        // canScrollBetweenPages (horizontal-dominant gesture, set on first
+        // scroll) filters out vertical-dominant drags that drift a few pixels
         // horizontally into the edge branch.
-        val pullingForward = canScrollBetweenPages && when (mode) {
-            MODE_LEFT_TO_RIGHT -> deltaX > 0
-            MODE_RIGHT_TO_LEFT -> deltaX < 0
-            else -> false
-        }
-        if (offset == 0 && next.first == null && pullingForward) {
+        val pulledPastEnd = canScrollBetweenPages && endPull > endPullSlop
+        if (abs(offset) <= endPullSlop && next.first == null && pulledPastEnd) {
             galleryView.onTransferEnd()
         }
 
@@ -878,6 +883,12 @@ internal class PagerLayoutManager(
             canScrollBetweenPages = abs(dx) > abs(dy) * 1.5
         }
 
+        // A move back takes back as much of the pull past the end; it still
+        // scrolls the image or the pages as before.
+        val forward = forwardSign
+        val back = -remainX * forward
+        if (back > 0) endPull = max(0, endPull - back)
+
         while (remainX != 0 || remainY != 0) {
             if (offset == 0 && canImageScroll) {
                 // A page turn earlier in this loop replaced the current page.
@@ -891,6 +902,7 @@ internal class PagerLayoutManager(
                 deltaY = 0
             } else if (isOnEdge(remainX)) {
                 // On edge
+                if (remainX * forward > 0) endPull += remainX * forward
                 overScrollEdge(remainX, remainY, x, y)
                 remainX = 0
                 remainY = 0
@@ -912,6 +924,10 @@ internal class PagerLayoutManager(
             galleryView.requestFill()
         }
     }
+
+    /** +1 when a positive scroll dx heads for the next page (left to right), -1 right to left. */
+    private val forwardSign: Int
+        get() = if (mode == MODE_RIGHT_TO_LEFT) -1 else 1
 
     private fun isOnEdge(remainX: Int): Boolean =
         remainX == 0 ||

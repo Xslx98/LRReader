@@ -1,7 +1,9 @@
 package com.lanraragi.framework.lib.glgallery
 
 import android.graphics.Rect
+import android.view.ViewConfiguration
 import com.lanraragi.framework.lib.glview.util.GalleryUtils
+import com.lanraragi.framework.lib.glview.view.AnimationTime
 import com.lanraragi.framework.lib.glview.view.GLView
 import com.lanraragi.framework.util.minAllocatedBytes
 import org.junit.Assert.assertEquals
@@ -15,6 +17,8 @@ import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.shadows.ShadowSystemClock
+import java.time.Duration
 
 /**
  * Two-page spreads in the pager as the reader sees them, in both reading
@@ -198,6 +202,35 @@ class SpreadPagerTest(private val layoutMode: Int) {
         assertFalse(view.isReachEnd)
     }
 
+    // Issue #110: the whole pull decides, as for a single page (PagerNavigationTest).
+    @Test
+    fun `lifting after pulling past the last spread ends the book unless the pull came back`() {
+        val slop = ViewConfiguration.get(RuntimeEnvironment.getApplication()).scaledTouchSlop.toFloat()
+        jump(SIZE - 1)
+        pull(2 * slop to 0f, 2 * slop to 0f, 0f to 1f)
+        assertShowing(SIZE - 2, SIZE - 1)
+        assertEquals("pull, then hold still with a tremor", 1, listener.transferDone)
+
+        pull(2 * slop to 0f, -2 * slop to 0f)
+        assertShowing(SIZE - 2, SIZE - 1)
+        assertEquals("pull, then back to the edge", 1, listener.transferDone)
+    }
+
+    /** One gesture; a move's x is positive towards the next spread. */
+    private fun pull(vararg moves: Pair<Float, Float>) {
+        val forward = if (rtl) -1f else 1f
+        view.onDown(WIDTH / 2f, HEIGHT / 2f)
+        for ((dx, dy) in moves) render { view.onScroll(forward * dx, dy, forward * dx, dy, WIDTH / 2f, HEIGHT / 2f) }
+        view.onUp()
+        repeat(SETTLE_FRAMES) {
+            AnimationTime.update()
+            view.render(canvas)
+            ShadowSystemClock.advanceBy(Duration.ofMillis(SETTLE_FRAME_MS))
+        }
+        AnimationTime.update()
+        view.render(canvas)
+    }
+
     @Test
     fun `a partner found to be wide moves on, and the pages behind stay`() {
         adapter.aspects[6] = WIDE
@@ -364,6 +397,8 @@ class SpreadPagerTest(private val layoutMode: Int) {
         private const val TURNS = 200
         private const val DATA_CHANGES = 20
         private const val RUNS = 5
+        private const val SETTLE_FRAMES = 4
+        private const val SETTLE_FRAME_MS = 500L
 
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "layoutMode={0}")
