@@ -1,0 +1,5 @@
+2.4.1: two-page reading and chapters.
+- Two-page reading (Settings, off by default): side-by-side pages, cover alone, shift pairing.
+- Chapter list in the reader to jump between chapters, kept for offline reading.
+- Tag archives with the server's metadata plugins, with a preview.
+Fixed: large download lists, mixed-up details across servers, end-of-book panel turning pages, tankoubon delete leftovers, hidden buttons.
