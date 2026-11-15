@@ -22,6 +22,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -219,6 +220,37 @@ class DownloadServiceTest {
         manager.allDownloadInfoList.first { it.arcid == "fgs_refused" }.state = DownloadState.WAIT
         service.pauseIfForegroundRefused()
         assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
+    }
+
+    /**
+     * Audit 2026-11-15 B2: a refused placeholder followed by a successful
+     * promotion to the progress notification leaves the service foreground,
+     * so the next command boundary must not pause the queue.
+     */
+    @Test
+    fun successfulPromotion_afterRefusal_doesNotPause() {
+        DownloadResumeBanner.clear()
+        val info = com.lanraragi.reader.dao.DownloadInfo().apply { arcid = "fgs_promoted"; title = "T" }
+        manager.addDownload(info.toArchive(), null, DownloadState.NONE)
+        val stored = manager.allDownloadInfoList.first { it.arcid == "fgs_promoted" }
+        stored.state = DownloadState.WAIT
+
+        val c = Robolectric.buildService(DownloadService::class.java).create().also { controller = it }
+        val service = c.get()
+        service.onForegroundRefused(IllegalStateException("ForegroundServiceStartNotAllowedException"))
+
+        // The real path: onStart -> NotificationDelay.startForeground -> promoteToForeground.
+        service.onStart(stored)
+        shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(3))
+        val progress = shadowOf(service).lastForegroundNotification
+        service.pauseIfForegroundRefused()
+
+        assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
+        assertEquals(DownloadState.WAIT, stored.state)
+
+        // A later command keeps the progress notification: no placeholder over it.
+        service.onStartCommand(null, 0, 2)
+        assertSame(progress, shadowOf(service).lastForegroundNotification)
     }
 }
 

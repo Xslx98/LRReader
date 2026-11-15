@@ -293,6 +293,17 @@ class DownloadService : Service(), DownloadListener {
         foregroundRefused = true
     }
 
+    /**
+     * startForeground succeeded, either for the placeholder or for the
+     * delayed promotion to the progress notification. Records the service as
+     * foreground, so later commands skip the placeholder, and disarms a
+     * pending refusal pause: the service is foreground now.
+     */
+    internal fun onForegroundPromoted() {
+        isForeground = true
+        foregroundRefused = false
+    }
+
     /** Main thread. Pauses everything once after a refusal; see [onForegroundRefused]. */
     internal fun pauseIfForegroundRefused() {
         if (!foregroundRefused || isForeground) return
@@ -329,8 +340,7 @@ class DownloadService : Service(), DownloadListener {
             } else {
                 startForeground(ID_DOWNLOADING, notification)
             }
-            isForeground = true
-            foregroundRefused = false
+            onForegroundPromoted()
         } catch (e: Exception) {
             Log.e(TAG, "startForeground(placeholder) failed", e)
             onForegroundRefused(e)
@@ -920,6 +930,7 @@ class DownloadService : Service(), DownloadListener {
                 } else {
                     service.startForeground(mId, mBuilder.build())
                 }
+                (service as? DownloadService)?.onForegroundPromoted()
             } catch (e: Exception) {
                 Log.e(TAG, "startForeground(delay) failed", e)
                 (service as? DownloadService)?.let {
