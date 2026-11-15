@@ -97,7 +97,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         const val KEY_PENDING_SAVE_FILE = "pending_save_file"
 
         // NotifyTask keys
-        private const val NOTIFY_KEY_LAYOUT_MODE = 0
         private const val NOTIFY_KEY_SIZE = 1
         private const val NOTIFY_KEY_CURRENT_INDEX = 2
         private const val NOTIFY_KEY_TAP_SLIDER_AREA = 3
@@ -719,10 +718,6 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
 
         override fun run() {
             when (mKey) {
-                NOTIFY_KEY_LAYOUT_MODE -> {
-                    mSliderController.layoutMode = mValue
-                    mInputHandler.layoutMode = mValue
-                }
                 NOTIFY_KEY_SIZE -> mSliderController.size = mValue
                 NOTIFY_KEY_CURRENT_INDEX -> {
                     mSliderController.currentIndex = mValue
