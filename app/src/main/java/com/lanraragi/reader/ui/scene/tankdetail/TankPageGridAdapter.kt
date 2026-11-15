@@ -11,7 +11,7 @@ import android.widget.TextView
 import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.PageThumbnailCache
+import com.lanraragi.reader.cover.PageThumbnailCache
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.tankoubon.TankPageGridLayout
 import com.lanraragi.reader.tankoubon.TankPageGridLayout.Item

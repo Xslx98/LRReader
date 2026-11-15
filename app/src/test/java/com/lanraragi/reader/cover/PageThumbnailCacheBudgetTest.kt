@@ -7,7 +7,7 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.cover
 
 import org.junit.Assert.assertTrue
 import org.junit.Test

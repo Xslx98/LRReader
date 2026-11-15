@@ -7,12 +7,15 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.cover
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRHttpException
+import com.lanraragi.reader.client.api.await
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred

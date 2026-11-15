@@ -7,11 +7,10 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.cover
 
 import android.graphics.Bitmap
 import android.util.LruCache
-import com.lanraragi.reader.cover.LRRCacheKeyFactory
 import com.lanraragi.reader.module.Cacheable
 
 /**

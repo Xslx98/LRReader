@@ -11,7 +11,7 @@ import com.lanraragi.reader.cover.StoredCoverFetcher
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.reading.ReaderPageCache
 import com.lanraragi.reader.client.api.LRRTagCache
-import com.lanraragi.reader.client.api.PageThumbnailCache
+import com.lanraragi.reader.cover.PageThumbnailCache
 import okio.Path.Companion.toOkioPath
 import java.io.File
 
