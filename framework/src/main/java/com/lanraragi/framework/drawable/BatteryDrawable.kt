@@ -25,7 +25,7 @@ import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import com.lanraragi.framework.util.MathUtils
 
-class BatteryDrawable : Drawable() {
+internal class BatteryDrawable : Drawable() {
 
     private var color = Color.WHITE
     private var warningColor = Color.RED

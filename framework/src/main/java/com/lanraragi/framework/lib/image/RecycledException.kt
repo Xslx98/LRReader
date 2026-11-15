@@ -18,4 +18,4 @@ package com.lanraragi.framework.lib.image
 /**
  * Image is recycled.
  */
-class RecycledException : Exception()
+internal class RecycledException : Exception()
