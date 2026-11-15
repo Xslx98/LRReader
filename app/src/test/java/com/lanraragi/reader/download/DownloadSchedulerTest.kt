@@ -183,17 +183,6 @@ class DownloadSchedulerTest {
     }
 
     @Test
-    fun getNoneDownloadInfo_stopsActiveAndReturns() {
-        val info = makeInfo(1L)
-        scheduler.waitList.add(info)
-
-        val result = scheduler.getNoneDownloadInfo("token_1")
-        assertNotNull("getNoneDownloadInfo should return the info", result)
-        assertEquals(DownloadState.NONE, result!!.state)
-        assertTrue("Wait list should be empty", scheduler.waitList.isEmpty())
-    }
-
-    @Test
     fun stopDownload_nonExistentReturnsNull() {
         val result = scheduler.stopDownload("nonexistent")
         assertNull("Stopping a non-existent arcid should return null", result)

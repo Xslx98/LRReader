@@ -267,37 +267,6 @@ internal class DownloadScheduler(
     // Query + stop combo
     // ═══════════════════════════════════════════════════════════
 
-    /**
-     * If the given gid is currently downloading (active or waiting), stop it
-     * and set its state to [DownloadState.NONE]. Returns the
-     * [DownloadInfo] from the repository (may be null if not tracked).
-     */
-    fun getNoneDownloadInfo(arcid: String): DownloadInfo? {
-        assertMainThread()
-        var wasActive = false
-        for (info in activeTasks) {
-            if (info.arcid == arcid) {
-                wasActive = true
-                break
-            }
-        }
-        if (wasActive) {
-            stopDownload(arcid)
-        } else {
-            val iterator = waitList.iterator()
-            while (iterator.hasNext()) {
-                val info = iterator.next()
-                if (info.arcid == arcid) {
-                    info.state = DownloadState.NONE
-                    progressTracker.clear(arcid)
-                    iterator.remove()
-                    break
-                }
-            }
-        }
-        return repo.getDownloadInfo(arcid)
-    }
-
     // ═══════════════════════════════════════════════════════════
     // Event system
     // ═══════════════════════════════════════════════════════════
