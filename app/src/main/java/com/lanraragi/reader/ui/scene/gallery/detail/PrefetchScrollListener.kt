@@ -94,7 +94,7 @@ internal class PrefetchScrollListener(
          *
          * **Cache-budget invariant:** the scroll working set is the
          * visible viewport plus these prefetch rows. It must stay below
-         * [com.lanraragi.reader.client.api.PageThumbnailCache]'s entry
+         * [com.lanraragi.reader.cover.PageThumbnailCache]'s entry
          * capacity, otherwise the LRU evicts tiles that are still on
          * screen and they flicker on rebind. Growing this (or the grid's
          * span count) widens the working set — re-check the cache budget

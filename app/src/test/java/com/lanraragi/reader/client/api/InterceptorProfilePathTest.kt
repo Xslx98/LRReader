@@ -3,14 +3,12 @@ package com.lanraragi.reader.client.api
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.containedTestScope
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
-import com.lanraragi.reader.module.IDataModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
@@ -55,9 +53,9 @@ class InterceptorProfilePathTest {
     private lateinit var host: String
     private var port = 0
 
-    private val authClient = OkHttpClient.Builder().addInterceptor(LRRAuthInterceptor()).build()
+    private val authClient = OkHttpClient.Builder().addInterceptor(LRRAuthInterceptor { cache }).build()
     private val cleartextClient =
-        OkHttpClient.Builder().addInterceptor(LRRCleartextRejectionInterceptor()).build()
+        OkHttpClient.Builder().addInterceptor(LRRCleartextRejectionInterceptor { cache }).build()
 
     @Before
     fun setUp() {
@@ -70,7 +68,6 @@ class InterceptorProfilePathTest {
         repo = ProfileRepository(db.miscDao())
         scope = containedTestScope()
         cache = ProfileLookupCache(repo, scope)
-        ServiceRegistry.initializeForTest(data = dataModule { cache })
 
         val prefs = ctx.getSharedPreferences("interceptor_profile_path", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
@@ -82,8 +79,6 @@ class InterceptorProfilePathTest {
 
     @After
     fun tearDown() {
-        // Leave the registry as the legacy-path suites expect: no cache hit.
-        ServiceRegistry.initializeForTest(data = dataModule { throw UnsupportedOperationException() })
         scope.cancel()
         db.close()
         server.shutdown()
@@ -197,19 +192,5 @@ class InterceptorProfilePathTest {
         addProfile("https://$host:$port", key = null)
 
         assertRefused<LRRCleartextRefusedException>(cleartextClient, "http://$host:$port/api/info")
-    }
-
-    private fun dataModule(lookup: () -> ProfileLookupCache): IDataModule = object : IDataModule {
-        override val profileLookupCache get() = lookup()
-        override val profileRepository get() = throw UnsupportedOperationException("not needed")
-        override val searchHistoryRepository get() = throw UnsupportedOperationException("not needed")
-        override val historyRepository get() = throw UnsupportedOperationException("not needed")
-        override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
-        override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
-        override val downloadDbRepository get() = throw UnsupportedOperationException("not needed")
-        override val downloadManager get() = throw UnsupportedOperationException("not needed")
-        override val favouriteStatusRouter get() = throw UnsupportedOperationException("not needed")
-        override val archiveDetailCache get() = throw UnsupportedOperationException("not needed")
-        override fun clearArchiveDetailCache() {}
     }
 }

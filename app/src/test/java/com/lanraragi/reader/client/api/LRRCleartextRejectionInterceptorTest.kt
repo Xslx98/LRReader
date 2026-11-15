@@ -72,7 +72,7 @@ class LRRCleartextRejectionInterceptorTest {
     }
 
     private fun client() = OkHttpClient.Builder()
-        .addInterceptor(LRRCleartextRejectionInterceptor())
+        .addInterceptor(LRRCleartextRejectionInterceptor { null })
         .build()
 
     private fun executeAndExpectRefused(url: String, message: String) {
@@ -123,7 +123,7 @@ class LRRCleartextRejectionInterceptorTest {
     fun https_request_with_no_active_profile_passes_through() {
         val req = Request.Builder().url("https://example.test/api/info").build()
         val chain = FakeChain(req)
-        val response = LRRCleartextRejectionInterceptor().intercept(chain)
+        val response = LRRCleartextRejectionInterceptor { null }.intercept(chain)
         assertEquals(200, response.code)
         assertSame(req, chain.proceededRequest)
         response.close()
@@ -135,7 +135,7 @@ class LRRCleartextRejectionInterceptorTest {
         ServerSession.setAllowCleartext(true)
         val req = Request.Builder().url("https://attacker.test/whatever").build()
         val chain = FakeChain(req)
-        val response = LRRCleartextRejectionInterceptor().intercept(chain)
+        val response = LRRCleartextRejectionInterceptor { null }.intercept(chain)
         assertEquals(200, response.code)
         assertSame(req, chain.proceededRequest)
         response.close()
@@ -169,7 +169,7 @@ class LRRCleartextRejectionInterceptorTest {
         ServerSession.setAllowCleartext(false)
         val req = Request.Builder().url("http://192.168.1.10:3000/api/info").build()
         val chain = FakeChain(req)
-        LRRCleartextRejectionInterceptor().intercept(chain)
+        LRRCleartextRejectionInterceptor { null }.intercept(chain)
         assertSame(req, chain.proceededRequest)
     }
 

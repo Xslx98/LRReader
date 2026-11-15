@@ -3,8 +3,8 @@ package com.lanraragi.reader.ui.scene.tankdetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.reader.client.api.PageThumbnailCache
-import com.lanraragi.reader.client.api.PageThumbnailRepository
+import com.lanraragi.reader.cover.PageThumbnailCache
+import com.lanraragi.reader.cover.PageThumbnailRepository
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.reading.TankPageMap
 import com.lanraragi.reader.tankoubon.TankPageGridLayout

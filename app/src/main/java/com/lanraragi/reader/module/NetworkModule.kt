@@ -7,6 +7,8 @@ import okhttp3.ConnectionPool
 import okhttp3.CookieJar
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.server.ProfileLookupCache
 import com.lanraragi.reader.server.ServerTrust
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -36,6 +38,13 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
     }
 
     override val proxySelector: AppProxySelector by lazy { AppProxySelector() }
+
+    /**
+     * The interceptors' profile lookup, read per request: the data module is
+     * built after this one, so early in boot it is not there yet and the
+     * interceptors fall back to the active server.
+     */
+    private val profileLookupCache: () -> ProfileLookupCache? = { ServiceRegistry.dataModule.profileLookupCache }
 
     /**
      * Shared dispatcher. Its limits apply only to enqueue()d calls (API requests);
@@ -80,8 +89,8 @@ class NetworkModule(private val context: Context) : INetworkModule, Cacheable {
             // profile to plain HTTP. A network interceptor re-evaluates every
             // hop. Placed before the auth interceptor so a rejected hop never
             // gets an API key attached.
-            .addNetworkInterceptor(com.lanraragi.reader.client.api.LRRCleartextRejectionInterceptor())
-            .addNetworkInterceptor(com.lanraragi.reader.client.api.LRRAuthInterceptor())
+            .addNetworkInterceptor(com.lanraragi.reader.client.api.LRRCleartextRejectionInterceptor(profileLookupCache))
+            .addNetworkInterceptor(com.lanraragi.reader.client.api.LRRAuthInterceptor(profileLookupCache))
             .build()
     }
 

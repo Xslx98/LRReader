@@ -5,6 +5,7 @@ import com.lanraragi.reader.client.api.data.*
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
+import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.job
@@ -42,6 +43,7 @@ class LRRApiUtilsTest {
     @After
     fun tearDown() {
         server.shutdown()
+        ServiceRegistry.installOfflineProbe()
     }
 
     private val ctx: Context get() = ApplicationProvider.getApplicationContext()
@@ -247,6 +249,24 @@ class LRRApiUtilsTest {
         }
         assertEquals("ok", result)
         assertEquals(1, callCount)
+    }
+
+    @Test
+    fun retryOnFailure_knownOffline_failsFastWithoutRunningTheBlock() = runTest {
+        OfflineProbe.install { true }
+        var callCount = 0
+        try {
+            retryOnFailure { callCount++ }
+            fail("a known-offline device should fail fast")
+        } catch (_: LRROfflineException) {
+        }
+        assertEquals(0, callCount)
+    }
+
+    @Test
+    fun retryOnFailure_offlineProbeThrows_countsAsOnline() = runTest {
+        OfflineProbe.install { throw IllegalStateException("module not installed") }
+        assertEquals("ok", retryOnFailure { "ok" })
     }
 
     @Test

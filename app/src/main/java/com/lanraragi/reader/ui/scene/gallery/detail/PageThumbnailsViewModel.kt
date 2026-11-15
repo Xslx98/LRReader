@@ -16,8 +16,8 @@ import com.lanraragi.reader.archive.ArchivePageList
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.server.OrphanProfileException
 import com.lanraragi.reader.server.ServerConnections
-import com.lanraragi.reader.client.api.PageThumbnailCache
-import com.lanraragi.reader.client.api.PageThumbnailRepository
+import com.lanraragi.reader.cover.PageThumbnailCache
+import com.lanraragi.reader.cover.PageThumbnailRepository
 import com.lanraragi.reader.server.probeSourceHealthy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart

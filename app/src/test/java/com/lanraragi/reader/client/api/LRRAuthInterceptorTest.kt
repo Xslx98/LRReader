@@ -43,7 +43,7 @@ class LRRAuthInterceptorTest {
         server.start()
         baseUrl = server.url("").toString().removeSuffix("/")
         client = OkHttpClient.Builder()
-            .addInterceptor(LRRAuthInterceptor())
+            .addInterceptor(LRRAuthInterceptor { null })
             .build()
 
         val ctx: Context = ApplicationProvider.getApplicationContext()

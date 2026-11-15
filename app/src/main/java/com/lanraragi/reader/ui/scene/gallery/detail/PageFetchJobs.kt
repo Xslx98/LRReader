@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
  * The in-flight thumbnail request of each page of one preview grid, so the
  * grid can drop requests it no longer needs: pages a fling scrolled past and
  * everything of an entry the grid has left. Cancelling a request releases its
- * share of the [com.lanraragi.reader.client.api.PageThumbnailRepository]
+ * share of the [com.lanraragi.reader.cover.PageThumbnailRepository]
  * fetch, which is cancelled once no grid waits for it (audit 2026-10-13 PERF-01).
  */
 internal class PageFetchJobs {

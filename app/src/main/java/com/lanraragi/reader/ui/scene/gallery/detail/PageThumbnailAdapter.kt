@@ -20,7 +20,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.R
-import com.lanraragi.reader.client.api.PageThumbnailCache
+import com.lanraragi.reader.cover.PageThumbnailCache
 import com.lanraragi.reader.widget.CoverPlaceholderDrawable
 import java.util.Locale
 

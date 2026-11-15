@@ -1,10 +1,10 @@
 package com.lanraragi.reader.client.api
 
-import com.lanraragi.reader.ServiceRegistry
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response
+import com.lanraragi.reader.server.ProfileLookupCache
 import com.lanraragi.reader.server.ProfileUrlCandidate
 import com.lanraragi.reader.server.ServerSession
 
@@ -37,7 +37,10 @@ import com.lanraragi.reader.server.ServerSession
  * default automatically). No `InetAddress.getByName` — that would add IO and
  * a DNS-based bypass surface (DNS rebinding).
  */
-class LRRCleartextRejectionInterceptor : Interceptor {
+class LRRCleartextRejectionInterceptor(
+    /** The profile lookup; may throw or be null while the app is still booting. */
+    private val profileLookupCache: () -> ProfileLookupCache?,
+) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
@@ -49,7 +52,7 @@ class LRRCleartextRejectionInterceptor : Interceptor {
         }
 
         // 2. Find configured profiles owning this host:port (any scheme).
-        val cache = runCatching { ServiceRegistry.dataModule.profileLookupCache }
+        val cache = runCatching(profileLookupCache)
             .getOrNull()
         val candidates = cache?.findParsedCandidatesByHostPort(url.host, url.port).orEmpty()
 

@@ -1,6 +1,7 @@
 package com.lanraragi.reader
 
 import android.content.Context
+import com.lanraragi.reader.client.api.OfflineProbe
 import com.lanraragi.reader.module.AppModule
 import com.lanraragi.reader.module.Cacheable
 import com.lanraragi.reader.module.ClientModule
@@ -30,6 +31,20 @@ object ServiceRegistry {
     private var _coroutineModule: ICoroutineModule? = null
 
     private val cacheables = mutableListOf<Cacheable>()
+
+    init {
+        installOfflineProbe()
+    }
+
+    /**
+     * Points [OfflineProbe] at the installed network module, on the registry's
+     * first use: it asks whichever module is installed (a test double
+     * included), and one not installed yet throws, which the probe counts as
+     * online. Tests that replace the probe put this one back.
+     */
+    internal fun installOfflineProbe() {
+        OfflineProbe.install { !networkModule.networkMonitor.isAvailable }
+    }
 
     val networkModule: INetworkModule
         get() = _networkModule

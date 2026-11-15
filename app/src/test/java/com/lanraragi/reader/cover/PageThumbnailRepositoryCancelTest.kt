@@ -1,4 +1,4 @@
-package com.lanraragi.reader.client.api
+package com.lanraragi.reader.cover
 
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitRequest

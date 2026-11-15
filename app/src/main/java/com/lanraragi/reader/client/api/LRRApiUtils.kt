@@ -3,7 +3,6 @@ package com.lanraragi.reader.client.api
 import android.content.Context
 import android.util.Log
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -417,14 +416,9 @@ internal suspend fun <T> retryOnFailure(
     throw lastException ?: IOException("Retry exhausted after ${maxRetries + 1} attempts")
 }
 
-/**
- * Fast-fail when the device is known to be offline — avoids waiting for the
- * connect timeout. runCatching guards against an uninitialized ServiceRegistry
- * in unit tests.
- */
+/** Fast-fail when the device is known to be offline: avoids waiting for the connect timeout. */
 private fun ensureNotKnownOffline() {
-    val isOffline = runCatching { !ServiceRegistry.networkModule.networkMonitor.isAvailable }.getOrDefault(false)
-    if (isOffline) throw LRROfflineException()
+    if (OfflineProbe.isKnownOffline()) throw LRROfflineException()
 }
 
 /** Read/call timeouts ([java.net.SocketTimeoutException] is a subclass). */
