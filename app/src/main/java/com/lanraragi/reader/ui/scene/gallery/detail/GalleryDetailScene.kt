@@ -68,7 +68,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             // bind it, or both heart labels stay visible over each other (#94).
             keepPageNormal = {
                 if (mState != STATE_NORMAL) {
-                    adjustViewVisibility(STATE_NORMAL, true)
+                    adjustViewVisibility(STATE_NORMAL)
                     bindViewSecond()
                 }
             },
@@ -352,17 +352,17 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (viewModel.archiveDetail.value != null) {
                 bindViewSecond()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
-                adjustViewVisibility(STATE_NORMAL, false)
+                adjustViewVisibility(STATE_NORMAL)
             } else if (mArchive != null) {
                 bindViewFirst()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
-                adjustViewVisibility(STATE_REFRESH_HEADER, false)
+                adjustViewVisibility(STATE_REFRESH_HEADER)
             } else {
-                adjustViewVisibility(STATE_REFRESH, false)
+                adjustViewVisibility(STATE_REFRESH)
             }
         } else {
             tip.setText(R.string.error_cannot_find_gallery)
-            adjustViewVisibility(STATE_FAILED, false)
+            adjustViewVisibility(STATE_FAILED)
         }
 
         viewModel.downloadManager.addDownloadInfoListener(viewModel.downloadInfoListener)
@@ -447,12 +447,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
      */
     internal fun requestRefresh() {
         if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
-            adjustViewVisibility(STATE_REFRESH, true)
+            adjustViewVisibility(STATE_REFRESH)
             request()
         }
     }
 
-    private fun adjustViewVisibility(state: Int, animation: Boolean) {
+    private fun adjustViewVisibility(state: Int) {
         if (state == mState) {
             return
         }
@@ -462,30 +462,27 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val oldState = mState
         mState = state
 
-        @Suppress("NAME_SHADOWING")
-        val animation = !TRANSITION_ANIMATION_DISABLED && animation
-
         when (state) {
             STATE_NORMAL -> {
                 // Show mMainView
-                viewTransition.showView(0, animation)
+                viewTransition.showView(0, false)
                 // Show mBelowHeader
-                viewTransition2.showView(0, animation)
+                viewTransition2.showView(0, false)
             }
             STATE_REFRESH -> {
                 // Show mProgressView
-                viewTransition.showView(1, animation)
+                viewTransition.showView(1, false)
             }
             STATE_REFRESH_HEADER -> {
                 // Show mMainView
-                viewTransition.showView(0, animation)
+                viewTransition.showView(0, false)
                 // Show mProgress
-                viewTransition2.showView(1, animation)
+                viewTransition2.showView(1, false)
             }
             else -> {
                 // STATE_INIT, STATE_FAILED
                 // Show mFailedView
-                viewTransition.showView(2, animation)
+                viewTransition.showView(2, false)
             }
         }
         val context = getEHContext() ?: return
@@ -528,7 +525,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         if (mTip === v) {
             if (request()) {
-                adjustViewVisibility(STATE_REFRESH, true)
+                adjustViewVisibility(STATE_REFRESH)
             }
         } else {
             mActionHandler?.onClick(v, ctx, activity)
@@ -575,7 +572,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 viewModel.updateDownloadRowFromDetail(result.archive)
             }
         }
-        adjustViewVisibility(STATE_NORMAL, true)
+        adjustViewVisibility(STATE_NORMAL)
         bindViewSecond()
     }
 
@@ -586,7 +583,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (context != null && tip != null) {
             val error = readableErrorText(e)
             tip.text = error
-            adjustViewVisibility(STATE_FAILED, true)
+            adjustViewVisibility(STATE_FAILED)
         }
     }
 
@@ -605,7 +602,5 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         const val KEY_PAGE = "page"
 
         private const val KEY_ARCHIVE_DETAIL = "archive_detail"
-
-        private const val TRANSITION_ANIMATION_DISABLED = true
     }
 }
