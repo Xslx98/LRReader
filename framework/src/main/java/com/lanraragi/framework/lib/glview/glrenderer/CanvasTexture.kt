@@ -23,8 +23,6 @@ import androidx.core.graphics.createBitmap
 // CanvasTexture is a texture whose content is the drawing on a Canvas.
 // The subclasses should override onDraw() to draw on the bitmap.
 // By default CanvasTexture is not opaque.
-// Public (Java had it package-private): Kotlin has no package visibility and
-// the public StringTexture extends it.
 internal abstract class CanvasTexture(width: Int, height: Int) : UploadedTexture() {
     private val config: Bitmap.Config = Bitmap.Config.ARGB_8888
 
