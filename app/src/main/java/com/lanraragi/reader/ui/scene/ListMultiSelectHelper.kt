@@ -100,6 +100,10 @@ class ListMultiSelectHelper(
             view.setOnItemLongClickListener(null)
             view.isLongClickable = false
             onModeChanged(true)
+            // Entering by long-press starts at 0 checked; a restored mode
+            // already has rows checked and needs its count shown.
+            val count = view.checkedItemCount
+            if (count > 0) onCheckedChanged(count)
         }
 
         override fun onOutOfCustomChoice(view: EasyRecyclerView) {

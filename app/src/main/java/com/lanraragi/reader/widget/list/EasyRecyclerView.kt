@@ -45,9 +45,10 @@ import kotlin.math.hypot
  * [CustomChoiceListener]; a checked row is shown checked (Checkable) or
  * activated.
  *
- * Ported to Kotlin from seven332's EasyRecyclerView library (0.1.1),
- * behaviour unchanged; only the custom choice mode the app uses is kept
- * (not the single / multiple / ActionMode-modal ones).
+ * Ported to Kotlin from seven332's EasyRecyclerView library (0.1.1); only
+ * the custom choice mode the app uses is kept (not the single / multiple /
+ * ActionMode-modal ones). Unlike the library, restoring an active custom
+ * choice mode tells the [CustomChoiceListener].
  */
 open class EasyRecyclerView @JvmOverloads constructor(
     context: Context,
@@ -66,6 +67,11 @@ open class EasyRecyclerView @JvmOverloads constructor(
     }
 
     interface CustomChoiceListener {
+        /**
+         * The mode became active: entered via [intoCustomChoiceMode], or
+         * restored with its checked rows by [onRestoreInstanceState] (then
+         * [checkedItemCount] can already be above 0).
+         */
         fun onIntoCustomChoice(view: EasyRecyclerView)
 
         fun onOutOfCustomChoice(view: EasyRecyclerView)
@@ -263,7 +269,7 @@ open class EasyRecyclerView @JvmOverloads constructor(
     fun intoCustomChoiceMode() {
         if (choiceMode == CHOICE_MODE_MULTIPLE_CUSTOM && !isInCustomChoice) {
             isInCustomChoice = true
-            customChoiceListener?.onIntoCustomChoice(this)
+            dispatchIntoCustomChoice()
         }
     }
 
@@ -527,6 +533,16 @@ open class EasyRecyclerView @JvmOverloads constructor(
         checkedItemCount = ss.checkedItemCount
         ss.checkState?.let { checkStates = it }
         updateOnScreenCheckedViews()
+        // The mode came back without intoCustomChoiceMode(): tell the
+        // listener, or its chrome (batch bar, drawer lock) stays hidden while
+        // clicks already toggle rows (audit 2026-11-15 B4).
+        if (isInCustomChoice && choiceMode == CHOICE_MODE_MULTIPLE_CUSTOM) {
+            dispatchIntoCustomChoice()
+        }
+    }
+
+    private fun dispatchIntoCustomChoice() {
+        customChoiceListener?.onIntoCustomChoice(this)
     }
 
     private fun findViewForAdapterPosition(position: Int): View? = findViewHolderForAdapterPosition(position)?.itemView
