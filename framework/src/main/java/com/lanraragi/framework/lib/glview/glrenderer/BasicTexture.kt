@@ -174,7 +174,6 @@ abstract class BasicTexture protected constructor(canvas: GLCanvas?, id: Int, st
 
         protected const val STATE_UNLOADED = 0
         protected const val STATE_LOADED = 1
-        protected const val STATE_ERROR = -1
 
         // Log a warning if a texture is larger along a dimension
         private const val MAX_TEXTURE_SIZE = 4096
