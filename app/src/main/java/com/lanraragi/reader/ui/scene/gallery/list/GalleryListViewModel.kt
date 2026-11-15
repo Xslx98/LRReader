@@ -20,6 +20,7 @@ import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadRequests
 import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
+import com.lanraragi.reader.widget.SavedRows
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,6 +56,9 @@ import kotlinx.parcelize.Parcelize
  * list rows render no favourite state.)
  */
 class GalleryListViewModel : ViewModel() {
+
+    /** The list's rows across a view-state save and restore (see ContentHelper.savedRows). */
+    internal val savedRows = SavedRows<Archive>()
 
     // -------------------------------------------------------------------------
     // Service accessors (read-through to ServiceRegistry so the Scene does not

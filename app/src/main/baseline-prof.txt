@@ -8786,7 +8786,6 @@ HSPLcom/lanraragi/reader/LRReaderApplication;->attachBaseContext(Landroid/conten
 HSPLcom/lanraragi/reader/LRReaderApplication;->clearTempDir()V
 HSPLcom/lanraragi/reader/LRReaderApplication;->onCreate()V
 HSPLcom/lanraragi/reader/LRReaderApplication;->publishDatabaseResetNotice()V
-PLcom/lanraragi/reader/LRReaderApplication;->putGlobalStuff(Ljava/lang/Object;)I
 HSPLcom/lanraragi/reader/LRReaderApplication;->update()V
 Lcom/lanraragi/reader/LRReaderApplication$$ExternalSyntheticLambda0;
 HSPLcom/lanraragi/reader/LRReaderApplication$$ExternalSyntheticLambda0;-><init>(Lcom/lanraragi/reader/LRReaderApplication;Ljava/lang/Thread$UncaughtExceptionHandler;)V
@@ -10322,8 +10321,6 @@ HSPLcom/lanraragi/reader/module/AppModule;->access$getBootProfileLoadError$cp()L
 HSPLcom/lanraragi/reader/module/AppModule;->access$getBootScope$cp()Lkotlinx/coroutines/CoroutineScope;
 HSPLcom/lanraragi/reader/module/AppModule;->access$getDatabaseResetNotice$cp()Lkotlinx/coroutines/flow/MutableStateFlow;
 PLcom/lanraragi/reader/module/AppModule;->getContext()Landroid/content/Context;
-HSPLcom/lanraragi/reader/module/AppModule;->initialize()V
-PLcom/lanraragi/reader/module/AppModule;->putGlobalStuff(Ljava/lang/Object;)I
 Lcom/lanraragi/reader/module/AppModule$$ExternalSyntheticLambda0;
 HSPLcom/lanraragi/reader/module/AppModule$$ExternalSyntheticLambda0;-><init>()V
 Lcom/lanraragi/reader/module/AppModule$$ExternalSyntheticLambda1;

@@ -18,6 +18,8 @@ class GalleryListDataHelper(
     private val viewModel: GalleryListViewModel,
 ) : GalleryInfoContentHelper() {
 
+    override val savedRows get() = viewModel.savedRows
+
     interface Callback {
         fun getHostContext(): Context?
 
