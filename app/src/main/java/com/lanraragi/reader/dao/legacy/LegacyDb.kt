@@ -22,12 +22,14 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
+import androidx.core.content.edit
 
 import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.dao.*
 import com.lanraragi.reader.dao.toArchiveJson
 import com.lanraragi.framework.util.ExceptionUtils
 import com.lanraragi.reader.domain.Archive
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Unified database access layer.
@@ -81,12 +83,31 @@ object LegacyDb {
     }
 
     fun initialize(context: Context) {
-        sHasOldDB = context.getDatabasePath("data").exists()
+        sHasOldDB = shouldMerge(context)
         sDatabase = AppDatabase.getInstance(context)
         MAX_HISTORY_COUNT = AppearanceSettings.getHistoryInfoSize()
     }
 
     fun needMerge(): Boolean = sHasOldDB
+
+    /**
+     * Pref key (in the `boot_cleanup` file) set once a merge has completed.
+     * Together with deleting the legacy file it makes the merge one-shot:
+     * either alone stops a re-run, so a failed delete cannot bring it back.
+     */
+    const val PREF_MERGED = "legacy_db_merged"
+
+    /** A legacy file is present and no earlier merge completed. */
+    internal fun shouldMerge(context: Context): Boolean =
+        context.getDatabasePath(OldDBHelper.DB_NAME).exists() &&
+            !bootPrefs(context).getBoolean(PREF_MERGED, false)
+
+    private fun bootPrefs(context: Context) =
+        context.applicationContext.getSharedPreferences("boot_cleanup", Context.MODE_PRIVATE)
+
+    private fun SQLiteDatabase.hasTable(name: String): Boolean =
+        rawQuery("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", arrayOf(name))
+            .use { it.moveToFirst() }
 
     /**
      * Migrates data from the legacy SQLite database into the current Room database.
@@ -109,6 +130,23 @@ object LegacyDb {
 
         val browsingDao = sDatabase.browsingDao()
         val archiveLocalStateDao = sDatabase.archiveLocalStateDao()
+
+        // A failed step leaves the merge incomplete, so it runs again on the
+        // next boot. Every write below is safe to repeat: the fills never
+        // overwrite and quick searches are de-duplicated. A table the legacy
+        // file lacks counts as empty.
+        var complete = true
+        suspend fun step(table: String, body: suspend () -> Unit) {
+            try {
+                if (oldDB.hasTable(table)) body()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                ExceptionUtils.throwIfFatal(e)
+                Log.e(TAG, "Legacy merge of $table failed", e)
+                complete = false
+            }
+        }
 
         // Build a fresh Archive shell for an arcid using only the columns
         // the legacy gallery row carried (title / thumb / rating / arcid).
@@ -136,7 +174,7 @@ object LegacyDb {
         // posted / category / uploader / etc. are EH-era fields the LRR
         // entities no longer carry, so we don't bother projecting them.
         val map = HashMap<Long, LegacyGallery>()
-        try {
+        step(OldDBHelper.TABLE_GALLERY) {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_GALLERY}", null)
             cursor.use {
                 if (it.moveToFirst()) {
@@ -159,12 +197,10 @@ object LegacyDb {
                     }
                 }
             }
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
         }
 
         // Merge local favorites
-        try {
+        step(OldDBHelper.TABLE_LOCAL_FAVOURITE) {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_LOCAL_FAVOURITE}", null)
             cursor.use {
                 if (it.moveToFirst()) {
@@ -186,14 +222,14 @@ object LegacyDb {
                     }
                 }
             }
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
         }
 
         // Merge quick search
-        try {
+        step(OldDBHelper.TABLE_TAG) {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_TAG}", null)
             cursor.use {
+                val existing = browsingDao.getAllQuickSearch()
+                    .mapTo(HashSet()) { q -> Triple(q.name, q.mode, q.keyword) }
                 if (it.moveToFirst()) {
                     while (!it.isAfterLast) {
                         val quickSearch = QuickSearch()
@@ -210,17 +246,17 @@ object LegacyDb {
                         quickSearch.keyword = if (mode == ListUrlBuilder.MODE_TAG) tag else search
                         quickSearch.advanceSearch = it.getInt(5)
                         quickSearch.minRating = it.getInt(6)
-                        browsingDao.insertQuickSearch(quickSearch)
+                        if (existing.add(Triple(quickSearch.name, quickSearch.mode, quickSearch.keyword))) {
+                            browsingDao.insertQuickSearch(quickSearch)
+                        }
                         it.moveToNext()
                     }
                 }
             }
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
         }
 
         // Merge download info
-        try {
+        step(OldDBHelper.TABLE_DOWNLOAD) {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_DOWNLOAD}", null)
             cursor.use {
                 if (it.moveToFirst()) {
@@ -267,12 +303,10 @@ object LegacyDb {
                     }
                 }
             }
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
         }
 
         // Merge history
-        try {
+        step(OldDBHelper.TABLE_HISTORY) {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_HISTORY}", null)
             cursor.use {
                 if (it.moveToFirst()) {
@@ -298,14 +332,20 @@ object LegacyDb {
                     }
                 }
             }
-        } catch (e: Throwable) {
-            ExceptionUtils.throwIfFatal(e)
         }
 
         try {
             oldDBHelper.close()
         } catch (e: Throwable) {
             ExceptionUtils.throwIfFatal(e)
+        }
+        if (complete) {
+            // Marker first (synchronous), then the file: a death between the
+            // two leaves the marker, and a failed delete is covered by it.
+            bootPrefs(context).edit(commit = true) { putBoolean(PREF_MERGED, true) }
+            if (!context.deleteDatabase(OldDBHelper.DB_NAME)) {
+                Log.w(TAG, "Legacy database not deleted after merge")
+            }
         }
         sHasOldDB = false
     }

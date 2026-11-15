@@ -121,6 +121,9 @@ class LegacyDbMergeOldDbTest {
             "legacy history TIME is milliseconds; lifted archive_json must be epoch seconds",
             1700000001L, stored.lastreadtime
         )
+        // This legacy file has no favourite/tag/download tables: they count
+        // as empty, so the merge still completes.
+        assertFalse(LegacyDb.shouldMerge(context))
     }
 
     @Test
@@ -136,13 +139,15 @@ class LegacyDbMergeOldDbTest {
     /**
      * Seed a legacy `data` DB with every table the merge reads.
      * [galleries] are (gid, arcid); [history] (gid, mode, ms); [favorites]
-     * gids; [downloads] (gid, state code, legacy, time).
+     * gids; [downloads] (gid, state code, legacy, time); [quickSearches]
+     * (name, keyword).
      */
     private fun seedLegacy(
         galleries: List<Pair<Int, String>>,
         history: List<Triple<Int, Int, Long>> = emptyList(),
         favorites: List<Int> = emptyList(),
         downloads: List<List<Long>> = emptyList(),
+        quickSearches: List<Pair<String, String>> = emptyList(),
     ) {
         val dbFile = context.getDatabasePath("data")
         dbFile.parentFile?.mkdirs()
@@ -167,6 +172,9 @@ class LegacyDbMergeOldDbTest {
             }
             history.forEach { (gid, mode, ms) -> legacy.execSQL("INSERT INTO history VALUES ($gid, $mode, $ms)") }
             favorites.forEach { gid -> legacy.execSQL("INSERT INTO local_favourite VALUES ($gid)") }
+            quickSearches.forEachIndexed { i, (name, keyword) ->
+                legacy.execSQL("INSERT INTO tag VALUES ($i, '$name', 0, 0, '$keyword', 0, 0, NULL)")
+            }
             downloads.forEach { (gid, state, left, time) ->
                 legacy.execSQL("INSERT INTO download VALUES ($gid, NULL, $state, $left, $time)")
             }
@@ -235,5 +243,72 @@ class LegacyDbMergeOldDbTest {
 
         assertEquals(1, db.archiveLocalStateDao().getAllDownloads().count { it.arcid == "arc-dl" })
         assertNull(db.archiveLocalStateDao().loadByArcidAndProfile("arc-dl", 0L))
+    }
+
+    // ── Runs until it completes (audit 2026-11-15 B1) ──
+
+    @Test
+    fun mergeOldDB_deletesLegacyFile_andMarksDone_soNextBootSkips() = runTest {
+        seedLegacy(listOf(1 to "arc-a"), history = listOf(Triple(1, 0, 1_000L)))
+        assertTrue(LegacyDb.shouldMerge(context))
+
+        LegacyDb.mergeOldDB(context)
+
+        assertFalse("legacy file must be gone", context.getDatabasePath("data").exists())
+        assertFalse(LegacyDb.shouldMerge(context))
+    }
+
+    @Test
+    fun shouldMerge_isFalse_whenMarkerSet_evenIfLegacyFileSurvived() = runTest {
+        seedLegacy(listOf(1 to "arc-a"))
+        context.getSharedPreferences("boot_cleanup", Context.MODE_PRIVATE)
+            .edit().putBoolean(LegacyDb.PREF_MERGED, true).commit()
+
+        assertFalse(LegacyDb.shouldMerge(context))
+    }
+
+    @Test
+    fun mergeOldDB_failedStep_keepsFileAndMarkerUnset_soItRetries() = runTest {
+        // A history table without the TIME column makes that step throw.
+        val dbFile = context.getDatabasePath("data")
+        dbFile.parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { legacy ->
+            legacy.version = 6
+            legacy.execSQL(
+                "CREATE TABLE gallery (GID INTEGER PRIMARY KEY, ARCID TEXT, TITLE TEXT, " +
+                    "POSTED TEXT, CATEGORY INTEGER, THUMB TEXT, UPLOADER TEXT, RATING REAL)"
+            )
+            legacy.execSQL("CREATE TABLE history (GID INTEGER PRIMARY KEY, MODE INTEGER)")
+            legacy.execSQL("INSERT INTO gallery VALUES (1, 'arc-a', 'T', NULL, 0, '', NULL, 0)")
+            legacy.execSQL("INSERT INTO history VALUES (1, 0)")
+        }
+
+        LegacyDb.mergeOldDB(context)
+
+        assertTrue("an incomplete merge keeps its source", dbFile.exists())
+        assertTrue(LegacyDb.shouldMerge(context))
+    }
+
+    @Test
+    fun mergeOldDB_secondRunOverSameFile_changesNothing() = runTest {
+        // A run that did not complete leaves the file; the retry must not
+        // duplicate or alter what the first run wrote.
+        fun seed() = seedLegacy(
+            listOf(1 to "arc-a"),
+            history = listOf(Triple(1, 1, 2_000L)),
+            favorites = listOf(1),
+            quickSearches = listOf("Saved" to "artist:x"),
+        )
+        seed()
+        LegacyDb.mergeOldDB(context)
+        val rows = db.archiveLocalStateDao().getAllHistory()
+        val searches = db.browsingDao().getAllQuickSearch().map { it.name to it.keyword }
+
+        seed()
+        LegacyDb.mergeOldDB(context)
+
+        assertEquals(rows, db.archiveLocalStateDao().getAllHistory())
+        assertEquals(searches, db.browsingDao().getAllQuickSearch().map { it.name to it.keyword })
+        assertEquals(1, searches.size)
     }
 }
