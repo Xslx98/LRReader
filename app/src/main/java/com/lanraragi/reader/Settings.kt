@@ -143,14 +143,4 @@ object Settings {
     fun putIntToStr(key: String, value: Int) {
         sSettingsPre.edit { putString(key, value.toString()) }
     }
-
-    private const val KEY_VERSION_CODE = "version_code"
-    private const val DEFAULT_VERSION_CODE = 0
-
-    @JvmStatic
-    fun getVersionCode(): Int = getInt(KEY_VERSION_CODE, DEFAULT_VERSION_CODE)
-
-    @JvmStatic
-    fun putVersionCode(value: Int) = putInt(KEY_VERSION_CODE, value)
-
 }

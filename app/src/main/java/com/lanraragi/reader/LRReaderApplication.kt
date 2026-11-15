@@ -536,33 +536,11 @@ class LRReaderApplication : SceneApplication() {
             }
         }
 
-        // Check app update
-        update()
-
-        // Update version code — BuildConfig is the same value at compile time,
-        // so skip the PackageManager binder call and only write on change.
-        if (Settings.getVersionCode() != BuildConfig.VERSION_CODE) {
-            Settings.putVersionCode(BuildConfig.VERSION_CODE)
-        }
-
         if (DEBUG_PRINT_NATIVE_MEMORY || DEBUG_PRINT_IMAGE_COUNT) {
             debugPrint()
         }
 
         initialized = true
-    }
-
-    /**
-     * Persist the current package's versionCode so future first-launch hooks
-     * can detect upgrades. The historical EhViewer code keyed first-launch
-     * tutorials off `version < 52` here; that branch was unreachable under
-     * LR Reader's `MAJOR*10000 + MINOR*100 + PATCH` scheme (smallest
-     * value 10000) so it was removed. If a real first-launch hook is needed
-     * later, gate it on `Settings.getVersionCode() == 0` (fresh install).
-     */
-    private fun update() {
-        // Intentionally empty — kept as the documented integration point for
-        // future versionCode-driven upgrades.
     }
 
     /** Publishes an unseen database quarantine for MainActivity's notice (REL-02). IO thread. */
