@@ -29,8 +29,8 @@ class LRRUrlHelperTestClientTest {
     @Test
     fun buildTestClient_stripsAuthAndCleartextInterceptors() {
         val base = OkHttpClient.Builder()
-            .addNetworkInterceptor(LRRCleartextRejectionInterceptor())
-            .addNetworkInterceptor(LRRAuthInterceptor())
+            .addNetworkInterceptor(LRRCleartextRejectionInterceptor { null })
+            .addNetworkInterceptor(LRRAuthInterceptor { null })
             .build()
 
         val test = LRRUrlHelper.buildTestClient(base)

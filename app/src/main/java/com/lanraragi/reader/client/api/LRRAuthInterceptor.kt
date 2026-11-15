@@ -2,11 +2,11 @@ package com.lanraragi.reader.client.api
 
 import android.util.Base64
 import android.util.Log
-import com.lanraragi.reader.ServiceRegistry
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response
+import com.lanraragi.reader.server.ProfileLookupCache
 import com.lanraragi.reader.server.ProfileUrlCandidate
 import com.lanraragi.reader.server.ServerSession
 
@@ -34,7 +34,10 @@ import com.lanraragi.reader.server.ServerSession
  *    matching against [ServerSession.getServerUrl] so requests issued
  *    during the first few ms of process life still authenticate correctly.
  */
-class LRRAuthInterceptor : Interceptor {
+class LRRAuthInterceptor(
+    /** The profile lookup; may throw or be null while the app is still booting. */
+    private val profileLookupCache: () -> ProfileLookupCache?,
+) : Interceptor {
 
     companion object {
         private const val TAG = "LRRAuthInterceptor"
@@ -42,7 +45,7 @@ class LRRAuthInterceptor : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
-        val cache = runCatching { ServiceRegistry.dataModule.profileLookupCache }
+        val cache = runCatching(profileLookupCache)
             .getOrNull()
         val candidates = cache?.findParsedCandidatesByHostPort(
             original.url.host, original.url.port,

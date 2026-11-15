@@ -9072,7 +9072,7 @@ PLcom/lanraragi/reader/client/api/LRRArchiveApi$updateProgress$2;->invoke(Lkotli
 PLcom/lanraragi/reader/client/api/LRRArchiveApi$updateProgress$2;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
 Lcom/lanraragi/reader/client/api/LRRAuthInterceptor;
 HSPLcom/lanraragi/reader/client/api/LRRAuthInterceptor;-><clinit>()V
-HSPLcom/lanraragi/reader/client/api/LRRAuthInterceptor;-><init>()V
+HSPLcom/lanraragi/reader/client/api/LRRAuthInterceptor;-><init>(Lkotlin/jvm/functions/Function0;)V
 HSPLcom/lanraragi/reader/client/api/LRRAuthInterceptor;->intercept(Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;
 HSPLcom/lanraragi/reader/client/api/LRRAuthInterceptor;->interceptViaActive(Lokhttp3/Interceptor$Chain;)Lokhttp3/Response;
 Lcom/lanraragi/reader/client/api/LRRAuthInterceptor$Companion;
@@ -9120,7 +9120,7 @@ PLcom/lanraragi/reader/client/api/LRRCategoryApi$getArchiveCategories$2$1;->invo
 PLcom/lanraragi/reader/client/api/LRRCategoryApi$getArchiveCategories$2$1;->invoke(Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 PLcom/lanraragi/reader/client/api/LRRCategoryApi$getArchiveCategories$2$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
 Lcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;
-HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;-><init>()V
+HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;-><init>(Lkotlin/jvm/functions/Function0;)V
 HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;->cleartextPermitted(ZLokhttp3/HttpUrl;)Z
 HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;->enforceActiveBased(Lokhttp3/Interceptor$Chain;Lokhttp3/Request;Lokhttp3/HttpUrl;)Lokhttp3/Response;
 HSPLcom/lanraragi/reader/client/api/LRRCleartextRejectionInterceptor;->enforceProfileBased(Lokhttp3/Interceptor$Chain;Lokhttp3/Request;Lokhttp3/HttpUrl;Ljava/util/List;)Lokhttp3/Response;
