@@ -24,13 +24,6 @@ class GalleryDetailEvents(
         // fragment alive); the previous fragment-scoped launches stacked one
         // collector set per re-attach.
 
-        // Capture the server-side rating exactly once per detail-page
-        // entry. The cache-hit / process-death-restore paths take
-        // STATE_NORMAL straight from `prepareData` and never reach
-        // `onGetArchiveDetailSuccessInternal`, so the capture lives here.
-        // (StateFlow replay + the isNaN guard make re-subscription a no-op.)
-        collectFlow(owner, viewModel.archiveDetail) { _ ->
-        }
         // Drive REFRESH→NORMAL transitions off the dedicated load-event
         // SharedFlow rather than the deduped archiveDetail StateFlow.
         // A refresh that returns identical content would otherwise leave

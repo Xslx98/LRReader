@@ -16,7 +16,6 @@
 
 package com.lanraragi.reader.ui.scene.gallery.detail
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -40,8 +39,6 @@ import com.lanraragi.reader.widget.Ripples
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.LoadImageView
-import java.text.SimpleDateFormat
-import java.util.Date
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.ui.readableErrorText
 
@@ -129,10 +126,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.arcid.value
         set(value) { viewModel.setArcid(value) }
 
-    /** Rating when the scene was opened, used to detect changes on exit. */
-
-    private var properties: MutableMap<String, String>? = null
-
     /** Shortcut delegating to [GalleryDetailViewModel.state]. */
     private var mState: Int
         get() = viewModel.state.value
@@ -207,17 +200,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             onInit()
         } else {
             onRestore(savedInstanceState)
-        }
-
-        val a = mArchive
-        if (properties == null && a != null) {
-            val date = Date()
-            @SuppressLint("SimpleDateFormat")
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-            properties = HashMap<String, String>().apply {
-                put("Title", a.title)
-                put("Time", dateFormat.format(date))
-            }
         }
     }
 
@@ -434,8 +416,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionHandler = null
 
         pageThumbs.clear()
-
-        properties = null
     }
 
     private fun prepareData(): Boolean {
@@ -451,12 +431,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
 
         // Do request
-        return request()
-    }
-
-    @Suppress("UNUSED_PARAMETER")
-    private fun request(url: String, resultMode: Int): Boolean {
-        // LANraragi: ignore E-Hentai URL, fetch archive metadata via LRRArchiveApi
         return request()
     }
 
@@ -617,8 +591,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
     companion object {
-        private const val REQUEST_CODE_COMMENT_GALLERY = 0
-
         private const val STATE_INIT = GalleryDetailViewModel.STATE_INIT
         private const val STATE_NORMAL = GalleryDetailViewModel.STATE_NORMAL
         private const val STATE_REFRESH = GalleryDetailViewModel.STATE_REFRESH
