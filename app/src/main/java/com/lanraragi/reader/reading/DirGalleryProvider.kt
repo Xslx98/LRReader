@@ -150,6 +150,9 @@ class DirGalleryProvider : GalleryProvider2 {
 
     @Volatile
     private var sizeValue: Int = STATE_WAIT
+
+    /** Written with [sizeValue] = STATE_ERROR off the GL thread, read by [getError] on it. */
+    @Volatile
     private var errorMessage: String? = null
 
     /**
@@ -582,8 +585,9 @@ class DirGalleryProvider : GalleryProvider2 {
                 }
 
                 if (files == null) {
-                    sizeValue = STATE_ERROR
+                    // Message first: a reader that sees STATE_ERROR must also see it.
                     errorMessage = GetText.getString(R.string.error_not_folder_path)
+                    sizeValue = STATE_ERROR
                     notifyDataChanged()
                     Log.i(TAG, "ImageDecoder end with error")
                     return@launch
