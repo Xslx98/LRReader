@@ -28,10 +28,16 @@
 # 8192 B approved for PRs C-E; apk.file unchanged). dex and res stay.
 # 2026-11-11 (owner-approved): dex +8192 for the tank-detail badge refresh and
 # wheel-burst follow-ups (3771184 -> 3779376). Only dex moves.
+# 2026-11-15 (owner-approved, state unification plan 2026-11): apk.download
+# +8192 B (2502870 -> 2511062) and dex +16384 B (3779376 -> 3795760) for the
+# whole plan (PRs 1.1-5.5). main had 44 B of download headroom left; PR 1.1
+# (#126, legacy-DB merge runs once) alone grew it by 432 B. The plan's
+# phases 2 and 5 delete code, so all budgets are re-seeded to the measured
+# arm64 release when the plan's last PR lands. Only these two move.
 tolerance.percent 1.5
 apk.file        5242448
-apk.download    2502870
-dex             3779376
+apk.download    2511062
+dex             3795760
 lib                6400
 res             1350000
 assets            14000
