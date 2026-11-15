@@ -174,7 +174,10 @@ class EasyRecyclerViewTest {
         parcel.recycle()
 
         setUp()
+        events.clear()
         list.onRestoreInstanceState(restored)
+        // The listener hears about the restored mode (audit 2026-11-15 B4).
+        assertEquals(listOf("into"), events)
         assertTrue(list.isInCustomChoice)
         assertEquals(2, list.checkedItemCount)
         assertTrue(list.isItemChecked(6))
