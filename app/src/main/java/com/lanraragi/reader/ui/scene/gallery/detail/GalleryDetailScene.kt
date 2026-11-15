@@ -16,7 +16,6 @@
 
 package com.lanraragi.reader.ui.scene.gallery.detail
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -30,7 +29,6 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
 import com.lanraragi.reader.domain.ArchiveDetail
-import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import com.lanraragi.framework.util.AssertUtils
@@ -132,8 +130,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         set(value) { viewModel.setState(value) }
 
 
-    private var mContext: Context? = null
-    private var activity: MainActivity? = null
 
 
     private fun handleArgs(args: Bundle?) {
@@ -517,11 +513,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     override fun onClick(v: View) {
         val ctx = getEHContext() ?: return
-        mContext = ctx
-        activity = activity2
-        if (activity == null) {
-            return
-        }
+        val activity = activity2 ?: return
 
         if (mTip === v) {
             if (request()) {
@@ -533,13 +525,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
     override fun onLongClick(v: View): Boolean {
-        mContext = getEHContext()
-        activity = activity2
-        if (activity == null) {
-            return false
-        }
-
-        return mActionHandler?.onLongClick(v, mContext ?: return false, activity) ?: false
+        val ctx = getEHContext() ?: return false
+        val activity = activity2 ?: return false
+        return mActionHandler?.onLongClick(v, ctx, activity) ?: false
     }
 
 
