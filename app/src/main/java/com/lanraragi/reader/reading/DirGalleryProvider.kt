@@ -47,7 +47,6 @@ import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
@@ -152,23 +151,6 @@ class DirGalleryProvider : GalleryProvider2 {
     @Volatile
     private var sizeValue: Int = STATE_WAIT
     private var errorMessage: String? = null
-
-    /**
-     * False until the first [start] cycle has either applied a stored
-     * scroll fraction or decided there is none worth restoring. While
-     * false, [putScrollFraction] suppresses writes that would clobber
-     * the stored fraction with `0` — the GalleryView's first
-     * onUpdateCurrentIndex(0) callback fires almost instantly for a
-     * downloaded archive (local file enum is synchronous), and without
-     * this guard the saved fraction is overwritten before the async
-     * metadata + DB read in [start] has a chance to consume it.
-     *
-     * Online (LRRGalleryProvider) avoids the race because its file list
-     * round-trip is slow enough that the parallel-async fraction read
-     * always lands first; we add the guard here for symmetry and to
-     * cover any future scenario where the file list arrives quickly.
-     */
-    private val initialRestoreCompleted = AtomicBoolean(false)
 
     /**
      * Set on the first user-driven page change after open (any
@@ -342,10 +324,6 @@ class DirGalleryProvider : GalleryProvider2 {
     override fun start() {
         super.start()
 
-        // Reset the save gate for this start cycle. stop() may have
-        // flipped it earlier; we want each fresh open to re-do the
-        // initial restore window.
-        initialRestoreCompleted.set(false)
         userNavigated = openedOnOtherPage(startPageValue)
         startPageBaseline = startPageValue
         readAnchor = startPageValue
@@ -395,7 +373,7 @@ class DirGalleryProvider : GalleryProvider2 {
         // and jump if newer / non-zero. The fraction read runs in
         // parallel with the metadata fetch so its value is captured
         // before any onUpdateCurrentIndex(0) callback can clobber the
-        // stored row — see the [initialRestoreCompleted] KDoc above.
+        // stored row (putScrollFraction also never persists 0).
         if (arcId != null && context != null) {
             scope.launch {
                 // Kick off both reads in parallel. fractionDeferred is
@@ -547,61 +525,46 @@ class DirGalleryProvider : GalleryProvider2 {
                                             resolvedPage
                                         }
                                         DiagLog.i(DIAG_TAG, "dir jump page=$target fraction=$savedFraction")
-                                        try {
-                                            if (savedFraction > 0f) {
-                                                gvNow.setCurrentPageScrollFraction(target, savedFraction)
-                                                // Captured-var template: R8 cannot strip it, so gate it.
-                                                if (BuildConfig.DEBUG) {
-                                                    Log.i(TAG, "[PROGRESS] setCurrentPageScrollFraction(" +
-                                                            "$target, $savedFraction) called")
-                                                }
-                                            } else {
-                                                gvNow.setCurrentPage(target)
-                                                if (BuildConfig.DEBUG) {
-                                                    Log.i(TAG, "[PROGRESS] setCurrentPage($target) called")
-                                                }
+                                        if (savedFraction > 0f) {
+                                            gvNow.setCurrentPageScrollFraction(target, savedFraction)
+                                            // Captured-var template: R8 cannot strip it, so gate it.
+                                            if (BuildConfig.DEBUG) {
+                                                Log.i(TAG, "[PROGRESS] setCurrentPageScrollFraction(" +
+                                                        "$target, $savedFraction) called")
                                             }
-                                        } finally {
-                                            initialRestoreCompleted.set(true)
+                                        } else {
+                                            gvNow.setCurrentPage(target)
+                                            if (BuildConfig.DEBUG) {
+                                                Log.i(TAG, "[PROGRESS] setCurrentPage($target) called")
+                                            }
                                         }
                                     } else {
                                         DiagLog.i(DIAG_TAG, "dir jump dropped: view=${gvNow != null} navigated=$userNavigated")
-                                        initialRestoreCompleted.set(true)
                                     }
                                 }
                             } else {
                                 DiagLog.i(DIAG_TAG, "dir jump dropped: no view")
-                                initialRestoreCompleted.set(true)
                             }
                         } else {
                             // Nothing to restore, or the user already navigated —
-                            // open the save gate and leave them where they are.
+                            // leave them where they are.
                             DiagLog.i(DIAG_TAG, "dir no jump: resolved=$resolvedPage navigated=$userNavigated")
                             if (userNavigated) {
                                 Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
                             }
-                            initialRestoreCompleted.set(true)
                         }
                     } else {
-                        // No saved fraction and no server progress — open
-                        // the gate immediately.
+                        // No saved fraction and no server progress.
                         DiagLog.i(DIAG_TAG, "dir no jump: nothing saved")
-                        initialRestoreCompleted.set(true)
                     }
                 } catch (e: CancellationException) {
-                    // Reader closed mid-restore (NET-3): release the save gate
-                    // without logging a spurious restore-failure warning.
-                    initialRestoreCompleted.set(true)
+                    // Reader closed mid-restore (NET-3): no spurious
+                    // restore-failure warning.
                     throw e
                 } catch (e: Exception) {
                     Log.w(TAG, "[PROGRESS] Restore flow failed: ${e.message}")
-                    initialRestoreCompleted.set(true)
                 }
             }
-        } else {
-            // Provider was constructed without arcid/context — no save
-            // path is possible anyway, but flip the gate for symmetry.
-            initialRestoreCompleted.set(true)
         }
 
         // Build the file list, then spin up the decode workers. We do

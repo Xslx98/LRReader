@@ -108,12 +108,6 @@ class TankGalleryProvider(
     @Volatile
     private var startPageValue: Int = TankProgress.start0(appContext, seed.tankId, seed.serverProgress)
 
-    @Volatile
-    private var startPageBaseline = 0
-
-    @Volatile
-    private var userNavigated = false
-
     /** Serialized + conflated tank global progress sync (app-scoped, survives stop()). */
     private val progressSyncer = ReadingProgressSyncer(
         ServiceRegistry.coroutineModule.ioScope
@@ -154,8 +148,6 @@ class TankGalleryProvider(
 
     override fun start() {
         super.start()
-        userNavigated = openedOnOtherPage(startPageValue)
-        startPageBaseline = startPageValue
         // A page saved while offline never reached the server: push it now.
         TankProgress.pendingPage0(appContext, seed.tankId).takeIf { it >= 0 }?.let(progressSyncer::submit)
 
@@ -250,7 +242,6 @@ class TankGalleryProvider(
     }
 
     override fun putStartPage(page: Int) {
-        if (page != startPageBaseline && hasUserInteracted) userNavigated = true
         startPageValue = page
         saveLocalProgressSoon(page)
         TankProgress.markPending(appContext, seed.tankId, page)

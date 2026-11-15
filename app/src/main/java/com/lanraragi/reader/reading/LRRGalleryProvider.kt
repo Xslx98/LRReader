@@ -149,13 +149,6 @@ class LRRGalleryProvider(
     @Volatile
     private var startPageValue: Int = loadReadingProgress(this.context, arcId, progressProfileId)
 
-    // Local-only intra-page scroll fraction (0.0 ~ 1.0) restored on
-    // start from ARCHIVE_LOCAL_STATE.HISTORY_SCROLL_FRACTION; written
-    // back via putScrollFraction. Only meaningful when reading in
-    // LAYOUT_TOP_TO_BOTTOM (vertical long-strip) mode.
-    @Volatile
-    private var pendingStartScrollFraction: Float = 0f
-
     /** See DirGalleryProvider.userNavigated — same guard for the online reader. */
     @Volatile
     private var userNavigated = false
@@ -391,7 +384,6 @@ class LRRGalleryProvider(
 
                 val finalPage = serverPage
                 val finalFraction = fractionDeferred.await().coerceIn(0f, 1f)
-                pendingStartScrollFraction = finalFraction
                 Log.i(
                     TAG,
                     "[PROGRESS] Final resolved page=$finalPage fraction=$finalFraction"
