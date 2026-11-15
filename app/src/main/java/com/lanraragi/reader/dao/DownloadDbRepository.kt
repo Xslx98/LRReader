@@ -263,6 +263,7 @@ class DownloadDbRepository(
             downloadLabel = downloadInfo.label,
             downloadArchiveUri = downloadInfo.archiveUri,
             downloadRootUri = downloadInfo.downloadRootUri,
+            downloadFailureReason = downloadInfo.failureReason,
         )
     }
 

@@ -289,6 +289,7 @@ object LegacyDb {
                                 downloadLabel = null,
                                 downloadArchiveUri = null,
                                 downloadRootUri = null,
+                                downloadFailureReason = null,
                             )
                             archiveLocalStateDao.fillDownloadIfAbsent(
                                 arcid = gi.arcid,
