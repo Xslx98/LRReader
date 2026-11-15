@@ -32,7 +32,6 @@ import androidx.core.os.BundleCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
-import com.lanraragi.reader.LRReaderApplication
 import com.lanraragi.reader.R
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.framework.util.IntIdGenerator
@@ -993,7 +992,15 @@ class ContentLayout : FrameLayout {
             }
         }
 
-        private var savedDataId = IntIdGenerator.INVALID_ID
+        /**
+         * Where the rows wait between a view-state save and the restore that
+         * follows (a rotation, a scene's view rebuilt from the back stack): the
+         * bundle holds only the paging state, the rows are too big for it. The
+         * host keeps it somewhere that outlives the view, a ViewModel. Null: the
+         * rows are not kept and a restore loads the list again, as it does after
+         * process death either way.
+         */
+        protected open val savedRows: SavedRows<E>? get() = null
 
         open fun saveInstanceState(superState: Parcelable?): Parcelable {
             val bundle = Bundle()
@@ -1002,14 +1009,9 @@ class ContentLayout : FrameLayout {
             bundle.putInt(KEY_SHOWN_VIEW, shownView)
             bundle.putString(KEY_TIP, tipView.text.toString())
 
-            // KNOWN-ISSUE (P2): uses LRReaderApplication global state to persist data across config changes
-            val app = requireContext().applicationContext as LRReaderApplication
-            if (savedDataId != IntIdGenerator.INVALID_ID) {
-                app.removeGlobalStuff(savedDataId)
-                savedDataId = IntIdGenerator.INVALID_ID
-            }
-            savedDataId = app.putGlobalStuff(rows)
-            bundle.putInt(KEY_DATA, savedDataId)
+            val kept = savedRows
+            kept?.keep(rows)
+            bundle.putBoolean(KEY_DATA, kept != null)
 
             bundle.putInt(KEY_NEXT_ID, idGenerator.nextId())
             bundle.putIntArray(KEY_PAGE_DIVIDER, pageDivider.toArray())
@@ -1029,16 +1031,9 @@ class ContentLayout : FrameLayout {
                 viewTransition.showView(state.getInt(KEY_SHOWN_VIEW), false)
                 tipView.text = state.getString(KEY_TIP)
 
-                savedDataId = state.getInt(KEY_DATA)
-                var newData: ArrayList<E>? = null
-                val app = requireContext().applicationContext as LRReaderApplication
-                if (savedDataId != IntIdGenerator.INVALID_ID) {
-                    @Suppress("UNCHECKED_CAST") // saveInstanceState stored this helper's ArrayList<E>
-                    newData = app.removeGlobalStuff(savedDataId) as ArrayList<E>?
-                    savedDataId = IntIdGenerator.INVALID_ID
-                    if (newData != null) {
-                        rows = newData
-                    }
+                val newData = if (state.getBoolean(KEY_DATA)) savedRows?.take() else null
+                if (newData != null) {
+                    rows = newData
                 }
 
                 idGenerator.setNextId(state.getInt(KEY_NEXT_ID))

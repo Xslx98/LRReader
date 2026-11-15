@@ -709,16 +709,6 @@ class LRReaderApplication : SceneApplication() {
         ProcessRebirth.trigger(this)
     }
 
-    // --- GlobalStuff delegation (ContentLayout's saved-rows handoff only) ---
-
-    fun putGlobalStuff(o: Any): Int {
-        return ServiceRegistry.appModule.putGlobalStuff(o)
-    }
-
-    fun removeGlobalStuff(id: Int): Any? {
-        return ServiceRegistry.appModule.removeGlobalStuff(id)
-    }
-
     /**
      * Wrap [block] in a [Trace] section so cold-start profiles attribute time
      * to a named slice.
