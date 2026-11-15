@@ -138,7 +138,7 @@ object LegacyDb {
         val map = HashMap<Long, LegacyGallery>()
         try {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_GALLERY}", null)
-            cursor?.use {
+            cursor.use {
                 if (it.moveToFirst()) {
                     while (!it.isAfterLast) {
                         val gid = it.getInt(0).toLong()
@@ -166,7 +166,7 @@ object LegacyDb {
         // Merge local favorites
         try {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_LOCAL_FAVOURITE}", null)
-            cursor?.use {
+            cursor.use {
                 if (it.moveToFirst()) {
                     var i = 0L
                     while (!it.isAfterLast) {
@@ -193,7 +193,7 @@ object LegacyDb {
         // Merge quick search
         try {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_TAG}", null)
-            cursor?.use {
+            cursor.use {
                 if (it.moveToFirst()) {
                     while (!it.isAfterLast) {
                         val quickSearch = QuickSearch()
@@ -222,7 +222,7 @@ object LegacyDb {
         // Merge download info
         try {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_DOWNLOAD}", null)
-            cursor?.use {
+            cursor.use {
                 if (it.moveToFirst()) {
                     var i = 0L
                     while (!it.isAfterLast) {
@@ -275,7 +275,7 @@ object LegacyDb {
         // Merge history
         try {
             val cursor = oldDB.rawQuery("select * from ${OldDBHelper.TABLE_HISTORY}", null)
-            cursor?.use {
+            cursor.use {
                 if (it.moveToFirst()) {
                     while (!it.isAfterLast) {
                         val gid = it.getInt(0).toLong()
