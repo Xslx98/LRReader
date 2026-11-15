@@ -137,15 +137,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             return
         }
 
-        // The ViewModels are scene-scoped; new arguments for this same scene
-        // must still not be shadowed by the previous entry's state via the
-        // detail > info > args fallback in viewModel.getEffective*().
-        viewModel.resetForNewEntry()
-        // Same for the thumbnail grid VM —
-        // without this, navigating from archive A to archive B would
-        // briefly show A's pageStates against B's archive.
-        pageThumbsViewModel.resetForNewEntry()
-
         val action = args.getString(KEY_ACTION)
         mAction = action
         if (ACTION_ARCHIVE == action) {
@@ -160,29 +151,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
     }
 
-    /**
-     * The [GalleryDetailViewModel] is Activity-scoped and shared across every stacked
-     * GalleryDetailScene. On re-attach (a sibling detail was pushed then popped) it may
-     * still hold the other scene's archive, which would render here as the wrong gallery
-     * — and route ratings/edits to the wrong arcid. This scene's own identity lives only
-     * in its nav [arguments]; if the VM's effective arcid no longer matches, replay
-     * [handleArgs] to reset and re-point both view models before binding.
-     */
-    private fun reassertOwnEntryIfStale() {
-        val args = arguments ?: return
-        val ownArcid = args.getParcelable<com.lanraragi.reader.domain.Archive>(KEY_ARCHIVE)?.arcid ?: return
-        if (viewModel.getEffectiveArcid() != ownArcid) {
-            handleArgs(args)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         viewModel = ViewModelProvider(this)[GalleryDetailViewModel::class.java]
-        // Activity-scoped just like [viewModel]; obtaining it before onInit()
-        // so handleArgs() can call resetForNewEntry() on it during a new
-        // archive entry, mirroring [GalleryDetailViewModel.resetForNewEntry].
+        // Scene-scoped like [viewModel]; each detail scene owns both.
         pageThumbsViewModel =
             ViewModelProvider(this)[PageThumbnailsViewModel::class.java]
         pageThumbs = DetailPageThumbs(this, viewModel, pageThumbsViewModel)
@@ -233,9 +206,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         savedInstanceState: Bundle?
     ): View? {
         val context = getEHContext()
-        // Re-point the shared Activity-scoped ViewModel at this scene's archive if a
-        // sibling detail scene left it pointing elsewhere, before reading any VM state.
-        reassertOwnEntryIfStale()
         // Get download state
         viewModel.initDownloadState(viewModel.getEffectiveArcid())
 

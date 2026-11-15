@@ -50,7 +50,7 @@ import com.lanraragi.reader.module.Cacheable
  * deliberately *not* invalidated on detail-page navigation — the
  * ViewModel keeps it warm so a back→forward navigation reuses already
  * decoded thumbnails (see
- * [com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel.resetForNewEntry]).
+ * [com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel.start]).
  * Per-page keys are arcid-scoped so a different archive's pages can
  * never collide. [invalidate] is available for explicit per-archive
  * eviction but currently has no caller.

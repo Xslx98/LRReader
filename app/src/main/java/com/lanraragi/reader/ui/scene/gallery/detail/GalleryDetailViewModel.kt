@@ -268,39 +268,6 @@ class GalleryDetailViewModel : ViewModel() {
         _state.value = state
     }
 
-    /**
-     * Clear every per-entry state flow so a fresh navigation does not inherit
-     * the previous gallery's data.
-     *
-     * Why this exists: this ViewModel is scoped via
-     * `ViewModelProvider(requireActivity())`, so the same instance is reused
-     * across `GalleryDetailScene` navigations. The `getEffective*()` accessors
-     * fall back as `archiveDetail > archive > args`. Without an explicit
-     * reset, the previously loaded `_archiveDetail` shadows the newly
-     * written `_archive` and every effective arcid returns the stale
-     * gallery — the new detail page renders the old gallery, downloads its
-     * file, etc. The reader path is unaffected because it goes through an
-     * Intent with the Archive embedded directly, bypassing the ViewModel.
-     *
-     * Must be called by `GalleryDetailScene.handleArgs()` before writing the
-     * new arguments to the flows.
-     */
-    fun resetForNewEntry() {
-        detailPreloadJob?.cancel()
-        detailPreloadJob = null
-        requestJob?.cancel()
-        requestJob = null
-        detailRequestEvents.clear()
-        _action.value = null
-        _arcid.value = null
-        _archive.value = null
-        _archiveDetail.value = null
-        _favoriteState.value = null
-        _currentRating.value = null
-        _downloadState.value = DownloadState.INVALID
-        _state.value = STATE_INIT
-    }
-
     // -------------------------------------------------------------------------
     // Derived accessors
     // -------------------------------------------------------------------------
@@ -408,7 +375,7 @@ class GalleryDetailViewModel : ViewModel() {
         }
         // Lazily started so the flow does not run (and does not touch
         // ServiceRegistry / SharedPreferences) until the Scene subscribes.
-        // Avoids needless work on Activity-scoped VM construction and keeps
+        // Avoids needless work on VM construction and keeps
         // unit tests (which never collect) free of Android dependencies.
         .stateIn(viewModelScope, SharingStarted.Lazily, ReadingProgressTracker.NO_LOCAL_PROGRESS)
 
