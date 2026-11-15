@@ -25,7 +25,7 @@ import androidx.core.graphics.createBitmap
 // By default CanvasTexture is not opaque.
 // Public (Java had it package-private): Kotlin has no package visibility and
 // the public StringTexture extends it.
-abstract class CanvasTexture(width: Int, height: Int) : UploadedTexture() {
+internal abstract class CanvasTexture(width: Int, height: Int) : UploadedTexture() {
     private val config: Bitmap.Config = Bitmap.Config.ARGB_8888
 
     init {

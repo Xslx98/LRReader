@@ -22,7 +22,7 @@ import com.lanraragi.framework.lib.glview.view.GLView
 import com.lanraragi.framework.lib.glview.view.Gravity
 import kotlin.math.max
 
-class GLImageMovableTextView : GLView() {
+internal class GLImageMovableTextView : GLView() {
 
     private var textTexture: ImageMovableTextTexture? = null
 

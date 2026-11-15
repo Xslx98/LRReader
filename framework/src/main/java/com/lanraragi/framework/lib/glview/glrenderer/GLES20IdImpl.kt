@@ -4,7 +4,7 @@ import android.opengl.GLES20
 import javax.microedition.khronos.opengles.GL11
 import javax.microedition.khronos.opengles.GL11ExtensionPack
 
-class GLES20IdImpl : GLId {
+internal class GLES20IdImpl : GLId {
     private val tempIntArray = IntArray(1)
 
     override fun generateTexture(): Int {

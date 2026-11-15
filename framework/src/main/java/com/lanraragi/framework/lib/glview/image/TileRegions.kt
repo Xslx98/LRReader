@@ -11,7 +11,7 @@ import android.graphics.RectF
  * tiles instead of all of them; the gap between the two margins keeps a small
  * back-and-forth scroll from releasing and re-uploading the same tiles.
  */
-object TileRegions {
+internal object TileRegions {
 
     const val UPLOAD_MARGIN_SCREENS = 1f
     const val KEEP_MARGIN_SCREENS = 2f

@@ -24,7 +24,7 @@ import android.os.SystemClock
 // time just after eglSwapBuffers (when GLSurfaceView.onDrawFrame is called)
 // as a approximation.
 //
-object AnimationTime {
+internal object AnimationTime {
     @Volatile
     private var time: Long = 0
 

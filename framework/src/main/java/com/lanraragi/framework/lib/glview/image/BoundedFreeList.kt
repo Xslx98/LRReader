@@ -5,7 +5,7 @@ package com.lanraragi.framework.lib.glview.image
  * GL tiles keep their texture allocated, so the pool size is VRAM held after
  * the pages that used them are gone (audit 2026-10-13 PERF-02).
  */
-class BoundedFreeList<T : Any>(private val capacity: Int) {
+internal class BoundedFreeList<T : Any>(private val capacity: Int) {
 
     private val items = ArrayDeque<T>()
 

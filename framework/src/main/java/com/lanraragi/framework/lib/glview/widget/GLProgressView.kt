@@ -30,7 +30,7 @@ import com.lanraragi.framework.lib.glview.view.GLView
 import kotlin.math.max
 import kotlin.math.min
 
-class GLProgressView : GLView() {
+internal class GLProgressView : GLView() {
 
     private val paint: GLPaint
 

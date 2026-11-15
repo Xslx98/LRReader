@@ -21,7 +21,7 @@ import androidx.annotation.IntDef
 import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 import com.lanraragi.framework.lib.glview.view.GLView
 
-class GLEdgeView(color: Int) : GLView() {
+internal class GLEdgeView(color: Int) : GLView() {
 
     @IntDef(TOP, LEFT, BOTTOM, RIGHT)
     @Retention(AnnotationRetention.SOURCE)
