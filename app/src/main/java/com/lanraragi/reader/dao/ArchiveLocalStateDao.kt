@@ -35,6 +35,7 @@ data class DownloadUpsertRow(
     val downloadLabel: String?,
     val downloadArchiveUri: String?,
     val downloadRootUri: String?,
+    val downloadFailureReason: DownloadFailureReason?,
 )
 
 /**
@@ -60,6 +61,7 @@ data class DownloadObservedRow(
     @ColumnInfo(name = "DOWNLOAD_ARCHIVE_URI") val downloadArchiveUri: String?,
     @ColumnInfo(name = "DOWNLOAD_ROOT_URI") val downloadRootUri: String?,
     @ColumnInfo(name = "DOWNLOAD_TANK_ID") val downloadTankId: String?,
+    @ColumnInfo(name = "DOWNLOAD_FAILURE_REASON") val downloadFailureReason: DownloadFailureReason? = null,
 )
 
 /** Value carrier for [ArchiveLocalStateDao.upsertHistoryBatch]. */
@@ -117,7 +119,7 @@ interface ArchiveLocalStateDao {
     @Query(
         "SELECT ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, " +
             "DOWNLOAD_LEGACY, DOWNLOAD_TIME, DOWNLOAD_LABEL, " +
-            "DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI, DOWNLOAD_TANK_ID " +
+            "DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI, DOWNLOAD_TANK_ID, DOWNLOAD_FAILURE_REASON " +
             "FROM ARCHIVE_LOCAL_STATE " +
             "WHERE DOWNLOAD_STATE IS NOT NULL " +
             "ORDER BY DOWNLOAD_TIME DESC"
@@ -226,7 +228,7 @@ interface ArchiveLocalStateDao {
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
             "DOWNLOAD_STATE = NULL, DOWNLOAD_LEGACY = 0, DOWNLOAD_TIME = NULL, " +
             "DOWNLOAD_LABEL = NULL, DOWNLOAD_ARCHIVE_URI = NULL, " +
-            "DOWNLOAD_ROOT_URI = NULL " +
+            "DOWNLOAD_ROOT_URI = NULL, DOWNLOAD_FAILURE_REASON = NULL " +
             "WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL"
     )
     suspend fun clearDownloadSubsystem(arcid: String)
@@ -316,10 +318,11 @@ interface ArchiveLocalStateDao {
     @Query(
         "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +
             "(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, DOWNLOAD_STATE, DOWNLOAD_LEGACY, " +
-            "DOWNLOAD_TIME, DOWNLOAD_LABEL, DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI) " +
+            "DOWNLOAD_TIME, DOWNLOAD_LABEL, DOWNLOAD_ARCHIVE_URI, DOWNLOAD_ROOT_URI, " +
+            "DOWNLOAD_FAILURE_REASON) " +
             "VALUES (:arcid, :serverProfileId, :archiveJson, :downloadState, " +
             ":downloadLegacy, :downloadTime, :downloadLabel, :downloadArchiveUri, " +
-            ":downloadRootUri)"
+            ":downloadRootUri, :downloadFailureReason)"
     )
     suspend fun insertOrIgnoreDownload(
         arcid: String,
@@ -331,6 +334,7 @@ interface ArchiveLocalStateDao {
         downloadLabel: String?,
         downloadArchiveUri: String?,
         downloadRootUri: String?,
+        downloadFailureReason: DownloadFailureReason?,
     )
 
     @Suppress("LongParameterList")
@@ -342,7 +346,8 @@ interface ArchiveLocalStateDao {
             "DOWNLOAD_TIME = :downloadTime, " +
             "DOWNLOAD_LABEL = :downloadLabel, " +
             "DOWNLOAD_ARCHIVE_URI = :downloadArchiveUri, " +
-            "DOWNLOAD_ROOT_URI = :downloadRootUri " +
+            "DOWNLOAD_ROOT_URI = :downloadRootUri, " +
+            "DOWNLOAD_FAILURE_REASON = :downloadFailureReason " +
             "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :serverProfileId"
     )
     suspend fun updateDownloadFields(
@@ -355,6 +360,7 @@ interface ArchiveLocalStateDao {
         downloadLabel: String?,
         downloadArchiveUri: String?,
         downloadRootUri: String?,
+        downloadFailureReason: DownloadFailureReason?,
     )
 
     /**
@@ -589,14 +595,15 @@ interface ArchiveLocalStateDao {
         downloadLabel: String?,
         downloadArchiveUri: String?,
         downloadRootUri: String?,
+        downloadFailureReason: DownloadFailureReason?,
     ) {
         insertOrIgnoreDownload(
-            arcid, serverProfileId, archiveJson, downloadState,
-            downloadLegacy, downloadTime, downloadLabel, downloadArchiveUri, downloadRootUri
+            arcid, serverProfileId, archiveJson, downloadState, downloadLegacy, downloadTime,
+            downloadLabel, downloadArchiveUri, downloadRootUri, downloadFailureReason
         )
         updateDownloadFields(
-            arcid, serverProfileId, archiveJson, downloadState,
-            downloadLegacy, downloadTime, downloadLabel, downloadArchiveUri, downloadRootUri
+            arcid, serverProfileId, archiveJson, downloadState, downloadLegacy, downloadTime,
+            downloadLabel, downloadArchiveUri, downloadRootUri, downloadFailureReason
         )
     }
 
@@ -710,7 +717,7 @@ interface ArchiveLocalStateDao {
         upsertDownload(
             r.arcid, r.serverProfileId, r.archiveJson, r.downloadState,
             r.downloadLegacy, r.downloadTime, r.downloadLabel,
-            r.downloadArchiveUri, r.downloadRootUri
+            r.downloadArchiveUri, r.downloadRootUri, r.downloadFailureReason
         )
     }
 

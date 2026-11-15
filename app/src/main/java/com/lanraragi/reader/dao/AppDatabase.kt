@@ -46,10 +46,10 @@ import kotlinx.serialization.json.Json
         DailyReadingAggregate::class,
         TankDownloadGroup::class
     ],
-    version = 31,
+    version = 32,
     exportSchema = true
 )
-@TypeConverters(DateConverter::class, DownloadStateConverter::class)
+@TypeConverters(DateConverter::class, DownloadStateConverter::class, DownloadFailureReasonConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun downloadDao(): DownloadRoomDao
@@ -90,7 +90,7 @@ abstract class AppDatabase : RoomDatabase() {
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, name)
                 .openHelperFactory(QuarantiningOpenHelperFactory())
                 .addCallback(DownloadArcidGuard)
-                .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
+                .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32)
                 .build()
 
         /**
@@ -400,6 +400,19 @@ abstract class AppDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS `index_SEARCH_HISTORY_SERVER_PROFILE_ID_LAST_USED` " +
                         "ON `SEARCH_HISTORY` (`SERVER_PROFILE_ID`, `LAST_USED`)"
                 )
+            }
+        }
+
+        /**
+         * v31 → v32: `DOWNLOAD_FAILURE_REASON` on `ARCHIVE_LOCAL_STATE`, the
+         * [DownloadFailureReason] name of a FAILED download's last run (null
+         * otherwise), so the downloads card can show why after a restart
+         * (audit 2026-11-15 B3). Purely additive.
+         */
+        @VisibleForTesting
+        internal val MIGRATION_31_32 = object : Migration(31, 32) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `ARCHIVE_LOCAL_STATE` ADD COLUMN `DOWNLOAD_FAILURE_REASON` TEXT")
             }
         }
 

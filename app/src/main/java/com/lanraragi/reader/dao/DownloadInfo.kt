@@ -131,8 +131,9 @@ class DownloadInfo {
     /**
      * Why the last run of this download failed (audit C21), shown on the
      * card and in the completion notification. Set by the scheduler when a
-     * run ends FAILED, cleared when the next run starts; in memory only,
-     * never persisted, so a FAILED row loaded at boot has none.
+     * run ends FAILED, cleared when the next run starts, and persisted with
+     * the row (`DOWNLOAD_FAILURE_REASON`, schema v32), so a FAILED row keeps
+     * its reason across restarts and on the Room-decoded list items.
      */
     @JvmField
     var failureReason: DownloadFailureReason? = null
@@ -168,6 +169,7 @@ class DownloadInfo {
             archiveUri = src.archiveUri
             downloadRootUri = src.downloadRootUri
             tankId = src.tankId
+            failureReason = src.failureReason
             pagecount = src.pagecount
         }
     }

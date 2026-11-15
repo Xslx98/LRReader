@@ -158,7 +158,7 @@ class RoomMigrationV30V31Test {
         v30Helper.close()
 
         val room = Room.databaseBuilder(ctx, AppDatabase::class.java, name)
-            .addMigrations(AppDatabase.MIGRATION_30_31)
+            .addMigrations(AppDatabase.MIGRATION_30_31, AppDatabase.MIGRATION_31_32)
             .build()
         try {
             room.openHelper.writableDatabase

@@ -105,6 +105,13 @@ data class ArchiveLocalState(
     @ColumnInfo(name = "DOWNLOAD_TANK_ID")
     val downloadTankId: String? = null,
 
+    /**
+     * Why the last failed run failed (schema v32); cleared when a run starts.
+     * Only read while the row is FAILED.
+     */
+    @ColumnInfo(name = "DOWNLOAD_FAILURE_REASON")
+    val downloadFailureReason: DownloadFailureReason? = null,
+
     // ── History subsystem ──────────────────────────────────────
     /** Non-null iff the archive has reading history. */
     @ColumnInfo(name = "HISTORY_TIME")

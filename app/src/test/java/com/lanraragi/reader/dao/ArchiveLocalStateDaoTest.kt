@@ -322,6 +322,7 @@ class ArchiveLocalStateDaoTest {
                 downloadLabel = null,
                 downloadArchiveUri = null,
                 downloadRootUri = null,
+                downloadFailureReason = null,
             )
         }
 

@@ -122,7 +122,7 @@ class HistoryRepositoryTankFoldTest {
     @Test
     fun fold_memberWithDownloadFlag_keepsRow_dropsOnlyHistory() = runTest {
         putHistoryAt(M1, 1_000L)
-        dao.upsertDownload(M1, 1L, archive(M1).toJson(), DownloadState.FINISH, 0, 1L, null, null, null)
+        dao.upsertDownload(M1, 1L, archive(M1).toJson(), DownloadState.FINISH, 0, 1L, null, null, null, null)
 
         repo.foldMembersIntoTank(TANK, 1L, listOf(M1), archive(TANK))
 

@@ -32,6 +32,7 @@ internal class DownloadInfoDiffCallback(
         val newItem = newList[newItemPosition]
         return oldItem.state == newItem.state &&
             oldItem.legacy == newItem.legacy &&
+            oldItem.failureReason == newItem.failureReason &&
             oldItem.label == newItem.label &&
             oldItem.title == newItem.title &&
             oldItem.thumb == newItem.thumb &&

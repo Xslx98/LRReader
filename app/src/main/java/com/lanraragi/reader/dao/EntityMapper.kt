@@ -166,6 +166,7 @@ fun ArchiveLocalState.toDownloadInfoView(): DownloadInfo {
     info.archiveUri = downloadArchiveUri
     info.downloadRootUri = downloadRootUri
     info.tankId = downloadTankId
+    info.failureReason = downloadFailureReason
     info.pagecount = archive.pagecount
     return info
 }
@@ -191,6 +192,7 @@ fun DownloadObservedRow.toDownloadInfoView(): DownloadInfo {
     info.archiveUri = downloadArchiveUri
     info.downloadRootUri = downloadRootUri
     info.tankId = downloadTankId
+    info.failureReason = downloadFailureReason
     info.pagecount = archive.pagecount
     return info
 }
