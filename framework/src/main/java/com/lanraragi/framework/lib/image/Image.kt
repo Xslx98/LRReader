@@ -157,8 +157,6 @@ class Image private constructor(
     val isRecycled: Boolean
         get() = mDrawableRef.get() == null
 
-    private var started = false
-
     @Synchronized
     fun recycle() {
         val drawable = mDrawableRef.getAndSet(null) ?: return
@@ -303,10 +301,8 @@ class Image private constructor(
     }
 
     fun start() {
-        if (!started) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                (mDrawableRef.get() as? AnimatedImageDrawable)?.start()
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            (mDrawableRef.get() as? AnimatedImageDrawable)?.start()
         }
     }
 
