@@ -19,7 +19,7 @@ package com.lanraragi.framework.lib.glview.util
 import android.graphics.Matrix
 import android.view.MotionEvent
 
-object MotionEventHelper {
+internal object MotionEventHelper {
 
     @JvmStatic
     fun transformEvent(e: MotionEvent, m: Matrix): MotionEvent {

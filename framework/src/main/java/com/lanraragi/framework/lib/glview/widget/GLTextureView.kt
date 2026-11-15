@@ -21,7 +21,7 @@ import com.lanraragi.framework.lib.glview.glrenderer.GLCanvas
 import com.lanraragi.framework.lib.glview.glrenderer.Texture
 import com.lanraragi.framework.lib.glview.view.GLView
 
-class GLTextureView : GLView() {
+internal class GLTextureView : GLView() {
 
     private val src = RectF()
     private val dst = RectF()

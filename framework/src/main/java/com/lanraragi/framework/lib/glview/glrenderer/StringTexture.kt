@@ -29,7 +29,7 @@ import kotlin.math.ceil
 //
 // To create a StringTexture, use the newInstance() method and specify
 // the String, the font size, and the color.
-class StringTexture private constructor(
+internal class StringTexture private constructor(
     private val text: String,
     private val paint: TextPaint,
     private val metrics: FontMetricsInt,

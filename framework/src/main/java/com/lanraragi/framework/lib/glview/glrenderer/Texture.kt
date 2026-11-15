@@ -30,7 +30,7 @@ import android.graphics.RectF
 //       -- CanvasTexture
 //          -- StringTexture
 //
-interface Texture {
+internal interface Texture {
     fun getWidth(): Int
     fun getHeight(): Int
     fun draw(canvas: GLCanvas, x: Int, y: Int)

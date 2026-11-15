@@ -35,7 +35,7 @@ import javax.microedition.khronos.opengles.GL11
 //
 // By default an UploadedTexture is opaque (so it can be drawn faster without
 // blending). The user or subclass can override it using setOpaque().
-abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
+internal abstract class UploadedTexture protected constructor(hasBorder: Boolean) :
     BasicTexture(null, 0, STATE_UNLOADED) {
 
     private var contentValid = true

@@ -21,7 +21,7 @@ import com.lanraragi.framework.lib.glview.view.GLView
 import com.lanraragi.framework.lib.glview.view.Gravity
 import kotlin.math.max
 
-class GLLinearLayout : GLView() {
+internal class GLLinearLayout : GLView() {
 
     @IntDef(HORIZONTAL, VERTICAL)
     @Retention(AnnotationRetention.SOURCE)

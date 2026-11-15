@@ -18,4 +18,4 @@ package com.lanraragi.framework.lib.glview.annotation
 
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CONSTRUCTOR, AnnotationTarget.CLASS)
-annotation class RenderThread
+internal annotation class RenderThread

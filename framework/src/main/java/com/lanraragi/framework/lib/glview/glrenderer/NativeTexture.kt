@@ -20,7 +20,7 @@ import android.opengl.GLES20
 import android.util.Log
 import javax.microedition.khronos.opengles.GL11
 
-abstract class NativeTexture : BasicTexture() {
+internal abstract class NativeTexture : BasicTexture() {
 
     private var contentValid = true
 

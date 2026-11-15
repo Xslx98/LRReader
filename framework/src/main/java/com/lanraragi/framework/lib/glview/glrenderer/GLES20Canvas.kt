@@ -37,7 +37,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 @Suppress("LargeClass") // the whole GLCanvas over one GL state; splitting it would put the draw path behind another object
-class GLES20Canvas : GLCanvas {
+internal class GLES20Canvas : GLCanvas {
 
     // Keep track of restore state
     private var matrices = FloatArray(INITIAL_RESTORE_STATE_SIZE * MATRIX_SIZE)

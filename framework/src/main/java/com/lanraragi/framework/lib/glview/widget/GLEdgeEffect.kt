@@ -31,7 +31,7 @@ import kotlin.math.sqrt
 /**
  * Material design edge effect
  */
-class GLEdgeEffect(color: Int) {
+internal class GLEdgeEffect(color: Int) {
 
     private var glowAlpha = 0f
     private var glowScaleY = 0f

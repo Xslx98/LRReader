@@ -18,7 +18,7 @@ package com.lanraragi.framework.lib.glview.anim
 
 import com.lanraragi.framework.util.MathUtils
 
-open class FloatAnimation : Animation() {
+internal open class FloatAnimation : Animation() {
 
     private var from = 0f
     private var to = 0f
