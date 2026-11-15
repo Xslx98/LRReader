@@ -53,7 +53,7 @@ object ServiceRegistry {
      */
     fun initialize(context: Context) {
         cacheables.clear()
-        _appModule = AppModule(context).also { it.initialize() }
+        _appModule = AppModule(context)
         _coroutineModule = CoroutineModule(debugRethrow = CoroutineModule::rethrowOnMainInDebug)
         val network = NetworkModule(context)
         _networkModule = network

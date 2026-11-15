@@ -62,12 +62,9 @@ fun stubDataModule(): IDataModule = object : IDataModule {
     override fun clearArchiveDetailCache() {}
 }
 
-/** [IAppModule] that only supplies [context]; the global-stuff and temp caches are inert. */
+/** [IAppModule] that only supplies [context]; nothing else. */
 fun stubAppModule(context: Context): IAppModule = object : IAppModule {
     override fun getContext(): Context = context
-    override fun initialize() {}
-    override fun putGlobalStuff(o: Any): Int = 0
-    override fun removeGlobalStuff(id: Int): Any? = null
 }
 
 private fun unsupported(): Nothing = throw UnsupportedOperationException()

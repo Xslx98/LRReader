@@ -5,18 +5,15 @@ import android.util.Log
 import com.lanraragi.reader.diagnostics.Analytics
 import com.lanraragi.reader.diagnostics.Crash
 import com.lanraragi.reader.LRReaderApplication
-import com.lanraragi.reader.Settings
-import com.lanraragi.framework.util.IntIdGenerator
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
-import java.lang.ref.WeakReference
 
 /**
- * Application-level utilities: the global object registry (ContentLayout's saved rows).
+ * Application-level utilities: the application context.
  * Extracted from LRReaderApplication to reduce its responsibility scope.
  *
  * Also hosts the early-boot [bootScope]/[bootCEH] used by [LRReaderApplication.onCreate]
@@ -29,26 +26,7 @@ class AppModule(private val context: Context) : IAppModule {
     /** Returns the application context. Use instead of LRReaderApplication.getInstance(). */
     override fun getContext(): Context = context
 
-    private val idGenerator = IntIdGenerator()
-    private val globalStuffMap = HashMap<Int, WeakReference<Any>>()
-
-    override fun initialize() {
-        idGenerator.setNextId(Settings.getInt(KEY_GLOBAL_STUFF_NEXT_ID, 0))
-    }
-
-    // --- Global Stuff Registry ---
-
-    override fun putGlobalStuff(o: Any): Int {
-        val id = idGenerator.nextId()
-        globalStuffMap[id] = WeakReference(o)
-        Settings.putInt(KEY_GLOBAL_STUFF_NEXT_ID, idGenerator.nextId())
-        return id
-    }
-
-    override fun removeGlobalStuff(id: Int): Any? = globalStuffMap.remove(id)?.get()
-
     companion object {
-        private const val KEY_GLOBAL_STUFF_NEXT_ID = "global_stuff_next_id"
         private const val BOOT_TAG = "AppModule.bootScope"
 
         @JvmStatic

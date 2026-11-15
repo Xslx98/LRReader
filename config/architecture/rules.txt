@@ -51,9 +51,8 @@ D9  | ^com\.lanraragi\.(?!reader\.download(\.|$)) | import | ^com\.lanraragi\.re
 D10a | ^com\.lanraragi\.(?!reader(\.dao(\.|$)|$)) | import | ^com\.lanraragi\.reader\.(dao\.legacy\.)?LegacyDb$ | -
 D10b | ^com\.lanraragi\.reader\.ui(\.|$)       | text   | ViewModelProvider\(requireActivity\(\)\) | -
 
-# D11 GlobalStuff, a process-wide id -> object handoff map, is retired: pass data through
-#    Scene args or keep it on a ViewModel. Only the module that implements it is exempt; the
-#    Application's forwarders and their one caller are in the allowlist until both go.
+# D11 GlobalStuff, a process-wide id -> object handoff map, is retired (removed 2026-11): pass
+#    data through Scene args or keep it on a ViewModel. The rule stays so it does not come back.
 D11 | ^com\.lanraragi\.reader(\.(?!module$)\w+|$) | text | \b(put|remove)GlobalStuff\( | -
 
 # D12 framework.util is a leaf: the rest of the framework and the app build on it.
