@@ -358,6 +358,29 @@ interface ArchiveLocalStateDao {
     )
 
     /**
+     * Give the `(arcid, serverProfileId)` row download columns only when it
+     * has none yet. Pairs with [insertOrIgnoreDownload] for a one-shot import
+     * (the legacy-DB merge): a row the import created for another subsystem
+     * gains the download, while a live download and the row's `ARCHIVE_JSON`
+     * are never overwritten.
+     */
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET " +
+            "DOWNLOAD_STATE = :downloadState, " +
+            "DOWNLOAD_LEGACY = :downloadLegacy, " +
+            "DOWNLOAD_TIME = :downloadTime " +
+            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :serverProfileId " +
+            "AND DOWNLOAD_STATE IS NULL"
+    )
+    suspend fun fillDownloadIfAbsent(
+        arcid: String,
+        serverProfileId: Long,
+        downloadState: DownloadState,
+        downloadLegacy: Int,
+        downloadTime: Long,
+    )
+
+    /**
      * Backfill legacy download rows that pre-date the
      * DOWNLOAD_ROOT_URI column with the user's current download
      * location URI. Idempotent — only NULL rows are touched, so
@@ -428,6 +451,26 @@ interface ArchiveLocalStateDao {
         historyMode: Int,
     )
 
+    /**
+     * Give the `(arcid, serverProfileId)` row history columns only when it has
+     * none yet; see [fillDownloadIfAbsent]. With the composite primary key each
+     * profile owns its own row, so this never touches another profile's row
+     * (ADR-003).
+     */
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET " +
+            "HISTORY_TIME = :historyTime, " +
+            "HISTORY_MODE = :historyMode " +
+            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :serverProfileId " +
+            "AND HISTORY_TIME IS NULL"
+    )
+    suspend fun fillHistoryIfAbsent(
+        arcid: String,
+        serverProfileId: Long,
+        historyTime: Long,
+        historyMode: Int,
+    )
+
     @Query(
         "INSERT OR IGNORE INTO ARCHIVE_LOCAL_STATE " +
             "(ARCID, SERVER_PROFILE_ID, ARCHIVE_JSON, FAVORITE_TIME) " +
@@ -441,20 +484,18 @@ interface ArchiveLocalStateDao {
     )
 
     /**
-     * Update the favorite columns of the `(arcid, serverProfileId)` row.
-     * Per-profile rows make the old download-ownership CASE guard
-     * unnecessary (see [updateHistoryFields]).
+     * Give the `(arcid, serverProfileId)` row a favorite time only when it has
+     * none yet; see [fillDownloadIfAbsent].
      */
     @Query(
         "UPDATE ARCHIVE_LOCAL_STATE SET " +
-            "ARCHIVE_JSON = :archiveJson, " +
             "FAVORITE_TIME = :favoriteTime " +
-            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :serverProfileId"
+            "WHERE ARCID = :arcid AND SERVER_PROFILE_ID = :serverProfileId " +
+            "AND FAVORITE_TIME IS NULL"
     )
-    suspend fun updateFavoriteFields(
+    suspend fun fillFavoriteIfAbsent(
         arcid: String,
         serverProfileId: Long,
-        archiveJson: String,
         favoriteTime: Long,
     )
 

@@ -213,11 +213,11 @@ class ArchiveLocalStateDaoTest {
     }
 
     @Test
-    fun updateFavoriteFields_isProfileScoped_leavesOtherProfileDownloadRowIntact() = runTest {
+    fun fillFavoriteIfAbsent_isProfileScoped_leavesOtherProfileDownloadRowIntact() = runTest {
         dao.upsert(row("mirror-f", serverProfileId = 7L, downloadState = DownloadState.FINISH, downloadTime = 1L))
 
         dao.insertOrIgnoreFavorite("mirror-f", 9L, """{"arcid":"mirror-f"}""", 3000L)
-        dao.updateFavoriteFields("mirror-f", 9L, """{"arcid":"mirror-f"}""", 3000L)
+        dao.fillFavoriteIfAbsent("mirror-f", 9L, 3000L)
 
         val downloadRow = dao.loadByArcidAndProfile("mirror-f", 7L)!!
         assertEquals(7L, downloadRow.serverProfileId)
@@ -246,7 +246,7 @@ class ArchiveLocalStateDaoTest {
     @Test
     fun favoriteCountForProfile_isPerProfile() = runTest {
         dao.insertOrIgnoreFavorite("f", 1L, "{}", 100L)
-        dao.updateFavoriteFields("f", 1L, "{}", 100L)
+        dao.fillFavoriteIfAbsent("f", 1L, 100L)
         assertEquals(1, dao.favoriteCountForProfile("f", 1L))
         assertEquals(0, dao.favoriteCountForProfile("f", 2L))
     }

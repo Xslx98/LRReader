@@ -5,12 +5,16 @@ import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.dao.AppDatabase
+import com.lanraragi.reader.dao.ArchiveLocalState
+import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.dao.ArchiveLocalStateJson
 import com.lanraragi.reader.domain.Archive
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -30,6 +34,7 @@ import com.lanraragi.reader.dao.legacy.LegacyDb
  *    that does not throw and leaves the Room DB untouched.
  * 2. A real legacy database merges its history rows with epoch-second lastreadtime.
  */
+@Suppress("DEPRECATION") // upsert() seeds live rows directly
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = android.app.Application::class)
 class LegacyDbMergeOldDbTest {
@@ -124,5 +129,111 @@ class LegacyDbMergeOldDbTest {
         LegacyDb.mergeOldDB(context)
         LegacyDb.mergeOldDB(context)
         assertFalse("needMerge() should be false after merge completes", LegacyDb.needMerge())
+    }
+
+    // ── Legacy data never overwrites live rows (audit 2026-11-15 B1) ──
+
+    /**
+     * Seed a legacy `data` DB with every table the merge reads.
+     * [galleries] are (gid, arcid); [history] (gid, mode, ms); [favorites]
+     * gids; [downloads] (gid, state code, legacy, time).
+     */
+    private fun seedLegacy(
+        galleries: List<Pair<Int, String>>,
+        history: List<Triple<Int, Int, Long>> = emptyList(),
+        favorites: List<Int> = emptyList(),
+        downloads: List<List<Long>> = emptyList(),
+    ) {
+        val dbFile = context.getDatabasePath("data")
+        dbFile.parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(dbFile, null).use { legacy ->
+            legacy.version = 6
+            legacy.execSQL(
+                "CREATE TABLE gallery (GID INTEGER PRIMARY KEY, ARCID TEXT, TITLE TEXT, " +
+                    "POSTED TEXT, CATEGORY INTEGER, THUMB TEXT, UPLOADER TEXT, RATING REAL)"
+            )
+            legacy.execSQL("CREATE TABLE history (GID INTEGER PRIMARY KEY, MODE INTEGER, TIME INTEGER)")
+            legacy.execSQL("CREATE TABLE local_favourite (GID INTEGER PRIMARY KEY)")
+            legacy.execSQL(
+                "CREATE TABLE tag (TIME INTEGER, NAME TEXT, MODE INTEGER, CATEGORY INTEGER, " +
+                    "KEYWORD TEXT, ADVANCE INTEGER, MIN_RATING INTEGER, TAG TEXT)"
+            )
+            legacy.execSQL(
+                "CREATE TABLE download (GID INTEGER PRIMARY KEY, X TEXT, STATE INTEGER, " +
+                    "LEGACY INTEGER, TIME INTEGER)"
+            )
+            galleries.forEach { (gid, arcid) ->
+                legacy.execSQL("INSERT INTO gallery VALUES ($gid, '$arcid', 'T', NULL, 0, '', NULL, 0)")
+            }
+            history.forEach { (gid, mode, ms) -> legacy.execSQL("INSERT INTO history VALUES ($gid, $mode, $ms)") }
+            favorites.forEach { gid -> legacy.execSQL("INSERT INTO local_favourite VALUES ($gid)") }
+            downloads.forEach { (gid, state, left, time) ->
+                legacy.execSQL("INSERT INTO download VALUES ($gid, NULL, $state, $left, $time)")
+            }
+        }
+    }
+
+    @Test
+    fun mergeOldDB_neverOverwritesLiveRoomRow() = runTest {
+        val liveJson = """{"arcid":"arc-live","title":"Live","tags":{"artist":["x"]}}"""
+        db.archiveLocalStateDao().upsert(
+            ArchiveLocalState(
+                arcid = "arc-live", serverProfileId = 0L, archiveJson = liveJson,
+                historyTime = 9_000L, downloadState = DownloadState.FINISH, downloadTime = 5L,
+            )
+        )
+        seedLegacy(
+            listOf(1 to "arc-live"),
+            history = listOf(Triple(1, 0, 1_000L)),
+            favorites = listOf(1),
+            downloads = listOf(listOf(1L, DownloadState.FAILED.code.toLong(), 3L, 77L)),
+        )
+
+        LegacyDb.mergeOldDB(context)
+
+        val row = db.archiveLocalStateDao().loadByArcidAndProfile("arc-live", 0L)!!
+        assertEquals(liveJson, row.archiveJson)
+        assertEquals(9_000L, row.historyTime)
+        assertEquals(DownloadState.FINISH, row.downloadState)
+        assertEquals(5L, row.downloadTime)
+        assertNotNull("an absent subsystem is still filled in", row.favoriteTime)
+    }
+
+    @Test
+    fun mergeOldDB_mergesSeveralSubsystemsOfOneGalleryIntoOneRow() = runTest {
+        seedLegacy(
+            listOf(1 to "arc-both"),
+            history = listOf(Triple(1, 2, 4_000L)),
+            favorites = listOf(1),
+            downloads = listOf(listOf(1L, DownloadState.FINISH.code.toLong(), 0L, 88L)),
+        )
+
+        LegacyDb.mergeOldDB(context)
+
+        val row = db.archiveLocalStateDao().loadByArcidAndProfile("arc-both", 0L)!!
+        assertNotNull(row.favoriteTime)
+        assertEquals(4_000L, row.historyTime)
+        assertEquals(2, row.historyMode)
+        assertEquals(DownloadState.FINISH, row.downloadState)
+        assertEquals(88L, row.downloadTime)
+    }
+
+    @Test
+    fun mergeOldDB_skipsLegacyDownload_whenAnotherProfileAlreadyDownloadsTheArcid() = runTest {
+        db.archiveLocalStateDao().upsert(
+            ArchiveLocalState(
+                arcid = "arc-dl", serverProfileId = 4L, archiveJson = """{"arcid":"arc-dl"}""",
+                downloadState = DownloadState.FINISH, downloadTime = 1L,
+            )
+        )
+        seedLegacy(
+            listOf(1 to "arc-dl"),
+            downloads = listOf(listOf(1L, DownloadState.FINISH.code.toLong(), 0L, 9L)),
+        )
+
+        LegacyDb.mergeOldDB(context)
+
+        assertEquals(1, db.archiveLocalStateDao().getAllDownloads().count { it.arcid == "arc-dl" })
+        assertNull(db.archiveLocalStateDao().loadByArcidAndProfile("arc-dl", 0L))
     }
 }

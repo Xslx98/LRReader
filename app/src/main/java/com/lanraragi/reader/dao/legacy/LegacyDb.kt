@@ -180,7 +180,7 @@ object LegacyDb {
                         val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)
                         val archiveJson = archive.toArchiveJson()
                         archiveLocalStateDao.insertOrIgnoreFavorite(gi.arcid, 0L, archiveJson, i)
-                        archiveLocalStateDao.updateFavoriteFields(gi.arcid, 0L, archiveJson, i)
+                        archiveLocalStateDao.fillFavoriteIfAbsent(gi.arcid, 0L, i)
                         it.moveToNext()
                         i++
                     }
@@ -239,30 +239,29 @@ object LegacyDb {
                             state = com.lanraragi.reader.dao.DownloadState.FAILED
                         }
                         val time = if (it.columnCount == 5) it.getLong(4) else i
-                        val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)
-                        val archiveJson = archive.toArchiveJson()
-                        archiveLocalStateDao.insertOrIgnoreDownload(
-                            arcid = gi.arcid,
-                            serverProfileId = 0L,
-                            archiveJson = archiveJson,
-                            downloadState = state,
-                            downloadLegacy = legacy,
-                            downloadTime = time,
-                            downloadLabel = null,
-                            downloadArchiveUri = null,
-                            downloadRootUri = null,
-                        )
-                        archiveLocalStateDao.updateDownloadFields(
-                            arcid = gi.arcid,
-                            serverProfileId = 0L,
-                            archiveJson = archiveJson,
-                            downloadState = state,
-                            downloadLegacy = legacy,
-                            downloadTime = time,
-                            downloadLabel = null,
-                            downloadArchiveUri = null,
-                            downloadRootUri = null,
-                        )
+                        // One download row per arcid, on any profile (ADR-003):
+                        // an existing download always wins over the legacy one.
+                        if (archiveLocalStateDao.loadDownloadRowByArcid(gi.arcid) == null) {
+                            val archive = shellArchive(gi.arcid, gi.title, gi.thumb, gi.rating)
+                            archiveLocalStateDao.insertOrIgnoreDownload(
+                                arcid = gi.arcid,
+                                serverProfileId = 0L,
+                                archiveJson = archive.toArchiveJson(),
+                                downloadState = state,
+                                downloadLegacy = legacy,
+                                downloadTime = time,
+                                downloadLabel = null,
+                                downloadArchiveUri = null,
+                                downloadRootUri = null,
+                            )
+                            archiveLocalStateDao.fillDownloadIfAbsent(
+                                arcid = gi.arcid,
+                                serverProfileId = 0L,
+                                downloadState = state,
+                                downloadLegacy = legacy,
+                                downloadTime = time,
+                            )
+                        }
                         it.moveToNext()
                         i++
                     }
@@ -294,7 +293,7 @@ object LegacyDb {
                             .copy(lastreadtime = time / 1000L)
                         val archiveJson = archive.toArchiveJson()
                         archiveLocalStateDao.insertOrIgnoreHistory(gi.arcid, 0L, archiveJson, time, mode)
-                        archiveLocalStateDao.updateHistoryFields(gi.arcid, 0L, archiveJson, time, mode)
+                        archiveLocalStateDao.fillHistoryIfAbsent(gi.arcid, 0L, time, mode)
                         it.moveToNext()
                     }
                 }
