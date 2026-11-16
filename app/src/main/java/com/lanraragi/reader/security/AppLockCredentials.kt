@@ -358,6 +358,9 @@ object AppLockCredentials {
      */
     @JvmStatic
     fun lockState(): LockState {
+        // The oldest versions' plaintext pattern locks until the boot step
+        // hashes it; checked first so no mirror is ever written as "unlocked" for it.
+        if (hasLegacyPlaintextPattern()) return LockState.Pattern(keystoreBound = false)
         val hint = lockEnabledHint()
         val locked: Boolean? = hint ?: patternEvidenceWithoutKeystore()?.also { rememberLockState(it) }
             ?: run {
@@ -372,6 +375,14 @@ object AppLockCredentials {
             null -> LockState.Unknown
         }
     }
+
+    /** Settings key of the oldest versions' plaintext pattern (only migrated and removed now). */
+    internal const val KEY_LEGACY_PLAINTEXT_PATTERN = "security"
+
+    internal fun legacyPlaintextPattern(): String =
+        com.lanraragi.reader.Settings.getString(KEY_LEGACY_PLAINTEXT_PATTERN, "").orEmpty()
+
+    internal fun hasLegacyPlaintextPattern(): Boolean = legacyPlaintextPattern().isNotEmpty()
 
     /**
      * Whether a pattern is stored, from plaintext only: true / false, or null

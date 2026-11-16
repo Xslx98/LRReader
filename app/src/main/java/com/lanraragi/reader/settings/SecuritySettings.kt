@@ -3,7 +3,6 @@ package com.lanraragi.reader.settings
 import android.util.Log
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.security.AppLockCredentials
-import com.lanraragi.reader.server.LRRSecureStorageUnavailableException
 
 /**
  * Security-related settings extracted from Settings.java.
@@ -24,15 +23,10 @@ object SecuritySettings {
     fun putEnabledSecurity(value: Boolean) = Settings.putBoolean(KEY_SEC_SECURITY, value)
 
     // --- Password / Pattern Lock ---
-    // Legacy key — used only for one-time migration to hashed storage.
-    private const val KEY_SECURITY = "security"
-
-    /** A pre-hash plaintext pattern is still stored under the legacy Settings key. */
-    private fun hasLegacyPlaintextPattern(): Boolean = !Settings.getString(KEY_SECURITY, "").isNullOrEmpty()
 
     /** @return true if an app-lock pattern is stored (hashed, or the pre-hash plaintext not yet migrated). */
     @JvmStatic
-    fun hasPattern(): Boolean = AppLockCredentials.hasPattern() || hasLegacyPlaintextPattern()
+    fun hasPattern(): Boolean = AppLockCredentials.hasPattern() || AppLockCredentials.hasLegacyPlaintextPattern()
 
     /**
      * Boot step, once the secure store has opened: hash a plaintext pattern
@@ -43,12 +37,15 @@ object SecuritySettings {
      */
     @JvmStatic
     fun migrateLegacyPattern() {
-        val legacy = Settings.getString(KEY_SECURITY, "").orEmpty()
+        val legacy = AppLockCredentials.legacyPlaintextPattern()
         if (legacy.isEmpty()) return
         try {
             AppLockCredentials.setPattern(legacy)
-            Settings.putString(KEY_SECURITY, "")
-        } catch (e: LRRSecureStorageUnavailableException) {
+            Settings.putString(AppLockCredentials.KEY_LEGACY_PLAINTEXT_PATTERN, "")
+        } catch (e: Exception) {
+            // Store unavailable, or no PBKDF2 here: the plaintext stays (still
+            // locked) and the next boot, or an unlock with it, retries. Never
+            // let it abort the rest of the boot.
             Log.e(TAG, "Could not migrate legacy pattern to secure storage", e)
         }
     }
@@ -63,7 +60,7 @@ object SecuritySettings {
      * plaintext pattern not yet migrated ([migrateLegacyPattern]) is locked too.
      */
     @JvmStatic
-    fun isLockEnabled(): Boolean = hasLegacyPlaintextPattern() || AppLockCredentials.lockState().isLocked
+    fun isLockEnabled(): Boolean = AppLockCredentials.lockState().isLocked
 
     /**
      * Whether a lock is known to be set, as opposed to only "cannot be ruled
@@ -72,7 +69,7 @@ object SecuritySettings {
      */
     @JvmStatic
     fun isLockKnownSet(): Boolean =
-        hasLegacyPlaintextPattern() || AppLockCredentials.lockStateWithoutKeystore() == true
+        AppLockCredentials.hasLegacyPlaintextPattern() || AppLockCredentials.lockStateWithoutKeystore() == true
 
     /**
      * Hash and store [pattern] in EncryptedSharedPreferences.
@@ -87,7 +84,22 @@ object SecuritySettings {
      * for KeyStore-bound pattern verification.
      */
     @JvmStatic
-    fun verifyPattern(input: String?): Boolean = AppLockCredentials.verifyPattern(input)
+    fun verifyPattern(input: String?): Boolean {
+        val legacy = AppLockCredentials.legacyPlaintextPattern()
+        if (legacy.isEmpty() || AppLockCredentials.hasPattern()) return AppLockCredentials.verifyPattern(input)
+        // Only the plaintext exists (the boot step has not run yet, or the store
+        // was down at boot): check it, with the same lockout, and hash it on success.
+        if (AppLockCredentials.isLockedOut()) return false
+        val ok = input != null &&
+            java.security.MessageDigest.isEqual(input.toByteArray(Charsets.UTF_8), legacy.toByteArray(Charsets.UTF_8))
+        if (ok) {
+            AppLockCredentials.resetFailures()
+            migrateLegacyPattern()
+        } else {
+            AppLockCredentials.recordFailure()
+        }
+        return ok
+    }
 
     // --- Lockout ---
 

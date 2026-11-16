@@ -106,4 +106,28 @@ class LockStateTest {
 
         assertEquals("getters have no side effect", "0369", Settings.getString("security", ""))
     }
+
+    @Test
+    fun plaintextOnly_isLockedByLockStateItself_andNeverRemembersUnlocked() {
+        AppLockCredentials.setPattern(null)
+        SecureCredentialStore.plainPrefs!!.edit { remove("app_lock_enabled") }
+        Settings.putString("security", "0369")
+
+        assertEquals(LockState.Pattern(keystoreBound = false), AppLockCredentials.lockState())
+        assertEquals("no mirror written as unlocked", null, AppLockCredentials.lockEnabledHint())
+    }
+
+    @Test
+    fun plaintextOnly_unlocksWithThatPattern_andHashesIt() {
+        AppLockCredentials.setPattern(null)
+        Settings.putString("security", "0369")
+
+        assertFalse(SecuritySettings.verifyPattern("1111"))
+        assertEquals("a wrong try counts toward the lockout", 1, AppLockCredentials.getFailureCount())
+
+        assertTrue(SecuritySettings.verifyPattern("0369"))
+        assertEquals("", Settings.getString("security", ""))
+        assertEquals(0, AppLockCredentials.getFailureCount())
+        assertTrue("now checked against the hash", SecuritySettings.verifyPattern("0369"))
+    }
 }
