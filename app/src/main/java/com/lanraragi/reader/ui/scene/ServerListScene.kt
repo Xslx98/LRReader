@@ -25,6 +25,7 @@ import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
+import com.lanraragi.reader.widget.StateListLayout
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.scene.StageActivity
 
@@ -43,7 +44,7 @@ class ServerListScene : BaseScene() {
     private lateinit var dialogHelper: ServerListDialogHelper
 
     private var mRecyclerView: RecyclerView? = null
-    private var mEmptyText: TextView? = null
+    private var mStateList: StateListLayout? = null
     private var mAdapter: ServerAdapter? = null
     private var mReauthDialogShown = false
 
@@ -71,8 +72,10 @@ class ServerListScene : BaseScene() {
         val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.setNavigationOnClickListener { onBackPressed() }
 
-        mRecyclerView = view.findViewById(R.id.recycler_view)
-        mEmptyText = view.findViewById(R.id.empty_text)
+        mStateList = view.findViewById<StateListLayout>(R.id.state_list).apply {
+            onRetry = { viewModel.loadProfiles() }
+        }
+        mRecyclerView = view.findViewById(R.id.state_content)
         val fab = view.findViewById<FloatingActionButton>(R.id.fab_add)
 
         mRecyclerView?.layoutManager = LinearLayoutManager(getEHContext())
@@ -113,9 +116,9 @@ class ServerListScene : BaseScene() {
         // collectors stacked one set per re-attach — applyProfileSwitch
         // (cache clear + reload + navigation) ran once per accumulated
         // collector for a single ProfileActivated event.
-        collectFlow(viewLifecycleOwner, viewModel.profiles) { profiles ->
-            mProfiles.submit(profiles)
-            mEmptyText?.visibility = if (profiles.isEmpty()) View.VISIBLE else View.GONE
+        collectFlow(viewLifecycleOwner, viewModel.state) { state ->
+            mProfiles.submit(state.items)
+            mStateList?.render(state)
         }
 
         // Observe one-shot UI events. These are buffered channel events that drive
@@ -343,7 +346,7 @@ class ServerListScene : BaseScene() {
     override fun onDestroyView() {
         super.onDestroyView()
         mRecyclerView = null
-        mEmptyText = null
+        mStateList = null
         mAdapter = null
         mProfiles.adapter = null
         dialogHelper.clearDialogRefs()

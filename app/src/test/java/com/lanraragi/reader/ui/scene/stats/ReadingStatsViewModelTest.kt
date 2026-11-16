@@ -14,6 +14,8 @@ import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.domain.Archive
+import com.lanraragi.reader.ui.list.ListScreenState
+import com.lanraragi.reader.stubAppModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -22,6 +24,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,6 +57,7 @@ class ReadingStatsViewModelTest {
 
         ServiceRegistry.initializeForTest(
             coroutine = CoroutineModule(),
+            app = stubAppModule(ctx),
             data = object : IDataModule {
                 override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
                 override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
@@ -101,16 +105,36 @@ class ReadingStatsViewModelTest {
         val vm = ReadingStatsViewModel(serverExcludedNamespaces = { emptySet() })
         vm.load()
         // load() hops to Dispatchers.IO; wait until the Unconfined resume lands.
-        // Wait on the exact asserted condition (isLoading reset happens AFTER the
+        // Wait on the exact asserted condition (the state settles AFTER the
         // stats emission) — waiting on stats alone races the final assert.
-        awaitUntil { vm.stats.value != null && !vm.isLoading.value }
+        awaitUntil { vm.state.value !is ListScreenState.Loading }
 
-        val stats = vm.stats.value!!
+        val stats = vm.state.value.items.single()
         assertEquals(2, stats.totalArchives)
         assertEquals(1, stats.completedCount)
         assertEquals(15L, stats.totalPagesRead)
         assertEquals("Home", stats.perServer.single().serverName)
-        assertEquals(false, vm.isLoading.value)
+        assertTrue(vm.state.value is ListScreenState.Content)
+    }
+
+    /** Nothing read yet is the empty screen, not a page of zeros. */
+    @Test
+    fun load_withNothingRead_isEmpty() {
+        val vm = ReadingStatsViewModel(serverExcludedNamespaces = { emptySet() })
+        vm.load()
+        awaitUntil { vm.state.value !is ListScreenState.Loading }
+
+        assertEquals(ListScreenState.Empty, vm.state.value)
+    }
+
+    /** A failed load is the error with its retry; it used to look like "nothing read yet". */
+    @Test
+    fun load_failure_isTheError() {
+        val vm = ReadingStatsViewModel(serverExcludedNamespaces = { throw java.io.IOException("unreachable") })
+        vm.load()
+        awaitUntil { vm.state.value !is ListScreenState.Loading }
+
+        assertTrue("state: ${vm.state.value}", vm.state.value is ListScreenState.Error)
     }
 
     @Test
@@ -130,7 +154,7 @@ class ReadingStatsViewModelTest {
 
         val vm = ReadingStatsViewModel(serverExcludedNamespaces = { setOf("artist") })
         vm.load()
-        awaitUntil { vm.tagPreference.value != null && !vm.isLoading.value }
+        awaitUntil { vm.tagPreference.value != null && vm.state.value !is ListScreenState.Loading }
 
         val pref = vm.tagPreference.value!!
         assertEquals(emptyList<String>(), pref.artists.map { it.tag })

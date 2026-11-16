@@ -31,7 +31,9 @@ import com.lanraragi.reader.ui.list.ListScreenState
  *   nothing retained (a failure that kept items shows them; the screen
  *   reports it through its own one-shot event);
  * - [R.id.state_content]: the list (or any content view), shown whenever
- *   there are items, also when a reload failed and kept them.
+ *   there are items, also when a reload failed and kept them;
+ * - [R.id.state_empty], optional: the screen's own empty look (a big icon
+ *   and text), shown for an empty answer instead of the message slot.
  * Any other child (a toolbar, a footer, a FAB) is left alone.
  */
 class StateListLayout @JvmOverloads constructor(
@@ -54,6 +56,7 @@ class StateListLayout @JvmOverloads constructor(
     private val progress: View? get() = slot(R.id.state_progress)
     private val message: View? get() = slot(R.id.state_message)
     private val content: View? get() = slot(R.id.state_content)
+    private val empty: View? get() = slot(R.id.state_empty)
 
     /** A direct child only: a nested StateListLayout keeps its own slots. */
     private fun slot(id: Int): View? = (0 until childCount).map(::getChildAt).firstOrNull { it.id == id }
@@ -63,9 +66,12 @@ class StateListLayout @JvmOverloads constructor(
         val showContent = state.items.isNotEmpty()
         progress?.visibility = if (state is ListScreenState.Loading) VISIBLE else GONE
         content?.visibility = if (showContent) VISIBLE else GONE
+        val emptySlot = empty
+        emptySlot?.visibility = if (state is ListScreenState.Empty) VISIBLE else GONE
         val messageSlot = message ?: return
         when {
             showContent || state is ListScreenState.Loading -> messageSlot.visibility = GONE
+            state is ListScreenState.Empty && emptySlot != null -> messageSlot.visibility = GONE
             state is ListScreenState.Error -> showMessage(
                 messageSlot,
                 title = context.getText(R.string.lrr_error_title),

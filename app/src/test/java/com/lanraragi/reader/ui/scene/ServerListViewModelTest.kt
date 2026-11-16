@@ -425,10 +425,10 @@ class ServerListViewModelTest {
         val vm = newVm()
         vm.loadProfiles()
 
-        awaitUntil { vm.profiles.value.size == 2 }
-        assertTrue("First profile should be active", vm.profiles.value[0].isActive)
-        assertFalse("Second profile should be inactive", vm.profiles.value[1].isActive)
-        assertEquals("Active", vm.profiles.value[0].name)
+        awaitUntil { vm.state.value.items.size == 2 }
+        assertTrue("First profile should be active", vm.state.value.items[0].isActive)
+        assertFalse("Second profile should be inactive", vm.state.value.items[1].isActive)
+        assertEquals("Active", vm.state.value.items[0].name)
     }
 
     // ── activateProfile ────────────────────────────────────────────
@@ -513,7 +513,7 @@ class ServerListViewModelTest {
 
         val vm = newVm()
         vm.loadProfiles()
-        awaitUntil { vm.profiles.value.size == 1 }
+        awaitUntil { vm.state.value.items.size == 1 }
 
         vm.deleteProfile(profile)
 
@@ -529,12 +529,12 @@ class ServerListViewModelTest {
 
         val vm = newVm()
         vm.loadProfiles()
-        awaitUntil { vm.profiles.value.size == 2 }
+        awaitUntil { vm.state.value.items.size == 2 }
 
         vm.deleteProfile(toDelete)
-        awaitUntil { vm.profiles.value.size == 1 }
+        awaitUntil { vm.state.value.items.size == 1 }
 
-        assertEquals("Keep", vm.profiles.value[0].name)
+        assertEquals("Keep", vm.state.value.items[0].name)
     }
 
     /**

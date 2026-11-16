@@ -4,9 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.appbar.MaterialToolbar
@@ -17,6 +15,8 @@ import com.lanraragi.reader.stats.ReadingStatsCalculator
 import com.lanraragi.reader.stats.TagPreferenceCalculator
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.collectFlow
+import com.lanraragi.reader.ui.list.ListScreenState
+import com.lanraragi.reader.widget.StateListLayout
 import com.lanraragi.framework.widget.AutoWrapLayout
 import java.util.Locale
 
@@ -29,9 +29,7 @@ import java.util.Locale
 class ReadingStatsScene : BaseScene() {
 
     private var mToolbar: MaterialToolbar? = null
-    private var mProgress: FrameLayout? = null
-    private var mEmpty: TextView? = null
-    private var mScroll: ScrollView? = null
+    private var mStateList: StateListLayout? = null
     private var mTotalValue: TextView? = null
     private var mCompletedValue: TextView? = null
     private var mPagesValue: TextView? = null
@@ -54,9 +52,9 @@ class ReadingStatsScene : BaseScene() {
         viewModel = ViewModelProvider(this)[ReadingStatsViewModel::class.java]
 
         mToolbar = view.findViewById(R.id.toolbar)
-        mProgress = view.findViewById(R.id.progress)
-        mEmpty = view.findViewById(R.id.empty_view)
-        mScroll = view.findViewById(R.id.content_scroll)
+        mStateList = view.findViewById<StateListLayout>(R.id.state_list).apply {
+            onRetry = { viewModel.load() }
+        }
         mTotalValue = view.findViewById(R.id.stat_total_value)
         mCompletedValue = view.findViewById(R.id.stat_completed_value)
         mPagesValue = view.findViewById(R.id.stat_pages_value)
@@ -71,27 +69,27 @@ class ReadingStatsScene : BaseScene() {
             setNavigationOnClickListener { onBackPressed() }
         }
 
-        collectFlow(viewLifecycleOwner, viewModel.stats) { stats ->
-            if (stats != null) bind(stats)
+        collectFlow(viewLifecycleOwner, viewModel.state) { state ->
+            state.items.firstOrNull()?.let(::bind)
+            mStateList?.render(state)
         }
         collectFlow(viewLifecycleOwner, viewModel.tagPreference) { preference ->
             if (preference != null) bindTagPreference(preference)
         }
-        collectFlow(viewLifecycleOwner, viewModel.isLoading) { loading ->
-            mProgress?.visibility = if (loading) View.VISIBLE else View.GONE
-            if (!loading) applyContentVisibility()
-        }
 
-        viewModel.load()
+        // A rotation keeps the ViewModel and its state (an error stays with its
+        // retry); a new view otherwise (first open, coming back to this
+        // screen, a restore after process death) loads.
+        if (savedInstanceState == null || viewModel.state.value is ListScreenState.Loading) {
+            viewModel.load()
+        }
         return view
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         mToolbar = null
-        mProgress = null
-        mEmpty = null
-        mScroll = null
+        mStateList = null
         mTotalValue = null
         mCompletedValue = null
         mPagesValue = null
@@ -99,13 +97,6 @@ class ReadingStatsScene : BaseScene() {
         mRecentContainer = null
         mSectionRecent = null
         mTagPreferenceContainer = null
-    }
-
-    private fun applyContentVisibility() {
-        val stats = viewModel.stats.value
-        val empty = stats == null || stats.totalArchives == 0
-        mEmpty?.visibility = if (empty) View.VISIBLE else View.GONE
-        mScroll?.visibility = if (empty) View.GONE else View.VISIBLE
     }
 
     private fun bind(stats: ReadingStatsCalculator.ReadingStats) {
@@ -137,8 +128,6 @@ class ReadingStatsScene : BaseScene() {
                 container.addView(singleLineRow(entry.title))
             }
         }
-
-        applyContentVisibility()
     }
 
     private fun bindTagPreference(preference: TagPreferenceCalculator.TagPreference) {

@@ -19,8 +19,14 @@
         app:titleTextColor="@android:color/white"
         app:navigationIconTint="@android:color/white" />
 
+    <!-- One slot per screen state (StateListLayout.render) -->
+    <com.lanraragi.reader.widget.StateListLayout
+        android:id="@+id/state_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
     <FrameLayout
-        android:id="@+id/progress"
+        android:id="@+id/state_progress"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone">
@@ -32,8 +38,15 @@
 
     </FrameLayout>
 
+    <include
+        android:id="@+id/state_message"
+        layout="@layout/view_error_state"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
     <TextView
-        android:id="@+id/empty_view"
+        android:id="@+id/state_empty"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
@@ -43,7 +56,7 @@
         android:visibility="gone" />
 
     <ScrollView
-        android:id="@+id/content_scroll"
+        android:id="@+id/state_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone">
@@ -174,5 +187,7 @@
         </LinearLayout>
 
     </ScrollView>
+
+    </com.lanraragi.reader.widget.StateListLayout>
 
 </LinearLayout>
