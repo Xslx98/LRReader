@@ -64,20 +64,32 @@ class TankMembershipSync(
         val pagecount: Int,
     )
 
-    /** Returns true when any local row changed (group rewrite or fold). */
-    suspend fun sync(profileId: Long, baseUrl: String, tanks: List<TankTruth>): Boolean {
-        var changed = false
-        var folded = false
+    /** What one [sync] did, per tank id. */
+    data class SyncOutcome(
+        /** Tanks whose downloaded group row followed the server. */
+        val regrouped: Set<String> = emptySet(),
+        /** Tanks whose members' history folded into the tank's row. */
+        val folded: Set<String> = emptySet(),
+        /** Tanks whose sync threw; the others still ran. */
+        val failed: Set<String> = emptySet(),
+    ) {
+        /** Any local row changed (group rewrite or fold). */
+        val changed: Boolean get() = regrouped.isNotEmpty() || folded.isNotEmpty()
+    }
+
+    suspend fun sync(profileId: Long, baseUrl: String, tanks: List<TankTruth>): SyncOutcome {
+        val regrouped = LinkedHashSet<String>()
+        val folded = LinkedHashSet<String>()
+        val failed = LinkedHashSet<String>()
         for (tank in tanks) {
             try {
                 if (downloadDb.reconcileTankGroup(tank.tankId, tank.name, tank.memberIds, profileId) != null) {
-                    changed = true
+                    regrouped += tank.tankId
                 }
                 val fold = history.foldMembersIntoTank(
                     tank.tankId, profileId, tank.memberIds, pseudoArchive(tank, profileId, baseUrl)
                 ) ?: continue
-                changed = true
-                folded = true
+                folded += tank.tankId
                 if (progress.load(tank.tankId) <= 0 && tank.progress > 1) {
                     progress.save(tank.tankId, tank.progress - 1)
                 }
@@ -88,11 +100,12 @@ class TankMembershipSync(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Log.w(TAG, "tank membership sync failed for one tank")
+                failed += tank.tankId
+                Log.e(TAG, "tank membership sync failed for one tank", e)
             }
         }
-        if (folded) refreshWidget()
-        return changed
+        if (folded.isNotEmpty()) refreshWidget()
+        return SyncOutcome(regrouped, folded, failed)
     }
 
     private fun pseudoArchive(tank: TankTruth, profileId: Long, baseUrl: String) = Archive(

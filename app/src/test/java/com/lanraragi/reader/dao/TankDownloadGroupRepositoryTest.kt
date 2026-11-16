@@ -340,9 +340,36 @@ class TankDownloadGroupRepositoryTest {
         assertEquals(TANK, repo.observeDownloads().first().single().tankId)
     }
 
+    /** The tag is derived from the group rows: the boot rebuild repairs stale tags and tags late members. */
+    @Test
+    fun rebuildTankTags_followsTheGroupRows() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B, ARC_C))
+        // C's download row is created after the group row; B carries a stale tag.
+        repo.putDownloadInfo(downloadInfo(ARC_C, "C"))
+        db.archiveLocalStateDao().setDownloadTankId(ARC_B, "TANK_1688009999")
+
+        repo.rebuildTankTags()
+
+        val tags = repo.observeDownloads().first().associate { it.arcid to it.tankId }
+        assertEquals(mapOf(ARC_A to TANK, ARC_B to TANK, ARC_C to TANK), tags)
+    }
+
+    @Test
+    fun rebuildTankTags_untagsRowsOfAGroupThatIsGone() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        db.archiveLocalStateDao().setDownloadTankId(ARC_A, TANK)
+
+        repo.rebuildTankTags()
+
+        assertEquals(null, repo.observeDownloads().first().single().tankId)
+    }
+
     private companion object {
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)
+        val ARC_C = "c".repeat(40)
         const val TANK = "TANK_1688000000"
         const val LEGACY_SQLITE_MAX_VARIABLES = 999
     }

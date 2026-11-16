@@ -145,6 +145,10 @@ interface ArchiveLocalStateDao {
     )
     suspend fun setDownloadTankId(arcid: String, tankId: String?)
 
+    /** Untag every download row (the boot rebuild, [DownloadDbRepository.rebuildTankTags]). */
+    @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TANK_ID = NULL WHERE DOWNLOAD_TANK_ID IS NOT NULL")
+    suspend fun clearAllDownloadTankIds()
+
     /** Untag every member of a dissolved tank in one statement. */
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TANK_ID = NULL WHERE DOWNLOAD_TANK_ID = :tankId")
     suspend fun clearDownloadTankId(tankId: String)
