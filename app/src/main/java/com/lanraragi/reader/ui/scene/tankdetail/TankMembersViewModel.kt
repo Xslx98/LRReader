@@ -21,6 +21,7 @@ import com.lanraragi.reader.tankoubon.TankMemberOrderOps
 import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.tankoubon.TankTagSyncer
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
@@ -59,10 +61,39 @@ class TankMembersViewModel : ViewModel() {
     var profileId: Long = 0L
         private set
 
-    /** Base URL resolved from [profileId] on the first [load]; null before. */
-    @Volatile
-    var baseUrl: String? = null
-        private set
+    /**
+     * What the last [load] learnt about the tank besides its members, as one
+     * value (it replaces six volatile fields that were written one by one).
+     *
+     * @property baseUrl resolved from [profileId] by the first [load]; null before.
+     * @property summary tank summary from the last load; null when the server sent none.
+     * @property tags tank tags from the last load; null when the server sent none.
+     * @property metaLoaded a load succeeded, so [summary]/[tags] hold server
+     *   truth. Gates the edit-metadata menu item: submitting the dialog's
+     *   empty defaults before a successful load would WIPE them server-side.
+     * @property coverFallbackMember FIRST member to render as the cover
+     *   stand-in when the cover probe reported no generated cover (the probe
+     *   also queues generation); null = a real cover exists (or the tank is
+     *   empty / the probe failed). Cleared by a successful [setCover].
+     */
+    data class TankMeta(
+        val baseUrl: String? = null,
+        val summary: String? = null,
+        val tags: String? = null,
+        val metaLoaded: Boolean = false,
+        val coverFallbackMember: Archive? = null,
+    )
+
+    private val _meta = MutableStateFlow(TankMeta())
+
+    /** See [TankMeta]; the scene re-enables the edit-metadata item when it changes. */
+    val meta: StateFlow<TankMeta> = _meta.asStateFlow()
+
+    val baseUrl: String? get() = _meta.value.baseUrl
+    val summary: String? get() = _meta.value.summary
+    val tags: String? get() = _meta.value.tags
+    val metaLoaded: Boolean get() = _meta.value.metaLoaded
+    val coverFallbackMember: Archive? get() = _meta.value.coverFallbackMember
 
     private var initialized = false
 
@@ -75,62 +106,33 @@ class TankMembersViewModel : ViewModel() {
     /** Tank display name; seeded from the nav arg, refreshed by [load]. */
     val tankName: StateFlow<String> = _tankName.asStateFlow()
 
-    private val _members = MutableStateFlow<List<Archive>>(emptyList())
+    private val _state = MutableStateFlow<ListScreenState<Archive>>(ListScreenState.Loading)
 
-    /** Ordered member archives (server order), mapped with source context. */
-    val members: StateFlow<List<Archive>> = _members.asStateFlow()
+    /**
+     * The member list screen: the ordered member archives (server order,
+     * mapped with source context), or loading / empty / the last load's
+     * error. Its items are the ONE holder of the member order; [memberIds]
+     * and [pageOffsets] are read from them.
+     */
+    val state: StateFlow<ListScreenState<Archive>> = _state.asStateFlow()
+
+    /** The ordered members ([state]'s items). */
+    val members: List<Archive> get() = _state.value.items
+
+    private fun on(event: ListScreenState.Event<Archive>) {
+        _state.update { ListScreenState.reduce(it, event) }
+    }
 
     private val _progress = MutableStateFlow(0)
 
     /** Global 1-indexed reading progress; 0/1 = nothing meaningful. */
     val progress: StateFlow<Int> = _progress.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
+    /** Ordered member arcids, read from [members]. */
+    val memberIds: List<String> get() = members.map { it.arcid }
 
-    /** Whether a load operation is in progress. */
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    /** Ordered member arcids — single source of truth for membership. */
-    @Volatile
-    var memberIds: List<String> = emptyList()
-        private set
-
-    /** Prefix-sum global page offsets, see [TankPageMath.pageOffsets]. */
-    @Volatile
-    var pageOffsets: List<Int> = TankPageMath.pageOffsets(emptyList())
-        private set
-
-    /** Tank summary from the last load; null when the server sent none. */
-    @Volatile
-    var summary: String? = null
-        private set
-
-    /** Tank tags from the last load; null when the server sent none. */
-    @Volatile
-    var tags: String? = null
-        private set
-
-    /**
-     * True once a load has succeeded, i.e. [summary]/[tags] hold server
-     * truth. Gates the edit-metadata menu item in the scene: submitting
-     * the dialog's empty defaults before a successful load would WIPE the
-     * server-side summary/tags.
-     */
-    @Volatile
-    var metaLoaded: Boolean = false
-        private set
-
-    /**
-     * FIRST member to render as the cover stand-in when the cover probe
-     * reported no generated cover server-side (the probe also queues
-     * generation); null = a real cover exists (or the tank is empty /
-     * the probe failed) — bind the tank thumbnail route as usual.
-     * Cleared by a successful [setCover], which creates the cover
-     * synchronously server-side.
-     */
-    @Volatile
-    var coverFallbackMember: Archive? = null
-        private set
+    /** Prefix-sum global page offsets of [members], see [TankPageMath.pageOffsets]. */
+    val pageOffsets: List<Int> get() = TankPageMath.pageOffsets(members.map { it.pagecount })
 
     // -------------------------------------------------------------------------
     // One-shot UI events
@@ -146,10 +148,12 @@ class TankMembersViewModel : ViewModel() {
      * The Scene observes [uiEvent] and dispatches via `when`.
      */
     sealed interface TankDetailUiEvent {
+        /**
+         * A failure the screen does not show by itself: a management op, or a
+         * load while members are shown (a load with none is the [state]'s
+         * error, including "the server lacks the tankoubon routes").
+         */
         data class ShowError(val message: String) : TankDetailUiEvent
-
-        /** The source server lacks the 0.9.8 tankoubon detail routes. */
-        data object ShowUnsupported : TankDetailUiEvent
 
         /** A management op succeeded; the scene toasts [messageResId]. */
         data class ShowSuccess(val messageResId: Int) : TankDetailUiEvent
@@ -238,47 +242,46 @@ class TankMembersViewModel : ViewModel() {
 
     /**
      * Fetches the tank's full member metadata from its source server and
-     * publishes name/progress/members plus the page-math inputs. A 404
-     * flips [TankoubonSupportGate] and surfaces [TankDetailUiEvent.ShowUnsupported];
-     * any other failure surfaces [TankDetailUiEvent.ShowError].
+     * publishes name/progress/members/metadata. A 404 flips
+     * [TankoubonSupportGate] and fails with the "unsupported" message; a
+     * failure is the [state]'s error, also toasted while members are shown.
      */
     fun load() {
-        _isLoading.value = true
+        on(ListScreenState.Event.Load)
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val url = baseUrlResolver(profileId)
-                baseUrl = url
+                _meta.update { it.copy(baseUrl = url) }
                 val conn = connection(url)
                 // Members in `archives` order, mapped with the EXPLICIT source
                 // context (this tank may belong to a non-active profile).
                 val (tank, mapped) = tanks.detail(conn, tankId)
-                memberIds = mapped.map { it.arcid }
-                pageOffsets = TankPageMath.pageOffsets(mapped.map { it.pagecount })
-                summary = tank.summary
-                tags = tank.tags
-                metaLoaded = true
-                coverFallbackMember = resolveCoverFallback(conn, mapped)
+                val fallback = resolveCoverFallback(conn, mapped)
+                _meta.update {
+                    it.copy(summary = tank.summary, tags = tank.tags, metaLoaded = true, coverFallbackMember = fallback)
+                }
                 // Fresh server truth — revalidate the cover. Must precede the
                 // publications below: their collectors re-bind the cover and
                 // must already see the new stamp.
                 TankCoverCacheStamp.revalidate(tankId, tank.archives)
                 _tankName.value = tank.name
                 _progress.value = tank.progress
-                _members.value = mapped
-                _isLoading.value = false
+                on(ListScreenState.Event.Loaded(mapped))
                 syncMembership(url, tank.name, tank.archives, tank.progress, mapped.sumOf { it.pagecount })
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                _isLoading.value = false
                 val ctx = ServiceRegistry.appModule.getContext()
                 val url = baseUrl
-                if (url != null && TankoubonSupportGate.markFrom(url, e)) {
-                    _uiEvent.tryEmit(TankDetailUiEvent.ShowUnsupported)
+                val message = if (url != null && TankoubonSupportGate.markFrom(url, e)) {
+                    ctx.getString(R.string.tankoubons_unsupported)
                 } else {
                     Log.e(TAG, "Failed to load tankoubon", e)
-                    _uiEvent.tryEmit(TankDetailUiEvent.ShowError(errorMessage(ctx, e)))
+                    errorMessage(ctx, e)
                 }
+                on(ListScreenState.Event.Failed(message))
+                // With members shown the error keeps them: report it.
+                if (members.isNotEmpty()) _uiEvent.tryEmit(TankDetailUiEvent.ShowError(message))
             }
         }
     }
@@ -303,7 +306,7 @@ class TankMembersViewModel : ViewModel() {
     /** Removes every id in [arcids] (one DELETE each), then reloads once. */
     fun removeMembers(arcids: List<String>) {
         val firstBefore = memberIds.firstOrNull()
-        val remaining = _members.value.filter { it.arcid !in arcids }
+        val remaining = members.filter { it.arcid !in arcids }
         mutateAndReload { conn ->
             val client = conn.client
             val url = conn.baseUrl
@@ -402,9 +405,9 @@ class TankMembersViewModel : ViewModel() {
                 val page1 = TankPageMath.globalPage1(offsets, memberIndex, page0)
                 tanks.setCover(connection(url), tankId, page1)
                 // The cover now exists server-side — drop the stand-in.
-                coverFallbackMember = null
+                _meta.update { it.copy(coverFallbackMember = null) }
                 TankCoverCacheStamp.bump(tankId)
-                _members.value.getOrNull(memberIndex)?.let { member ->
+                members.getOrNull(memberIndex)?.let { member ->
                     coverChoices.put(tankId, TankCoverChoiceStore.Choice(member.arcid, page0, profileId))
                 }
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_cover_updated))
@@ -417,12 +420,11 @@ class TankMembersViewModel : ViewModel() {
 
     /**
      * Persists a new member order (the scene has already applied it
-     * optimistically to its adapter). Authoritative VM state ([members] /
-     * [memberIds] / [pageOffsets]) is updated BEFORE the network call:
-     * [_members] is conflated on equality, so a failed call's [load]
-     * rollback only re-renders if the VM state genuinely holds the new
-     * order — and the continue-reading math needs [pageOffsets] recomputed
-     * from the reordered pagecounts either way. On failure the server
+     * optimistically to its adapter). The [state]'s members (and with them
+     * [memberIds] / [pageOffsets]) take the new order BEFORE the network
+     * call: the state is conflated on equality, so a failed call's [load]
+     * rollback only re-renders if it genuinely holds the new order — and
+     * the continue-reading math needs the reordered pagecounts either way. On failure the server
      * truth is re-fetched (rollback) after a [R.string.tank_reorder_failed]
      * (or 423 locked) message.
      *
@@ -435,7 +437,7 @@ class TankMembersViewModel : ViewModel() {
 
     /** Sort by title (spec 2026-09-21 §2): episode-aware key over the current titles; undoable. */
     fun sortByTitle() {
-        val titles = _members.value.associate { it.arcid to it.title }
+        val titles = members.associate { it.arcid to it.title }
         applyOrder(TankMemberOrderOps.sortByTitle(memberIds) { titles[it].orEmpty() }, undoable = true)
     }
 
@@ -451,7 +453,7 @@ class TankMembersViewModel : ViewModel() {
      * new order so downloaded group rows follow without waiting for a reload.
      */
     fun applyOrder(newOrder: List<String>, undoable: Boolean) {
-        val currentIds = _members.value.map { it.arcid }
+        val currentIds = memberIds
         val currentSet = currentIds.toSet()
         val newOrderSet = newOrder.toSet()
         val finalOrder =
@@ -461,12 +463,10 @@ class TankMembersViewModel : ViewModel() {
             return
         }
         val previousOrder = memberIds
-        val byId = _members.value.associateBy { it.arcid }
+        val byId = members.associateBy { it.arcid }
         val reordered = finalOrder.mapNotNull { byId[it] }
         val ids = reordered.map { it.arcid }
-        memberIds = ids
-        pageOffsets = TankPageMath.pageOffsets(reordered.map { it.pagecount })
-        _members.value = reordered
+        on(ListScreenState.Event.Loaded(reordered))
         viewModelScope.launch(Dispatchers.IO) {
             val url = requireBaseUrl() ?: return@launch
             try {
@@ -494,13 +494,11 @@ class TankMembersViewModel : ViewModel() {
         }
     }
 
-    /** Puts [members] / [memberIds] / [pageOffsets] back to [order] without a network call. */
+    /** Puts the [members] back to [order] without a network call. */
     private fun restoreOrder(order: List<String>) {
-        val byId = _members.value.associateBy { it.arcid }
-        val restored = order.mapNotNull { byId[it] } + _members.value.filter { it.arcid !in order }
-        memberIds = restored.map { it.arcid }
-        pageOffsets = TankPageMath.pageOffsets(restored.map { it.pagecount })
-        _members.value = restored
+        val byId = members.associateBy { it.arcid }
+        val restored = order.mapNotNull { byId[it] } + members.filter { it.arcid !in order }
+        on(ListScreenState.Event.Loaded(restored))
     }
 
     // -------------------------------------------------------------------------

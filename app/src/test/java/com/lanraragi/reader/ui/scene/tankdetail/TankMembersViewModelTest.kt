@@ -19,6 +19,8 @@ import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.TankoubonSupportGate
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
 import com.lanraragi.reader.ui.scene.tankdetail.TankMembersViewModel.TankDetailUiEvent
+import com.lanraragi.reader.ui.list.ListScreenState
+import com.lanraragi.reader.domain.Archive
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
@@ -221,7 +223,7 @@ class TankMembersViewModelTest {
         )
         vm.init(TANK, "Tank", profileId = 5L)
         vm.load()
-        awaitUntil { vm.members.value.size == 3 && !vm.isLoading.value }
+        awaitUntil { vm.members.size == 3 && vm.state.value !is ListScreenState.Loading }
         return vm
     }
 
@@ -244,7 +246,7 @@ class TankMembersViewModelTest {
 
         awaitUntil { putBodies.size == 1 }
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), putBodies[0])
-        assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), vm.members.value.map { it.arcid })
+        assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), vm.members.map { it.arcid })
         assertEquals(listOf(ID_EP1, ID_EP2, ID_EXTRA), vm.memberIds)
         awaitViewModelIdle(vm)
         assertTrue("non-undoable reorders emit no OrderApplied", events.none { it is TankDetailUiEvent.OrderApplied })
@@ -297,7 +299,7 @@ class TankMembersViewModelTest {
         vm.sortByTitle()
 
         awaitUntil { events.any { it is TankDetailUiEvent.ShowError } }
-        awaitUntil { vm.members.value.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
+        awaitUntil { vm.members.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
         assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.memberIds)
         assertTrue(events.none { it is TankDetailUiEvent.OrderApplied })
     }
@@ -311,7 +313,7 @@ class TankMembersViewModelTest {
         vm.sortByTitle()
 
         awaitUntil { events.any { it is TankDetailUiEvent.ShowError } }
-        awaitUntil { vm.members.value.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
+        awaitUntil { vm.members.map { it.arcid } == listOf(ID_EP2, ID_EXTRA, ID_EP1) }
         assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.memberIds)
     }
 
@@ -320,7 +322,7 @@ class TankMembersViewModelTest {
         // full_data arrives in a different order than `archives`.
         fullDataOrder = listOf(ID_EP1, ID_EP2, ID_EXTRA)
         val vm = loadedVm()
-        assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.members.value.map { it.arcid })
+        assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.members.map { it.arcid })
         assertEquals(listOf(ID_EP2, ID_EXTRA, ID_EP1), vm.memberIds)
     }
 
@@ -390,10 +392,10 @@ class TankMembersViewModelTest {
         fullDataOrder = listOf(ID_EP1, ID_LOOSE, ID_EP2)
         val vm = loadedVm()
 
-        assertEquals(listOf(ID_EP2, ID_EP1, ID_LOOSE), vm.members.value.map { it.arcid })
+        assertEquals(listOf(ID_EP2, ID_EP1, ID_LOOSE), vm.members.map { it.arcid })
         assertEquals(listOf(ID_EP2, ID_EP1, ID_LOOSE), vm.memberIds)
         assertEquals(listOf(0, 10, 20, 30), vm.pageOffsets)
-        assertTrue(vm.members.value.all { it.serverProfileId == 5L })
+        assertTrue(vm.members.all { it.serverProfileId == 5L })
         assertEquals("Tank", vm.tankName.value)
         assertEquals(7, vm.progress.value)
         assertEquals("s", vm.summary)
@@ -421,11 +423,32 @@ class TankMembersViewModelTest {
 
         vm.load()
 
-        awaitUntil { events.isNotEmpty() }
-        assertEquals(TankDetailUiEvent.ShowUnsupported, events.single())
-        assertFalse(vm.isLoading.value)
+        awaitUntil { vm.state.value is ListScreenState.Error }
+        assertEquals(
+            "with no members shown the unsupported server is the screen's error, not a toast",
+            ListScreenState.Error(ctx.getString(R.string.tankoubons_unsupported), emptyList<Archive>()),
+            vm.state.value,
+        )
+        assertTrue(events.isEmpty())
         assertFalse(vm.metaLoaded)
         assertTrue(TankoubonSupportGate.isUnsupported(vm.baseUrl!!))
+    }
+
+    /** A failed reload while members are shown keeps them (and the page math) and reports it. */
+    @Test
+    fun load_failureWithMembersShown_keepsThemAndReports() {
+        val vm = loadedVm()
+        val before = vm.memberIds
+        val offsets = vm.pageOffsets
+        val events = vm.uiEvent.collectInto(eventScope)
+        fullStatus = 500
+
+        vm.load()
+
+        awaitUntil { events.any { it is TankDetailUiEvent.ShowError } }
+        assertTrue(vm.state.value is ListScreenState.Error)
+        assertEquals(before, vm.memberIds)
+        assertEquals(offsets, vm.pageOffsets)
     }
 
     @Test
@@ -438,10 +461,10 @@ class TankMembersViewModelTest {
 
         vm.load()
 
-        awaitUntil { events.isNotEmpty() }
-        assertTrue(events.single() is TankDetailUiEvent.ShowError)
+        awaitUntil { vm.state.value is ListScreenState.Error }
+        assertTrue("the error is the state, not a toast", events.isEmpty())
         assertFalse(TankoubonSupportGate.isUnsupported(vm.baseUrl!!))
-        assertTrue(vm.members.value.isEmpty())
+        assertTrue(vm.members.isEmpty())
     }
 
     // ---- rename / edit meta ----

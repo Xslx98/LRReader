@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
@@ -39,6 +38,7 @@ import com.lanraragi.reader.ui.scene.gallery.detail.PageThumbnailsViewModel
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.ui.collectFlowWhileCreated
 import com.lanraragi.reader.widget.LoadImageViewNew
+import com.lanraragi.reader.widget.StateListLayout
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.BatchBarAnimator
@@ -65,12 +65,7 @@ import com.lanraragi.reader.ui.scene.TankDialogs
 class TankMembersScene : BaseScene() {
 
     private var mRecyclerView: RecyclerView? = null
-    private var mProgress: View? = null
-    private var mErrorView: View? = null
-    private var mErrorIcon: ImageView? = null
-    private var mErrorTitle: TextView? = null
-    private var mErrorMessage: TextView? = null
-    private var mErrorRetry: TextView? = null
+    private var mStateList: StateListLayout? = null
     private var mToolbar: MaterialToolbar? = null
     private var mCover: LoadImageViewNew? = null
     private var mProgressText: TextView? = null
@@ -146,7 +141,7 @@ class TankMembersScene : BaseScene() {
         // On the frame, not the image: LoadImageViewNew resets its own click
         // listener on every load (retry-on-click).
         view.findViewById<View>(R.id.tank_cover_frame).setOnClickListener {
-            val members = viewModel.members.value
+            val members = viewModel.members
             if (members.isEmpty()) return@setOnClickListener
             val remembered = viewModel.coverChoices.get(viewModel.tankId)?.arcid
             val index = members.indexOfFirst { it.arcid == remembered }.takeIf { it >= 0 } ?: 0
@@ -155,19 +150,16 @@ class TankMembersScene : BaseScene() {
         mProgressText = view.findViewById(R.id.tank_detail_progress)
         mBtnReadStart = view.findViewById(R.id.btn_read_start)
         mBtnReadContinue = view.findViewById(R.id.btn_read_continue)
-        mProgress = view.findViewById(R.id.progress)
-        mErrorView = view.findViewById(R.id.error_view)
-        mErrorIcon = view.findViewById(R.id.error_icon)
-        mErrorTitle = view.findViewById(R.id.error_title)
-        mErrorMessage = view.findViewById(R.id.error_message)
-        mErrorRetry = view.findViewById(R.id.error_retry)
-        mRecyclerView = view.findViewById(R.id.recycler_view)
+        mStateList = view.findViewById<StateListLayout>(R.id.state_list).apply {
+            onRetry = { viewModel.load() }
+        }
+        mRecyclerView = view.findViewById(R.id.state_content)
 
         setupToolbar()
         setupActionCard(view)
 
         mBtnReadStart?.setOnClickListener {
-            if (viewModel.members.value.isNotEmpty()) {
+            if (viewModel.members.isNotEmpty()) {
                 openTankSession(startGlobalPage = 0)
             }
         }
@@ -194,7 +186,7 @@ class TankMembersScene : BaseScene() {
             inflateMenu(R.menu.scene_tankoubon_detail)
             // Edit-metadata needs server truth (summary/tags): submitting the
             // dialog's empty defaults before a successful load would WIPE
-            // them. Disabled until the VM has loaded; the isLoading collector
+            // them. Disabled until the VM has loaded; the meta collector
             // keeps this fresh per load outcome.
             menu.findItem(R.id.action_tank_edit_meta)?.isEnabled = viewModel.metaLoaded
             setOnMenuItemClickListener { item ->
@@ -244,7 +236,7 @@ class TankMembersScene : BaseScene() {
         }
         mActionCover?.setOnClickListener {
             val only = selection.selected.singleOrNull() ?: return@setOnClickListener
-            val index = viewModel.members.value.indexOfFirst { it.arcid == only }
+            val index = viewModel.members.indexOfFirst { it.arcid == only }
             if (index >= 0) pickCoverPage(index) { selection.clear() }
         }
         card.findViewById<View>(R.id.member_action_remove).setOnClickListener {
@@ -262,43 +254,20 @@ class TankMembersScene : BaseScene() {
             bindCover()
         }
 
-        // Member list
-        collectFlow(viewLifecycleOwner, viewModel.members) { newList ->
+        // The member list screen: members, or loading / empty / the error.
+        collectFlow(viewLifecycleOwner, viewModel.state) { state ->
+            val newList = state.items
             mMembers.submit(newList)
             // A reload / removal may have dropped selected members.
             selection.retainAll(newList.map { it.arcid })
-            if (mMembers.items.isEmpty() && !viewModel.isLoading.value) {
-                showEmpty(getString(R.string.error_empty))
-            } else if (mMembers.items.isNotEmpty()) {
-                showList()
-            }
+            mStateList?.render(state)
             bindCover()
             bindProgressUi()
         }
 
-        // Loading state. Re-evaluate empty vs list on finish here, not only in
-        // the members collector: an empty tank emits emptyList() which the
-        // StateFlow dedupes against the initial value, so the members
-        // collector never re-runs and the spinner would spin forever.
-        // The spinner only covers a bare scene — a reload over retained data
-        // (view recreation on a retained VM) keeps the list visible; DiffUtil
-        // refreshes it in place when the reload lands.
-        collectFlow(viewLifecycleOwner, viewModel.isLoading) { loading ->
-            // metaLoaded flips inside a successful load, right before
-            // isLoading goes false — refreshing here (not in the members
-            // collector) also covers the empty-tank success, whose members
-            // emission is deduped against the initial emptyList().
-            mToolbar?.menu?.findItem(R.id.action_tank_edit_meta)?.isEnabled =
-                viewModel.metaLoaded
-            if (loading) {
-                if (mMembers.items.isEmpty()) {
-                    showProgress()
-                }
-            } else if (mMembers.items.isEmpty()) {
-                showEmpty(getString(R.string.error_empty))
-            } else {
-                showList()
-            }
+        // The edit-metadata item needs a successful load (see TankMeta.metaLoaded).
+        collectFlow(viewLifecycleOwner, viewModel.meta) { meta ->
+            mToolbar?.menu?.findItem(R.id.action_tank_edit_meta)?.isEnabled = meta.metaLoaded
         }
 
         // Global reading progress → continue button + progress text
@@ -317,21 +286,8 @@ class TankMembersScene : BaseScene() {
         val ctx = ehContext ?: return
         when (event) {
             is TankDetailUiEvent.ShowError -> {
-                // If the list is empty, show the error view; otherwise toast
-                if (mMembers.items.isEmpty()) {
-                    showError(event.message)
-                } else {
-                    Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
-                }
-            }
-            TankDetailUiEvent.ShowUnsupported -> {
-                // Same split as ShowError: never clobber a loaded list
-                val message = getString(R.string.tankoubons_unsupported)
-                if (mMembers.items.isEmpty()) {
-                    showError(message)
-                } else {
-                    Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
-                }
+                // Never clobbers the list: a load with nothing shown is the state's error.
+                Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
             }
             is TankDetailUiEvent.ShowSuccess -> {
                 Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
@@ -383,12 +339,7 @@ class TankMembersScene : BaseScene() {
         mItemTouchHelper = null
         mPickingTarget = false
         mRecyclerView = null
-        mProgress = null
-        mErrorView = null
-        mErrorIcon = null
-        mErrorTitle = null
-        mErrorMessage = null
-        mErrorRetry = null
+        mStateList = null
         mToolbar = null
         mCover = null
         mCoverPicker?.dismiss()
@@ -486,7 +437,7 @@ class TankMembersScene : BaseScene() {
 
         // Read-from-start (and the cover next to it) only make sense once
         // members are loaded — hide the dead entry on unsupported/empty tanks.
-        val hasMembers = viewModel.members.value.isNotEmpty()
+        val hasMembers = viewModel.members.isNotEmpty()
         mBtnReadStart?.visibility = if (hasMembers) View.VISIBLE else View.GONE
         mCover?.visibility = if (hasMembers) View.VISIBLE else View.GONE
         (mCover?.parent as? View)?.visibility = if (hasMembers) View.VISIBLE else View.GONE
@@ -525,7 +476,7 @@ class TankMembersScene : BaseScene() {
     }
 
     private fun buildSessionSeed(): TankSessionSeed? {
-        val members = viewModel.members.value
+        val members = viewModel.members
         if (members.isEmpty()) return null
         return TankSessionSeed(
             tankId = viewModel.tankId,
@@ -545,7 +496,7 @@ class TankMembersScene : BaseScene() {
     private fun openMemberSession(archive: Archive) {
         val ctx = ehContext ?: return
         val seed = buildSessionSeed() ?: return
-        val members = viewModel.members.value
+        val members = viewModel.members
         val start = TankPageMath.anchoredStart(
             members.map { it.pagecount },
             members.indexOfFirst { it.arcid == archive.arcid },
@@ -583,7 +534,7 @@ class TankMembersScene : BaseScene() {
      */
     private fun downloadTank() {
         val ctx = ehContext ?: return
-        val members = viewModel.members.value
+        val members = viewModel.members
         if (members.isEmpty()) {
             Toast.makeText(ctx, R.string.error_empty, Toast.LENGTH_SHORT).show()
             return
@@ -677,7 +628,7 @@ class TankMembersScene : BaseScene() {
      * page was chosen (not on dismiss).
      */
     private fun pickCoverPage(memberIndex: Int, afterPick: () -> Unit = {}) {
-        val member = viewModel.members.value.getOrNull(memberIndex) ?: return
+        val member = viewModel.members.getOrNull(memberIndex) ?: return
         mCoverPicker?.show(member) { page0 ->
             viewModel.setCover(memberIndex, page0)
             afterPick()
@@ -705,48 +656,6 @@ class TankMembersScene : BaseScene() {
         if (binding == mCoverBoundUrl) return
         mCoverBoundUrl = binding
         mCover?.load(key, url)
-    }
-
-    private fun showProgress() {
-        mProgress?.visibility = View.VISIBLE
-        mRecyclerView?.visibility = View.GONE
-        mErrorView?.visibility = View.GONE
-    }
-
-    private fun showList() {
-        mProgress?.visibility = View.GONE
-        mRecyclerView?.visibility = View.VISIBLE
-        mErrorView?.visibility = View.GONE
-    }
-
-    private fun showError(message: String) {
-        mProgress?.visibility = View.GONE
-        mRecyclerView?.visibility = View.GONE
-        mErrorView?.apply {
-            visibility = View.VISIBLE
-            mErrorIcon?.visibility = View.VISIBLE
-            mErrorTitle?.setText(R.string.lrr_error_title)
-            mErrorMessage?.apply {
-                visibility = View.VISIBLE
-                text = message
-            }
-            mErrorRetry?.apply {
-                visibility = View.VISIBLE
-                setOnClickListener { viewModel.load() }
-            }
-        }
-    }
-
-    private fun showEmpty(message: String) {
-        mProgress?.visibility = View.GONE
-        mRecyclerView?.visibility = View.GONE
-        mErrorView?.apply {
-            visibility = View.VISIBLE
-            mErrorIcon?.visibility = View.GONE
-            mErrorTitle?.text = message
-            mErrorMessage?.visibility = View.GONE
-            mErrorRetry?.visibility = View.GONE
-        }
     }
 
     // ==================== Adapter ====================
