@@ -31,15 +31,9 @@ import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
- * The production path of both interceptors: the request's host:port is owned
- * by a profile in [ProfileLookupCache], so the key and the cleartext policy
- * come from that profile, not from the legacy active-server fallback that
- * LRRAuthInterceptorTest / LRRCleartextRejectionInterceptorTest reach.
- *
- * The legacy active server is deliberately the SAME http host:port, with its
- * own key and cleartext allowed: a request that fell back to it would carry
- * the legacy key and pass the cleartext gate. So every refusal and every
- * profile-specific header below can only come from the profile path.
+ * Both interceptors over several profiles in a Room-backed
+ * [ProfileLookupCache]: the request's host:port (and base path) picks the
+ * profile, and the key and the cleartext policy come from that profile.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
@@ -72,9 +66,6 @@ class InterceptorProfilePathTest {
         val prefs = ctx.getSharedPreferences("interceptor_profile_path", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
         SecureCredentialStore.initializeForTesting(prefs)
-        ServerSession.setServerUrl("http://$host:$port")
-        ServerSession.setApiKey("legacy-key")
-        ServerSession.setAllowCleartext(true)
     }
 
     @After

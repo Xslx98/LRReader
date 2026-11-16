@@ -476,7 +476,7 @@ object AppLockCredentials {
         deletePatternKeystoreKey()
         store.fastPlainPrefs()?.edit(commit = true) {
             putBoolean(KEY_LOCK_ENABLED, false)
-            putBoolean(KEY_CONFIGURED_HINT, false)
+            remove(KEY_CONFIGURED_HINT)
             remove(KEY_WAS_CONFIGURED)
             remove(KEY_STORE_OPEN_FAILURES)
             remove(KEY_PATTERN_KEYSTORE_BOUND)

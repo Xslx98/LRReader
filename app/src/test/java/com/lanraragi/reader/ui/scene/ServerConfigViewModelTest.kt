@@ -1,5 +1,8 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.containedTestScope
+import com.lanraragi.reader.server.ProfileLookupCache
+import kotlinx.coroutines.cancel
 import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.awaitViewModelIdle
@@ -64,6 +67,15 @@ class ServerConfigViewModelTest {
     private lateinit var context: Context
     private lateinit var db: AppDatabase
     private lateinit var server: MockWebServer
+    private lateinit var cacheScope: CoroutineScope
+    private lateinit var cache: ProfileLookupCache
+
+    /** An active profile at [url] with [key], once the cache shows it as the active server. */
+    private fun activeServer(url: String, key: String) {
+        val id = runBlocking { db.miscDao().insertServerProfile(ServerProfile(name = "Prior", url = url, isActive = true)) }
+        ServerSession.setApiKeyForProfile(id, key)
+        awaitUntil { ServerSession.getServerUrl() == url }
+    }
 
     @Before
     fun setUp() {
@@ -101,10 +113,12 @@ class ServerConfigViewModelTest {
         // Create a minimal INetworkModule providing our test client
         val networkModule = createTestNetworkModule(testClient)
 
+        cacheScope = containedTestScope()
+        cache = ProfileLookupCache(ProfileRepository(db.miscDao()), cacheScope)
         val testDataModule = object : IDataModule {
             override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
             override val profileRepository get() = ProfileRepository(db.miscDao())
-            override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+            override val profileLookupCache get() = cache
             override val historyRepository get() = throw UnsupportedOperationException("not needed")
             override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
             override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
@@ -130,6 +144,7 @@ class ServerConfigViewModelTest {
 
     @After
     fun tearDown() {
+        cacheScope.cancel()
         Dispatchers.resetMain()
         server.shutdown()
         db.close()
@@ -231,8 +246,7 @@ class ServerConfigViewModelTest {
     @Test
     fun attemptConnection_failure_neverTouchesGlobalAuthState() {
         // Simulate an existing working configuration.
-        ServerSession.setServerUrl("http://prior.example.com:3000")
-        ServerSession.setApiKey("prior-key")
+        activeServer("http://prior.example.com:3000", "prior-key")
 
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
@@ -257,8 +271,7 @@ class ServerConfigViewModelTest {
         // LRRCleartextRefusedException. Before delegation tryConnect had no gate
         // and would instead attempt a real cleartext connection. Global auth
         // stays intact.
-        ServerSession.setServerUrl("http://prior.example.com:3000")
-        ServerSession.setApiKey("prior-key")
+        activeServer("http://prior.example.com:3000", "prior-key")
 
         val vm = ServerConfigViewModel()
         val failures = mutableListOf<Exception>()
@@ -335,12 +348,11 @@ class ServerConfigViewModelTest {
         // The live global auth must switch only after the profile row persists.
         // If the Room insert fails, the active server URL/key must still point
         // at the old server, and the failure must surface (not silently switch).
-        ServerSession.setServerUrl("https://old.example.com")
-        ServerSession.setApiKey("old-key")
+        activeServer("https://old.example.com", "old-key")
         server.enqueue(MockResponse().setResponseCode(200).setBody(SERVER_INFO_JSON))
 
         val throwingDao = object : MiscRoomDao by db.miscDao() {
-            override suspend fun insertServerProfile(profile: ServerProfile): Long {
+            override suspend fun insertActive(profile: ServerProfile, beforeCommit: (Long) -> Unit): Long {
                 throw IllegalStateException("simulated Room insert failure")
             }
         }
@@ -383,7 +395,7 @@ class ServerConfigViewModelTest {
     private fun throwingDataModule(repo: ProfileRepository): IDataModule = object : IDataModule {
         override val searchHistoryRepository get() = throw UnsupportedOperationException("Not needed for these tests")
         override val profileRepository get() = repo
-        override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+        override val profileLookupCache get() = cache
         override val historyRepository get() = throw UnsupportedOperationException("not needed")
         override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
         override val favoritesRepository get() = throw UnsupportedOperationException("not needed")

@@ -20,6 +20,8 @@ import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.server.ServerSession
+import com.lanraragi.reader.containedTestScope
+import com.lanraragi.reader.server.ProfileLookupCache
 import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +65,8 @@ class ServerListViewModelTest {
     private lateinit var ctx: Context
     private lateinit var server: MockWebServer
     private lateinit var eventScope: CoroutineScope
+    private lateinit var cacheScope: CoroutineScope
+    private lateinit var cache: ProfileLookupCache
 
     /** Every view model a test made, so tearDown can let their work finish first. */
     private val viewModels = mutableListOf<ServerListViewModel>()
@@ -95,10 +99,12 @@ class ServerListViewModelTest {
 
         val testAppModule = stubAppModule(ctx)
 
+        cacheScope = containedTestScope()
+        cache = ProfileLookupCache(ProfileRepository(db.miscDao()), cacheScope)
         val testDataModule = object : IDataModule {
             override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
             override val profileRepository get() = ProfileRepository(db.miscDao())
-            override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+            override val profileLookupCache get() = cache
             override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
             override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
             override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
@@ -125,6 +131,7 @@ class ServerListViewModelTest {
         // race resetMain below, which fails this test and the next one's setMain.
         viewModels.forEach { awaitViewModelIdle(it) }
         eventScope.cancel()
+        cacheScope.cancel()
         Dispatchers.resetMain()
         SecureCredentialStore.clear()
         db.close()
@@ -135,6 +142,14 @@ class ServerListViewModelTest {
         return runBlocking { db.miscDao().insertServerProfile(ServerProfile(name = name, url = url, isActive = isActive)) }
     }
 
+    /** An active profile at [url] with [key], once the cache shows it as the active server. */
+    private fun activeServer(url: String, key: String, name: String = "Prior"): Long {
+        val id = insertProfile(name, url, isActive = true)
+        ServerSession.setApiKeyForProfile(id, key)
+        awaitUntil { ServerSession.getServerUrl() == url }
+        return id
+    }
+
     /**
      * An [IDataModule] exposing [repo] as its profileRepository and throwing
      * for every other member, for tests that force a persistence failure.
@@ -142,7 +157,7 @@ class ServerListViewModelTest {
     private fun throwingDataModule(repo: ProfileRepository): IDataModule = object : IDataModule {
         override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
         override val profileRepository get() = repo
-        override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+        override val profileLookupCache get() = cache
         override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
         override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
         override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
@@ -157,8 +172,7 @@ class ServerListViewModelTest {
 
     @Test
     fun testAndAddProfile_failure_leavesGlobalAuthUntouched() {
-        ServerSession.setServerUrl("http://prior.example.com:3000")
-        ServerSession.setApiKey("prior-key")
+        activeServer("http://prior.example.com:3000", "prior-key")
         // 401 = permanent failure, no retry.
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
@@ -227,13 +241,12 @@ class ServerListViewModelTest {
         // A Room insert failure after a successful probe must surface
         // AddConnectionFailed (not silently soft-lock the dialog) and must not
         // have switched the live global auth to the new server.
-        ServerSession.setServerUrl("https://old.example.com")
-        ServerSession.setApiKey("old-key")
+        activeServer("https://old.example.com", "old-key")
         server.enqueue(MockResponse().setResponseCode(200)
             .setBody("""{"name":"New","version":"0.9.8","archives_per_page":100}"""))
 
         val throwingDao = object : MiscRoomDao by db.miscDao() {
-            override suspend fun insertServerProfile(profile: ServerProfile): Long {
+            override suspend fun insertActive(profile: ServerProfile, beforeCommit: (Long) -> Unit): Long {
                 throw IllegalStateException("simulated Room insert failure")
             }
         }
@@ -321,7 +334,7 @@ class ServerListViewModelTest {
         // persistence failure. Delegation forwards every other DAO call to the
         // real in-memory database.
         val throwingDao = object : MiscRoomDao by db.miscDao() {
-            override suspend fun updateServerProfile(profile: ServerProfile) {
+            override suspend fun updateWithKey(profile: ServerProfile, beforeCommit: (Long) -> Unit) {
                 throw IllegalStateException("simulated Room write failure")
             }
         }
@@ -345,15 +358,13 @@ class ServerListViewModelTest {
         // commits. If the Room update fails, the active server URL/key must
         // still point at the old server — otherwise traffic silently follows
         // the edited URL while the profile list shows the old one.
-        ServerSession.setServerUrl("https://old.example.com")
-        ServerSession.setApiKey("old-key")
-        val id = insertProfile("Old Name", "https://old.example.com", isActive = true)
+        val id = activeServer("https://old.example.com", "old-key", name = "Old Name")
         val profile = ServerProfile(id = id, name = "Old Name", url = "https://old.example.com", isActive = true)
         server.enqueue(MockResponse().setResponseCode(200)
             .setBody("""{"name":"New Server","version":"0.9.8","archives_per_page":100}"""))
 
         val throwingDao = object : MiscRoomDao by db.miscDao() {
-            override suspend fun updateServerProfile(profile: ServerProfile) {
+            override suspend fun updateWithKey(profile: ServerProfile, beforeCommit: (Long) -> Unit) {
                 throw IllegalStateException("simulated Room write failure")
             }
         }
@@ -462,7 +473,7 @@ class ServerListViewModelTest {
         // Done by the view model (off main) by the time the Scene hears of it.
         assertEquals("https://b.com", ServerSession.getServerUrl())
         assertEquals("key-b", ServerSession.getApiKey())
-        assertEquals("B", ServerSession.getServerName())
+        assertEquals("B", ServerSession.activeServer()?.name)
         assertEquals(id2, ServerSession.getActiveProfileId())
         assertTrue(ServerSession.serverConfigVersion > versionBefore)
     }
@@ -527,26 +538,23 @@ class ServerListViewModelTest {
     }
 
     /**
-     * Audit 2026-10-04 C02: deleting the active profile used to clear only its
-     * per-profile key. The global session kept the URL and key, and the auth
-     * interceptor's active-server fallback kept sending that key to the
-     * deleted server's host.
+     * Audit 2026-10-04 C02: deleting the active profile must leave no active
+     * server and no key for the deleted server's host.
      */
     @Test
-    fun deleteProfile_activeProfile_clearsGlobalSession() {
+    fun deleteProfile_activeProfile_leavesNoActiveServer() {
         val id = insertProfile("Retired NAS", "http://192.168.1.50:3000", isActive = true)
         val profile = ServerProfile(
             id = id, name = "Retired NAS", url = "http://192.168.1.50:3000", isActive = true
         )
         ServerSession.setApiKeyForProfile(id, "nas-key")
-        ServerSession.setServerUrl(profile.url)
-        ServerSession.setApiKey("nas-key")
-        ServerSession.setActiveProfileId(id)
+        awaitUntil { ServerSession.getActiveProfileId() == id }
 
         val vm = newVm()
         vm.deleteProfile(profile)
 
-        awaitUntil { runBlocking { db.miscDao().getAllServerProfiles() }.isEmpty() }
+        awaitUntil { ServerSession.activeServer() == null }
+        assertEquals(null, ServerSession.getApiKeyForProfile(id))
         assertEquals(null, ServerSession.getApiKey())
         assertEquals(null, ServerSession.getServerUrl())
         assertEquals(0L, ServerSession.getActiveProfileId())
@@ -595,11 +603,8 @@ class ServerListViewModelTest {
 
     @Test
     fun deleteProfile_inactiveProfile_keepsActiveSession() {
-        val activeId = insertProfile("Home", "http://192.168.1.10:3000", isActive = true)
+        val activeId = activeServer("http://192.168.1.10:3000", "home-key", name = "Home")
         val otherId = insertProfile("Other", "https://other.example")
-        ServerSession.setServerUrl("http://192.168.1.10:3000")
-        ServerSession.setApiKey("home-key")
-        ServerSession.setActiveProfileId(activeId)
 
         val vm = newVm()
         vm.deleteProfile(ServerProfile(id = otherId, name = "Other", url = "https://other.example"))

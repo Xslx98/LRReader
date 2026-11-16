@@ -62,6 +62,8 @@ class ReadingHistoryServiceTest {
             .build()
         repository = HistoryRepository(db.archiveLocalStateDao(), db)
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        // No active server left over from an earlier test class (the registry outlives it).
+        com.lanraragi.reader.ServiceRegistry.initializeForTest(coroutine = null, data = com.lanraragi.reader.stubDataModule())
     }
 
     @After

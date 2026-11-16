@@ -66,12 +66,11 @@ class LegacyCredentialStoreTest {
     @Test(timeout = 10_000)
     fun updateFromV1_configuredWithLock_asksForKeysAndReportsTheLostLock() {
         writeLegacyStoreFile()
-        plainPrefs().edit(commit = true) {
-            putBoolean("was_configured", true)
-            putBoolean("pattern_keystore_bound", true)
-        }
+        plainPrefs().edit(commit = true) { putBoolean("pattern_keystore_bound", true) }
 
         launch()
+        // The boot profile check: Room still holds the v1 profile, its key is gone.
+        ServerSession.markReauthIfProfilesUnprotected(listOf(1L))
 
         assertTrue(SecureCredentialStore.isSecureStorageAvailable())
         assertTrue("the old API keys are gone: ask for them", ServerSession.isNeedsReauthentication())
@@ -95,12 +94,14 @@ class LegacyCredentialStoreTest {
     @Test(timeout = 10_000)
     fun alreadyHandled_laterLaunchesDoNotAskAgain() {
         writeLegacyStoreFile()
-        plainPrefs().edit(commit = true) { putBoolean("was_configured", true) }
         launch()
+        ServerSession.markReauthIfProfilesUnprotected(listOf(1L))
         assertTrue(ServerSession.isNeedsReauthentication())
+        // The user enters the key again.
+        ServerSession.setApiKeyForProfile(1L, "re-entered")
 
-        SecureCredentialStore.clear()
         launch()
+        ServerSession.markReauthIfProfilesUnprotected(listOf(1L))
 
         assertFalse(ServerSession.isNeedsReauthentication())
     }

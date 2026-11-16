@@ -213,22 +213,19 @@ class LRReaderApplication : SceneApplication() {
                 // async initialize. Inside the try so the finally still completes
                 // activeProfileIdDeferred if join() ever throws.
                 authInitJob.join()
-                val allProfiles = com.lanraragi.reader.dao.AppDatabase.getInstance(this@LRReaderApplication)
-                    .miscDao().getAllServerProfiles()
+                val dao = com.lanraragi.reader.dao.AppDatabase.getInstance(this@LRReaderApplication).miscDao()
+                // Pre-v2.5 installs kept the active server in the secure store too.
+                com.lanraragi.reader.server.LegacyActiveSessionMigration.run(dao)
+                val allProfiles = dao.getAllServerProfiles()
                 ServerSession.markReauthIfProfilesUnprotected(allProfiles.map { it.id })
                 val activeProfile = allProfiles.firstOrNull { it.isActive }
                 if (activeProfile != null) {
-                    ServerSession.setActiveProfileId(activeProfile.id)
                     resolvedId = activeProfile.id
                     // Pre-C37 progress was keyed by arcid alone: it belongs to this profile.
                     com.lanraragi.reader.reading.LocalReadingProgress.migrateLegacy(
                         com.lanraragi.reader.reading.LocalReadingProgress.prefs(this@LRReaderApplication),
                         activeProfile.id,
                     )
-                } else {
-                    // Repair installs where the active profile was deleted before
-                    // the session was cleared on delete (audit 2026-10-04 C02).
-                    ServerSession.clearSessionIfActiveProfileGone(allProfiles.map { it.id })
                 }
             } catch (e: com.lanraragi.reader.server.LRRSecureStorageUnavailableException) {
                 // Log.e, not Log.w: R8 cannot strip a Throwable-carrying Log.w
@@ -310,6 +307,9 @@ class LRReaderApplication : SceneApplication() {
 
         // Initialize ServiceRegistry (must be after Settings/LegacyDb)
         trace("LRRApp.ServiceRegistry.init") { ServiceRegistry.initialize(this) }
+        // Start loading the server profiles now: the launch decision and the
+        // first requests read the active server from them.
+        ServiceRegistry.dataModule.profileLookupCache
         // Eagerly start network monitoring so isAvailable() is ready before first API call
         ServiceRegistry.networkModule.networkMonitor
         // Build the cover image loader (OkHttp client, caches) off the main

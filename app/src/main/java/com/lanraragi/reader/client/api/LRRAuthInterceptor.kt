@@ -3,7 +3,6 @@ package com.lanraragi.reader.client.api
 import android.util.Base64
 import android.util.Log
 import okhttp3.HttpUrl
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response
 import com.lanraragi.reader.server.ProfileLookupCache
@@ -29,10 +28,9 @@ import com.lanraragi.reader.server.ServerSession
  *    token leaves the device.
  *  - URLs containing userInfo (`user:pass@`) or a fragment (`#`) are rejected
  *    outright.
- *  - When the cache is cold (boot edge: app started but the Room flow has
- *    not delivered its first emission yet), falls back to legacy active-only
- *    matching against [ServerSession.getServerUrl] so requests issued
- *    during the first few ms of process life still authenticate correctly.
+ *  - A request issued before the Room flow's first emission waits for it
+ *    ([ProfileLookupCache.awaitLoadedBlocking]): the profiles are the only
+ *    source of which hosts get a key.
  */
 class LRRAuthInterceptor(
     /** The profile lookup; may throw or be null while the app is still booting. */
@@ -47,16 +45,13 @@ class LRRAuthInterceptor(
         val original = chain.request()
         val cache = runCatching(profileLookupCache)
             .getOrNull()
+        cache?.awaitLoadedBlocking()
         val candidates = cache?.findParsedCandidatesByHostPort(
             original.url.host, original.url.port,
         ).orEmpty()
 
-        if (candidates.isEmpty()) {
-            // Either a third-party host (no profile owns it — pass through),
-            // or the cache is still cold. Fall back to legacy active-only
-            // matching so cold-start requests still authenticate.
-            return interceptViaActive(chain)
-        }
+        // A third-party host: no profile owns it, no key goes with it.
+        if (candidates.isEmpty()) return chain.proceed(original)
 
         if (candidates.none { it.url.scheme == original.url.scheme }) {
             Log.e(TAG, "Refusing to send API key: scheme mismatch with configured profile")
@@ -96,48 +91,6 @@ class LRRAuthInterceptor(
             .header("Authorization", bearerAuthHeaderValue(apiKey))
             .build()
         return chain.proceed(authed)
-    }
-
-    /**
-     * Legacy fallback path: match against [ServerSession.getServerUrl] and
-     * inject [ServerSession.getApiKey]. Preserves the pre-cache behaviour
-     * for boot-edge requests and for tests that wire only the auth-manager
-     * singleton without populating the Room SERVER_PROFILES table.
-     */
-    private fun interceptViaActive(chain: Interceptor.Chain): Response {
-        val apiKey = ServerSession.getApiKey()
-        val original = chain.request()
-
-        if (apiKey.isNullOrEmpty()) {
-            return chain.proceed(original)
-        }
-
-        val serverUrl = ServerSession.getServerUrl()
-        if (serverUrl.isNullOrEmpty()) {
-            // Surface at error level so the line survives R8 log stripping in release.
-            // No host is included: the intent is only to flag the missing-config state,
-            // not to leak which host the caller was trying to reach.
-            Log.e(TAG, "LRR auth interceptor: request without base URL configured")
-            return chain.proceed(original)
-        }
-
-        when (matchesConfiguredServer(original.url, serverUrl)) {
-            ServerMatchResult.MATCH -> {
-                val authed = original.newBuilder()
-                    .header("Authorization", bearerAuthHeaderValue(apiKey))
-                    .build()
-                return chain.proceed(authed)
-            }
-            ServerMatchResult.SCHEME_DOWNGRADE -> {
-                Log.e(TAG, "Refusing to send API key: scheme mismatch with configured server")
-                throw LRRPlaintextRefusedException(
-                    "Scheme mismatch between request and configured server"
-                )
-            }
-            ServerMatchResult.MISMATCH -> {
-                return chain.proceed(original)
-            }
-        }
     }
 }
 
@@ -183,53 +136,6 @@ private fun basePath(url: HttpUrl): String = url.encodedPath.trimEnd('/')
 /** Whether [prefix] is [path] or one of its parent paths, on segment boundaries. */
 private fun isPathPrefix(prefix: String, path: String): Boolean =
     prefix.isEmpty() || path == prefix || path.startsWith("$prefix/")
-
-/**
- * Result of comparing a request URL against the configured LANraragi server URL.
- *
- *  - [MATCH]            Same host, same port, same scheme — inject the bearer token.
- *  - [SCHEME_DOWNGRADE] Same host and port but different scheme — abort the request.
- *  - [MISMATCH]         Different host or port — pass through without injecting.
- */
-internal enum class ServerMatchResult { MATCH, SCHEME_DOWNGRADE, MISMATCH }
-
-/**
- * Decide whether [requestUrl] targets the same endpoint as [serverUrlString], using
- * **pure string equality** on host + port + scheme. No DNS resolution and no I/O.
- *
- * Both sides are parsed via [HttpUrl] which strips IPv6 brackets, normalises host
- * to lowercase, and resolves the default port for the scheme. Either URL containing
- * userInfo or a fragment is treated as malformed/malicious and causes a
- * [LRRPlaintextRefusedException] — that is the audit's `http://attacker.com#@host/`
- * defence.
- *
- * @throws LRRPlaintextRefusedException when either URL has userInfo or a fragment.
- */
-internal fun matchesConfiguredServer(
-    requestUrl: HttpUrl,
-    serverUrlString: String
-): ServerMatchResult {
-    val serverUrl = serverUrlString.toHttpUrlOrNull()
-        ?: throw LRRPlaintextRefusedException("Configured server URL is not a valid HTTP(S) URL")
-
-    if (hasSuspiciousComponents(serverUrl)) {
-        throw LRRPlaintextRefusedException(
-            "Configured server URL contains userInfo or fragment"
-        )
-    }
-    if (hasSuspiciousComponents(requestUrl)) {
-        throw LRRPlaintextRefusedException(
-            "Request URL contains userInfo or fragment"
-        )
-    }
-
-    // HttpUrl.host is already lowercased and bracket-free; HttpUrl.port returns the
-    // effective port (defaults applied for the scheme).
-    if (requestUrl.host != serverUrl.host) return ServerMatchResult.MISMATCH
-    if (requestUrl.port != serverUrl.port) return ServerMatchResult.MISMATCH
-    if (requestUrl.scheme != serverUrl.scheme) return ServerMatchResult.SCHEME_DOWNGRADE
-    return ServerMatchResult.MATCH
-}
 
 /** True when [url] carries userInfo (`user:pass@`) or a fragment (`#…`). */
 private fun hasSuspiciousComponents(url: HttpUrl): Boolean {

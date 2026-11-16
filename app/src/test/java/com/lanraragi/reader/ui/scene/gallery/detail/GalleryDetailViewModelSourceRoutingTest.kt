@@ -134,12 +134,10 @@ class GalleryDetailViewModelSourceRoutingTest {
         scope = containedTestScope()
         val lookup = ProfileLookupCache(repo, scope)
         runBlocking {
-            activeProfileId = repo.insert(ServerProfile(name = "A", url = activeUrl))
+            activeProfileId = repo.insert(ServerProfile(name = "A", url = activeUrl, isActive = true))
             sourceProfileId = repo.insert(ServerProfile(name = "B", url = sourceUrl))
         }
         awaitUntil { lookup.snapshot.value?.size == 2 }
-        ServerSession.setServerUrl(activeUrl)
-        ServerSession.setActiveProfileId(activeProfileId)
 
         detailCache = LruCache(4)
         val client = OkHttpClient.Builder()

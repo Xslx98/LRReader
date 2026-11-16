@@ -10,6 +10,8 @@ import androidx.core.content.edit
 import com.lanraragi.reader.server.CredentialStoreLayout.KEYSTORE_ALIAS_PATTERN
 import com.lanraragi.reader.server.CredentialStoreLayout.KEYSTORE_ALIAS_SECURE_PREFS
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_ACTIVE_PROFILE_ID
+import com.lanraragi.reader.server.CredentialStoreLayout.KEY_ALLOW_CLEARTEXT
+import com.lanraragi.reader.server.CredentialStoreLayout.KEY_API_KEY
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_CONFIGURED_HINT
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_LEGACY_LOCK_REMOVED_NOTICE
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_LOCKOUT_BOOT
@@ -21,6 +23,7 @@ import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_HASH_V1
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_KEYSTORE_BOUND
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_LOCKOUT_UNTIL_LEGACY
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_SECURE_STORE_MIGRATED
+import com.lanraragi.reader.server.CredentialStoreLayout.KEY_SERVER_NAME
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_SERVER_URL
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_STORE_OPEN_FAILURES
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_WAS_CONFIGURED
@@ -86,9 +89,6 @@ object SecureCredentialStore {
     @Volatile
     internal var plainPrefs: SharedPreferences? = null
 
-    @Volatile
-    internal var activeProfileId: Long = 0
-
     /** True when KeyStore became unavailable and the user must re-enter credentials. */
     @Volatile
     internal var needsReauthentication: Boolean = false
@@ -107,8 +107,8 @@ object SecureCredentialStore {
      */
     internal val profileKeyCache = ConcurrentHashMap<Long, String>()
 
-    /** Backs [ServerSession.serverConfigVersion]. */
-    internal val serverConfigVersion = AtomicLong(0L)
+    /** Bumped on every API-key write; part of [ServerSession.serverConfigVersion]. */
+    internal val keyRevision = AtomicLong(0L)
 
     /**
      * Monotonic clock for the app-lock lockout (overridable in tests).
@@ -178,8 +178,7 @@ object SecureCredentialStore {
     internal var secureStoreCipher: () -> ValueCipher = { KeystoreValueCipher(KEYSTORE_ALIAS_SECURE_PREFS) }
 
     /**
-     * Gate every read/write of [prefs]/[plainPrefs]/[activeProfileId]/
-     * [needsReauthentication] behind async initialization (INF-9):
+     * Gate every read/write of [prefs]/[plainPrefs]/[needsReauthentication] behind async initialization (INF-9):
      *
      * - gate open: a single volatile read (steady state, zero cost);
      * - never scheduled: return immediately — legacy semantics for unit tests
@@ -290,23 +289,19 @@ object SecureCredentialStore {
             // destroy the user's API keys; preserving the blobs lets them
             // become readable again once KeyStore recovers on a later launch,
             // and an unfinished legacy migration is retried then too.
+            // The boot profile check (ServerSession.markReauthIfProfilesUnprotected)
+            // asks for the keys again when Room holds profiles.
             prefs = null
-            // Only prompt reauth if the user had previously configured a server
-            needsReauthentication = plain.getBoolean(KEY_WAS_CONFIGURED, false)
         } catch (e: IOException) {
             Log.e(TAG, "I/O error initializing the secure store — credentials will not persist", e)
             prefs = null
-            needsReauthentication = plain.getBoolean(KEY_WAS_CONFIGURED, false)
         } catch (e: java.security.ProviderException) {
             // KeyStore failures some devices report as a runtime exception.
             Log.e(TAG, "KeyStore provider failure — credentials will not persist this session", e)
             prefs = null
-            needsReauthentication = plain.getBoolean(KEY_WAS_CONFIGURED, false)
         }
         recordStoreOpenOutcome(plain, opened = prefs != null)
-        // Restore active profile (falls back to 0 when prefs is null)
         val opened = prefs
-        activeProfileId = opened?.getLong(KEY_ACTIVE_PROFILE_ID, 0L) ?: 0L
         // Migrate away from v1 SHA-256 pattern hash: it cannot be checked any
         // more, so the lock is dropped and the app opens unlocked. Tell the
         // user once (AppLockCredentials.isLegacyLockRemovedNoticePending, audit
@@ -317,19 +312,11 @@ object SecureCredentialStore {
             }
             opened.edit { remove(KEY_PATTERN_HASH_V1) }
         }
-        // Persist "was_configured" flag when a server URL exists, so we can detect
-        // KeyStore corruption vs fresh install on next startup.
-        if (opened?.getString(KEY_SERVER_URL, null) != null) {
-            plain.edit { putBoolean(KEY_WAS_CONFIGURED, true) }
-        }
         if (opened != null) {
-            // Refresh the plain mirrors from the source of truth (also
-            // migrates installs from before they existed).
+            // Refresh the plain mirror from the source of truth (also
+            // migrates installs from before it existed).
             synchronized(lockMirrorWrite) {
-                plain.edit {
-                    putBoolean(KEY_LOCK_ENABLED, hasPatternIn(opened))
-                    putBoolean(KEY_CONFIGURED_HINT, !opened.getString(KEY_SERVER_URL, null).isNullOrEmpty())
-                }
+                plain.edit { putBoolean(KEY_LOCK_ENABLED, hasPatternIn(opened)) }
             }
         }
     }
@@ -395,9 +382,8 @@ object SecureCredentialStore {
             }
             deletePatternKeystoreKey()
         }
-        if (plain.getBoolean(KEY_WAS_CONFIGURED, false)) {
-            needsReauthentication = true
-        }
+        // The API keys: the boot profile check finds Room's profiles without
+        // a key in the new store and asks for them again.
     }
 
     internal fun legacyStoreFile(context: Context) =
@@ -462,7 +448,6 @@ object SecureCredentialStore {
         plainPrefs = testPrefs
         profileKeyCache.clear()
         needsReauthentication = false
-        activeProfileId = testPrefs.getLong(KEY_ACTIVE_PROFILE_ID, 0L)
         clockMillis = { SystemClock.elapsedRealtime() }
         openInitGate()
     }
@@ -476,7 +461,6 @@ object SecureCredentialStore {
     internal fun simulateStorageUnavailableForTesting() {
         prefs = null
         profileKeyCache.clear()
-        activeProfileId = 0L
         // Keep plainPrefs alive — lockout state must survive KeyStore failures.
     }
 
@@ -567,7 +551,6 @@ object SecureCredentialStore {
         plainPrefs?.edit {
             remove(KEY_PATTERN_KEYSTORE_BOUND)
             remove(KEY_LOCK_ENABLED)
-            remove(KEY_CONFIGURED_HINT)
             remove(KEY_PATTERN_FAIL_COUNT)
             remove(KEY_PATTERN_LOCKOUT_UNTIL_LEGACY)
             remove(KEY_LOCKOUT_DURATION)
@@ -575,7 +558,57 @@ object SecureCredentialStore {
             remove(KEY_LOCKOUT_BOOT)
         }
         deletePatternKeystoreKey()
-        activeProfileId = 0
         needsReauthentication = false
     }
+
+    /**
+     * The secure store's copy of the active server from before v2.5
+     * (server URL, key, name, profile id, cleartext flag), read once by the
+     * boot migration that hands it to Room. Null when there is none or the
+     * store is closed.
+     */
+    internal fun legacyActiveSession(): LegacyActiveSession? {
+        awaitInit()
+        val opened = prefs ?: return null
+        val id = opened.getLong(KEY_ACTIVE_PROFILE_ID, 0L)
+        val url = opened.getString(KEY_SERVER_URL, null)?.ifEmpty { null }
+        if (id == 0L && url == null) return null
+        return LegacyActiveSession(
+            profileId = id,
+            url = url,
+            name = opened.getString(KEY_SERVER_NAME, null),
+            apiKey = opened.getString(KEY_API_KEY, null),
+            allowCleartext = opened.getBoolean(KEY_ALLOW_CLEARTEXT, true),
+        )
+    }
+
+    /**
+     * Drop the pre-v2.5 active-session copies, secure and plain. Only once
+     * the store is open: the secure ones must be read by
+     * [legacyActiveSession] first, so a closed store keeps them for a later boot.
+     */
+    internal fun dropLegacyActiveSession() {
+        awaitInit()
+        val opened = prefs ?: return
+        opened.edit {
+            remove(KEY_SERVER_URL)
+            remove(KEY_API_KEY)
+            remove(KEY_SERVER_NAME)
+            remove(KEY_ACTIVE_PROFILE_ID)
+            remove(KEY_ALLOW_CLEARTEXT)
+        }
+        fastPlainPrefs()?.edit {
+            remove(KEY_CONFIGURED_HINT)
+            remove(KEY_WAS_CONFIGURED)
+        }
+    }
 }
+
+/** See [SecureCredentialStore.legacyActiveSession]. */
+internal data class LegacyActiveSession(
+    val profileId: Long,
+    val url: String?,
+    val name: String?,
+    val apiKey: String?,
+    val allowCleartext: Boolean,
+)

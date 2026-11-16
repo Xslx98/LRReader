@@ -9,6 +9,7 @@
  */
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.installActiveServer
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitRequest
 import android.content.Context
@@ -83,7 +84,7 @@ class LRRUrlHelperConnectTest {
 
     @Test
     fun explicitUrl_withKey_sendsBearerAndLeavesGlobalUrlUntouched() = runBlocking {
-        ServerSession.setServerUrl("http://prior.example.com:3000")
+        installActiveServer("http://prior.example.com:3000")
         server.enqueue(MockResponse().setResponseCode(200).setBody(infoJson))
 
         val result = LRRUrlHelper.connectWithFallback(client, baseUrl(), "candidate-key")
@@ -120,7 +121,7 @@ class LRRUrlHelperConnectTest {
 
     @Test
     fun schemelessLadder_httpsFailsHttpSucceeds_globalUrlStillUntouched() = runBlocking {
-        ServerSession.setServerUrl("http://prior.example.com:3000")
+        installActiveServer("http://prior.example.com:3000")
         // Schemeless 127.0.0.1:port → HTTPS attempt against the plaintext
         // MockWebServer fails the TLS handshake fast, then the LAN gate admits
         // the HTTP fallback which succeeds.

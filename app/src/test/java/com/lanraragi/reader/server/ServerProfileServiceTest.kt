@@ -22,6 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -56,6 +57,7 @@ class ServerProfileServiceTest {
     private lateinit var scope: CoroutineScope
     private lateinit var service: ServerProfileService
     private lateinit var url: String
+    private val cacheScope = com.lanraragi.reader.containedTestScope()
 
     @Before
     fun setUp() {
@@ -75,7 +77,12 @@ class ServerProfileServiceTest {
             data = object : IDataModule {
                 override val searchHistoryRepository get() = SearchHistoryRepository(db.browsingDao(), db)
                 override val profileRepository get() = ProfileRepository(db.miscDao())
-                override val profileLookupCache get() = throw UnsupportedOperationException("not needed")
+                // Lags Room on purpose: a commit must return only once the
+                // cache shows it, so the reads right after it see the new server.
+                override val profileLookupCache = ProfileLookupCache(
+                    ProfileRepository(db.miscDao()).observeAll().onEach { delay(150) },
+                    cacheScope,
+                )
                 override val historyRepository get() = HistoryRepository(db.archiveLocalStateDao(), db)
                 override val quickSearchRepository get() = throw UnsupportedOperationException("not needed")
                 override val favoritesRepository get() = throw UnsupportedOperationException("not needed")
@@ -88,6 +95,8 @@ class ServerProfileServiceTest {
         )
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         service = ServerProfileService(scope)
+        // Loaded before the commit, so a read after it cannot block until fresh data arrives.
+        runBlocking { ServiceRegistry.dataModule.profileLookupCache.awaitInitialized() }
     }
 
     @After

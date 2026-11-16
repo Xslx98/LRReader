@@ -25,8 +25,8 @@ class LRRSearchResult {
      * thumbnail route (mirrors toArchive's null-URL tolerance).
      *
      * Archive entries use [sourceProfileId] / [sourceBaseUrl], resolved once
-     * for the whole page rather than per entry by toArchive's defaults (audit
-     * 06e PERF-01: the URL lives in the encrypted store).
+     * for the whole page rather than per entry by toArchive's defaults, so a
+     * page never mixes two servers across a switch.
      */
     fun toArchiveList(
         includeTanks: Boolean = false,

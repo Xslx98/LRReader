@@ -34,6 +34,8 @@ internal object CredentialStoreLayout {
 
     /** The legacy store was copied (or there was none). */
     const val KEY_SECURE_STORE_MIGRATED = "secure_store_v2"
+
+    /** Pre-v2.5 "a server was configured" flag; only removed now. */
     const val KEY_WAS_CONFIGURED = "was_configured"
 
     /**
@@ -46,15 +48,19 @@ internal object CredentialStoreLayout {
     const val KEY_STORE_OPEN_FAILURES = "secure_store_open_failures"
 
     /**
-     * Plain-prefs mirrors of two facts that live in encrypted storage, so a
-     * launch decision needs no keystore work and a keystore failure cannot
-     * make a locked app look unlocked (fail closed). Absent = not yet
-     * written by this version; callers then fall back to the secure store.
+     * Plain-prefs mirror of whether an app-lock pattern is set, so a launch
+     * decision needs no keystore work and a keystore failure cannot make a
+     * locked app look unlocked (fail closed). Absent = not yet written by
+     * this version; callers then fall back to the secure store.
      */
     const val KEY_LOCK_ENABLED = "app_lock_enabled"
+
+    /** Pre-v2.5 plain mirror of "a server is configured"; only removed now. */
     const val KEY_CONFIGURED_HINT = "server_configured"
 
-    // ── Secure store: the active server session ─────────────────────────
+    // ── Secure store: the pre-v2.5 active-server copy ───────────────────
+    // Room's IS_ACTIVE profile is the active server now. These are read once
+    // by the boot migration (SecureCredentialStore.legacyActiveSession) and removed.
 
     const val KEY_SERVER_URL = "server_url"
     const val KEY_API_KEY = "api_key"

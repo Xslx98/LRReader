@@ -9,6 +9,8 @@ import com.lanraragi.reader.dao.MiscRoomDao
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.dao.ServerProfile
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -197,5 +199,76 @@ class ProfileLookupCacheTest {
         // Callers see an unknown profile (their existing error path), not a hang.
         val resolved = runCatching { withTimeout(2_000) { resolveSourceBaseUrl(7L, cache) } }
         assertTrue(resolved.exceptionOrNull() is OrphanProfileException)
+    }
+
+    // ── The active server ───────────────────────────────────────────
+
+    private fun row(id: Long, url: String, active: Boolean, cleartext: Boolean = true) =
+        ServerProfile(id, "S$id", url, active, cleartext)
+
+    private fun staticCache(rows: MutableStateFlow<List<ServerProfile>>) =
+        ProfileLookupCache(rows, CoroutineScope(Dispatchers.Unconfined))
+
+    @Test
+    fun activeServer_isTheActiveRowOfTheSameEmission() {
+        val rows = MutableStateFlow(listOf(row(1, "http://a.local/", false), row(2, "http://b.local:3000/", true, cleartext = false)))
+        val cache = staticCache(rows)
+
+        assertEquals(ActiveServer(2, "http://b.local:3000", "S2", false), cache.activeServer.value)
+
+        rows.value = listOf(row(1, "http://a.local/", false), row(2, "http://b.local:3000/", false))
+        assertNull("no active row, no active server", cache.activeServer.value)
+    }
+
+    @Test
+    fun activeRevision_movesOnlyWhenTheActiveServerChanges() {
+        val rows = MutableStateFlow(listOf(row(1, "http://a.local", true), row(2, "http://b.local", false)))
+        val cache = staticCache(rows)
+        val start = cache.activeRevision
+
+        rows.value = listOf(row(1, "http://a.local", true), row(2, "http://b2.local", false))
+        assertEquals("an inactive profile's edit", start, cache.activeRevision)
+
+        rows.value = listOf(row(1, "http://a.local", false), row(2, "http://b2.local", true))
+        assertEquals("a switch", start + 1, cache.activeRevision)
+
+        rows.value = listOf(row(1, "http://a.local", false), row(2, "http://b2.local", true, cleartext = false))
+        assertEquals("the active profile's consent", start + 2, cache.activeRevision)
+    }
+
+    @Test(timeout = 10_000)
+    fun activeServerBlocking_waitsForTheFirstEmission() {
+        val gate = MutableStateFlow<List<ServerProfile>?>(null)
+        val cache = ProfileLookupCache(gate.filterNotNull(), CoroutineScope(Dispatchers.Default))
+        Thread { Thread.sleep(200); gate.value = listOf(row(4, "http://late.local", true)) }.start()
+
+        assertEquals(4L, cache.activeServerBlocking()?.id)
+    }
+
+    @Test(timeout = 10_000)
+    fun activeServerBlocking_onMain_givesUpBeforeTheAnrLimit_thenStopsWaiting() {
+        val cache = ProfileLookupCache(MutableStateFlow<List<ServerProfile>?>(null).filterNotNull(), CoroutineScope(Dispatchers.Default))
+
+        val start = System.nanoTime()
+        assertNull(cache.activeServerBlocking())
+        val firstMs = (System.nanoTime() - start) / 1_000_000
+        assertTrue("main-thread wait is bounded, was $firstMs ms", firstMs in 1_500..4_000)
+
+        val again = System.nanoTime()
+        cache.activeServerBlocking()
+        assertTrue("a later main-thread read does not wait again", (System.nanoTime() - again) / 1_000_000 < 500)
+    }
+
+    @Test(timeout = 10_000)
+    fun awaitActive_returnsOnceTheCommitIsVisible() = runBlocking {
+        val rows = MutableStateFlow(listOf(row(1, "http://a.local", true), row(2, "http://b.local", false)))
+        val cache = ProfileLookupCache(rows, CoroutineScope(Dispatchers.Default))
+        cache.awaitInitialized()
+
+        val waiter = async(Dispatchers.Default) { cache.awaitActive { it?.id == 2L } }
+        rows.value = listOf(row(1, "http://a.local", false), row(2, "http://b.local", true))
+        waiter.await()
+
+        assertEquals(2L, cache.activeServer.value?.id)
     }
 }

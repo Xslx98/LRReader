@@ -137,4 +137,69 @@ class ServerProfileDaoTest {
         assertTrue(id2 > 0)
         assertNotEquals(id1, id2)
     }
+
+    // ── One-transaction commits (active server = Room's IS_ACTIVE row) ──
+
+    @Test
+    fun insertActive_commitsTheRowTheActivationAndTheKeyWriteTogether() = runTest {
+        val old = dao.insertServerProfile(ServerProfile(name = "Old", url = "https://old.com", isActive = true))
+        var keyFor = -1L
+
+        val id = dao.insertActive(ServerProfile(name = "New", url = "https://new.com")) { keyFor = it }
+
+        assertEquals("the key is written for the new row", id, keyFor)
+        assertEquals(id, dao.getActiveProfile()?.id)
+        assertFalse(dao.findProfileById(old)!!.isActive)
+    }
+
+    @Test
+    fun insertActive_keyWriteFails_commitsNothing() = runTest {
+        val old = dao.insertServerProfile(ServerProfile(name = "Old", url = "https://old.com", isActive = true))
+
+        val thrown = runCatching {
+            dao.insertActive(ServerProfile(name = "New", url = "https://new.com")) { error("keystore down") }
+        }
+
+        assertTrue(thrown.isFailure)
+        assertEquals(listOf("Old"), dao.getAllServerProfiles().map { it.name })
+        assertEquals("the previous server stays active", old, dao.getActiveProfile()?.id)
+    }
+
+    @Test
+    fun updateActive_keyWriteFails_keepsTheOldRowAndTheOldActiveServer() = runTest {
+        val a = dao.insertServerProfile(ServerProfile(name = "A", url = "https://a.com", isActive = true))
+        val b = dao.insertServerProfile(ServerProfile(name = "B", url = "https://b.com"))
+
+        runCatching {
+            dao.updateActive(ServerProfile(b, "B2", "https://b2.com", true)) { error("keystore down") }
+        }
+
+        assertEquals("https://b.com", dao.findProfileById(b)!!.url)
+        assertEquals(a, dao.getActiveProfile()?.id)
+    }
+
+    @Test
+    fun updateWithKey_keyWriteFails_keepsTheOldRow() = runTest {
+        val id = dao.insertServerProfile(ServerProfile(name = "A", url = "https://a.com", isActive = true))
+
+        runCatching { dao.updateWithKey(ServerProfile(id, "A2", "https://a2.com", true)) { error("keystore down") } }
+
+        assertEquals("https://a.com", dao.findProfileById(id)!!.url)
+    }
+
+    @Test
+    fun updateWithKey_rowWriteFails_neverWritesTheKey() = runTest {
+        var keyWritten = false
+        // A duplicate-free table has no failing UPDATE; a row that a trigger
+        // rejects stands in for a disk error on the row write.
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TEMP TRIGGER reject BEFORE UPDATE ON SERVER_PROFILES BEGIN SELECT RAISE(ABORT, 'disk'); END"
+        )
+        val id = dao.insertServerProfile(ServerProfile(name = "A", url = "https://a.com", isActive = true))
+
+        val thrown = runCatching { dao.updateWithKey(ServerProfile(id, "A2", "https://a2.com", true)) { keyWritten = true } }
+
+        assertTrue(thrown.isFailure)
+        assertFalse("the key write runs after the row write", keyWritten)
+    }
 }

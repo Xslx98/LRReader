@@ -1,11 +1,11 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.installActiveServer
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.client.api.data.LRRTagStat
 import com.lanraragi.reader.server.SecureCredentialStore
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.stubNetworkModule
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -60,7 +60,7 @@ class LRRTagCacheFetchTest {
 
     @Test
     fun fetchesStatsFromTheActiveServer() = runBlocking {
-        ServerSession.setServerUrl(server.url("/").toString())
+        installActiveServer(server.url("/").toString())
         server.enqueue(MockResponse().setBody("""[{"namespace":"artist","text":"john","weight":3}]"""))
 
         val tags = LRRTagCache.getTags(client)

@@ -165,7 +165,7 @@ class MainActivity : StageActivity(), AppUnlockHost,
     override fun getLaunchAnnouncer(): Announcer {
         return if (SecuritySettings.isLockEnabled()) {
             Announcer(SecurityScene::class.java)
-        } else if (!ServerSession.isConfiguredFast()) {
+        } else if (!ServerSession.isConfigured()) {
             // LANraragi: show server config if not yet configured
             val announcer = Announcer(ServerConfigScene::class.java)
             // Benchmark builds only (PerfSeam): auto-fill and submit the form.

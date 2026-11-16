@@ -1,5 +1,6 @@
 package com.lanraragi.reader.server
 
+import com.lanraragi.reader.installActiveServer
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -53,6 +54,8 @@ class ArchiveSourceResolverTest {
         // that would otherwise escape to the global handler and fail the
         // next runTest in this sandbox with UncaughtExceptionsBeforeTest.
         scope = containedTestScope()
+        // No active server unless a test installs one (the registry outlives a test).
+        com.lanraragi.reader.ServiceRegistry.initializeForTest(coroutine = null, data = com.lanraragi.reader.stubDataModule())
         // Wire SecureCredentialStore onto a clean SharedPreferences so the legacy
         // (id == 0) fallback path is testable without touching KeyStore.
         val prefs = ctx.getSharedPreferences("lrr_test_prefs", Context.MODE_PRIVATE)
@@ -79,7 +82,7 @@ class ArchiveSourceResolverTest {
 
     @Test
     fun legacyId_returnsActiveServerUrl() = runBlocking {
-        ServerSession.setServerUrl("http://active.local:3000")
+        installActiveServer("http://active.local:3000")
         val cache = newCache()
         cache.awaitInitialized()
 

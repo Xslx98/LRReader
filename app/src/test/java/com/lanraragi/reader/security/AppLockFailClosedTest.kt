@@ -63,22 +63,14 @@ class AppLockFailClosedTest {
     }
 
     @Test
-    fun serverUrlMaintainsTheConfiguredMirror() {
-        assertNull(ServerSession.configuredHint())
-        ServerSession.setServerUrl("http://10.0.2.2:3000/")
-        assertEquals(true, ServerSession.configuredHint())
-        assertTrue(ServerSession.isConfiguredFast())
-    }
-
-    @Test
     fun resetClearsTheLockAndTheCredentials() {
         AppLockCredentials.setPattern("0123")
-        ServerSession.setServerUrl("http://10.0.2.2:3000")
+        ServerSession.setApiKeyForProfile(1L, "key")
 
         AppLockCredentials.resetAppLockAndCredentials(ctx)
 
         assertEquals(false, AppLockCredentials.lockEnabledHint())
-        assertEquals(false, ServerSession.configuredHint())
+        assertNull(ServerSession.getApiKeyForProfile(1L))
         assertFalse(SecuritySettings.isLockEnabled())
     }
 }

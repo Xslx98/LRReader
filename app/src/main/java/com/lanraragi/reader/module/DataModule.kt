@@ -37,9 +37,10 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
     }
 
     override val profileLookupCache: ProfileLookupCache by lazy {
+        // Off main: main-thread readers block on the first emission.
         ProfileLookupCache(
             repo = profileRepository,
-            scope = ServiceRegistry.coroutineModule.applicationScope,
+            scope = ServiceRegistry.coroutineModule.ioScope,
         )
     }
 
