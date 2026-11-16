@@ -27,54 +27,43 @@ object SecuritySettings {
     // Legacy key — used only for one-time migration to hashed storage.
     private const val KEY_SECURITY = "security"
 
+    /** A pre-hash plaintext pattern is still stored under the legacy Settings key. */
+    private fun hasLegacyPlaintextPattern(): Boolean = !Settings.getString(KEY_SECURITY, "").isNullOrEmpty()
+
+    /** @return true if an app-lock pattern is stored (hashed, or the pre-hash plaintext not yet migrated). */
+    @JvmStatic
+    fun hasPattern(): Boolean = AppLockCredentials.hasPattern() || hasLegacyPlaintextPattern()
+
     /**
-     * @return true if an app-lock pattern has been set.
-     *
-     * Performs a one-time migration: if a plaintext pattern was stored under the
-     * legacy Settings key it is hashed into EncryptedSharedPreferences and the
-     * plaintext is erased.
+     * Boot step, once the secure store has opened: hash a plaintext pattern
+     * stored by the oldest versions under the legacy Settings key into the
+     * secure store, then erase the plaintext. With the store unavailable the
+     * plaintext stays (the app stays locked, see [isLockEnabled]) and the
+     * next boot retries.
      */
     @JvmStatic
-    fun hasPattern(): Boolean {
-        if (AppLockCredentials.hasPattern()) return true
-        // One-time migration: hash the legacy plaintext pattern
-        val legacy = Settings.getString(KEY_SECURITY, "") ?: ""
-        if (legacy.isNotEmpty()) {
-            try {
-                AppLockCredentials.setPattern(legacy)
-                Settings.putString(KEY_SECURITY, "")
-                return true
-            } catch (e: LRRSecureStorageUnavailableException) {
-                // KeyStore unavailable — leave legacy plaintext in place so migration
-                // can retry next launch, and report "no pattern" for this session.
-                Log.w(TAG, "Could not migrate legacy pattern to secure storage", e)
-                return false
-            }
+    fun migrateLegacyPattern() {
+        val legacy = Settings.getString(KEY_SECURITY, "").orEmpty()
+        if (legacy.isEmpty()) return
+        try {
+            AppLockCredentials.setPattern(legacy)
+            Settings.putString(KEY_SECURITY, "")
+        } catch (e: LRRSecureStorageUnavailableException) {
+            Log.e(TAG, "Could not migrate legacy pattern to secure storage", e)
         }
-        return false
     }
 
     /**
      * Whether the app lock is on — the value every lock gate must use.
      *
-     * Reads the plain-prefs mirror, so it needs no keystore work (safe on the
-     * launch path) and FAILS CLOSED: when the secure store cannot be opened,
-     * [hasPattern] reports false, but the mirror still says the app is
-     * locked. Before this version has written the mirror (first launch after
-     * upgrading from <= v1.26) it decides without the keystore and reports
-     * "locked" while that is not possible (audit 2026-10-06c SEC-01, see
-     * [AppLockCredentials.isLockSetOrUnknown]).
+     * [AppLockCredentials.lockState]: reads the plain-prefs mirror, so it
+     * needs no keystore work (safe on the launch path) and FAILS CLOSED: when
+     * the secure store cannot be opened, [hasPattern] reports false, but the
+     * mirror still says the app is locked (audit 2026-10-06c SEC-01). A
+     * plaintext pattern not yet migrated ([migrateLegacyPattern]) is locked too.
      */
     @JvmStatic
-    fun isLockEnabled(): Boolean {
-        if (!Settings.getString(KEY_SECURITY, "").isNullOrEmpty()) {
-            // Pre-hash plaintext pattern: locked. Migrate it while the mirror
-            // is unwritten, as before.
-            if (AppLockCredentials.lockEnabledHint() == null) hasPattern()
-            return true
-        }
-        return AppLockCredentials.isLockSetOrUnknown()
-    }
+    fun isLockEnabled(): Boolean = hasLegacyPlaintextPattern() || AppLockCredentials.lockState().isLocked
 
     /**
      * Whether a lock is known to be set, as opposed to only "cannot be ruled
@@ -83,8 +72,7 @@ object SecuritySettings {
      */
     @JvmStatic
     fun isLockKnownSet(): Boolean =
-        !Settings.getString(KEY_SECURITY, "").isNullOrEmpty() ||
-            AppLockCredentials.lockStateWithoutKeystore() == true
+        hasLegacyPlaintextPattern() || AppLockCredentials.lockStateWithoutKeystore() == true
 
     /**
      * Hash and store [pattern] in EncryptedSharedPreferences.
