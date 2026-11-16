@@ -122,7 +122,7 @@ class LRRDownloadWorker(
      */
     private lateinit var serverUrl: String
 
-    var listener: DownloadWorkerListener? = null
+    internal var listener: DownloadWorkerListener? = null
 
     /** Network-wait lifecycle, surfaced to the scheduler for notifications/banner. */
     enum class NetworkWaitEvent { WAITING, RESUMED, TIMED_OUT }
@@ -171,8 +171,7 @@ class LRRDownloadWorker(
 
     /** The reason of the latest page that was given up on, if any. */
     @Volatile
-    internal var failureReason: DownloadFailureReason? = null
-        private set
+    private var failureReason: DownloadFailureReason? = null
 
     fun start() {
         cancelled = false
@@ -188,7 +187,7 @@ class LRRDownloadWorker(
                     Log.e(TAG, "Uncaught exception in download worker", e)
                     listener?.run {
                         onPageFailure(0, "Unexpected error: ${e.message}", 0, 0, 0)
-                        onFinish(0, 0, 0)
+                        onFinish(WorkerResult.Failed(failureReason))
                     }
                 }
             }
@@ -251,7 +250,7 @@ class LRRDownloadWorker(
                     context.getString(R.string.lrr_download_orphan_profile),
                     0, 0, 0,
                 )
-                onFinish(0, 0, 0)
+                onFinish(WorkerResult.Failed(failureReason))
             }
             return
         }
@@ -290,7 +289,7 @@ class LRRDownloadWorker(
                         failureReason = DownloadFailureReason.NETWORK
                         listener?.run {
                             onPageFailure(0, "Network timeout", 0, 0, 0)
-                            onFinish(0, 0, 0)
+                            onFinish(WorkerResult.Failed(failureReason))
                         }
                         return
                     }
@@ -325,7 +324,7 @@ class LRRDownloadWorker(
         if (downloadDir == null) {
             listener?.run {
                 onPageFailure(0, "Cannot create download directory", 0, 0, total)
-                onFinish(0, 0, total)
+                onFinish(WorkerResult.Failed(failureReason, total = total))
             }
             return
         }
@@ -402,7 +401,7 @@ class LRRDownloadWorker(
         }
 
         // Step 4: Report finish
-        listener?.onFinish(finished.get(), downloaded.get(), total)
+        listener?.onFinish(WorkerResult.of(finished.get(), downloaded.get(), total, failureReason))
     }
 
     /** On disk with a valid header and size, and not marked for a re-download. */
@@ -563,7 +562,7 @@ class LRRDownloadWorker(
         failureReason = reason
         listener?.run {
             onPageFailure(0, "Extract failed: ${e.message}", 0, 0, 0)
-            onFinish(0, 0, 0)
+            onFinish(WorkerResult.Failed(failureReason))
         }
     }
 
@@ -590,7 +589,7 @@ class LRRDownloadWorker(
         }
         listener?.run {
             onGetPages(pagecount)
-            onFinish(pagecount, 0, pagecount)
+            onFinish(WorkerResult.Finished(downloaded = 0, total = pagecount))
         }
         return true
     }

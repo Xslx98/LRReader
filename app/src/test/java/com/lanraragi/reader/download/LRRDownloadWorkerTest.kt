@@ -112,6 +112,7 @@ class LRRDownloadWorkerTest {
         val done = CountDownLatch(1)
         @Volatile var finished = -1
         @Volatile var total = -1
+        @Volatile var reason: DownloadFailureReason? = null
     }
 
     private fun run(): Result {
@@ -141,9 +142,11 @@ class LRRDownloadWorkerTest {
             override fun onPageDownload(index: Int, contentLength: Long, receivedSize: Long, bytesRead: Int) {}
             override fun onPageSuccess(index: Int, finished: Int, downloaded: Int, total: Int) = onSuccess(index)
             override fun onPageFailure(index: Int, error: String, finished: Int, downloaded: Int, total: Int) {}
-            override fun onFinish(finished: Int, downloaded: Int, total: Int) {
-                result.finished = finished
-                result.total = total
+            override fun onFinish(result: WorkerResult) = finish(result)
+            private fun finish(outcome: WorkerResult) {
+                result.finished = outcome.finished
+                result.total = outcome.total
+                result.reason = (outcome as? WorkerResult.Failed)?.reason
                 result.done.countDown()
             }
         }
@@ -162,7 +165,7 @@ class LRRDownloadWorkerTest {
         assertEquals(3, r.total)
         assertEquals(3, dir.listFiles()!!.count { it.name.endsWith(".jpg") })
         assertEquals(ARCID, DownloadDirMarker.read(com.lanraragi.reader.storage.StorageFile(dir))?.arcid)
-        assertEquals(null, worker.failureReason)
+        assertEquals(null, r.reason)
     }
 
     @Test
@@ -181,7 +184,7 @@ class LRRDownloadWorkerTest {
         val r = run()
 
         assertEquals(3, r.finished)
-        assertEquals(null, worker.failureReason)
+        assertEquals(null, r.reason)
     }
 
     @Test
@@ -211,7 +214,7 @@ class LRRDownloadWorkerTest {
         val r = run()
 
         assertEquals(0, r.finished)
-        assertEquals(DownloadFailureReason.AUTH, worker.failureReason)
+        assertEquals(DownloadFailureReason.AUTH, r.reason)
         // No page is asked twice, and the window stops claiming new pages.
         assertTrue(pageHits.values.all { it.get() == 1 })
         assertTrue("pages requested: ${pageHits.size}", pageHits.size < pageCount)
@@ -232,7 +235,7 @@ class LRRDownloadWorkerTest {
 
         assertEquals(3, r.finished)
         assertEquals(2, hits(2))
-        assertEquals(null, worker.failureReason)
+        assertEquals(null, r.reason)
     }
 
     @Test
@@ -245,7 +248,7 @@ class LRRDownloadWorkerTest {
 
         assertEquals(2, r.finished)
         assertEquals(2, hits(3))
-        assertEquals(DownloadFailureReason.CORRUPT, worker.failureReason)
+        assertEquals(DownloadFailureReason.CORRUPT, r.reason)
     }
 
     @Test
@@ -255,7 +258,7 @@ class LRRDownloadWorkerTest {
         val r = run()
 
         assertEquals(0, r.finished)
-        assertEquals(DownloadFailureReason.NO_SPACE, worker.failureReason)
+        assertEquals(DownloadFailureReason.NO_SPACE, r.reason)
         assertEquals(0, pageHits.size)
     }
 
@@ -268,7 +271,7 @@ class LRRDownloadWorkerTest {
         val r = run()
 
         assertEquals(3, r.finished)
-        assertEquals(null, worker.failureReason)
+        assertEquals(null, r.reason)
         assertEquals(0, pageHits.size)
     }
 
@@ -279,7 +282,7 @@ class LRRDownloadWorkerTest {
         val r = run()
 
         assertEquals(0, r.total)
-        assertEquals(DownloadFailureReason.NOT_FOUND, worker.failureReason)
+        assertEquals(DownloadFailureReason.NOT_FOUND, r.reason)
         assertEquals(0, pageHits.size)
         // Permanent: asked once, no retry (audit 2026-10-06e REL-02).
         assertEquals(1, filesHitTimes.size)
@@ -295,7 +298,7 @@ class LRRDownloadWorkerTest {
         assertEquals(3, r.finished)
         assertEquals(3, r.total)
         assertEquals(2, filesHitTimes.size)
-        assertEquals(null, worker.failureReason)
+        assertEquals(null, r.reason)
     }
 
     @Test(timeout = 60_000)
@@ -322,7 +325,7 @@ class LRRDownloadWorkerTest {
 
         assertEquals(0, r.total)
         assertEquals(PageRetryPolicy.TRANSIENT_ATTEMPTS, filesHitTimes.size)
-        assertEquals(DownloadFailureReason.SERVER, worker.failureReason)
+        assertEquals(DownloadFailureReason.SERVER, r.reason)
         assertEquals(0, pageHits.size)
     }
 
@@ -334,7 +337,7 @@ class LRRDownloadWorkerTest {
 
         assertEquals(0, r.total)
         assertEquals(1, filesHitTimes.size)
-        assertEquals(DownloadFailureReason.UNKNOWN, worker.failureReason)
+        assertEquals(DownloadFailureReason.UNKNOWN, r.reason)
     }
 
     /** On-disk file of 1-based page [n] (the worker's naming). */
@@ -355,7 +358,7 @@ class LRRDownloadWorkerTest {
         assertEquals("only the marked page is fetched again", mapOf(2 to 1), pageHits.mapValues { it.value.get() })
         assertEquals("counted only once it was fetched again", 1, hitsWhenCounted.get())
         assertFalse(DownloadPageRepair.isMarked(pageFile(2)))
-        assertEquals(null, worker.failureReason)
+        assertEquals(null, r.reason)
     }
 
     @Test(timeout = 60_000)
@@ -383,7 +386,7 @@ class LRRDownloadWorkerTest {
 
         assertEquals(2, r.finished)
         assertEquals(PageRetryPolicy.TRANSIENT_ATTEMPTS, hits(1))
-        assertEquals(DownloadFailureReason.SERVER, worker.failureReason)
+        assertEquals(DownloadFailureReason.SERVER, r.reason)
     }
 
     /**
@@ -405,7 +408,7 @@ class LRRDownloadWorkerTest {
         assertEquals("the two good pages still count", 2, r.finished)
         assertEquals("no second round of retries", PageRetryPolicy.TRANSIENT_ATTEMPTS, hits(2))
         assertTrue("still marked for the next run", DownloadPageRepair.isMarked(pageFile(2)))
-        assertEquals(DownloadFailureReason.SERVER, worker.failureReason)
+        assertEquals(DownloadFailureReason.SERVER, r.reason)
     }
 
     private companion object {

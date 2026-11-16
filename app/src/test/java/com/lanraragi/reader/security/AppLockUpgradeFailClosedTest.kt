@@ -55,6 +55,9 @@ class AppLockUpgradeFailClosedTest {
         SecureCredentialStore.resetInitGateForTesting()
         // Production has no store until init opens one; earlier tests leave one behind.
         SecureCredentialStore.simulateStorageUnavailableForTesting()
+        // Nor its plain prefs: an earlier class's initializeForTesting points them
+        // at its own file, whose lock mirror would decide these tests.
+        SecureCredentialStore.plainPrefs = null
         wipeFiles()
         AppLockGate.resetForTesting()
     }

@@ -109,7 +109,7 @@ class DownloadsScene : ToolbarScene(),
     private var mViewTransition: ViewTransition? = null
     private var mTip: TextView? = null
 
-    /** Last [com.lanraragi.reader.download.DownloadManager.loadError] (audit C34 / STAB-13). */
+    /** The error of a failed [com.lanraragi.reader.download.DownloadManager.loadState] (audit C34 / STAB-13). */
     internal var loadError: Throwable? = null
     private lateinit var mFabLayout: FabLayout
     private var mAdapter: RecyclerView.Adapter<*>? = null

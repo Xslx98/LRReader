@@ -36,6 +36,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Collections
 import com.lanraragi.reader.dao.DownloadState
@@ -90,20 +91,18 @@ class DownloadRepository(
     // Init lifecycle
     // ═══════════════════════════════════════════════════════════
 
-    /** Signals when async init is complete. */
-    internal val initDeferred = CompletableDeferred<Unit>()
+    private val _loadState = MutableStateFlow<DownloadLoadState>(DownloadLoadState.Loading)
 
-    @Volatile
-    internal var initialized = false
+    /** The one record of the load; [retryLoading] moves it back to Loading. */
+    val loadState: StateFlow<DownloadLoadState> = _loadState.asStateFlow()
 
-    private val _loadError = MutableStateFlow<Throwable?>(null)
+    /** The load ended (loaded or failed); false again while a retry runs. */
+    internal val initialized: Boolean get() = _loadState.value !is DownloadLoadState.Loading
 
-    /**
-     * Set when the load from Room failed (audit 2026-10-04 C34 / STAB-13). The
-     * in-memory lists are then empty although the database may hold downloads,
-     * so the Downloads screen shows an error with Retry instead of "no downloads".
-     */
-    val loadError: StateFlow<Throwable?> = _loadError.asStateFlow()
+    /** Suspends until the load ends, see [initialized]. */
+    internal suspend fun awaitLoadEnded() {
+        _loadState.first { it !is DownloadLoadState.Loading }
+    }
 
     // ═══════════════════════════════════════════════════════════
     // Thread helpers
@@ -154,22 +153,20 @@ class DownloadRepository(
                 loadDataFromDb(onComplete)
             } catch (e: CancellationException) {
                 Log.e(TAG, "Download data load cancelled", e)
-                finishFailedLoad(onComplete)
+                finishFailedLoad(onComplete, e)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load download data from DB", e)
                 com.lanraragi.reader.diagnostics.DiagLog.e(TAG, "Failed to load download data from DB", e)
                 com.lanraragi.reader.diagnostics.Crash.saveNonFatal(e)
-                _loadError.value = e
-                finishFailedLoad(onComplete)
+                finishFailedLoad(onComplete, e)
             }
         }
     }
 
-    /** Marks the load finished (empty) so awaiters never hang. */
-    private fun finishFailedLoad(onComplete: () -> Unit) {
+    /** Marks the load failed (lists empty) so awaiters never hang. */
+    private fun finishFailedLoad(onComplete: () -> Unit, error: Throwable) {
         runOnMainThread {
-            initialized = true
-            initDeferred.complete(Unit)
+            _loadState.value = DownloadLoadState.Failed(error)
             onComplete()
         }
     }
@@ -180,8 +177,8 @@ class DownloadRepository(
      */
     fun retryLoading(onComplete: () -> Unit) {
         assertMainThread()
-        if (_loadError.value == null) return
-        _loadError.value = null
+        if (_loadState.value !is DownloadLoadState.Failed) return
+        _loadState.value = DownloadLoadState.Loading
         startLoading(onComplete)
     }
 
@@ -277,9 +274,7 @@ class DownloadRepository(
             }
         }
 
-
-        initialized = true
-        initDeferred.complete(Unit)
+        _loadState.value = DownloadLoadState.Loaded
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -937,4 +932,19 @@ class DownloadRepository(
             list.add(insertionPoint, item)
         }
     }
+}
+
+/** Where the load of the download lists from Room stands. */
+sealed interface DownloadLoadState {
+    data object Loading : DownloadLoadState
+
+    data object Loaded : DownloadLoadState
+
+    /**
+     * The load from Room failed (audit 2026-10-04 C34 / STAB-13). The
+     * in-memory lists are then empty although the database may hold
+     * downloads, so the Downloads screen shows an error with Retry
+     * instead of "no downloads".
+     */
+    data class Failed(val error: Throwable) : DownloadLoadState
 }
