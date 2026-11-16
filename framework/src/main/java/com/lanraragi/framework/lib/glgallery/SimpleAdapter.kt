@@ -33,17 +33,12 @@ open class SimpleAdapter(
 
     override fun onBind(view: GalleryPageView, index: Int) {
         provider.request(index)
-        view.showInfo()
-        view.setImage(null)
-        view.setPage(index + 1)
-        view.setProgress(GalleryPageView.PROGRESS_INDETERMINATE)
-        view.clearError()
+        view.render(PageCellState.Wait, index + 1)
     }
 
     override fun onUnbind(view: GalleryPageView, index: Int) {
         provider.cancelRequest(index)
-        view.setImage(null)
-        view.clearError()
+        view.reset()
     }
 
     override fun getError(): String? = provider.getError()
@@ -58,41 +53,24 @@ open class SimpleAdapter(
         galleryView?.onDataChanged()
     }
 
+    /**
+     * The page cell bound to [index], unless it already shows its image: a
+     * wait, percent or failure can be re-delivered for a visible, loaded page
+     * (cache-eviction re-bind, preload churn, the recycled-image re-request
+     * path), and tearing it down to the spinner was the visible image ->
+     * white -> image flicker. A decode genuinely in flight replaces the image
+     * in place when it lands. A failure is not guarded: the page menu's
+     * Refresh drops the cached page and re-requests it, and when that fails
+     * the error text (tap to retry) must replace the stale image.
+     */
+    private fun unloadedPage(index: Int): GalleryPageView? = findPageByIndex(index)?.takeUnless { it.isLoaded }
+
     override fun onPageWait(index: Int) {
-        val page = findPageByIndex(index)
-        if (page != null) {
-            // Don't tear a page that already shows its image back down to the
-            // white loading spinner. A wait can be re-delivered for a visible,
-            // already-loaded page (cache-eviction re-bind, preload churn, the
-            // recycled-image re-request path) and blanking it to showInfo() was
-            // the visible image -> white -> image flicker. Keep the image up;
-            // if a decode is genuinely in flight, onPageSucceed replaces it in
-            // place when it lands.
-            if (page.isLoaded) {
-                return
-            }
-            page.showInfo()
-            page.setImage(null)
-            page.setPage(index + 1)
-            page.setProgress(GalleryPageView.PROGRESS_INDETERMINATE)
-            page.clearError()
-        }
+        unloadedPage(index)?.render(PageCellState.Wait, index + 1)
     }
 
     override fun onPagePercent(index: Int, percent: Float) {
-        val page = findPageByIndex(index)
-        if (page != null) {
-            // Same guard as onPageWait: a percent update for an
-            // already-displayed page must not blank it back to the spinner.
-            if (page.isLoaded) {
-                return
-            }
-            page.showInfo()
-            page.setImage(null)
-            page.setPage(index + 1)
-            page.setProgress(percent)
-            page.clearError()
-        }
+        unloadedPage(index)?.render(PageCellState.Progress(percent), index + 1)
     }
 
     override fun onPageSucceed(index: Int, image: ImageWrapper) {
@@ -101,11 +79,7 @@ open class SimpleAdapter(
             if (image.obtain()) {
                 val imageTexture = ImageTexture(image)
                 uploader.addTexture(imageTexture)
-                page.showImage()
-                page.setImage(imageTexture)
-                page.setPage(index + 1)
-                page.setProgress(GalleryPageView.PROGRESS_GONE)
-                page.clearError()
+                page.render(PageCellState.Loaded, index + 1, imageTexture)
                 // The decode recorded the page's size (GalleryProvider.pageAspect).
                 galleryView?.onPageAspectKnown(index)
             } else {
@@ -125,19 +99,8 @@ open class SimpleAdapter(
     }
 
     override fun onPageFailed(index: Int, error: String?) {
-        val page = findPageByIndex(index)
-        if (page != null) {
-            page.showInfo()
-            page.setImage(null)
-            page.setPage(index + 1)
-            page.setProgress(GalleryPageView.PROGRESS_GONE)
-            if (error == null) {
-                page.clearError()
-            } else {
-                // The page was found through the gallery view, so it is set.
-                galleryView?.let { page.setError(error, it) }
-            }
-        }
+        // The page was found through the gallery view, so it is set.
+        findPageByIndex(index)?.render(PageCellState.Error(error), index + 1, galleryView = galleryView)
     }
 
     override fun onDataChanged(index: Int) {
