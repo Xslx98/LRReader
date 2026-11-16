@@ -125,6 +125,11 @@
 
 
 
+    <declare-styleable name="StateListLayout">
+        <!-- Title of the message slot when a load answered nothing. -->
+        <attr name="stateEmptyText" format="string" />
+    </declare-styleable>
+
     <declare-styleable name="LoadImageView">
         <attr name="image_radius" format="dimension" />
         <attr name="image_circle" format="boolean" />
