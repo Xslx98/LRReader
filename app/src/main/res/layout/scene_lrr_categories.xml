@@ -19,9 +19,16 @@
         app:titleTextColor="@android:color/white"
         app:navigationIconTint="@android:color/white" />
 
+    <!-- One slot per screen state (StateListLayout.render) -->
+    <com.lanraragi.reader.widget.StateListLayout
+        android:id="@+id/state_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:stateEmptyText="@string/lrr_categories_empty">
+
     <!-- Loading state while loading categories -->
     <FrameLayout
-        android:id="@+id/progress"
+        android:id="@+id/state_progress"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone">
@@ -36,7 +43,7 @@
 
     <!-- Error / empty state -->
     <include
-        android:id="@+id/error_view"
+        android:id="@+id/state_message"
         layout="@layout/view_error_state"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -44,11 +51,13 @@
 
     <!-- Category list -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view"
+        android:id="@+id/state_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:paddingTop="4dp"
         android:paddingBottom="4dp" />
+
+    </com.lanraragi.reader.widget.StateListLayout>
 
 </LinearLayout>

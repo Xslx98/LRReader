@@ -92,6 +92,21 @@ class StateListLayoutTest {
         assertEquals(1, retries)
     }
 
+    /** A screen with its own empty look shows it instead of the message slot. */
+    @Test
+    fun `an empty slot replaces the message for an empty answer only`() {
+        val empty = View(layout.context).apply { id = R.id.state_empty }
+        layout.addView(empty)
+
+        layout.render(ListScreenState.Empty)
+        assertEquals(View.VISIBLE, empty.visibility)
+        assertEquals(listOf<String>(), shown())
+
+        layout.render(ListScreenState.Error("x", emptyList<Int>()))
+        assertEquals(View.GONE, empty.visibility)
+        assertEquals(listOf("message"), shown())
+    }
+
     /** A nested StateListLayout (a list inside a detail screen) keeps its own slots. */
     @Test
     fun `only direct children are slots`() {
