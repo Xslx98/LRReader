@@ -208,8 +208,8 @@ class DownloadManager(
         val rating: Float,
     )
 
-    /** Non-null while the download list failed to load from the database (audit C34). */
-    val loadError: kotlinx.coroutines.flow.StateFlow<Throwable?> get() = repo.loadError
+    /** Whether the download list is loading, loaded or failed to load from the database (audit C34). */
+    val loadState: kotlinx.coroutines.flow.StateFlow<DownloadLoadState> get() = repo.loadState
 
     /** Retries a failed load; listeners get onReload() as on a normal start. */
     fun retryLoading() {
@@ -219,7 +219,7 @@ class DownloadManager(
     suspend fun awaitInitAsync(timeoutMs: Long = 10_000L) {
         if (repo.initialized) return
         check(Looper.myLooper() != Looper.getMainLooper()) { "awaitInitAsync() must not be called on the main thread" }
-        kotlinx.coroutines.withTimeout(timeoutMs) { repo.initDeferred.await() }
+        kotlinx.coroutines.withTimeout(timeoutMs) { repo.awaitLoadEnded() }
     }
 
     // ── Query methods ─────────────────────────────────────────
@@ -347,7 +347,7 @@ class DownloadManager(
             // old row still exists in this session.
             val uri = existing.archiveUri
             if ((uri != null && uri.startsWith("content://")) || existing.state == DownloadState.WAIT) return null
-            existing.state = DownloadState.WAIT
+            existing.transition(DownloadState.WAIT)
             scheduler.waitList.add(existing)
             return StagedStart.Restarted(existing)
         }
@@ -378,7 +378,7 @@ class DownloadManager(
         for (arcid in ordered) {
             val info = repo.allInfoMap[arcid]
             if (info != null && info.state in RESTARTABLE_STATES) {
-                info.state = DownloadState.WAIT
+                info.transition(DownloadState.WAIT)
                 scheduler.waitList.add(info)
                 changed.add(info)
             }
@@ -398,7 +398,7 @@ class DownloadManager(
         val downloadOrder = DownloadSettings.getDownloadOrder()
         for (info in repo.allInfoList) {
             if (info.state == DownloadState.NONE || info.state == DownloadState.FAILED) {
-                update = true; info.state = DownloadState.WAIT
+                update = true; info.transition(DownloadState.WAIT)
                 if (downloadOrder) scheduler.waitList.add(info) else scheduler.waitList.add(0, info)
                 changed.add(info)
             }

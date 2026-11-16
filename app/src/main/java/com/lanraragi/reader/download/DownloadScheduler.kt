@@ -89,7 +89,6 @@ internal class DownloadScheduler(
         val maxConcurrent = DownloadSettings.getConcurrentDownloads()
         while (activeTasks.size < maxConcurrent && waitList.isNotEmpty()) {
             val info = waitList.removeAt(0)
-            info.failureReason = null
             val worker = LRRDownloadWorker(context, info)
             activeTasks.add(info)
             activeWorkers[info] = worker
@@ -105,13 +104,11 @@ internal class DownloadScheduler(
                         listener.post(DownloadEvent.OnNetworkTimeout(info))
                 }
             }
-            info.state = DownloadState.DOWNLOAD
-            info.legacy = -1
+            info.transition(DownloadState.DOWNLOAD)
             progressTracker.resetForStart(info.arcid)
             // Persist to DB
             repo.persistInfo(info)
-            // Start speed tracking
-            speedTracker.start()
+            syncSpeedTracking()
             // Notify start downloading
             eventBus.getDownloadListener()?.onStart(info)
             // Notify state update
@@ -122,6 +119,11 @@ internal class DownloadScheduler(
             // Start the worker
             worker.start()
         }
+    }
+
+    /** Speed ticks run exactly while a download is active. */
+    private fun syncSpeedTracking() {
+        if (activeTasks.isEmpty()) speedTracker.stop() else speedTracker.start()
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -145,8 +147,8 @@ internal class DownloadScheduler(
                 val w = activeWorkers.remove(info)
                 w?.cancel()
                 activeIt.remove()
-                if (activeTasks.isEmpty()) speedTracker.stop()
-                info.state = DownloadState.NONE
+                syncSpeedTracking()
+                info.transition(DownloadState.NONE)
                 DownloadResumeBanner.markResumed(info.arcid)
                 progressTracker.clear(info.arcid)
                 repo.persistInfo(info)
@@ -161,7 +163,7 @@ internal class DownloadScheduler(
             val info = waitIt.next()
             if (info.arcid == arcid) {
                 waitIt.remove()
-                info.state = DownloadState.NONE
+                info.transition(DownloadState.NONE)
                 progressTracker.clear(info.arcid)
                 repo.persistInfo(info)
                 return info
@@ -185,11 +187,11 @@ internal class DownloadScheduler(
         val stopped = ArrayList(activeTasks)
         activeTasks.clear()
         activeWorkers.clear()
-        speedTracker.stop()
+        syncSpeedTracking()
         if (stopped.isEmpty()) return null
         DownloadResumeBanner.markResumed(stopped.map { it.arcid })
         for (info in stopped) {
-            info.state = DownloadState.NONE
+            info.transition(DownloadState.NONE)
             progressTracker.clear(info.arcid)
             repo.persistInfo(info)
             eventBus.getDownloadListener()?.onCancel(info)
@@ -222,7 +224,7 @@ internal class DownloadScheduler(
                 val info = iterator.next()
                 if (info.arcid in arcidSet) {
                     iterator.remove()
-                    info.state = DownloadState.NONE
+                    info.transition(DownloadState.NONE)
                     progressTracker.clear(info.arcid)
                     stopped.add(info)
                 }
@@ -254,7 +256,7 @@ internal class DownloadScheduler(
         assertMainThread()
         // Stop all in wait list
         for (info in waitList) {
-            info.state = DownloadState.NONE
+            info.transition(DownloadState.NONE)
             progressTracker.clear(info.arcid)
         }
         if (waitList.isNotEmpty()) repo.persistInfoBatch(waitList)
@@ -300,13 +302,7 @@ internal class DownloadScheduler(
             val downloaded: Int,
             val total: Int
         ) : DownloadEvent
-        data class OnFinish(
-            val taskInfo: DownloadInfo,
-            val finished: Int,
-            val downloaded: Int,
-            val total: Int,
-            val failureReason: DownloadFailureReason? = null
-        ) : DownloadEvent
+        data class OnFinish(val taskInfo: DownloadInfo, val result: WorkerResult) : DownloadEvent
         data class OnNetworkWait(val taskInfo: DownloadInfo, val waiting: Boolean) : DownloadEvent
         data class OnNetworkTimeout(val taskInfo: DownloadInfo) : DownloadEvent
     }
@@ -403,25 +399,19 @@ internal class DownloadScheduler(
                 speedTracker.onFinish(info.arcid)
                 activeTasks.remove(info)
                 activeWorkers.remove(info)
-                if (activeTasks.isEmpty()) speedTracker.stop()
-                // Update state. A real LANraragi archive always has >=1 page, so a
-                // zero-page finish (extract failure / offline-at-start / orphan
-                // profile, all of which report onFinish(0,0,0)) is a failure, not a
-                // success — guard total<=0 explicitly so legacy==0 cannot mean FINISH.
-                info.legacy = event.total - event.finished
-                info.state = if (event.total <= 0 || info.legacy != 0) {
-                    DownloadState.FAILED
-                } else {
-                    DownloadState.FINISH
+                syncSpeedTracking()
+                val result = event.result
+                when (result) {
+                    is WorkerResult.Finished -> info.transition(DownloadState.FINISH)
+                    is WorkerResult.Failed -> info.transition(DownloadState.FAILED, result.reason, result.remaining)
                 }
-                info.failureReason = if (info.state == DownloadState.FAILED) event.failureReason else null
                 // Mirror final values into tracker, then drop the live entry
                 // (download is no longer active → progress not live).
                 progressTracker.update(
                     info.arcid,
-                    finished = event.finished,
-                    downloaded = event.downloaded,
-                    total = event.total
+                    finished = result.finished,
+                    downloaded = result.downloaded,
+                    total = result.total
                 )
                 progressTracker.clear(info.arcid)
                 // Persist to DB
@@ -506,8 +496,8 @@ internal class DownloadScheduler(
             post(DownloadEvent.OnPageFailure(mInfo, index, error, finished, downloaded, total))
         }
 
-        override fun onFinish(finished: Int, downloaded: Int, total: Int) {
-            post(DownloadEvent.OnFinish(mInfo, finished, downloaded, total, mWorker.failureReason))
+        override fun onFinish(result: WorkerResult) {
+            post(DownloadEvent.OnFinish(mInfo, result))
         }
     }
 }

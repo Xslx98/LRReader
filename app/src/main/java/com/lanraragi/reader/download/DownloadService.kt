@@ -76,17 +76,11 @@ class DownloadService : Service(), DownloadListener {
     private var mLastNotifiedArcid: String? = null
     private var mLastNotifiedFinished: Int = -1
 
-    /** Arcids currently paused waiting for the network. While an arcid is in
-     *  this set its own onUpdate rebuilds are suppressed so the "Waiting for
-     *  network…" notification is not clobbered by speed-tracker ticks — but a
-     *  different, still-downloading archive can keep updating the notification
-     *  (a single global flag froze every concurrent download instead). All
-     *  access is on the main thread. */
-    private val mPausedArcids = HashSet<String>()
-
-    /** Arcids whose worker is suspended until the network returns; drives
-     *  [syncKeepAlive]. Kept apart from [mPausedArcids], which only exists
-     *  for the notification. Main thread only. */
+    /** Arcids whose worker is suspended until the network returns. Drives
+     *  [syncKeepAlive], and while an arcid is in it its own onUpdate rebuilds
+     *  are suppressed so the "Waiting for network" notification is not
+     *  clobbered by speed-tracker ticks (another, still-downloading archive
+     *  keeps updating it). Main thread only. */
     private val mNetworkWaitArcids = HashSet<String>()
 
     /**
@@ -524,7 +518,6 @@ class DownloadService : Service(), DownloadListener {
         // the same numeric value).
         mLastNotifiedArcid = null
         mLastNotifiedFinished = -1
-        mPausedArcids.remove(info.arcid)
 
         ensureDownloadingBuilder()
 
@@ -553,7 +546,7 @@ class DownloadService : Service(), DownloadListener {
         if (mNotifyManager == null) {
             return
         }
-        if (info.arcid in mPausedArcids) return
+        if (info.arcid in mNetworkWaitArcids) return
         ensureDownloadingBuilder()
 
         // A tank member reports the WHOLE tank's progress (spec 2026-09-21
@@ -614,7 +607,6 @@ class DownloadService : Service(), DownloadListener {
         if (mNotifyManager == null) {
             return
         }
-        mPausedArcids.remove(info.arcid)
 
         // The active task is gone; clear the progress-delta gate so the next
         // task's first onUpdate fires unconditionally (see onStart).
@@ -770,7 +762,6 @@ class DownloadService : Service(), DownloadListener {
         syncKeepAlive()
         if (mNotifyManager == null) return
         if (waiting) {
-            mPausedArcids.add(info.arcid)
             ensureDownloadingBuilder()
             val dlBuilder = mDownloadingBuilder ?: return
             dlBuilder.setContentTitle(redacted(info.title))
@@ -779,10 +770,8 @@ class DownloadService : Service(), DownloadListener {
                 .setProgress(0, 0, true)
             mDownloadingDelay?.startForeground()
         } else {
-            // Resumed: clear this arcid's pause guard and force the next onUpdate
-            // to redraw real progress (it is gated on a finished-count delta
-            // which a resume would otherwise suppress).
-            mPausedArcids.remove(info.arcid)
+            // Resumed: force the next onUpdate to redraw real progress (it is
+            // gated on a finished-count delta which a resume would otherwise suppress).
             mLastNotifiedArcid = null
             mLastNotifiedFinished = -1
         }

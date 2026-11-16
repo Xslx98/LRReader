@@ -17,8 +17,8 @@ class DownloadsEvents(
     fun install(owner: LifecycleOwner) {
         // A failed load from the database must not look like "no downloads":
         // the tip shows the error and retries on tap (audit 2026-10-04 C34).
-        collectFlow(owner, viewModel.downloadManager.loadError) { error ->
-            scene.loadError = error
+        collectFlow(owner, viewModel.downloadManager.loadState) { state ->
+            scene.loadError = (state as? com.lanraragi.reader.download.DownloadLoadState.Failed)?.error
             scene.updateView()
         }
 

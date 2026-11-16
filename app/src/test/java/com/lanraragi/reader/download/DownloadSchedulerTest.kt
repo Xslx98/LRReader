@@ -273,7 +273,7 @@ class DownloadSchedulerTest {
         scheduler.activeWorkers[info] = current
         info.state = DownloadState.DOWNLOAD
 
-        scheduler.PerTaskListener(info, stale).onFinish(10, 10, 10)
+        scheduler.PerTaskListener(info, stale).onFinish(WorkerResult.of(10, 10, 10, null))
         scheduler.PerTaskListener(info, stale).onGetPages(99)
         ShadowLooper.idleMainLooper()
 
@@ -295,12 +295,7 @@ class DownloadSchedulerTest {
 
         // Dispatch an OnFinish event where all pages succeeded
         scheduler.dispatchEvent(
-            DownloadScheduler.DownloadEvent.OnFinish(
-                taskInfo = info,
-                finished = 10,
-                downloaded = 10,
-                total = 10
-            )
+            DownloadScheduler.DownloadEvent.OnFinish(info, WorkerResult.of(10, 10, 10, null))
         )
         ShadowLooper.idleMainLooper()
 
@@ -323,12 +318,7 @@ class DownloadSchedulerTest {
 
         // Extract failure / offline-at-start reports onFinish(0, 0, 0).
         scheduler.dispatchEvent(
-            DownloadScheduler.DownloadEvent.OnFinish(
-                taskInfo = info,
-                finished = 0,
-                downloaded = 0,
-                total = 0
-            )
+            DownloadScheduler.DownloadEvent.OnFinish(info, WorkerResult.of(0, 0, 0, null))
         )
         ShadowLooper.idleMainLooper()
 
@@ -346,12 +336,7 @@ class DownloadSchedulerTest {
         info.state = DownloadState.DOWNLOAD
 
         scheduler.dispatchEvent(
-            DownloadScheduler.DownloadEvent.OnFinish(
-                taskInfo = info,
-                finished = 8,
-                downloaded = 8,
-                total = 10
-            )
+            DownloadScheduler.DownloadEvent.OnFinish(info, WorkerResult.of(8, 8, 10, null))
         )
         ShadowLooper.idleMainLooper()
 
@@ -367,10 +352,7 @@ class DownloadSchedulerTest {
         info.state = DownloadState.DOWNLOAD
 
         scheduler.dispatchEvent(
-            DownloadScheduler.DownloadEvent.OnFinish(
-                taskInfo = info, finished = 3, downloaded = 3, total = 10,
-                failureReason = DownloadFailureReason.NO_SPACE,
-            )
+            DownloadScheduler.DownloadEvent.OnFinish(info, WorkerResult.of(3, 3, 10, DownloadFailureReason.NO_SPACE))
         )
         ShadowLooper.idleMainLooper()
 
@@ -387,10 +369,7 @@ class DownloadSchedulerTest {
         info.state = DownloadState.DOWNLOAD
 
         scheduler.dispatchEvent(
-            DownloadScheduler.DownloadEvent.OnFinish(
-                taskInfo = info, finished = 10, downloaded = 10, total = 10,
-                failureReason = DownloadFailureReason.SERVER,
-            )
+            DownloadScheduler.DownloadEvent.OnFinish(info, WorkerResult.of(10, 10, 10, DownloadFailureReason.SERVER))
         )
         ShadowLooper.idleMainLooper()
 
@@ -410,10 +389,7 @@ class DownloadSchedulerTest {
         scheduler.waitList.add(waiting)
 
         scheduler.dispatchEvent(
-            DownloadScheduler.DownloadEvent.OnFinish(
-                taskInfo = failed, finished = 2, downloaded = 2, total = 10,
-                failureReason = DownloadFailureReason.NO_SPACE,
-            )
+            DownloadScheduler.DownloadEvent.OnFinish(failed, WorkerResult.of(2, 2, 10, DownloadFailureReason.NO_SPACE))
         )
         ShadowLooper.idleMainLooper()
 
@@ -483,6 +459,20 @@ class DownloadSchedulerTest {
         assertEquals(1, snap.finished)
         // onDone dropped page 0 before the update → only page 1's 500/2000 remains.
         assertEquals(0.25f, snap.partialPages, 0.0001f)
+    }
+
+    /** Speed ticks follow activeTasks: stopping the last active download stops (and clears) the tracker. */
+    @Test
+    fun stoppingTheLastActiveDownload_stopsSpeedTracking() {
+        val info = makeInfo(9L)
+        info.state = DownloadState.DOWNLOAD
+        scheduler.activeTasks.add(info)
+        speedTracker.start()
+        speedTracker.onDownload(info.arcid, 0, 1000L, 500L, 500)
+
+        scheduler.stopDownload(info.arcid)
+
+        assertEquals("the stopped tracker dropped its in-flight bytes", 0f, speedTracker.partialFor(info.arcid), 0f)
     }
 
     @Test

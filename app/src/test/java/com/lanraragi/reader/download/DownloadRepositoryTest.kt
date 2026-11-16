@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
@@ -379,7 +380,7 @@ class DownloadRepositoryTest {
 
         val restarted = DownloadRepository(context, testScope, Dispatchers.Unconfined)
         restarted.startLoading {}
-        awaitUntil { restarted.initDeferred.isCompleted }
+        awaitUntil { restarted.initialized }
 
         assertEquals(
             DownloadResumeBanner.Snapshot.Interrupted(listOf("queued"), 1),
@@ -494,16 +495,16 @@ class DownloadRepositoryTest {
         failDbRepo = true
         val r = DownloadRepository(context, testScope, Dispatchers.Unconfined)
         r.startLoading {}
-        awaitUntil { r.initDeferred.isCompleted }
+        awaitUntil { r.initialized }
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
-        assertNotNull(r.loadError.value)
+        assertTrue(r.loadState.value is DownloadLoadState.Failed)
         assertFalse(r.containDownloadInfo("a"))
 
         failDbRepo = false
         var reloaded = false
         r.retryLoading { reloaded = true }
         awaitUntil { reloaded }
-        assertNull(r.loadError.value)
+        assertEquals(DownloadLoadState.Loaded, r.loadState.value)
         assertTrue(r.containDownloadInfo("a"))
     }
 
@@ -516,7 +517,7 @@ class DownloadRepositoryTest {
         failDbRepo = true
         val r = DownloadRepository(context, testScope, Dispatchers.Unconfined)
         r.startLoading {}
-        awaitUntil { r.initDeferred.isCompleted }
+        awaitUntil { r.initialized }
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
 
         // The user re-adds "a" while the list is broken.
@@ -530,6 +531,29 @@ class DownloadRepositoryTest {
         assertEquals(listOf("a", "b"), r.allInfoList.map { it.arcid }.sorted())
         assertSame(live, r.getDownloadInfo("a"))
         assertEquals(2, r.getInfoListForLabel(null)!!.size)
+    }
+
+    /** A retry is a new load: waiters (awaitInitAsync) wait for it instead of seeing the failure as done. */
+    @Test
+    fun retry_movesTheLoadBackToLoading_untilItEnds() {
+        failDbRepo = true
+        val r = DownloadRepository(context, testScope, Dispatchers.Unconfined)
+        r.startLoading {}
+        awaitUntil { r.initialized }
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        val seen = java.util.Collections.synchronizedList(ArrayList<DownloadLoadState>())
+        val watcher = kotlinx.coroutines.CoroutineScope(Dispatchers.Unconfined).launch { r.loadState.collect { seen += it } }
+
+        failDbRepo = false
+        var reloaded = false
+        r.retryLoading { reloaded = true }
+        awaitUntil { reloaded }
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        watcher.cancel()
+
+        assertTrue(seen.first() is DownloadLoadState.Failed)
+        assertEquals(listOf(DownloadLoadState.Loading, DownloadLoadState.Loaded), seen.drop(1))
+        assertTrue(r.initialized)
     }
 
     @Test
