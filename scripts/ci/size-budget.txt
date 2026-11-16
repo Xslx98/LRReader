@@ -43,12 +43,15 @@
 # needed): apk.download +8192 B (2511062 -> 2519254). PR 4.3 (#140, page jobs,
 # shared damaged pages, local-page probe) put CI at 2548913 vs the 2548727
 # limit after 4.1/4.2 used the rest. Re-seeded with the others when the plan ends.
+# 2026-11-16 (same approval, phase 5): res +8192 B (1350000 -> 1358192). PR 5.1
+# (StateListLayout's slot ids and attr) put res at 1370275 vs the 1370249 limit;
+# res had not moved since the 2.4 re-seed. Re-seeded with the others at the end.
 tolerance.percent 1.5
 apk.file        5275216
 apk.download    2519254
 dex             3795760
 lib                6400
-res             1350000
+res             1358192
 assets            14000
 other              3600
 dex.method_refs   25896

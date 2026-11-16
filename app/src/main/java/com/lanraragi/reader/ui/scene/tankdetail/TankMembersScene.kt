@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.snackbar.Snackbar
+import com.lanraragi.reader.ui.list.ListDiffBinder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.cover.ArchiveCoverStamps
@@ -39,7 +40,6 @@ import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.ui.collectFlowWhileCreated
 import com.lanraragi.reader.widget.LoadImageViewNew
 import com.lanraragi.reader.domain.Archive
-import java.util.Collections
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.ui.scene.BatchBarAnimator
 import com.lanraragi.reader.ui.scene.TankCoverPagePicker
@@ -83,14 +83,11 @@ class TankMembersScene : BaseScene() {
     private var mActionRowEdit: View? = null
     private var mActionCover: View? = null
 
-    private val mMembers: MutableList<Archive> = mutableListOf()
+    // What the adapter shows: fed by the members observer, moved in place by
+    // a drag (so the VM's re-emission in the same order is a no-op). See ListDiffBinder.
+    private val mMembers = ListDiffBinder<Archive> { old, new -> MemberDiffCallback(old, new) }
     private var mAdapter: MemberAdapter? = null
     private var mItemTouchHelper: ItemTouchHelper? = null
-
-    // Snapshot of the list last dispatched to the adapter. Read/written by
-    // the members observer (the single dispatch path) and by the drag
-    // callback's clearView (which re-syncs it after an optimistic reorder).
-    private var mLastSnapshot: List<Archive> = emptyList()
 
     /** Multi-select state; every change re-renders the rows and the card. */
     private val selection = TankMemberSelection { onSelectionChanged() }
@@ -175,7 +172,7 @@ class TankMembersScene : BaseScene() {
             }
         }
 
-        mAdapter = MemberAdapter()
+        mAdapter = MemberAdapter().also { mMembers.adapter = it }
         mRecyclerView?.apply {
             layoutManager = LinearLayoutManager(context)
             setHasFixedSize(true)
@@ -224,7 +221,7 @@ class TankMembersScene : BaseScene() {
         mActionRowEdit = card.findViewById(R.id.member_action_row_edit)
         mActionCover = card.findViewById(R.id.member_action_cover)
         card.findViewById<View>(R.id.member_action_select_all).setOnClickListener {
-            selection.selectAll(mMembers.map { it.arcid })
+            selection.selectAll(mMembers.items.map { it.arcid })
         }
         card.findViewById<View>(R.id.member_action_top).setOnClickListener {
             applySelectionOrder { order, picked -> TankMemberOrderOps.moveToTop(order, picked) }
@@ -234,8 +231,8 @@ class TankMembersScene : BaseScene() {
         }
         card.findViewById<View>(R.id.member_action_position).setOnClickListener {
             val ctx = ehContext ?: return@setOnClickListener
-            if (mMembers.isEmpty()) return@setOnClickListener
-            TankDialogs.showPositionDialog(ctx, mMembers.size) { position ->
+            if (mMembers.items.isEmpty()) return@setOnClickListener
+            TankDialogs.showPositionDialog(ctx, mMembers.items.size) { position ->
                 applySelectionOrder { order, picked -> TankMemberOrderOps.moveTo(order, picked, position) }
             }
         }
@@ -267,23 +264,12 @@ class TankMembersScene : BaseScene() {
 
         // Member list
         collectFlow(viewLifecycleOwner, viewModel.members) { newList ->
-            val adapter = mAdapter
-            if (adapter != null) {
-                val diff = DiffUtil.calculateDiff(MemberDiffCallback(mLastSnapshot, newList))
-                mMembers.clear()
-                mMembers.addAll(newList)
-                mLastSnapshot = ArrayList(newList)
-                diff.dispatchUpdatesTo(adapter)
-            } else {
-                mMembers.clear()
-                mMembers.addAll(newList)
-                mLastSnapshot = ArrayList(newList)
-            }
+            mMembers.submit(newList)
             // A reload / removal may have dropped selected members.
             selection.retainAll(newList.map { it.arcid })
-            if (mMembers.isEmpty() && !viewModel.isLoading.value) {
+            if (mMembers.items.isEmpty() && !viewModel.isLoading.value) {
                 showEmpty(getString(R.string.error_empty))
-            } else if (mMembers.isNotEmpty()) {
+            } else if (mMembers.items.isNotEmpty()) {
                 showList()
             }
             bindCover()
@@ -305,10 +291,10 @@ class TankMembersScene : BaseScene() {
             mToolbar?.menu?.findItem(R.id.action_tank_edit_meta)?.isEnabled =
                 viewModel.metaLoaded
             if (loading) {
-                if (mMembers.isEmpty()) {
+                if (mMembers.items.isEmpty()) {
                     showProgress()
                 }
-            } else if (mMembers.isEmpty()) {
+            } else if (mMembers.items.isEmpty()) {
                 showEmpty(getString(R.string.error_empty))
             } else {
                 showList()
@@ -332,7 +318,7 @@ class TankMembersScene : BaseScene() {
         when (event) {
             is TankDetailUiEvent.ShowError -> {
                 // If the list is empty, show the error view; otherwise toast
-                if (mMembers.isEmpty()) {
+                if (mMembers.items.isEmpty()) {
                     showError(event.message)
                 } else {
                     Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
@@ -341,7 +327,7 @@ class TankMembersScene : BaseScene() {
             TankDetailUiEvent.ShowUnsupported -> {
                 // Same split as ShowError: never clobber a loaded list
                 val message = getString(R.string.tankoubons_unsupported)
-                if (mMembers.isEmpty()) {
+                if (mMembers.items.isEmpty()) {
                     showError(message)
                 } else {
                     Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
@@ -416,8 +402,8 @@ class TankMembersScene : BaseScene() {
         mActionRowEdit = null
         mActionCover = null
         mAdapter = null
-        // Reset snapshots so the next view recreation starts clean.
-        mLastSnapshot = emptyList()
+        // Dispatch nowhere until the next view; its adapter shows the same items.
+        mMembers.adapter = null
         mCoverBoundUrl = null
     }
 
@@ -643,10 +629,9 @@ class TankMembersScene : BaseScene() {
                 if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) {
                     return false
                 }
-                // Optimistic UI: swap the scene's copy only; the VM
+                // Optimistic UI: move the shown copy only; the VM
                 // reconciles authoritative state in reorder() on release.
-                Collections.swap(mMembers, from, to)
-                mAdapter?.notifyItemMoved(from, to)
+                mMembers.move(from, to)
                 dragged = true
                 return true
             }
@@ -657,11 +642,10 @@ class TankMembersScene : BaseScene() {
                 super.clearView(rv, vh)
                 if (!dragged) return
                 dragged = false
-                // Keep the local snapshot in sync so the members
-                // collector's next DiffUtil pass (the VM re-emission in
-                // the SAME order) is a no-op instead of a bounce-back.
-                mLastSnapshot = ArrayList(mMembers)
-                viewModel.reorder(mMembers.map { it.arcid })
+                // The shown list already has the new order, so the members
+                // collector's next pass (the VM re-emission in the SAME
+                // order) is a no-op instead of a bounce-back.
+                viewModel.reorder(mMembers.items.map { it.arcid })
             }
         }
         mItemTouchHelper = ItemTouchHelper(callback).also { it.attachToRecyclerView(recycler) }
@@ -780,7 +764,7 @@ class TankMembersScene : BaseScene() {
                 if (mPickingTarget) return@setOnLongClickListener false
                 val position = holder.bindingAdapterPosition
                 if (position == RecyclerView.NO_POSITION) return@setOnLongClickListener false
-                val archive = mMembers.getOrNull(position) ?: return@setOnLongClickListener false
+                val archive = mMembers.items.getOrNull(position) ?: return@setOnLongClickListener false
                 selection.enterAndToggle(archive.arcid)
                 true
             }
@@ -797,7 +781,7 @@ class TankMembersScene : BaseScene() {
         // GalleryAdapterNew ("12/34P") and is deliberately not localized.
         @SuppressLint("SetTextI18n")
         override fun onBindViewHolder(holder: MemberViewHolder, position: Int) {
-            val a = mMembers[position]
+            val a = mMembers.items[position]
 
             holder.thumb.load(LRRCacheKeyFactory.getThumbKey(a.arcid), ArchiveCoverStamps.bust(a.thumbnailUrl, a.arcid))
             holder.title.text = a.title
@@ -815,7 +799,7 @@ class TankMembersScene : BaseScene() {
 
         override fun onBindViewHolder(holder: MemberViewHolder, position: Int, payloads: MutableList<Any>) {
             if (payloads.contains(PAYLOAD_SELECTION)) {
-                bindSelection(holder, mMembers[position])
+                bindSelection(holder, mMembers.items[position])
             } else {
                 super.onBindViewHolder(holder, position, payloads)
             }
@@ -829,7 +813,7 @@ class TankMembersScene : BaseScene() {
             holder.handle.visibility = if (selecting) View.GONE else View.VISIBLE
         }
 
-        override fun getItemCount(): Int = mMembers.size
+        override fun getItemCount(): Int = mMembers.items.size
     }
 
     private class MemberViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
