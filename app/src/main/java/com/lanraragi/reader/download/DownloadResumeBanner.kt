@@ -74,12 +74,20 @@ object DownloadResumeBanner {
      */
     private val reasons = LinkedHashMap<String, Reason>()
 
-    /** [arcid] is on the banner for [reason], replacing any earlier reason. */
+    /**
+     * [arcid] is on the banner for [reason], replacing any earlier reason,
+     * except that a network pause or time-out never hides a storage-full or
+     * system-limit entry: those ask the user to act first.
+     */
     @Synchronized
     fun mark(arcid: String, reason: Reason) {
+        val current = reasons[arcid]
+        if (reason.isNetwork && current != null && !current.isNetwork) return
         reasons.remove(arcid) // re-insert at the end: newest last
         reasons[arcid] = reason
     }
+
+    private val Reason.isNetwork: Boolean get() = this == Reason.PAUSED || this == Reason.TIMED_OUT
 
     fun markResumed(arcid: String) = markResumed(listOf(arcid))
 

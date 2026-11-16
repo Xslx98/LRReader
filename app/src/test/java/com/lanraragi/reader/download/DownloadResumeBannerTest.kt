@@ -99,6 +99,19 @@ class DownloadResumeBannerTest {
         assertEquals(1, s.count)
     }
 
+    /** A storage-full or system-limit entry asks the user to act: a later network pause must not hide it. */
+    @Test
+    fun aNetworkPause_neverHidesAStorageFullEntry() {
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.STORAGE_FULL)
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.PAUSED)
+        DownloadResumeBanner.mark("b", DownloadResumeBanner.Reason.SYSTEM_LIMITED)
+        DownloadResumeBanner.mark("b", DownloadResumeBanner.Reason.TIMED_OUT)
+
+        val s = DownloadResumeBanner.consume()
+        assertTrue(s is DownloadResumeBanner.Snapshot.StorageFull)
+        assertEquals(listOf("a"), (s as DownloadResumeBanner.Snapshot.StorageFull).arcids)
+    }
+
     @Test
     fun markTimedOut_clearsPausedForSameArcid() {
         DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.PAUSED)

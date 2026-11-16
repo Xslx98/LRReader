@@ -64,6 +64,12 @@ data class DownloadObservedRow(
     @ColumnInfo(name = "DOWNLOAD_FAILURE_REASON") val downloadFailureReason: DownloadFailureReason? = null,
 )
 
+/** One row of [ArchiveLocalStateDao.getDownloadTankIds]. */
+data class DownloadTankIdRow(
+    @ColumnInfo(name = "ARCID") val arcid: String,
+    @ColumnInfo(name = "DOWNLOAD_TANK_ID") val tankId: String?,
+)
+
 /** One row of [ArchiveLocalStateDao.observeDownloadStates]. */
 data class DownloadStateRow(
     @ColumnInfo(name = "ARCID") val arcid: String,
@@ -145,9 +151,17 @@ interface ArchiveLocalStateDao {
     )
     suspend fun setDownloadTankId(arcid: String, tankId: String?)
 
-    /** Untag every download row (the boot rebuild, [DownloadDbRepository.rebuildTankTags]). */
-    @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TANK_ID = NULL WHERE DOWNLOAD_TANK_ID IS NOT NULL")
-    suspend fun clearAllDownloadTankIds()
+    /** [setDownloadTankId] unless another tank already tags the row. */
+    @Query(
+        "UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TANK_ID = :tankId " +
+            "WHERE ARCID = :arcid AND DOWNLOAD_STATE IS NOT NULL " +
+            "AND (DOWNLOAD_TANK_ID IS NULL OR DOWNLOAD_TANK_ID = :tankId)"
+    )
+    suspend fun setDownloadTankIdIfFree(arcid: String, tankId: String)
+
+    /** Every download row's tank tag (the boot rebuild, [DownloadDbRepository.rebuildTankTags]). */
+    @Query("SELECT ARCID, DOWNLOAD_TANK_ID FROM ARCHIVE_LOCAL_STATE WHERE DOWNLOAD_STATE IS NOT NULL")
+    suspend fun getDownloadTankIds(): List<DownloadTankIdRow>
 
     /** Untag every member of a dissolved tank in one statement. */
     @Query("UPDATE ARCHIVE_LOCAL_STATE SET DOWNLOAD_TANK_ID = NULL WHERE DOWNLOAD_TANK_ID = :tankId")
