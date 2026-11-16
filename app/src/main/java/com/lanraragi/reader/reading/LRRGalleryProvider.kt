@@ -550,9 +550,9 @@ class LRRGalleryProvider(
             return
         }
         scope.launch {
-            var outcome = PageJobs.Outcome.Cancelled
+            var cancelled = false
             try {
-                outcome = downloadAndDecodePage(index)
+                downloadAndDecodePage(index)
 
                 // Preload adjacent pages after successful load
                 preloadPages(index)
@@ -560,15 +560,14 @@ class LRRGalleryProvider(
                 // stop()/onCancelRequest severed the call deliberately — not a
                 // failure. Stay quiet so a recycled tile doesn't show an error
                 // placeholder; a re-request just downloads again.
-                outcome = PageJobs.Outcome.Cancelled
+                cancelled = true
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load page $index: ${e.message}", e)
                 notifyPageFailed(index, e.message)
-                outcome = PageJobs.Outcome.Failed
             } finally {
                 // A rebind landed while this job was in flight and the job
                 // ended quietly: re-request, or the page spins forever.
-                if (jobs.finish(index, token, outcome, isStopped)) {
+                if (jobs.finish(index, token, cancelled, isStopped)) {
                     onRequest(index)
                 }
             }
@@ -657,9 +656,8 @@ class LRRGalleryProvider(
         return paths.getOrNull(index) ?: throw IOException("Page index $index out of bounds (size=${paths.size})")
     }
 
-    /** Fetches, decodes and publishes page [index]; [PageJobs.Outcome.Failed] when it published the failure. */
     @Throws(IOException::class)
-    private suspend fun downloadAndDecodePage(index: Int): PageJobs.Outcome {
+    private suspend fun downloadAndDecodePage(index: Int) {
         // Fetch -> validate -> decode with one retry for a BAD FILE only; a
         // valid page this device cannot decode fails at once and is kept, and
         // a download-dir page (hybrid) is never deleted for a decode failure
@@ -686,15 +684,9 @@ class LRRGalleryProvider(
                 delay(RETRY_DELAY_MS)
             },
         ).run()
-        return when (result) {
-            is PageLoadResult.Loaded -> {
-                notifyPageSucceed(index, result.value)
-                PageJobs.Outcome.Succeeded
-            }
-            is PageLoadResult.Failed -> {
-                notifyPageFailed(index, result.failure.message(context))
-                PageJobs.Outcome.Failed
-            }
+        when (result) {
+            is PageLoadResult.Loaded -> notifyPageSucceed(index, result.value)
+            is PageLoadResult.Failed -> notifyPageFailed(index, result.failure.message(context))
         }
     }
 

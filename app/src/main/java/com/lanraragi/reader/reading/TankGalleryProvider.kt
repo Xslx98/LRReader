@@ -242,26 +242,22 @@ class TankGalleryProvider(
         // that index meant then: the rebind after the remap must ask again.
         val generation = pageGeneration
         scope.launch {
-            var outcome = PageJobs.Outcome.Cancelled
+            var cancelled = false
             try {
-                outcome = serveGlobalPage(index)
+                serveGlobalPage(index)
             } catch (ignored: TankPageCancelledException) {
-                outcome = PageJobs.Outcome.Cancelled
+                cancelled = true
             } catch (ignored: MemberDeletedException) {
                 // The remap's notifyDataChanged re-drives layout; whatever
                 // page now occupies this slot is re-requested by the view.
-                outcome = PageJobs.Outcome.Cancelled
+                cancelled = true
             } catch (ce: CancellationException) {
                 throw ce
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to serve tank page $index: ${e.message}")
                 notifyPageFailed(index, friendlyPageError(e))
-                outcome = PageJobs.Outcome.Failed
             } finally {
-                if (outcome == PageJobs.Outcome.Failed && pageGeneration != generation) {
-                    outcome = PageJobs.Outcome.Cancelled
-                }
-                if (jobs.finish(index, token, outcome, isStopped)) {
+                if (jobs.finish(index, token, cancelled || pageGeneration != generation, isStopped)) {
                     onRequest(index)
                 }
             }
@@ -281,14 +277,13 @@ class TankGalleryProvider(
     /**
      * Resolve member + source, correct the map from the real file list on
      * first touch, then fetch + decode + publish. Runs on the provider IO
-     * scope; every notify goes out at the GLOBAL index. Returns how the
-     * job ended ([PageJobs.Outcome.Failed] when it published the failure).
+     * scope; every notify goes out at the GLOBAL index.
      */
-    private suspend fun serveGlobalPage(global0: Int): PageJobs.Outcome {
+    private suspend fun serveGlobalPage(global0: Int) {
         var located = pageMap.locate(global0)
             ?: run {
                 notifyPageFailed(global0, GetText.getString(R.string.error_out_of_range))
-                return PageJobs.Outcome.Failed
+                return
             }
         var source = countedSourceFor(located.first)
         // A remap from here on makes global0 another page: the decode is then dropped.
@@ -302,7 +297,7 @@ class TankGalleryProvider(
             }
         } ?: run {
             notifyPageFailed(global0, GetText.getString(R.string.error_out_of_range))
-            return PageJobs.Outcome.Failed
+            return
         }
 
         val image = source.obtainImage(located.second) { pct ->
@@ -310,7 +305,7 @@ class TankGalleryProvider(
         }
         if (isStopped) {
             image?.recycle()
-            return PageJobs.Outcome.Cancelled
+            return
         }
         if (image != null) {
             if (!notifyPageSucceed(global0, image, generation)) {
@@ -319,10 +314,9 @@ class TankGalleryProvider(
                 throw TankPageCancelledException(IOException("remapped"))
             }
             prefetchAround(global0)
-            return PageJobs.Outcome.Succeeded
+            return
         }
         notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
-        return PageJobs.Outcome.Failed
     }
 
     /**

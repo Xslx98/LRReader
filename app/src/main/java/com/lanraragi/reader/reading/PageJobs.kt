@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentMap
  *   the entry of a newer job started by a force request.
  * - A rebind that lands while a job is in flight is consumed by that job's
  *   [finish]; when the job ended without publishing anything for the page
- *   ([Outcome.Cancelled]) the caller re-requests it, or the rebound page
+ *   as it is now (cancelled) the caller re-requests it, or the rebound page
  *   spins forever. A published success or failure reached the rebound view
  *   too (notifies are keyed by index), so it is not fetched again. If the
  *   job finished between the collision and the rebind mark (its [finish]
@@ -29,21 +29,6 @@ import java.util.concurrent.ConcurrentMap
 internal class PageJobs(
     private val inflight: ConcurrentMap<Int, Any> = ConcurrentHashMap(),
 ) {
-    /** How a page job ended. */
-    enum class Outcome {
-        /** The page was published. */
-        Succeeded,
-
-        /** The page's failure was published. */
-        Failed,
-
-        /**
-         * Nothing was published for the page as it is now: cancelled, or
-         * published under a page map that has moved since (a tank remap).
-         */
-        Cancelled,
-    }
-
     private val rebindWanted = ConcurrentHashMap.newKeySet<Int>()
     private val mutexes = ConcurrentHashMap<Int, Mutex>()
     private val calls = ConcurrentHashMap<Int, Call>()
@@ -74,14 +59,15 @@ internal class PageJobs(
      * End the job owning [token].
      *
      * @return true when the caller must re-request [index]: a rebind landed
-     * while the job ran, the job published nothing for the page
-     * ([Outcome.Cancelled]) and the source is not [stopped].
+     * while the job ran, the job published nothing for the page as it is now
+     * ([cancelled]: cut off, or a tank job published under a page map a
+     * remap has moved since) and the source is not [stopped].
      */
-    fun finish(index: Int, token: Any, outcome: Outcome, stopped: Boolean): Boolean {
+    fun finish(index: Int, token: Any, cancelled: Boolean, stopped: Boolean): Boolean {
         // Only this job's own entry: a force request may already have
         // replaced it with a newer job's token.
         inflight.remove(index, token)
-        return rebindWanted.remove(index) && outcome == Outcome.Cancelled && !stopped
+        return rebindWanted.remove(index) && cancelled && !stopped
     }
 
     /** Forget the in-flight job for [index] so the next [begin] starts a new one (force request). */

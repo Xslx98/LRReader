@@ -46,7 +46,7 @@ class PageJobsTest {
         map.onCollision = {
             // The cancelled job finishes before the rebind is marked, so its
             // finally sees no rebind and does not re-request.
-            redispatchFromFinish = tracker.finish(5, first!!, outcome = PageJobs.Outcome.Cancelled, stopped = false)
+            redispatchFromFinish = tracker.finish(5, first!!, cancelled = true, stopped = false)
         }
         val second = tracker.begin(5)
 
@@ -63,7 +63,7 @@ class PageJobsTest {
         val newer = tracker.begin(2)
         assertNotNull(newer)
 
-        tracker.finish(2, old, outcome = PageJobs.Outcome.Cancelled, stopped = false)
+        tracker.finish(2, old, cancelled = true, stopped = false)
 
         assertNull("the newer job is still in flight; no duplicate fetch", tracker.begin(2))
     }
@@ -73,19 +73,19 @@ class PageJobsTest {
         val tracker = PageJobs()
         val token = tracker.begin(1)!!
         assertNull(tracker.begin(1))
-        assertTrue(tracker.finish(1, token, outcome = PageJobs.Outcome.Cancelled, stopped = false))
+        assertTrue(tracker.finish(1, token, cancelled = true, stopped = false))
         assertNotNull(tracker.begin(1))
     }
 
     @Test
-    fun `rebind during a job that published its page needs no re-dispatch`() {
+    fun `rebind during a job that published its page or its failure needs no re-dispatch`() {
         val tracker = PageJobs()
         val token = tracker.begin(1)!!
         assertNull(tracker.begin(1))
-        assertFalse(tracker.finish(1, token, outcome = PageJobs.Outcome.Succeeded, stopped = false))
+        assertFalse(tracker.finish(1, token, cancelled = false, stopped = false))
         // The rebind was consumed: a later cancelled run does not re-dispatch.
         val next = tracker.begin(1)!!
-        assertFalse(tracker.finish(1, next, outcome = PageJobs.Outcome.Cancelled, stopped = false))
+        assertFalse(tracker.finish(1, next, cancelled = true, stopped = false))
     }
 
     @Test
@@ -93,7 +93,7 @@ class PageJobsTest {
         val tracker = PageJobs()
         val token = tracker.begin(4)!!
         assertNull(tracker.begin(4))
-        assertFalse(tracker.finish(4, token, outcome = PageJobs.Outcome.Cancelled, stopped = true))
+        assertFalse(tracker.finish(4, token, cancelled = true, stopped = true))
     }
 
     @Test
@@ -107,15 +107,6 @@ class PageJobsTest {
         tracker.clear()
         assertNotNull(tracker.begin(0))
         assertNotNull(tracker.begin(7))
-    }
-
-    /** A published failure reached the rebound view too (notifies are keyed by index): no second fetch, no flicker. */
-    @Test
-    fun `rebind during a failed job needs no re-dispatch`() {
-        val jobs = PageJobs()
-        val token = jobs.begin(6)!!
-        assertNull(jobs.begin(6))
-        assertFalse(jobs.finish(6, token, outcome = PageJobs.Outcome.Failed, stopped = false))
     }
 
     @Test
