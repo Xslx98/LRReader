@@ -278,7 +278,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.framework.util.MemoryTrimmable
         onCallCreated: ((Call) -> Unit)? = null,
         durable: DurablePageWrite? = null,
     ) {
-        if (cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE) return
+        if (LocalPage.probe(cacheFile)) return
 
         // Delete any corrupt/tiny cached file before re-downloading
         if (cacheFile.exists()) cacheFile.delete()
@@ -360,7 +360,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.framework.util.MemoryTrimmable
     private fun pageProblem(tmpFile: File, contentLength: Long, totalRead: Long): String? = when {
         contentLength > 0 && totalRead != contentLength ->
             "Incomplete download: expected $contentLength bytes, got $totalRead"
-        totalRead < MIN_IMAGE_SIZE -> "Downloaded file too small ($totalRead bytes), likely corrupt"
+        totalRead <= MIN_IMAGE_SIZE -> "Downloaded file too small ($totalRead bytes), likely corrupt"
         !validateImageFile(tmpFile) -> "Downloaded file is not a valid image (bad magic bytes)"
         else -> null
     }
@@ -370,7 +370,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.framework.util.MemoryTrimmable
     private fun commitTemp(tmpFile: File, cacheFile: File) {
         if (!tmpFile.renameTo(cacheFile)) {
             tmpFile.delete()
-            if (!cacheFile.exists() || cacheFile.length() < MIN_IMAGE_SIZE) {
+            if (!LocalPage.probe(cacheFile)) {
                 throw IOException("Failed to rename temp file")
             }
         }
@@ -746,7 +746,7 @@ object ReaderPageCache : Cacheable, com.lanraragi.framework.util.MemoryTrimmable
                 // Left the detail page: stop between pages too (audit C18).
                 ensureActive()
                 val cacheFile = getCacheFile(appContext, arcId, pageIndex)
-                if (!(cacheFile.exists() && cacheFile.length() > MIN_IMAGE_SIZE)) {
+                if (!(LocalPage.probe(cacheFile))) {
                     try {
                         val pageUrl = resolvePageUrl(serverUrl, pages[pageIndex])
                         downloadCancellable(pageClient, pageUrl, cacheFile, pageIndex)

@@ -32,7 +32,7 @@ internal sealed class PageFailure(@param:StringRes private val messageRes: Int) 
 
     open fun message(context: Context): String = context.getString(messageRes)
 
-    /** The fetched file is missing or below [ReaderPageCache.MIN_IMAGE_SIZE]. */
+    /** The fetched file is missing or a truncated stub ([LocalPage.probe]). */
     data object DownloadInvalid : PageFailure(R.string.lrr_download_failed_invalid)
 
     /** The fetched file has no known image magic. */
@@ -98,7 +98,7 @@ internal sealed interface PageLoadResult<out T> {
  */
 internal class PageLoadLoop<T>(
     private val pageFile: () -> File,
-    private val fetch: suspend () -> Unit,
+    private val fetch: suspend (File) -> Unit,
     private val decode: suspend (File) -> DecodeResult<T>,
     private val ownedByDownload: (File) -> Boolean,
     private val handOverDamaged: (File) -> Boolean,
@@ -121,9 +121,12 @@ internal class PageLoadLoop<T>(
 
     /** One fetch + decode; null asks for a retry (never on the last attempt). */
     private suspend fun attemptOnce(isLast: Boolean): PageLoadResult<T>? {
-        fetch()
+        // Where the page lives is decided once per attempt: a damaged
+        // download-dir page handed over in between moves it to the reader
+        // cache, and fetch and decode must agree on one file.
         val file = pageFile()
-        if (!file.exists() || file.length() < ReaderPageCache.MIN_IMAGE_SIZE) {
+        fetch(file)
+        if (!LocalPage.probe(file)) {
             return failOrRetry(isLast, PageFailure.DownloadInvalid)
         }
         val format = ReaderPageCache.detectImageFormat(file)

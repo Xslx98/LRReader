@@ -39,9 +39,13 @@
 # and dex.method_refs +256 (25640 -> 25896). PR 3.3 (#135) moved apk.file
 # across one alignment step (CI: 5336447 vs the 5321084 limit) with 42
 # method refs of headroom left. Re-seeded with the others when the plan ends.
+# 2026-11-16 (owner-approved for phases 4 and 5 of the same plan, raised as
+# needed): apk.download +8192 B (2511062 -> 2519254). PR 4.3 (#140, page jobs,
+# shared damaged pages, local-page probe) put CI at 2548913 vs the 2548727
+# limit after 4.1/4.2 used the rest. Re-seeded with the others when the plan ends.
 tolerance.percent 1.5
 apk.file        5275216
-apk.download    2511062
+apk.download    2519254
 dex             3795760
 lib                6400
 res             1350000

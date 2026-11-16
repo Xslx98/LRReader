@@ -10638,7 +10638,7 @@ PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getPreloadSemaphore$p
 PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getProbeActive$p(Lcom/lanraragi/reader/reading/LRRGalleryProvider;)Lkotlin/jvm/functions/Function0;
 PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getProgressProfileId$p(Lcom/lanraragi/reader/reading/LRRGalleryProvider;)J
 PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getProviderScope$p(Lcom/lanraragi/reader/reading/LRRGalleryProvider;)Lkotlinx/coroutines/CoroutineScope;
-PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getRequests$p(Lcom/lanraragi/reader/reading/LRRGalleryProvider;)Lcom/lanraragi/reader/reading/PageRequestTracker;
+PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getRequests$p(Lcom/lanraragi/reader/reading/LRRGalleryProvider;)Lcom/lanraragi/reader/reading/PageJobs;
 PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getServerProfileId$p(Lcom/lanraragi/reader/reading/LRRGalleryProvider;)J
 PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getServerUrl$p(Lcom/lanraragi/reader/reading/LRRGalleryProvider;)Ljava/lang/String;
 PLcom/lanraragi/reader/reading/LRRGalleryProvider;->access$getServerUrlDeferred$p(Lcom/lanraragi/reader/reading/LRRGalleryProvider;)Lkotlinx/coroutines/CompletableDeferred;
@@ -10810,10 +10810,10 @@ PLcom/lanraragi/reader/reading/PageLoadLoop$run$1;-><init>(Lcom/lanraragi/reader
 PLcom/lanraragi/reader/reading/PageLoadLoop$run$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
 PLcom/lanraragi/reader/reading/PageLoadResult$Loaded;-><init>(Ljava/lang/Object;)V
 PLcom/lanraragi/reader/reading/PageLoadResult$Loaded;->getValue()Ljava/lang/Object;
-PLcom/lanraragi/reader/reading/PageRequestTracker;-><init>(Ljava/util/concurrent/ConcurrentMap;)V
-PLcom/lanraragi/reader/reading/PageRequestTracker;-><init>(Ljava/util/concurrent/ConcurrentMap;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-PLcom/lanraragi/reader/reading/PageRequestTracker;->begin(I)Ljava/lang/Object;
-PLcom/lanraragi/reader/reading/PageRequestTracker;->finish(ILjava/lang/Object;ZZ)Z
+PLcom/lanraragi/reader/reading/PageJobs;-><init>(Ljava/util/concurrent/ConcurrentMap;)V
+PLcom/lanraragi/reader/reading/PageJobs;-><init>(Ljava/util/concurrent/ConcurrentMap;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+PLcom/lanraragi/reader/reading/PageJobs;->begin(I)Ljava/lang/Object;
+PLcom/lanraragi/reader/reading/PageJobs;->finish(ILjava/lang/Object;ZZ)Z
 PLcom/lanraragi/reader/reading/ProgressThrottle;-><clinit>()V
 PLcom/lanraragi/reader/reading/ProgressThrottle;-><init>(JLkotlin/jvm/functions/Function0;)V
 PLcom/lanraragi/reader/reading/ProgressThrottle;-><init>(JLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V

@@ -77,9 +77,10 @@ class TankGalleryProvider(
 
     private val serverUrlDeferred = CompletableDeferred<String?>()
 
-    // In-flight page requests (per-job tokens) and rebinds that arrived while
-    // a job was running; see PageRequestTracker (audit 2026-10-06 N6).
-    private val requests = PageRequestTracker()
+    // In-flight page jobs (per-job tokens) and rebinds that arrived while a
+    // job was running; see PageJobs (audit 2026-10-06 N6). Member sources
+    // keep their own downloads' mutexes and calls.
+    private val jobs = PageJobs()
 
     /** Global cap on concurrent prefetch downloads (mirrors LRRGalleryProvider). */
     private val prefetchSemaphore = Semaphore(PREFETCH_PARALLELISM)
@@ -202,7 +203,7 @@ class TankGalleryProvider(
 
     override fun stop() {
         super.stop()
-        requests.clear()
+        jobs.clear()
         providerScope?.cancel()
         providerScope = null
         synchronized(slotsLock) { slots.forEach { it.source?.cancelAll() } }
@@ -230,14 +231,16 @@ class TankGalleryProvider(
         }
         // Already in flight: the tracker records the rebind so a cancelled
         // job re-requests the page instead of leaving it spinning.
-        val token = requests.begin(index)
-        if (token == null) return
+        val token = jobs.begin(index) ?: return
         notifyPageWait(index)
         val scope = providerScope
         if (scope == null) {
-            requests.abandon(index, token)
+            jobs.abandon(index, token)
             return
         }
+        // A failure published under an older page map belongs to the page
+        // that index meant then: the rebind after the remap must ask again.
+        val generation = pageGeneration
         scope.launch {
             var cancelled = false
             try {
@@ -254,7 +257,7 @@ class TankGalleryProvider(
                 Log.w(TAG, "Failed to serve tank page $index: ${e.message}")
                 notifyPageFailed(index, friendlyPageError(e))
             } finally {
-                if (requests.finish(index, token, cancelled, isStopped)) {
+                if (jobs.finish(index, token, cancelled || pageGeneration != generation, isStopped)) {
                     onRequest(index)
                 }
             }
@@ -262,7 +265,7 @@ class TankGalleryProvider(
     }
 
     override fun onForceRequest(index: Int) {
-        requests.forget(index)
+        jobs.forget(index)
         onRequest(index)
     }
 
@@ -311,9 +314,9 @@ class TankGalleryProvider(
                 throw TankPageCancelledException(IOException("remapped"))
             }
             prefetchAround(global0)
-        } else {
-            notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
+            return
         }
+        notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
     }
 
     /**
