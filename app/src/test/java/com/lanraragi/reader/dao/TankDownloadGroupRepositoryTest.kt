@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -314,6 +315,7 @@ class TankDownloadGroupRepositoryTest {
         repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
         repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
         repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B))
+        // The group delete fails after the prune, which must roll back (the prune also clears the tags).
         failOn(
             "CREATE TRIGGER fail_dissolve BEFORE DELETE ON TANK_DOWNLOAD_GROUP " +
                 "BEGIN SELECT RAISE(ABORT, 'injected'); END"
@@ -324,26 +326,71 @@ class TankDownloadGroupRepositoryTest {
         val downloads = repo.observeDownloads().first()
         assertEquals("a group row never outlives its members' rows", setOf(ARC_A, ARC_B), downloads.map { it.arcid }.toSet())
         assertEquals(setOf(TANK), downloads.map { it.tankId }.toSet())
+        assertNotNull("the group delete rolled back", repo.getTankGroup(TANK))
     }
 
     @Test
-    fun dissolveTankGroup_failingGroupDelete_keepsTheMemberTags() = runTest {
+    fun dissolveTankGroup_failingUntag_keepsTheGroupRow() = runTest {
         repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
         repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A))
         failOn(
-            "CREATE TRIGGER fail_dissolve BEFORE DELETE ON TANK_DOWNLOAD_GROUP " +
+            "CREATE TRIGGER fail_untag BEFORE UPDATE OF DOWNLOAD_TANK_ID ON ARCHIVE_LOCAL_STATE " +
                 "BEGIN SELECT RAISE(ABORT, 'injected'); END"
         )
 
         assertFailsWithInjected { repo.dissolveTankGroup(TANK) }
 
+        assertNotNull("a group row never loses its tags without going itself", repo.getTankGroup(TANK))
         assertEquals(TANK, repo.observeDownloads().first().single().tankId)
+    }
+
+    /** An arcid in two tanks is tagged with the newest group; syncing the older one does not take it. */
+    @Test
+    fun sharedMember_staysWithTheNewestGroup() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
+        repo.putTankGroup(TANK, 1L, "Old", listOf(ARC_A))
+        repo.putTankGroup(TANK_2, 1L, "New", listOf(ARC_A, ARC_B))
+
+        repo.reconcileTankGroup(TANK, "Old renamed", listOf(ARC_A), activeProfileId = 1L)
+        assertEquals(TANK_2, repo.observeDownloads().first().single { it.arcid == ARC_A }.tankId)
+
+        repo.rebuildTankTags()
+        assertEquals("the boot rebuild agrees", TANK_2, repo.observeDownloads().first().single { it.arcid == ARC_A }.tankId)
+    }
+
+    /** The tag is derived from the group rows: the boot rebuild repairs stale tags and tags late members. */
+    @Test
+    fun rebuildTankTags_followsTheGroupRows() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        repo.putDownloadInfo(downloadInfo(ARC_B, "B"))
+        repo.putTankGroup(TANK, 1L, "MyTank", listOf(ARC_A, ARC_B, ARC_C))
+        // C's download row is created after the group row; B carries a stale tag.
+        repo.putDownloadInfo(downloadInfo(ARC_C, "C"))
+        db.archiveLocalStateDao().setDownloadTankId(ARC_B, "TANK_1688009999")
+
+        repo.rebuildTankTags()
+
+        val tags = repo.observeDownloads().first().associate { it.arcid to it.tankId }
+        assertEquals(mapOf(ARC_A to TANK, ARC_B to TANK, ARC_C to TANK), tags)
+    }
+
+    @Test
+    fun rebuildTankTags_untagsRowsOfAGroupThatIsGone() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        db.archiveLocalStateDao().setDownloadTankId(ARC_A, TANK)
+
+        repo.rebuildTankTags()
+
+        assertEquals(null, repo.observeDownloads().first().single().tankId)
     }
 
     private companion object {
         val ARC_A = "a".repeat(40)
         val ARC_B = "b".repeat(40)
+        val ARC_C = "c".repeat(40)
         const val TANK = "TANK_1688000000"
+        const val TANK_2 = "TANK_1688000001"
         const val LEGACY_SQLITE_MAX_VARIABLES = 999
     }
 

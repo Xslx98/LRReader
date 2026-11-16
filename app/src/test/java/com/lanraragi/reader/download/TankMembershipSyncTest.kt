@@ -46,7 +46,10 @@ class TankMembershipSyncTest {
             downloadDb,
             history,
             object : TankMembershipSync.ProgressStore {
-                override fun load(arcid: String): Int = progressStore[arcid] ?: 0
+                override fun load(arcid: String): Int {
+                    check(arcid != FAILING_TANK) { "progress store down" }
+                    return progressStore[arcid] ?: 0
+                }
                 override fun save(arcid: String, page0: Int) { progressStore[arcid] = page0 }
             },
             object : TankMembershipSync.ShortcutPort {
@@ -100,9 +103,9 @@ class TankMembershipSyncTest {
         downloadDb.putTankGroup(TANK, 1L, "MyTank", listOf(M1))
         putHistory(M2, 5_000L)
 
-        val changed = sync.sync(1L, BASE, listOf(truth(M1, M2, progress = 7)))
+        val outcome = sync.sync(1L, BASE, listOf(truth(M1, M2, progress = 7)))
 
-        assertTrue(changed)
+        assertEquals(TankMembershipSync.SyncOutcome(regrouped = setOf(TANK), folded = setOf(TANK)), outcome)
         assertEquals(listOf(M1, M2), downloadDb.getTankGroupMemberIds(TANK))
         assertNull(db.archiveLocalStateDao().loadByArcidAndProfile(M2, 1L)!!.historyTime)
         assertEquals(5_000L, db.archiveLocalStateDao().loadByArcidAndProfile(TANK, 1L)!!.historyTime)
@@ -148,9 +151,10 @@ class TankMembershipSyncTest {
     fun nothingToDo_reportsUnchanged_andLeavesWidgetAlone() = runTest {
         downloadDb.putTankGroup(TANK, 1L, "MyTank", listOf(M1))
 
-        val changed = sync.sync(1L, BASE, listOf(truth(M1)))
+        val outcome = sync.sync(1L, BASE, listOf(truth(M1)))
 
-        assertFalse(changed)
+        assertFalse(outcome.changed)
+        assertEquals(TankMembershipSync.SyncOutcome(), outcome)
         assertEquals(0, widgetRefreshes)
     }
 
@@ -158,14 +162,28 @@ class TankMembershipSyncTest {
     fun tankWithoutGroupRow_stillFoldsHistory() = runTest {
         putHistory(M1, 1_000L)
 
-        val changed = sync.sync(1L, BASE, listOf(truth(M1)))
+        val outcome = sync.sync(1L, BASE, listOf(truth(M1)))
 
-        assertTrue(changed)
+        assertEquals("no group row: only the fold", TankMembershipSync.SyncOutcome(folded = setOf(TANK)), outcome)
         assertEquals("MyTank", history.getArchiveSnapshot(TANK, 1L)!!.title)
         assertNull(db.archiveLocalStateDao().loadByArcidAndProfile(M1, 1L))
     }
 
+    @Test
+    fun oneFailingTank_isReported_andTheOthersStillSync() = runTest {
+        putHistory(M1, 1_000L)
+        putHistory(M2, 2_000L)
+        val failing = TankMembershipSync.TankTruth(FAILING_TANK, "Broken", listOf(M2), 1, pagecount = 0)
+
+        val outcome = sync.sync(1L, BASE, listOf(failing, truth(M1)))
+
+        assertEquals(setOf(FAILING_TANK), outcome.failed)
+        assertTrue("the next tank still folded", TANK in outcome.folded)
+        assertEquals("MyTank", history.getArchiveSnapshot(TANK, 1L)!!.title)
+    }
+
     private companion object {
+        const val FAILING_TANK = "TANK_1688000099"
         val M1 = "1".repeat(40)
         val M2 = "2".repeat(40)
         const val TANK = "TANK_1688000000"

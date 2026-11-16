@@ -19,7 +19,7 @@ class DownloadResumeBannerTest {
     @Test
     fun markResumed_batch_clearsEveryEntryWithOneStoreWrite() {
         DownloadResumeBanner.markInterrupted(listOf("a", "b", "c", "d"))
-        DownloadResumeBanner.markTimedOut("a", "A")
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.TIMED_OUT)
         store.writes = 0
 
         DownloadResumeBanner.markResumed(listOf("a", "b", "c", "x"))
@@ -56,9 +56,9 @@ class DownloadResumeBannerTest {
 
     @Test
     fun storageFull_takesPrecedenceAndIsClearedByResume() {
-        DownloadResumeBanner.markTimedOut("t", "Timed out")
-        DownloadResumeBanner.markStorageFull("a", "Title A")
-        DownloadResumeBanner.markStorageFull("b", "Title B")
+        DownloadResumeBanner.mark("t", DownloadResumeBanner.Reason.TIMED_OUT)
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.STORAGE_FULL)
+        DownloadResumeBanner.mark("b", DownloadResumeBanner.Reason.STORAGE_FULL)
         DownloadResumeBanner.markResumed("b")
 
         assertEquals(DownloadResumeBanner.Snapshot.StorageFull(listOf("a"), 1), DownloadResumeBanner.consume())
@@ -73,8 +73,8 @@ class DownloadResumeBannerTest {
 
     @Test
     fun consume_paused_whenOnlyPaused() {
-        DownloadResumeBanner.markPaused("a", "Title A")
-        DownloadResumeBanner.markPaused("b", "Title B")
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.PAUSED)
+        DownloadResumeBanner.mark("b", DownloadResumeBanner.Reason.PAUSED)
         val s = DownloadResumeBanner.consume()
         assertEquals(DownloadResumeBanner.Snapshot.Paused(2), s)
         // consume clears
@@ -83,15 +83,15 @@ class DownloadResumeBannerTest {
 
     @Test
     fun markResumed_removesFromPaused() {
-        DownloadResumeBanner.markPaused("a", "Title A")
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.PAUSED)
         DownloadResumeBanner.markResumed("a")
         assertEquals(DownloadResumeBanner.Snapshot.None, DownloadResumeBanner.consume())
     }
 
     @Test
     fun timedOut_takesPrecedenceAndCarriesArcids() {
-        DownloadResumeBanner.markPaused("a", "Title A")
-        DownloadResumeBanner.markTimedOut("b", "Title B")
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.PAUSED)
+        DownloadResumeBanner.mark("b", DownloadResumeBanner.Reason.TIMED_OUT)
         val s = DownloadResumeBanner.consume()
         assertTrue(s is DownloadResumeBanner.Snapshot.TimedOut)
         s as DownloadResumeBanner.Snapshot.TimedOut
@@ -99,10 +99,23 @@ class DownloadResumeBannerTest {
         assertEquals(1, s.count)
     }
 
+    /** A storage-full or system-limit entry asks the user to act: a later network pause must not hide it. */
+    @Test
+    fun aNetworkPause_neverHidesAStorageFullEntry() {
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.STORAGE_FULL)
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.PAUSED)
+        DownloadResumeBanner.mark("b", DownloadResumeBanner.Reason.SYSTEM_LIMITED)
+        DownloadResumeBanner.mark("b", DownloadResumeBanner.Reason.TIMED_OUT)
+
+        val s = DownloadResumeBanner.consume()
+        assertTrue(s is DownloadResumeBanner.Snapshot.StorageFull)
+        assertEquals(listOf("a"), (s as DownloadResumeBanner.Snapshot.StorageFull).arcids)
+    }
+
     @Test
     fun markTimedOut_clearsPausedForSameArcid() {
-        DownloadResumeBanner.markPaused("a", "Title A")
-        DownloadResumeBanner.markTimedOut("a", "Title A")
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.PAUSED)
+        DownloadResumeBanner.mark("a", DownloadResumeBanner.Reason.TIMED_OUT)
         val s = DownloadResumeBanner.consume()
         assertTrue(s is DownloadResumeBanner.Snapshot.TimedOut)
         assertEquals(1, (s as DownloadResumeBanner.Snapshot.TimedOut).count)
@@ -141,7 +154,7 @@ class DownloadResumeBannerTest {
     @Test
     fun timedOut_isShownFirstAndInterruptedWaitsForTheNextForeground() {
         DownloadResumeBanner.markInterrupted(listOf("a"))
-        DownloadResumeBanner.markTimedOut("b", "Title B")
+        DownloadResumeBanner.mark("b", DownloadResumeBanner.Reason.TIMED_OUT)
 
         assertTrue(DownloadResumeBanner.consume() is DownloadResumeBanner.Snapshot.TimedOut)
         assertEquals(DownloadResumeBanner.Snapshot.Interrupted(listOf("a"), 1), DownloadResumeBanner.consume())
@@ -149,14 +162,14 @@ class DownloadResumeBannerTest {
 
     @Test
     fun systemLimited_comesAfterStorageFull_beforeTimedOut_andIsClearedByResume() {
-        DownloadResumeBanner.markTimedOut("t", "Timed out")
-        DownloadResumeBanner.markSystemLimited("s", "S")
-        DownloadResumeBanner.markSystemLimited("r", "R")
+        DownloadResumeBanner.mark("t", DownloadResumeBanner.Reason.TIMED_OUT)
+        DownloadResumeBanner.mark("s", DownloadResumeBanner.Reason.SYSTEM_LIMITED)
+        DownloadResumeBanner.mark("r", DownloadResumeBanner.Reason.SYSTEM_LIMITED)
         DownloadResumeBanner.markResumed("r")
         assertEquals(DownloadResumeBanner.Snapshot.SystemLimited(listOf("s"), 1), DownloadResumeBanner.consume())
 
-        DownloadResumeBanner.markSystemLimited("s", "S")
-        DownloadResumeBanner.markStorageFull("f", "F")
+        DownloadResumeBanner.mark("s", DownloadResumeBanner.Reason.SYSTEM_LIMITED)
+        DownloadResumeBanner.mark("f", DownloadResumeBanner.Reason.STORAGE_FULL)
         assertEquals(DownloadResumeBanner.Snapshot.StorageFull(listOf("f"), 1), DownloadResumeBanner.consume())
     }
 }

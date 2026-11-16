@@ -290,6 +290,44 @@ class DownloadDbRepository(
 
     suspend fun getTankGroup(tankId: String): TankDownloadGroup? = tankGroupDao.getById(tankId)
 
+    // ── Tank membership ───────────────────────────────────────────
+    // The group row's member id list is the truth. DOWNLOAD_TANK_ID on a
+    // member's download row is an index derived from it: written only by
+    // [retag], inside the same transaction as the group row it follows,
+    // and re-derived from every group row once per boot ([rebuildTankTags]).
+    // An arcid in two tanks' lists is tagged with the newest group, the
+    // card it folds into (TankDownloadGrouping).
+
+    /**
+     * Make the tags of [tankId]'s rows follow [memberIds] (null: the group
+     * is gone). [take] = the group is the newest one, so it also takes
+     * members another tank tags (a new download); otherwise those keep their
+     * tag. Inside a transaction only.
+     */
+    private suspend fun retag(tankId: String, memberIds: List<String>?, take: Boolean = false) {
+        archiveLocalStateDao.clearDownloadTankId(tankId)
+        memberIds?.forEach {
+            if (take) archiveLocalStateDao.setDownloadTankId(it, tankId) else archiveLocalStateDao.setDownloadTankIdIfFree(it, tankId)
+        }
+    }
+
+    /**
+     * Re-derive every DOWNLOAD_TANK_ID from the group rows (boot, before the
+     * download list is read), writing only the rows whose tag differs. Repairs
+     * tags a crash or an older version left out of step, and tags members
+     * whose download row was created after the group was written.
+     */
+    suspend fun rebuildTankTags() = database.withTransaction {
+        val expected = HashMap<String, String>()
+        for (group in tankGroupDao.getAll().sortedByDescending { it.createdTime }) {
+            for (arcid in TankGroupReconciler.decode(group.memberIdsJson)) expected.putIfAbsent(arcid, group.tankId)
+        }
+        for (row in archiveLocalStateDao.getDownloadTankIds()) {
+            val tag = expected[row.arcid]
+            if (tag != row.tankId) archiveLocalStateDao.setDownloadTankId(row.arcid, tag)
+        }
+    }
+
     /**
      * Create/refresh the group row for a downloaded tank and tag every
      * member's download row. [memberIdsInOrder] is the tank order at
@@ -317,17 +355,15 @@ class DownloadDbRepository(
                 createdTime = System.currentTimeMillis(),
             )
         )
-        for (arcid in memberIdsInOrder) {
-            archiveLocalStateDao.setDownloadTankId(arcid, tankId)
-        }
+        retag(tankId, memberIdsInOrder, take = true)
     }
 
     /**
      * Bring a downloaded tank group in line with the server's CURRENT
      * membership (spec 2026-09-21 §1): rewrite ids/order/name via
-     * [TankGroupReconciler], then mirror the per-row tag (added members
-     * tagged, removed members untagged — their download rows survive as
-     * standalone downloads). Returns null when there is no such group, the
+     * [TankGroupReconciler], then re-derive the per-row tags (removed
+     * members are untagged; their download rows survive as standalone
+     * downloads). Returns null when there is no such group, the
      * group belongs to another profile, or nothing changed.
      */
     suspend fun reconcileTankGroup(
@@ -342,12 +378,7 @@ class DownloadDbRepository(
             result = r
             r?.group ?: group
         }
-        result?.also { applyReconcileTags(tankId, it) }
-    }
-
-    private suspend fun applyReconcileTags(tankId: String, result: TankGroupReconciler.Result) {
-        for (arcid in result.added) archiveLocalStateDao.setDownloadTankId(arcid, tankId)
-        for (arcid in result.removed) archiveLocalStateDao.setDownloadTankId(arcid, null)
+        result?.also { retag(tankId, TankGroupReconciler.decode(it.group.memberIdsJson)) }
     }
 
     /**
@@ -392,30 +423,27 @@ class DownloadDbRepository(
         return order.mapNotNull { byId[it] }
     }
 
-    /** Tag one member row into (or out of, with null) a tank group. */
-    suspend fun setDownloadTankId(arcid: String, tankId: String?) {
-        archiveLocalStateDao.setDownloadTankId(arcid, tankId)
-    }
-
     /**
      * Remove ONE member from a tank group (member removed from the tank
      * app-side): rewrite the group's id list and clear the row tag; the
      * member reappears as a standalone download.
      */
     suspend fun removeTankGroupMember(tankId: String, arcid: String): Unit = database.withTransaction {
-        archiveLocalStateDao.setDownloadTankId(arcid, null)
+        var remaining: List<String>? = null
         tankGroupDao.modify(tankId) { group ->
-            val remaining = TankGroupReconciler.decode(group.memberIdsJson).filterNot { it == arcid }
-            if (remaining.isEmpty()) {
+            val rest = TankGroupReconciler.decode(group.memberIdsJson).filterNot { it == arcid }
+            if (rest.isEmpty()) {
                 null
             } else {
+                remaining = rest
                 group.copy(
                     memberIdsJson = ArchiveLocalStateJson.encodeToString(
-                        ListSerializer(String.serializer()), remaining
+                        ListSerializer(String.serializer()), rest
                     )
                 )
             }
         }
+        retag(tankId, remaining)
     }
 
     /**
@@ -423,8 +451,8 @@ class DownloadDbRepository(
      * the members reappear as standalone downloads (files untouched).
      */
     suspend fun dissolveTankGroup(tankId: String) = database.withTransaction {
-        archiveLocalStateDao.clearDownloadTankId(tankId)
         tankGroupDao.delete(tankId)
+        retag(tankId, null)
     }
 
     /**
@@ -437,8 +465,8 @@ class DownloadDbRepository(
         database.withTransaction {
             if (arcids.isNotEmpty()) archiveLocalStateDao.clearDownloadAndPruneBatch(arcids)
             for (tankId in tankIds) {
-                archiveLocalStateDao.clearDownloadTankId(tankId)
                 tankGroupDao.delete(tankId)
+                retag(tankId, null)
             }
         }
 

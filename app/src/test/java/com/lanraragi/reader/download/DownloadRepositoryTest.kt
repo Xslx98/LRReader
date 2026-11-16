@@ -487,6 +487,28 @@ class DownloadRepositoryTest {
     // Audit 2026-10-04 C34 / STAB-13: a failed load is an error, not "no downloads"
     // ═══════════════════════════════════════════════════════════
 
+    /** Tank tags are rebuilt from the group rows before the list is read (PR 3.3). */
+    @Test
+    fun load_rebuildsTankTagsFromTheGroupRows() {
+        val arcA = "a".repeat(40)
+        val arcB = "b".repeat(40)
+        val tank = "TANK_1688000000"
+        runBlocking {
+            val dbRepo = ServiceRegistry.dataModule.downloadDbRepository
+            dbRepo.putDownloadInfo(makeInfo(arcA, "A"))
+            dbRepo.putTankGroup(tank, 0L, "T", listOf(arcA, arcB))
+            // B's row only appears after the group was written: untagged in Room.
+            dbRepo.putDownloadInfo(makeInfo(arcB, "B"))
+        }
+        val r = DownloadRepository(context, testScope, Dispatchers.Unconfined)
+        r.startLoading {}
+        awaitUntil { r.initialized }
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+
+        assertEquals(tank, r.getDownloadInfo(arcB)?.tankId)
+        assertEquals(tank, r.getDownloadInfo(arcA)?.tankId)
+    }
+
     @Test
     fun loadFailure_setsLoadError_andRetryLoadsTheRows() {
         runBlocking {

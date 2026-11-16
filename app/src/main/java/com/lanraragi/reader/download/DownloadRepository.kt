@@ -198,6 +198,15 @@ class DownloadRepository(
         // The reset queue is offered back on the next foreground (A47) rather than
         // resumed silently: the user decides whether to spend the data.
         DownloadResumeBanner.markInterrupted(downloadDbRepo.resetTransientDownloadStates())
+        // Tank tags are derived from the group rows; rebuild them before the rows are read.
+        // A derived index: failing to write it (a full disk) must not cost the download list.
+        try {
+            downloadDbRepo.rebuildTankTags()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Tank tag rebuild failed; loading the downloads anyway", e)
+        }
         val loadedLabels = downloadDbRepo.getAllDownloadLabels()
         val loadedInfos = downloadDbRepo.getAllDownloadInfo()
 
