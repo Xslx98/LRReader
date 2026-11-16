@@ -234,7 +234,6 @@ class DownloadManager(
     fun getDownloadInfo(arcid: String): DownloadInfo? = repo.getDownloadInfo(arcid)
     fun getDownloadState(arcid: String): DownloadState = repo.getDownloadState(arcid)
     fun getLabelCount(label: String?): Long = repo.getLabelCount(label)
-    fun getNoneDownloadInfo(arcid: String): DownloadInfo? = scheduler.getNoneDownloadInfo(arcid)
     val isIdle: Boolean get() = scheduler.isIdle
 
     /** Arcids of the downloads running right now. Main thread only. */

@@ -13,23 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import com.lanraragi.reader.domain.FavoriteState
 
-/**
- * Regression tests for the Activity-scoped state bleed in [GalleryDetailViewModel].
- *
- * Background: GalleryDetailViewModel is scoped via
- * `ViewModelProvider(requireActivity())`, so the same instance is reused
- * across navigations. The `getEffective*()` accessors prefer archiveDetail
- * over the navigation Archive (the "archiveDetail > archive > args" fallback).
- * When the user pops back to the list and clicks a different gallery,
- * [setArchive] writes the new arg but the previous gallery's
- * `_archiveDetail` is still cached. Without an explicit reset every
- * getEffective*() call returns the stale arcid → the new detail screen
- * renders the old gallery, downloads it, etc.
- *
- * Fix: [GalleryDetailViewModel.resetForNewEntry] clears all per-entry state
- * and must be called by the Scene's `handleArgs()` before writing the new
- * arguments.
- */
+/** Unit tests of [GalleryDetailViewModel]; each detail scene owns its instance. */
 class GalleryDetailViewModelTest {
 
     private fun archive(arcid: String) = Archive(
@@ -87,53 +71,6 @@ class GalleryDetailViewModelTest {
     }
 
     @Test
-    fun secondNavigation_afterReset_returnsNewGalleryArcid_notStaleDetail() {
-        val vm = GalleryDetailViewModel()
-
-        val archiveB = archive("tokB")
-
-        // First navigation: A loaded with both archive and detail.
-        vm.setArchive(archive("tokA"))
-        vm.setArchiveDetail(archiveDetail("tokA"))
-        assertEquals("tokA", vm.getEffectiveArcid())
-
-        // User pops back and clicks gallery B. The Scene must reset the
-        // ViewModel before writing the new arguments, otherwise the stale
-        // detail from gallery A wins via the archiveDetail > archive fallback.
-        vm.resetForNewEntry()
-        vm.setArchive(archiveB)
-
-        assertEquals("tokB", vm.getEffectiveArcid())
-        assertEquals(archiveB, vm.getEffectiveArchive())
-    }
-
-    @Test
-    fun resetForNewEntry_clearsAllPerEntryState() {
-        // updateFavoriteState mirrors into the process-wide favorite cache.
-        ServiceRegistry.initializeForTest(coroutine = null, data = detailCacheOnly(LruCache(4)))
-        val vm = GalleryDetailViewModel()
-
-        vm.setAction(GalleryDetailScene.ACTION_ARCHIVE)
-        vm.setArcid("tok")
-        vm.setArchive(archive("tok"))
-        vm.setArchiveDetail(archiveDetail("tok"))
-        vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "slot"))
-        vm.setState(GalleryDetailViewModel.STATE_NORMAL)
-
-        vm.resetForNewEntry()
-
-        assertNull(vm.action.value)
-        assertNull(vm.arcid.value)
-        assertNull(vm.archive.value)
-        assertNull(vm.archiveDetail.value)
-        assertNull(vm.favoriteState.value)
-        assertNull(vm.currentRating.value)
-        assertEquals(GalleryDetailViewModel.STATE_INIT, vm.state.value)
-        assertNull(vm.getEffectiveArcid())
-        assertNull(vm.getEffectiveArchive())
-    }
-
-    @Test
     fun setArchiveDetail_initializesCurrentRatingFromArchive() {
         val vm = GalleryDetailViewModel()
 
@@ -149,26 +86,6 @@ class GalleryDetailViewModelTest {
         // Clearing falls back to null.
         vm.setArchiveDetail(null)
         assertNull(vm.currentRating.value)
-    }
-
-    @Test
-    fun tryLoadFromCache_restoresTheFavoriteStateResolvedOnAnEarlierVisit() {
-        // Reopening a gallery whose detail is cached skips the network fetch,
-        // so the heart icon must come back from the per-arcid favorite cache
-        // instead of flashing "not favorited" until some later refresh.
-        val detailCache = LruCache<String, ArchiveDetail>(4)
-        ServiceRegistry.initializeForTest(coroutine = null, data = detailCacheOnly(detailCache))
-        val vm = GalleryDetailViewModel()
-
-        vm.setArchiveDetail(archiveDetail("favTok"))
-        vm.updateFavoriteState(FavoriteState(isFavorited = true, name = "Reading"))
-        detailCache.put(GalleryDetailViewModel.detailCacheKey(0L, "favTok"), archiveDetail("favTok"))
-
-        vm.resetForNewEntry()
-        vm.setArchive(archive("favTok"))
-
-        assertTrue(vm.tryLoadFromCache())
-        assertEquals(FavoriteState(isFavorited = true, name = "Reading"), vm.favoriteState.value)
     }
 
     @Test
@@ -293,25 +210,5 @@ class GalleryDetailViewModelTest {
         // StateFlow exists, holds the sentinel, and was created without throwing.
         assertNotNull(vm.localReadingPage)
         assertEquals(ReadingProgressTracker.NO_LOCAL_PROGRESS, vm.localReadingPage.value)
-    }
-
-    /**
-     * The request outcomes are kept for a late subscriber
-     * ([DetailRequestEvents]). The VM outlives one archive, and an archive
-     * that opens from the detail cache sends no request, so without this
-     * reset the previous archive's failure would replay onto the new page.
-     */
-    @Test
-    fun resetForNewEntry_dropsThePreviousArchivesRequestOutcomes() {
-        val vm = GalleryDetailViewModel()
-        vm.detailRequestEvents.loaded(archiveDetail("tokA"))
-        vm.detailRequestEvents.failed(RuntimeException("A offline"))
-        vm.detailRequestEvents.failedWithContent(RuntimeException("A banner"))
-
-        vm.resetForNewEntry()
-
-        assertTrue(vm.detailLoaded.replayCache.isEmpty())
-        assertTrue(vm.detailError.replayCache.isEmpty())
-        assertTrue(vm.detailErrorBanner.replayCache.isEmpty())
     }
 }

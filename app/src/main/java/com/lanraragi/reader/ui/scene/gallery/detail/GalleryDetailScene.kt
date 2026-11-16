@@ -16,8 +16,6 @@
 
 package com.lanraragi.reader.ui.scene.gallery.detail
 
-import android.annotation.SuppressLint
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -31,7 +29,6 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
 import com.lanraragi.reader.domain.ArchiveDetail
-import com.lanraragi.reader.ui.MainActivity
 import com.lanraragi.reader.ui.scene.BaseScene
 import com.lanraragi.reader.widget.ArchiverDownloadProgress
 import com.lanraragi.framework.util.AssertUtils
@@ -40,8 +37,6 @@ import com.lanraragi.reader.widget.Ripples
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.LoadImageView
-import java.text.SimpleDateFormat
-import java.util.Date
 import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.ui.readableErrorText
 
@@ -71,7 +66,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             // bind it, or both heart labels stay visible over each other (#94).
             keepPageNormal = {
                 if (mState != STATE_NORMAL) {
-                    adjustViewVisibility(STATE_NORMAL, true)
+                    adjustViewVisibility(STATE_NORMAL)
                     bindViewSecond()
                 }
             },
@@ -129,33 +124,18 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.arcid.value
         set(value) { viewModel.setArcid(value) }
 
-    /** Rating when the scene was opened, used to detect changes on exit. */
-
-    private var properties: MutableMap<String, String>? = null
-
     /** Shortcut delegating to [GalleryDetailViewModel.state]. */
     private var mState: Int
         get() = viewModel.state.value
         set(value) { viewModel.setState(value) }
 
 
-    private var mContext: Context? = null
-    private var activity: MainActivity? = null
 
 
     private fun handleArgs(args: Bundle?) {
         if (args == null) {
             return
         }
-
-        // The ViewModels are scene-scoped; new arguments for this same scene
-        // must still not be shadowed by the previous entry's state via the
-        // detail > info > args fallback in viewModel.getEffective*().
-        viewModel.resetForNewEntry()
-        // Same for the thumbnail grid VM —
-        // without this, navigating from archive A to archive B would
-        // briefly show A's pageStates against B's archive.
-        pageThumbsViewModel.resetForNewEntry()
 
         val action = args.getString(KEY_ACTION)
         mAction = action
@@ -171,29 +151,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
     }
 
-    /**
-     * The [GalleryDetailViewModel] is Activity-scoped and shared across every stacked
-     * GalleryDetailScene. On re-attach (a sibling detail was pushed then popped) it may
-     * still hold the other scene's archive, which would render here as the wrong gallery
-     * — and route ratings/edits to the wrong arcid. This scene's own identity lives only
-     * in its nav [arguments]; if the VM's effective arcid no longer matches, replay
-     * [handleArgs] to reset and re-point both view models before binding.
-     */
-    private fun reassertOwnEntryIfStale() {
-        val args = arguments ?: return
-        val ownArcid = args.getParcelable<com.lanraragi.reader.domain.Archive>(KEY_ARCHIVE)?.arcid ?: return
-        if (viewModel.getEffectiveArcid() != ownArcid) {
-            handleArgs(args)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         viewModel = ViewModelProvider(this)[GalleryDetailViewModel::class.java]
-        // Activity-scoped just like [viewModel]; obtaining it before onInit()
-        // so handleArgs() can call resetForNewEntry() on it during a new
-        // archive entry, mirroring [GalleryDetailViewModel.resetForNewEntry].
+        // Scene-scoped like [viewModel]; each detail scene owns both.
         pageThumbsViewModel =
             ViewModelProvider(this)[PageThumbnailsViewModel::class.java]
         pageThumbs = DetailPageThumbs(this, viewModel, pageThumbsViewModel)
@@ -207,17 +169,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             onInit()
         } else {
             onRestore(savedInstanceState)
-        }
-
-        val a = mArchive
-        if (properties == null && a != null) {
-            val date = Date()
-            @SuppressLint("SimpleDateFormat")
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-            properties = HashMap<String, String>().apply {
-                put("Title", a.title)
-                put("Time", dateFormat.format(date))
-            }
         }
     }
 
@@ -255,9 +206,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         savedInstanceState: Bundle?
     ): View? {
         val context = getEHContext()
-        // Re-point the shared Activity-scoped ViewModel at this scene's archive if a
-        // sibling detail scene left it pointing elsewhere, before reading any VM state.
-        reassertOwnEntryIfStale()
         // Get download state
         viewModel.initDownloadState(viewModel.getEffectiveArcid())
 
@@ -370,17 +318,17 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             if (viewModel.archiveDetail.value != null) {
                 bindViewSecond()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
-                adjustViewVisibility(STATE_NORMAL, false)
+                adjustViewVisibility(STATE_NORMAL)
             } else if (mArchive != null) {
                 bindViewFirst()
                 mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
-                adjustViewVisibility(STATE_REFRESH_HEADER, false)
+                adjustViewVisibility(STATE_REFRESH_HEADER)
             } else {
-                adjustViewVisibility(STATE_REFRESH, false)
+                adjustViewVisibility(STATE_REFRESH)
             }
         } else {
             tip.setText(R.string.error_cannot_find_gallery)
-            adjustViewVisibility(STATE_FAILED, false)
+            adjustViewVisibility(STATE_FAILED)
         }
 
         viewModel.downloadManager.addDownloadInfoListener(viewModel.downloadInfoListener)
@@ -434,8 +382,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         mActionHandler = null
 
         pageThumbs.clear()
-
-        properties = null
     }
 
     private fun prepareData(): Boolean {
@@ -454,12 +400,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         return request()
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun request(url: String, resultMode: Int): Boolean {
-        // LANraragi: ignore E-Hentai URL, fetch archive metadata via LRRArchiveApi
-        return request()
-    }
-
     private fun request(): Boolean {
         getEHContext() ?: return false
         return viewModel.requestGalleryDetail(
@@ -473,12 +413,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
      */
     internal fun requestRefresh() {
         if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
-            adjustViewVisibility(STATE_REFRESH, true)
+            adjustViewVisibility(STATE_REFRESH)
             request()
         }
     }
 
-    private fun adjustViewVisibility(state: Int, animation: Boolean) {
+    private fun adjustViewVisibility(state: Int) {
         if (state == mState) {
             return
         }
@@ -488,30 +428,27 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val oldState = mState
         mState = state
 
-        @Suppress("NAME_SHADOWING")
-        val animation = !TRANSITION_ANIMATION_DISABLED && animation
-
         when (state) {
             STATE_NORMAL -> {
                 // Show mMainView
-                viewTransition.showView(0, animation)
+                viewTransition.showView(0, false)
                 // Show mBelowHeader
-                viewTransition2.showView(0, animation)
+                viewTransition2.showView(0, false)
             }
             STATE_REFRESH -> {
                 // Show mProgressView
-                viewTransition.showView(1, animation)
+                viewTransition.showView(1, false)
             }
             STATE_REFRESH_HEADER -> {
                 // Show mMainView
-                viewTransition.showView(0, animation)
+                viewTransition.showView(0, false)
                 // Show mProgress
-                viewTransition2.showView(1, animation)
+                viewTransition2.showView(1, false)
             }
             else -> {
                 // STATE_INIT, STATE_FAILED
                 // Show mFailedView
-                viewTransition.showView(2, animation)
+                viewTransition.showView(2, false)
             }
         }
         val context = getEHContext() ?: return
@@ -546,15 +483,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
     override fun onClick(v: View) {
         val ctx = getEHContext() ?: return
-        mContext = ctx
-        activity = activity2
-        if (activity == null) {
-            return
-        }
+        val activity = activity2 ?: return
 
         if (mTip === v) {
             if (request()) {
-                adjustViewVisibility(STATE_REFRESH, true)
+                adjustViewVisibility(STATE_REFRESH)
             }
         } else {
             mActionHandler?.onClick(v, ctx, activity)
@@ -562,13 +495,9 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
     override fun onLongClick(v: View): Boolean {
-        mContext = getEHContext()
-        activity = activity2
-        if (activity == null) {
-            return false
-        }
-
-        return mActionHandler?.onLongClick(v, mContext ?: return false, activity) ?: false
+        val ctx = getEHContext() ?: return false
+        val activity = activity2 ?: return false
+        return mActionHandler?.onLongClick(v, ctx, activity) ?: false
     }
 
 
@@ -601,7 +530,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
                 viewModel.updateDownloadRowFromDetail(result.archive)
             }
         }
-        adjustViewVisibility(STATE_NORMAL, true)
+        adjustViewVisibility(STATE_NORMAL)
         bindViewSecond()
     }
 
@@ -612,13 +541,11 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         if (context != null && tip != null) {
             val error = readableErrorText(e)
             tip.text = error
-            adjustViewVisibility(STATE_FAILED, true)
+            adjustViewVisibility(STATE_FAILED)
         }
     }
 
     companion object {
-        private const val REQUEST_CODE_COMMENT_GALLERY = 0
-
         private const val STATE_INIT = GalleryDetailViewModel.STATE_INIT
         private const val STATE_NORMAL = GalleryDetailViewModel.STATE_NORMAL
         private const val STATE_REFRESH = GalleryDetailViewModel.STATE_REFRESH
@@ -633,7 +560,5 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         const val KEY_PAGE = "page"
 
         private const val KEY_ARCHIVE_DETAIL = "archive_detail"
-
-        private const val TRANSITION_ANIMATION_DISABLED = true
     }
 }

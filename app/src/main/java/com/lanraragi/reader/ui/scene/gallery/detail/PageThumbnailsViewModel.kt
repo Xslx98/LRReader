@@ -47,11 +47,8 @@ import java.io.IOException
  *    memory — if the map carried `Ready(bitmap)` entries the LRU
  *    eviction would be a no-op until the entire detail page exited.
  *
- * **Activity-scoped:** the Scene obtains this VM via
- * `ViewModelProvider(requireActivity())`, mirroring
- * [GalleryDetailViewModel]. [resetForNewEntry] must be called whenever
- * the Scene's archive arg changes, otherwise stale page-states from a
- * previous archive shadow the new grid.
+ * **Scene-scoped:** each detail scene owns its instance. [start] resets
+ * the per-entry state itself when it is pointed at a different arcid.
  */
 class PageThumbnailsViewModel : ViewModel() {
 
@@ -132,9 +129,9 @@ class PageThumbnailsViewModel : ViewModel() {
 
                 val pages = ArchivePageList.load(conn, arcid)
 
-                // Race-guard: if the user navigated away (resetForNewEntry
-                // wiped currentArcid) while the fetch was in flight, do
-                // not stomp the cleared state.
+                // Race-guard: if start() was re-pointed at another arcid
+                // (which resets the state) while the fetch was in flight,
+                // do not stomp the new entry's state.
                 if (currentArcid == arcid) {
                     _state.value = State.Loaded(pages.size)
                 }
@@ -220,13 +217,11 @@ class PageThumbnailsViewModel : ViewModel() {
     }
 
     /**
-     * Clear all per-entry state. Must be called from the Scene
-     * `handleArgs` before writing a new arcid, mirroring
-     * [GalleryDetailViewModel.resetForNewEntry]. The bitmap cache is
-     * **not** invalidated here — keeping it warm lets a back→forward
-     * navigation reuse work.
+     * Clear all per-entry state before [start] loads a different arcid. The
+     * bitmap cache is **not** invalidated here — keeping it warm lets a
+     * back→forward navigation reuse work.
      */
-    fun resetForNewEntry() {
+    private fun resetForNewEntry() {
         initJob?.cancel()
         initJob = null
         pageJobs.cancelAll()

@@ -29,21 +29,17 @@ import java.net.URI
 
 class AppProxySelector : ProxySelector() {
 
-    private var delegation: ProxySelector?
-    private val alternative: ProxySelector
+    private val alternative: ProxySelector = getDefault() ?: NullProxySelector()
 
-    init {
-        alternative = getDefault() ?: NullProxySelector()
-        delegation = null
-        updateProxy()
-    }
-
-    fun updateProxy() {
-        delegation = when (NetworkSettings.getProxyType()) {
-            TYPE_DIRECT -> NullProxySelector()
-            TYPE_HTTP, TYPE_SOCKS -> null
-            else -> alternative
-        }
+    /**
+     * Chosen once, from the proxy type at construction: switching between
+     * direct and system proxy takes effect on the next process start.
+     * HTTP/SOCKS are resolved per request in [select].
+     */
+    private val delegation: ProxySelector? = when (NetworkSettings.getProxyType()) {
+        TYPE_DIRECT -> NullProxySelector()
+        TYPE_HTTP, TYPE_SOCKS -> null
+        else -> alternative
     }
 
     override fun select(uri: URI): List<Proxy> {
