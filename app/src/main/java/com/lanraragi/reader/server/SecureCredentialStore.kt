@@ -140,15 +140,23 @@ object SecureCredentialStore {
 
     // ── Async-init readiness gate (INF-9) ───────────────────────────────
 
-    /** Set synchronously by [scheduleInitialize] BEFORE the init coroutine is
-     *  launched, so no reader can take the never-scheduled fallback while the
-     *  coroutine merely hasn't started running yet. */
-    @Volatile
-    private var sInitScheduled = false
+    /** Where the store's open stands; one value, written by the open only. */
+    enum class Readiness {
+        /** No open was scheduled (unit tests that read the "no store" defaults). */
+        NOT_SCHEDULED,
 
-    /** True once [initialize] (or a test seam) finished, whatever the outcome. */
-    @Volatile
-    private var sInitDone = false
+        /**
+         * [scheduleInitialize] ran and the open has not finished. Set
+         * synchronously before the init coroutine is launched, so no reader
+         * takes the never-scheduled fallback while it merely has not started.
+         */
+        OPENING,
+
+        /** The open finished, with the store or without it (then [prefs] is null). */
+        DONE,
+    }
+
+    private val readiness = java.util.concurrent.atomic.AtomicReference(Readiness.NOT_SCHEDULED)
 
     /** Opened by [openInitGate]. Replaced only by [resetInitGateForTesting]. */
     @Volatile
@@ -188,8 +196,7 @@ object SecureCredentialStore {
      *   unconditionally charging the main thread in Application.onCreate.
      */
     internal fun awaitInit() {
-        if (sInitDone) return
-        if (!sInitScheduled) return
+        if (readiness.get() != Readiness.OPENING) return
         if (sInitTimedOut) return
         // Gated getters run on the main thread during cold start (MainActivity's
         // reauthentication check, SecurityScene's storage check, drawer and list
@@ -218,7 +225,7 @@ object SecureCredentialStore {
     @JvmStatic
     fun scheduleInitialize(context: Context, scope: CoroutineScope): Job {
         appContext = context.applicationContext
-        sInitScheduled = true
+        readiness.set(Readiness.OPENING)
         return scope.launch {
             Trace.beginSection("LRRApp.SecureCredentialStore.init")
             try {
@@ -230,15 +237,14 @@ object SecureCredentialStore {
     }
 
     private fun openInitGate() {
-        sInitDone = true
+        readiness.set(Readiness.DONE)
         sInitLatch.countDown()
     }
 
     /** Restore the never-scheduled gate state. Tests only. */
     @JvmStatic
     internal fun resetInitGateForTesting() {
-        sInitScheduled = false
-        sInitDone = false
+        readiness.set(Readiness.NOT_SCHEDULED)
         sInitTimedOut = false
         sMainInitTimedOut = false
         sStoreFailureCounted = false
@@ -471,16 +477,6 @@ object SecureCredentialStore {
         return prefs != null
     }
 
-    /**
-     * True while the store's async init has not finished, i.e. a reader gave
-     * up waiting for it ([isSecureStorageAvailable] is then false). Unlike an
-     * init that finished and failed, this is transient — the store may open a
-     * moment later — so it must not offer the destructive app-lock reset
-     * (audit SEC-04).
-     */
-    @JvmStatic
-    fun isSecureStorageStillStarting(): Boolean = sInitScheduled && !sInitDone
-
     /** The secure store's state as one consistent reading, see [secureStorageState]. */
     enum class SecureStorageState {
         /** The store is open. */
@@ -494,16 +490,17 @@ object SecureCredentialStore {
     }
 
     /**
-     * [isSecureStorageAvailable] and [isSecureStorageStillStarting] in one
-     * reading. Asked one after the other, an init that finished in between
-     * read as "not available and not starting", i.e. failed (audit 06b N11).
-     * Here the init flag is read first: init publishes the store before it
-     * marks itself done, so once done is seen the store read next is final.
+     * Whether the store is open, still starting, or failed, in one reading.
+     * STARTING is transient (the store may open a moment later), so it must
+     * not offer the destructive app-lock reset (audit SEC-04). Read as two
+     * questions, an init that finished in between looked failed (audit 06b
+     * N11). Here [readiness] is read first: init publishes the store before
+     * it marks itself done, so once done is seen the store read next is final.
      */
     @JvmStatic
     fun secureStorageState(): SecureStorageState {
         awaitInit()
-        val starting = sInitScheduled && !sInitDone
+        val starting = readiness.get() == Readiness.OPENING
         val opened = prefs
         return when {
             opened != null -> SecureStorageState.AVAILABLE
