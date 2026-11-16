@@ -319,7 +319,7 @@ class DownloadDbRepository(
      */
     suspend fun rebuildTankTags() = database.withTransaction {
         val expected = HashMap<String, String>()
-        for (group in tankGroupDao.getAll().sortedByDescending { it.createdTime }) {
+        for (group in tankGroupDao.getAll().sortedWith(TankDownloadGroup.NEWEST_FIRST)) {
             for (arcid in TankGroupReconciler.decode(group.memberIdsJson)) expected.putIfAbsent(arcid, group.tankId)
         }
         for (row in archiveLocalStateDao.getDownloadTankIds()) {
