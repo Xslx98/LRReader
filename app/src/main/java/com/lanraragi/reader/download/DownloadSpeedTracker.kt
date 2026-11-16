@@ -20,7 +20,6 @@ import android.os.Handler
 import android.os.Looper
 import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.framework.util.MathUtils
-import java.lang.ref.WeakReference
 
 /**
  * Calculates and reports download speed and remaining time on a 2-second interval.
@@ -49,17 +48,8 @@ internal class DownloadSpeedTracker(
         /** @return a snapshot of all currently-active tasks (empty if idle). */
         fun getActiveTasks(): List<DownloadInfo>
 
-        /** @return the per-label list used for listener notifications. */
-        fun getInfoListForLabel(label: String?): List<DownloadInfo>?
-
         /** @return the active DownloadListener (may be null). */
         fun getDownloadListener(): DownloadListener?
-
-        /** @return all registered DownloadInfoListeners (weak references). */
-        fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>>
-
-        /** @return the current wait list (passed to onUpdate). */
-        fun getWaitList(): List<DownloadInfo>
     }
 
     private var stopped = true
@@ -188,11 +178,5 @@ internal class DownloadSpeedTracker(
         )
 
         callback.getDownloadListener()?.onDownload(info)
-        val list = callback.getInfoListForLabel(info.label)
-        if (list != null) {
-            for (ref in callback.getDownloadInfoListeners()) {
-                ref.get()?.onUpdate(info, list, callback.getWaitList())
-            }
-        }
     }
 }

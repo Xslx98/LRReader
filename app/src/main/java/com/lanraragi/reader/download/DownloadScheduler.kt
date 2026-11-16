@@ -111,11 +111,6 @@ internal class DownloadScheduler(
             syncSpeedTracking()
             // Notify start downloading
             eventBus.getDownloadListener()?.onStart(info)
-            // Notify state update
-            val list = repo.getInfoListForLabel(info.label)
-            if (list != null) {
-                eventBus.forEachListener { it.onUpdate(info, list, waitList) }
-            }
             // Start the worker
             worker.start()
         }
@@ -249,7 +244,6 @@ internal class DownloadScheduler(
         }
         stopAllDownload()
         for (di in affected) DownloadResumeBanner.markStorageFull(di.arcid, di.title)
-        eventBus.forEachListener { it.onUpdateAll() }
     }
 
     fun stopAllDownload() {
@@ -323,12 +317,6 @@ internal class DownloadScheduler(
                     info.pagecount = event.pages
                     repo.persistInfo(info)
                 }
-                val list = repo.getInfoListForLabel(info.label)
-                if (list != null) {
-                    eventBus.forEachListener {
-                        it.onUpdate(info, list, waitList)
-                    }
-                }
             }
             is DownloadEvent.OnGet509 -> {
                 eventBus.getDownloadListener()?.onGet509()
@@ -354,12 +342,6 @@ internal class DownloadScheduler(
                     partialPages = speedTracker.partialFor(info.arcid)
                 )
                 eventBus.getDownloadListener()?.onGetPage(info)
-                val list = repo.getInfoListForLabel(info.label)
-                if (list != null) {
-                    eventBus.forEachListener {
-                        it.onUpdate(info, list, waitList)
-                    }
-                }
             }
             is DownloadEvent.OnPageFailure -> {
                 speedTracker.onDone(event.taskInfo.arcid, event.index)
@@ -374,12 +356,6 @@ internal class DownloadScheduler(
                     total = event.total,
                     partialPages = speedTracker.partialFor(info.arcid)
                 )
-                val list = repo.getInfoListForLabel(info.label)
-                if (list != null) {
-                    eventBus.forEachListener {
-                        it.onUpdate(info, list, waitList)
-                    }
-                }
             }
             is DownloadEvent.OnFinish -> {
                 val info = event.taskInfo
@@ -418,12 +394,6 @@ internal class DownloadScheduler(
                 repo.persistInfo(info)
                 // Notify
                 eventBus.getDownloadListener()?.onFinish(info)
-                val list = repo.getInfoListForLabel(info.label)
-                if (list != null) {
-                    eventBus.forEachListener {
-                        it.onUpdate(info, list, waitList)
-                    }
-                }
                 // Storage full (audit C21): every other queued or running
                 // download would fail the same way, one by one. Pause them all
                 // resumably instead and offer a single "Resume" once space is freed.

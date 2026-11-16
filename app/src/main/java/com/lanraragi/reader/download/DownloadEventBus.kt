@@ -62,13 +62,6 @@ class DownloadEventBus {
     }
 
     /**
-     * Returns the raw list of weak references for [DownloadSpeedTracker.Callback].
-     */
-    fun getInfoListenerRefs(): List<WeakReference<DownloadInfoListener>> {
-        return mDownloadInfoListeners
-    }
-
-    /**
      * Iterates over [mDownloadInfoListeners], unwrapping each [WeakReference]
      * and skipping GC'd entries. Periodically cleans up null refs.
      */

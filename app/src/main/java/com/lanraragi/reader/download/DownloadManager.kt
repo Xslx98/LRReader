@@ -38,7 +38,6 @@ import com.lanraragi.reader.domain.Archive
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.lang.ref.WeakReference
 import java.util.Collections
 import com.lanraragi.reader.dao.DownloadState
 
@@ -69,14 +68,10 @@ class DownloadManager(
     init {
         mSpeedReminder = DownloadSpeedTracker(object : DownloadSpeedTracker.Callback {
             override fun getActiveTasks(): List<DownloadInfo> = scheduler.activeTasks.toList()
-            override fun getInfoListForLabel(label: String?): List<DownloadInfo>? = repo.getInfoListForLabel(label)
             override fun getDownloadListener(): DownloadListener? = eventBus.getDownloadListener()
-            override fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>> = eventBus.getInfoListenerRefs()
-            override fun getWaitList(): List<DownloadInfo> = scheduler.waitList
         }, progressTracker)
         scheduler = DownloadScheduler(mContext, scope, repo, eventBus, mSpeedReminder, progressTracker)
         repo.startLoading {
-            eventBus.forEachListener { it.onReload() }
             syncRatingsFromServer()
         }
         scope.launch {
@@ -211,9 +206,9 @@ class DownloadManager(
     /** Whether the download list is loading, loaded or failed to load from the database (audit C34). */
     val loadState: kotlinx.coroutines.flow.StateFlow<DownloadLoadState> get() = repo.loadState
 
-    /** Retries a failed load; listeners get onReload() as on a normal start. */
+    /** Retries a failed load; the screens follow [loadState] and Room. */
     fun retryLoading() {
-        repo.retryLoading { eventBus.forEachListener { it.onReload() } }
+        repo.retryLoading {}
     }
 
     suspend fun awaitInitAsync(timeoutMs: Long = 10_000L) {
@@ -270,6 +265,14 @@ class DownloadManager(
 
     // ── Listener methods ──────────────────────────────────────
 
+    /**
+     * arcid -> state of every download, from Room. Screens that only show
+     * whether (and how far) an archive is downloaded follow this instead of
+     * listener callbacks.
+     */
+    fun observeDownloadStates(): kotlinx.coroutines.flow.Flow<Map<String, DownloadState>> =
+        ServiceRegistry.dataModule.downloadDbRepository.observeDownloadStates()
+
     fun addDownloadInfoListener(listener: DownloadInfoListener) { eventBus.addDownloadInfoListener(listener) }
     fun removeDownloadInfoListener(listener: DownloadInfoListener) { eventBus.removeDownloadInfoListener(listener) }
     fun setDownloadListener(listener: DownloadListener?) { eventBus.setDownloadListener(listener) }
@@ -282,15 +285,10 @@ class DownloadManager(
             is StagedStart.Restarted -> {
                 val existing = staged.info
                 repo.persistInfo(existing)
-                val list = repo.getInfoListForLabel(existing.label)
-                if (list != null) eventBus.forEachListener { it.onUpdate(existing, list, scheduler.waitList) }
                 scheduler.ensureDownload()
             }
             is StagedStart.Added -> {
                 repo.persistInfo(staged.info)
-                // Inserted at index 0 (newest-first), so the listener
-                // position is 0 — not list.size - 1, which pointed at the wrong row.
-                eventBus.forEachListener { it.onAdd(staged.info, staged.list, 0) }
                 scheduler.ensureDownload()
             }
             null -> Unit
@@ -300,7 +298,7 @@ class DownloadManager(
     /**
      * Batch form of [startDownload] for "download selected": the in-memory
      * lists change once per archive as before, but the rows are written in
-     * ONE transaction, listeners get one [DownloadInfoListener.onUpdateAll]
+     * ONE transaction (so Room re-emits the downloads once)
      * and the scheduler is kicked once. 300 archives used to mean ~600
      * single-row writes, each re-running the downloads observer (audit C17).
      */
@@ -316,7 +314,6 @@ class DownloadManager(
         }
         if (changed.isEmpty()) return
         repo.persistInfoBatch(changed)
-        eventBus.forEachListener { it.onUpdateAll() }
         scheduler.ensureDownload()
     }
 
@@ -387,7 +384,6 @@ class DownloadManager(
         // One banner write and one transaction for the whole range instead of one per row.
         DownloadResumeBanner.markResumed(changed.map { it.arcid })
         repo.persistInfoBatch(changed)
-        eventBus.forEachListener { it.onUpdateAll() }
         scheduler.ensureDownload()
     }
 
@@ -405,14 +401,13 @@ class DownloadManager(
         }
         DownloadResumeBanner.markResumed(changed.map { it.arcid })
         if (changed.isNotEmpty()) repo.persistInfoBatch(changed)
-        if (update) { eventBus.forEachListener { it.onUpdateAll() }; scheduler.ensureDownload() }
+        if (update) scheduler.ensureDownload()
     }
 
     fun addDownload(downloadInfoList: List<DownloadInfo>) {
         repo.assertMainThread()
         val newLabels = repo.importInfoBatch(downloadInfoList)
         repo.persistImport(newLabels, downloadInfoList)
-        eventBus.postToMain { eventBus.forEachListener { it.onReload() } }
     }
 
     fun addDownloadLabel(downloadLabelList: List<DownloadLabel>) {
@@ -433,10 +428,7 @@ class DownloadManager(
 
     fun addDownload(archive: Archive, label: String?, state: DownloadState) {
         repo.assertMainThread()
-        val result = repo.addSingleDownload(archive, label, state) ?: return
-        // addSingleDownload inserts at index 0 (newest-first); report that
-        // position instead of size - 1.
-        eventBus.forEachListener { it.onAdd(result.first, result.second, 0) }
+        repo.addSingleDownload(archive, label, state)
     }
 
     fun addDownload(archive: Archive, label: String?) { addDownload(archive, label, DownloadState.NONE) }
@@ -516,31 +508,25 @@ class DownloadManager(
 
     fun stopDownload(arcid: String) {
         repo.assertMainThread()
-        val info = scheduler.stopDownload(arcid) ?: return
-        val list = repo.getInfoListForLabel(info.label)
-        if (list != null) eventBus.forEachListener { it.onUpdate(info, list, scheduler.waitList) }
+        scheduler.stopDownload(arcid) ?: return
         scheduler.ensureDownload()
     }
 
     fun stopCurrentDownload() {
         repo.assertMainThread()
-        val info = scheduler.stopCurrentDownload() ?: return
-        val list = repo.getInfoListForLabel(info.label)
-        if (list != null) eventBus.forEachListener { it.onUpdate(info, list, scheduler.waitList) }
+        scheduler.stopCurrentDownload() ?: return
         scheduler.ensureDownload()
     }
 
     fun stopRangeDownload(arcidList: List<String>) {
         repo.assertMainThread()
         scheduler.stopRangeDownload(arcidList)
-        eventBus.forEachListener { it.onUpdateAll() }
         scheduler.ensureDownload()
     }
 
     fun stopAllDownload() {
         repo.assertMainThread()
         scheduler.stopAllDownload()
-        eventBus.forEachListener { it.onUpdateAll() }
     }
 
     /**
@@ -577,9 +563,7 @@ class DownloadManager(
         // scheduler.stopDownload only clears the resume banner for active/waiting
         // tasks; a timed-out (FAILED) download is neither, so clear it here too.
         DownloadResumeBanner.markResumed(arcid)
-        val result = repo.deleteInfo(arcid) ?: return
-        val (info, list, index) = result
-        if (index >= 0) eventBus.forEachListener { it.onRemove(info, list, index) }
+        repo.deleteInfo(arcid) ?: return
         scheduler.ensureDownload()
     }
 
@@ -687,7 +671,6 @@ class DownloadManager(
         scheduler.stopRangeDownload(arcidList)
         repo.deleteInfoRange(arcidList.toHashSet(), dissolveTankIds, ::postTankGroupWriteFailed)
         DownloadResumeBanner.markResumed(arcidList)
-        eventBus.forEachListener { it.onReload() }
         scheduler.ensureDownload()
     }
 
@@ -701,7 +684,7 @@ class DownloadManager(
     fun reload() {
         repo.assertMainThread()
         stopAllDownload()
-        repo.reload { eventBus.forEachListener { it.onReload() } }
+        repo.reload {}
     }
 
     // ── Misc ──────────────────────────────────────────────────
@@ -768,7 +751,6 @@ class DownloadManager(
             srcList.remove(info); info.label = label; DownloadRepository.insertSorted(dstList, info); changed.add(info)
         }
         if (changed.isNotEmpty()) repo.persistInfoBatch(changed)
-        eventBus.forEachListener { it.onReload() }
     }
 
     fun addLabel(label: String?) {

@@ -88,20 +88,8 @@ class DownloadSchedulerTest {
                 return scheduler.activeTasks.toList()
             }
 
-            override fun getInfoListForLabel(label: String?): List<DownloadInfo>? {
-                return repo.getInfoListForLabel(label)
-            }
-
             override fun getDownloadListener(): DownloadListener? {
                 return eventBus.getDownloadListener()
-            }
-
-            override fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>> {
-                return eventBus.getInfoListenerRefs()
-            }
-
-            override fun getWaitList(): List<DownloadInfo> {
-                return scheduler.waitList
             }
         }, progressTracker)
 

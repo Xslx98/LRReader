@@ -313,58 +313,6 @@ class DownloadsViewModelTest {
     // ═══════════════════════════════════════════════════════════
 
     @Test
-    fun onAdd_emitsItemAddedEvent() {
-        val events = mutableListOf<DownloadUiEvent>()
-        val collectScope = CoroutineScope(Dispatchers.Unconfined)
-        val job = collectScope.launch {
-            vm.downloadEvent.collect { events.add(it) }
-        }
-
-        val info = DownloadInfo().apply { arcid = "vm_1" }
-        vm.onAdd(info, listOf(info), 0)
-
-        assertTrue(events.size >= 1)
-        val event = events.first()
-        assertTrue(event is DownloadUiEvent.ItemAdded)
-        assertEquals("vm_1", (event as DownloadUiEvent.ItemAdded).info.arcid)
-
-        job.cancel()
-    }
-
-    @Test
-    fun onRemove_emitsItemRemovedEvent() {
-        val events = mutableListOf<DownloadUiEvent>()
-        val collectScope = CoroutineScope(Dispatchers.Unconfined)
-        val job = collectScope.launch {
-            vm.downloadEvent.collect { events.add(it) }
-        }
-
-        val info = DownloadInfo().apply { arcid = "vm_2" }
-        vm.onRemove(info, emptyList(), 0)
-
-        assertTrue(events.size >= 1)
-        assertTrue(events.first() is DownloadUiEvent.ItemRemoved)
-
-        job.cancel()
-    }
-
-    @Test
-    fun onReload_emitsReloadedEvent() {
-        val events = mutableListOf<DownloadUiEvent>()
-        val collectScope = CoroutineScope(Dispatchers.Unconfined)
-        val job = collectScope.launch {
-            vm.downloadEvent.collect { events.add(it) }
-        }
-
-        vm.onReload()
-
-        assertTrue(events.size >= 1)
-        assertTrue(events.first() is DownloadUiEvent.Reloaded)
-
-        job.cancel()
-    }
-
-    @Test
     fun onRenameLabel_emitsLabelRenamedEvent() {
         val events = mutableListOf<DownloadUiEvent>()
         val collectScope = CoroutineScope(Dispatchers.Unconfined)

@@ -16,9 +16,7 @@ import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
-import com.lanraragi.reader.dao.DownloadInfo
 import com.lanraragi.reader.download.DownloadRequests
-import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.widget.SavedRows
 import kotlinx.coroutines.CancellationException
@@ -28,6 +26,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -50,8 +51,8 @@ import kotlinx.parcelize.Parcelize
  * back stack has its own). Batch writes run on [ListBatchWrites]'s process scope
  * and outlive it; an upload is bound to the scene's progress dialog.
  *
- * Also manages the [DownloadInfoListener] registration so the Scene does not
- * need to hold the listener directly. The Scene observes [downloadEvent] to
+ * Also follows which archives are downloaded (from Room), so the Scene does
+ * not observe the download manager itself. The Scene observes [downloadEvent] to
  * update adapter items. (Favourite changes are deliberately not observed:
  * list rows render no favourite state.)
  */
@@ -118,21 +119,25 @@ class GalleryListViewModel : ViewModel() {
     /** Emitted when download state changes. Observe to update adapter items. */
     val downloadEvent: SharedFlow<DownloadEvent> = _downloadEvent.asSharedFlow()
 
-    private var downloadInfoListener: DownloadInfoListener? = null
     private var observingDownloads = false
 
     /**
-     * Register a [DownloadInfoListener] on the [DownloadManager]. The listener
-     * translates callbacks into [DownloadEvent] emissions. Safe to call multiple
-     * times; only the first call takes effect.
+     * Follow which archives are downloaded (Room) and emit [DownloadEvent.BulkChanged]
+     * when that set changes. The list's only download-dependent pixel is the
+     * "downloaded" badge, so progress and state changes of a download already
+     * in the set are not reported. Safe to call multiple times; only the
+     * first call takes effect.
      */
     fun startObservingDownloads() {
         if (observingDownloads) return
         observingDownloads = true
-
-        val listener = galleryListDownloadEventListener { _downloadEvent.tryEmit(it) }
-        downloadInfoListener = listener
-        downloadManager.addDownloadInfoListener(listener)
+        viewModelScope.launch {
+            downloadManager.observeDownloadStates()
+                .map { it.keys }
+                .distinctUntilChanged()
+                .drop(1) // the set the list was bound with
+                .collect { _downloadEvent.tryEmit(DownloadEvent.BulkChanged) }
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -523,7 +528,6 @@ class GalleryListViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     override fun onCleared() {
-        downloadInfoListener?.let { downloadManager.removeDownloadInfoListener(it) }
         super.onCleared()
     }
 
@@ -532,61 +536,5 @@ class GalleryListViewModel : ViewModel() {
 
         /** Max archives processed in parallel by [runBatch]. */
         private const val BATCH_CONCURRENCY = 4
-    }
-}
-
-/**
- * Translates [DownloadInfoListener] callbacks into gallery-list
- * [GalleryListViewModel.DownloadEvent]s.
- *
- * The gallery list's only download-dependent pixel is the "downloaded" badge,
- * which reads membership (`containDownloadInfo`) — never per-page progress.
- * Per-page [DownloadInfoListener.onUpdate] callbacks (several per second on
- * LAN plus the 2 s speed tick) are therefore deliberately silent here: they
- * used to trigger an O(N) scan and a full row rebind that cancelled and
- * restarted the row's thumbnail request for zero visual change. Only
- * membership-changing callbacks emit.
- */
-internal fun galleryListDownloadEventListener(
-    emit: (GalleryListViewModel.DownloadEvent) -> Unit,
-): DownloadInfoListener = object : DownloadInfoListener {
-    override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        emit(GalleryListViewModel.DownloadEvent.BulkChanged)
-    }
-
-    override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
-        // No-op: replace does not affect gallery list display
-    }
-
-    override fun onUpdate(
-        info: DownloadInfo,
-        list: List<DownloadInfo>,
-        mWaitList: List<DownloadInfo>
-    ) {
-        // No-op: per-page progress never changes the membership badge
-    }
-
-    override fun onUpdateAll() {
-        // No-op: bulk state change without visual impact on gallery list
-    }
-
-    override fun onReload() {
-        emit(GalleryListViewModel.DownloadEvent.BulkChanged)
-    }
-
-    override fun onChange() {
-        emit(GalleryListViewModel.DownloadEvent.BulkChanged)
-    }
-
-    override fun onRenameLabel(from: String, to: String) {
-        // No-op: label changes don't affect gallery list display
-    }
-
-    override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        emit(GalleryListViewModel.DownloadEvent.BulkChanged)
-    }
-
-    override fun onUpdateLabels() {
-        // No-op: label changes don't affect gallery list display
     }
 }

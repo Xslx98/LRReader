@@ -39,15 +39,10 @@ import com.lanraragi.reader.download.DownloadDirCache
  * [DownloadsViewModel.downloadEvent] and dispatches via `when`.
  */
 sealed interface DownloadUiEvent {
-    data class ItemAdded(val info: DownloadInfo, val list: List<DownloadInfo>, val position: Int) : DownloadUiEvent
-    data class ItemRemoved(val info: DownloadInfo, val list: List<DownloadInfo>, val position: Int) : DownloadUiEvent
-    data class ItemUpdated(val info: DownloadInfo, val list: List<DownloadInfo>, val waitList: List<DownloadInfo>) : DownloadUiEvent
-    data class DiffUpdate(val tag: String) : DownloadUiEvent
     data class Replaced(val newInfo: DownloadInfo, val oldInfo: DownloadInfo) : DownloadUiEvent
     data class LabelRenamed(val from: String, val to: String) : DownloadUiEvent
     data object LabelDeleted : DownloadUiEvent
     data object LabelsChanged : DownloadUiEvent
-    data object Reloaded : DownloadUiEvent
 }
 
 /**
@@ -131,6 +126,7 @@ class DownloadsViewModel(
                 downloadsFlow,
                 ServiceRegistry.dataModule.downloadDbRepository.observeTankGroups(),
             ) { allDownloads, groups ->
+                forgetDirsOfRemoved(allDownloads)
                 TankDownloadGrouping.group(allDownloads, groups)
             }
                 // Grouping and the label filter are O(N) over every download
@@ -150,6 +146,20 @@ class DownloadsViewModel(
                     _backList.value = filtered
                 }
         }
+    }
+
+    /** Arcids of the last Room emission, see [forgetDirsOfRemoved]. */
+    private var knownArcids: Set<String> = emptySet()
+
+    /**
+     * A download that left the table (single or bulk delete) drops its
+     * cached directory, so a later re-download of the same arcid resolves
+     * its new one. Runs in the single list collector, in emission order.
+     */
+    private fun forgetDirsOfRemoved(allDownloads: List<DownloadInfo>) {
+        val arcids = allDownloads.mapTo(HashSet()) { it.arcid }
+        for (gone in knownArcids) if (gone !in arcids) downloadDirCache.invalidate(gone)
+        knownArcids = arcids
     }
 
     // -------------------------------------------------------------------------
@@ -527,29 +537,10 @@ class DownloadsViewModel(
     // DownloadInfoListener implementation → sealed event emission
     // -------------------------------------------------------------------------
 
-    override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        _downloadEvent.tryEmit(DownloadUiEvent.ItemAdded(info, list, position))
-    }
-
     override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {
         downloadDirCache.invalidate(oldInfo.arcid)
         downloadDirCache.invalidate(newInfo.arcid)
         _downloadEvent.tryEmit(DownloadUiEvent.Replaced(newInfo, oldInfo))
-    }
-
-    override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
-        _downloadEvent.tryEmit(DownloadUiEvent.ItemUpdated(info, list, mWaitList))
-    }
-
-    override fun onUpdateAll() {
-        _downloadEvent.tryEmit(DownloadUiEvent.DiffUpdate("updateAll"))
-    }
-
-    override fun onReload() {
-        // Bulk delete (deleteRangeDownload) also lands here — drop the whole
-        // dir cache so removed-then-re-added archives re-resolve.
-        downloadDirCache.clear()
-        _downloadEvent.tryEmit(DownloadUiEvent.Reloaded)
     }
 
     override fun onChange() {
@@ -558,11 +549,6 @@ class DownloadsViewModel(
 
     override fun onRenameLabel(from: String, to: String) {
         _downloadEvent.tryEmit(DownloadUiEvent.LabelRenamed(from, to))
-    }
-
-    override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-        downloadDirCache.invalidate(info.arcid)
-        _downloadEvent.tryEmit(DownloadUiEvent.ItemRemoved(info, list, position))
     }
 
     override fun onUpdateLabels() {

@@ -21,29 +21,9 @@ import com.lanraragi.reader.dao.DownloadInfo
 interface DownloadInfoListener {
 
     /**
-     * Add the special info to the special position
-     */
-    fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int)
-
-    /**
-     * delete Old replace new
+     * [newInfo] took the place of [oldInfo] (same arcid, another row).
      */
     fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo)
-
-    /**
-     * The special info is changed
-     */
-    fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>)
-
-    /**
-     * Maybe all data is changed, but size is the same
-     */
-    fun onUpdateAll()
-
-    /**
-     * Maybe all data is changed, maybe list is changed
-     */
-    fun onReload()
 
     /**
      * The list is gone, use default list please
@@ -56,9 +36,7 @@ interface DownloadInfoListener {
     fun onRenameLabel(from: String, to: String)
 
     /**
-     * Remove the special info from the special position
+     * The label list changed (added, removed or reordered).
      */
-    fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int)
-
     fun onUpdateLabels()
 }

@@ -64,6 +64,12 @@ data class DownloadObservedRow(
     @ColumnInfo(name = "DOWNLOAD_FAILURE_REASON") val downloadFailureReason: DownloadFailureReason? = null,
 )
 
+/** One row of [ArchiveLocalStateDao.observeDownloadStates]. */
+data class DownloadStateRow(
+    @ColumnInfo(name = "ARCID") val arcid: String,
+    @ColumnInfo(name = "DOWNLOAD_STATE") val state: DownloadState,
+)
+
 /** Value carrier for [ArchiveLocalStateDao.upsertHistoryBatch]. */
 data class HistoryUpsertRow(
     val arcid: String,
@@ -125,6 +131,10 @@ interface ArchiveLocalStateDao {
             "ORDER BY DOWNLOAD_TIME DESC"
     )
     fun observeAllDownloads(): Flow<List<DownloadObservedRow>>
+
+    /** Every download's state alone, for screens that only show "downloaded / downloading". */
+    @Query("SELECT ARCID, DOWNLOAD_STATE FROM ARCHIVE_LOCAL_STATE WHERE DOWNLOAD_STATE IS NOT NULL")
+    fun observeDownloadStates(): Flow<List<DownloadStateRow>>
 
     // ── Tank download grouping (Track 2) ───────────────────────────
 

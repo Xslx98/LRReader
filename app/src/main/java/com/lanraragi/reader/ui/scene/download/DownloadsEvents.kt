@@ -67,22 +67,11 @@ class DownloadsEvents(
             scene.updateView()
         }
 
-        // ── Observe DownloadInfoListener events from ViewModel (sealed dispatch) ──
-
+        // Rows, their state and progress come from the downloadList and
+        // progressMap flows above (Room and the progress tracker); only the
+        // label events have no row to carry them.
         collectFlow(owner, viewModel.downloadEvent) { event ->
             when (event) {
-                // Structural events are covered by the downloadList Flow
-                // above; transient progress by the progressMap Flow. These
-                // listener callbacks exist only so downstream consumers
-                // (e.g. the rating sync path inside GalleryDetailViewModel)
-                // can react — the Scene itself just refreshes its empty-view.
-                is DownloadUiEvent.ItemAdded,
-                is DownloadUiEvent.ItemRemoved,
-                is DownloadUiEvent.DiffUpdate,
-                is DownloadUiEvent.Reloaded,
-                is DownloadUiEvent.ItemUpdated -> {
-                    scene.updateView()
-                }
                 is DownloadUiEvent.Replaced -> {
                     scene.updateForLabel()
                     scene.updateView()
