@@ -9,6 +9,7 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.category.CategoryLibraryService
 import com.lanraragi.reader.domain.Category
 import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -17,13 +18,14 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
  * ViewModel for [LRRCategoriesScene]. Manages category list state and
  * calls [CategoryLibraryService] for load/create/edit/delete.
  *
- * The Scene observes [categories] for list updates and [uiEvent] for
+ * The Scene observes [state] for what the list shows and [uiEvent] for
  * one-shot Toast messages. View construction, adapter, dialogs, and
  * navigation remain in the Scene.
  */
@@ -42,22 +44,20 @@ class LRRCategoriesViewModel(
 ) : ViewModel() {
 
     // -------------------------------------------------------------------------
-    // Category list state
+    // Screen state
     // -------------------------------------------------------------------------
 
-    private val _categories = MutableStateFlow<List<Category>>(emptyList())
+    private val _state = MutableStateFlow<ListScreenState<Category>>(ListScreenState.Loading)
 
-    /** Sorted category list (pinned first, then by name). */
-    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
+    /**
+     * What the screen shows: the sorted categories (pinned first, then by
+     * name), or loading / empty / the last load's error. Survives rotation.
+     */
+    val state: StateFlow<ListScreenState<Category>> = _state.asStateFlow()
 
-    // -------------------------------------------------------------------------
-    // Loading state
-    // -------------------------------------------------------------------------
-
-    private val _isLoading = MutableStateFlow(false)
-
-    /** Whether a load/CRUD operation is in progress. */
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private fun on(event: ListScreenState.Event<Category>) {
+        _state.update { ListScreenState.reduce(it, event) }
+    }
 
     // -------------------------------------------------------------------------
     // One-shot UI events
@@ -73,6 +73,7 @@ class LRRCategoriesViewModel(
      * The Scene observes [uiEvent] and dispatches via `when`.
      */
     sealed interface CategoriesUiEvent {
+        /** A failure the screen does not show by itself (a write, or a reload while categories are shown). */
         data class ShowError(val message: String) : CategoriesUiEvent
         data class ShowSuccess(val messageResId: Int) : CategoriesUiEvent
     }
@@ -82,25 +83,13 @@ class LRRCategoriesViewModel(
     // -------------------------------------------------------------------------
 
     /**
-     * Fetches all categories from LANraragi, sorts them (pinned first),
-     * and emits the result to [_categories]. Emits [CategoriesUiEvent.ShowError]
-     * on failure.
+     * Fetches all categories from LANraragi, sorts them (pinned first), and
+     * publishes them as the [state]; a failure becomes the state's error
+     * (shown as an error view, or as a toast while categories are shown).
      */
     fun loadCategories() {
-        _isLoading.value = true
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // No server (null) still clears the spinner, or the scene spins forever.
-                library.load()?.let { publish(it) }
-                _isLoading.value = false
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "Failed to load categories", e)
-                _isLoading.value = false
-                emitError(e)
-            }
-        }
+        on(ListScreenState.Event.Load)
+        viewModelScope.launch(Dispatchers.IO) { reload() }
     }
 
     /**
@@ -135,7 +124,7 @@ class LRRCategoriesViewModel(
             try {
                 if (!write()) return@launch
                 _uiEvent.tryEmit(CategoriesUiEvent.ShowSuccess(successRes))
-                loadCategoriesInternal()
+                reload()
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 emitError(e)
@@ -144,22 +133,22 @@ class LRRCategoriesViewModel(
     }
 
     /**
-     * Internal reload that does not toggle [_isLoading] — used after
-     * create/edit/delete where the loading indicator is not shown.
+     * Loads the categories into the [state]. No server configured (null)
+     * answers an empty list, so the screen does not spin forever. A failure
+     * while categories are shown keeps them and is reported as a toast.
      */
-    private suspend fun loadCategoriesInternal() {
+    private suspend fun reload() {
         try {
-            library.load()?.let { publish(it) }
+            val categories = library.load().orEmpty()
+            on(ListScreenState.Event.Loaded(ArrayList(categories)))
+            syncNames(categories)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            Log.e(TAG, "Failed to reload categories after CRUD", e)
-            emitError(e)
+            Log.e(TAG, "Failed to load categories", e)
+            val message = friendlyError(ServiceRegistry.appModule.getContext(), e)
+            on(ListScreenState.Event.Failed(message))
+            if (_state.value.items.isNotEmpty()) _uiEvent.tryEmit(CategoriesUiEvent.ShowError(message))
         }
-    }
-
-    private suspend fun publish(categories: List<Category>) {
-        _categories.value = ArrayList(categories)
-        syncNames(categories)
     }
 
     private fun emitError(e: Exception) {

@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.QuickSearch
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -25,7 +28,7 @@ import kotlinx.coroutines.withContext
  * instance, scoped to its [GalleryListScene], for loading and adding entries
  * and to remember its scroll position.
  *
- * The Scene observes [quickSearches] for the current list and [uiEvent] for
+ * The Scene observes [state] for the current list and [uiEvent] for
  * one-shot events (errors, deletions). View references, adapters, drag-drop
  * setup, dialogs, and navigation remain in the Scene.
  */
@@ -35,16 +38,26 @@ class QuickSearchViewModel : ViewModel() {
     // Quick search list state
     // -------------------------------------------------------------------------
 
-    private val _quickSearches = MutableStateFlow<List<QuickSearch>>(emptyList())
+    private val _state = MutableStateFlow<ListScreenState<QuickSearch>>(ListScreenState.Loading)
 
-    /** The current quick search list. The Scene's adapter reads from this. */
-    val quickSearches: StateFlow<List<QuickSearch>> = _quickSearches.asStateFlow()
+    /**
+     * What the screen shows: the quick searches (the Scene's adapter renders
+     * [ListScreenState.items]), or loading / empty / the load's error.
+     */
+    val state: StateFlow<ListScreenState<QuickSearch>> = _state.asStateFlow()
+
+    private val shown: List<QuickSearch> get() = _state.value.items
+
+    private fun on(event: ListScreenState.Event<QuickSearch>) {
+        _state.update { ListScreenState.reduce(it, event) }
+    }
 
     // -------------------------------------------------------------------------
     // One-shot events
     // -------------------------------------------------------------------------
 
     sealed interface QuickSearchUiEvent {
+        /** A failed delete or reorder (a failed load is the [state]'s error). */
         data class ShowError(val message: String) : QuickSearchUiEvent
         data class Deleted(val quickSearch: QuickSearch) : QuickSearchUiEvent
     }
@@ -59,19 +72,20 @@ class QuickSearchViewModel : ViewModel() {
     // -------------------------------------------------------------------------
 
     /**
-     * Asynchronously loads the quick search list from the database on IO and
-     * emits the result to [quickSearches].
+     * Asynchronously loads the quick search list from the database on IO
+     * into the [state]; a failure is the state's error.
      */
     fun loadQuickSearches() {
+        on(ListScreenState.Event.Load)
         viewModelScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) { ServiceRegistry.dataModule.quickSearchRepository.getAll() }
-                _quickSearches.value = result
+                on(ListScreenState.Event.Loaded(result))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load quick searches", e)
-                _uiEvent.tryEmit(
-                    QuickSearchUiEvent.ShowError("Failed to load quick searches")
-                )
+                on(ListScreenState.Event.Failed(friendlyError(ServiceRegistry.appModule.getContext(), e)))
             }
         }
     }
@@ -90,7 +104,7 @@ class QuickSearchViewModel : ViewModel() {
      * [addQuickSearch]): this ViewModel is cleared when its scene is popped.
      */
     fun deleteQuickSearch(quickSearch: QuickSearch) {
-        _quickSearches.value = _quickSearches.value.filter { it.id != quickSearch.id }
+        on(ListScreenState.Event.Loaded(shown.filter { it.id != quickSearch.id }))
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO + NonCancellable) {
@@ -99,9 +113,7 @@ class QuickSearchViewModel : ViewModel() {
                 _uiEvent.tryEmit(QuickSearchUiEvent.Deleted(quickSearch))
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete quick search", e)
-                _uiEvent.tryEmit(
-                    QuickSearchUiEvent.ShowError("Failed to delete quick search")
-                )
+                _uiEvent.tryEmit(QuickSearchUiEvent.ShowError(friendlyError(ServiceRegistry.appModule.getContext(), e)))
                 // Reconcile: the row is still in the DB — reload so it
                 // reappears instead of leaving UI and DB diverged.
                 loadQuickSearches()
@@ -122,7 +134,7 @@ class QuickSearchViewModel : ViewModel() {
         if (fromPosition == toPosition) return
 
         // Update in-memory list immediately for responsive UI
-        val currentList = _quickSearches.value.toMutableList()
+        val currentList = shown.toMutableList()
         if (fromPosition < 0 || fromPosition >= currentList.size ||
             toPosition < 0 || toPosition >= currentList.size
         ) {
@@ -130,7 +142,7 @@ class QuickSearchViewModel : ViewModel() {
         }
         val item = currentList.removeAt(fromPosition)
         currentList.add(toPosition, item)
-        _quickSearches.value = currentList
+        on(ListScreenState.Event.Loaded(currentList))
 
         // Persist reorder to database
         viewModelScope.launch {
@@ -140,9 +152,7 @@ class QuickSearchViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to move quick search", e)
-                _uiEvent.tryEmit(
-                    QuickSearchUiEvent.ShowError("Failed to reorder quick search")
-                )
+                _uiEvent.tryEmit(QuickSearchUiEvent.ShowError(friendlyError(ServiceRegistry.appModule.getContext(), e)))
             }
         }
     }

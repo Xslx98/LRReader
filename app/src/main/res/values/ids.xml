@@ -34,5 +34,6 @@
     <item name="state_progress" type="id"/>
     <item name="state_message" type="id"/>
     <item name="state_content" type="id"/>
+    <item name="state_empty" type="id"/>
 
 </resources>

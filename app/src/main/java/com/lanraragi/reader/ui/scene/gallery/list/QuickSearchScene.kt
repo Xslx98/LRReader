@@ -22,6 +22,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.lifecycle.ViewModelProvider
@@ -38,9 +39,10 @@ import com.lanraragi.reader.R
 import com.lanraragi.reader.dao.QuickSearch
 import com.lanraragi.reader.ui.scene.ToolbarScene
 import com.lanraragi.reader.ui.collectFlow
+import com.lanraragi.reader.ui.list.ListScreenState
 import com.lanraragi.framework.util.ViewUtils
 import androidx.core.content.ContextCompat
-import com.lanraragi.reader.widget.ViewTransition
+import com.lanraragi.reader.widget.StateListLayout
 
 class QuickSearchScene : ToolbarScene() {
 
@@ -53,7 +55,7 @@ class QuickSearchScene : ToolbarScene() {
      View life cycle
      ---------------*/
     private var mRecyclerView: EasyRecyclerView? = null
-    private var mViewTransition: ViewTransition? = null
+    private var mStateList: StateListLayout? = null
     private var mAdapter: RecyclerView.Adapter<*>? = null
     private var mInnerAdapter: QuickSearchAdapter? = null
 
@@ -73,11 +75,13 @@ class QuickSearchScene : ToolbarScene() {
     ): View {
         viewModel = ViewModelProvider(this)[QuickSearchViewModel::class.java]
 
-        val view = inflater.inflate(R.layout.scene_label_list, container, false)
+        val view = inflater.inflate(R.layout.scene_quick_search, container, false)
 
-        mRecyclerView = ViewUtils.requireView(view, R.id.recycler_view) as EasyRecyclerView
-        val tip = ViewUtils.requireView(view, R.id.tip) as TextView
-        mViewTransition = ViewTransition(mRecyclerView, tip)
+        mStateList = (view.findViewById<StateListLayout>(R.id.state_list)).apply {
+            onRetry = { viewModel.loadQuickSearches() }
+        }
+        mRecyclerView = ViewUtils.requireView(view, R.id.state_content) as EasyRecyclerView
+        val tip = ViewUtils.requireView(view, R.id.state_empty) as TextView
 
         val context = ehContext ?: return view
 
@@ -107,8 +111,12 @@ class QuickSearchScene : ToolbarScene() {
 
         dragDropManager.attachRecyclerView(recyclerView)
 
-        viewModel.loadQuickSearches()
-        updateView()
+        // A rotation keeps the ViewModel and its state (an error stays with its
+        // retry); a new view otherwise (first open, coming back to this
+        // screen, a restore after process death) loads.
+        if (savedInstanceState == null || viewModel.state.value is ListScreenState.Loading) {
+            viewModel.loadQuickSearches()
+        }
 
         return view
     }
@@ -123,7 +131,9 @@ class QuickSearchScene : ToolbarScene() {
         // the rendered snapshot. Drag reorders are the one exception — the
         // drag wrapper dispatches its own move, so onMoveItem syncs the
         // snapshot and the matching emission is skipped by identity below.
-        collectFlow(viewLifecycleOwner, viewModel.quickSearches) { list ->
+        collectFlow(viewLifecycleOwner, viewModel.state) { state ->
+            val list = state.items
+            mStateList?.render(state)
             val inner = mInnerAdapter ?: return@collectFlow
             if (list !== renderedList) {
                 val old = renderedList
@@ -139,7 +149,12 @@ class QuickSearchScene : ToolbarScene() {
                 renderedList = list
                 diff.dispatchUpdatesTo(inner)
             }
-            updateView()
+        }
+        // A failed delete or reorder (it used to be dropped unseen).
+        collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
+            if (event is QuickSearchViewModel.QuickSearchUiEvent.ShowError) {
+                ehContext?.let { Toast.makeText(it, event.message, Toast.LENGTH_SHORT).show() }
+            }
         }
     }
 
@@ -150,22 +165,11 @@ class QuickSearchScene : ToolbarScene() {
         mRecyclerView = null
         mInnerAdapter = null
         mAdapter = null
-
-        mViewTransition = null
+        mStateList = null
     }
 
     override fun onNavigationClick(view: View) {
         onBackPressed()
-    }
-
-    private fun updateView() {
-        mViewTransition?.let {
-            if (renderedList.isNotEmpty()) {
-                it.showView(0)
-            } else {
-                it.showView(1)
-            }
-        }
     }
 
     private inner class QuickSearchHolder(itemView: View) :
@@ -240,7 +244,7 @@ class QuickSearchScene : ToolbarScene() {
             // The drag wrapper dispatches its own move notification, so sync
             // the rendered snapshot here; the collector skips the matching
             // StateFlow emission by identity instead of double-notifying.
-            renderedList = viewModel.quickSearches.value
+            renderedList = viewModel.state.value.items
         }
 
         override fun onCheckCanDrop(draggingPosition: Int, dropPosition: Int): Boolean = true
