@@ -539,7 +539,7 @@ class GalleryActivity : BaseActivity(), GalleryView.Listener,
         // tracks the state change.
         if (index >= 0) {
             val provider = mGalleryProvider
-            provider?.putStartPage(index)
+            provider?.onPageRead(index)
             // Persist intra-page fraction in lockstep with page-index
             // changes — this is the same cadence the existing local SP
             // page progress uses, plus an onPause() backstop. Vertical

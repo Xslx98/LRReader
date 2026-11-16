@@ -10686,11 +10686,6 @@ PLcom/lanraragi/reader/reading/LRRGalleryProvider$$ExternalSyntheticLambda8;->in
 PLcom/lanraragi/reader/reading/LRRGalleryProvider$Companion;-><init>()V
 PLcom/lanraragi/reader/reading/LRRGalleryProvider$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 PLcom/lanraragi/reader/reading/LRRGalleryProvider$Companion;->resolvePageFile$app_appReleaseRelease(Lcom/lanraragi/reader/reading/HybridPageStore;Ljava/io/File;ILjava/lang/String;)Ljava/io/File;
-PLcom/lanraragi/reader/reading/LRRGalleryProvider$ProviderState;-><init>([Ljava/lang/String;IZ)V
-PLcom/lanraragi/reader/reading/LRRGalleryProvider$ProviderState;-><init>([Ljava/lang/String;IZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-PLcom/lanraragi/reader/reading/LRRGalleryProvider$ProviderState;->getCount()I
-PLcom/lanraragi/reader/reading/LRRGalleryProvider$ProviderState;->getPaths()[Ljava/lang/String;
-PLcom/lanraragi/reader/reading/LRRGalleryProvider$ProviderState;->getStopped()Z
 PLcom/lanraragi/reader/reading/LRRGalleryProvider$aspectProbe$1;-><init>(Ljava/lang/Object;)V
 PLcom/lanraragi/reader/reading/LRRGalleryProvider$aspectProbe$1;->invoke(I)Ljava/lang/Boolean;
 PLcom/lanraragi/reader/reading/LRRGalleryProvider$aspectProbe$1;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
