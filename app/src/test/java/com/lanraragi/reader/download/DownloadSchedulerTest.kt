@@ -1,11 +1,11 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.installActiveServer
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadInfo
@@ -74,7 +74,7 @@ class DownloadSchedulerTest {
             .setTransactionExecutor { it.run() }
             .build()
 
-        ServerSession.setServerUrl("http://localhost:3000")
+        installActiveServer("http://localhost:3000")
 
         ShadowLooper.idleMainLooper()
 

@@ -1,5 +1,6 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.installActiveServer
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
 import android.content.Context
@@ -8,7 +9,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.dao.toArchive
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadInfo
@@ -133,7 +133,7 @@ class DownloadManagerTest {
 
         // Configure a fake server URL so LRRDownloadWorker can be constructed
         // (ensureDownload creates workers that check for a non-null server URL)
-        ServerSession.setServerUrl("http://localhost:3000")
+        installActiveServer("http://localhost:3000")
 
         // Drain any pending Handler callbacks from prior tests before creating manager
         org.robolectric.shadows.ShadowLooper.idleMainLooper()

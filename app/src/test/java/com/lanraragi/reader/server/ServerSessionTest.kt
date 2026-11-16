@@ -1,8 +1,10 @@
 package com.lanraragi.reader.server
 
-import com.lanraragi.reader.client.api.*
-import com.lanraragi.reader.client.api.data.*
 import android.content.Context
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.dao.ServerProfile
+import com.lanraragi.reader.installProfiles
+import com.lanraragi.reader.stubDataModule
 import androidx.test.core.app.ApplicationProvider
 import org.junit.After
 import org.junit.Assert.*
@@ -14,7 +16,8 @@ import org.robolectric.annotation.Config
 import com.lanraragi.reader.security.AppLockCredentials
 
 /**
- * Unit tests for [ServerSession].
+ * Unit tests for [ServerSession]: the active server is read from Room's
+ * active profile (through [ProfileLookupCache]); the keys from the store.
  *
  * Uses Robolectric because [SecureCredentialStore.initialize] creates [EncryptedSharedPreferences]
  * which requires an Android Context. The test Application is a plain [android.app.Application]
@@ -45,46 +48,79 @@ class ServerSessionTest {
     @After
     fun tearDown() {
         SecureCredentialStore.clear()
+        ServiceRegistry.initializeForTest(coroutine = null, data = stubDataModule())
     }
 
-    // ── Server URL ──────────────────────────────────────────────────
+    // ── Active server (Room's IS_ACTIVE profile) ────────────────────
+
+    private fun profile(id: Long, url: String, active: Boolean = false, cleartext: Boolean = true) =
+        ServerProfile(id, "Server $id", url, active, cleartext)
 
     @Test
-    fun setAndGetServerUrl_roundtrips() {
-        ServerSession.setServerUrl("http://192.168.1.100:3000")
-        assertEquals("http://192.168.1.100:3000", ServerSession.getServerUrl())
-    }
+    fun noActiveProfile_readsAsNotConfigured() {
+        installProfiles(profile(1L, "http://a.local:3000"))
+        ServerSession.setApiKeyForProfile(1L, "k1")
 
-    @Test
-    fun setServerUrl_stripsTrailingSlash() {
-        ServerSession.setServerUrl("http://192.168.1.100:3000/")
-        assertEquals("http://192.168.1.100:3000", ServerSession.getServerUrl())
-    }
-
-    @Test
-    fun isConfigured_falseWhenNoUrl() {
+        assertNull(ServerSession.activeServer())
+        assertNull(ServerSession.getServerUrl())
+        assertNull(ServerSession.getApiKey())
+        assertEquals(0L, ServerSession.getActiveProfileId())
         assertFalse(ServerSession.isConfigured())
     }
 
     @Test
-    fun isConfigured_trueAfterSettingUrl() {
-        ServerSession.setServerUrl("http://192.168.1.100:3000")
+    fun withoutAProfileCache_readsAsNotConfigured() {
+        ServiceRegistry.initializeForTest(coroutine = null, data = stubDataModule())
+        assertNull(ServerSession.activeServer())
+        assertFalse(ServerSession.isConfigured())
+    }
+
+    @Test
+    fun activeProfile_isTheActiveServer_withItsOwnKey() {
+        installProfiles(profile(1L, "http://a.local:3000"), profile(2L, "http://b.local:3000/", active = true, cleartext = false))
+        ServerSession.setApiKeyForProfile(1L, "k1")
+        ServerSession.setApiKeyForProfile(2L, "k2")
+
+        assertEquals(ActiveServer(2L, "http://b.local:3000", "Server 2", false), ServerSession.activeServer())
+        assertEquals("http://b.local:3000", ServerSession.getServerUrl())
+        assertEquals("k2", ServerSession.getApiKey())
+        assertEquals(2L, ServerSession.getActiveProfileId())
         assertTrue(ServerSession.isConfigured())
     }
 
-    // ── API key ─────────────────────────────────────────────────────
-
     @Test
-    fun setAndGetApiKey_roundtrips() {
-        ServerSession.setApiKey("abc123")
-        assertEquals("abc123", ServerSession.getApiKey())
+    fun switchingTheActiveRow_switchesEveryReadAndTheConfigVersion() {
+        val rows = installProfiles(profile(1L, "http://a.local:3000", active = true), profile(2L, "http://b.local:3000"))
+        ServerSession.setApiKeyForProfile(2L, "k2")
+        val before = ServerSession.serverConfigVersion
+
+        rows.value = listOf(profile(1L, "http://a.local:3000"), profile(2L, "http://b.local:3000", active = true))
+
+        assertEquals("http://b.local:3000", ServerSession.getServerUrl())
+        assertEquals("k2", ServerSession.getApiKey())
+        assertNotEquals(before, ServerSession.serverConfigVersion)
     }
 
     @Test
-    fun setApiKey_nullClearsKey() {
-        ServerSession.setApiKey("abc123")
-        ServerSession.setApiKey(null)
-        assertNull(ServerSession.getApiKey())
+    fun configVersion_movesOnAKeyWrite_notOnAnUnrelatedProfileEdit() {
+        val rows = installProfiles(profile(1L, "http://a.local:3000", active = true), profile(2L, "http://b.local:3000"))
+        val start = ServerSession.serverConfigVersion
+
+        rows.value = listOf(profile(1L, "http://a.local:3000", active = true), profile(2L, "http://renamed.local:3000"))
+        assertEquals("an inactive profile's edit is not the active server's", start, ServerSession.serverConfigVersion)
+
+        ServerSession.setApiKeyForProfile(2L, "other-key")
+        assertEquals("an inactive profile's key", start, ServerSession.serverConfigVersion)
+
+        ServerSession.setApiKeyForProfile(1L, "new-key")
+        assertNotEquals(start, ServerSession.serverConfigVersion)
+    }
+
+    @Test
+    fun deletingTheActiveRow_leavesNoActiveServer() {
+        val rows = installProfiles(profile(1L, "http://a.local:3000", active = true))
+        rows.value = emptyList()
+        assertNull(ServerSession.activeServer())
     }
 
     // ── Per-profile API key ─────────────────────────────────────────
@@ -119,137 +155,48 @@ class ServerSessionTest {
         assertEquals("key-2", ServerSession.getApiKeyForProfile(2L))
     }
 
-    // ── Active profile ID ───────────────────────────────────────────
-
-    @Test
-    fun setAndGetActiveProfileId_roundtrips() {
-        ServerSession.setActiveProfileId(99L)
-        assertEquals(99L, ServerSession.getActiveProfileId())
-    }
-
     @Test
     fun isNeedsReauthentication_falseAfterInitializeForTesting() {
         assertFalse("Reauth flag should be false when KeyStore is available",
             ServerSession.isNeedsReauthentication())
     }
 
+    // ── Storage unavailable ─────────────────────────────────────────
+
     @Test
-    fun getServerUrl_returnsNullWhenNotSet() {
-        assertNull(ServerSession.getServerUrl())
+    fun keyWrites_throwWhenStorageUnavailable() {
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
+        assertThrows(LRRSecureStorageUnavailableException::class.java) {
+            ServerSession.setApiKeyForProfile(1L, "k")
+        }
+        assertThrows(LRRSecureStorageUnavailableException::class.java) {
+            ServerSession.clearApiKeyForProfile(1L)
+        }
     }
 
     @Test
-    fun clear_removesAllCredentials() {
-        ServerSession.setServerUrl("http://test.local")
-        ServerSession.setApiKey("key")
-        ServerSession.setActiveProfileId(5L)
-        AppLockCredentials.setPattern("pin")
-        SecureCredentialStore.clear()
-        assertNull(ServerSession.getServerUrl())
+    fun keyReads_returnNullWhenStorageUnavailable() {
+        installProfiles(profile(1L, "http://a.local:3000", active = true))
+        SecureCredentialStore.simulateStorageUnavailableForTesting()
         assertNull(ServerSession.getApiKey())
-        assertEquals(0L, ServerSession.getActiveProfileId())
+        assertNull(ServerSession.getApiKeyForProfile(1L))
+        assertEquals("the address is Room's, not the store's", "http://a.local:3000", ServerSession.getServerUrl())
         assertFalse(AppLockCredentials.hasPattern())
     }
 
-    // ── Allow cleartext flag ────────────────────────────────────────
-
     @Test
-    fun allowCleartext_defaultsToTrueWhenPrefsAvailable() {
-        // Default value (no key in prefs, sPrefs available) — existing HTTP profiles
-        // never wrote this key explicitly, so default must be true for compatibility
-        assertTrue("default should be true when sPrefs available", ServerSession.getAllowCleartext())
-    }
-
-    @Test
-    fun setAllowCleartext_roundTripsThroughPrefs() {
-        ServerSession.setAllowCleartext(false)
-        assertFalse("after setAllowCleartext(false)", ServerSession.getAllowCleartext())
-
-        ServerSession.setAllowCleartext(true)
-        assertTrue("after setAllowCleartext(true)", ServerSession.getAllowCleartext())
-    }
-
-    @Test
-    fun allowCleartext_returnsFalseWhenStorageUnavailable() {
-        // When sPrefs is null (KeyStore broken), getAllowCleartext() must fail-closed
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        assertFalse(
-            "getAllowCleartext must return false when secure storage is unavailable",
-            ServerSession.getAllowCleartext()
-        )
-    }
-
-    // ── Setter failure surfacing (sPrefs == null) ──────────────────
-    //
-    // When the KeyStore / EncryptedSharedPreferences is unavailable every setter
-    // must throw LRRSecureStorageUnavailableException instead of silently dropping
-    // the write. Silent drops previously let users believe they had saved new
-    // credentials when in reality nothing was persisted.
-
-    @Test(expected = LRRSecureStorageUnavailableException::class)
-    fun setServerUrl_throwsWhenStorageUnavailable() {
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        ServerSession.setServerUrl("http://test.local")
-    }
-
-    @Test(expected = LRRSecureStorageUnavailableException::class)
-    fun setApiKey_throwsWhenStorageUnavailable() {
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        ServerSession.setApiKey("secret")
-    }
-
-    @Test(expected = LRRSecureStorageUnavailableException::class)
-    fun setServerName_throwsWhenStorageUnavailable() {
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        ServerSession.setServerName("LRR")
-    }
-
-    @Test(expected = LRRSecureStorageUnavailableException::class)
-    fun setActiveProfileId_throwsWhenStorageUnavailable() {
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        ServerSession.setActiveProfileId(7L)
-    }
-
-    @Test(expected = LRRSecureStorageUnavailableException::class)
-    fun setApiKeyForProfile_throwsWhenStorageUnavailable() {
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        ServerSession.setApiKeyForProfile(1L, "key")
-    }
-
-    @Test(expected = LRRSecureStorageUnavailableException::class)
-    fun clearApiKeyForProfile_throwsWhenStorageUnavailable() {
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        ServerSession.clearApiKeyForProfile(1L)
-    }
-
-    @Test(expected = LRRSecureStorageUnavailableException::class)
-    fun setAllowCleartext_throwsWhenStorageUnavailable() {
-        // Added during W0-3/W0-4 merge: setAllowCleartext originally used the
-        // silent `?: return` pattern that W0-4 had purged from every other
-        // setter. Aligned here so the UI catches are guaranteed to fire on
-        // KeyStore failure instead of the flag update being silently dropped.
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        ServerSession.setAllowCleartext(false)
-    }
-
-    @Test
-    fun getters_returnNullWhenStorageUnavailable() {
-        // Reads MUST NOT throw — UI polls getApiKey()/getServerUrl() frequently.
-        SecureCredentialStore.simulateStorageUnavailableForTesting()
-        assertNull(ServerSession.getServerUrl())
-        assertNull(ServerSession.getApiKey())
-        assertNull(ServerSession.getServerName())
-        assertNull(ServerSession.getApiKeyForProfile(1L))
+    fun clear_removesEveryKeyAndThePattern() {
+        ServerSession.setApiKeyForProfile(5L, "key")
+        AppLockCredentials.setPattern("pin")
+        SecureCredentialStore.clear()
+        assertNull(ServerSession.getApiKeyForProfile(5L))
         assertFalse(AppLockCredentials.hasPattern())
     }
 
     @Test
     fun clear_toleratesUnavailableStorage() {
-        // clear() is safe to call during reauth flows — must not throw even if
-        // the backing store was never initialized.
         SecureCredentialStore.simulateStorageUnavailableForTesting()
         SecureCredentialStore.clear() // should not throw
-        assertEquals(0L, ServerSession.getActiveProfileId())
     }
 
     // ── Multi-profile reauth detection (W0-4 part 2) ────────────────
@@ -304,58 +251,5 @@ class ServerSessionTest {
         ServerSession.setApiKeyForProfile(1L, "restored")
         ServerSession.markReauthIfProfilesUnprotected(listOf(1L))
         assertFalse(ServerSession.isNeedsReauthentication())
-    }
-
-    // -- Audit 2026-10-04 C02: deleting the active profile ---------------
-
-    @Test
-    fun clearActiveSession_forgetsGlobalCredentials() {
-        ServerSession.setServerUrl("http://192.168.1.50:3000")
-        ServerSession.setApiKey("old-key")
-        ServerSession.setServerName("Old NAS")
-        ServerSession.setActiveProfileId(7L)
-        ServerSession.setAllowCleartext(true)
-        ServerSession.setApiKeyForProfile(8L, "other-profile-key")
-        val before = ServerSession.serverConfigVersion
-
-        ServerSession.clearActiveSession()
-
-        assertNull(ServerSession.getServerUrl())
-        assertNull(ServerSession.getApiKey())
-        assertNull(ServerSession.getServerName())
-        assertEquals(0L, ServerSession.getActiveProfileId())
-        assertFalse(ServerSession.isConfigured())
-        assertTrue(ServerSession.serverConfigVersion > before)
-        // Other profiles' keys are not part of the active session.
-        assertEquals("other-profile-key", ServerSession.getApiKeyForProfile(8L))
-    }
-
-    @Test
-    fun clearSessionIfActiveProfileGone_clearsWhenActiveRowIsMissing() {
-        ServerSession.setServerUrl("http://192.168.1.50:3000")
-        ServerSession.setApiKey("old-key")
-        ServerSession.setActiveProfileId(7L)
-
-        assertTrue(ServerSession.clearSessionIfActiveProfileGone(listOf(1L, 2L)))
-
-        assertNull(ServerSession.getApiKey())
-        assertNull(ServerSession.getServerUrl())
-    }
-
-    @Test
-    fun clearSessionIfActiveProfileGone_keepsLiveAndLegacySessions() {
-        ServerSession.setServerUrl("http://192.168.1.50:3000")
-        ServerSession.setApiKey("key")
-
-        // Legacy single-server setup: no active profile id at all.
-        ServerSession.setActiveProfileId(0L)
-        assertFalse(ServerSession.clearSessionIfActiveProfileGone(emptyList()))
-
-        // The active profile still exists.
-        ServerSession.setActiveProfileId(2L)
-        assertFalse(ServerSession.clearSessionIfActiveProfileGone(listOf(1L, 2L)))
-
-        assertEquals("key", ServerSession.getApiKey())
-        assertEquals("http://192.168.1.50:3000", ServerSession.getServerUrl())
     }
 }

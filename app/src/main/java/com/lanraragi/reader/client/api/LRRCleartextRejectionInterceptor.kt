@@ -1,12 +1,10 @@
 package com.lanraragi.reader.client.api
 
 import okhttp3.HttpUrl
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.Response
 import com.lanraragi.reader.server.ProfileLookupCache
 import com.lanraragi.reader.server.ProfileUrlCandidate
-import com.lanraragi.reader.server.ServerSession
 
 /**
  * Authoritative cleartext gate for LANraragi Reader.
@@ -25,8 +23,10 @@ import com.lanraragi.reader.server.ServerSession
  *   - HTTP, host:port matches a configured profile, scheme matches,
  *     no consent and not a LAN address                                   → reject
  *   - HTTP, host:port matches a configured profile, scheme differs       → reject
- *   - HTTP, no profile matches host:port (cache empty / cold-start) →
- *     fall back to legacy active-only check against [ServerSession]
+ *   - HTTP, no profile matches host:port                                 → reject
+ *
+ * A request issued before the Room flow's first emission waits for it
+ * ([ProfileLookupCache.awaitLoadedBlocking]).
  *
  * Reject = throw [LRRCleartextRefusedException], a subclass of [java.io.IOException]
  * so OkHttp surfaces it as a normal network failure handled by existing
@@ -54,16 +54,16 @@ class LRRCleartextRejectionInterceptor(
         // 2. Find configured profiles owning this host:port (any scheme).
         val cache = runCatching(profileLookupCache)
             .getOrNull()
+        cache?.awaitLoadedBlocking()
         val candidates = cache?.findParsedCandidatesByHostPort(url.host, url.port).orEmpty()
 
-        if (candidates.isNotEmpty()) {
-            return enforceProfileBased(chain, request, url, candidates)
+        // 3. No configured server owns this host: plain HTTP is refused.
+        if (candidates.isEmpty()) {
+            throw LRRCleartextRefusedException(
+                "Cleartext request refused: host does not match a configured LANraragi server."
+            )
         }
-
-        // 3. Cache cold-start or unconfigured host. Fall back to legacy
-        //    active-only matching so requests issued before the Room flow
-        //    delivers its first emission still pass policy gates correctly.
-        return enforceActiveBased(chain, request, url)
+        return enforceProfileBased(chain, request, url, candidates)
     }
 
     private fun enforceProfileBased(
@@ -89,49 +89,6 @@ class LRRCleartextRejectionInterceptor(
                 "Cleartext request refused: profile does not allow plain HTTP."
             )
         }
-        return chain.proceed(request)
-    }
-
-    private fun enforceActiveBased(
-        chain: Interceptor.Chain,
-        request: okhttp3.Request,
-        url: HttpUrl,
-    ): Response {
-        val serverUrlStr = ServerSession.getServerUrl()
-            ?: throw LRRCleartextRefusedException(
-                "Cleartext request refused: no active LANraragi server configured."
-            )
-
-        val serverUrl = serverUrlStr.toHttpUrlOrNull()
-            ?: throw LRRCleartextRefusedException(
-                "Cleartext request refused: configured server URL is malformed."
-            )
-
-        // Active server scheme must match the request scheme.
-        if (!serverUrl.scheme.equals("http", ignoreCase = true)) {
-            throw LRRCleartextRefusedException(
-                "Cleartext request refused: active server is HTTPS, request is HTTP."
-            )
-        }
-
-        if (!url.host.equals(serverUrl.host, ignoreCase = true)) {
-            throw LRRCleartextRefusedException(
-                "Cleartext request refused: host does not match active server."
-            )
-        }
-
-        if (url.port != serverUrl.port) {
-            throw LRRCleartextRefusedException(
-                "Cleartext request refused: port does not match active server."
-            )
-        }
-
-        if (!cleartextPermitted(ServerSession.getAllowCleartext(), url)) {
-            throw LRRCleartextRefusedException(
-                "Cleartext request refused: profile does not allow plain HTTP."
-            )
-        }
-
         return chain.proceed(request)
     }
 

@@ -14,6 +14,9 @@ import com.lanraragi.reader.dao.QuickSearchRepository
 import com.lanraragi.reader.dao.SearchHistoryRepository
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.server.ProfileLookupCache
+import com.lanraragi.reader.server.SecureCredentialStore
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import com.lanraragi.reader.domain.FavoriteState
 
 /**
@@ -37,9 +40,21 @@ class DataModule(private val context: Context) : IDataModule, Cacheable {
     }
 
     override val profileLookupCache: ProfileLookupCache by lazy {
+        // Off main: main-thread readers block on the first emission. An
+        // install that may still hold the pre-v2.5 active-server copy waits
+        // for the boot migration first, so its first launch after the
+        // update does not see "no active server".
+        val profiles = profileRepository.observeAll()
         ProfileLookupCache(
-            repo = profileRepository,
-            scope = ServiceRegistry.coroutineModule.applicationScope,
+            profiles = if (SecureCredentialStore.mayHoldLegacyActiveSession()) {
+                flow {
+                    AppModule.activeProfileIdDeferred.await()
+                    emitAll(profiles)
+                }
+            } else {
+                profiles
+            },
+            scope = ServiceRegistry.coroutineModule.ioScope,
         )
     }
 

@@ -119,8 +119,6 @@ class ServerListViewModel(
                 // Scene handles toasts and navigation
                 ServerProfileService.SwitchResult.SWITCHED ->
                     _uiEvent.send(ServerListUiEvent.ProfileActivated(profile))
-                ServerProfileService.SwitchResult.SECURE_STORAGE_UNAVAILABLE ->
-                    _uiEvent.send(ServerListUiEvent.SecureStorageError)
                 ServerProfileService.SwitchResult.FAILED -> Unit
             }
         }

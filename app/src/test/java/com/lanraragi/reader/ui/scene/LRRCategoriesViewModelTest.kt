@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene
 
+import com.lanraragi.reader.installActiveServer
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.stubAppModule
@@ -8,7 +9,6 @@ import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.collectInto
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.domain.Category
 import kotlinx.coroutines.CoroutineScope
@@ -70,7 +70,6 @@ class LRRCategoriesViewModelTest {
         SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("categories_vm_test", Context.MODE_PRIVATE)
         )
-        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
 
         val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
 
@@ -86,6 +85,7 @@ class LRRCategoriesViewModelTest {
             data = stubDataModule(),
             app = testAppModule
         )
+        installActiveServer(server.url("").toString().removeSuffix("/"))
 
         // Use a real dispatcher scope for event collection (not test scope)
         eventScope = CoroutineScope(Dispatchers.Default + SupervisorJob())

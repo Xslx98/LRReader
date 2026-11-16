@@ -20,6 +20,11 @@ import com.lanraragi.reader.server.ProfileLookupCache
 import okhttp3.OkHttpClient
 import java.io.File
 import com.lanraragi.reader.module.AppProxySelector
+import com.lanraragi.reader.dao.ServerProfile
+import com.lanraragi.reader.server.ServerSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * [INetworkModule] for [ServiceRegistry.initializeForTest] whose three
@@ -68,3 +73,38 @@ fun stubAppModule(context: Context): IAppModule = object : IAppModule {
 }
 
 private fun unsupported(): Nothing = throw UnsupportedOperationException()
+
+/**
+ * Makes [profiles] the server profiles of the process (what [ServerSession]
+ * and the network interceptors see), keeping the rest of the installed data
+ * module. The cache collects on an unconfined scope, so it is loaded on
+ * return and every later write to the returned flow is visible at once.
+ * Call it after the test's own [ServiceRegistry.initializeForTest].
+ */
+fun installProfiles(vararg profiles: ServerProfile): MutableStateFlow<List<ServerProfile>> {
+    val flow = MutableStateFlow(profiles.toList())
+    val cache = ProfileLookupCache(flow, CoroutineScope(Dispatchers.Unconfined))
+    val current = runCatching { ServiceRegistry.dataModule }.getOrNull() ?: stubDataModule()
+    ServiceRegistry.initializeForTest(
+        coroutine = null,
+        data = object : IDataModule by current {
+            override val profileLookupCache: ProfileLookupCache = cache
+        },
+    )
+    return flow
+}
+
+/**
+ * [installProfiles] with one active profile at [url], storing [apiKey] for it
+ * (the secure store must be initialised for a non-null key).
+ */
+fun installActiveServer(
+    url: String,
+    apiKey: String? = null,
+    id: Long = 1L,
+    allowCleartext: Boolean = true,
+): MutableStateFlow<List<ServerProfile>> {
+    val flow = installProfiles(ServerProfile(id, "Test server", url, true, allowCleartext))
+    if (apiKey != null) ServerSession.setApiKeyForProfile(id, apiKey)
+    return flow
+}

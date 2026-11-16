@@ -44,4 +44,32 @@ interface MiscRoomDao {
      *  window where a crash could leave zero (or two) active profiles. */
     @Query("UPDATE SERVER_PROFILES SET IS_ACTIVE = CASE WHEN ID = :id THEN 1 ELSE 0 END")
     suspend fun setActiveProfileExclusive(id: Long)
+
+    /**
+     * Inserts [profile] and makes it the sole active one in one transaction.
+     * [beforeCommit] runs last inside it with the new id (the API-key write):
+     * a failed row write never reaches it, and if it throws nothing commits.
+     */
+    @Transaction
+    suspend fun insertActive(profile: ServerProfile, beforeCommit: (Long) -> Unit): Long {
+        val id = insertServerProfile(profile.copy(id = 0, isActive = false))
+        setActiveProfileExclusive(id)
+        beforeCommit(id)
+        return id
+    }
+
+    /** [insertActive] for an existing row: the update, the activation and [beforeCommit] commit together. */
+    @Transaction
+    suspend fun updateActive(profile: ServerProfile, beforeCommit: (Long) -> Unit) {
+        updateServerProfile(profile)
+        setActiveProfileExclusive(profile.id)
+        beforeCommit(profile.id)
+    }
+
+    /** Updates [profile] and runs [beforeCommit] (the API-key write) in one transaction, as [insertActive]. */
+    @Transaction
+    suspend fun updateWithKey(profile: ServerProfile, beforeCommit: (Long) -> Unit) {
+        updateServerProfile(profile)
+        beforeCommit(profile.id)
+    }
 }

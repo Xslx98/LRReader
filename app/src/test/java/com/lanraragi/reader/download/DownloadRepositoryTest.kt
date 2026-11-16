@@ -1,12 +1,12 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.installActiveServer
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -123,7 +123,7 @@ class DownloadRepositoryTest {
             }
         )
 
-        ServerSession.setServerUrl("http://localhost:3000")
+        installActiveServer("http://localhost:3000")
 
         // Create the repository and wait for init to complete
         repo = DownloadRepository(context, testScope, Dispatchers.Unconfined)

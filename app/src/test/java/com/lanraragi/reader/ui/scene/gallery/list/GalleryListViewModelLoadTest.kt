@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.installActiveServer
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
@@ -7,7 +8,6 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
 import com.lanraragi.reader.awaitRequest
 import com.lanraragi.reader.awaitUntil
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.stubNetworkModule
@@ -63,12 +63,12 @@ class GalleryListViewModelLoadTest {
 
         SecureCredentialStore.initialize(ctx)
         SecureCredentialStore.initializeForTesting(ctx.getSharedPreferences("list_load_test", Context.MODE_PRIVATE))
-        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
         val client = OkHttpClient.Builder()
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .build()
         ServiceRegistry.initializeForTest(network = stubNetworkModule(client, File(ctx.cacheDir, "list-load-test")))
+        installActiveServer(server.url("").toString().removeSuffix("/"))
     }
 
     @After
@@ -155,7 +155,7 @@ class GalleryListViewModelLoadTest {
 
     @Test
     fun `without a server the load fails at once with its own text`() {
-        SecureCredentialStore.clear()
+        com.lanraragi.reader.installProfiles()
         val results = mutableListOf<GalleryListLoad>()
 
         GalleryListViewModel().loadPage(archiveQuery, 0) { results += it; true }

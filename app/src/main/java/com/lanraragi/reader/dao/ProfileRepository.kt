@@ -48,6 +48,20 @@ class ProfileRepository(private val dao: MiscRoomDao) {
         dao.setActiveProfileExclusive(id)
     }
 
+    /** See [MiscRoomDao.insertActive]. */
+    suspend fun insertActive(profile: ServerProfile, beforeCommit: (Long) -> Unit): Long =
+        dao.insertActive(profile, beforeCommit)
+
+    /** See [MiscRoomDao.updateActive]. */
+    suspend fun updateActive(profile: ServerProfile, beforeCommit: (Long) -> Unit) {
+        dao.updateActive(profile, beforeCommit)
+    }
+
+    /** See [MiscRoomDao.updateWithKey]. */
+    suspend fun updateWithKey(profile: ServerProfile, beforeCommit: (Long) -> Unit) {
+        dao.updateWithKey(profile, beforeCommit)
+    }
+
     private companion object {
         const val TAG = "ProfileRepository"
     }

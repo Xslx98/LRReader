@@ -54,7 +54,7 @@ class SecureCredentialStoreInitGateTest {
     @Test
     fun neverScheduled_gettersReturnDefaultsImmediately() {
         SecureCredentialStore.simulateStorageUnavailableForTesting()
-        assertNull(ServerSession.getServerUrl())
+        assertNull(ServerSession.getApiKeyForProfile(9L))
         assertFalse(ServerSession.isConfigured())
         assertEquals(0L, ServerSession.getActiveProfileId())
         assertFalse(AppLockCredentials.hasPattern())
@@ -80,7 +80,7 @@ class SecureCredentialStoreInitGateTest {
             val readerDone = CountDownLatch(1)
             var observedUrl: String? = "sentinel"
             thread(isDaemon = true) {
-                observedUrl = ServerSession.getServerUrl()
+                observedUrl = ServerSession.getApiKeyForProfile(9L)
                 readerDone.countDown()
             }
 
@@ -91,7 +91,7 @@ class SecureCredentialStoreInitGateTest {
 
             // Open the gate with injected prefs carrying a known value.
             val prefs = ctx.getSharedPreferences("lrr_gate_test", Context.MODE_PRIVATE)
-            prefs.edit().putString("server_url", "http://10.0.0.9:3000").commit()
+            prefs.edit().putString("api_key_9", "http://10.0.0.9:3000").commit()
             SecureCredentialStore.initializeForTesting(prefs)
 
             assertTrue(
@@ -123,7 +123,7 @@ class SecureCredentialStoreInitGateTest {
             // Gate must be open: a reader thread completes promptly.
             val readerDone = CountDownLatch(1)
             thread(isDaemon = true) {
-                ServerSession.getServerUrl()
+                ServerSession.getApiKeyForProfile(9L)
                 AppLockCredentials.isLockedOut()
                 readerDone.countDown()
             }
@@ -155,23 +155,23 @@ class SecureCredentialStoreInitGateTest {
             val first = CountDownLatch(1)
             var observed: String? = "sentinel"
             thread(isDaemon = true) {
-                observed = ServerSession.getServerUrl()
+                observed = ServerSession.getApiKeyForProfile(9L)
                 first.countDown()
             }
             assertTrue("reader must give up after the timeout", first.await(5, TimeUnit.SECONDS))
             assertNull(observed)
 
             val started = System.nanoTime()
-            ServerSession.getServerUrl()
+            ServerSession.getApiKeyForProfile(9L)
             assertTrue(
                 "later readers must not wait again",
                 TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started) < 150
             )
 
             val prefs = ctx.getSharedPreferences("lrr_gate_timeout_test", Context.MODE_PRIVATE)
-            prefs.edit().putString("server_url", "http://10.0.0.8:3000").commit()
+            prefs.edit().putString("api_key_9", "http://10.0.0.8:3000").commit()
             SecureCredentialStore.initializeForTesting(prefs)
-            assertEquals("http://10.0.0.8:3000", ServerSession.getServerUrl())
+            assertEquals("http://10.0.0.8:3000", ServerSession.getApiKeyForProfile(9L))
         } finally {
             scope.cancel()
         }
@@ -194,7 +194,7 @@ class SecureCredentialStoreInitGateTest {
             assertTrue(android.os.Looper.myLooper() == android.os.Looper.getMainLooper())
 
             val started = System.nanoTime()
-            assertNull(ServerSession.getServerUrl())
+            assertNull(ServerSession.getApiKeyForProfile(9L))
             val waitedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
             assertTrue("main thread waited $waitedMs ms, at the ANR limit", waitedMs < 5_000)
 
@@ -208,7 +208,7 @@ class SecureCredentialStoreInitGateTest {
             val background = CountDownLatch(1)
             var observed: String? = "sentinel"
             thread(isDaemon = true) {
-                observed = ServerSession.getServerUrl()
+                observed = ServerSession.getApiKeyForProfile(9L)
                 background.countDown()
             }
             assertFalse(
@@ -216,7 +216,7 @@ class SecureCredentialStoreInitGateTest {
                 background.await(300, TimeUnit.MILLISECONDS)
             )
             val prefs = ctx.getSharedPreferences("lrr_gate_main_test", Context.MODE_PRIVATE)
-            prefs.edit().putString("server_url", "http://10.0.0.7:3000").commit()
+            prefs.edit().putString("api_key_9", "http://10.0.0.7:3000").commit()
             SecureCredentialStore.initializeForTesting(prefs)
             assertTrue(background.await(5, TimeUnit.SECONDS))
             assertEquals("http://10.0.0.7:3000", observed)

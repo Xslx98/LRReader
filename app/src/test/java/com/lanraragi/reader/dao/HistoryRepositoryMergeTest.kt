@@ -99,7 +99,7 @@ class HistoryRepositoryMergeTest {
             .getSharedPreferences("history_clear_test", Context.MODE_PRIVATE)
         com.lanraragi.reader.server.SecureCredentialStore.initializeForTesting(prefs)
         try {
-            com.lanraragi.reader.server.ServerSession.setActiveProfileId(1L)
+            com.lanraragi.reader.installActiveServer("http://active.local:3000", id = 1L)
             repo.putHistoryInfo(archive(pagecount = 5, progress = 1, summary = null, tags = emptyMap()))
             repo.putHistoryInfo(
                 archive(pagecount = 5, progress = 1, summary = null, tags = emptyMap()).copy(serverProfileId = 2L)

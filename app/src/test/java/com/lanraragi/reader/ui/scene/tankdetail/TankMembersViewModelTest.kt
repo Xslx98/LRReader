@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.tankdetail
 
+import com.lanraragi.reader.installActiveServer
 import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitUntil
@@ -170,7 +171,7 @@ class TankMembersViewModelTest {
         SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("tank_detail_vm_test", Context.MODE_PRIVATE)
         )
-        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
+        installActiveServer(server.url("").toString().removeSuffix("/"))
 
         val testNetworkModule = stubNetworkModule(client, File(ctx.cacheDir, "test-cache"))
         val testAppModule = stubAppModule(ctx)

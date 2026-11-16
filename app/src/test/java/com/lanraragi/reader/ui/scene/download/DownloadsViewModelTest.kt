@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.download
 
+import com.lanraragi.reader.installActiveServer
 import com.lanraragi.reader.stubNetworkModule
 import android.content.Context
 import androidx.collection.LruCache
@@ -18,7 +19,6 @@ import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.containedTestScope
@@ -95,7 +95,7 @@ class DownloadsViewModelTest {
             .setTransactionExecutor { it.run() }
             .build()
 
-        ServerSession.setServerUrl("http://localhost:3000")
+        installActiveServer("http://localhost:3000")
 
         ShadowLooper.idleMainLooper()
 

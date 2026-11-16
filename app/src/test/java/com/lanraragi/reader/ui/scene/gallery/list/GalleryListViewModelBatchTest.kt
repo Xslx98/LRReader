@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.installActiveServer
 import com.lanraragi.reader.archive.BatchOp
 import android.content.Context
 import androidx.lifecycle.ViewModelProvider
@@ -11,7 +12,6 @@ import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.event.AppEventBus
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.domain.Archive
@@ -81,7 +81,7 @@ class GalleryListViewModelBatchTest {
         SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("batch_vm_test", Context.MODE_PRIVATE)
         )
-        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
+        installActiveServer(server.url("").toString().removeSuffix("/"))
 
         val client = OkHttpClient.Builder()
             .connectTimeout(5, TimeUnit.SECONDS)

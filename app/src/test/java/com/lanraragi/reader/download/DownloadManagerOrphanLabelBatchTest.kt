@@ -1,12 +1,12 @@
 package com.lanraragi.reader.download
 
+import com.lanraragi.reader.installActiveServer
 import com.lanraragi.reader.stubNetworkModule
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.Settings
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.dao.DownloadDbRepository
@@ -90,7 +90,7 @@ class DownloadManagerOrphanLabelBatchTest {
             }
         )
 
-        ServerSession.setServerUrl("http://localhost:3000")
+        installActiveServer("http://localhost:3000")
         org.robolectric.shadows.ShadowLooper.idleMainLooper()
     }
 

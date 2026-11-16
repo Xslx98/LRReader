@@ -23,9 +23,12 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 /**
  * Server profile changes the server screens ask for: onboarding connect,
  * add, edit, switch and delete. The connecting ones test the server first,
- * then commit in a fixed order (Room row, keystore key, active flag, live
- * session last), so an error at any step leaves the previous server in
- * charge.
+ * then commit: the Room rows and the API key in one Room transaction (the
+ * key is written last inside it: a row failure never writes it, a key
+ * failure commits nothing). Room's
+ * active profile IS the active server ([ProfileLookupCache.activeServer]),
+ * so an error at any step leaves the previous server in charge. Each commit
+ * returns once the cache shows it.
  *
  * Every operation runs on the process scope: a profile change the user
  * started finishes even when the screen that asked for it closes, so a
@@ -91,38 +94,19 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             // unpersisted candidate. The active flag moves only after the key
             // is stored (below), in one atomic UPDATE: never zero active
             // profiles, never an active one without its key.
+            // One transaction: the row (created or updated), its key and the
+            // active flag commit together, so a failure keeps the previous server.
             val existing = profileRepository.findByUrl(resolvedUrl)
-            val inserted: ServerProfile?
-            val profileId = if (existing != null) {
-                inserted = null
-                profileRepository.update(
-                    ServerProfile(existing.id, info.name ?: existing.name, resolvedUrl, existing.isActive, allowCleartext)
-                )
-                existing.id
+            val storeKey: (Long) -> Unit = { id -> ServerSession.setApiKeyForProfile(id, apiKey) }
+            val committed = if (existing != null) {
+                val row = ServerProfile(existing.id, info.name ?: existing.name, resolvedUrl, true, allowCleartext)
+                profileRepository.updateActive(row, storeKey)
+                row
             } else {
-                val row = ServerProfile(0, info.name ?: "LANraragi", resolvedUrl, false, allowCleartext)
-                val id = profileRepository.insert(row)
-                inserted = row.copy(id = id)
-                id
+                val row = ServerProfile(0, info.name ?: "LANraragi", resolvedUrl, true, allowCleartext)
+                row.copy(id = profileRepository.insertActive(row, storeKey))
             }
-
-            // Keystore per-profile key, then activation, then live global
-            // auth LAST. (API key rides EncryptedSharedPreferences, not
-            // Room.) bumpServerConfigVersion drives GalleryListScene's
-            // auto-refresh, so re-onboarding refreshes the list like add/edit.
-            try {
-                ServerSession.setApiKeyForProfile(profileId, apiKey)
-            } catch (e: LRRSecureStorageUnavailableException) {
-                inserted?.let { profileRepository.delete(it) }
-                throw e
-            }
-            profileRepository.activateExclusive(profileId)
-            ServerSession.setActiveProfileId(profileId)
-            ServerSession.setServerUrl(resolvedUrl)
-            ServerSession.setApiKey(apiKey)
-            ServerSession.setServerName(info.name)
-            ServerSession.setAllowCleartext(allowCleartext)
-            ServerSession.bumpServerConfigVersion()
+            awaitActive(committed)
         } catch (e: LRRSecureStorageUnavailableException) {
             Log.e(TAG, "Secure storage unavailable on connect success", e)
             return Outcome.SecureStorageUnavailable
@@ -136,7 +120,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
     }
 
     /** How a server switch ended. */
-    enum class SwitchResult { SWITCHED, SECURE_STORAGE_UNAVAILABLE, FAILED }
+    enum class SwitchResult { SWITCHED, FAILED }
 
     /**
      * Makes [profile] the active server: one atomic Room UPDATE, then the
@@ -151,15 +135,9 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             // clears it for all others without a window where none is active. Other
             // columns (name/url/allowCleartext) are untouched and thus preserved.
             ServiceRegistry.dataModule.profileRepository.activateExclusive(profile.id)
-            // Every secure-store access is an AndroidKeyStore AES-GCM call (a
-            // binder round trip into keystore2), so the session switch runs
-            // here, off main (audit 2026-10-13 STAB-10).
-            applySessionFor(profile)
+            profileCache().awaitActive { it?.id == profile.id }
         } catch (e: CancellationException) {
             throw e
-        } catch (e: LRRSecureStorageUnavailableException) {
-            Log.e(TAG, "Secure storage unavailable while switching profile", e)
-            return SwitchResult.SECURE_STORAGE_UNAVAILABLE
         } catch (e: Exception) {
             Log.e(TAG, "Failed to activate profile", e)
             return SwitchResult.FAILED
@@ -182,31 +160,18 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
         }
     }
 
-    /** Points the auth session at [profile]. Blocking keystore work: call off main. */
-    private fun applySessionFor(profile: ServerProfile) {
-        ServerSession.setServerUrl(profile.url)
-        ServerSession.setApiKey(ServerSession.getApiKeyForProfile(profile.id))
-        ServerSession.setServerName(profile.name)
-        ServerSession.setActiveProfileId(profile.id)
-        ServerSession.setAllowCleartext(profile.allowCleartext)
-        ServerSession.bumpServerConfigVersion()
-    }
-
     /**
-     * Deletes [profile]. Its keys go first, on the caller's thread: the
-     * active profile's URL and key are also mirrored into the global session
-     * that the auth interceptor falls back to, so that is cleared before the
-     * row goes, or the deleted server keeps receiving the key. Then the row
-     * and everything kept for that server are purged on the process scope.
+     * Deletes [profile]. Its key goes first, on the caller's thread, so the
+     * deleted server stops receiving it before the row goes. Then the row
+     * and everything kept for that server are purged on the process scope;
+     * deleting the active profile leaves no server active.
      *
      * @return the running purge (it never fails; errors are logged), or null
      *   when the secure store is unavailable and nothing was deleted
      */
     fun delete(profile: ServerProfile): Deferred<Unit>? {
-        val wasActive = profile.isActive || ServerSession.getActiveProfileId() == profile.id
         try {
             ServerSession.clearApiKeyForProfile(profile.id)
-            if (wasActive) ServerSession.clearActiveSession()
         } catch (e: LRRSecureStorageUnavailableException) {
             Log.e(TAG, "Secure storage unavailable while deleting a profile", e)
             return null
@@ -218,6 +183,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
         try {
             val data = ServiceRegistry.dataModule
             data.profileRepository.delete(profile)
+            profileCache().awaitActive { it?.id != profile.id }
             // Cascade (triage decision, issue #12): a deleted profile's
             // search history must not linger.
             data.searchHistoryRepository.deleteAllForProfile(profile.id)
@@ -282,8 +248,8 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
     data class Edited(val updated: ServerProfile, val usedHttpFallback: Boolean)
 
     /**
-     * Tests the edited address of [profile] and saves the edit: keystore key
-     * first, then Room, then (for the active profile) the live session.
+     * Tests the edited address of [profile] and saves the edit: the row and
+     * its key in one transaction.
      *
      * NET-7: the probe is self-contained (explicit Bearer header on a
      * stripped test client); no global auth state is touched by it. It is
@@ -303,7 +269,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
             is LRRUrlHelper.ConnectResult.Failure -> Outcome.Failed(r.error)
             is LRRUrlHelper.ConnectResult.UntrustedCertificate -> Outcome.Untrusted(r.certificate)
             is LRRUrlHelper.ConnectResult.Success ->
-                saveEdit(profile, ServerProfile(profile.id, newName, r.resolvedUrl, profile.isActive, allowCleartext), newKey)
+                saveEdit(ServerProfile(profile.id, newName, r.resolvedUrl, profile.isActive, allowCleartext), newKey)
                     .map { Edited(it, r.usedHttpFallback) }
         }
     }
@@ -312,35 +278,20 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
      * Saves [updated] (the dialog's name, the resolved URL and the user's
      * cleartext consent, audit C27 ruling R11) with [newKey].
      */
-    private suspend fun saveEdit(profile: ServerProfile, updated: ServerProfile, newKey: String): Outcome<ServerProfile> {
+    private suspend fun saveEdit(updated: ServerProfile, newKey: String): Outcome<ServerProfile> {
         val profileRepository = ServiceRegistry.dataModule.profileRepository
         try {
+            // One transaction: a failed row write keeps the old key, a failed
+            // key write (keystore unavailable) keeps the old row. For the
+            // active profile the row write is the switch itself.
             try {
-                // Fragile keystore per-profile key first: if the keystore is
-                // unavailable this throws before any durable write, so the
-                // edit aborts with Room and live auth untouched.
-                ServerSession.setApiKeyForProfile(profile.id, newKey.ifEmpty { null })
+                profileRepository.updateWithKey(updated) { ServerSession.setApiKeyForProfile(it, newKey.ifEmpty { null }) }
             } catch (e: LRRSecureStorageUnavailableException) {
                 Log.e(TAG, "Secure storage unavailable while saving an edited profile", e)
                 return Outcome.SecureStorageUnavailable
             }
-            // Durable Room write next. A failure is reported (Failed) with the
-            // live global auth still pointing at the old server — no silent switch.
-            profileRepository.update(updated)
-            // Live global-auth switch LAST, only once Room has committed.
-            try {
-                if (profile.isActive) {
-                    ServerSession.setServerUrl(updated.url)
-                    ServerSession.setApiKey(newKey.ifEmpty { null })
-                    ServerSession.setServerName(updated.name)
-                    ServerSession.setAllowCleartext(updated.allowCleartext)
-                    ServerSession.bumpServerConfigVersion()
-                }
-                ServerSession.markReauthIfProfilesUnprotected(profileRepository.getAllProfiles().map { it.id })
-            } catch (e: LRRSecureStorageUnavailableException) {
-                Log.e(TAG, "Secure storage unavailable while switching the edited profile", e)
-                return Outcome.SecureStorageUnavailable
-            }
+            if (updated.isActive) awaitActive(updated)
+            ServerSession.markReauthIfProfilesUnprotected(profileRepository.getAllProfiles().map { it.id })
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -384,49 +335,37 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
         }
     }
 
-    /** Inserts [row] (inactive), stores its key, activates it; returns the active profile. */
+    /**
+     * Inserts [row], stores its key and activates it in one transaction
+     * (never an active profile without its key); returns the active profile.
+     */
     private suspend fun add(row: ServerProfile, finalKey: String?): Outcome<ServerProfile> {
         val profileRepository = ServiceRegistry.dataModule.profileRepository
-        val newId = try {
-            // Row first, INACTIVE: a failure is reported (Failed) with the old
-            // active profile and the live global auth untouched.
-            val id = profileRepository.insert(row)
-            // Then its key; only a profile whose key is stored becomes
-            // active (one atomic UPDATE), else the row is rolled back —
-            // never an active profile without its key.
-            try {
-                ServerSession.setApiKeyForProfile(id, finalKey)
-            } catch (e: LRRSecureStorageUnavailableException) {
-                Log.e(TAG, "Secure storage unavailable while adding a profile", e)
-                profileRepository.delete(row.copy(id = id))
-                return Outcome.SecureStorageUnavailable
-            }
-            profileRepository.activateExclusive(id)
-            // Live global auth LAST.
-            try {
-                ServerSession.setActiveProfileId(id)
-                ServerSession.setServerUrl(row.url)
-                ServerSession.setApiKey(finalKey)
-                ServerSession.setServerName(row.name)
-                ServerSession.setAllowCleartext(row.allowCleartext)
-                ServerSession.bumpServerConfigVersion()
-            } catch (e: LRRSecureStorageUnavailableException) {
-                Log.e(TAG, "Secure storage unavailable while switching to the added profile", e)
-                return Outcome.SecureStorageUnavailable
-            }
-            id
+        val added = try {
+            val id = profileRepository.insertActive(row) { ServerSession.setApiKeyForProfile(it, finalKey) }
+            row.copy(id = id, isActive = true).also { awaitActive(it) }
         } catch (e: CancellationException) {
             throw e
+        } catch (e: LRRSecureStorageUnavailableException) {
+            Log.e(TAG, "Secure storage unavailable while adding a profile", e)
+            return Outcome.SecureStorageUnavailable
         } catch (e: Exception) {
             // Persistence failed after a successful probe. Reported so the add
             // dialog re-enables instead of soft-locking with no feedback; the
-            // live global auth was not switched (it runs only after the Room
-            // insert succeeds).
+            // transaction committed nothing, the previous server stays active.
             Log.e(TAG, "Failed to add profile", e)
             return Outcome.Failed(e)
         }
-        return Outcome.Done(row.copy(id = newId, isActive = true))
+        return Outcome.Done(added)
     }
+
+    /** Returns once the cache shows [committed] as the active server. */
+    private suspend fun awaitActive(committed: ServerProfile) {
+        val expected = ActiveServer.of(committed)
+        profileCache().awaitActive { it == expected }
+    }
+
+    private fun profileCache(): ProfileLookupCache = ServiceRegistry.dataModule.profileLookupCache
 
     /** [transform]s a [Outcome.Done] payload; any other outcome passes through. */
     private inline fun <A, B> Outcome<A>.map(transform: (A) -> B): Outcome<B> = when (this) {

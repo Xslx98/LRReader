@@ -38,7 +38,7 @@ class MainIntentRouter(private val activity: MainActivity) {
                 newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
                 newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)
                 return Announcer(SecurityScene::class.java).setArgs(newArgs)
-            } else if (!ServerSession.isConfiguredFast()) {
+            } else if (!ServerSession.isConfigured()) {
                 val newArgs = Bundle()
                 newArgs.putString(SolidScene.KEY_TARGET_SCENE, announcer.clazz.name)
                 newArgs.putBundle(SolidScene.KEY_TARGET_ARGS, announcer.args)

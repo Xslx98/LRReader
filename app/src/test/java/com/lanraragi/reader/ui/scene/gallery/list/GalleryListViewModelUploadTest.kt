@@ -1,5 +1,6 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
+import com.lanraragi.reader.installActiveServer
 import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.stubNetworkModule
 import com.lanraragi.reader.awaitRequest
@@ -11,7 +12,6 @@ import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.archive.ArchiveUploadService
 import com.lanraragi.reader.dao.AppDatabase
 import com.lanraragi.reader.module.IDataModule
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -65,7 +65,6 @@ class GalleryListViewModelUploadTest {
         SecureCredentialStore.initializeForTesting(
             ctx.getSharedPreferences("upload_vm_test", Context.MODE_PRIVATE)
         )
-        ServerSession.setServerUrl(server.url("").toString().removeSuffix("/"))
 
         val client = OkHttpClient.Builder()
             .connectTimeout(2, TimeUnit.SECONDS)
@@ -93,6 +92,7 @@ class GalleryListViewModelUploadTest {
             app = testAppModule,
             data = testDataModule
         )
+        installActiveServer(server.url("").toString().removeSuffix("/"))
     }
 
     @After

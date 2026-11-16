@@ -1,5 +1,6 @@
 package com.lanraragi.reader.server
 
+import com.lanraragi.reader.installActiveServer
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -45,7 +46,7 @@ class ServerConnectionsTest {
         val prefs = ctx.getSharedPreferences("lrr_test_prefs", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
         SecureCredentialStore.initializeForTesting(prefs)
-        ServiceRegistry.initializeForTest(network = stubNetworkModule(client))
+        ServiceRegistry.initializeForTest(network = stubNetworkModule(client), data = com.lanraragi.reader.stubDataModule())
     }
 
     @After
@@ -61,8 +62,7 @@ class ServerConnectionsTest {
 
     @Test
     fun active_isTheActiveProfileOnTheSharedClient() {
-        ServerSession.setServerUrl("http://active.local:3000")
-        ServerSession.setActiveProfileId(7L)
+        installActiveServer("http://active.local:3000", id = 7L)
 
         val conn = ServerConnections.active()!!
 
@@ -73,7 +73,7 @@ class ServerConnectionsTest {
 
     @Test
     fun forProfile_isTheSourceProfileNotTheActiveOne() = runBlocking {
-        ServerSession.setServerUrl("http://active.local:3000")
+        installActiveServer("http://active.local:3000")
         val id = repo.insert(ServerProfile(name = "B", url = "http://server-b.local:3000"))
         val cache = ProfileLookupCache(repo, scope)
         withTimeout(2_000) { while (cache.snapshot.value?.size != 1) kotlinx.coroutines.delay(20) }

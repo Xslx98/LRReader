@@ -1,5 +1,10 @@
 package com.lanraragi.reader.client.api
 
+import com.lanraragi.reader.dao.ServerProfile
+import com.lanraragi.reader.server.ProfileLookupCache
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.lanraragi.reader.client.api.*
 import com.lanraragi.reader.client.api.data.*
 import android.content.Context
@@ -27,7 +32,6 @@ import org.robolectric.annotation.Config
 import java.io.IOException
 import java.lang.reflect.Field
 import java.util.concurrent.TimeUnit
-import com.lanraragi.reader.server.ServerSession
 import com.lanraragi.reader.server.SecureCredentialStore
 
 /**
@@ -35,8 +39,8 @@ import com.lanraragi.reader.server.SecureCredentialStore
  *
  * Validates that:
  *   1. HTTPS requests always pass.
- *   2. HTTP requests are allowed iff host:port:scheme matches the active server
- *      AND the active profile has allowCleartext = true.
+ *   2. HTTP requests are allowed iff host:port:scheme matches a configured
+ *      profile AND that profile has allowCleartext = true (or is a LAN host).
  *   3. All other HTTP requests are rejected with [LRRCleartextRefusedException].
  *
  * For HTTPS pass-through we use a fake [Interceptor.Chain] that returns a canned
@@ -54,6 +58,13 @@ import com.lanraragi.reader.server.SecureCredentialStore
 class LRRCleartextRejectionInterceptorTest {
 
     private lateinit var prefs: SharedPreferences
+    private val profiles = MutableStateFlow<List<ServerProfile>>(emptyList())
+    private val cache = ProfileLookupCache(profiles, CoroutineScope(Dispatchers.Unconfined))
+
+    /** One active profile at [url] with the cleartext consent [allowCleartext]. */
+    private fun serve(url: String, allowCleartext: Boolean) {
+        profiles.value = listOf(ServerProfile(1L, "LRR", url, true, allowCleartext))
+    }
 
     @Before
     fun setUp() {
@@ -72,7 +83,7 @@ class LRRCleartextRejectionInterceptorTest {
     }
 
     private fun client() = OkHttpClient.Builder()
-        .addInterceptor(LRRCleartextRejectionInterceptor { null })
+        .addInterceptor(LRRCleartextRejectionInterceptor { cache })
         .build()
 
     private fun executeAndExpectRefused(url: String, message: String) {
@@ -123,7 +134,7 @@ class LRRCleartextRejectionInterceptorTest {
     fun https_request_with_no_active_profile_passes_through() {
         val req = Request.Builder().url("https://example.test/api/info").build()
         val chain = FakeChain(req)
-        val response = LRRCleartextRejectionInterceptor { null }.intercept(chain)
+        val response = LRRCleartextRejectionInterceptor { cache }.intercept(chain)
         assertEquals(200, response.code)
         assertSame(req, chain.proceededRequest)
         response.close()
@@ -131,11 +142,10 @@ class LRRCleartextRejectionInterceptorTest {
 
     @Test
     fun https_request_to_third_party_passes_through_when_profile_set() {
-        ServerSession.setServerUrl("http://lrr.local:3000")
-        ServerSession.setAllowCleartext(true)
+        serve("http://lrr.local:3000", true)
         val req = Request.Builder().url("https://attacker.test/whatever").build()
         val chain = FakeChain(req)
-        val response = LRRCleartextRejectionInterceptor { null }.intercept(chain)
+        val response = LRRCleartextRejectionInterceptor { cache }.intercept(chain)
         assertEquals(200, response.code)
         assertSame(req, chain.proceededRequest)
         response.close()
@@ -150,42 +160,37 @@ class LRRCleartextRejectionInterceptorTest {
 
     @Test
     fun http_request_to_third_party_host_is_refused_even_when_flag_true() {
-        ServerSession.setServerUrl("http://lrr.local:3000")
-        ServerSession.setAllowCleartext(true)
+        serve("http://lrr.local:3000", true)
         executeAndExpectRefused("http://attacker.test/api/info", "third-party host")
     }
 
     @Test
     fun http_request_to_active_wan_host_is_refused_when_flag_false() {
-        ServerSession.setServerUrl("http://lrr.example.com:3000")
-        ServerSession.setAllowCleartext(false)
+        serve("http://lrr.example.com:3000", false)
         executeAndExpectRefused("http://lrr.example.com:3000/api/info", "flag false")
     }
 
     /** Audit C27 (ruling R11): a LAN host needs no consent flag. */
     @Test
     fun http_request_to_active_lan_host_passes_without_flag() {
-        ServerSession.setServerUrl("http://192.168.1.10:3000")
-        ServerSession.setAllowCleartext(false)
+        serve("http://192.168.1.10:3000", false)
         val req = Request.Builder().url("http://192.168.1.10:3000/api/info").build()
         val chain = FakeChain(req)
-        LRRCleartextRejectionInterceptor { null }.intercept(chain)
+        LRRCleartextRejectionInterceptor { cache }.intercept(chain)
         assertSame(req, chain.proceededRequest)
     }
 
     @Test
     fun http_request_to_active_host_is_refused_when_active_is_https() {
         // Active server is HTTPS, request is HTTP — scheme downgrade attempt
-        ServerSession.setServerUrl("https://lrr.local")
-        ServerSession.setAllowCleartext(true)
+        serve("https://lrr.local", true)
         executeAndExpectRefused("http://lrr.local/api/info", "scheme downgrade")
     }
 
     @Test
     fun http_request_to_active_host_is_refused_when_port_differs() {
         // Active is :3000, request is default :80
-        ServerSession.setServerUrl("http://lrr.local:3000")
-        ServerSession.setAllowCleartext(true)
+        serve("http://lrr.local:3000", true)
         executeAndExpectRefused("http://lrr.local/api/info", "port mismatch")
     }
 
@@ -196,8 +201,7 @@ class LRRCleartextRejectionInterceptorTest {
         val server = MockWebServer().apply { start() }
         try {
             val baseUrl = server.url("/").toString().trimEnd('/')
-            ServerSession.setServerUrl(baseUrl)
-            ServerSession.setAllowCleartext(true)
+            serve(baseUrl, true)
 
             server.enqueue(MockResponse().setBody("ok"))
             val resp = client().newCall(Request.Builder().url(server.url("/api/info")).build()).execute()
@@ -213,8 +217,7 @@ class LRRCleartextRejectionInterceptorTest {
         val server = MockWebServer().apply { start() }
         try {
             val port = server.port
-            ServerSession.setServerUrl("http://127.0.0.1:$port")
-            ServerSession.setAllowCleartext(true)
+            serve("http://127.0.0.1:$port", true)
 
             server.enqueue(MockResponse().setBody("ok"))
             val resp = client().newCall(

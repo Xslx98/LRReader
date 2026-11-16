@@ -3,8 +3,15 @@ package com.lanraragi.reader.client.api
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.awaitRequest
+import com.lanraragi.reader.dao.ServerProfile
+import com.lanraragi.reader.server.ProfileLookupCache
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.server.ServerSession
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse
@@ -24,7 +31,8 @@ import java.util.Base64
 
 /**
  * Unit tests for [LRRAuthInterceptor]: the Bearer token goes only to requests
- * targeting the configured LANraragi server.
+ * targeting a configured LANraragi server profile (one profile here; the
+ * multi-profile and base-path rules are in InterceptorProfilePathTest).
  *
  * Plain SharedPreferences stand in for the KeyStore-backed store
  * ([SecureCredentialStore.initializeForTesting]).
@@ -36,6 +44,8 @@ class LRRAuthInterceptorTest {
     private lateinit var server: MockWebServer
     private lateinit var client: OkHttpClient
     private lateinit var baseUrl: String
+    private val profiles = MutableStateFlow<List<ServerProfile>>(emptyList())
+    private var cache: ProfileLookupCache? = null
 
     @Before
     fun setUp() {
@@ -43,13 +53,20 @@ class LRRAuthInterceptorTest {
         server.start()
         baseUrl = server.url("").toString().removeSuffix("/")
         client = OkHttpClient.Builder()
-            .addInterceptor(LRRAuthInterceptor { null })
+            .addInterceptor(LRRAuthInterceptor { cache })
             .build()
 
         val ctx: Context = ApplicationProvider.getApplicationContext()
         val prefs = ctx.getSharedPreferences("test_lrr_auth", Context.MODE_PRIVATE)
         prefs.edit().clear().apply()
         SecureCredentialStore.initializeForTesting(prefs)
+        cache = ProfileLookupCache(profiles, CoroutineScope(Dispatchers.Unconfined))
+    }
+
+    /** One profile (id 1) at [url] whose stored key is [apiKey]. */
+    private fun serve(url: String, apiKey: String?) {
+        profiles.value = listOf(ServerProfile(1L, "LRR", url, true))
+        if (apiKey != null) ServerSession.setApiKeyForProfile(1L, apiKey)
     }
 
     @After
@@ -75,22 +92,19 @@ class LRRAuthInterceptorTest {
 
     @Test
     fun noApiKey_noHeader() {
-        // API key is null by default after clearing prefs
-        ServerSession.setServerUrl(baseUrl)
+        serve(baseUrl, null)
         assertNull(authHeaderSent())
     }
 
     @Test
     fun emptyApiKey_noHeader() {
-        ServerSession.setApiKey("")
-        ServerSession.setServerUrl(baseUrl)
+        serve(baseUrl, "")
         assertNull(authHeaderSent())
     }
 
     @Test
     fun withApiKey_addsBearer() {
-        ServerSession.setApiKey("test-key")
-        ServerSession.setServerUrl(baseUrl)
+        serve(baseUrl, "test-key")
 
         val authHeader = authHeaderSent()
         assertNotNull("Authorization header should be present", authHeader)
@@ -101,16 +115,36 @@ class LRRAuthInterceptorTest {
 
     @Test
     fun requestToOtherHost_noHeader() {
-        ServerSession.setApiKey("secret")
-        ServerSession.setServerUrl("https://different-host.example.com")
+        serve("https://different-host.example.com", "secret")
         assertNull(authHeaderSent())
     }
 
     @Test
-    fun noServerUrl_noHeader() {
-        ServerSession.setApiKey("secret")
-        // Server URL not set — getServerUrl() returns null
+    fun noProfile_noHeader() {
+        ServerSession.setApiKeyForProfile(1L, "secret")
         assertNull(authHeaderSent())
+    }
+
+    /**
+     * A request sent before Room's first emission waits for it instead of
+     * going out without the key (the profiles are the only source).
+     */
+    @Test
+    fun requestBeforeTheFirstEmission_waitsAndGetsTheKey() {
+        val gate = CompletableDeferred<Unit>()
+        ServerSession.setApiKeyForProfile(1L, "late-key")
+        cache = ProfileLookupCache(
+            flow {
+                gate.await()
+                emit(listOf(ServerProfile(1L, "LRR", baseUrl, true)))
+            },
+            CoroutineScope(Dispatchers.Default),
+        )
+        Thread { Thread.sleep(200); gate.complete(Unit) }.start()
+
+        val header = authHeaderSent()
+
+        assertEquals("late-key", String(Base64.getDecoder().decode(header!!.removePrefix("Bearer "))))
     }
 
     // ── W0-2 hardening tests ──────────────────────────────────────────────────
@@ -121,10 +155,9 @@ class LRRAuthInterceptorTest {
      */
     @Test
     fun httpsConfigured_httpRequest_throwsPlaintextRefused() {
-        ServerSession.setApiKey("secret")
         // Configure HTTPS for the same host:port that MockWebServer listens on (HTTP).
         val mockUrl = server.url("/")
-        ServerSession.setServerUrl("https://${mockUrl.host}:${mockUrl.port}")
+        serve("https://${mockUrl.host}:${mockUrl.port}", "secret")
 
         assertRefused(mockServerRequest())
         assertEquals("Request must not reach the server", 0, server.requestCount)
@@ -136,21 +169,19 @@ class LRRAuthInterceptorTest {
      */
     @Test
     fun httpConfigured_httpsRequest_throwsPlaintextRefused() {
-        ServerSession.setApiKey("secret")
-        ServerSession.setServerUrl("http://example.local:3000")
+        serve("http://example.local:3000", "secret")
 
         assertRefused(Request.Builder().url("https://example.local:3000/api/info").build())
     }
 
     /**
-     * Stored server URL containing userInfo (`user:pass@host`) is treated as
+     * Profile URL containing userInfo (`user:pass@host`) is treated as
      * malformed/malicious — every request must abort.
      */
     @Test
     fun serverUrlWithUserInfo_throwsPlaintextRefused() {
-        ServerSession.setApiKey("secret")
         val mockUrl = server.url("/")
-        ServerSession.setServerUrl("http://attacker:pwd@${mockUrl.host}:${mockUrl.port}")
+        serve("http://attacker:pwd@${mockUrl.host}:${mockUrl.port}", "secret")
 
         assertRefused(mockServerRequest())
         assertEquals(0, server.requestCount)
@@ -165,9 +196,8 @@ class LRRAuthInterceptorTest {
      */
     @Test
     fun serverUrlWithFragment_throwsPlaintextRefused() {
-        ServerSession.setApiKey("secret")
         val mockUrl = server.url("/")
-        ServerSession.setServerUrl("http://${mockUrl.host}:${mockUrl.port}/#@evil.local/api")
+        serve("http://${mockUrl.host}:${mockUrl.port}/#@evil.local/api", "secret")
 
         assertRefused(mockServerRequest())
         assertEquals(0, server.requestCount)
@@ -179,9 +209,8 @@ class LRRAuthInterceptorTest {
      */
     @Test
     fun requestUrlWithUserInfo_throwsPlaintextRefused() {
-        ServerSession.setApiKey("secret")
         val mockUrl = server.url("/")
-        ServerSession.setServerUrl("http://${mockUrl.host}:${mockUrl.port}")
+        serve("http://${mockUrl.host}:${mockUrl.port}", "secret")
 
         // Build a request URL with userInfo via HttpUrl.Builder so OkHttp accepts it.
         val evilUrl = mockUrl.newBuilder()
@@ -200,11 +229,10 @@ class LRRAuthInterceptorTest {
      */
     @Test
     fun differentPort_noHeader() {
-        ServerSession.setApiKey("k")
         // Configure a port that does not match MockWebServer's.
         val mockUrl = server.url("/")
         val otherPort = if (mockUrl.port == 9999) 9998 else 9999
-        ServerSession.setServerUrl("http://${mockUrl.host}:$otherPort")
+        serve("http://${mockUrl.host}:$otherPort", "k")
 
         assertNull(authHeaderSent())
     }
@@ -212,24 +240,18 @@ class LRRAuthInterceptorTest {
     /** Host comparison must be case-insensitive (HttpUrl normalizes to lowercase). */
     @Test
     fun hostCaseInsensitive_match() {
-        ServerSession.setApiKey("k")
         val mockUrl = server.url("/")
         // Mixed-case version of the host (HttpUrl will lowercase on parse).
-        ServerSession.setServerUrl("http://${mockUrl.host.uppercase()}:${mockUrl.port}")
+        serve("http://${mockUrl.host.uppercase()}:${mockUrl.port}", "k")
 
         assertNotNull("Case-insensitive host match expected", authHeaderSent())
     }
 
-    /**
-     * A completely unparseable server URL must abort, never silently swallow the
-     * token. This is a defense against corrupted prefs.
-     */
+    /** An unparseable profile URL matches no request, so its key goes nowhere. */
     @Test
-    fun invalidServerUrl_throwsPlaintextRefused() {
-        ServerSession.setApiKey("k")
-        ServerSession.setServerUrl("not-a-valid-url")
+    fun invalidProfileUrl_neverSendsTheKey() {
+        serve("not-a-valid-url", "k")
 
-        assertRefused(mockServerRequest())
-        assertEquals(0, server.requestCount)
+        assertNull(authHeaderSent())
     }
 }
