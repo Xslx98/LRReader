@@ -37,9 +37,8 @@
 # 2026-11-16 (owner-approved for phase 3 of the same plan): apk.file +32768 B
 # (5242448 -> 5275216, two 16 KB zip-alignment steps of the native library)
 # and dex.method_refs +256 (25640 -> 25896). PR 3.3 (#135) moved apk.file
-# across one alignment step (CI: 5336447 vs the 5321084 limit; dex +44 B over
-# its first head) with 42 method refs of headroom left. Re-seeded with the
-# others when the plan ends.
+# across one alignment step (CI: 5336447 vs the 5321084 limit) with 42
+# method refs of headroom left. Re-seeded with the others when the plan ends.
 tolerance.percent 1.5
 apk.file        5275216
 apk.download    2511062
