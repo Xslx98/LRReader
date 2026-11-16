@@ -26,8 +26,7 @@ object ServerSession {
     fun activeServer(): ActiveServer? = cache()?.activeServerBlocking()
 
     /**
-     * Changes whenever the active server changes or any profile's API key
-     * is written. Screens compare it with the value they last saw to know
+     * Changes whenever the active server changes or its API key is written. Screens compare it with the value they last saw to know
      * that their content came from another server (or credential).
      */
     @JvmStatic
@@ -112,7 +111,7 @@ object ServerSession {
         // distinguish "intentionally no key" from "key lost due to KeyStore failure".
         prefs.edit { putString(prefKey, apiKey ?: "") }
         store.profileKeyCache[profileId] = apiKey.orEmpty()
-        store.keyRevision.incrementAndGet()
+        if (cache()?.activeServer?.value?.id == profileId) store.keyRevision.incrementAndGet()
     }
 
     /** @return the API key for the given profile, or null if none stored / empty. */
@@ -136,6 +135,6 @@ object ServerSession {
         val prefs = store.requireSecurePrefs("clearApiKeyForProfile")
         prefs.edit { remove(profileApiKey(profileId)) }
         store.profileKeyCache.remove(profileId)
-        store.keyRevision.incrementAndGet()
+        if (cache()?.activeServer?.value?.id == profileId) store.keyRevision.incrementAndGet()
     }
 }

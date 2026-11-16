@@ -117,6 +117,51 @@ class LegacyActiveSessionMigrationTest {
     }
 
     @Test
+    fun staleIdButKnownUrl_activatesThatProfile() = runBlocking {
+        dao.insertServerProfile(ServerProfile(1, "A", "http://a.local", false))
+        dao.insertServerProfile(ServerProfile(3, "NAS", "http://nas.local:3000/", false))
+        legacySession(id = 9)
+
+        LegacyActiveSessionMigration.run(dao)
+
+        assertEquals(3L, dao.getActiveProfile()?.id)
+    }
+
+    @Test
+    fun adoptedProfileWithoutItsOwnKey_getsTheStoredKey() = runBlocking {
+        dao.insertServerProfile(ServerProfile(2, "B", "http://b.local", false))
+        ServerSession.setApiKeyForProfile(1L, "unrelated")
+        legacySession(id = 2)
+
+        LegacyActiveSessionMigration.run(dao)
+
+        assertEquals("legacy-key", ServerSession.getApiKeyForProfile(2L))
+    }
+
+    @Test
+    fun adoptedProfileWithItsOwnKey_keepsIt() = runBlocking {
+        dao.insertServerProfile(ServerProfile(2, "B", "http://b.local", false))
+        ServerSession.setApiKeyForProfile(2L, "own-key")
+        legacySession(id = 2)
+
+        LegacyActiveSessionMigration.run(dao)
+
+        assertEquals("own-key", ServerSession.getApiKeyForProfile(2L))
+    }
+
+    @Test
+    fun noPlainMirror_isNotALegacyInstall() = runBlocking {
+        dao.insertServerProfile(ServerProfile(2, "B", "http://b.local", false))
+        legacySession(id = 2)
+        prefs.edit().remove("server_configured").remove("was_configured").commit()
+
+        assertFalse(SecureCredentialStore.mayHoldLegacyActiveSession())
+        LegacyActiveSessionMigration.run(dao)
+
+        assertNull("v2.5 installs skip the step", dao.getActiveProfile())
+    }
+
+    @Test
     fun storeClosed_keepsTheCopyForALaterBoot() = runBlocking {
         dao.insertServerProfile(ServerProfile(2, "B", "http://b.local", false))
         legacySession(id = 2)

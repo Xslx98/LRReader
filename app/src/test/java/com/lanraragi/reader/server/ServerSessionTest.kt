@@ -109,6 +109,9 @@ class ServerSessionTest {
         rows.value = listOf(profile(1L, "http://a.local:3000", active = true), profile(2L, "http://renamed.local:3000"))
         assertEquals("an inactive profile's edit is not the active server's", start, ServerSession.serverConfigVersion)
 
+        ServerSession.setApiKeyForProfile(2L, "other-key")
+        assertEquals("an inactive profile's key", start, ServerSession.serverConfigVersion)
+
         ServerSession.setApiKeyForProfile(1L, "new-key")
         assertNotEquals(start, ServerSession.serverConfigVersion)
     }

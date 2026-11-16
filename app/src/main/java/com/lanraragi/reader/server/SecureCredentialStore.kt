@@ -107,7 +107,7 @@ object SecureCredentialStore {
      */
     internal val profileKeyCache = ConcurrentHashMap<Long, String>()
 
-    /** Bumped on every API-key write; part of [ServerSession.serverConfigVersion]. */
+    /** Bumped when the active profile's API key is written; part of [ServerSession.serverConfigVersion]. */
     internal val keyRevision = AtomicLong(0L)
 
     /**
@@ -580,6 +580,16 @@ object SecureCredentialStore {
             apiKey = opened.getString(KEY_API_KEY, null),
             allowCleartext = opened.getBoolean(KEY_ALLOW_CLEARTEXT, true),
         )
+    }
+
+    /**
+     * Whether this install may still hold the pre-v2.5 copy: every version
+     * that wrote it also kept a plain mirror, which [dropLegacyActiveSession]
+     * removes with it. Plain prefs only, no keystore work.
+     */
+    internal fun mayHoldLegacyActiveSession(): Boolean {
+        val plain = fastPlainPrefs() ?: return false
+        return plain.contains(KEY_CONFIGURED_HINT) || plain.contains(KEY_WAS_CONFIGURED)
     }
 
     /**
