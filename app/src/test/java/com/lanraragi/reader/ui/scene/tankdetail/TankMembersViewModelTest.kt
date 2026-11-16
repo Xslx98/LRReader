@@ -424,6 +424,7 @@ class TankMembersViewModelTest {
         vm.load()
 
         awaitUntil { vm.state.value is ListScreenState.Error }
+        awaitViewModelIdle(vm)
         assertEquals(
             "with no members shown the unsupported server is the screen's error, not a toast",
             ListScreenState.Error(ctx.getString(R.string.tankoubons_unsupported), emptyList<Archive>()),
@@ -446,9 +447,43 @@ class TankMembersViewModelTest {
         vm.load()
 
         awaitUntil { events.any { it is TankDetailUiEvent.ShowError } }
-        assertTrue(vm.state.value is ListScreenState.Error)
+        val state = vm.state.value
+        assertTrue(state is ListScreenState.Error)
+        assertEquals(before, (state as ListScreenState.Error).retained.map { it.arcid })
         assertEquals(before, vm.memberIds)
         assertEquals(offsets, vm.pageOffsets)
+    }
+
+    /** A reload while members are shown keeps showing them: no spinner over the list. */
+    @Test
+    fun load_overMembers_staysContent() {
+        val vm = quietVm()
+
+        vm.load()
+
+        assertTrue(vm.state.value is ListScreenState.Content)
+        awaitViewModelIdle(vm)
+        assertTrue(vm.state.value is ListScreenState.Content)
+    }
+
+    /**
+     * An empty tank that loads fine is Empty with its metadata loaded: the
+     * case the scene's isLoading workaround existed for (the empty member
+     * list was deduped against the initial one, so nothing re-rendered).
+     */
+    @Test
+    fun load_emptyTank_isEmptyWithMetaLoaded() {
+        serverOrder = emptyList()
+        val vm = TankMembersViewModel()
+        vm.baseUrlResolver = { ServerSession.getServerUrl()!! }
+        vm.membershipSync = TankMembershipSyncFactory.Runner { _, _, _ -> }
+        vm.init(TANK, "Tank", profileId = 5L)
+
+        vm.load()
+        awaitUntil { vm.state.value !is ListScreenState.Loading }
+
+        assertEquals(ListScreenState.Empty, vm.state.value)
+        assertTrue(vm.meta.value.metaLoaded)
     }
 
     @Test
@@ -462,6 +497,7 @@ class TankMembersViewModelTest {
         vm.load()
 
         awaitUntil { vm.state.value is ListScreenState.Error }
+        awaitViewModelIdle(vm)
         assertTrue("the error is the state, not a toast", events.isEmpty())
         assertFalse(TankoubonSupportGate.isUnsupported(vm.baseUrl!!))
         assertTrue(vm.members.isEmpty())

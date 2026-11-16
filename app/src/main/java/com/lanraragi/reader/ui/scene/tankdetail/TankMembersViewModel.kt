@@ -63,7 +63,8 @@ class TankMembersViewModel : ViewModel() {
 
     /**
      * What the last [load] learnt about the tank besides its members, as one
-     * value (it replaces six volatile fields that were written one by one).
+     * value. With [memberIds] / [pageOffsets] now read from the [state] it
+     * replaces the seven volatile fields that were written one by one.
      *
      * @property baseUrl resolved from [profileId] by the first [load]; null before.
      * @property summary tank summary from the last load; null when the server sent none.
@@ -398,8 +399,11 @@ class TankMembersViewModel : ViewModel() {
     fun setCover(memberIndex: Int, page0: Int = 0) {
         viewModelScope.launch(Dispatchers.IO) {
             val url = requireBaseUrl() ?: return@launch
+            // One read of the members: the page PUT and the remembered choice
+            // must name the same member even if a reload lands meanwhile.
+            val shown = members
             // offsets has size members+1; valid member indices are 0..size-2
-            val offsets = pageOffsets
+            val offsets = TankPageMath.pageOffsets(shown.map { it.pagecount })
             if (memberIndex < 0 || memberIndex >= offsets.size - 1 || page0 < 0) return@launch
             try {
                 val page1 = TankPageMath.globalPage1(offsets, memberIndex, page0)
@@ -407,7 +411,7 @@ class TankMembersViewModel : ViewModel() {
                 // The cover now exists server-side — drop the stand-in.
                 _meta.update { it.copy(coverFallbackMember = null) }
                 TankCoverCacheStamp.bump(tankId)
-                members.getOrNull(memberIndex)?.let { member ->
+                shown.getOrNull(memberIndex)?.let { member ->
                     coverChoices.put(tankId, TankCoverChoiceStore.Choice(member.arcid, page0, profileId))
                 }
                 _uiEvent.tryEmit(TankDetailUiEvent.ShowSuccess(R.string.tank_cover_updated))
