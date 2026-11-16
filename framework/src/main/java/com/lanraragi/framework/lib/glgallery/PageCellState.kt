@@ -12,18 +12,19 @@ package com.lanraragi.framework.lib.glgallery
 /**
  * What one reader page cell shows ([GalleryPageView.state]). The cell's child
  * views follow it ([GalleryPageView.render]); nothing reads their visibility
- * back to learn what the page is doing.
+ * back to learn what the page is doing. Plain classes, not data classes:
+ * nothing compares or prints them in the app, and the reader is size-budgeted.
  */
 sealed interface PageCellState {
     /** Requested, nothing known yet: the page number and an indeterminate spinner. */
-    data object Wait : PageCellState
+    object Wait : PageCellState
 
     /** Loading, [fraction] (0..1) done: the page number and a determinate ring. */
-    data class Progress(val fraction: Float) : PageCellState
+    class Progress(val fraction: Float) : PageCellState
 
     /** The image is shown. */
-    data object Loaded : PageCellState
+    object Loaded : PageCellState
 
     /** Failed: the page number and [message] as tappable error text (none when null). */
-    data class Error(val message: String?) : PageCellState
+    class Error(val message: String?) : PageCellState
 }

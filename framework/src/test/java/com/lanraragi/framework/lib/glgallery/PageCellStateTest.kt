@@ -10,6 +10,7 @@ import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.framework.lib.glview.image.ImageWrapper
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -77,7 +78,7 @@ class PageCellStateTest {
         assertEquals(PageCellState.Wait, cell().state)
 
         adapter.onPagePercent(0, 0.5f)
-        assertEquals(PageCellState.Progress(0.5f), cell().state)
+        assertEquals(0.5f, (cell().state as PageCellState.Progress).fraction, 0f)
 
         adapter.onPageSucceed(0, image())
         assertEquals(PageCellState.Loaded, cell().state)
@@ -87,11 +88,11 @@ class PageCellStateTest {
     @Test
     fun `a failure shows its message as error text, a failure without one shows none`() {
         adapter.onPageFailed(0, "Failed to load")
-        assertEquals(PageCellState.Error("Failed to load"), cell().state)
+        assertEquals("Failed to load", (cell().state as PageCellState.Error).message)
         assertTrue(cell().isError)
 
         adapter.onPageFailed(1, null)
-        assertEquals(PageCellState.Error(null), cell(1).state)
+        assertNull((cell(1).state as PageCellState.Error).message)
         assertFalse(cell(1).isError)
     }
 
@@ -112,7 +113,7 @@ class PageCellStateTest {
 
         adapter.onPageFailed(0, "Failed to load")
 
-        assertEquals(PageCellState.Error("Failed to load"), cell().state)
+        assertEquals("Failed to load", (cell().state as PageCellState.Error).message)
         assertTrue(cell().isError)
     }
 
