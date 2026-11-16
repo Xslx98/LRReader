@@ -18,8 +18,6 @@ import com.lanraragi.reader.server.probeSourceHealthy
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.domain.ArchiveDetail
-import com.lanraragi.reader.dao.DownloadInfo
-import com.lanraragi.reader.download.DownloadInfoListener
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.reading.LocalReadingProgress
 import com.lanraragi.reader.reading.ReaderPageCache
@@ -537,14 +535,24 @@ class GalleryDetailViewModel : ViewModel() {
     /** Current download state for the displayed gallery. */
     val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
 
+    private var downloadStateJob: Job? = null
+
     /**
-     * Initialize download state for the given arcid.
+     * Shows [arcid]'s download state, re-read whenever Room records a change
+     * to any download's state. The in-memory state is the one read: it is
+     * written first (Room follows through the write queue), so a lagging or
+     * failed Room write cannot show an older state.
      */
     fun initDownloadState(arcid: String?) {
-        _downloadState.value = if (!arcid.isNullOrEmpty()) {
-            downloadManager.getDownloadState(arcid)
-        } else {
-            DownloadState.INVALID
+        downloadStateJob?.cancel()
+        if (arcid.isNullOrEmpty()) {
+            _downloadState.value = DownloadState.INVALID
+            return
+        }
+        _downloadState.value = downloadManager.getDownloadState(arcid)
+        downloadStateJob = viewModelScope.launch {
+            downloadManager.observeDownloadStates()
+                .collect { _downloadState.value = downloadManager.getDownloadState(arcid) }
         }
     }
 
@@ -555,25 +563,6 @@ class GalleryDetailViewModel : ViewModel() {
         val arcid = getEffectiveArcid()
         if (arcid.isNullOrEmpty()) return
         _downloadState.value = downloadManager.getDownloadState(arcid)
-    }
-
-    /** [DownloadInfoListener] that updates [_downloadState] on any change. */
-    val downloadInfoListener: DownloadInfoListener = object : DownloadInfoListener {
-        override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-            refreshDownloadState()
-        }
-        override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
-        override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {
-            refreshDownloadState()
-        }
-        override fun onUpdateAll() { refreshDownloadState() }
-        override fun onReload() { refreshDownloadState() }
-        override fun onChange() { refreshDownloadState() }
-        override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-            refreshDownloadState()
-        }
-        override fun onRenameLabel(from: String, to: String) {}
-        override fun onUpdateLabels() {}
     }
 
     // -------------------------------------------------------------------------

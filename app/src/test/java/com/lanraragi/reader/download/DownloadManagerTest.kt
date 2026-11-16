@@ -217,14 +217,7 @@ class DownloadManagerTest {
     // ═══════════════════════════════════════════════════════════
 
     @Test
-    fun startDownload_addsInfoToListAndNotifies() {
-        val notifications = mutableListOf<String>()
-        listen(object : FakeDownloadInfoListener() {
-            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                notifications.add("add:${info.arcid}")
-            }
-        })
-
+    fun startDownload_addsInfoToListAndPersistsIt() {
         val gallery = DownloadInfo().apply {
             arcid = "tok_2001"
             title = "Test Download"
@@ -239,7 +232,10 @@ class DownloadManagerTest {
             "Expected WAIT or DOWNLOAD, got $state",
             state == DownloadState.WAIT || state == DownloadState.DOWNLOAD
         )
-        assertTrue(notifications.contains("add:tok_2001"))
+        // The screens see it through Room.
+        awaitUntil(message = "the started download never reached Room") {
+            runBlocking { db.archiveLocalStateDao().getAllDownloads() }.any { it.arcid == "tok_2001" }
+        }
     }
 
     /**
@@ -265,25 +261,16 @@ class DownloadManagerTest {
 
     /**
      * Audit 2026-10-04 C17 (SCAL-04): "download selected" persists the whole
-     * selection in one batch and refreshes listeners once, instead of one
-     * write + one onAdd per archive.
+     * selection in one batch instead of one write per archive.
      */
     @Test
-    fun startDownloads_queuesAllWithOneRefreshAndOneBatchWrite() {
+    fun startDownloads_queuesAllInOneBatchWrite() {
         val existing = DownloadInfo().apply { arcid = "tok_2100"; title = "Old" }
         manager.addDownload(existing.toArchive(), null, DownloadState.NONE)
-        var adds = 0
-        var updateAlls = 0
-        listen(object : FakeDownloadInfoListener() {
-            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) { adds++ }
-            override fun onUpdateAll() { updateAlls++ }
-        })
         val fresh = (1..5).map { i -> DownloadInfo().apply { arcid = "tok_21$i"; title = "New $i" } }
 
         manager.startDownloads(fresh.map { it.toArchive() } + existing.toArchive(), null)
 
-        assertEquals(0, adds)
-        assertEquals(1, updateAlls)
         for (arcid in fresh.map { it.arcid } + "tok_2100") {
             val state = manager.getDownloadState(arcid)
             assertTrue(
@@ -468,8 +455,8 @@ class DownloadManagerTest {
     fun addDownloadInfoListener_receivesCallbacks() {
         val events = mutableListOf<String>()
         val listener = object : FakeDownloadInfoListener() {
-            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                events.add("add:${info.arcid}")
+            override fun onRenameLabel(from: String, to: String) {
+                events.add("rename:$from>$to")
             }
             override fun onUpdateLabels() {
                 events.add("updateLabels")
@@ -477,44 +464,29 @@ class DownloadManagerTest {
         }
         listen(listener)
 
-        val gallery = DownloadInfo().apply {
-            arcid = "tok_5001"
-            title = "Listener Test"
-        }
-        manager.addDownload(gallery.toArchive(), null, DownloadState.NONE)
         manager.addLabel("ListenerLabel")
+        manager.renameLabel("ListenerLabel", "Renamed")
 
-        assertTrue("add:tok_5001" in events)
         assertTrue("updateLabels" in events)
+        assertTrue("rename:ListenerLabel>Renamed" in events)
     }
 
     @Test
     fun removeDownloadInfoListener_stopsReceiving() {
         val events = mutableListOf<String>()
         val listener = object : FakeDownloadInfoListener() {
-            override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {
-                events.add("add:${info.arcid}")
+            override fun onUpdateLabels() {
+                events.add("updateLabels")
             }
         }
         manager.addDownloadInfoListener(listener)
 
-        // First add — should be received
-        val gallery1 = DownloadInfo().apply {
-            arcid = "tok_5002"
-            title = "First"
-        }
-        manager.addDownload(gallery1.toArchive(), null, DownloadState.NONE)
+        manager.addLabel("First")
         assertEquals(1, events.size)
 
-        // Remove listener
         manager.removeDownloadInfoListener(listener)
 
-        // Second add — should NOT be received
-        val gallery2 = DownloadInfo().apply {
-            arcid = "tok_5003"
-            title = "Second"
-        }
-        manager.addDownload(gallery2.toArchive(), null, DownloadState.NONE)
+        manager.addLabel("Second")
         assertEquals(1, events.size) // Still 1 — listener was removed
     }
 
@@ -530,25 +502,13 @@ class DownloadManagerTest {
         }
         runBlocking { ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(info) }
 
-        val events = mutableListOf<String>()
-        listen(object : FakeDownloadInfoListener() {
-            override fun onReload() {
-                events.add("reload")
-            }
-            override fun onUpdateAll() {
-                events.add("updateAll")
-            }
-        })
-
         // Reload — should pick up the DB-inserted download
         manager.reload()
 
         // With the Unconfined test scope and inline Room executors the reload
         // queue item and its publish run inline, so this normally returns on
-        // the first check; the wait only guards against that changing. Its
-        // old flakes (here and at a 200 ms sleep before) were the listener
-        // being collected — see [listen].
-        awaitUntil(timeoutMs = 5_000, message = "reload never reported") { "reload" in events }
+        // the first check; the wait only guards against that changing.
+        awaitUntil(timeoutMs = 5_000, message = "reload never published") { manager.containDownloadInfo("tok_5004") }
 
         // After reload, our download should be present (DB may also contain
         // data from prior tests since the in-memory DB is shared in the suite)
@@ -557,7 +517,6 @@ class DownloadManagerTest {
             manager.allDownloadInfoList.isNotEmpty()
         )
         assertTrue(manager.containDownloadInfo("tok_5004"))
-        assertTrue("reload" in events)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -1225,14 +1184,9 @@ class DownloadManagerTest {
     }
 
     private open class FakeDownloadInfoListener : DownloadInfoListener {
-        override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
         override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
-        override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {}
-        override fun onUpdateAll() {}
-        override fun onReload() {}
         override fun onChange() {}
         override fun onRenameLabel(from: String, to: String) {}
-        override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
         override fun onUpdateLabels() {}
     }
 }

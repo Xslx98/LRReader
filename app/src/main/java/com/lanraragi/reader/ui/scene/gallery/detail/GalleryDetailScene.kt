@@ -331,7 +331,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             adjustViewVisibility(STATE_FAILED)
         }
 
-        viewModel.downloadManager.addDownloadInfoListener(viewModel.downloadInfoListener)
 
         pageThumbs.setUp(view)
 
@@ -355,7 +354,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         val context = getEHContext()
         AssertUtils.assertNotNull(context)
-        viewModel.downloadManager.removeDownloadInfoListener(viewModel.downloadInfoListener)
         GalleryTagHelper.destroy()
 
         setDrawerGestureBlocker(null)

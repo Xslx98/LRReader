@@ -109,6 +109,17 @@ class DownloadDbRepository(
     }
 
     /**
+     * arcid -> state of every download, re-emitted only when one of them
+     * changes (not on history or favourite writes to the shared table, and
+     * without decoding the archive JSON).
+     */
+    fun observeDownloadStates(): Flow<Map<String, DownloadState>> =
+        archiveLocalStateDao.observeDownloadStates()
+            .map { rows -> rows.associate { it.arcid to it.state } }
+            .distinctUntilChanged()
+            .endOnDbFailure(TAG, "download states")
+
+    /**
      * Reorder a contiguous slice of the download list by rotating
      * DOWNLOAD_TIME values. Mirrors the v22 swap algorithm; only the
      * persistence step is different (per-row UPDATE on the unified

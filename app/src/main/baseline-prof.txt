@@ -13013,11 +13013,6 @@ Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel$tankTagSyncAfte
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel$tankTagSyncAfterAdd$1;-><init>(Lkotlin/coroutines/Continuation;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel$tanks$1;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel$tanks$1;-><init>(Ljava/lang/Object;)V
-Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModelKt;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModelKt;->galleryListDownloadEventListener(Lkotlin/jvm/functions/Function1;)Lcom/lanraragi/reader/download/DownloadInfoListener;
-Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModelKt$galleryListDownloadEventListener$1;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModelKt$galleryListDownloadEventListener$1;-><init>(Lkotlin/jvm/functions/Function1;)V
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModelKt$galleryListDownloadEventListener$1;->onReload()V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryRowHighlighter;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryRowHighlighter;-><clinit>()V
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryRowHighlighter;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;)V

@@ -50,11 +50,7 @@ class DownloadSpeedTrackerTest {
 
         val callback = object : DownloadSpeedTracker.Callback {
             override fun getActiveTasks(): List<DownloadInfo> = activeTasks
-            override fun getInfoListForLabel(label: String?): List<DownloadInfo>? = null
             override fun getDownloadListener(): DownloadListener = fakeListener
-            override fun getDownloadInfoListeners(): List<WeakReference<DownloadInfoListener>> =
-                infoListeners.map { WeakReference(it) }
-            override fun getWaitList(): List<DownloadInfo> = waitList
         }
 
         tracker = DownloadSpeedTracker(callback, progressTracker)

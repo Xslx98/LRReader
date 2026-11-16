@@ -27,17 +27,17 @@ class DownloadEventBusTest {
     fun addAndRemoveInfoListener() {
         var callCount = 0
         val listener = object : FakeDownloadInfoListener() {
-            override fun onReload() {
+            override fun onUpdateLabels() {
                 callCount++
             }
         }
 
         eventBus.addDownloadInfoListener(listener)
-        eventBus.forEachListener { it.onReload() }
+        eventBus.forEachListener { it.onUpdateLabels() }
         assertEquals(1, callCount)
 
         eventBus.removeDownloadInfoListener(listener)
-        eventBus.forEachListener { it.onReload() }
+        eventBus.forEachListener { it.onUpdateLabels() }
         assertEquals(1, callCount) // no additional call
     }
 
@@ -45,14 +45,14 @@ class DownloadEventBusTest {
     fun forEachListener_skipsGarbageCollectedRefs() {
         var strongCallCount = 0
         val strongListener = object : FakeDownloadInfoListener() {
-            override fun onReload() {
+            override fun onUpdateLabels() {
                 strongCallCount++
             }
         }
 
         // Add a listener that we will lose the strong reference to
         var weakListener: FakeDownloadInfoListener? = object : FakeDownloadInfoListener() {
-            override fun onReload() {
+            override fun onUpdateLabels() {
                 fail("GC'd listener should not be called")
             }
         }
@@ -65,7 +65,7 @@ class DownloadEventBusTest {
         System.gc()
         System.runFinalization()
 
-        eventBus.forEachListener { it.onReload() }
+        eventBus.forEachListener { it.onUpdateLabels() }
         assertEquals(1, strongCallCount)
     }
 
@@ -90,14 +90,14 @@ class DownloadEventBusTest {
     }
 
     @Test
-    fun getInfoListenerRefs_returnsRegisteredRefs() {
+    fun registeredListeners_areHeldInOrder() {
         val listenerA = FakeDownloadInfoListener()
         val listenerB = FakeDownloadInfoListener()
 
         eventBus.addDownloadInfoListener(listenerA)
         eventBus.addDownloadInfoListener(listenerB)
 
-        val refs = eventBus.getInfoListenerRefs()
+        val refs = eventBus.mDownloadInfoListeners
         assertEquals(2, refs.size)
         assertSame(listenerA, refs[0].get())
         assertSame(listenerB, refs[1].get())
@@ -108,7 +108,7 @@ class DownloadEventBusTest {
         val callCounts = IntArray(5)
         val listeners = List(5) { index ->
             object : FakeDownloadInfoListener() {
-                override fun onReload() {
+                override fun onUpdateLabels() {
                     callCounts[index]++
                 }
             }
@@ -118,7 +118,7 @@ class DownloadEventBusTest {
             eventBus.addDownloadInfoListener(listener)
         }
 
-        eventBus.forEachListener { it.onReload() }
+        eventBus.forEachListener { it.onUpdateLabels() }
 
         for (i in callCounts.indices) {
             assertEquals("Listener $i should have been called once", 1, callCounts[i])
@@ -131,12 +131,12 @@ class DownloadEventBusTest {
         var callCountB = 0
 
         val listenerA = object : FakeDownloadInfoListener() {
-            override fun onReload() {
+            override fun onUpdateLabels() {
                 callCountA++
             }
         }
         val listenerB = object : FakeDownloadInfoListener() {
-            override fun onReload() {
+            override fun onUpdateLabels() {
                 callCountB++
             }
         }
@@ -146,7 +146,7 @@ class DownloadEventBusTest {
 
         eventBus.removeDownloadInfoListener(listenerA)
 
-        eventBus.forEachListener { it.onReload() }
+        eventBus.forEachListener { it.onUpdateLabels() }
 
         assertEquals(0, callCountA)
         assertEquals(1, callCountB)
@@ -170,14 +170,9 @@ class DownloadEventBusTest {
      * Open no-op implementation of [DownloadInfoListener] for test use.
      */
     private open class FakeDownloadInfoListener : DownloadInfoListener {
-        override fun onAdd(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
         override fun onReplace(newInfo: DownloadInfo, oldInfo: DownloadInfo) {}
-        override fun onUpdate(info: DownloadInfo, list: List<DownloadInfo>, mWaitList: List<DownloadInfo>) {}
-        override fun onUpdateAll() {}
-        override fun onReload() {}
         override fun onChange() {}
         override fun onRenameLabel(from: String, to: String) {}
-        override fun onRemove(info: DownloadInfo, list: List<DownloadInfo>, position: Int) {}
         override fun onUpdateLabels() {}
     }
 }
