@@ -47,7 +47,17 @@ data class TankDownloadGroup(
 
     @ColumnInfo(name = "CREATED_TIME", defaultValue = "0")
     val createdTime: Long = 0L,
-)
+) {
+    companion object {
+        /**
+         * "Newest" for an arcid two groups share: the later [createdTime],
+         * then the larger [tankId] (tank ids carry their creation second).
+         * Must match the ORDER BY of [TankDownloadGroupDao.observeAll].
+         */
+        val NEWEST_FIRST: Comparator<TankDownloadGroup> =
+            compareByDescending<TankDownloadGroup> { it.createdTime }.thenByDescending { it.tankId }
+    }
+}
 
 @Dao
 interface TankDownloadGroupDao {
@@ -61,7 +71,12 @@ interface TankDownloadGroupDao {
     @Query("SELECT * FROM TANK_DOWNLOAD_GROUP WHERE TANK_ID = :tankId")
     suspend fun getById(tankId: String): TankDownloadGroup?
 
-    @Query("SELECT * FROM TANK_DOWNLOAD_GROUP ORDER BY CREATED_TIME DESC")
+    /**
+     * Newest first ([TankDownloadGroup.NEWEST_FIRST]): two groups created in
+     * the same millisecond keep one order, so the download list folds a
+     * shared member into the same card the boot rebuild tags it with.
+     */
+    @Query("SELECT * FROM TANK_DOWNLOAD_GROUP ORDER BY CREATED_TIME DESC, TANK_ID DESC")
     fun observeAll(): Flow<List<TankDownloadGroup>>
 
     @Query("SELECT * FROM TANK_DOWNLOAD_GROUP")

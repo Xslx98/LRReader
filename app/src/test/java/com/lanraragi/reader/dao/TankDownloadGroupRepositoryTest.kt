@@ -344,6 +344,25 @@ class TankDownloadGroupRepositoryTest {
         assertEquals(TANK, repo.observeDownloads().first().single().tankId)
     }
 
+    /**
+     * Two groups created in the same millisecond: the boot rebuild and the
+     * download list's group order (which folds a shared member into one card)
+     * both take the larger tank id as the newer, whatever order rows come in.
+     */
+    @Test
+    fun sameMillisecondGroups_haveOneNewest() = runTest {
+        repo.putDownloadInfo(downloadInfo(ARC_A, "A"))
+        val dao = db.tankDownloadGroupDao()
+        // The older id first, so row order alone would pick it.
+        dao.upsert(TankDownloadGroup(TANK, 1L, "Old", "[\"$ARC_A\"]", createdTime = 5L))
+        dao.upsert(TankDownloadGroup(TANK_2, 1L, "New", "[\"$ARC_A\"]", createdTime = 5L))
+
+        repo.rebuildTankTags()
+
+        assertEquals(TANK_2, repo.observeDownloads().first().single().tankId)
+        assertEquals(listOf(TANK_2, TANK), dao.observeAll().first().map { it.tankId })
+    }
+
     /** An arcid in two tanks is tagged with the newest group; syncing the older one does not take it. */
     @Test
     fun sharedMember_staysWithTheNewestGroup() = runTest {
