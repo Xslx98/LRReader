@@ -21,6 +21,9 @@ import android.content.SharedPreferences
 import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.glgallery.GalleryView
 import com.lanraragi.reader.DeviceMemory
+import com.lanraragi.reader.ServiceRegistry
+import com.lanraragi.reader.client.api.LRRArchiveApi
+import com.lanraragi.reader.client.api.LRRTankoubonApi
 import com.lanraragi.reader.diagnostics.DiagLog
 import com.lanraragi.reader.domain.ReaderChapterList
 import com.lanraragi.reader.storage.StorageFile
@@ -29,6 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * DiagLog tag of the reading-position trace (open, resolve, jump, saves). It
@@ -64,46 +68,124 @@ abstract class GalleryProvider2 : GalleryProvider(DeviceMemory.readerCacheBytes(
     protected suspend fun awaitGalleryView(timeoutMs: Long = GALLERY_VIEW_ATTACH_TIMEOUT_MS): GalleryView? =
         galleryView ?: withTimeoutOrNull(timeoutMs) { galleryViewAttached.await() }
 
+    // ==================== Lifecycle ====================
+
+    /**
+     * Where the provider's session stands, as one value. [size], [getError]
+     * and every "has the reader closed" check read it; subclasses move it with
+     * [markReady] / [markFailed], the base class with [start] / [stop].
+     */
+    sealed interface Lifecycle {
+        /** What [size] reports in this state. */
+        val size: Int
+
+        /** Constructed, [start] not called yet. */
+        data object Idle : Lifecycle {
+            override val size: Int get() = STATE_WAIT
+        }
+
+        /** [start] ran; the page count is not known yet. */
+        data object Starting : Lifecycle {
+            override val size: Int get() = STATE_WAIT
+        }
+
+        /** [count] pages to show. A provider whose count changes (a tank's members) re-enters it. */
+        data class Ready(val count: Int) : Lifecycle {
+            override val size: Int get() = count
+        }
+
+        /** The session cannot show pages; [message] is the inline error. */
+        data class Error(val message: String) : Lifecycle {
+            override val size: Int get() = STATE_ERROR
+        }
+
+        /**
+         * [stop] ran; terminal. Keeps the [size] and [error] the reader last
+         * saw, so a frame drawn during teardown does not change what it shows.
+         */
+        data class Stopped(override val size: Int, val error: String? = null) : Lifecycle
+
+        /** The state after [start]. */
+        fun started(): Lifecycle = if (this == Idle) Starting else this
+
+        /** The state once [count] pages are known; ignored before start and once failed or stopped. */
+        fun ready(count: Int): Lifecycle = when (this) {
+            Starting, is Ready -> Ready(count)
+            else -> this
+        }
+
+        /** The state after a failure to load; ignored once failed or stopped. */
+        fun failed(message: String): Lifecycle = when (this) {
+            is Stopped, is Error -> this
+            else -> Error(message)
+        }
+
+        /** The state after [stop]. */
+        fun stopped(): Lifecycle = this as? Stopped ?: Stopped(size, (this as? Error)?.message)
+    }
+
+    private val lifecycleRef = AtomicReference<Lifecycle>(Lifecycle.Idle)
+
+    /** The session's [Lifecycle]. */
+    val lifecycle: Lifecycle get() = lifecycleRef.get()
+
+    /** [stop] ran: background work must not request, publish or save anything more. */
+    protected val isStopped: Boolean get() = lifecycleRef.get() is Lifecycle.Stopped
+
+    /** [count] pages are known (again). Publish what they need first, then call this, then notifyDataChanged. */
+    protected fun markReady(count: Int) {
+        lifecycleRef.updateAndGet { it.ready(count) }
+    }
+
+    /** The session failed with the inline error [message]; call notifyDataChanged after it. */
+    protected fun markFailed(message: String) {
+        lifecycleRef.updateAndGet { it.failed(message) }
+    }
+
+    final override fun size(): Int = lifecycleRef.get().size
+
+    final override fun getError(): String? = when (val state = lifecycleRef.get()) {
+        is Lifecycle.Error -> state.message
+        is Lifecycle.Stopped -> state.error
+        else -> null
+    }
+
+    // ==================== Start position ====================
+
+    private val restoreRef = AtomicReference(RestoreState())
+
+    /** The start position and whether the restore may still move it (see [RestoreState]). */
+    protected val restore: RestoreState get() = restoreRef.get()
+
+    /** Applies [step] to [restore] atomically, from whichever thread. */
+    protected fun updateRestore(step: (RestoreState) -> RestoreState): RestoreState = restoreRef.updateAndGet(step)
+
+    /** Short name in this provider's DiagLog lines ("lrr", "dir", ...). */
+    protected open val diagName: String get() = "reader"
+
     /**
      * Explicit start page from the launch intent (KEY_PAGE, e.g. a
      * thumbnail-grid tap), or -1 when the provider's own saved progress
-     * decides. Providers use it to warm / consume the decoded slot for the
-     * page the reader will actually land on, instead of the SP-saved one
-     * (a thumbnail tap to a far page otherwise always missed the warm and
-     * replayed the open fade-in).
+     * decides. Providers use it ([RestoreState.entryPage]) to warm / consume
+     * the decoded slot for the page the reader will actually land on,
+     * instead of the SP-saved one (a thumbnail tap to a far page otherwise
+     * always missed the warm and replayed the open fade-in).
      */
-    @Volatile
-    var initialPageOverride: Int = -1
-
-    @Volatile
-    private var userInteracted = false
-
-    /**
-     * Whether the user has touched the reader or pressed a key since [start].
-     * Only then can a current-index change be their navigation: when the
-     * reader opens, the layout can settle through other pages first (a
-     * device reported page 0 for a moment before the saved page), and
-     * taking that echo for navigation cancelled the start-position restore
-     * and saved page 0 over the reading position.
-     */
-    protected val hasUserInteracted: Boolean get() = userInteracted
+    var initialPageOverride: Int
+        get() = restoreRef.get().override
+        set(value) {
+            updateRestore { it.copy(override = value) }
+        }
 
     /** The reader reports every touch and key event here (Activity.onUserInteraction). */
     fun onUserInteraction() {
-        userInteracted = true
+        updateRestore { it.interacted() }
     }
-
-    /**
-     * Whether the reader opened on an explicit page (a thumbnail tap) other
-     * than [savedStartPage]: then the user chose where to be and the
-     * saved-position restore must not move them.
-     */
-    protected fun openedOnOtherPage(savedStartPage: Int): Boolean =
-        initialPageOverride >= 0 && initialPageOverride != savedStartPage
 
     override fun start() {
         super.start()
-        userInteracted = false
+        lifecycleRef.updateAndGet { it.started() }
+        updateRestore { it.started() }
     }
 
     private val chapterList = MutableStateFlow(ReaderChapterList())
@@ -118,9 +200,73 @@ abstract class GalleryProvider2 : GalleryProvider(DeviceMemory.readerCacheBytes(
     /** The chapter list was opened: a provider that loads chapters lazily starts now. */
     open fun requestChapters() {}
 
-    open fun getStartPage(): Int = 0
+    /** The reading position: the saved page until the reader reports one, then the page on screen. */
+    fun getStartPage(): Int = restoreRef.get().startPage
 
-    open fun putStartPage(page: Int) {}
+    // ==================== Progress ====================
+
+    /** Where a read page is reported beyond the local save. */
+    sealed interface ProgressTarget {
+        /** A plain archive: the server's archive progress, queued in [ArchiveProgressOutbox] while it fails. */
+        data class Archive(val arcid: String) : ProgressTarget
+
+        /** A tank read as one book: the server's tank progress; [TankProgress] holds the page not yet sent. */
+        data class Tank(val context: Context, val tankId: String) : ProgressTarget
+    }
+
+    /** Where this session's pages are reported; null = local only. First read on a page report, after construction. */
+    protected open val progressTarget: ProgressTarget? get() = null
+
+    /** The base URL to report progress to (null: none, the report is dropped). Called off the main thread. */
+    protected open suspend fun progressServerUrl(): String? = null
+
+    /** Serialized + conflated server progress sync (app-scoped, survives [stop]). */
+    private val progressSyncer by lazy {
+        ReadingProgressSyncer(ServiceRegistry.coroutineModule.ioScope, ::sendProgress)
+    }
+
+    private suspend fun sendProgress(page0: Int) {
+        val target = progressTarget ?: return
+        val url = progressServerUrl() ?: return
+        val client = ServiceRegistry.networkModule.okHttpClient
+        when (target) {
+            is ProgressTarget.Archive -> ArchiveProgressOutbox.tracked(url, target.arcid, page0) {
+                LRRArchiveApi.updateProgress(client, url, target.arcid, page0 + 1)
+            }
+            is ProgressTarget.Tank -> {
+                LRRTankoubonApi.updateTankProgress(client, url, target.tankId, page0 + 1)
+                TankProgress.markSynced(target.context, target.tankId, page0)
+            }
+        }
+    }
+
+    /**
+     * The reader shows [page0] (0-indexed); the single entry for a read page.
+     * It updates the start position (and decides whether this was the user's
+     * navigation), saves the page locally within a second, and reports it to
+     * the [progressTarget], serialized and conflated so the last page of a
+     * fast-flip burst is what the server ends up with.
+     */
+    fun onPageRead(page0: Int) {
+        val before = restoreRef.getAndUpdate { it.pageShown(page0) }
+        if (page0 != before.baseline && !before.userNavigated) {
+            DiagLog.i(
+                DIAG_TAG,
+                if (before.userInteracted) {
+                    "$diagName navigated page=$page0 baseline=${before.baseline}"
+                } else {
+                    "$diagName index $page0 without user input (baseline=${before.baseline})"
+                },
+            )
+        }
+        saveLocalProgressSoon(page0)
+        val target = progressTarget ?: return
+        if (target is ProgressTarget.Tank) TankProgress.markPending(target.context, target.tankId, page0)
+        progressSyncer.submit(page0)
+    }
+
+    /** Re-sends [page0], a page an earlier session read but could not report. */
+    protected fun resendProgress(page0: Int) = progressSyncer.submit(page0)
 
     /**
      * Persist the intra-page scroll fraction (0.0 ~ 1.0) for this
@@ -138,7 +284,7 @@ abstract class GalleryProvider2 : GalleryProvider(DeviceMemory.readerCacheBytes(
     protected open fun writeLocalProgress(page: Int) {}
 
     /** Records [page] as the local reading position, written within a second (audit 2026-10-13 PERF-10). */
-    protected fun saveLocalProgressSoon(page: Int) = deferredLocalSave.submit(page)
+    private fun saveLocalProgressSoon(page: Int) = deferredLocalSave.submit(page)
 
     /** Writes a recorded local position now: the reader is pausing or the provider stopping. */
     fun flushLocalProgress() = deferredLocalSave.flush()
@@ -146,6 +292,7 @@ abstract class GalleryProvider2 : GalleryProvider(DeviceMemory.readerCacheBytes(
     override fun stop() {
         flushLocalProgress()
         super.stop()
+        lifecycleRef.updateAndGet { it.stopped() }
     }
 
     /**

@@ -26,11 +26,9 @@ import org.robolectric.annotation.Config
 class GalleryProviderAttachWaitTest {
 
     private class Provider : GalleryProvider2() {
-        override fun size(): Int = 1
         override fun onRequest(index: Int) = Unit
         override fun onForceRequest(index: Int) = Unit
         override fun onCancelRequest(index: Int) = Unit
-        override fun getError(): String? = null
         override fun getImageFilename(index: Int): String = "page_$index"
         override fun save(index: Int, file: StorageFile): Boolean = false
         override fun save(index: Int, dir: StorageFile, filename: String): StorageFile? = null

@@ -60,15 +60,9 @@ class DirGalleryProvider : GalleryProvider2 {
     // (0 = legacy row -> active), not whichever profile is active while a
     // download of another server is read (audit 2026-10-06b C37 / REL-04).
     private var progressProfileId: Long = 0L
-    // Written from the seed/reconcile path and putStartPage (GL/main
-    // threads), read by getStartPage on the GL thread — volatile, matching
-    // LRRGalleryProvider.
-    @Volatile
-    private var startPageValue: Int = 0
-
     /**
      * Local SP progress (page, epoch-seconds ts) captured at construction,
-     * BEFORE [startPageValue] is seeded from the archive snapshot and before
+     * BEFORE the start page is seeded from the archive snapshot and before
      * the first layout echo re-saves SP with a fresh timestamp. The restore
      * flow MUST reconcile fresh server metadata against these pristine values:
      * reconciling against the echo-polluted SP timestamp would let a stale
@@ -89,16 +83,6 @@ class DirGalleryProvider : GalleryProvider2 {
      * pending progress sync that awaits it.
      */
     private val serverUrlDeferred = CompletableDeferred<String?>()
-
-    /**
-     * The reader's current page — updated on every page turn via
-     * [putStartPage] and seeded from the saved progress in [start].
-     * Preload spawning in [processRequest] is bounded to
-     * `readAnchor + PRELOAD_RADIUS` so the decode chain cannot march
-     * away from the reader (see [DirPreloadPolicy]).
-     */
-    @Volatile
-    private var readAnchor = 0
 
     private val fileList = AtomicReference<Array<StorageFile>?>()
 
@@ -148,51 +132,13 @@ class DirGalleryProvider : GalleryProvider2 {
     @Volatile
     private var providerScope: CoroutineScope? = null
 
-    @Volatile
-    private var sizeValue: Int = STATE_WAIT
+    override val diagName: String get() = "dir"
 
-    /** Written with [sizeValue] = STATE_ERROR off the GL thread, read by [getError] on it. */
-    @Volatile
-    private var errorMessage: String? = null
+    /** The legacy constructor has no archive: its pages are saved locally only (and not at all without a context). */
+    override val progressTarget: ProgressTarget? get() = arcId?.let { ProgressTarget.Archive(it) }
 
-    /**
-     * Set on the first user-driven page change after open (any
-     * putStartPage whose page differs from the page the reader opened
-     * on — including an explicit KEY_PAGE override from a thumbnail
-     * tap). Once set, the async restore in [start] must NOT apply its
-     * setCurrentPage / setCurrentPageScrollFraction: yanking the user
-     * away from a page they navigated to is worse than losing the
-     * restore.
-     */
-    @Volatile
-    private var userNavigated = false
-
-    /**
-     * The page the GalleryView was BUILT with (saved progress snapshot
-     * taken in start(), before the async reconciler can mutate
-     * [startPageValue]). [putStartPage] compares the incoming page
-     * against this immutable baseline so neither the reconciler's own
-     * startPageValue rewrite nor the initial layout echo is mistaken for
-     * user navigation. A KEY_PAGE thumbnail tap (built-with != saved
-     * progress) still flags navigation on the first echo, intentionally
-     * suppressing the restore.
-     */
-    @Volatile
-    private var startPageBaseline = 0
-
-    /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
-    private val progressSyncer = ReadingProgressSyncer(
-        ServiceRegistry.coroutineModule.ioScope
-    ) { page0 ->
-        val url = serverUrlDeferred.await()
-        val id = arcId
-        if (url != null && id != null) {
-            val client = ServiceRegistry.networkModule.okHttpClient
-            ArchiveProgressOutbox.tracked(url, id, page0) {
-                LRRArchiveApi.updateProgress(client, url, id, page0 + 1)
-            }
-        }
-    }
+    /** Awaits the source-profile URL; null drops the send (see [serverUrlDeferred]). */
+    override suspend fun progressServerUrl(): String? = serverUrlDeferred.await()
 
     /**
      * Signalled from the file enum coroutine right after notifyDataChanged
@@ -219,7 +165,7 @@ class DirGalleryProvider : GalleryProvider2 {
      *   snapshot ([com.lanraragi.reader.domain.Archive.progress]); <=0 = none.
      * @param lastreadSnapshot epoch seconds
      *   [com.lanraragi.reader.domain.Archive.lastreadtime] of that snapshot.
-     *   Seeds [startPageValue] via the offline reconcile so the reader opens
+     *   Seeds the start page via the offline reconcile so the reader opens
      *   directly on the best-known page even when the SP save is missing
      *   (snapshot rollback / reinstall) — and so the seed agrees with the
      *   warm target chosen by GalleryOpenHelper (same math, same inputs).
@@ -238,49 +184,28 @@ class DirGalleryProvider : GalleryProvider2 {
         this.serverProfileId = serverProfileId
         this.progressProfileId = LocalReadingProgress.sourceProfile(serverProfileId)
         val ctx = this.context ?: return
-        // Order matters: capture pristine SP BEFORE seeding startPageValue.
+        // Order matters: capture pristine SP BEFORE seeding the start page.
         pristineLocalPage0 = loadReadingProgress(ctx, arcid, progressProfileId)
         pristineLocalTs = loadReadingTimestamp(ctx, arcid, progressProfileId)
-        this.startPageValue = ReadingProgressReconciler.resolve(
+        val seed = ReadingProgressReconciler.resolve(
             pristineLocalPage0,
             pristineLocalTs,
             progressSnapshot,
             // Pre-unification rows may carry milliseconds — see normalizeEpochSeconds.
             ReadingProgressReconciler.normalizeEpochSeconds(lastreadSnapshot),
         )
+        updateRestore { it.copy(startPage = seed) }
         DiagLog.i(
             DIAG_TAG,
             "dir open ${arcid.take(8)} local=$pristineLocalPage0@$pristineLocalTs" +
-                " snapshot=$progressSnapshot@$lastreadSnapshot seed=$startPageValue",
+                " snapshot=$progressSnapshot@$lastreadSnapshot seed=$seed",
         )
     }
-
-    override fun getStartPage(): Int = startPageValue
 
     override fun writeLocalProgress(page: Int) {
         val ctx = context
         val id = arcId
         if (ctx != null && id != null) saveReadingProgress(ctx, id, page, progressProfileId)
-    }
-
-    override fun putStartPage(page: Int) {
-        readAnchor = page
-        if (page != startPageBaseline && !userNavigated) {
-            if (hasUserInteracted) {
-                DiagLog.i(DIAG_TAG, "dir navigated page=$page baseline=$startPageBaseline")
-                userNavigated = true
-            } else {
-                DiagLog.i(DIAG_TAG, "dir index $page without user input (baseline=$startPageBaseline)")
-            }
-        }
-        startPageValue = page
-        saveLocalProgressSoon(page)
-        // Sync progress to LANraragi server (1-indexed), serialized and
-        // conflated — see ReadingProgressSyncer. The syncer awaits the
-        // source-profile URL and drops the send if it resolves to null.
-        if (arcId != null) {
-            progressSyncer.submit(page)
-        }
     }
 
     override fun putScrollFraction(fraction: Float) {
@@ -326,10 +251,6 @@ class DirGalleryProvider : GalleryProvider2 {
 
     override fun start() {
         super.start()
-
-        userNavigated = openedOnOtherPage(startPageValue)
-        startPageBaseline = startPageValue
-        readAnchor = startPageValue
 
         // Each start cycle gets a fresh notify-enqueued signal — we
         // can't reuse a completed Deferred across re-opens.
@@ -431,10 +352,10 @@ class DirGalleryProvider : GalleryProvider2 {
                     pageSpaceKnown.await()
                     val kept = store.read(progressProfileId, arcId)
                     if (kept.isNotEmpty()) {
-                        publishChapters(ReaderChapterList(ChapterIndex.fromToc(kept, sizeValue)))
+                        publishChapters(ReaderChapterList(ChapterIndex.fromToc(kept, size())))
                     }
                     val toc = metadataDeferred.await()?.toc ?: return@launch
-                    publishChapters(ReaderChapterList(ChapterIndex.fromToc(toc, sizeValue)))
+                    publishChapters(ReaderChapterList(ChapterIndex.fromToc(toc, size())))
                     // A failed write must not cancel the restore this launch is a child of.
                     try {
                         store.update(progressProfileId, arcId, toc)
@@ -445,6 +366,8 @@ class DirGalleryProvider : GalleryProvider2 {
                 try {
                     val savedFraction = fractionDeferred.await()
                     val metadata = metadataDeferred.await()
+                    // Read after the awaits: a page reported meanwhile is the position to reconcile from.
+                    val seed = restore.startPage
                     val serverProgress = metadata?.progress ?: 0
                     val serverTs = metadata?.lastreadtime ?: 0L
                     Log.i(TAG, "[PROGRESS] Server metadata: progress=$serverProgress" +
@@ -452,14 +375,14 @@ class DirGalleryProvider : GalleryProvider2 {
                     DiagLog.i(
                         DIAG_TAG,
                         "dir restore server=$serverProgress@$serverTs fraction=$savedFraction" +
-                            " seed=$startPageValue navigated=$userNavigated",
+                            " seed=$seed navigated=${restore.userNavigated}",
                     )
                     if (serverProgress > 0 || savedFraction > 0f) {
                         // Reconcile fresh server metadata against the PRISTINE
                         // local (page, ts) captured at construction — see the
                         // pristineLocalPage0 KDoc. When the server offers no
                         // progress (metadata failed or progress==0), keep the
-                        // snapshot-seeded startPageValue: falling back to the
+                        // snapshot-seeded start page: falling back to the
                         // pristine page would undo the seed and yank the reader
                         // back to page 0 in the lost-SP case.
                         val resolvedPage = if (serverProgress > 0) {
@@ -467,18 +390,17 @@ class DirGalleryProvider : GalleryProvider2 {
                                 pristineLocalPage0, pristineLocalTs, serverProgress, serverTs
                             )
                         } else {
-                            startPageValue
+                            seed
                         }
                         DiagLog.i(DIAG_TAG, "dir resolved page=$resolvedPage")
                         Log.i(
                             TAG,
                             "[PROGRESS] resolved page=$resolvedPage" +
-                                " (pristine=$pristineLocalPage0/$pristineLocalTs seed=$startPageValue" +
+                                " (pristine=$pristineLocalPage0/$pristineLocalTs seed=$seed" +
                                 " serverProgress1=$serverProgress/$serverTs)"
                         )
-                        if (resolvedPage != startPageValue) {
-                            startPageValue = resolvedPage
-                            readAnchor = startPageValue
+                        // Saved only when taken: once the user navigated, their page is the position.
+                        if (resolvedPage != seed && updateRestore { it.reconciled(resolvedPage) }.startPage == resolvedPage) {
                             if (arcId != null) saveReadingProgress(context, arcId!!, resolvedPage, progressProfileId)
                         }
                         // Second consume at the reconciled page (mirrors
@@ -510,18 +432,18 @@ class DirGalleryProvider : GalleryProvider2 {
                         // producing the visible "snap to fraction → snap
                         // back to top" double-flicker on cold opens of
                         // downloaded long-strip archives.
-                        if (!userNavigated && (resolvedPage > 0 || savedFraction > 0f)) {
+                        if (restore.resolve(resolvedPage, savedFraction) != null) {
                             val gv = awaitGalleryView()
                             if (gv != null) {
                                 notifyDataChangedEnqueued.await()
                                 awaitGlIdleBarrier()
                                 withContext(Dispatchers.Main) {
                                     val gvNow = galleryView
-                                    if (gvNow != null && !userNavigated) {
-                                        // sizeValue is published by the file-enum
+                                    if (gvNow != null && !restore.userNavigated) {
+                                        // The page count is published by the file-enum
                                         // coroutine before notifyDataChanged, which
                                         // we awaited above.
-                                        val maxIndex = sizeValue - 1
+                                        val maxIndex = size() - 1
                                         val target = if (maxIndex >= 0) {
                                             resolvedPage.coerceIn(0, maxIndex)
                                         } else {
@@ -542,7 +464,7 @@ class DirGalleryProvider : GalleryProvider2 {
                                             }
                                         }
                                     } else {
-                                        DiagLog.i(DIAG_TAG, "dir jump dropped: view=${gvNow != null} navigated=$userNavigated")
+                                        DiagLog.i(DIAG_TAG, "dir jump dropped: view=${gvNow != null} navigated=${restore.userNavigated}")
                                     }
                                 }
                             } else {
@@ -551,8 +473,9 @@ class DirGalleryProvider : GalleryProvider2 {
                         } else {
                             // Nothing to restore, or the user already navigated —
                             // leave them where they are.
-                            DiagLog.i(DIAG_TAG, "dir no jump: resolved=$resolvedPage navigated=$userNavigated")
-                            if (userNavigated) {
+                            val navigated = restore.userNavigated
+                            DiagLog.i(DIAG_TAG, "dir no jump: resolved=$resolvedPage navigated=$navigated")
+                            if (navigated) {
                                 Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
                             }
                         }
@@ -585,9 +508,7 @@ class DirGalleryProvider : GalleryProvider2 {
                 }
 
                 if (files == null) {
-                    // Message first: a reader that sees STATE_ERROR must also see it.
-                    errorMessage = GetText.getString(R.string.error_not_folder_path)
-                    sizeValue = STATE_ERROR
+                    markFailed(GetText.getString(R.string.error_not_folder_path))
                     notifyDataChanged()
                     Log.i(TAG, "ImageDecoder end with error")
                     return@launch
@@ -596,11 +517,12 @@ class DirGalleryProvider : GalleryProvider2 {
                 fileList.lazySet(files)
                 val numeric = DirImageFiles.numericPageIndices(files.map { it.name })
                 pageIndexMap.lazySet(numeric)
-                sizeValue = DirImageFiles.pageSpaceSize(numeric, files.size, expectedPageCount)
-                if (numeric != null && sizeValue != files.size && BuildConfig.DEBUG) {
+                val pageCount = DirImageFiles.pageSpaceSize(numeric, files.size, expectedPageCount)
+                markReady(pageCount)
+                if (numeric != null && pageCount != files.size && BuildConfig.DEBUG) {
                     Log.w(
                         TAG,
-                        "[GAPS] dir has ${files.size} files for $sizeValue pages" +
+                        "[GAPS] dir has ${files.size} files for $pageCount pages" +
                             " (expectedPageCount=$expectedPageCount) — missing pages" +
                             " will show an explicit error"
                     )
@@ -626,18 +548,16 @@ class DirGalleryProvider : GalleryProvider2 {
                 // 300ms fade-in — the visible flicker when opening a
                 // downloaded archive.
                 val targetArcid = arcId
-                // files.isNotEmpty() guard: an empty dir has sizeValue == 0 so
+                // files.isNotEmpty() guard: an empty dir has pageCount == 0 so
                 // coerceIn(0, -1) throws (empty range), and the exception would
                 // skip notifyDataChanged() below, leaving the reader stuck on a
                 // permanent spinner.
                 if (targetArcid != null && files.isNotEmpty()) {
-                    // Clamp in PAGE space (sizeValue), not file count: with
+                    // Clamp in PAGE space (pageCount), not file count: with
                     // numeric naming a partial download has fewer files than
                     // pages, and a file-count clamp would shift the consume
                     // index off the page the warm published (RD-2 consume side).
-                    val warmIndex = (
-                        if (initialPageOverride >= 0) initialPageOverride else startPageValue
-                        ).coerceIn(0, sizeValue - 1)
+                    val warmIndex = restore.entryPage.coerceIn(0, pageCount - 1)
                     val warmed = ReaderPageCache.consumeDecodedPage(
                         targetArcid, warmIndex, awaitInflightWarmMs = WARM_AWAIT_MS
                     )
@@ -649,7 +569,7 @@ class DirGalleryProvider : GalleryProvider2 {
 
                 notifyDataChanged()
 
-                startDecodeWorkers(scope, sizeValue)
+                startDecodeWorkers(scope, pageCount)
             } finally {
                 // ALWAYS release the restore coroutine, even on the error
                 // / cancellation path. Otherwise restore.await() hangs
@@ -685,8 +605,6 @@ class DirGalleryProvider : GalleryProvider2 {
         Log.i(TAG, "ImageDecoder end")
     }
 
-    override fun size(): Int = sizeValue
-
     override fun onRequest(index: Int) {
         enqueueRequest(index, PRIO_CURRENT)
         notifyPageWait(index)
@@ -706,8 +624,6 @@ class DirGalleryProvider : GalleryProvider2 {
             pendingIndices.remove(index)
         }
     }
-
-    override fun getError(): String? = errorMessage
 
     override fun getImageFilename(index: Int): String {
         // LEGACY: local files use index as filename fallback
@@ -755,7 +671,7 @@ class DirGalleryProvider : GalleryProvider2 {
         if (index < 0) return
         // Bound by the page-space size (which, with numeric naming, may
         // exceed the file count); STATE_WAIT (-1) means "not sized yet".
-        val sz = sizeValue
+        val sz = size()
         if (sz >= 0 && index >= sz) return
         if (!pendingIndices.add(index)) return
         requestQueue.offer(PageRequest(index, priority, seqCounter.incrementAndGet()))
@@ -819,7 +735,7 @@ class DirGalleryProvider : GalleryProvider2 {
                 // Reader-anchored preload window — never marches past
                 // readAnchor + PRELOAD_RADIUS, skips cached pages.
                 DirPreloadPolicy.preloadTargets(
-                    index, readAnchor, totalPages, PRELOAD_RADIUS, ::hasCache
+                    index, restore.startPage, totalPages, PRELOAD_RADIUS, ::hasCache
                 ).forEach { next ->
                     enqueueRequest(next, PRIO_PRELOAD)
                 }

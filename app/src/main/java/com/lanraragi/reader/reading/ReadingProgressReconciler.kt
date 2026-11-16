@@ -21,7 +21,7 @@ import kotlin.math.max
  * `lastreadtime` is set when the server processes our own progress PUT —
  * i.e. always a beat after the local save. A naive `serverTs > localTs`
  * comparison therefore makes the server win on almost every reopen, so a
- * stale racing PUT (the providers' putStartPage fires a fire-and-forget
+ * stale racing PUT (the providers' onPageRead fires a fire-and-forget
  * updateProgress PUT per page turn) used to move the resume position
  * backwards. Within [CLOCK_SKEW_GRACE_SECONDS] the two saves are
  * treated as the same reading session and the furthest page wins; beyond
