@@ -25,7 +25,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import com.lanraragi.reader.download.DownloadLoadState
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -123,20 +126,20 @@ class GalleryListViewModel : ViewModel() {
 
     /**
      * Follow which archives are downloaded (Room) and emit [DownloadEvent.BulkChanged]
-     * when that set changes. The list's only download-dependent pixel is the
-     * "downloaded" badge, so progress and state changes of a download already
-     * in the set are not reported. Safe to call multiple times; only the
-     * first call takes effect.
+     * when that set changes, or when the in-memory download list (which the
+     * badge reads) finishes loading. The list's only download-dependent pixel
+     * is the "downloaded" badge, so progress and state changes of a download
+     * already in the set are not reported. Safe to call multiple times; only
+     * the first call takes effect.
      */
     fun startObservingDownloads() {
         if (observingDownloads) return
         observingDownloads = true
         viewModelScope.launch {
-            downloadManager.observeDownloadStates()
-                .map { it.keys }
-                .distinctUntilChanged()
-                .drop(1) // the set the list was bound with
-                .collect { _downloadEvent.tryEmit(DownloadEvent.BulkChanged) }
+            downloadBadgeChanges(
+                downloadManager.observeDownloadStates().map { it.keys },
+                downloadManager.loadState,
+            ).collect { _downloadEvent.tryEmit(DownloadEvent.BulkChanged) }
         }
     }
 
@@ -538,3 +541,19 @@ class GalleryListViewModel : ViewModel() {
         private const val BATCH_CONCURRENCY = 4
     }
 }
+
+/**
+ * When the gallery list's "downloaded" badges must be re-bound: the set of
+ * downloaded arcids changed, or the in-memory download list the badge reads
+ * finished loading (Room can hold the whole set before it lands, and a list
+ * bound in between shows no badges). The state the list was bound with is
+ * not a change.
+ */
+internal fun downloadBadgeChanges(
+    downloadedArcids: Flow<Set<String>>,
+    loadState: Flow<DownloadLoadState>,
+): Flow<Unit> =
+    combine(downloadedArcids, loadState.map { it !is DownloadLoadState.Loading }) { keys, loaded -> keys to loaded }
+        .distinctUntilChanged()
+        .drop(1)
+        .map { }

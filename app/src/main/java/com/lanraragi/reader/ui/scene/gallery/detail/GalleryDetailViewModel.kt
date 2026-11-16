@@ -30,7 +30,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -539,8 +538,10 @@ class GalleryDetailViewModel : ViewModel() {
     private var downloadStateJob: Job? = null
 
     /**
-     * Shows [arcid]'s download state: the in-memory one at once, then every
-     * change Room records for it.
+     * Shows [arcid]'s download state, re-read whenever Room records a change
+     * to any download's state. The in-memory state is the one read: it is
+     * written first (Room follows through the write queue), so a lagging or
+     * failed Room write cannot show an older state.
      */
     fun initDownloadState(arcid: String?) {
         downloadStateJob?.cancel()
@@ -551,9 +552,7 @@ class GalleryDetailViewModel : ViewModel() {
         _downloadState.value = downloadManager.getDownloadState(arcid)
         downloadStateJob = viewModelScope.launch {
             downloadManager.observeDownloadStates()
-                .map { it[arcid] ?: DownloadState.INVALID }
-                .distinctUntilChanged()
-                .collect { _downloadState.value = it }
+                .collect { _downloadState.value = downloadManager.getDownloadState(arcid) }
         }
     }
 
