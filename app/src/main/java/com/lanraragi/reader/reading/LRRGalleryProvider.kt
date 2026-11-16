@@ -35,7 +35,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
@@ -95,7 +94,7 @@ class LRRGalleryProvider(
     // Header-only size reads of pages on disk, for two-page pairing.
     private val aspectProbe = PageAspectProbe(::hasPageAspect, ::recordPageBounds)
     private val openPageOnDisk: (Int) -> FileInputStream? = { index ->
-        getCacheFile(index).takeIf { it.length() > ReaderPageCache.MIN_IMAGE_SIZE }?.let(::FileInputStream)
+        getCacheFile(index).takeIf(LocalPage::probe)?.let(::FileInputStream)
     }
     private val probeActive: () -> Boolean = { !isStopped }
 
@@ -439,8 +438,6 @@ class LRRGalleryProvider(
     override fun stop() {
         super.stop()
         pageClient = null
-        // Safe to clear: stopped flag prevents new requests from entering onRequest()
-        requests.clear()
 
         // Evict old archive caches on the application-scoped IO scope so the
         // cleanup still runs after the provider's own scope is cancelled below.
@@ -453,12 +450,12 @@ class LRRGalleryProvider(
         providerScope?.cancel()
         providerScope = null
 
-        // Coroutine cancellation can't interrupt blocking execute()/body reads —
-        // sever the sockets so in-flight page streams end now. A request that
+        // Coroutine cancellation can't interrupt blocking execute()/body reads:
+        // sever the sockets so in-flight page streams end now, and forget the
+        // jobs (the stopped lifecycle keeps new requests out). A request that
         // slips past the stopped check before registration runs to completion
         // harmlessly (its failure path is silenced by the stopped flag).
-        inflightCalls.values.forEach { runCatching { it.cancel() } }
-        inflightCalls.clear()
+        jobs.clear()
     }
 
     override fun writeLocalProgress(page: Int) {
@@ -540,8 +537,7 @@ class LRRGalleryProvider(
         // (scroll-away then scroll-back races onCancelRequest against the
         // job's finally), its quiet PageCancelledException path would
         // otherwise leave this rebound page on an infinite spinner.
-        val token = requests.begin(index)
-        if (token == null) return
+        val token = jobs.begin(index) ?: return
 
         notifyPageWait(index)
 
@@ -550,13 +546,13 @@ class LRRGalleryProvider(
         val scope = providerScope
         if (scope == null) {
             // stop() was called after onRequest arrived — skip silently
-            requests.abandon(index, token)
+            jobs.abandon(index, token)
             return
         }
         scope.launch {
-            var cancelled = false
+            var outcome = PageJobs.Outcome.Cancelled
             try {
-                downloadAndDecodePage(index)
+                outcome = downloadAndDecodePage(index)
 
                 // Preload adjacent pages after successful load
                 preloadPages(index)
@@ -564,15 +560,15 @@ class LRRGalleryProvider(
                 // stop()/onCancelRequest severed the call deliberately — not a
                 // failure. Stay quiet so a recycled tile doesn't show an error
                 // placeholder; a re-request just downloads again.
-                cancelled = true
+                outcome = PageJobs.Outcome.Cancelled
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load page $index: ${e.message}", e)
                 notifyPageFailed(index, e.message)
+                outcome = PageJobs.Outcome.Failed
             } finally {
                 // A rebind landed while this job was in flight and the job
-                // ended on the quiet cancelled path: re-request, or the page
-                // spins forever.
-                if (requests.finish(index, token, cancelled, isStopped)) {
+                // ended quietly: re-request, or the page spins forever.
+                if (jobs.finish(index, token, outcome, isStopped)) {
                     onRequest(index)
                 }
             }
@@ -587,14 +583,14 @@ class LRRGalleryProvider(
         if (cached.parentFile == cacheDir && cached.exists()) {
             cached.delete()
         }
-        requests.forget(index)
+        jobs.forget(index)
         onRequest(index)
     }
 
     override fun onCancelRequest(index: Int) {
         // Sever the in-flight HTTP call; the blocked read throws IOException,
         // which downloadPageToCache converts to PageCancelledException (quiet).
-        inflightCalls[index]?.cancel()
+        jobs.cancelCall(index)
     }
 
     // ==================== Internal ====================
@@ -602,25 +598,11 @@ class LRRGalleryProvider(
     private fun getCacheFile(index: Int): File =
         resolvePageFile(store, cacheDir, index, pagePaths.get()?.getOrNull(index))
 
-    // Per-page download mutexes (same-page exclusion across the user-request
-    // and preload paths). Replaces mod-32 striped Java monitors: a stripe
-    // collision serialized UNRELATED pages — a user-visible page could park,
-    // uncancellably and pinning an IO thread, behind a preload's full network
-    // download. Mutex.withLock keeps the wait suspending and cancellable.
-    // Bounded by the archive's page count, entries live for the provider.
-    private val pageMutexes = ConcurrentHashMap<Int, Mutex>()
-
-    private fun pageMutex(index: Int): Mutex = pageMutexes.computeIfAbsent(index) { Mutex() }
-
-    // In-flight page requests (per-job tokens) and rebinds that arrived while
-    // a job was running; see PageRequestTracker.
-    private val requests = PageRequestTracker()
-
-    // In-flight page HTTP calls, keyed by page index. Coroutine cancellation
-    // cannot interrupt the blocking execute()/body read inside
-    // ReaderPageCache.downloadToFile, so stop()/onCancelRequest sever these
-    // sockets explicitly (NET-3).
-    private val inflightCalls = ConcurrentHashMap<Int, Call>()
+    // Page jobs: per-request tokens, rebinds that arrived while a job ran,
+    // the per-page fetch mutex (same-page exclusion across the user-request
+    // and preload paths, suspending and cancellable) and the in-flight HTTP
+    // calls that stop()/onCancelRequest sever (NET-3). See PageJobs.
+    private val jobs = PageJobs()
 
     /**
      * Download a page to cache if not already cached.
@@ -630,27 +612,23 @@ class LRRGalleryProvider(
     @Throws(IOException::class)
     private suspend fun downloadPageToCache(
         index: Int,
-        progressCallback: ReaderPageCache.ProgressCallback? = null
+        cacheFile: File = getCacheFile(index),
+        progressCallback: ReaderPageCache.ProgressCallback? = null,
     ) {
-        val cacheFile = getCacheFile(index)
-        if (cacheFile.exists() && cacheFile.length() > ReaderPageCache.MIN_IMAGE_SIZE) {
+        if (LocalPage.probe(cacheFile)) {
             return // Already cached and sufficiently large
         }
 
-        pageMutex(index).withLock {
+        jobs.mutex(index).withLock {
             if (isStopped) return
-            if (cacheFile.exists() && cacheFile.length() > ReaderPageCache.MIN_IMAGE_SIZE) {
+            if (LocalPage.probe(cacheFile)) {
                 return
             }
 
-            val paths = pagePaths.get()
-                ?: throw IOException("Page paths not loaded yet")
-            if (index >= paths.size) {
-                throw IOException("Page index $index out of bounds (size=${paths.size})")
-            }
+            val pagePath = pagePathOf(index)
             if (store?.adoptWarmCachedPage(index, cacheFile) == true) return
 
-            val pageUrl = resolvePageUrl(serverUrl, paths[index])
+            val pageUrl = resolvePageUrl(serverUrl, pagePath)
             val currentPageClient = pageClient
                 ?: ServiceRegistry.networkModule.okHttpClient
 
@@ -660,30 +638,35 @@ class LRRGalleryProvider(
                     currentPageClient, pageUrl, cacheFile, index, progressCallback,
                     onCallCreated = { c ->
                         call = c
-                        inflightCalls[index] = c
+                        jobs.track(index, c)
                     },
                     durable = store?.durableWriteFor(cacheFile),
                 )
             } catch (e: IOException) {
-                if (call?.isCanceled() == true || isStopped) {
-                    throw PageCancelledException(e)
-                }
-                throw e
+                throw if (call?.isCanceled() == true || isStopped) PageCancelledException(e) else e
             } finally {
-                inflightCalls.remove(index)
+                jobs.untrack(index)
             }
         }
     }
 
+    /** The server path of page [index]; throws while the page list is unknown or out of range. */
     @Throws(IOException::class)
-    private suspend fun downloadAndDecodePage(index: Int) {
+    private fun pagePathOf(index: Int): String {
+        val paths = pagePaths.get() ?: throw IOException("Page paths not loaded yet")
+        return paths.getOrNull(index) ?: throw IOException("Page index $index out of bounds (size=${paths.size})")
+    }
+
+    /** Fetches, decodes and publishes page [index]; [PageJobs.Outcome.Failed] when it published the failure. */
+    @Throws(IOException::class)
+    private suspend fun downloadAndDecodePage(index: Int): PageJobs.Outcome {
         // Fetch -> validate -> decode with one retry for a BAD FILE only; a
         // valid page this device cannot decode fails at once and is kept, and
         // a download-dir page (hybrid) is never deleted for a decode failure
         // (audit 2026-10-06d PERF-01). See PageLoadLoop.
         val result = PageLoadLoop(
             pageFile = { getCacheFile(index) },
-            fetch = { downloadPageToCache(index) { idx, percent -> notifyPagePercent(idx, percent) } },
+            fetch = { file -> downloadPageToCache(index, file) { idx, percent -> notifyPagePercent(idx, percent) } },
             // Decode routed through the bounded decoderDispatcher so a burst
             // of concurrent page requests doesn't blow past the global cap on
             // simultaneous BitmapFactory work.
@@ -703,9 +686,15 @@ class LRRGalleryProvider(
                 delay(RETRY_DELAY_MS)
             },
         ).run()
-        when (result) {
-            is PageLoadResult.Loaded -> notifyPageSucceed(index, result.value)
-            is PageLoadResult.Failed -> notifyPageFailed(index, result.failure.message(context))
+        return when (result) {
+            is PageLoadResult.Loaded -> {
+                notifyPageSucceed(index, result.value)
+                PageJobs.Outcome.Succeeded
+            }
+            is PageLoadResult.Failed -> {
+                notifyPageFailed(index, result.failure.message(context))
+                PageJobs.Outcome.Failed
+            }
         }
     }
 
@@ -725,7 +714,7 @@ class LRRGalleryProvider(
                 val preloadIndex = currentIndex + i
                 if (preloadIndex >= paths.size) break
                 val cached = getCacheFile(preloadIndex)
-                if (cached.exists() && cached.length() > ReaderPageCache.MIN_IMAGE_SIZE) continue
+                if (LocalPage.probe(cached)) continue
 
                 launch {
                     preloadSemaphore.acquire()

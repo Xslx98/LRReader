@@ -18,7 +18,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Per-member page sourcing behind [TankGalleryProvider]: the composite
@@ -113,8 +112,9 @@ internal class LrrTankMemberSource(
     private var stopped = false
 
     private val listMutex = Mutex()
-    private val pageMutexes = ConcurrentHashMap<Int, Mutex>()
-    private val inflightCalls = ConcurrentHashMap<Int, Call>()
+
+    /** Per-page fetch mutexes and the in-flight calls cancelPage / cancelAll sever. */
+    private val jobs = PageJobs()
 
     private val cacheDir: File by lazy { ReaderPageCache.ensureCacheDir(appContext, arcid) }
 
@@ -141,9 +141,10 @@ internal class LrrTankMemberSource(
     }
 
     override suspend fun obtainImage(page0: Int, onPercent: ((Float) -> Unit)?): Image? {
-        downloadPage(page0, onPercent)
+        // One file for this attempt (see PageLoadLoop): fetch and decode agree on it.
         val file = cacheFile(page0)
-        if (!file.exists() || file.length() < ReaderPageCache.MIN_IMAGE_SIZE) {
+        downloadPage(page0, file, onPercent)
+        if (!LocalPage.probe(file)) {
             throw IOException("Cached page $page0 missing or too small for $arcid")
         }
         val decoded = withContext(ServiceRegistry.coroutineModule.decoderDispatcher) {
@@ -167,7 +168,7 @@ internal class LrrTankMemberSource(
 
     override suspend fun prefetchPage(page0: Int) {
         try {
-            downloadPage(page0, onPercent = null)
+            downloadPage(page0, cacheFile(page0), onPercent = null)
         } catch (e: IOException) {
             // Best-effort warm; the on-demand path retries with real errors.
         }
@@ -187,16 +188,15 @@ internal class LrrTankMemberSource(
     }
 
     override fun openPageOnDisk(page0: Int): InputStream? =
-        cacheFile(page0).takeIf { it.length() > ReaderPageCache.MIN_IMAGE_SIZE }?.let(::FileInputStream)
+        cacheFile(page0).takeIf(LocalPage::probe)?.let(::FileInputStream)
 
     override fun cancelPage(page0: Int) {
-        inflightCalls[page0]?.cancel()
+        jobs.cancelCall(page0)
     }
 
     override fun cancelAll() {
         stopped = true
-        inflightCalls.values.forEach { runCatching { it.cancel() } }
-        inflightCalls.clear()
+        jobs.clear()
     }
 
     /**
@@ -205,21 +205,17 @@ internal class LrrTankMemberSource(
      * double-downloading; in-flight calls are registered for severing.
      */
     @Throws(IOException::class)
-    private suspend fun downloadPage(page0: Int, onPercent: ((Float) -> Unit)?) {
-        val file = cacheFile(page0)
-        if (file.exists() && file.length() > ReaderPageCache.MIN_IMAGE_SIZE) return
-        val pagePaths = paths ?: throw IOException("Page list not loaded for $arcid")
-        if (page0 < 0 || page0 >= pagePaths.size) {
-            throw IOException("Page $page0 out of bounds (size=${pagePaths.size}) for $arcid")
-        }
-        pageMutexes.computeIfAbsent(page0) { Mutex() }.withLock {
+    private suspend fun downloadPage(page0: Int, file: File, onPercent: ((Float) -> Unit)?) {
+        if (LocalPage.probe(file)) return
+        val pagePath = pagePathOf(page0)
+        jobs.mutex(page0).withLock {
             if (stopped) throw TankPageCancelledException(IOException("source stopped"))
-            if (file.exists() && file.length() > ReaderPageCache.MIN_IMAGE_SIZE) return
+            if (LocalPage.probe(file)) return
             if (store != null) {
                 check(storeDirReady)
                 if (store.adoptWarmCachedPage(page0, file)) return
             }
-            val url = resolvePageUrl(serverUrl, pagePaths[page0])
+            val url = resolvePageUrl(serverUrl, pagePath)
             var call: Call? = null
             try {
                 ReaderPageCache.downloadToFile(
@@ -229,17 +225,24 @@ internal class LrrTankMemberSource(
                     },
                     onCallCreated = { c ->
                         call = c
-                        inflightCalls[page0] = c
+                        jobs.track(page0, c)
                     },
                     durable = store?.durableWriteFor(file),
                 )
             } catch (e: IOException) {
-                if (call?.isCanceled() == true || stopped) throw TankPageCancelledException(e)
-                throw e
+                throw if (call?.isCanceled() == true || stopped) TankPageCancelledException(e) else e
             } finally {
-                inflightCalls.remove(page0)
+                jobs.untrack(page0)
             }
         }
+    }
+
+    /** The server path of member-local [page0]; throws while the page list is unknown or out of range. */
+    @Throws(IOException::class)
+    private fun pagePathOf(page0: Int): String {
+        val pagePaths = paths ?: throw IOException("Page list not loaded for $arcid")
+        return pagePaths.getOrNull(page0)
+            ?: throw IOException("Page $page0 out of bounds (size=${pagePaths.size}) for $arcid")
     }
 
     private companion object {

@@ -45,10 +45,15 @@ internal class HybridPageStore(
 ) {
 
     /**
-     * Pages whose download-dir copy turned out damaged in this session
-     * ([handOverDamagedPage]); they are read from the reader cache instead.
+     * Pages whose download-dir copy turned out damaged ([handOverDamagedPage]);
+     * they are read from the reader cache instead. Shared by every store on
+     * the same [downloadDir] for the life of the process, so the standalone
+     * reader and a tank member source of the same archive agree on where a
+     * page lives (each kept its own set before). An entry stays until the
+     * process dies, also after the worker repaired the page: the page is
+     * then read through the reader cache, which costs a fetch, not a page.
      */
-    private val damaged: MutableSet<Int> = ConcurrentHashMap.newKeySet()
+    private val damaged: MutableSet<Int> = damagedPages(downloadDir)
 
     /**
      * The write policy for [target]: [durable] when it is a page of the
@@ -115,7 +120,7 @@ internal class HybridPageStore(
      */
     fun adoptWarmCachedPage(index: Int, target: File): Boolean {
         val warm = File(warmDir, "page_$index")
-        if (target.parentFile != downloadDir || !isPresent(warm)) return false
+        if (target.parentFile != downloadDir || !LocalPage.probe(warm)) return false
         if (!ReaderPageCache.validateImageFile(warm)) return false
         val parent = target.parentFile ?: return false
         val policy = durableWriteFor(target)
@@ -147,8 +152,10 @@ internal class HybridPageStore(
         private const val TAG = "HybridPageStore"
         private const val BUFFER_SIZE = 65536
 
-        /** A page file counts as landed once it exists and is not a truncated stub. */
-        fun isPresent(file: File): Boolean =
-            file.exists() && file.length() > ReaderPageCache.MIN_IMAGE_SIZE
+        /** Damaged page sets by download directory (see [damaged]). */
+        private val damagedByDir = ConcurrentHashMap<String, MutableSet<Int>>()
+
+        private fun damagedPages(dir: File): MutableSet<Int> =
+            damagedByDir.computeIfAbsent(dir.absolutePath) { ConcurrentHashMap.newKeySet() }
     }
 }

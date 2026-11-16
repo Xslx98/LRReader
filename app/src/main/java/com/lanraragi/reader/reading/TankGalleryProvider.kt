@@ -77,9 +77,10 @@ class TankGalleryProvider(
 
     private val serverUrlDeferred = CompletableDeferred<String?>()
 
-    // In-flight page requests (per-job tokens) and rebinds that arrived while
-    // a job was running; see PageRequestTracker (audit 2026-10-06 N6).
-    private val requests = PageRequestTracker()
+    // In-flight page jobs (per-job tokens) and rebinds that arrived while a
+    // job was running; see PageJobs (audit 2026-10-06 N6). Member sources
+    // keep their own downloads' mutexes and calls.
+    private val jobs = PageJobs()
 
     /** Global cap on concurrent prefetch downloads (mirrors LRRGalleryProvider). */
     private val prefetchSemaphore = Semaphore(PREFETCH_PARALLELISM)
@@ -202,7 +203,7 @@ class TankGalleryProvider(
 
     override fun stop() {
         super.stop()
-        requests.clear()
+        jobs.clear()
         providerScope?.cancel()
         providerScope = null
         synchronized(slotsLock) { slots.forEach { it.source?.cancelAll() } }
@@ -230,31 +231,37 @@ class TankGalleryProvider(
         }
         // Already in flight: the tracker records the rebind so a cancelled
         // job re-requests the page instead of leaving it spinning.
-        val token = requests.begin(index)
-        if (token == null) return
+        val token = jobs.begin(index) ?: return
         notifyPageWait(index)
         val scope = providerScope
         if (scope == null) {
-            requests.abandon(index, token)
+            jobs.abandon(index, token)
             return
         }
+        // A failure published under an older page map belongs to the page
+        // that index meant then: the rebind after the remap must ask again.
+        val generation = pageGeneration
         scope.launch {
-            var cancelled = false
+            var outcome = PageJobs.Outcome.Cancelled
             try {
-                serveGlobalPage(index)
+                outcome = serveGlobalPage(index)
             } catch (ignored: TankPageCancelledException) {
-                cancelled = true
+                outcome = PageJobs.Outcome.Cancelled
             } catch (ignored: MemberDeletedException) {
                 // The remap's notifyDataChanged re-drives layout; whatever
                 // page now occupies this slot is re-requested by the view.
-                cancelled = true
+                outcome = PageJobs.Outcome.Cancelled
             } catch (ce: CancellationException) {
                 throw ce
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to serve tank page $index: ${e.message}")
                 notifyPageFailed(index, friendlyPageError(e))
+                outcome = PageJobs.Outcome.Failed
             } finally {
-                if (requests.finish(index, token, cancelled, isStopped)) {
+                if (outcome == PageJobs.Outcome.Failed && pageGeneration != generation) {
+                    outcome = PageJobs.Outcome.Cancelled
+                }
+                if (jobs.finish(index, token, outcome, isStopped)) {
                     onRequest(index)
                 }
             }
@@ -262,7 +269,7 @@ class TankGalleryProvider(
     }
 
     override fun onForceRequest(index: Int) {
-        requests.forget(index)
+        jobs.forget(index)
         onRequest(index)
     }
 
@@ -274,13 +281,14 @@ class TankGalleryProvider(
     /**
      * Resolve member + source, correct the map from the real file list on
      * first touch, then fetch + decode + publish. Runs on the provider IO
-     * scope; every notify goes out at the GLOBAL index.
+     * scope; every notify goes out at the GLOBAL index. Returns how the
+     * job ended ([PageJobs.Outcome.Failed] when it published the failure).
      */
-    private suspend fun serveGlobalPage(global0: Int) {
+    private suspend fun serveGlobalPage(global0: Int): PageJobs.Outcome {
         var located = pageMap.locate(global0)
             ?: run {
                 notifyPageFailed(global0, GetText.getString(R.string.error_out_of_range))
-                return
+                return PageJobs.Outcome.Failed
             }
         var source = countedSourceFor(located.first)
         // A remap from here on makes global0 another page: the decode is then dropped.
@@ -294,7 +302,7 @@ class TankGalleryProvider(
             }
         } ?: run {
             notifyPageFailed(global0, GetText.getString(R.string.error_out_of_range))
-            return
+            return PageJobs.Outcome.Failed
         }
 
         val image = source.obtainImage(located.second) { pct ->
@@ -302,7 +310,7 @@ class TankGalleryProvider(
         }
         if (isStopped) {
             image?.recycle()
-            return
+            return PageJobs.Outcome.Cancelled
         }
         if (image != null) {
             if (!notifyPageSucceed(global0, image, generation)) {
@@ -311,9 +319,10 @@ class TankGalleryProvider(
                 throw TankPageCancelledException(IOException("remapped"))
             }
             prefetchAround(global0)
-        } else {
-            notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
+            return PageJobs.Outcome.Succeeded
         }
+        notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
+        return PageJobs.Outcome.Failed
     }
 
     /**

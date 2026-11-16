@@ -189,6 +189,9 @@ internal class PagerLayoutManager(
             return
         }
         spreadActive = active
+        // Every re-plan drops the cached parity (as setSpreadPairing and
+        // onDataChanged do), so it never outlives the spreads it was read from.
+        parityIndex = GalleryPageView.INVALID_INDEX
         cancelAllAnimations()
         removeAllPages()
         resetParameters()
