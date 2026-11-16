@@ -12,6 +12,7 @@ import com.lanraragi.reader.dao.ProfileRepository
 import com.lanraragi.reader.module.CoroutineModule
 import com.lanraragi.reader.module.IDataModule
 import com.lanraragi.reader.server.SecureCredentialStore
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -109,27 +110,61 @@ class HistoryViewModelTest {
         vm.loadHistory()
         awaitViewModelIdle(vm)
 
-        assertEquals(2, vm.historyList.value.size)
+        assertEquals(2, vm.state.value.items.size)
     }
 
     @Test
-    fun loadHistory_emitsListUpdate() {
-        insertGalleries(1L to "Gallery One")
-
+    fun loadHistory_startsLoading_andNoHistoryIsEmpty() {
         val vm = HistoryViewModel()
-        val updates = mutableListOf<HistoryViewModel.ListUpdate>()
-        val collectScope = CoroutineScope(Dispatchers.Unconfined)
-        val job = collectScope.launch {
-            vm.listUpdate.collect { updates.add(it) }
-        }
+        assertEquals(ListScreenState.Loading, vm.state.value)
 
         vm.loadHistory()
         awaitViewModelIdle(vm)
 
-        assertTrue(updates.isNotEmpty())
-        assertEquals(1, updates.first().newList.size)
+        assertEquals(ListScreenState.Empty, vm.state.value)
+    }
 
-        job.cancel()
+    /** A reload over shown rows keeps them (no blank list while it runs). */
+    @Test
+    fun loadHistory_overRows_staysContent() {
+        insertGalleries(1L to "Gallery One")
+        val vm = HistoryViewModel()
+        vm.loadHistory()
+        awaitViewModelIdle(vm)
+
+        vm.loadHistory()
+
+        assertTrue(vm.state.value is ListScreenState.Content)
+        awaitViewModelIdle(vm)
+        assertEquals(listOf("Gallery One"), vm.state.value.items.map { it.archive.title })
+    }
+
+    /** Each row carries its own Room entity: no second list matched by index. */
+    @Test
+    fun rows_pairTheEntityWithTheArchiveItShows() {
+        insertGalleries(1L to "Gallery One", 2L to "Gallery Two")
+        val vm = HistoryViewModel()
+        vm.loadHistory()
+        awaitViewModelIdle(vm)
+
+        for (row in vm.state.value.items) assertEquals(row.info.arcid, row.archive.arcid)
+    }
+
+    /** A rating saved on the detail page changes the shown row at once and survives a reload. */
+    @Test
+    fun updateRating_changesTheRow_andIsPersisted() {
+        insertGalleries(1L to "Gallery One", 2L to "Gallery Two")
+        val vm = HistoryViewModel()
+        vm.loadHistory()
+        awaitViewModelIdle(vm)
+
+        vm.updateRating("tok2", 4.5f)
+        assertEquals(4.5f, vm.state.value.items.single { it.archive.arcid == "tok2" }.archive.rating)
+
+        awaitViewModelIdle(vm)
+        vm.loadHistory()
+        awaitViewModelIdle(vm)
+        assertEquals(4.5f, vm.state.value.items.single { it.archive.arcid == "tok2" }.archive.rating)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -143,13 +178,13 @@ class HistoryViewModelTest {
         val vm = HistoryViewModel()
         vm.loadHistory()
         awaitViewModelIdle(vm)
-        assertEquals(2, vm.historyList.value.size)
+        assertEquals(2, vm.state.value.items.size)
 
-        val itemToDelete = vm.getRawHistoryInfo(0)!!
+        val itemToDelete = vm.state.value.items[0].info
         vm.deleteHistoryItem(itemToDelete)
         awaitViewModelIdle(vm)
 
-        assertEquals(1, vm.historyList.value.size)
+        assertEquals(1, vm.state.value.items.size)
     }
 
     @Test
@@ -159,54 +194,12 @@ class HistoryViewModelTest {
         val vm = HistoryViewModel()
         vm.loadHistory()
         awaitViewModelIdle(vm)
-        assertEquals(2, vm.historyList.value.size)
+        assertEquals(2, vm.state.value.items.size)
 
         vm.clearAllHistory()
         awaitViewModelIdle(vm)
 
-        assertTrue(vm.historyList.value.isEmpty())
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // D. Snapshot management
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
-    fun resetSnapshot_clearsHistoryListAndSnapshot() {
-        insertGalleries(1L to "Gallery One")
-
-        val vm = HistoryViewModel()
-        vm.loadHistory()
-        awaitViewModelIdle(vm)
-        assertEquals(1, vm.historyList.value.size)
-
-        vm.resetSnapshot()
-        assertTrue(vm.historyList.value.isEmpty())
-    }
-
-    @Test
-    fun resetSnapshot_thenReload_producesCleanDelta() {
-        insertGalleries(1L to "Gallery One")
-
-        val vm = HistoryViewModel()
-        vm.loadHistory()
-        awaitViewModelIdle(vm)
-
-        vm.resetSnapshot()
-
-        val updates = mutableListOf<HistoryViewModel.ListUpdate>()
-        val collectScope = CoroutineScope(Dispatchers.Unconfined)
-        val job = collectScope.launch {
-            vm.listUpdate.collect { updates.add(it) }
-        }
-
-        vm.loadHistory()
-        awaitViewModelIdle(vm)
-
-        assertTrue(updates.isNotEmpty())
-        assertEquals(1, updates.last().newList.size)
-
-        job.cancel()
+        assertTrue(vm.state.value.items.isEmpty())
     }
 
     // ═══════════════════════════════════════════════════════════

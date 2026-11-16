@@ -10,6 +10,8 @@ import com.lanraragi.reader.dao.HistoryRepository
 import com.lanraragi.reader.dao.toArchive
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.reading.ReadingHistoryService
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -18,16 +20,17 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * ViewModel for [HistoryScene]. Manages the history list data, DiffUtil
- * snapshot tracking, and the clear/delete/rating edits, which
- * [ReadingHistoryService] finishes even if the screen closes.
- *
- * The Scene observes [historyList] for data and [listUpdate] for dispatching
- * adapter updates. View references, adapters, and navigation remain in the Scene.
+ * ViewModel for [HistoryScene]. Holds the history screen as one
+ * [ListScreenState] of [HistoryRow]s and runs the clear/delete/rating edits,
+ * which [ReadingHistoryService] finishes even if the screen closes. The
+ * Scene renders the state and diffs the rows into its adapter
+ * ([com.lanraragi.reader.ui.list.ListDiffBinder]); views, adapters and
+ * navigation remain in the Scene.
  */
 class HistoryViewModel(
     private val historyEdits: ReadingHistoryService = ReadingHistoryService.default,
@@ -37,87 +40,51 @@ class HistoryViewModel(
         ServiceRegistry.dataModule.historyRepository
 
     // -------------------------------------------------------------------------
-    // History list state
-    // -------------------------------------------------------------------------
-
-    private val _historyList = MutableStateFlow<List<Archive>>(emptyList())
-
-    /** The current history list as [Archive] domain models for display. */
-    val historyList: StateFlow<List<Archive>> = _historyList.asStateFlow()
-
-    /**
-     * Raw [HistoryInfo] entities from the last DB load, kept in parallel with
-     * [_historyList] for operations that need the Room entity (delete, navigate).
-     * Same ordering and indices as [_historyList].
-     */
-    private var rawHistoryList: List<HistoryInfo> = emptyList()
-
-    /**
-     * Snapshot of the list last dispatched to the adapter. Used to compute
-     * DiffUtil deltas against the freshly loaded list. See
-     * docs/diffutil-root-cause-analysis.md for why we are careful about
-     * snapshot ownership.
-     */
-    private var lastSnapshot: List<Archive> = emptyList()
-
-    // -------------------------------------------------------------------------
-    // One-shot events
+    // Screen state
     // -------------------------------------------------------------------------
 
     /**
-     * Carries a [DiffResult] plus the new list for the Scene to dispatch to
-     * its adapter. Using a data class so the Scene can apply both atomically.
+     * One history entry: the Room entity (for delete / navigation) and the
+     * [Archive] it displays, kept together instead of two lists matched by
+     * index.
      */
-    data class ListUpdate(
-        val newList: List<Archive>,
-        val diffResult: DiffUtil.DiffResult
-    )
+    data class HistoryRow(val info: HistoryInfo, val archive: Archive)
 
-    private val _listUpdate = MutableSharedFlow<ListUpdate>(extraBufferCapacity = 1)
+    private val _state = MutableStateFlow<ListScreenState<HistoryRow>>(ListScreenState.Loading)
 
-    /** Emitted after each load with the DiffResult for the adapter. */
-    val listUpdate: SharedFlow<ListUpdate> = _listUpdate.asSharedFlow()
+    /** What the screen shows: the history rows, or loading / empty / the last load's error. */
+    val state: StateFlow<ListScreenState<HistoryRow>> = _state.asStateFlow()
+
+    private fun on(event: ListScreenState.Event<HistoryRow>) {
+        _state.update { ListScreenState.reduce(it, event) }
+    }
 
     // -------------------------------------------------------------------------
     // Data loading
     // -------------------------------------------------------------------------
 
     /**
-     * Asynchronously loads the history list from the database on IO, computes a
-     * DiffUtil delta against the last snapshot, and emits the result.
+     * Loads the history from the database on IO into the [state]. A reload
+     * over shown rows keeps them; a failure keeps them too, and with none
+     * shown it is the screen's error (it used to be logged and dropped).
      *
-     * SwipeResultActionClear (swipe-to-dismiss) calls into this same path after
-     * async DB delete completes; the diff-driven remove of the swiped item
-     * aligns with the SwipeDismissItemAnimator's ongoing animation since we
-     * keep [lastSnapshot] in sync with what the adapter last saw.
+     * SwipeResultActionClear (swipe-to-dismiss) calls into this same path
+     * after the async DB delete: the Scene's diff of the new rows removes
+     * the swiped row in step with the SwipeDismissItemAnimator.
      */
     fun loadHistory() {
+        on(ListScreenState.Event.Load)
         viewModelScope.launch {
             try {
                 val lazyList = withContext(Dispatchers.IO) { historyRepository.getHistoryLazyList() }
-                rawHistoryList = ArrayList(lazyList)
-                val newList = ArrayList(lazyList.map { it.toArchive() })
-                val diff = DiffUtil.calculateDiff(
-                    ArchiveDiffCallback(lastSnapshot, newList)
-                )
-                _historyList.value = newList
-                lastSnapshot = newList
-                _listUpdate.tryEmit(ListUpdate(newList, diff))
+                on(ListScreenState.Event.Loaded(lazyList.map { HistoryRow(it, it.toArchive()) }))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load history", e)
+                on(ListScreenState.Event.Failed(friendlyError(ServiceRegistry.appModule.getContext(), e)))
             }
         }
-    }
-
-    /**
-     * Resets the snapshot so the next [loadHistory] starts from an empty
-     * baseline and produces a clean inserts-only delta. Called when the
-     * Scene's view is destroyed.
-     */
-    fun resetSnapshot() {
-        lastSnapshot = emptyList()
-        _historyList.value = emptyList()
-        rawHistoryList = emptyList()
     }
 
     // -------------------------------------------------------------------------
@@ -125,28 +92,28 @@ class HistoryViewModel(
     // -------------------------------------------------------------------------
 
     /**
-     * Update the rating of the Archive at [position] in the display list.
-     * Used by HistoryScene on an ArchiveRatingChangedEvent for immediate UI feedback.
+     * Sets the rating of the row showing [arcid] (a rating saved on the
+     * detail page): the [state] changes at once (the Scene's diff rebinds the
+     * row), and the rating is persisted so a reload keeps it.
      */
-    fun updateRatingAtPosition(position: Int, newRating: Float) {
-        val current = _historyList.value.toMutableList()
-        if (position in current.indices) {
-            current[position] = current[position].copy(rating = newRating)
-            _historyList.value = current
-            lastSnapshot = current
+    fun updateRating(arcid: String, newRating: Float) {
+        val current = _state.value.items
+        val position = current.indexOfFirst { it.archive.arcid == arcid }
+        if (position >= 0) {
+            val row = current[position]
+            val updated = current.toMutableList()
+            updated[position] = row.copy(archive = row.archive.copy(rating = newRating))
+            on(ListScreenState.Event.Loaded(updated))
             // Persist to archive_json so the rating survives a reload/restart;
             // updating only the in-memory list would revert on the next
-            // loadHistory(). arcid comes from the parallel raw list.
-            val rawInfo = rawHistoryList.getOrNull(position)
-            if (rawInfo != null) {
-                viewModelScope.launch {
-                    try {
-                        historyEdits.updateRating(rawInfo.arcid, rawInfo.serverProfileId, newRating)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to persist history rating", e)
-                    }
+            // loadHistory().
+            viewModelScope.launch {
+                try {
+                    historyEdits.updateRating(row.info.arcid, row.info.serverProfileId, newRating)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to persist history rating", e)
                 }
             }
         }
@@ -191,14 +158,6 @@ class HistoryViewModel(
     }
 
     /**
-     * Returns the raw [HistoryInfo] at the given position (same index as [historyList]).
-     * Used by the Scene for operations that require the Room entity (IPC, delete, download).
-     */
-    fun getRawHistoryInfo(position: Int): HistoryInfo? {
-        return rawHistoryList.getOrNull(position)
-    }
-
-    /**
      * Clears the shown (active server's) history entries, then reloads the list.
      */
     fun clearAllHistory() {
@@ -223,24 +182,23 @@ class HistoryViewModel(
     // -------------------------------------------------------------------------
 
     /**
-     * DiffUtil callback for [Archive] lists. Identity is [Archive.arcid].
-     * Content compares fields rendered in onBindViewHolder.
+     * DiffUtil callback for the Scene's [HistoryRow] lists. Identity is
+     * [Archive.arcid]; content compares the fields rendered in onBindViewHolder.
      */
-    private class ArchiveDiffCallback(
-        private val oldList: List<Archive>,
-        private val newList: List<Archive>
+    class RowDiffCallback(
+        private val oldList: List<HistoryRow>,
+        private val newList: List<HistoryRow>,
     ) : DiffUtil.Callback() {
 
         override fun getOldListSize(): Int = oldList.size
         override fun getNewListSize(): Int = newList.size
 
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            return oldList[oldItemPosition].arcid == newList[newItemPosition].arcid
-        }
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+            oldList[oldItemPosition].archive.arcid == newList[newItemPosition].archive.arcid
 
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            val o = oldList[oldItemPosition]
-            val n = newList[newItemPosition]
+            val o = oldList[oldItemPosition].archive
+            val n = newList[newItemPosition].archive
             return o.title == n.title &&
                 o.rating == n.rating &&
                 o.thumbnailUrl == n.thumbnailUrl
