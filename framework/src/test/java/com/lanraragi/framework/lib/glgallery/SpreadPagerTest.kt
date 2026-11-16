@@ -41,8 +41,6 @@ class SpreadPagerTest(private val layoutMode: Int) {
         // Tank member starts; an array, as a set would box the index.
         val breaks = BooleanArray(SIZE)
         override fun onBind(view: GalleryPageView, index: Int) {
-            // A page view starts out showing its error text, which takes taps.
-            view.clearError()
             if (record) bound += view
         }
         override fun onUnbind(view: GalleryPageView, index: Int) {

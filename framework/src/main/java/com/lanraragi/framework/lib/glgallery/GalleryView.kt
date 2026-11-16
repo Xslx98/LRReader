@@ -123,8 +123,10 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     private var fillRequested = false
     private var willFill = false
 
-    private var scaling = false
-    private var scrolling = false
+    /** The touch gesture in progress; render thread only (see [GestureMode]). */
+    private var gesture = GestureMode.Idle
+
+    /** The next onScroll is the first of its gesture; consumed by [isFirstScroll]. */
     private var firstScroll = false
 
     private val leftArea = Rect()
@@ -767,7 +769,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun onDoubleTapConfirmedInternal(x: Float, y: Float) {
-        if (scaling) {
+        if (gesture.blocksTaps) {
             return
         }
 
@@ -775,7 +777,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun onLongPressInternal(x: Float, y: Float) {
-        if (scaling) {
+        if (gesture.blocksTaps) {
             return
         }
 
@@ -790,10 +792,9 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun onScrollInternal(dx: Float, dy: Float, totalX: Float, totalY: Float, x: Float, y: Float) {
-        if (scaling) {
-            return
-        }
-        scrolling = true
+        val next = gesture.scrolled() ?: return
+        if (gesture != next) firstScroll = true
+        gesture = next
 
         layoutManager?.onScroll(dx, dy, totalX, totalY, x, y)
     }
@@ -808,10 +809,7 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
 
     private fun onScaleInternal(focusX: Float, focusY: Float, scale: Float) {
         val layoutManager = this.layoutManager
-        if (scrolling || (layoutManager != null && !layoutManager.canScale())) {
-            return
-        }
-        scaling = true
+        gesture = gesture.scaled(layoutManager?.canScale() ?: true) ?: return
 
         if (layoutManager != null) {
             layoutManager.onScale(focusX, focusY, scale)
@@ -819,21 +817,18 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
     }
 
     private fun onDownInternal() {
-        scaling = false
-        scrolling = false
-        firstScroll = true
+        gesture = GestureMode.Idle
+        firstScroll = false
         layoutManager?.onDown()
     }
 
     private fun onUpInternal() {
+        gesture = gesture.up()
         layoutManager?.onUp()
     }
 
     private fun onPointerDownInternal() {
-        val layoutManager = this.layoutManager
-        if (!scrolling && (layoutManager != null && layoutManager.canScale())) {
-            scaling = true
-        }
+        gesture = gesture.pointerDown(layoutManager?.canScale() == true)
     }
 
     private fun setLayoutModeInternal(layoutMode: Int) {
@@ -1476,4 +1471,31 @@ class GalleryView private constructor(build: Builder) : GLView(), GestureRecogni
             else -> START_POSITION_TOP_LEFT
         }
     }
+}
+
+/**
+ * The touch gesture [GalleryView] is in, one value instead of the old
+ * scaling / scrolling flags, moved on the render thread by the posted
+ * gesture callbacks through the steps below. A pinch owns its gesture until
+ * the last finger lifts: the finger left after it does not scroll or turn the
+ * page (scale end and pointer up do not end it), and it blocks double tap and
+ * long press. A scroll blocks a pinch. Every down starts over at [Idle].
+ */
+internal enum class GestureMode {
+    Idle, Scrolling, Scaling;
+
+    /** Double tap and long press are ignored. */
+    val blocksTaps: Boolean get() = this == Scaling
+
+    /** The mode after a scroll step, or null when the step is ignored (a pinch). */
+    fun scrolled(): GestureMode? = if (this == Scaling) null else Scrolling
+
+    /** The mode after a scale step, or null when it is ignored (a scroll, or the page cannot scale). */
+    fun scaled(canScale: Boolean): GestureMode? = if (this == Scrolling || !canScale) null else Scaling
+
+    /** A second finger touched: a pinch starts unless a scroll did. */
+    fun pointerDown(canScale: Boolean): GestureMode = if (this != Scrolling && canScale) Scaling else this
+
+    /** The last finger lifted (a fling or double tap was delivered just before): the gesture is over. */
+    fun up(): GestureMode = Idle
 }
