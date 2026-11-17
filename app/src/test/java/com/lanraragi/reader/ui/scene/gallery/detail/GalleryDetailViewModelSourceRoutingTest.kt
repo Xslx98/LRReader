@@ -49,6 +49,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -185,6 +186,11 @@ class GalleryDetailViewModelSourceRoutingTest {
         serverProfileId = profileId,
     )
 
+    private fun shownFresh(vm: GalleryDetailViewModel) =
+        (vm.state.value as? DetailState.Shown)?.let { it.sourceError == null && it.load > 0 } == true
+
+    private fun sourceError(vm: GalleryDetailViewModel) = (vm.state.value as? DetailState.Shown)?.sourceError
+
     /** Starts the request with the reading preload suppressed, as when the user left the page. */
     private fun request(vm: GalleryDetailViewModel, lrr: FakeLrr = sourceLrr) {
         val gate = CountDownLatch(1)
@@ -192,6 +198,59 @@ class GalleryDetailViewModelSourceRoutingTest {
         assertTrue(vm.requestGalleryDetail(" etc", " categories"))
         vm.cancelReadingPreload()
         gate.countDown()
+    }
+
+    @Test
+    fun opening_showsTheNavHeaderWhileLoading_andARefreshMeanwhileIsIgnored() {
+        val vm = GalleryDetailViewModel()
+        vm.setArchive(navArchive(sourceProfileId))
+        val gate = CountDownLatch(1)
+        sourceLrr.metadataGate = gate
+
+        vm.open(" etc", " categories")
+        vm.cancelReadingPreload()
+        assertEquals(DetailState.LoadingBelowHeader, vm.state.value)
+        // The request is at the server; a restart would send a second one.
+        awaitUntil { sourceLrr.paths.any { it.endsWith("/metadata") } }
+        vm.refresh(" etc", " categories")
+        vm.open(" etc", " categories")
+        gate.countDown()
+
+        awaitUntil { shownFresh(vm) }
+        assertEquals(1, sourceLrr.paths.count { it.endsWith("/metadata") })
+        // A re-created view opens again: the page stays as it is.
+        vm.open(" etc", " categories")
+        assertTrue(shownFresh(vm))
+        assertEquals(1, sourceLrr.paths.count { it.endsWith("/metadata") })
+
+        // A refresh that returns the same content is still a new state, so the page rebinds it.
+        val first = vm.state.value
+        vm.refresh(" etc", " categories")
+        vm.cancelReadingPreload()
+        awaitUntil { shownFresh(vm) && vm.state.value != first }
+        assertEquals(2, (vm.state.value as DetailState.Shown).load)
+    }
+
+    @Test
+    fun aRetryAfterABanner_spinsThePage_andASuccessDropsTheBanner() {
+        sourceLrr.overrides["/metadata"] = HTTP_BAD_REQUEST
+        val vm = GalleryDetailViewModel()
+        vm.setArchive(navArchive(sourceProfileId))
+        request(vm)
+        awaitUntil { sourceError(vm) != null }
+        // The stand-in detail of a failed fetch never reaches the download row.
+        assertFalse(vm.syncDownloadRow())
+
+        sourceLrr.overrides.remove("/metadata")
+        val gate = CountDownLatch(1)
+        sourceLrr.metadataGate = gate
+        vm.refresh(" etc", " categories")
+        vm.cancelReadingPreload()
+        // The degraded detail is on hand, so the whole page spins.
+        assertEquals(DetailState.Loading, vm.state.value)
+        gate.countDown()
+
+        awaitUntil { shownFresh(vm) }
     }
 
     @Test
@@ -217,7 +276,7 @@ class GalleryDetailViewModelSourceRoutingTest {
         assertEquals(sourceProfileId, archive.serverProfileId)
         assertTrue(archive.thumbnailUrl, archive.thumbnailUrl.startsWith(sourceUrl))
         assertEquals(sourceProfileId, detailCache.get(GalleryDetailViewModel.detailCacheKey(sourceProfileId, ARCID))!!.archive.serverProfileId)
-        assertEquals(archive, vm.detailLoaded.replayCache.single().archive)
+        assertTrue(shownFresh(vm))
         assertEquals(listOf(TANK_ID), vm.archiveTankoubons.value!!.map { it.id })
         assertEquals(TankoubonSupportGate.Support.SUPPORTED, TankoubonSupportGate.support(sourceUrl))
     }
@@ -260,7 +319,7 @@ class GalleryDetailViewModelSourceRoutingTest {
         )
 
         request(vm)
-        awaitUntil { vm.detailLoaded.replayCache.isNotEmpty() }
+        awaitUntil { shownFresh(vm) }
 
         assertEquals("the active server was contacted", emptyList<String>(), activeLrr.paths.toList())
         assertEquals(sourceProfileId, vm.archiveDetail.value!!.archive.serverProfileId)
@@ -275,10 +334,9 @@ class GalleryDetailViewModelSourceRoutingTest {
         vm.updateFavoriteState(known)
 
         request(vm)
-        awaitUntil { vm.detailLoaded.replayCache.isNotEmpty() }
+        awaitUntil { shownFresh(vm) }
 
         assertEquals(known, vm.favoriteState.value)
-        assertTrue(vm.detailErrorBanner.replayCache.isEmpty())
     }
 
     @Test
@@ -310,11 +368,10 @@ class GalleryDetailViewModelSourceRoutingTest {
         vm.setArchive(navArchive(sourceProfileId))
 
         request(vm)
-        awaitUntil { vm.detailErrorBanner.replayCache.isNotEmpty() }
+        awaitUntil { sourceError(vm) != null }
 
-        assertTrue(vm.detailErrorBanner.replayCache.single() is LRRHttpException)
+        assertTrue(sourceError(vm) is LRRHttpException)
         assertEquals(sourceProfileId, vm.archiveDetail.value!!.archive.serverProfileId)
-        assertTrue(vm.detailError.replayCache.isEmpty())
     }
 
     @Test
@@ -325,9 +382,9 @@ class GalleryDetailViewModelSourceRoutingTest {
         vm.setArchive(navArchive(sourceProfileId))
 
         request(vm)
-        awaitUntil { vm.detailErrorBanner.replayCache.isNotEmpty() }
+        awaitUntil { sourceError(vm) != null }
 
-        assertTrue(vm.detailErrorBanner.replayCache.single() is ConnectException)
+        assertTrue(sourceError(vm) is ConnectException)
         assertEquals("the active server was probed", emptyList<String>(), activeLrr.paths.toList())
     }
 
@@ -337,9 +394,9 @@ class GalleryDetailViewModelSourceRoutingTest {
         vm.setArchive(navArchive(sourceProfileId + DELETED_PROFILE_OFFSET))
 
         request(vm)
-        awaitUntil { vm.detailErrorBanner.replayCache.isNotEmpty() }
+        awaitUntil { sourceError(vm) != null }
 
-        assertTrue(vm.detailErrorBanner.replayCache.single() is OrphanProfileException)
+        assertTrue(sourceError(vm) is OrphanProfileException)
         assertEquals(emptyList<String>(), sourceLrr.paths.toList() + activeLrr.paths)
     }
 
@@ -351,10 +408,9 @@ class GalleryDetailViewModelSourceRoutingTest {
         vm.setArcid(ARCID)
 
         request(vm, activeLrr)
-        awaitUntil { vm.detailError.replayCache.isNotEmpty() }
+        awaitUntil { vm.state.value is DetailState.Failed }
 
-        assertTrue(vm.detailError.replayCache.single() is LRRHttpException)
-        assertTrue(vm.detailErrorBanner.replayCache.isEmpty())
+        assertTrue((vm.state.value as DetailState.Failed).error is LRRHttpException)
         assertNull(vm.archiveDetail.value)
     }
 

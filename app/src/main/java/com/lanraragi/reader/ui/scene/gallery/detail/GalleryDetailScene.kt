@@ -26,7 +26,6 @@ import android.widget.RatingBar
 import android.widget.TextView
 import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.reader.R
-import com.lanraragi.reader.ServiceRegistry
 import androidx.lifecycle.ViewModelProvider
 import com.lanraragi.reader.domain.ArchiveDetail
 import com.lanraragi.reader.ui.scene.BaseScene
@@ -37,7 +36,6 @@ import com.lanraragi.reader.widget.Ripples
 import androidx.core.content.ContextCompat
 import com.lanraragi.reader.widget.ViewTransition
 import com.lanraragi.reader.widget.LoadImageView
-import com.lanraragi.reader.dao.DownloadState
 import com.lanraragi.reader.ui.readableErrorText
 
 class GalleryDetailScene : BaseScene(), View.OnClickListener,
@@ -62,14 +60,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
             viewModel,
             context = { getEHContext() },
             onRetry = { requestRefresh() },
-            // The degraded detail seeded on failure has not been bound yet:
-            // bind it, or both heart labels stay visible over each other (#94).
-            keepPageNormal = {
-                if (mState != STATE_NORMAL) {
-                    adjustViewVisibility(STATE_NORMAL)
-                    bindViewSecond()
-                }
-            },
         )
     }
 
@@ -107,7 +97,12 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     internal val actionHandler: DetailActionHandler? get() = mActionHandler
     internal val tankBinder: DetailTankoubonBinder? get() = mTankBinder
     internal val headerBinder: DetailHeaderBinder? get() = mHeaderBinder
-    internal val isStateNormal: Boolean get() = mState == STATE_NORMAL
+
+    /** The state this view last rendered; null for a fresh view. */
+    private var renderedState: DetailState? = null
+
+    /** The scene's first view after opening the page: it reveals the header once shown. */
+    private var firstView = false
 
     /** Shortcut delegating to [GalleryDetailViewModel.action]. */
     private var mAction: String?
@@ -124,10 +119,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         get() = viewModel.arcid.value
         set(value) { viewModel.setArcid(value) }
 
-    /** Shortcut delegating to [GalleryDetailViewModel.state]. */
-    private var mState: Int
-        get() = viewModel.state.value
-        set(value) { viewModel.setState(value) }
 
 
 
@@ -166,6 +157,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         }
 
         if (savedInstanceState == null) {
+            firstView = true
             onInit()
         } else {
             onRestore(savedInstanceState)
@@ -314,22 +306,8 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         mViewTransition2 = ViewTransition(mBelowHeader, mProgress)
 
-        if (prepareData()) {
-            if (viewModel.archiveDetail.value != null) {
-                bindViewSecond()
-                mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
-                adjustViewVisibility(STATE_NORMAL)
-            } else if (mArchive != null) {
-                bindViewFirst()
-                mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
-                adjustViewVisibility(STATE_REFRESH_HEADER)
-            } else {
-                adjustViewVisibility(STATE_REFRESH)
-            }
-        } else {
-            tip.setText(R.string.error_cannot_find_gallery)
-            adjustViewVisibility(STATE_FAILED)
-        }
+        viewModel.open(getString(R.string.lrr_category_info_suffix), getString(R.string.lrr_category_count_suffix))
+        render(viewModel.state.value)
 
 
         pageThumbs.setUp(view)
@@ -360,6 +338,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         mTip = null
         mViewTransition = null
+        renderedState = null
 
         mHeader = null
         mActionGroup = null
@@ -382,77 +361,64 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         pageThumbs.clear()
     }
 
-    private fun prepareData(): Boolean {
-        val context = getEHContext()
-        AssertUtils.assertNotNull(context)
-
-        // Try ViewModel cache (checks in-memory detail, then archiveDetailCache)
-        if (!viewModel.tryLoadFromCache()) {
-            return false
-        }
-        if (viewModel.archiveDetail.value != null) {
-            return true
-        }
-
-        // Do request
-        return request()
-    }
-
-    private fun request(): Boolean {
-        getEHContext() ?: return false
-        return viewModel.requestGalleryDetail(
-            getString(R.string.lrr_category_info_suffix),
-            getString(R.string.lrr_category_count_suffix)
-        )
-    }
-
-    /**
-     * Called by [DetailActionHandler] to trigger a refresh from the popup menu.
-     */
+    /** Fetches the detail again unless a fetch already runs. */
     internal fun requestRefresh() {
-        if (mState != STATE_REFRESH && mState != STATE_REFRESH_HEADER) {
-            adjustViewVisibility(STATE_REFRESH)
-            request()
-        }
+        viewModel.refresh(getString(R.string.lrr_category_info_suffix), getString(R.string.lrr_category_count_suffix))
     }
 
-    private fun adjustViewVisibility(state: Int) {
-        if (state == mState) {
-            return
-        }
+    /** Shows [state] on this view; the transitions themselves are the ViewModel's. */
+    internal fun render(state: DetailState) {
         val viewTransition = mViewTransition ?: return
         val viewTransition2 = mViewTransition2 ?: return
+        val previous = renderedState
+        if (state == previous) return
+        renderedState = state
 
-        val oldState = mState
-        mState = state
-
+        val headerShown = state is DetailState.Shown || state == DetailState.LoadingBelowHeader
+        if (previous == null && headerShown) mHeaderBinder?.setTransitionName(viewModel.getEffectiveArcid())
         when (state) {
-            STATE_NORMAL -> {
-                // Show mMainView
+            is DetailState.Shown -> {
                 viewTransition.showView(0, false)
-                // Show mBelowHeader
                 viewTransition2.showView(0, false)
+                renderShown(state, previous)
             }
-            STATE_REFRESH -> {
-                // Show mProgressView
-                viewTransition.showView(1, false)
-            }
-            STATE_REFRESH_HEADER -> {
-                // Show mMainView
+            DetailState.LoadingBelowHeader -> {
+                if (previous == null) bindViewFirst()
                 viewTransition.showView(0, false)
-                // Show mProgress
                 viewTransition2.showView(1, false)
             }
-            else -> {
-                // STATE_INIT, STATE_FAILED
-                // Show mFailedView
+            DetailState.Init, DetailState.Loading -> viewTransition.showView(1, false)
+            is DetailState.Failed -> {
+                val error = state.error
+                mTip?.text = if (error != null) readableErrorText(error) else getString(R.string.error_cannot_find_gallery)
                 viewTransition.showView(2, false)
             }
         }
+
+        revealHeader(from = previous ?: if (firstView) DetailState.Init else null, headerShown)
+        firstView = false
+    }
+
+    private fun renderShown(state: DetailState.Shown, previous: DetailState?) {
+        // A fresh load (same content too), the degraded detail seeded on
+        // failure (or both heart labels stay visible over each other, #94),
+        // or a new view.
+        if (previous !is DetailState.Shown || previous.load != state.load) {
+            if (viewModel.syncDownloadRow()) mHeaderBinder?.useNetWorkLoadThumb = true
+            bindViewSecond()
+        }
+        val error = state.sourceError
+        if (error != null) mSourceError.show(error) else mSourceError.hide()
+    }
+
+    /**
+     * The header reveals once when it first appears after loading; not on a
+     * re-created view of a page already shown ([from] null).
+     */
+    private fun revealHeader(from: DetailState?, headerShown: Boolean) {
+        val wasLoading = from == DetailState.Init || from == DetailState.Loading || from is DetailState.Failed
         val context = getEHContext() ?: return
-        val wasLoading = oldState == STATE_INIT || oldState == STATE_FAILED || oldState == STATE_REFRESH
-        val nowShown = state == STATE_NORMAL || state == STATE_REFRESH_HEADER
-        if (wasLoading && nowShown && context.isLightTheme()) {
+        if (wasLoading && headerShown && context.isLightTheme()) {
             mHeaderBinder?.createCircularRevealOrPost()
         }
     }
@@ -484,9 +450,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         val activity = activity2 ?: return
 
         if (mTip === v) {
-            if (request()) {
-                adjustViewVisibility(STATE_REFRESH)
-            }
+            requestRefresh()
         } else {
             mActionHandler?.onClick(v, ctx, activity)
         }
@@ -499,56 +463,7 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
     }
 
 
-    internal fun onGetArchiveDetailSuccess(result: ArchiveDetail) {
-        try {
-            onGetArchiveDetailSuccessInternal(result)
-        } catch (e: Exception) {
-            android.util.Log.e("GalleryDetailScene", "onGetArchiveDetailSuccess crashed", e)
-        }
-    }
-
-    private fun onGetArchiveDetailSuccessInternal(result: ArchiveDetail) {
-        viewModel.refreshDownloadState()
-        val dlState = viewModel.downloadState.value
-        if (dlState != DownloadState.INVALID) {
-            // Refresh the cached download row's thumb if the freshly fetched
-            // detail carries a different one. Snapshot lookup — the row is
-            // only read here, so we do not need a long-lived StateFlow.
-            // The same arcid on another server is another server's row (#94).
-            val di = ServiceRegistry.dataModule.downloadManager.getDownloadInfo(result.archive.arcid)
-                ?.takeIf { it.serverProfileId == viewModel.getSourceProfileId() }
-            if (di != null && di.thumb != null &&
-                di.thumb != result.archive.thumbnailUrl && di.arcid == result.archive.arcid
-            ) {
-                mHeaderBinder?.useNetWorkLoadThumb = true
-                // The download state is owned by the scheduler: it is not
-                // copied back here (it could only be stale or another
-                // archive's), and the row is written through the ordered
-                // download write queue (audit 2026-10-06b STAB-01).
-                viewModel.updateDownloadRowFromDetail(result.archive)
-            }
-        }
-        adjustViewVisibility(STATE_NORMAL)
-        bindViewSecond()
-    }
-
-    internal fun onGetGalleryDetailFailure(e: Exception) {
-        e.printStackTrace()
-        val context = getEHContext()
-        val tip = mTip
-        if (context != null && tip != null) {
-            val error = readableErrorText(e)
-            tip.text = error
-            adjustViewVisibility(STATE_FAILED)
-        }
-    }
-
     companion object {
-        private const val STATE_INIT = GalleryDetailViewModel.STATE_INIT
-        private const val STATE_NORMAL = GalleryDetailViewModel.STATE_NORMAL
-        private const val STATE_REFRESH = GalleryDetailViewModel.STATE_REFRESH
-        private const val STATE_REFRESH_HEADER = GalleryDetailViewModel.STATE_REFRESH_HEADER
-        private const val STATE_FAILED = GalleryDetailViewModel.STATE_FAILED
 
         const val KEY_ACTION = "action"
         const val ACTION_ARCHIVE = "action_archive"
