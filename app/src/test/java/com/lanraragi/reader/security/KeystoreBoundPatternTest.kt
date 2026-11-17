@@ -64,7 +64,7 @@ class KeystoreBoundPatternTest {
     fun invalidatedKeyFallsBackToThePatternAndSwitchesFingerprintOff() = runTest(UnconfinedTestDispatcher()) {
         AppLockCredentials.setPatternWithCipher("0147", encryptCipher())
         SecuritySettings.putEnableFingerprint(true)
-        val vm = SecurityViewModel()
+        val vm = SecurityViewModel(kotlinx.coroutines.Dispatchers.Unconfined)
         val received = mutableListOf<SecurityUiEvent>()
         backgroundScope.launch { vm.uiEvent.collect { received += it } }
 
