@@ -493,10 +493,10 @@ class DownloadsViewModelTest {
         repo.putDownloadInfo(row("miss", "other", 2L))
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
 
-        vm.setSearchKey("artist:wanted")
         vm.updateForLabel()
-        vm.startSearching("artist:wanted")
+        vm.search("artist:wanted")
         awaitUntil { vm.downloadList.value.map { it.arcid } == listOf("hit") }
+        assertEquals(DownloadsFilter(query = "artist:wanted"), vm.filter.value)
 
         // Any later change to the downloads table re-emits the list; wait until
         // that emission has reached the ViewModel before asserting.
@@ -504,6 +504,11 @@ class DownloadsViewModelTest {
         awaitUntil { vm.backList.value.any { it.arcid == "miss" && it.time == 3L } }
 
         assertEquals(listOf("hit"), vm.downloadList.value.map { it.arcid })
+
+        // A blank search shows the whole label again.
+        vm.search("  ")
+        assertEquals(DownloadsFilter(), vm.filter.value)
+        assertEquals(setOf("hit", "miss"), vm.downloadList.value.map { it.arcid }.toSet())
     }
 
     @Test
@@ -518,12 +523,18 @@ class DownloadsViewModelTest {
         repo.putDownloadInfo(row("miss-done", "other", DownloadState.FINISH))
         awaitUntil { vm.backList.value.size == 3 }
 
-        vm.setSearchKey("artist:wanted")
-        vm.startSearching("artist:wanted")
+        vm.search("artist:wanted")
         vm.gotoFilterAndSort(com.lanraragi.reader.R.id.download_done)
-        awaitUntil { !vm.filterLoading.value }
+        assertTrue("the pass spins the list", vm.filter.value.applying)
+        awaitUntil { !vm.filter.value.applying }
 
         assertEquals(listOf("hit-done"), vm.downloadList.value.map { it.arcid })
+
+        // Leaving the page drops the search and any pass still running.
+        vm.gotoFilterAndSort(com.lanraragi.reader.R.id.download_done)
+        vm.clearSearch()
+        assertEquals(DownloadsFilter(), vm.filter.value)
+        assertEquals(3, vm.downloadList.value.size)
     }
 
     @Test

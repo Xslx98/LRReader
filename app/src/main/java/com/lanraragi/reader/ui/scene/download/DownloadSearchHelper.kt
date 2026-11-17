@@ -47,15 +47,10 @@ internal class DownloadSearchHelper(private val callback: Callback) {
         private set
     var searchBarMover: SearchBarMover? = null
         private set
-    var searchMode: Boolean = false
+    /** The dialog's search bar shows its suggestion list (dialog chrome only). */
+    private var searchMode: Boolean = false
 
-    var searchKey: String?
-        get() = callback.viewModel.searchKey.value
-        set(value) { callback.viewModel.setSearchKey(value) }
-
-    var searching: Boolean
-        get() = callback.viewModel.searching.value
-        set(value) { callback.viewModel.setSearching(value) }
+    private val searchKey: String? get() = callback.viewModel.filter.value.query
 
     fun gotoSearch(context: Context) {
         searchDialog?.let { it.show(); return }
@@ -87,7 +82,6 @@ internal class DownloadSearchHelper(private val callback: Callback) {
             .setCancelable(true)
             .setOnDismissListener { onSearchDialogDismiss(it) }
             .setNegativeButton(android.R.string.cancel) { dialog, _ ->
-                searchKey = null
                 bar.setText(null)
                 bar.setTitle(null as String?)
                 bar.applySearch(true)
@@ -112,10 +106,11 @@ internal class DownloadSearchHelper(private val callback: Callback) {
         mover.returnSearchBarPosition(animation)
     }
 
-    fun startSearching() {
+    /** Searches the current label for [query] (the dialog's, or the one kept across a label switch). */
+    fun startSearching(query: String? = searchKey) {
         if (searchMode) {
             searchMode = false
-            searchBar?.setTitle(searchKey)
+            searchBar?.setTitle(query)
             searchBar?.setState(SearchBar.STATE_NORMAL)
         }
 
@@ -123,14 +118,12 @@ internal class DownloadSearchHelper(private val callback: Callback) {
 
         callback.updateForLabel()
 
-        callback.viewModel.startSearching(searchKey ?: "")
+        callback.viewModel.search(query)
     }
 
     fun onApplySearch(query: String) {
-        searchKey = query
         searchBar?.hideKeyBoard()
-        searching = true
-        startSearching()
+        startSearching(query)
     }
 
     fun onSearchEditTextBackPressed() {

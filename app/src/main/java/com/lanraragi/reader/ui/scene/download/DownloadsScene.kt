@@ -130,15 +130,13 @@ class DownloadsScene : ToolbarScene(),
 
     private var downloadLabelDraw: DownloadLabelDraw? = null
 
-    var searchKey: String?
-        get() = viewModel.searchKey.value
-        set(value) { viewModel.setSearchKey(value) }
+    /** The search shown, or null. */
+    val searchKey: String? get() = viewModel.filter.value.query
 
     internal val deepLink by lazy { DownloadDeepLink(this, viewModel) }
 
-    var searching: Boolean
-        get() = viewModel.searching.value
-        set(value) { viewModel.setSearching(value) }
+    /** A filter or sort pass runs; its result would replace another label's list. */
+    val searching: Boolean get() = viewModel.filter.value.applying
 
     private val galleryActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -555,21 +553,6 @@ class DownloadsScene : ToolbarScene(),
     /** Delegates to [DownloadSearchHelper.startSearching]. Called from [DownloadLabelDraw]. */
     internal fun startSearching() {
         mSearchHelper?.startSearching()
-    }
-
-    internal fun updateAdapter() {
-        // 检查 Fragment 是否已附加，如果未附加则延迟创建适配器
-        if (!isAdded) {
-            return
-        }
-        val newAdapter = DownloadAdapter(this, this)
-        mOriginalAdapter = newAdapter
-        newAdapter.setHasStableIds(true)
-        // 避免重复创建包装适配器，直接使用原始适配器
-        mAdapter = mOriginalAdapter
-        if (::mRecyclerView.isInitialized) {
-            mRecyclerView.adapter = mAdapter
-        }
     }
 
     override fun onSearchEditTextBackPressed() {
