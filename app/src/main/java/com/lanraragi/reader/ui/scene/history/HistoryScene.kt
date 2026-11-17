@@ -82,6 +82,7 @@ import com.lanraragi.reader.client.api.isTankoubonId
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.ui.GalleryOpenHelper
 import com.lanraragi.reader.ui.list.ListDiffBinder
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -191,7 +192,10 @@ class HistoryScene : ToolbarScene(),
             setOnClickListener { onBatchRemoveClick() }
         }
         val multiSelect = ListMultiSelectHelper(
+            model = viewModel.selection,
             recyclerView = { if (::mRecyclerView.isInitialized) mRecyclerView else null },
+            keyAt = { position -> archiveAt(position)?.arcid },
+            selectableKeys = { mRows.items.map { it.archive.arcid } },
             longClickListener = { this },
             onModeChanged = { active ->
                 batchBar?.let { if (active) BatchBarAnimator.show(it) else BatchBarAnimator.hide(it) }
@@ -203,11 +207,7 @@ class HistoryScene : ToolbarScene(),
             },
         )
         multiSelectHelper = multiSelect
-        // intoCustomChoiceMode() is a no-op unless the custom choice mode is
-        // configured, and it dispatches to the listener without a null check —
-        // both calls below are required before the mode can be entered.
-        mRecyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        mRecyclerView.setCustomCheckedListener(multiSelect.choiceListener)
+        multiSelect.attach(mRecyclerView)
         multiSelect.attachDragSelect(mRecyclerView) { true }
 
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
@@ -229,6 +229,10 @@ class HistoryScene : ToolbarScene(),
         collectFlow(viewLifecycleOwner, viewModel.state) { state ->
             mRows.submit(state.items)
             mStateList?.render(state)
+            // A reload takes the checks of rows it no longer holds with it.
+            if (state !is ListScreenState.Loading) {
+                multiSelectHelper?.retainAll(state.items.map { it.archive.arcid })
+            }
         }
 
         viewModel.loadHistory()
@@ -280,10 +284,8 @@ class HistoryScene : ToolbarScene(),
             mLayoutManager.columnSize = columnWidth
             mRecyclerView.requestLayout()
         }
-        // Reload history to pick up rating changes made in detail page.
-        // The reload replaces the list and invalidates adapter positions, so
-        // any in-flight multi-select must not survive it.
-        multiSelectHelper?.exit()
+        // Reload history to pick up rating changes made in detail page. The
+        // selection is by arcid, so it survives the reload (and a rotation).
         viewModel.loadHistory()
     }
 
@@ -304,6 +306,7 @@ class HistoryScene : ToolbarScene(),
 
         mStateList = null
         mAdapter = null
+        multiSelectHelper?.detach()
         multiSelectHelper = null
         batchBar = null
         batchCountView = null
@@ -336,8 +339,7 @@ class HistoryScene : ToolbarScene(),
                 if (DialogInterface.BUTTON_POSITIVE != which || mAdapter == null) {
                     return@setPositiveButton
                 }
-                // The list is about to empty out — checked positions become
-                // meaningless, so leave multi-select first.
+                // The list is about to empty out: leave multi-select first.
                 multiSelectHelper?.exit()
                 viewModel.clearAllHistory()
             }.show()
@@ -358,8 +360,8 @@ class HistoryScene : ToolbarScene(),
     }
 
     override fun onItemClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean {
-        // In multi-select mode a click toggles the row instead of navigating —
-        // the library does not toggle on click by itself (mirrors gallery list).
+        // In multi-select mode a click toggles the row instead of navigating
+        // (mirrors gallery list).
         multiSelectHelper?.let { if (it.isActive) return it.toggleChecked(position) }
         val list = mRows.items.map { it.archive }
         if (position >= list.size) return false
@@ -440,15 +442,15 @@ class HistoryScene : ToolbarScene(),
 
     /**
      * Confirm-then-remove for the current selection. The selection is captured
-     * before the dialog (it cannot change under a modal dialog, but the exit
-     * below reorders the list) and multi-select is left only on confirm —
-     * cancelling keeps the selection, matching the gallery-list batch delete.
+     * before the dialog (it cannot change under a modal dialog) and
+     * multi-select is left only on confirm — cancelling keeps the selection,
+     * matching the gallery-list batch delete.
      */
     private fun onBatchRemoveClick() {
         val context = ehContext ?: return
         val multiSelect = multiSelectHelper ?: return
-        val list = mRows.items.map { it.archive }
-        val selected: List<Archive> = multiSelect.checkedPositions().mapNotNull { list.getOrNull(it) }
+        val checked = multiSelect.checkedKeys
+        val selected: List<Archive> = mRows.items.map { it.archive }.filter { it.arcid in checked }
         if (selected.isEmpty()) return
         AlertDialog.Builder(context)
             .setMessage(
@@ -458,7 +460,7 @@ class HistoryScene : ToolbarScene(),
             )
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.batch_remove_history) { _, _ ->
-                // Exit before the removal: rows fall out and positions shift.
+                // The removed rows leave the list; the mode ends with them.
                 multiSelect.exit()
                 viewModel.removeHistories(selected)
             }
@@ -542,8 +544,8 @@ class HistoryScene : ToolbarScene(),
         }
 
         override fun onGetSwipeReactionType(holder: HistoryHolder, position: Int, x: Int, y: Int): Int {
-            // Swiping a row away during multi-select would remove it and shift
-            // every later position while the checked SparseArray does not remap.
+            // A swipe removes a row; during multi-select taps and drags
+            // belong to the selection.
             if (multiSelectHelper?.isActive == true) {
                 return SwipeableItemConstants.REACTION_CAN_NOT_SWIPE_ANY
             }

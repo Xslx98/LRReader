@@ -251,11 +251,38 @@ open class EasyRecyclerView @JvmOverloads constructor(
         selector?.jumpToCurrentState()
     }
 
+    /**
+     * The checked look of each row, read from a selection the screen owns
+     * (a SelectionModel) instead of this view's choice mode. When set, rows
+     * are drawn from it as they attach and on [refreshChecked].
+     */
+    var checkedProvider: ((position: Int) -> Boolean)? = null
+        set(value) {
+            field = value
+            refreshChecked()
+        }
+
+    /** Redraws the checked look of the rows on screen from [checkedProvider]. */
+    fun refreshChecked() {
+        val provider = checkedProvider ?: return
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+            val position = getChildAdapterPosition(child)
+            if (position >= 0) setViewChecked(child, provider(position))
+        }
+    }
+
     override fun onChildAttachedToWindow(child: View) {
         super.onChildAttachedToWindow(child)
-        val states = checkStates ?: return
         val position = getChildAdapterPosition(child)
-        if (position >= 0) setViewChecked(child, states.get(position))
+        if (position < 0) return
+        val provider = checkedProvider
+        if (provider != null) {
+            setViewChecked(child, provider(position))
+            return
+        }
+        val states = checkStates ?: return
+        setViewChecked(child, states.get(position))
     }
 
     /** Whether [position] is checked (always `false` without a choice mode). */

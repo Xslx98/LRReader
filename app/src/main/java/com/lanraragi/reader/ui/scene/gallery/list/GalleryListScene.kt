@@ -354,9 +354,14 @@ open class GalleryListScene : BaseScene(),
 
     fun onUpdateUrlBuilder() {
         // The query is changing (search / tag / bookmark / filter / new args):
-        // the list is about to reload and adapter positions become meaningless,
-        // so any in-flight multi-select must not survive it.
+        // the list is about to show other results, so an in-flight
+        // multi-select must not survive it.
         multiSelectHelper?.exit()
+        showUrlBuilder()
+    }
+
+    /** Shows the query in the search bar, the title and the drawer's checked item. */
+    private fun showUrlBuilder() {
         val builder = mUrlBuilder
         val resources = resources2
         if (resources == null || builder == null || !::searchLayout.isInitialized) {
@@ -478,7 +483,8 @@ open class GalleryListScene : BaseScene(),
 
         GalleryListChrome.bind(this, context, mainLayout, paddingTopSB, paddingBottomFab)
 
-        onUpdateUrlBuilder()
+        // The query is the same one (a new view of it): the selection stays.
+        showUrlBuilder()
 
         // Restore state
         // The chrome the ViewModel holds (saved with the screen), without animation;
@@ -563,6 +569,7 @@ open class GalleryListScene : BaseScene(),
         rightDrawable = null
         actionFabDrawable = null
         tankSortDrawable = null
+        multiSelectHelper?.detach()
         multiSelectHelper = null
         batchOpsHelper = null
         uploadHelper = null
@@ -694,7 +701,16 @@ open class GalleryListScene : BaseScene(),
 
     /** The list state, its failure notices and the searches that landed, while the view is up. */
     private fun observeList() {
-        collectFlow(viewLifecycleOwner, viewModel.listState) { mHelper?.render(it) }
+        collectFlow(viewLifecycleOwner, viewModel.listState) { state ->
+            mHelper?.render(state)
+            // Checks of rows the list no longer holds go: a selection restored
+            // after process death keeps only what the first load brought back
+            // (none if it failed). Loads that start the list over have
+            // already ended the mode (GalleryListDataHelper.load).
+            if (state !is GalleryListState.Loading && state !is GalleryListState.Idle) {
+                multiSelectHelper?.retainAll(state.pages.rows.map { it.arcid })
+            }
+        }
         collectFlow(viewLifecycleOwner, viewModel.listNotice) { mHelper?.showNotice(it) }
         collectFlow(viewLifecycleOwner, viewModel.searchLanded) { params ->
             if (params == null) return@collectFlow

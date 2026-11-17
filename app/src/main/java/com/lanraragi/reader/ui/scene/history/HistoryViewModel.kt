@@ -3,6 +3,7 @@ package com.lanraragi.reader.ui.scene.history
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.SavedStateHandle
 import androidx.recyclerview.widget.DiffUtil
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.dao.HistoryInfo
@@ -12,6 +13,7 @@ import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.reading.ReadingHistoryService
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.ui.list.ListScreenState
+import com.lanraragi.reader.ui.list.SelectionModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,9 +34,14 @@ import kotlinx.coroutines.withContext
  * ([com.lanraragi.reader.ui.list.ListDiffBinder]); views, adapters and
  * navigation remain in the Scene.
  */
-class HistoryViewModel(
+class HistoryViewModel @JvmOverloads constructor(
+    // First, so the ViewModel factory finds the (SavedStateHandle) constructor.
+    saved: SavedStateHandle = SavedStateHandle(),
     private val historyEdits: ReadingHistoryService = ReadingHistoryService.default,
 ) : ViewModel() {
+
+    /** The list's multi-select, by arcid; saved with the screen. */
+    val selection = SelectionModel(saved)
 
     private val historyRepository: HistoryRepository =
         ServiceRegistry.dataModule.historyRepository

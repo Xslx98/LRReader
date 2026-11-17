@@ -22,8 +22,8 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
 
     fun onItemClick(view: View, position: Int): Boolean {
         val archive = scene.mHelper?.getDataAtEx(position)
-        // In multi-select mode a click toggles the row instead of navigating —
-        // the library does not toggle on click by itself (mirrors downloads).
+        // In multi-select mode a click toggles the row instead of navigating
+        // (mirrors downloads).
         // Tank pseudo-entries are NOT selectable outside tank mode (batch ops don't apply).
         scene.multiSelectHelper?.let {
             if (it.isActive) {

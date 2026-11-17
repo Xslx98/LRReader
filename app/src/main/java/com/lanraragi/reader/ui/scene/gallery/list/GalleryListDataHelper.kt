@@ -116,9 +116,9 @@ class GalleryListDataHelper(
     fun refresh() = load(GalleryLoadKind.Refresh)
 
     private fun load(kind: GalleryLoadKind) {
-        // Any load that replaces rows invalidates adapter positions, so an
-        // in-flight multi-select (or merge animation) must not survive it.
-        // Only next-page appends keep existing positions valid.
+        // A load that replaces the rows starts the list over: an in-flight
+        // multi-select or merge animation ends with it. A next-page append
+        // keeps both.
         if (kind != GalleryLoadKind.NextPage) {
             callback.exitMultiSelect()
             callback.cancelTankMerge()
