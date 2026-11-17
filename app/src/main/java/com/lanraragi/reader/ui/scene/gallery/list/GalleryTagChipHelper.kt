@@ -34,7 +34,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
         fun isDrawersVisible(): Boolean
         fun closeDrawer(gravity: Int)
         fun getUrlBuilder(): ListUrlBuilder?
-        fun getContentHelper(): com.lanraragi.reader.widget.ContentLayout.ContentHelper<*>?
+        fun getContentHelper(): GalleryListDataHelper?
         fun isFilterOpen(): Boolean
         fun buildFilterSearch(tagName: String): String
         fun updateFilterDisplay()

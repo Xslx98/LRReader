@@ -56,7 +56,7 @@ data class GalleryListQuery(
 sealed interface GalleryListLoad {
 
     /**
-     * The rows of one page. [pageCount] and [nextPage] are ContentLayout's
+     * The rows of one page. [pageCount] and [nextPage] are the list's
      * dense page bookkeeping; [issued] is the `/api/search` query behind the
      * rows (null for tank mode, which never anchors a reading context).
      */
@@ -163,7 +163,7 @@ class GalleryListLoader(
                         sortby = issued.sortby,
                         order = issued.order,
                     ),
-                    // ContentLayout counts dense page indexes (0,1,2,…) but the
+                    // The list counts dense page indexes (0,1,2,…) but the
                     // server is addressed by raw item offsets (NET-2).
                     offset = startOffset,
                 )

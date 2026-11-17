@@ -32,7 +32,7 @@ com.lanraragi.reader.tankoubon     | tankoubon rules, repository and membership 
 com.lanraragi.reader.ui            | Activities, Scenes + ViewModels, Binders/Controllers, dialogs
 com.lanraragi.reader.updater       | in-app update: GitHub release lookup, APK download and checks
 com.lanraragi.reader.util          | leaf utilities (no other app imports)
-com.lanraragi.reader.widget        | app-owned views (ContentLayout, LoadImageView, drawer, list)
+com.lanraragi.reader.widget        | app-owned views (StateListLayout, LoadImageView, drawer, list)
 com.lanraragi.framework.drawable   | generic drawables
 com.lanraragi.framework.lib        | GL reader engine (glgallery, glview) and image decoding; no per-frame allocation
 com.lanraragi.framework.preference | generic Preference widgets

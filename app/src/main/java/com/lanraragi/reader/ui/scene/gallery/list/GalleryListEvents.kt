@@ -79,11 +79,8 @@ class GalleryListEvents(private val scene: GalleryListScene) {
         // Rating saved on the detail page: update the row in place. Whole-
         // lifetime like the cover collector — this list is covered then.
         collectFlowWhileCreated(scene, AppEventBus.archiveRatingChangedEvent) { event ->
-            val list = scene.mHelper?.data ?: return@collectFlowWhileCreated
-            val i = list.indexOfFirst { it.arcid == event.arcid }
-            if (i >= 0) {
-                list[i] = list[i].copy(rating = event.rating)
-                scene.adapter?.notifyItemChanged(i)
+            val helper = scene.mHelper ?: return@collectFlowWhileCreated
+            if (helper.updateRow(event.arcid) { it.copy(rating = event.rating) }) {
                 scene.rowHighlighter.mark(event.arcid)
             }
         }
@@ -147,12 +144,6 @@ class GalleryListEvents(private val scene: GalleryListScene) {
         // SparseArray does not remap — an in-flight multi-select must not
         // survive it (same rationale as the getPageData refresh funnel).
         scene.multiSelectHelper?.exit()
-        val helper = scene.mHelper ?: return
-        for (i in 0 until helper.size()) {
-            if (helper.getDataAtEx(i)?.arcid == arcid) {
-                helper.removeAt(i)
-                return
-            }
-        }
+        scene.mHelper?.removeRow(arcid)
     }
 }
