@@ -210,6 +210,8 @@ class GalleryDetailViewModelSourceRoutingTest {
         vm.open(" etc", " categories")
         vm.cancelReadingPreload()
         assertEquals(DetailState.LoadingBelowHeader, vm.state.value)
+        // The request is at the server; a restart would send a second one.
+        awaitUntil { sourceLrr.paths.any { it.endsWith("/metadata") } }
         vm.refresh(" etc", " categories")
         vm.open(" etc", " categories")
         gate.countDown()
