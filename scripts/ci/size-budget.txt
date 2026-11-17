@@ -49,12 +49,17 @@
 # 2026-11-17 (same approval, phase 5): dex +8192 B (3795760 -> 3803952). PR 5.4b
 # slice 2 (downloads multi-select on SelectionModel) put the local arm64 release
 # at 3852800 vs the 3852696 limit. Re-seeded with the others at the end.
+# 2026-11-17 (plan end, as promised above): re-seeded from the arm64 release
+# CI measured on the state unification plan's last PR (#152, run 44111827832),
+# rounded up by < 0.3 %: apk.file 5337119, apk.download 2552067, dex 3852564,
+# res 1370765, dex.method_refs 26139. lib (local 6296 B), assets and other
+# keep their budgets. The phase raises above are folded into these figures.
 tolerance.percent 1.5
-apk.file        5275216
-apk.download    2519254
-dex             3803952
+apk.file        5345000
+apk.download    2556000
+dex             3860000
 lib                6400
-res             1358192
+res             1374000
 assets            14000
 other              3600
-dex.method_refs   25896
+dex.method_refs   26200
