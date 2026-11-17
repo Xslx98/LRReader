@@ -739,8 +739,6 @@ open class GalleryListScene : BaseScene(),
         const val KEY_LIST_URL_BUILDER = "list_url_builder"
         private const val HTTP_LOCKED = 423
 
-        // Keep for backward compat with references
-
         @JvmStatic
         fun startScene(scene: com.lanraragi.framework.scene.SceneFragment, lub: ListUrlBuilder) {
             scene.startScene(getStartAnnouncer(lub))

@@ -15,10 +15,9 @@ import com.lanraragi.framework.util.AnimationUtils
 import android.animation.AnimatorListenerAdapter
 
 /**
- * Renders the search chrome ([SearchChrome]) and runs the FAB animations for GalleryListScene.
- * Handles the 4-state transitions (NORMAL, SIMPLE_SEARCH, SEARCH, SEARCH_SHOW_LIST)
- * and the FAB show/hide/select animations.
- * Extracted to reduce GalleryListScene's line count.
+ * Renders the search chrome ([SearchChrome], owned by GalleryListViewModel)
+ * for GalleryListScene: the advanced layout, the search bar, its icons and
+ * drawer locks, and the FAB show/hide/select animations.
  */
 class GalleryStateHelper(private val callback: Callback) {
 
