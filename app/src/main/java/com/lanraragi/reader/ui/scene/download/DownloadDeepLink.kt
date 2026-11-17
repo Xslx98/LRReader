@@ -66,9 +66,9 @@ class DownloadDeepLink(
         pendingJump.resolveOnNewList(isEmpty, viewModel::listIndexOfArchive)?.let(::show)
     }
 
-    /** Checked rows are positions on the current page, so a selection keeps its page. */
+    /** A jump during multi-select would move the page out from under the user's picks. */
     private fun show(position: Int) {
-        if (scene.recyclerView?.isInCustomChoice != true) scene.showListPosition(position)
+        if (!scene.isSelecting) scene.showListPosition(position)
     }
 
     private companion object {

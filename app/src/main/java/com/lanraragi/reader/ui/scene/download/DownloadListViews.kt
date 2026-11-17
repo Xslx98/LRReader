@@ -7,7 +7,6 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lanraragi.framework.util.attrColor
 import com.lanraragi.framework.util.isLightTheme
-import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.widget.list.HandlerDrawable
 import com.lanraragi.reader.widget.list.MarginItemDecoration
@@ -49,8 +48,6 @@ internal object DownloadListViews {
         recyclerView.clipToPadding = false
         recyclerView.setOnItemClickListener(scene)
         recyclerView.setOnItemLongClickListener(scene)
-        recyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        recyclerView.setCustomCheckedListener(selectionHelper?.choiceListener)
         selectionHelper?.attachDragSelect(recyclerView)
         val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
         val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)

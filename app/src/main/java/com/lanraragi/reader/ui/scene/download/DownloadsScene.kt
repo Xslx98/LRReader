@@ -308,6 +308,9 @@ class DownloadsScene : ToolbarScene(),
 
         mActionFabDrawable = DownloadListViews.configureFab(this, context, mFabLayout)
         addAboveSnackView(mFabLayout)
+        // After the FAB is set up, so a restored selection expands it (and an
+        // off one collapses it) whatever the FAB saved itself.
+        mSelectionHelper?.attach(mRecyclerView)
 
         updateView()
 
@@ -333,6 +336,12 @@ class DownloadsScene : ToolbarScene(),
         }
     }
 
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        // The FAB restores its own expanded flag; the selection decides it.
+        if (::mFabLayout.isInitialized) mFabLayout.isExpanded = isSelecting
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
 
@@ -342,6 +351,7 @@ class DownloadsScene : ToolbarScene(),
         mSearchHelper = null
         mBatchOpsHelper = null
         mGalleryOpenHelper = null
+        mSelectionHelper?.detach()
         mSelectionHelper = null
 
         if (::mRecyclerView.isInitialized) {
@@ -366,7 +376,7 @@ class DownloadsScene : ToolbarScene(),
     @SuppressLint("NonConstantResourceId")
     override fun onMenuItemClick(item: MenuItem): Boolean {
         val activity = activity2
-        if (activity == null || !::mRecyclerView.isInitialized || mRecyclerView.isInCustomChoice) return false
+        if (activity == null || !::mRecyclerView.isInitialized || isSelecting) return false
         return handleMenuAction(item.itemId, activity)
     }
 
@@ -432,12 +442,11 @@ class DownloadsScene : ToolbarScene(),
         return draw.createView()
     }
 
-    override fun hasInSceneBack(): Boolean =
-        ::mRecyclerView.isInitialized && mRecyclerView.isInCustomChoice
+    override fun hasInSceneBack(): Boolean = isSelecting
 
     override fun onBackPressed() {
-        if (::mRecyclerView.isInitialized && mRecyclerView.isInCustomChoice) {
-            mRecyclerView.outOfCustomChoiceMode()
+        if (isSelecting) {
+            viewModel.selection.exit()
         } else {
             super.onBackPressed()
         }
@@ -450,7 +459,7 @@ class DownloadsScene : ToolbarScene(),
 
     override fun onEndDragHandler() {
         // Restore right drawer
-        if (::mRecyclerView.isInitialized && !mRecyclerView.isInCustomChoice) {
+        if (!isSelecting) {
             setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
         }
     }
@@ -497,6 +506,15 @@ class DownloadsScene : ToolbarScene(),
 
     override val recyclerView: EasyRecyclerView?
         get() = if (::mRecyclerView.isInitialized) mRecyclerView else null
+
+    override val isSelecting: Boolean
+        get() = ::viewModel.isInitialized && viewModel.selection.isActive
+
+    /** The arcid of the row at page position [position], or null. */
+    internal fun keyAt(position: Int): String? {
+        if (position < 0 || recyclerView?.adapter?.let { position < it.itemCount } != true) return null
+        return mList?.getOrNull(positionInList(position))?.arcid
+    }
 
     override fun downloadDirFutureFor(info: DownloadInfo): CompletableFuture<StorageFile?> =
         viewModel.downloadDirFutureFor(info)
@@ -582,6 +600,7 @@ class DownloadsScene : ToolbarScene(),
         override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.recyclerView
         override val mAdapter: RecyclerView.Adapter<*>? get() = this@DownloadsScene.mAdapter
         override val viewLifecycleOwner get() = this@DownloadsScene.viewLifecycleOwner
+        override val selection: DownloadSelectionHelper? get() = mSelectionHelper
         override fun positionInList(position: Int): Int = this@DownloadsScene.positionInList(position)
         override fun listIndexInPage(position: Int): Int = this@DownloadsScene.listIndexInPage(position)
         override fun launchGallery(intent: Intent) = galleryActivityLauncher.launch(intent)
@@ -593,6 +612,8 @@ class DownloadsScene : ToolbarScene(),
         override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null
         override val actionFabDrawable: AddDeleteDrawable? get() = mActionFabDrawable
         override val longClickListener: EasyRecyclerView.OnItemLongClickListener get() = this@DownloadsScene
+        override val selection get() = viewModel.selection
+        override fun keyAt(position: Int): String? = this@DownloadsScene.keyAt(position)
         override fun setDrawerLockMode(lockMode: Int, gravity: Int) =
             this@DownloadsScene.setDrawerLockMode(lockMode, gravity)
     }
@@ -629,6 +650,8 @@ class DownloadsScene : ToolbarScene(),
         override val mRecyclerView: EasyRecyclerView? get() = this@DownloadsScene.recyclerView
         override val mFabLayout: FabLayout? get() = if (this@DownloadsScene::mFabLayout.isInitialized) this@DownloadsScene.mFabLayout else null
         override val viewLifecycleOwner get() = this@DownloadsScene.viewLifecycleOwner
+        override val selection: DownloadSelectionHelper? get() = mSelectionHelper
+        override fun keyAt(position: Int): String? = this@DownloadsScene.keyAt(position)
         override fun positionInList(position: Int): Int = this@DownloadsScene.positionInList(position)
         override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?) =
             this@DownloadsScene.onClickPrimaryFab(view, fab)

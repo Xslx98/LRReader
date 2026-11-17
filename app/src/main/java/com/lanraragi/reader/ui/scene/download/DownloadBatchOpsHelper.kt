@@ -23,7 +23,6 @@ import android.widget.Toast
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.util.size
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -67,6 +66,12 @@ internal class DownloadBatchOpsHelper(
         fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?)
         fun launchGallery(intent: Intent)
         fun getResources(): android.content.res.Resources
+
+        /** The list's multi-select; null before the view (tests). */
+        val selection: DownloadSelectionHelper? get() = null
+
+        /** The arcid of the row at page position [position], or null. */
+        fun keyAt(position: Int): String? = null
     }
 
     fun startAll(activity: Activity) {
@@ -103,16 +108,17 @@ internal class DownloadBatchOpsHelper(
         val act = callback.activity2 ?: return
         val list = callback.mList ?: return
 
+        val selection = callback.selection ?: return
         if (position == 0) {
-            recyclerView.checkAll()
+            // Select all: every row of the page shown.
+            val count = recyclerView.adapter?.itemCount ?: 0
+            selection.selectAll((0 until count).mapNotNull(callback::keyAt))
             return
         }
 
-        val stateArray = recyclerView.checkedItemPositions ?: return
-        val selected = ArrayList<DownloadInfo>()
-        for (i in 0 until stateArray.size) {
-            if (stateArray.valueAt(i)) selected.add(list[callback.positionInList(stateArray.keyAt(i))])
-        }
+        // In list order, once per arcid.
+        val checked = selection.checkedKeys
+        val selected = list.filter { it.arcid in checked }.distinctBy { it.arcid }
         // A checked tank card stands for its member rows (spec 2026-09-21
         // §4); the TANK_ id itself never reaches the service or scheduler.
         val expanded = DownloadBatchSelection.expand(selected) { callback.viewModel.tankMembersOf(it) }
@@ -120,17 +126,17 @@ internal class DownloadBatchOpsHelper(
         when (position) {
             1 -> { // Start
                 startRange(expanded.arcids, act)
-                recyclerView.outOfCustomChoiceMode()
+                selection.exit()
             }
             2 -> { // Stop
                 stopRange(expanded.arcids)
-                recyclerView.outOfCustomChoiceMode()
+                selection.exit()
             }
             3 -> { // Delete
                 val infos = expanded.infos
                 val arcids = expanded.arcids
                 deleteRange(context, infos, arcids) { deleteFiles ->
-                    recyclerView.outOfCustomChoiceMode()
+                    selection.exit()
                     callback.viewModel.deleteRangeDownloads(infos, arcids, deleteFiles, expanded.cardIds)
                 }
             }
@@ -141,7 +147,7 @@ internal class DownloadBatchOpsHelper(
                 val infos = expanded.rowsOnly
                 if (infos.isEmpty()) return
                 moveRange(context, infos) { label ->
-                    recyclerView.outOfCustomChoiceMode()
+                    selection.exit()
                     callback.viewModel.moveDownloads(infos, label)
                 }
             }
