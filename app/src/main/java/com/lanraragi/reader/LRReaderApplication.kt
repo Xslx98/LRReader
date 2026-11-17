@@ -213,6 +213,8 @@ class LRReaderApplication : SceneApplication() {
                 // async initialize. Inside the try so the finally still completes
                 // activeProfileIdDeferred if join() ever throws.
                 authInitJob.join()
+                // A plaintext app-lock pattern from the oldest versions is hashed now, not inside a getter.
+                com.lanraragi.reader.settings.SecuritySettings.migrateLegacyPattern()
                 val dao = com.lanraragi.reader.dao.AppDatabase.getInstance(this@LRReaderApplication).miscDao()
                 // Pre-v2.5 installs kept the active server in the secure store too.
                 com.lanraragi.reader.server.LegacyActiveSessionMigration.run(dao)

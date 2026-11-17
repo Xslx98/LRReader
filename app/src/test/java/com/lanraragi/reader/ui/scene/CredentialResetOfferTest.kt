@@ -66,6 +66,8 @@ class CredentialResetOfferTest {
         SecureCredentialStore.plainPrefs = null
         controller = Robolectric.buildActivity(AppCompatActivity::class.java)
         activity = controller.get()
+        // The lock decision reads the oldest plaintext pattern from Settings, initialised at app start.
+        com.lanraragi.reader.Settings.initialize(activity.applicationContext)
         activity.setTheme(R.style.AppTheme)
         controller.create().start().resume()
         plainPrefs().edit(commit = true) { clear() }
