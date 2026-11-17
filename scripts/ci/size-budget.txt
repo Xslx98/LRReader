@@ -46,10 +46,13 @@
 # 2026-11-16 (same approval, phase 5): res +8192 B (1350000 -> 1358192). PR 5.1
 # (StateListLayout's slot ids and attr) put res at 1370275 vs the 1370249 limit;
 # res had not moved since the 2.4 re-seed. Re-seeded with the others at the end.
+# 2026-11-17 (same approval, phase 5): dex +8192 B (3795760 -> 3803952). PR 5.4b
+# slice 2 (downloads multi-select on SelectionModel) put the local arm64 release
+# at 3852800 vs the 3852696 limit. Re-seeded with the others at the end.
 tolerance.percent 1.5
 apk.file        5275216
 apk.download    2519254
-dex             3795760
+dex             3803952
 lib                6400
 res             1358192
 assets            14000
