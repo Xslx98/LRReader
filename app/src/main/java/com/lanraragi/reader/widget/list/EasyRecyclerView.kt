@@ -21,10 +21,7 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.TransitionDrawable
-import android.os.Parcel
-import android.os.Parcelable
 import android.util.AttributeSet
-import android.util.SparseBooleanArray
 import android.util.StateSet
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
@@ -33,22 +30,17 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Checkable
-import androidx.core.os.ParcelCompat
 import androidx.recyclerview.widget.RecyclerView
 import kotlin.math.hypot
 
 /**
  * RecyclerView with item click / long-click listeners that draw a pressed
- * selector over the touched row (like AbsListView), and a custom
- * multiple-choice mode: [intoCustomChoiceMode], [setItemChecked],
- * [checkAll], [outOfCustomChoiceMode], reported to a
- * [CustomChoiceListener]; a checked row is shown checked (Checkable) or
- * activated.
+ * selector over the touched row (like AbsListView). Rows are drawn checked
+ * (Checkable) or activated from [checkedProvider], a selection the screen
+ * owns; this view keeps no choice state of its own.
  *
- * Ported to Kotlin from seven332's EasyRecyclerView library (0.1.1); only
- * the custom choice mode the app uses is kept (not the single / multiple /
- * ActionMode-modal ones). Unlike the library, restoring an active custom
- * choice mode tells the [CustomChoiceListener].
+ * Ported to Kotlin from seven332's EasyRecyclerView library (0.1.1); its
+ * choice modes are gone (the screens' SelectionModel replaced them).
  */
 open class EasyRecyclerView @JvmOverloads constructor(
     context: Context,
@@ -65,36 +57,6 @@ open class EasyRecyclerView @JvmOverloads constructor(
         /** `true` if the long click was consumed. */
         fun onItemLongClick(parent: EasyRecyclerView, view: View, position: Int, id: Long): Boolean
     }
-
-    interface CustomChoiceListener {
-        /**
-         * The mode became active: entered via [intoCustomChoiceMode], or
-         * restored with its checked rows by [onRestoreInstanceState] (then
-         * [checkedItemCount] can already be above 0).
-         */
-        fun onIntoCustomChoice(view: EasyRecyclerView)
-
-        fun onOutOfCustomChoice(view: EasyRecyclerView)
-
-        fun onItemCheckedStateChanged(view: EasyRecyclerView, position: Int, id: Long, checked: Boolean)
-    }
-
-    private var choiceMode = CHOICE_MODE_NONE
-    private var customChoiceListener: CustomChoiceListener? = null
-
-    /** `true` while in the custom choice mode. */
-    var isInCustomChoice = false
-        private set
-
-    /** Guards against re-entering [outOfCustomChoiceMode] from its own unchecking. */
-    private var outOfCustomChoiceModing = false
-    private var tempCheckStates: SparseBooleanArray? = null
-
-    /** Number of checked items. */
-    var checkedItemCount = 0
-        private set
-
-    private var checkStates: SparseBooleanArray? = null
 
     private var easyAdapter: Adapter<*>? = null
 
@@ -153,7 +115,6 @@ open class EasyRecyclerView @JvmOverloads constructor(
     override fun setAdapter(adapter: Adapter<*>?) {
         super.setAdapter(adapter)
         easyAdapter = adapter
-        checkStates?.clear()
     }
 
     private fun positionSelector(position: Int, sel: View) {
@@ -251,111 +212,33 @@ open class EasyRecyclerView @JvmOverloads constructor(
         selector?.jumpToCurrentState()
     }
 
-    override fun onChildAttachedToWindow(child: View) {
-        super.onChildAttachedToWindow(child)
-        val states = checkStates ?: return
-        val position = getChildAdapterPosition(child)
-        if (position >= 0) setViewChecked(child, states.get(position))
-    }
-
-    /** Whether [position] is checked (always `false` without a choice mode). */
-    fun isItemChecked(position: Int): Boolean =
-        choiceMode != CHOICE_MODE_NONE && checkStates?.get(position) == true
-
-    /** The checked positions, or `null` without a choice mode. */
-    val checkedItemPositions: SparseBooleanArray?
-        get() = if (choiceMode != CHOICE_MODE_NONE) checkStates else null
-
-    fun intoCustomChoiceMode() {
-        if (choiceMode == CHOICE_MODE_MULTIPLE_CUSTOM && !isInCustomChoice) {
-            isInCustomChoice = true
-            dispatchIntoCustomChoice()
-        }
-    }
-
-    fun outOfCustomChoiceMode() {
-        if (choiceMode != CHOICE_MODE_MULTIPLE_CUSTOM || !isInCustomChoice || outOfCustomChoiceModing) return
-        outOfCustomChoiceModing = true
-        val states = checkStates ?: SparseBooleanArray()
-        val temp = tempCheckStates ?: SparseBooleanArray().also { tempCheckStates = it }
-        // Copy the check states, then uncheck what is still checked.
-        temp.clear()
-        for (i in 0 until states.size()) temp.put(states.keyAt(i), states.valueAt(i))
-        for (i in 0 until temp.size()) {
-            if (temp.valueAt(i)) setItemChecked(temp.keyAt(i), false)
-        }
-        isInCustomChoice = false
-        customChoiceListener?.onOutOfCustomChoice(this)
-        outOfCustomChoiceModing = false
-    }
-
-    private fun clearChoices() {
-        checkStates?.clear()
-        checkedItemCount = 0
-        updateOnScreenCheckedViews()
-    }
-
-    /** Checks every item; needs [intoCustomChoiceMode] first. */
-    fun checkAll() {
-        if (choiceMode == CHOICE_MODE_NONE) return
-        check(isInCustomChoice) { "Call intoCheckMode first" }
-        val adapter = easyAdapter ?: return
-        val states = checkStates ?: return
-        for (i in 0 until adapter.itemCount) {
-            val oldValue = states.get(i)
-            states.put(i, true)
-            if (!oldValue) checkedItemCount++
-            customChoiceListener?.onItemCheckedStateChanged(this, i, adapter.getItemId(i), true)
-        }
-        updateOnScreenCheckedViews()
-    }
-
-    fun toggleItemChecked(position: Int) {
-        val states = checkStates ?: return
-        setItemChecked(position, !states.get(position))
-    }
-
-    /** Sets the checked state of [position]; needs [intoCustomChoiceMode] first. */
-    fun setItemChecked(position: Int, value: Boolean) {
-        if (choiceMode == CHOICE_MODE_NONE) return
-        check(isInCustomChoice) { "Call intoCheckMode first" }
-        val states = checkStates ?: return
-        val oldValue = states.get(position)
-        states.put(position, value)
-        if (oldValue != value) {
-            if (value) checkedItemCount++ else checkedItemCount--
-        }
-        val id = easyAdapter?.getItemId(position) ?: NO_ID
-        customChoiceListener?.onItemCheckedStateChanged(this, position, id, value)
-        updateOnScreenCheckedViews()
-    }
-
     /**
-     * [CHOICE_MODE_NONE] or [CHOICE_MODE_MULTIPLE_CUSTOM]; switching clears
-     * the checked items.
+     * The checked look of each row, read from a selection the screen owns
+     * (a SelectionModel). When set, rows are drawn from it as they attach
+     * and on [refreshChecked].
      */
-    fun setChoiceMode(choiceMode: Int) {
-        this.choiceMode = choiceMode
-        if (choiceMode != CHOICE_MODE_NONE) {
-            if (checkStates == null) checkStates = SparseBooleanArray(0)
-            if (choiceMode == CHOICE_MODE_MULTIPLE_CUSTOM) {
-                if (tempCheckStates == null) tempCheckStates = SparseBooleanArray(0)
-                clearChoices()
-            }
+    var checkedProvider: ((position: Int) -> Boolean)? = null
+        set(value) {
+            field = value
+            refreshChecked()
         }
-    }
 
-    fun setCustomCheckedListener(listener: CustomChoiceListener?) {
-        customChoiceListener = listener
-    }
-
-    /** Updates the checked look of every row on screen; only with a choice mode. */
-    private fun updateOnScreenCheckedViews() {
-        val states = checkStates ?: return
+    /** Redraws the checked look of the rows on screen from [checkedProvider]. */
+    fun refreshChecked() {
+        val provider = checkedProvider ?: return
         for (i in 0 until childCount) {
             val child = getChildAt(i)
-            setViewChecked(child, states.get(getChildAdapterPosition(child)))
+            val position = getChildAdapterPosition(child)
+            if (position >= 0) setViewChecked(child, provider(position))
         }
+    }
+
+    override fun onChildAttachedToWindow(child: View) {
+        super.onChildAttachedToWindow(child)
+        val position = getChildAdapterPosition(child)
+        if (position < 0) return
+        val provider = checkedProvider ?: return
+        setViewChecked(child, provider(position))
     }
 
     override fun onInterceptTouchEvent(e: MotionEvent): Boolean {
@@ -518,33 +401,6 @@ open class EasyRecyclerView @JvmOverloads constructor(
         onItemLongClickListener = listener
     }
 
-    public override fun onSaveInstanceState(): Parcelable = SavedState(super.onSaveInstanceState()).also {
-        it.choiceMode = choiceMode
-        it.customChoice = isInCustomChoice
-        it.checkedItemCount = checkedItemCount
-        it.checkState = checkStates
-    }
-
-    public override fun onRestoreInstanceState(state: Parcelable?) {
-        val ss = state as SavedState
-        super.onRestoreInstanceState(ss.superState)
-        setChoiceMode(ss.choiceMode)
-        isInCustomChoice = ss.customChoice
-        checkedItemCount = ss.checkedItemCount
-        ss.checkState?.let { checkStates = it }
-        updateOnScreenCheckedViews()
-        // The mode came back without intoCustomChoiceMode(): tell the
-        // listener, or its chrome (batch bar, drawer lock) stays hidden while
-        // clicks already toggle rows (audit 2026-11-15 B4).
-        if (isInCustomChoice && choiceMode == CHOICE_MODE_MULTIPLE_CUSTOM) {
-            dispatchIntoCustomChoice()
-        }
-    }
-
-    private fun dispatchIntoCustomChoice() {
-        customChoiceListener?.onIntoCustomChoice(this)
-    }
-
     private fun findViewForAdapterPosition(position: Int): View? = findViewHolderForAdapterPosition(position)?.itemView
 
     /** Shows the row pressed after the tap timeout and arms the long press. */
@@ -644,60 +500,9 @@ open class EasyRecyclerView @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Not a View.BaseSavedState: AbsSavedState(Parcel) reads the super
-     * state with a null class loader, and RecyclerView's needs its own
-     * (BadParcelableException otherwise).
-     */
-    internal class SavedState : Parcelable {
-        var choiceMode = 0
-        var customChoice = false
-        var checkedItemCount = 0
-        var checkState: SparseBooleanArray? = null
-
-        /** RecyclerView's own saved state. */
-        val superState: Parcelable?
-
-        constructor(superState: Parcelable?) {
-            this.superState = superState
-        }
-
-        private constructor(parcel: Parcel) {
-            superState = ParcelCompat.readParcelable(parcel, RecyclerView::class.java.classLoader, Parcelable::class.java)
-            choiceMode = parcel.readInt()
-            customChoice = parcel.readInt() != 0
-            checkedItemCount = parcel.readInt()
-            checkState = parcel.readSparseBooleanArray()
-        }
-
-        override fun describeContents(): Int = 0
-
-        override fun writeToParcel(out: Parcel, flags: Int) {
-            out.writeParcelable(superState, flags)
-            out.writeInt(choiceMode)
-            out.writeInt(if (customChoice) 1 else 0)
-            out.writeInt(checkedItemCount)
-            out.writeSparseBooleanArray(checkState)
-        }
-
-        companion object {
-            @JvmField
-            val CREATOR = object : Parcelable.Creator<SavedState> {
-                override fun createFromParcel(parcel: Parcel): SavedState = SavedState(parcel)
-                override fun newArray(size: Int): Array<SavedState?> = arrayOfNulls(size)
-            }
-        }
-    }
-
     companion object {
         /** An invalid adapter position. */
         const val INVALID_POSITION = -1
-
-        /** No choices. */
-        const val CHOICE_MODE_NONE = 0
-
-        /** Multiple choices in a custom selection mode. */
-        const val CHOICE_MODE_MULTIPLE_CUSTOM = 4
 
         /** Shows [view] checked: Checkable views are checked, others activated. */
         private fun setViewChecked(view: View, checked: Boolean) {

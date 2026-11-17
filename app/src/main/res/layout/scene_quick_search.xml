@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quick search list: one slot per screen state (StateListLayout.render). -->
+<com.lanraragi.reader.widget.StateListLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/state_list"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.lanraragi.reader.widget.list.EasyRecyclerView
+        android:id="@+id/state_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="@dimen/keyline_margin"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:visibility="gone"/>
+
+    <com.lanraragi.framework.widget.ProgressView
+        android:id="@+id/state_progress"
+        android:visibility="gone"
+        style="@style/ProgressView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"/>
+
+    <TextView
+        android:id="@+id/state_empty"
+        android:layout_width="228dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:drawablePadding="16dp"
+        android:visibility="gone"
+        style="@style/TextAppearance.AppCompat.Medium"/>
+
+    <include
+        android:id="@+id/state_message"
+        layout="@layout/view_error_state"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+</com.lanraragi.reader.widget.StateListLayout>

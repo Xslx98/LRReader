@@ -30,4 +30,10 @@
     <item name="fab_translation_y" type="id"/>
     <item name="fab_translation_y_animator" type="id"/>
 
+    <!-- StateListLayout slots (widget/StateListLayout.kt) -->
+    <item name="state_progress" type="id"/>
+    <item name="state_message" type="id"/>
+    <item name="state_content" type="id"/>
+    <item name="state_empty" type="id"/>
+
 </resources>

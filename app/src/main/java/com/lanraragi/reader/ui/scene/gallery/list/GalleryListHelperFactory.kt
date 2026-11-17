@@ -52,7 +52,7 @@ internal object GalleryListHelperFactory {
      */
     @SuppressLint("RtlHardcoded")
     fun create(scene: GalleryListScene, context: Context): Result {
-        val filterHelper = GalleryFilterHelper(object : GalleryFilterHelper.Callback {
+        val filterHelper = GalleryFilterHelper(scene.viewModel.tagFilter, object : GalleryFilterHelper.Callback {
             override fun getFilterFab(): FloatingActionButton? = scene.floatingActionButton
         })
 
@@ -92,10 +92,10 @@ internal object GalleryListHelperFactory {
             override fun buildFilterSearch(tagName: String): String =
                 scene.filterHelper?.searchTagBuild(tagName) ?: tagName
             override fun updateFilterDisplay() {
-                scene.filterHelper?.updateFilterIcon(scene.filterHelper?.filterTagList?.size ?: 0)
+                scene.filterHelper?.updateFilterIcon()
             }
             override fun onUpdateUrlBuilder() = scene.onUpdateUrlBuilder()
-            override fun setState(state: Int) { scene.stateHelper?.setState(state) }
+            override fun setChrome(chrome: SearchChrome) = scene.viewModel.setSearchChrome(chrome)
             override fun onItemClick(view: View?, gi: Archive?): Boolean =
                 scene.itemActionHelper?.onItemClick(view, gi) ?: false
             override fun onItemLongClick(position: Int): Boolean =
@@ -113,33 +113,11 @@ internal object GalleryListHelperFactory {
                 scene.isTankMode,
                 if (scene.isTankMode) TankBrowse.Sort.saved() else TankBrowse.Sort.NAME,
             )
-            override fun notifyAdapterDataSetChanged() {
-                scene.adapter?.notifyItemRangeChanged(0, scene.adapter?.itemCount ?: 0)
-            }
-            override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                scene.adapter?.notifyItemRangeRemoved(positionStart, itemCount)
-            }
-            override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {
-                scene.adapter?.notifyItemRangeInserted(positionStart, itemCount)
-            }
-            override fun notifyAdapterItemRangeChanged(positionStart: Int, itemCount: Int) {
-                scene.adapter?.notifyItemRangeChanged(positionStart, itemCount)
-            }
-            override fun notifyAdapterItemMoved(fromPosition: Int, toPosition: Int) {
-                scene.adapter?.notifyItemMoved(fromPosition, toPosition)
-            }
             override fun showSearchBar() { scene.searchBarMover?.showSearchBar() }
             override fun showActionFab() { scene.stateHelper?.showActionFab() }
             override fun getString(resId: Int): String = scene.getString(resId)
             override fun exitMultiSelect() { scene.multiSelectHelper?.exit() }
             override fun cancelTankMerge() { scene.cancelTankMerge() }
-            override fun onSearchLoaded(params: GalleryListViewModel.SearchParams) {
-                scene.shownSearch.onLoaded(params)
-                // Time-to-fully-drawn = first list page landed. Idempotent:
-                // the framework reports once per activity (androidx also
-                // swallows the pre-API-29 permission quirk).
-                scene.activity?.reportFullyDrawn()
-            }
         }, scene.viewModel)
 
         val listSearchHelper = GalleryListSearchHelper(object : GalleryListSearchHelper.Callback {
@@ -147,7 +125,8 @@ internal object GalleryListHelperFactory {
             override fun getSearchLayout(): SearchLayout? = scene.searchLayout
             override fun getUrlBuilder(): ListUrlBuilder? = scene.mUrlBuilder
             override fun getContentHelper(): GalleryListDataHelper? = scene.mHelper
-            override fun getStateHelper(): GalleryStateHelper? = scene.stateHelper
+            override fun chrome(): SearchChrome = scene.viewModel.searchChrome.value
+            override fun setChrome(chrome: SearchChrome) = scene.viewModel.setSearchChrome(chrome)
             override fun getRecyclerView(): RecyclerView? = scene.recyclerView
             override fun onUpdateUrlBuilder() = scene.onUpdateUrlBuilder()
             override fun showTip(message: String, length: Int) = scene.showTip(message, length)

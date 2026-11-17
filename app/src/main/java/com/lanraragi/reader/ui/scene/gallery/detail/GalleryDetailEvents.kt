@@ -24,36 +24,12 @@ class GalleryDetailEvents(
         // fragment alive); the previous fragment-scoped launches stacked one
         // collector set per re-attach.
 
-        // Drive REFRESH→NORMAL transitions off the dedicated load-event
-        // SharedFlow rather than the deduped archiveDetail StateFlow.
-        // A refresh that returns identical content would otherwise leave
-        // the spinner up forever (StateFlow distinct-emit eats the value
-        // and `collect` never fires). detailLoaded fires unconditionally
-        // on every successful API response.
-        // collectFlowWhileCreated: a refresh completing while the app is
-        // backgrounded must still flip mState — STARTED gating would drop
-        // the event and leave a permanent spinner on return.
-        collectFlowWhileCreated(owner, viewModel.detailLoaded) { ad ->
-            if (!scene.isStateNormal) {
-                scene.onGetArchiveDetailSuccess(ad)
-            }
-            // A successful refresh after a banner-flagged failure also dismisses
-            // the source-error banner — the live data is now displayed and the
-            // warning no longer applies.
-            scene.sourceError.hide()
-        }
-        // collectFlowWhileCreated: error arm of the same state machine.
-        collectFlowWhileCreated(owner, viewModel.detailError) { e ->
-            scene.onGetGalleryDetailFailure(e)
-        }
-        // Cache-first failure: page is already painted from local data
-        // (LRU cache or a degraded ArchiveDetail seeded from the nav-arg
-        // Archive). Show a non-blocking banner so the user can read the
-        // archive offline and retry the source server when it returns.
-        // collectFlowWhileCreated: banner state must not be lost to a
-        // backgrounded window.
-        collectFlowWhileCreated(owner, viewModel.detailErrorBanner) { e ->
-            scene.sourceError.show(e)
+        // The page state: spinner, error, the detail (with the source-error
+        // banner when it shows cached data after a failed fetch).
+        // collectFlowWhileCreated: a refresh that finishes while the app is
+        // backgrounded is rendered now, not on return.
+        collectFlowWhileCreated(owner, viewModel.state) { state ->
+            scene.render(state)
         }
         // After a rollback the optimistic write to currentRating /
         // archiveDetail has been reverted on the IO thread; reflect the

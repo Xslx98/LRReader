@@ -16,29 +16,11 @@ import org.robolectric.annotation.Config
  * load won. Home list A -> detail -> tag search list B -> back to A (no reload)
  * -> opening an archive from A published B's filter, and "continue to the next
  * archive" walked B's results. Each scene now keeps its own [ShownSearchState],
- * fed by its own [GalleryListDataHelper] (wired like GalleryListHelperFactory).
+ * fed by its own [GalleryListViewModel.searchLanded] (see GalleryListScene.observeList).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
 class ShownSearchStateTest {
-
-    /** The scene-side wiring of GalleryListHelperFactory, minus the views. */
-    private class SceneCallback(val shown: ShownSearchState) : GalleryListDataHelper.Callback {
-        override fun getHostContext(): Context? = null
-        override fun currentQuery() = GalleryListQuery(GalleryListLoader.SearchInputs(null, null), "date_added", "desc")
-        override fun notifyAdapterDataSetChanged() {}
-        override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {}
-        override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {}
-        override fun notifyAdapterItemRangeChanged(positionStart: Int, itemCount: Int) {}
-        override fun notifyAdapterItemMoved(fromPosition: Int, toPosition: Int) {}
-        override fun showSearchBar() {}
-        override fun showActionFab() {}
-        override fun getString(resId: Int): String = ""
-        override fun exitMultiSelect() {}
-        override fun onSearchLoaded(params: GalleryListViewModel.SearchParams) {
-            shown.onLoaded(params)
-        }
-    }
 
     private val homeQuery = GalleryListViewModel.SearchParams(
         filter = "artist:alice", sortby = "title", order = "asc",
@@ -49,14 +31,13 @@ class ShownSearchStateTest {
 
     @Test
     fun `a list pushed on top does not change the query of the list below`() {
+        // Each scene feeds its own state from its own ViewModel's searchLanded.
         val shownA = ShownSearchState()
-        val helperA = GalleryListDataHelper(SceneCallback(shownA), GalleryListViewModel())
-        helperA.recordLoadedSearch(taskId = 0, issued = homeQuery)
+        shownA.onLoaded(homeQuery)
 
         // Tag search from a detail page opens list B, which loads its own query.
         val shownB = ShownSearchState()
-        val helperB = GalleryListDataHelper(SceneCallback(shownB), GalleryListViewModel())
-        helperB.recordLoadedSearch(taskId = 0, issued = tagQuery)
+        shownB.onLoaded(tagQuery)
 
         // Back to A without a reload: an archive opened from A continues A's query.
         assertEquals(homeQuery, shownA.forReadingContext())

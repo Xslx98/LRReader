@@ -19,7 +19,6 @@ class DetailSourceErrorBanner(
     private val viewModel: GalleryDetailViewModel,
     private val context: () -> Context?,
     private val onRetry: () -> Unit,
-    private val keepPageNormal: () -> Unit,
 ) {
 
     private var banner: View? = null
@@ -42,11 +41,10 @@ class DetailSourceErrorBanner(
 
     /**
      * Show the cache-first error banner above the detail content. The
-     * page is already rendered (LRU detail cache hit, or a degraded
-     * detail seeded from the navigation Archive) so we keep the user
-     * on STATE_NORMAL and surface the failure as a dismissible bar
-     * with a Retry button. A subsequent successful load auto-hides it
-     * via the [GalleryDetailViewModel.detailLoaded] observer.
+     * page is rendered from an LRU detail cache hit or a degraded detail
+     * seeded from the navigation Archive ([DetailState.Shown] with a
+     * source error), and the failure shows as a bar with a Retry button.
+     * The next successful load renders without it.
      */
     fun show(e: Exception) {
         val ctx = context() ?: return
@@ -54,10 +52,6 @@ class DetailSourceErrorBanner(
         val text = text ?: return
         text.text = tieredSourceErrorText(ctx, e)
         banner.visibility = View.VISIBLE
-        // The banner is informational on top of cached data — make sure
-        // the page itself stays in NORMAL so the cached content remains
-        // interactive (cancel buttons, read button, etc.).
-        keepPageNormal()
     }
 
     /**

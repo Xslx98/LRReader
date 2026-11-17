@@ -71,7 +71,7 @@ class BookmarksDraw(
                     ?.let { scene.mHistoryStore?.record(it) }
                 scene.onUpdateUrlBuilder()
                 helper.refresh()
-                scene.setState(GalleryListScene.STATE_NORMAL)
+                scene.viewModel.setSearchChrome(SearchChrome.Normal)
                 scene.closeDrawer(Gravity.RIGHT)
             }
 

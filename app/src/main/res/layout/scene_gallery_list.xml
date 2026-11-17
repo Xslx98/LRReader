@@ -23,10 +23,67 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.lanraragi.reader.widget.ContentLayout
+    <!-- The list: one slot per GalleryListState (GalleryListDataHelper.render). -->
+    <com.lanraragi.reader.widget.StateListLayout
         android:id="@+id/content_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent">
+
+        <!-- Holds the skeleton the scene adds (the first load and refreshes). -->
+        <FrameLayout
+            android:id="@+id/state_progress"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/state_empty"
+            android:layout_width="228dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:drawablePadding="8dp"
+            android:visibility="gone"
+            style="@style/TextAppearance.AppCompat.Medium"/>
+
+        <include
+            android:id="@+id/state_message"
+            layout="@layout/view_error_state"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+
+        <FrameLayout
+            android:id="@+id/state_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.lanraragi.reader.widget.ListRefreshLayout
+                android:id="@+id/refresh_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <com.lanraragi.reader.widget.list.EasyRecyclerView
+                    android:id="@+id/recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"/>
+
+            </com.lanraragi.reader.widget.ListRefreshLayout>
+
+            <com.lanraragi.reader.widget.list.FastScroller
+                android:id="@+id/fast_scroller"
+                android:layout_width="30dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:paddingStart="20dp"
+                android:paddingEnd="4dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"/>
+
+        </FrameLayout>
+
+    </com.lanraragi.reader.widget.StateListLayout>
 
     <com.lanraragi.reader.widget.SearchLayout
         android:id="@+id/search_layout"

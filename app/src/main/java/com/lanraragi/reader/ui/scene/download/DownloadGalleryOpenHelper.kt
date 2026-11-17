@@ -51,6 +51,9 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
         val viewLifecycleOwner: LifecycleOwner
         fun positionInList(position: Int): Int
         fun listIndexInPage(position: Int): Int
+
+        /** The list's multi-select. */
+        val selection: DownloadSelectionHelper?
         fun launchGallery(intent: Intent)
 
         /** Open the whole-tank composite session for a tank card row. */
@@ -62,13 +65,10 @@ internal class DownloadGalleryOpenHelper(private val callback: Callback) {
      */
     fun onItemClick(position: Int): Boolean {
         val activity = callback.activity2 ?: return false
-        val recyclerView = callback.mRecyclerView ?: return false
+        if (callback.mRecyclerView == null) return false
         val context = callback.ehContext ?: return false
 
-        if (recyclerView.isInCustomChoice) {
-            recyclerView.toggleItemChecked(position)
-            return true
-        }
+        if (callback.selection?.toggleChecked(position) == true) return true
 
         val list = callback.mList ?: return false
         if (position < 0 || position >= list.size) {

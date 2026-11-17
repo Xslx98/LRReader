@@ -1,26 +1,37 @@
 package com.lanraragi.reader.reading
 
+import kotlinx.coroutines.sync.Mutex
+import okhttp3.Call
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
 /**
- * In-flight page request bookkeeping shared by the reader providers
- * (LRRGalleryProvider, TankGalleryProvider).
+ * Everything a page source tracks about its page jobs, in one place
+ * (LRRGalleryProvider, TankGalleryProvider, LrrTankMemberSource):
  *
  * - One job per page: a second request for an in-flight page is recorded as a
  *   rebind instead of starting a duplicate fetch.
  * - Each job owns a per-request token, so a finishing (old) job never clears
  *   the entry of a newer job started by a force request.
  * - A rebind that lands while a job is in flight is consumed by that job's
- *   [finish]; when the job ended quietly (cancelled) the caller re-requests,
- *   otherwise the page would spin forever. If the job finished between the
- *   collision and the rebind mark (its [finish] already ran), [begin] takes
- *   the page over itself (audit 2026-10-06 N6).
+ *   [finish]; when the job ended without publishing anything for the page
+ *   as it is now (cancelled) the caller re-requests it, or the rebound page
+ *   spins forever. A published success or failure reached the rebound view
+ *   too (notifies are keyed by index), so it is not fetched again. If the
+ *   job finished between the collision and the rebind mark (its [finish]
+ *   already ran), [begin] takes the page over itself (audit 2026-10-06 N6).
+ * - A per-page [mutex] keeps the on-demand and prefetch paths from fetching
+ *   the same page twice; it is suspending and cancellable.
+ * - The page's HTTP [Call] while it downloads ([track]): coroutine
+ *   cancellation cannot interrupt a blocking body read, so a cancel or a stop
+ *   severs the socket ([cancelCall], [clear]).
  */
-internal class PageRequestTracker(
+internal class PageJobs(
     private val inflight: ConcurrentMap<Int, Any> = ConcurrentHashMap(),
 ) {
     private val rebindWanted = ConcurrentHashMap.newKeySet<Int>()
+    private val mutexes = ConcurrentHashMap<Int, Mutex>()
+    private val calls = ConcurrentHashMap<Int, Call>()
 
     /**
      * @return this request's token when the caller owns a new job for [index]
@@ -48,9 +59,9 @@ internal class PageRequestTracker(
      * End the job owning [token].
      *
      * @return true when the caller must re-request [index]: a rebind landed
-     * while the job ran and the job ended quietly ([cancelled]) without
-     * notifying the page. Success and failure paths already notified it
-     * (notify is keyed by index, not requester).
+     * while the job ran, the job published nothing for the page as it is now
+     * ([cancelled]: cut off, or a tank job published under a page map a
+     * remap has moved since) and the source is not [stopped].
      */
     fun finish(index: Int, token: Any, cancelled: Boolean, stopped: Boolean): Boolean {
         // Only this job's own entry: a force request may already have
@@ -64,7 +75,28 @@ internal class PageRequestTracker(
         inflight.remove(index)
     }
 
+    /** The page's fetch lock. Bounded by the page count; entries live as long as this object. */
+    fun mutex(index: Int): Mutex = mutexes.computeIfAbsent(index) { Mutex() }
+
+    /** [call] downloads page [index] now (one at a time per page, under [mutex]). */
+    fun track(index: Int, call: Call) {
+        calls[index] = call
+    }
+
+    /** Page [index]'s download ended. */
+    fun untrack(index: Int) {
+        calls.remove(index)
+    }
+
+    /** Sever page [index]'s download; the blocked read throws and the job ends quietly. */
+    fun cancelCall(index: Int) {
+        calls[index]?.cancel()
+    }
+
+    /** The source stops: sever every download and forget every job and rebind. */
     fun clear() {
+        calls.values.forEach { runCatching { it.cancel() } }
+        calls.clear()
         inflight.clear()
         rebindWanted.clear()
     }

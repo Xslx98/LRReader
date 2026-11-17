@@ -15,10 +15,9 @@ import com.lanraragi.framework.util.AnimationUtils
 import android.animation.AnimatorListenerAdapter
 
 /**
- * Manages search state machine and FAB animations for GalleryListScene.
- * Handles the 4-state transitions (NORMAL, SIMPLE_SEARCH, SEARCH, SEARCH_SHOW_LIST)
- * and the FAB show/hide/select animations.
- * Extracted to reduce GalleryListScene's line count.
+ * Renders the search chrome ([SearchChrome], owned by GalleryListViewModel)
+ * for GalleryListScene: the advanced layout, the search bar, its icons and
+ * drawer locks, and the FAB show/hide/select animations.
  */
 class GalleryStateHelper(private val callback: Callback) {
 
@@ -41,7 +40,11 @@ class GalleryStateHelper(private val callback: Callback) {
         fun onRightIconNormal(normal: Boolean) {}
     }
 
-    var state = STATE_NORMAL
+    /**
+     * The chrome on screen. Only [render] changes it; the truth is
+     * [GalleryListViewModel.searchChrome].
+     */
+    var rendered = SearchChrome.Normal
         private set
     private var mShowActionFab = true
 
@@ -57,110 +60,35 @@ class GalleryStateHelper(private val callback: Callback) {
         }
     }
 
-    fun setState(newState: Int) {
-        setState(newState, true)
-    }
-
-    fun setState(newState: Int, animation: Boolean) {
+    /**
+     * Shows [chrome]: the advanced layout, the search bar, its position and
+     * the FABs follow what differs from the chrome on screen. [animation]
+     * false for a restore.
+     */
+    fun render(chrome: SearchChrome, animation: Boolean) {
         val searchBar = callback.getSearchBar() ?: return
         val searchBarMover = callback.getSearchBarMover() ?: return
         val viewTransition = callback.getViewTransition() ?: return
         val searchLayout = callback.getSearchLayout() ?: return
 
-        if (state != newState) {
-            val oldState = state
-            state = newState
+        val old = rendered
+        if (old == chrome) return
+        rendered = chrome
 
-            when (oldState) {
-                STATE_NORMAL -> {
-                    when (newState) {
-                        STATE_SIMPLE_SEARCH -> {
-                            searchBar.setState(SearchBar.STATE_SEARCH_LIST, animation)
-                            searchBarMover.returnSearchBarPosition()
-                            selectSearchFab(animation)
-                        }
-                        STATE_SEARCH -> {
-                            viewTransition.showView(1, animation)
-                            searchLayout.scrollSearchContainerToTop()
-                            searchBar.setState(SearchBar.STATE_SEARCH, animation)
-                            searchBarMover.returnSearchBarPosition()
-                            selectSearchFab(animation)
-                        }
-                        STATE_SEARCH_SHOW_LIST -> {
-                            viewTransition.showView(1, animation)
-                            searchLayout.scrollSearchContainerToTop()
-                            searchBar.setState(SearchBar.STATE_SEARCH_LIST, animation)
-                            searchBarMover.returnSearchBarPosition()
-                            selectSearchFab(animation)
-                        }
-                    }
-                }
-                STATE_SIMPLE_SEARCH -> {
-                    when (newState) {
-                        STATE_NORMAL -> {
-                            searchBar.setState(SearchBar.STATE_NORMAL, animation)
-                            searchBarMover.returnSearchBarPosition()
-                            selectActionFab(animation)
-                        }
-                        STATE_SEARCH -> {
-                            viewTransition.showView(1, animation)
-                            searchLayout.scrollSearchContainerToTop()
-                            searchBar.setState(SearchBar.STATE_SEARCH, animation)
-                            searchBarMover.returnSearchBarPosition()
-                        }
-                        STATE_SEARCH_SHOW_LIST -> {
-                            viewTransition.showView(1, animation)
-                            searchLayout.scrollSearchContainerToTop()
-                            searchBar.setState(SearchBar.STATE_SEARCH_LIST, animation)
-                            searchBarMover.returnSearchBarPosition()
-                        }
-                    }
-                }
-                STATE_SEARCH -> {
-                    when (newState) {
-                        STATE_NORMAL -> {
-                            viewTransition.showView(0, animation)
-                            searchBar.setState(SearchBar.STATE_NORMAL, animation)
-                            searchBarMover.returnSearchBarPosition()
-                            selectActionFab(animation)
-                        }
-                        STATE_SIMPLE_SEARCH -> {
-                            viewTransition.showView(0, animation)
-                            searchBar.setState(SearchBar.STATE_SEARCH_LIST, animation)
-                            searchBarMover.returnSearchBarPosition()
-                        }
-                        STATE_SEARCH_SHOW_LIST -> {
-                            searchBar.setState(SearchBar.STATE_SEARCH_LIST, animation)
-                            searchBarMover.returnSearchBarPosition()
-                        }
-                    }
-                }
-                STATE_SEARCH_SHOW_LIST -> {
-                    when (newState) {
-                        STATE_NORMAL -> {
-                            viewTransition.showView(0, animation)
-                            searchBar.setState(SearchBar.STATE_NORMAL, animation)
-                            searchBarMover.returnSearchBarPosition()
-                            selectActionFab(animation)
-                        }
-                        STATE_SIMPLE_SEARCH -> {
-                            viewTransition.showView(0, animation)
-                            searchBar.setState(SearchBar.STATE_SEARCH_LIST, animation)
-                            searchBarMover.returnSearchBarPosition()
-                        }
-                        STATE_SEARCH -> {
-                            searchBar.setState(SearchBar.STATE_SEARCH, animation)
-                            searchBarMover.returnSearchBarPosition()
-                        }
-                    }
-                }
-            }
+        if (chrome.showsSearchLayout != old.showsSearchLayout) {
+            viewTransition.showView(if (chrome.showsSearchLayout) 1 else 0, animation)
+            if (chrome.showsSearchLayout) searchLayout.scrollSearchContainerToTop()
+        }
+        searchBar.setState(searchBarStateOf(chrome), animation)
+        searchBarMover.returnSearchBarPosition()
+        if ((old == SearchChrome.Normal) != (chrome == SearchChrome.Normal)) {
+            if (chrome == SearchChrome.Normal) selectActionFab(animation) else selectSearchFab(animation)
         }
     }
 
     fun showActionFab() {
         val fabLayout = callback.getFabLayout() ?: return
-        if (state == STATE_NORMAL && !mShowActionFab) {
+        if (rendered == SearchChrome.Normal && !mShowActionFab) {
             mShowActionFab = true
             val fab: View = fabLayout.primaryFab
             fab.visibility = View.VISIBLE
@@ -173,7 +101,7 @@ class GalleryStateHelper(private val callback: Callback) {
 
     fun hideActionFab() {
         val fabLayout = callback.getFabLayout() ?: return
-        if (state == STATE_NORMAL && mShowActionFab) {
+        if (rendered == SearchChrome.Normal && mShowActionFab) {
             mShowActionFab = false
             val fab: View = fabLayout.primaryFab
             fab.animate().scaleX(0.0f).scaleY(0.0f).setListener(mActionFabAnimatorListener)
@@ -275,7 +203,7 @@ class GalleryStateHelper(private val callback: Callback) {
                 }
             }
             SearchBar.STATE_SEARCH_LIST -> {
-                if (newState == STATE_NORMAL) {
+                if (newState == SearchBar.STATE_NORMAL) {
                     leftDrawable.setMenu(if (animation) ANIMATE_TIME else 0)
                     rightDrawable.setAdd(if (animation) ANIMATE_TIME else 0)
                     callback.getSearchBar()?.setLeftIconContentDescription(R.string.cd_menu)
@@ -285,7 +213,8 @@ class GalleryStateHelper(private val callback: Callback) {
             }
         }
 
-        if (newState == STATE_NORMAL || newState == STATE_SIMPLE_SEARCH) {
+        // The drawers stay closed while the suggestion list is up (SearchChrome.showsSuggestions).
+        if (newState != SearchBar.STATE_SEARCH_LIST) {
             callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.LEFT)
             callback.setDrawerLockMode(LOCK_MODE_UNLOCKED, Gravity.RIGHT)
         } else {
@@ -312,10 +241,12 @@ class GalleryStateHelper(private val callback: Callback) {
     }
 
     companion object {
-        const val STATE_NORMAL = 0
-        const val STATE_SIMPLE_SEARCH = 1
-        const val STATE_SEARCH = 2
-        const val STATE_SEARCH_SHOW_LIST = 3
+        /** The search bar's own state for [chrome]. */
+        fun searchBarStateOf(chrome: SearchChrome): Int = when (chrome) {
+            SearchChrome.Normal -> SearchBar.STATE_NORMAL
+            SearchChrome.Advanced -> SearchBar.STATE_SEARCH
+            SearchChrome.Simple, SearchChrome.AdvancedList -> SearchBar.STATE_SEARCH_LIST
+        }
 
         private const val ANIMATE_TIME = 300L
 

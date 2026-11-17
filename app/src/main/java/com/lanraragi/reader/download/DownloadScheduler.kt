@@ -243,7 +243,7 @@ internal class DownloadScheduler(
             addAll(waitList)
         }
         stopAllDownload()
-        for (di in affected) DownloadResumeBanner.markStorageFull(di.arcid, di.title)
+        for (di in affected) DownloadResumeBanner.mark(di.arcid, DownloadResumeBanner.Reason.STORAGE_FULL)
     }
 
     fun stopAllDownload() {
@@ -407,7 +407,7 @@ internal class DownloadScheduler(
             is DownloadEvent.OnNetworkWait -> {
                 val info = event.taskInfo
                 if (event.waiting) {
-                    DownloadResumeBanner.markPaused(info.arcid, info.title)
+                    DownloadResumeBanner.mark(info.arcid, DownloadResumeBanner.Reason.PAUSED)
                 } else {
                     DownloadResumeBanner.markResumed(info.arcid)
                 }
@@ -415,7 +415,7 @@ internal class DownloadScheduler(
             }
             is DownloadEvent.OnNetworkTimeout -> {
                 val info = event.taskInfo
-                DownloadResumeBanner.markTimedOut(info.arcid, info.title)
+                DownloadResumeBanner.mark(info.arcid, DownloadResumeBanner.Reason.TIMED_OUT)
             }
         }
     }

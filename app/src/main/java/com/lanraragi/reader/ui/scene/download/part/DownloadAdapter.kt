@@ -90,6 +90,9 @@ class DownloadAdapter(
         val downloadManager: DownloadManager?
         val recyclerView: EasyRecyclerView?
 
+        /** Multi-select is on: the row's own buttons stand down. */
+        val isSelecting: Boolean
+
         /**
          * VM-cached download-dir resolution for [info]'s thumbnail, shared
          * across rebinds of the same archive (DL-12). See
@@ -620,7 +623,7 @@ class DownloadAdapter(
         override fun onClick(v: View) {
             val context = mScene.ehContext ?: return
             val recyclerView = mCallback.recyclerView
-            if (recyclerView == null || recyclerView.isInCustomChoice) {
+            if (recyclerView == null || mCallback.isSelecting) {
                 return
             }
             val list = mCallback.list ?: return

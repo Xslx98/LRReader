@@ -22,8 +22,8 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
 
     fun onItemClick(view: View, position: Int): Boolean {
         val archive = scene.mHelper?.getDataAtEx(position)
-        // In multi-select mode a click toggles the row instead of navigating —
-        // the library does not toggle on click by itself (mirrors downloads).
+        // In multi-select mode a click toggles the row instead of navigating
+        // (mirrors downloads).
         // Tank pseudo-entries are NOT selectable outside tank mode (batch ops don't apply).
         scene.multiSelectHelper?.let {
             if (it.isActive) {
@@ -92,16 +92,13 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
         val filterHelper = scene.filterHelper
         val urlBuilder = scene.mUrlBuilder
         if (filterHelper != null && urlBuilder != null && removeLastOpenFilterTag(filterHelper)) {
-            urlBuilder.set(
-                filterHelper.listToString(filterHelper.filterTagList),
-                ListUrlBuilder.MODE_FILTER
-            )
-            filterHelper.updateFilterIcon(filterHelper.filterTagList.size)
+            urlBuilder.set(filterHelper.searchText(), ListUrlBuilder.MODE_FILTER)
+            filterHelper.updateFilterIcon()
 
             urlBuilder.pageIndex = 0
             scene.onUpdateUrlBuilder()
             scene.mHelper?.refresh()
-            scene.stateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
+            scene.viewModel.setSearchChrome(SearchChrome.Normal)
             return
         }
 
@@ -125,5 +122,5 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
 
     /** Drops the last tag of an open tag filter; false when the filter is closed or empty. */
     private fun removeLastOpenFilterTag(filterHelper: GalleryFilterHelper): Boolean =
-        filterHelper.filterOpen && filterHelper.removeLastFilterTag()
+        filterHelper.removeLastFilterTag()
 }

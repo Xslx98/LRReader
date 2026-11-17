@@ -536,16 +536,16 @@ class DownloadManager(
      * foreground shows the "downloads timed out — retry" snackbar with a
      * one-tap re-queue.
      */
-    fun pauseAllForSystemBudget() = pauseAllActive(DownloadResumeBanner::markTimedOut)
+    fun pauseAllForSystemBudget() = pauseAllActive(DownloadResumeBanner.Reason.TIMED_OUT)
 
     /**
      * The system refused the foreground service (Android 12+ background-start
      * limits, an OEM block): downloads would stall unprotected, so pause them
      * resumably and offer them back as "system limit" (audit 2026-10-04 C34 / STAB-14).
      */
-    fun pauseAllForSystemLimit() = pauseAllActive(DownloadResumeBanner::markSystemLimited)
+    fun pauseAllForSystemLimit() = pauseAllActive(DownloadResumeBanner.Reason.SYSTEM_LIMITED)
 
-    private fun pauseAllActive(mark: (String, String?) -> Unit) {
+    private fun pauseAllActive(reason: DownloadResumeBanner.Reason) {
         repo.assertMainThread()
         val affected = repo.allInfoList.filter {
             it.state == DownloadState.WAIT || it.state == DownloadState.DOWNLOAD
@@ -554,7 +554,7 @@ class DownloadManager(
         // flag (DownloadScheduler.stopCurrentDownload), which would undo a
         // mark made beforehand for exactly the downloads that were running.
         stopAllDownload()
-        for (di in affected) mark(di.arcid, di.title)
+        for (di in affected) DownloadResumeBanner.mark(di.arcid, reason)
     }
 
     fun deleteDownload(arcid: String) {

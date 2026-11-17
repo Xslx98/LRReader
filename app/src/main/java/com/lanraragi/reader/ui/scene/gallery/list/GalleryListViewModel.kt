@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.os.Parcelable
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.archive.ArchiveUploadService
@@ -16,9 +17,10 @@ import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
+import com.lanraragi.reader.ui.list.SelectionModel
 import com.lanraragi.reader.download.DownloadRequests
 import com.lanraragi.reader.download.DownloadManager
-import com.lanraragi.reader.widget.SavedRows
+import com.lanraragi.reader.client.api.friendlyError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -59,10 +61,30 @@ import kotlinx.parcelize.Parcelize
  * update adapter items. (Favourite changes are deliberately not observed:
  * list rows render no favourite state.)
  */
-class GalleryListViewModel : ViewModel() {
+class GalleryListViewModel(
+    private val saved: SavedStateHandle = SavedStateHandle(),
+) : ViewModel() {
 
-    /** The list's rows across a view-state save and restore (see ContentHelper.savedRows). */
-    internal val savedRows = SavedRows<Archive>()
+    // -------------------------------------------------------------------------
+    // Search chrome
+    // -------------------------------------------------------------------------
+
+    /**
+     * What the search chrome shows (see [SearchChrome]); saved with the
+     * screen, so a rotation or a process-death restore comes back to it.
+     */
+    val searchChrome: StateFlow<SearchChrome> = saved.getStateFlow(KEY_SEARCH_CHROME, SearchChrome.Normal)
+
+    /** Moves the search chrome to [chrome]; the scene renders the change. */
+    fun setSearchChrome(chrome: SearchChrome) {
+        saved[KEY_SEARCH_CHROME] = chrome
+    }
+
+    /** The list's multi-select, by arcid; saved with the screen like [searchChrome]. */
+    val selection = SelectionModel(saved)
+
+    /** The multi-tag filter; saved with the screen like [searchChrome]. */
+    val tagFilter = GalleryTagFilter(saved)
 
     // -------------------------------------------------------------------------
     // Service accessors (read-through to ServiceRegistry so the Scene does not
@@ -102,6 +124,94 @@ class GalleryListViewModel : ViewModel() {
      */
     fun loadPage(query: GalleryListQuery, page: Int, deliver: (GalleryListLoad) -> Boolean) {
         loader.load(query, page, deliver)
+    }
+
+    // -------------------------------------------------------------------------
+    // List screen state
+    // -------------------------------------------------------------------------
+
+    private val _listState = MutableStateFlow<GalleryListState>(GalleryListState.Idle)
+
+    /**
+     * The list screen: its loaded pages and what runs or failed (see
+     * [GalleryListState]). Outlives the scene's view, so a rotation or a view
+     * rebuilt from the back stack shows the same rows without a reload.
+     */
+    val listState: StateFlow<GalleryListState> = _listState.asStateFlow()
+
+    private val _listNotice = MutableSharedFlow<String>(extraBufferCapacity = 4)
+
+    /** A failure of a load that kept the rows on screen: the scene toasts it. */
+    val listNotice: SharedFlow<String> = _listNotice.asSharedFlow()
+
+    private val _searchLanded = MutableStateFlow<SearchParams?>(null)
+
+    /**
+     * The `/api/search` inputs of the last load that landed for the list on
+     * screen (a superseded load's never do): the reading context follows
+     * them. A value, not an event, so a load landing while the list is
+     * covered still reaches the scene when it shows again.
+     */
+    val searchLanded: StateFlow<SearchParams?> = _searchLanded.asStateFlow()
+
+    private var lastTask = 0
+
+    /**
+     * Starts a list load of [kind] for [query]: page 0 for a (re)load, the
+     * next page, or the last loaded page again. The answer lands in
+     * [listState]; it supersedes any load still running.
+     */
+    fun loadList(kind: GalleryLoadKind, query: GalleryListQuery) {
+        val pages = _listState.value.pages
+        val page = when (kind) {
+            GalleryLoadKind.NextPage -> pages.loadedPages
+            GalleryLoadKind.LastPage -> maxOf(0, pages.loadedPages - 1)
+            else -> 0
+        }
+        val task = ++lastTask
+        // Before the load: a synchronous answer (no server) must find the task.
+        _listState.update { GalleryListState.start(it, kind, task) }
+        loader.load(query, page) { load -> onListLoad(task, load) }
+    }
+
+    /** The scene's first load: only when nothing was asked yet (a rotation keeps the list). */
+    fun loadListIfIdle(query: GalleryListQuery) {
+        if (_listState.value == GalleryListState.Idle) loadList(GalleryLoadKind.Initial, query)
+    }
+
+    /** Applies one outcome of load [task]; true when it is still the list's current load. */
+    private fun onListLoad(task: Int, load: GalleryListLoad): Boolean {
+        val current = _listState.value.awaitedTask == task
+        when (load) {
+            is GalleryListLoad.Page -> {
+                if (!current) return false
+                load.issued?.let { _searchLanded.value = it }
+                _listState.update { GalleryListState.pageLoaded(it, task, load.rows, load.pageCount, load.emptyText) }
+            }
+            is GalleryListLoad.TankCovers -> editList { pages ->
+                pages.rows.foldIndexed(pages) { index, acc, row ->
+                    val url = load.thumbnailUrls[row.arcid]
+                    if (url != null && row.thumbnailUrl != url) acc.replaceAt(index, row.copy(thumbnailUrl = url)) else acc
+                }
+            }
+            is GalleryListLoad.Failed -> if (current) fail(task, friendlyError(appContext(), load.error))
+            is GalleryListLoad.FailedWith -> if (current) fail(task, appContext().getString(load.message))
+        }
+        return current
+    }
+
+    private fun fail(task: Int, message: String) {
+        val before = _listState.value
+        val after = GalleryListState.failed(before, task, message)
+        _listState.value = after
+        if (after is GalleryListState.Content) _listNotice.tryEmit(message)
+    }
+
+    private fun appContext() = ServiceRegistry.appModule.getContext()
+
+    /** Edits the loaded rows in place (a deletion, a rating, a merge); see [GalleryListState.edited]. */
+    fun editList(edit: (GalleryPages) -> GalleryPages) {
+        _listState.update { GalleryListState.edited(it, edit) }
     }
 
     // -------------------------------------------------------------------------
@@ -536,6 +646,7 @@ class GalleryListViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "GalleryListViewModel"
+        private const val KEY_SEARCH_CHROME = "search_chrome"
 
         /** Max archives processed in parallel by [runBatch]. */
         private const val BATCH_CONCURRENCY = 4

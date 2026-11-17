@@ -14,25 +14,34 @@
         app:titleTextColor="@android:color/white"
         app:navigationIcon="?attr/homeAsUpIndicator" />
 
-    <FrameLayout
+    <!-- One slot per screen state (StateListLayout.render); the FAB is not a slot. -->
+    <com.lanraragi.reader.widget.StateListLayout
+        android:id="@+id/state_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view"
+            android:id="@+id/state_content"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:padding="8dp" />
 
         <TextView
-            android:id="@+id/empty_text"
+            android:id="@+id/state_empty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/lrr_no_servers"
             android:textSize="16sp"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/state_message"
+            layout="@layout/view_error_state"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:visibility="gone" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -44,6 +53,6 @@
             android:src="@drawable/v_add_white_x24"
             android:contentDescription="@string/lrr_add_server" />
 
-    </FrameLayout>
+    </com.lanraragi.reader.widget.StateListLayout>
 
 </LinearLayout>

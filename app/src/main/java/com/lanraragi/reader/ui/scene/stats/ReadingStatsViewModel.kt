@@ -8,12 +8,16 @@ import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.server.excludedNamespaces
 import com.lanraragi.reader.stats.ReadingStatsCalculator
 import com.lanraragi.reader.stats.TagPreferenceCalculator
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
 
 /**
  * Loads the snapshot reading statistics (issue #18): cross-profile history
@@ -33,20 +37,27 @@ class ReadingStatsViewModel(
     private val historyRepository = ServiceRegistry.dataModule.historyRepository
     private val profileRepository = ServiceRegistry.dataModule.profileRepository
 
-    private val _stats = MutableStateFlow<ReadingStatsCalculator.ReadingStats?>(null)
-    val stats: StateFlow<ReadingStatsCalculator.ReadingStats?> = _stats.asStateFlow()
+    private val _state =
+        MutableStateFlow<ListScreenState<ReadingStatsCalculator.ReadingStats>>(ListScreenState.Loading)
+
+    /**
+     * What the screen shows: one item, the stats, once anything was read
+     * (Empty before that), or the load's error (it used to look empty).
+     */
+    val state: StateFlow<ListScreenState<ReadingStatsCalculator.ReadingStats>> = _state.asStateFlow()
+
+    private fun on(event: ListScreenState.Event<ReadingStatsCalculator.ReadingStats>) {
+        _state.update { ListScreenState.reduce(it, event) }
+    }
 
     private val _tagPreference =
         MutableStateFlow<TagPreferenceCalculator.TagPreference?>(null)
     val tagPreference: StateFlow<TagPreferenceCalculator.TagPreference?> =
         _tagPreference.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
     fun load() {
+        on(ListScreenState.Event.Load)
         viewModelScope.launch {
-            _isLoading.value = true
             try {
                 val (rows, names, excluded) = withContext(Dispatchers.IO) {
                     val rows = historyRepository.getAllHistoryStatsRows()
@@ -54,14 +65,14 @@ class ReadingStatsViewModel(
                         .associate { it.id to it.name }
                     Triple(rows, names, serverExcludedNamespaces())
                 }
-                _stats.value = ReadingStatsCalculator.compute(rows, names)
+                val stats = ReadingStatsCalculator.compute(rows, names)
                 _tagPreference.value = TagPreferenceCalculator.compute(rows, excluded)
+                on(ListScreenState.Event.Loaded(if (stats.totalArchives == 0) emptyList() else listOf(stats)))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load reading stats", e)
-                _stats.value = ReadingStatsCalculator.compute(emptyList(), emptyMap())
-                _tagPreference.value = TagPreferenceCalculator.compute(emptyList())
-            } finally {
-                _isLoading.value = false
+                on(ListScreenState.Event.Failed(friendlyError(ServiceRegistry.appModule.getContext(), e)))
             }
         }
     }

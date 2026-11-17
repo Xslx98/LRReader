@@ -13,7 +13,7 @@ import org.robolectric.annotation.Config
  * builder (spec 2026-09-15, Q1): the category survives so the server keeps
  * filtering within it, subscription mode survives as before, everything
  * else resets. The mutation is a pure companion function because the full
- * onApplySearch path drives an attached ContentLayout.
+ * onApplySearch path drives an attached list view.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = android.app.Application::class)
