@@ -83,6 +83,9 @@ class GalleryListViewModel(
     /** The list's multi-select, by arcid; saved with the screen like [searchChrome]. */
     val selection = SelectionModel(saved)
 
+    /** The multi-tag filter; saved with the screen like [searchChrome]. */
+    val tagFilter = GalleryTagFilter(saved)
+
     // -------------------------------------------------------------------------
     // Service accessors (read-through to ServiceRegistry so the Scene does not
     // need to import ServiceRegistry directly)

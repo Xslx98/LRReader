@@ -441,7 +441,8 @@ open class GalleryListScene : BaseScene(),
         // Initialize helpers
         initHelpers(context)
 
-        filterHelper?.updateFilterIcon(filterHelper?.filterTagList?.size ?: 0)
+        // The filter is saved with the screen; show what came back.
+        filterHelper?.updateFilterIcon()
 
         // Loads that hide the rows show a skeleton of the list instead of a spinner.
         loadingSkeleton = SkeletonView(context).also {

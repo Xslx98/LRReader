@@ -92,11 +92,8 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
         val filterHelper = scene.filterHelper
         val urlBuilder = scene.mUrlBuilder
         if (filterHelper != null && urlBuilder != null && removeLastOpenFilterTag(filterHelper)) {
-            urlBuilder.set(
-                filterHelper.listToString(filterHelper.filterTagList),
-                ListUrlBuilder.MODE_FILTER
-            )
-            filterHelper.updateFilterIcon(filterHelper.filterTagList.size)
+            urlBuilder.set(filterHelper.searchText(), ListUrlBuilder.MODE_FILTER)
+            filterHelper.updateFilterIcon()
 
             urlBuilder.pageIndex = 0
             scene.onUpdateUrlBuilder()
@@ -125,5 +122,5 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
 
     /** Drops the last tag of an open tag filter; false when the filter is closed or empty. */
     private fun removeLastOpenFilterTag(filterHelper: GalleryFilterHelper): Boolean =
-        filterHelper.filterOpen && filterHelper.removeLastFilterTag()
+        filterHelper.removeLastFilterTag()
 }

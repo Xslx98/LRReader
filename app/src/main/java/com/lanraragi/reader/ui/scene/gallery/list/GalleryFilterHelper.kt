@@ -1,41 +1,38 @@
 package com.lanraragi.reader.ui.scene.gallery.list
 
-import com.lanraragi.reader.domain.splitNamespace
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.reader.R
 
 /**
- * Manages multi-tag filter state and FAB icon for GalleryListScene.
- * Extracted to reduce GalleryListScene's line count.
+ * Draws the multi-tag filter FAB for GalleryListScene. The filter itself is
+ * the screen's [GalleryTagFilter], saved with it.
  */
-class GalleryFilterHelper(private val callback: Callback) {
+class GalleryFilterHelper(
+    private val filter: GalleryTagFilter,
+    private val callback: Callback,
+) {
 
     interface Callback {
         fun getFilterFab(): FloatingActionButton?
     }
 
-    var filterOpen = false
-        private set
-    val filterTagList: MutableList<String> = ArrayList()
+    val filterOpen: Boolean get() = filter.isOpen
+    val filterTagList: List<String> get() = filter.tags
 
     fun toggleFilter() {
-        filterOpen = !filterOpen
-        updateFilterIcon(filterTagList.size)
+        filter.toggle()
+        updateFilterIcon()
     }
 
-    /**
-     * Update filter FAB icon based on open state and tag count.
-     * When closing, also clears the tag list.
-     */
-    fun updateFilterIcon(num: Int) {
+    /** Shows the filter's state on its FAB: closed, or open with its tag count. */
+    fun updateFilterIcon() {
         val fab = callback.getFilterFab() ?: return
-        if (!filterOpen) {
+        if (!filter.isOpen) {
             fab.setImageResource(R.drawable.ic_baseline_filter_none_24)
-            filterTagList.clear()
             return
         }
 
-        val resId = when (num) {
+        val resId = when (filter.tags.size) {
             0 -> R.drawable.ic_baseline_filter_24
             1 -> R.drawable.ic_baseline_filter_1_24
             2 -> R.drawable.ic_baseline_filter_2_24
@@ -51,40 +48,12 @@ class GalleryFilterHelper(private val callback: Callback) {
         fab.setImageResource(resId)
     }
 
-    /**
-     * Add a tag to the filter list and return the joined filter string.
-     * Strips namespace prefix before adding.
-     */
-    fun searchTagBuild(tagName: String): String {
-        val key = splitNamespace(tagName).last()
+    /** Adds a tag (namespace stripped) to the filter; @return the filter's search text */
+    fun searchTagBuild(tagName: String): String = filter.add(tagName)
 
-        if (!filterTagList.contains(key)) {
-            filterTagList.add(key)
-        }
-        return listToString(filterTagList)
-    }
+    /** Removes the last tag; false if 0 or 1 tag remains. */
+    fun removeLastFilterTag(): Boolean = filter.dropLast()
 
-    /**
-     * Remove the last tag from the filter list.
-     * @return true if a tag was removed, false if only 0 or 1 tag remains.
-     */
-    fun removeLastFilterTag(): Boolean {
-        if (filterTagList.size > 1) {
-            filterTagList.removeAt(filterTagList.size - 1)
-            return true
-        }
-        return false
-    }
-
-    fun listToString(list: List<String>): String {
-        val result = StringBuilder()
-        for (i in list.indices) {
-            if (i == 0) {
-                result.append(list[i])
-            } else {
-                result.append("  ").append(list[i])
-            }
-        }
-        return result.toString()
-    }
+    /** The filter's search text. */
+    fun searchText(): String = filter.searchText()
 }
