@@ -12626,10 +12626,14 @@ Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryDrawerHelper$Callback;
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryFabHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryFabHelper;-><init>(Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper$Callback;)V
+HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryTagFilter;Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper$Callback;)V
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper;->getFilterOpen()Z
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper;->getFilterTagList()Ljava/util/List;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper;->updateFilterIcon(I)V
+HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper;->updateFilterIcon()V
+Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryTagFilter;
+HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryTagFilter;-><init>(Landroidx/lifecycle/SavedStateHandle;)V
+HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryTagFilter;->isOpen()Z
+HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryTagFilter;->getTags()Ljava/util/List;
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryFilterHelper$Callback;
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryItemActionHelper;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryItemActionHelper;-><clinit>()V

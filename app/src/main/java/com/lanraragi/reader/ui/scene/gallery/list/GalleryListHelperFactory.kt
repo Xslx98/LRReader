@@ -52,7 +52,7 @@ internal object GalleryListHelperFactory {
      */
     @SuppressLint("RtlHardcoded")
     fun create(scene: GalleryListScene, context: Context): Result {
-        val filterHelper = GalleryFilterHelper(object : GalleryFilterHelper.Callback {
+        val filterHelper = GalleryFilterHelper(scene.viewModel.tagFilter, object : GalleryFilterHelper.Callback {
             override fun getFilterFab(): FloatingActionButton? = scene.floatingActionButton
         })
 
@@ -92,7 +92,7 @@ internal object GalleryListHelperFactory {
             override fun buildFilterSearch(tagName: String): String =
                 scene.filterHelper?.searchTagBuild(tagName) ?: tagName
             override fun updateFilterDisplay() {
-                scene.filterHelper?.updateFilterIcon(scene.filterHelper?.filterTagList?.size ?: 0)
+                scene.filterHelper?.updateFilterIcon()
             }
             override fun onUpdateUrlBuilder() = scene.onUpdateUrlBuilder()
             override fun setChrome(chrome: SearchChrome) = scene.viewModel.setSearchChrome(chrome)
