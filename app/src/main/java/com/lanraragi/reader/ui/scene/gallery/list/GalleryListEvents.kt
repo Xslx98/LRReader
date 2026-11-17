@@ -79,11 +79,10 @@ class GalleryListEvents(private val scene: GalleryListScene) {
         // Rating saved on the detail page: update the row in place. Whole-
         // lifetime like the cover collector — this list is covered then.
         collectFlowWhileCreated(scene, AppEventBus.archiveRatingChangedEvent) { event ->
-            val list = scene.mHelper?.data ?: return@collectFlowWhileCreated
-            val i = list.indexOfFirst { it.arcid == event.arcid }
+            val helper = scene.mHelper ?: return@collectFlowWhileCreated
+            val i = helper.data.indexOfFirst { it.arcid == event.arcid }
             if (i >= 0) {
-                list[i] = list[i].copy(rating = event.rating)
-                scene.adapter?.notifyItemChanged(i)
+                helper.replaceAt(i, helper.data[i].copy(rating = event.rating))
                 scene.rowHighlighter.mark(event.arcid)
             }
         }

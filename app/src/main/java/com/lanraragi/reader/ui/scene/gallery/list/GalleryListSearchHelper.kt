@@ -158,7 +158,7 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
         /**
          * Normal-state query application: a fresh search that stays inside the
          * current category (spec 2026-09-15) and keeps subscription mode as before.
-         * Pure so the rule is testable without an attached ContentLayout.
+         * Pure so the rule is testable without an attached list view.
          */
         @JvmStatic
         fun applyQuery(urlBuilder: ListUrlBuilder, cleanQuery: String) {

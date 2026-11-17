@@ -24,6 +24,7 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.content.ContextCompat
 import android.os.Bundle
 import android.text.TextUtils
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,9 +52,10 @@ import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.reader.widget.list.EasyRecyclerView
+import com.lanraragi.reader.widget.list.HandlerDrawable
+import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.R
 import com.lanraragi.reader.archive.LRRUtils
-
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
@@ -66,12 +68,13 @@ import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.reader.widget.SkeletonView
 import com.lanraragi.framework.util.AssertUtils
 import com.lanraragi.framework.util.ViewUtils
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.widget.ListRefreshLayout
 import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.reader.widget.ContentLayout
+import com.lanraragi.reader.widget.StateListLayout
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.server.ServerSession
@@ -115,8 +118,6 @@ open class GalleryListScene : BaseScene(),
     internal var tankSortDrawable: Drawable? = null
 
     private var mHideActionFabSlop = 0
-
-    private var mHasFirstRefresh = false
 
     /** The query this scene's rows came from (C01); saved with the scene's state. */
     internal val shownSearch = ShownSearchState()
@@ -334,7 +335,6 @@ open class GalleryListScene : BaseScene(),
 
     @Suppress("DEPRECATION")
     private fun onRestore(savedInstanceState: Bundle) {
-        mHasFirstRefresh = savedInstanceState.getBoolean(KEY_HAS_FIRST_REFRESH)
         mUrlBuilder = savedInstanceState.getParcelable(KEY_LIST_URL_BUILDER)
         mRestoredState = savedInstanceState.getInt(KEY_STATE)
         shownSearch.restore(savedInstanceState)
@@ -343,12 +343,6 @@ open class GalleryListScene : BaseScene(),
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        val hasFirstRefresh = if (mHelper != null && 1 == mHelper?.shownViewIndex) {
-            false
-        } else {
-            mHasFirstRefresh
-        }
-        outState.putBoolean(KEY_HAS_FIRST_REFRESH, hasFirstRefresh)
         outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder)
         outState.putInt(KEY_STATE, stateHelper?.state ?: GalleryStateHelper.STATE_NORMAL)
         shownSearch.save(outState)
@@ -422,10 +416,11 @@ open class GalleryListScene : BaseScene(),
 
         val mainLayout = ViewUtils.requireView(view, R.id.main_layout)
         rootLayout = mainLayout as ViewGroup
-        val contentLayout = ViewUtils.requireView(mainLayout, R.id.content_layout) as ContentLayout
-        recyclerView = contentLayout.recyclerView
-        val fastScroller = contentLayout.fastScroller
-        val refreshLayout: ListRefreshLayout = contentLayout.refreshLayout
+        val contentLayout = ViewUtils.requireView(mainLayout, R.id.content_layout) as StateListLayout
+        recyclerView = ViewUtils.requireView(contentLayout, R.id.recycler_view) as EasyRecyclerView
+        val fastScroller = ViewUtils.requireView(contentLayout, R.id.fast_scroller) as FastScroller
+        val refreshLayout = ViewUtils.requireView(contentLayout, R.id.refresh_layout) as ListRefreshLayout
+        bindListWidgets(context, contentLayout, refreshLayout, fastScroller)
         searchLayout = ViewUtils.requireView(mainLayout, R.id.search_layout) as SearchLayout
         searchBar = ViewUtils.requireView(mainLayout, R.id.search_bar) as SearchBar
         fabLayout = ViewUtils.requireView(mainLayout, R.id.fab_layout) as FabLayout
@@ -443,14 +438,16 @@ open class GalleryListScene : BaseScene(),
 
         filterHelper?.updateFilterIcon(filterHelper?.filterTagList?.size ?: 0)
 
-        // First load shows a skeleton of the list instead of the spinner.
+        // Loads that hide the rows show a skeleton of the list instead of a spinner.
         loadingSkeleton = SkeletonView(context).also {
             it.setPadding(0, paddingTopSB, 0, 0)
-            contentLayout.setLoadingView(it)
+            (ViewUtils.requireView(contentLayout, R.id.state_progress) as ViewGroup).addView(
+                it,
+                ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
+            )
         }
         shapeLoadingSkeleton()
-        contentLayout.setHelper(mHelper)
-        contentLayout.fastScroller.setOnDragHandlerListener(searchBarHelper)
+        fastScroller.setOnDragHandlerListener(searchBarHelper)
 
         mAdapterImpl = GalleryListAdapter(
             inflater, resources,
@@ -464,7 +461,13 @@ open class GalleryListScene : BaseScene(),
         recyclerView.setClipToPadding(false)
         recyclerView.setOnItemClickListener(this)
         recyclerView.setOnItemLongClickListener(this)
-        mAdapterImpl?.let { GalleryListSelection.bind(this, it, mainLayout) }
+        mAdapterImpl?.let { adapter ->
+            // Rows arrive from the ViewModel: keep a restored scroll position until they are there.
+            adapter.stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+            mHelper?.attach(contentLayout, refreshLayout, recyclerView, adapter)
+            GalleryListSelection.bind(this, adapter, mainLayout)
+        }
+        observeList()
         recyclerView.addOnScrollListener(mOnScrollListener)
         fastScroller.setPadding(
             fastScroller.paddingLeft, fastScroller.paddingTop + paddingTopSB,
@@ -482,10 +485,9 @@ open class GalleryListScene : BaseScene(),
         stateHelper?.setState(mRestoredState, false)
         mRestoredState = GalleryStateHelper.STATE_NORMAL
 
-        if (!mHasFirstRefresh) {
-            mHasFirstRefresh = true
-            mHelper?.firstRefresh()
-        }
+        // The ViewModel keeps the list across a rotation; only a new (or a
+        // process-death restored) screen loads.
+        mHelper?.firstRefresh()
 
         return view
     }
@@ -544,12 +546,7 @@ open class GalleryListScene : BaseScene(),
         loadingSkeleton = null
         searchBarMover?.cancelAnimation()
         searchBarMover = null
-        val helper = mHelper
-        if (helper != null) {
-            if (1 == helper.shownViewIndex) {
-                mHasFirstRefresh = false
-            }
-        }
+        mHelper?.detach()
         if (::recyclerView.isInitialized) {
             recyclerView.stopScroll()
         }
@@ -672,6 +669,44 @@ open class GalleryListScene : BaseScene(),
         tankMerge.cancelTankMerge()
     }
 
+    /** The list's refresh layout, fast scroller and empty tip. */
+    private fun bindListWidgets(
+        context: Context,
+        list: StateListLayout,
+        refreshLayout: ListRefreshLayout,
+        fastScroller: FastScroller,
+    ) {
+        fastScroller.attachToRecyclerView(recyclerView)
+        fastScroller.setHandlerDrawable(HandlerDrawable().apply { setColor(context.attrColor(R.attr.widgetColorThemeAccent)) })
+        refreshLayout.setColorSchemeResources(
+            R.color.loading_indicator_red,
+            R.color.loading_indicator_purple,
+            R.color.loading_indicator_blue,
+            R.color.loading_indicator_cyan,
+            R.color.loading_indicator_green,
+            R.color.loading_indicator_yellow,
+        )
+        // An empty answer: the sad pandroid; a tap loads again.
+        (ViewUtils.requireView(list, R.id.state_empty) as TextView).apply {
+            val drawable = ContextCompat.getDrawable(context, R.drawable.big_sad_pandroid)
+            drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+            setCompoundDrawables(null, drawable, null, null)
+            setOnClickListener { mHelper?.refresh() }
+        }
+    }
+
+    /** The list state, its failure notices and the searches that landed, while the view is up. */
+    private fun observeList() {
+        collectFlow(viewLifecycleOwner, viewModel.listState) { mHelper?.render(it) }
+        collectFlow(viewLifecycleOwner, viewModel.listNotice) { mHelper?.showNotice(it) }
+        collectFlow(viewLifecycleOwner, viewModel.searchLanded) { params ->
+            shownSearch.onLoaded(params)
+            // Time-to-fully-drawn = first list page landed. Idempotent: the
+            // framework reports once per activity.
+            activity?.reportFullyDrawn()
+        }
+    }
+
     private inner class GalleryListAdapter(
         inflater: LayoutInflater,
         resources: Resources, recyclerView: RecyclerView, type: Int
@@ -704,7 +739,6 @@ open class GalleryListScene : BaseScene(),
         const val ACTION_LIST_URL_BUILDER = "action_list_url_builder"
 
         const val KEY_LIST_URL_BUILDER = "list_url_builder"
-        const val KEY_HAS_FIRST_REFRESH = "has_first_refresh"
         const val KEY_STATE = "state"
         private const val HTTP_LOCKED = 423
 

@@ -11,12 +11,16 @@ import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.settings.AppearanceSettings
 import com.lanraragi.reader.stubNetworkModule
+import com.lanraragi.reader.stubAppModule
 import com.lanraragi.reader.tankoubon.TankRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -26,6 +30,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -67,7 +72,10 @@ class GalleryListViewModelLoadTest {
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .build()
-        ServiceRegistry.initializeForTest(network = stubNetworkModule(client, File(ctx.cacheDir, "list-load-test")))
+        ServiceRegistry.initializeForTest(
+            network = stubNetworkModule(client, File(ctx.cacheDir, "list-load-test")),
+            app = stubAppModule(ctx),
+        )
         installActiveServer(server.url("").toString().removeSuffix("/"))
     }
 
@@ -221,5 +229,73 @@ class GalleryListViewModelLoadTest {
         assertNull("tank pages never anchor a reading context", page.issued)
         val covers = results[1] as GalleryListLoad.TankCovers
         assertTrue(covers.thumbnailUrls.getValue(tankId).contains(member))
+    }
+
+    // ── The list screen state (GalleryListState) ────────────────────────
+
+    @Test
+    fun `the first load lands as the list's content and reports its search`() {
+        server.enqueue(MockResponse().setBody(searchJson(count = 20, total = 100)))
+        val vm = GalleryListViewModel()
+        val landed = CopyOnWriteArrayList<GalleryListViewModel.SearchParams>()
+        val scope = CoroutineScope(Dispatchers.Unconfined)
+        scope.launch { vm.searchLanded.collect { landed += it } }
+
+        vm.loadListIfIdle(archiveQuery)
+        awaitUntil(message = "no content: ${vm.listState.value}") { vm.listState.value is GalleryListState.Content }
+
+        assertEquals(20, vm.listState.value.pages.rows.size)
+        assertTrue(vm.listState.value.pages.canLoadMore)
+        assertEquals("artist:foo", landed.single().filter)
+        vm.loadListIfIdle(archiveQuery)
+        assertEquals("a second first load is a no-op", 1, server.requestCount)
+        scope.cancel()
+    }
+
+    @Test
+    fun `the next page appends to the list`() {
+        server.enqueue(MockResponse().setBody(searchJson(count = 20, total = 40)))
+        server.enqueue(MockResponse().setBody(searchJson(count = 20, total = 40, from = 21)))
+        val vm = GalleryListViewModel()
+        vm.loadList(GalleryLoadKind.Initial, archiveQuery)
+        awaitUntil { vm.listState.value is GalleryListState.Content }
+
+        vm.loadList(GalleryLoadKind.NextPage, archiveQuery)
+        awaitUntil { vm.listState.value.pages.rows.size == 40 }
+
+        assertEquals(listOf(20, 40), vm.listState.value.pages.pageEnds)
+        assertFalse(vm.listState.value.pages.canLoadMore)
+    }
+
+    @Test
+    fun `a failed pull keeps the rows and reports the failure`() {
+        server.enqueue(MockResponse().setBody(searchJson(count = 20, total = 20)))
+        server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
+        val vm = GalleryListViewModel()
+        val notices = CopyOnWriteArrayList<String>()
+        val scope = CoroutineScope(Dispatchers.Unconfined)
+        scope.launch { vm.listNotice.collect { notices += it } }
+        vm.loadList(GalleryLoadKind.Initial, archiveQuery)
+        awaitUntil { vm.listState.value is GalleryListState.Content }
+
+        vm.loadList(GalleryLoadKind.Pull, archiveQuery)
+        awaitUntil(message = "no notice") { notices.isNotEmpty() }
+
+        assertTrue(vm.listState.value is GalleryListState.Content)
+        assertEquals(20, vm.listState.value.pages.rows.size)
+        scope.cancel()
+    }
+
+    @Test
+    fun `without a server the first load is the error at once`() {
+        com.lanraragi.reader.installProfiles()
+        val vm = GalleryListViewModel()
+
+        vm.loadList(GalleryLoadKind.Initial, archiveQuery)
+
+        assertEquals(
+            GalleryListState.Error(ctx.getString(R.string.lrr_no_servers), GalleryPages()),
+            vm.listState.value,
+        )
     }
 }

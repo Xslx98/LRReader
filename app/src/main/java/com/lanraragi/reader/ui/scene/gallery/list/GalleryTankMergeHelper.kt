@@ -112,8 +112,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
                     // removal and move has finished, and with the first visible
                     // rows gone it would also anchor the inserted row above the fold.
                     plan.removals.filter { it != replaceAt }.forEach { if (it < helper.size()) helper.removeAt(it) }
-                    helper.data[replaceAt] = provisional
-                    scene.adapter?.notifyItemChanged(replaceAt)
+                    helper.replaceAt(replaceAt, provisional)
                     return
                 }
                 plan.removals.forEach { if (it < helper.size()) helper.removeAt(it) }

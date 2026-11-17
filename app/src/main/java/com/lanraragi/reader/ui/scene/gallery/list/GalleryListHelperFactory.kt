@@ -113,33 +113,11 @@ internal object GalleryListHelperFactory {
                 scene.isTankMode,
                 if (scene.isTankMode) TankBrowse.Sort.saved() else TankBrowse.Sort.NAME,
             )
-            override fun notifyAdapterDataSetChanged() {
-                scene.adapter?.notifyItemRangeChanged(0, scene.adapter?.itemCount ?: 0)
-            }
-            override fun notifyAdapterItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                scene.adapter?.notifyItemRangeRemoved(positionStart, itemCount)
-            }
-            override fun notifyAdapterItemRangeInserted(positionStart: Int, itemCount: Int) {
-                scene.adapter?.notifyItemRangeInserted(positionStart, itemCount)
-            }
-            override fun notifyAdapterItemRangeChanged(positionStart: Int, itemCount: Int) {
-                scene.adapter?.notifyItemRangeChanged(positionStart, itemCount)
-            }
-            override fun notifyAdapterItemMoved(fromPosition: Int, toPosition: Int) {
-                scene.adapter?.notifyItemMoved(fromPosition, toPosition)
-            }
             override fun showSearchBar() { scene.searchBarMover?.showSearchBar() }
             override fun showActionFab() { scene.stateHelper?.showActionFab() }
             override fun getString(resId: Int): String = scene.getString(resId)
             override fun exitMultiSelect() { scene.multiSelectHelper?.exit() }
             override fun cancelTankMerge() { scene.cancelTankMerge() }
-            override fun onSearchLoaded(params: GalleryListViewModel.SearchParams) {
-                scene.shownSearch.onLoaded(params)
-                // Time-to-fully-drawn = first list page landed. Idempotent:
-                // the framework reports once per activity (androidx also
-                // swallows the pre-API-29 permission quirk).
-                scene.activity?.reportFullyDrawn()
-            }
         }, scene.viewModel)
 
         val listSearchHelper = GalleryListSearchHelper(object : GalleryListSearchHelper.Callback {

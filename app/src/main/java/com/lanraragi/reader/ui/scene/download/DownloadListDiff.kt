@@ -15,7 +15,7 @@ import com.lanraragi.reader.dao.DownloadInfo
  * 5000-row list then took a quarter of a second on a desktop JVM, several
  * times that on a phone. So a long list whose change is estimated to be
  * large skips the diff and is replaced as two range notifications, the way
- * ContentLayout handles deep lists; such a change shows a different list
+ * The gallery list handles deep lists; such a change shows a different list
  * anyway, so losing per-row animations and the scroll anchor is expected.
  *
  * The diff stays on the main thread on purpose: the adapter reads the
