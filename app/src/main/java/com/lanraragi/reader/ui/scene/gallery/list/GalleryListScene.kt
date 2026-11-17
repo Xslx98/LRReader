@@ -700,6 +700,7 @@ open class GalleryListScene : BaseScene(),
         collectFlow(viewLifecycleOwner, viewModel.listState) { mHelper?.render(it) }
         collectFlow(viewLifecycleOwner, viewModel.listNotice) { mHelper?.showNotice(it) }
         collectFlow(viewLifecycleOwner, viewModel.searchLanded) { params ->
+            if (params == null) return@collectFlow
             shownSearch.onLoaded(params)
             // Time-to-fully-drawn = first list page landed. Idempotent: the
             // framework reports once per activity.

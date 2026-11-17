@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.content.Context
 import android.widget.Toast
+import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.lanraragi.reader.domain.Archive
@@ -10,6 +11,7 @@ import com.lanraragi.reader.ui.list.ListScreenState
 import com.lanraragi.reader.widget.ListRefreshLayout
 import com.lanraragi.reader.widget.StateListLayout
 import com.lanraragi.reader.widget.list.LayoutManagerUtils
+import com.lanraragi.reader.R
 
 /**
  * The gallery list's view side: renders [GalleryListViewModel.listState] into
@@ -141,7 +143,9 @@ class GalleryListDataHelper(
         }
         val list = stateList
         if (list != null) {
-            list.emptyText = callback.getString(state.pages.emptyText)
+            val emptyText = callback.getString(state.pages.emptyText)
+            list.emptyText = emptyText
+            list.findViewById<TextView>(R.id.state_empty)?.text = emptyText
             val screen = screenOf(state)
             if (before == null || screenOf(before)::class != screen::class) {
                 // A different slot comes up: bring the chrome back with it.
@@ -189,26 +193,54 @@ class GalleryListDataHelper(
     }
 
     // ==================== Edits ====================
+    // An edit applies to the ViewModel's rows and, with its own notification,
+    // to the adapter. The adapter is brought up to those rows first: a load
+    // that landed while the list was covered (the state collector paused) has
+    // not reached it yet, and an index into a stale list names another row.
 
-    /** Removes row [index] (a deletion while the list is shown). */
+    private val loadedRows: List<Archive> get() = viewModel.listState.value.pages.rows
+
+    /** Shows the ViewModel's rows (a no-op when the adapter is up to date). */
+    private fun catchUp() = shown.submit(loadedRows)
+
+    /** Removes row [index] of [data] (a merge folding members into a tankoubon). */
     fun removeAt(index: Int) {
-        if (index !in shown.items.indices) return
+        catchUp()
+        if (index !in loadedRows.indices) return
         viewModel.editList { it.removeAt(index) }
-        shown.edit(viewModel.listState.value.pages.rows) { notifyItemRemoved(index) }
+        shown.edit(loadedRows) { notifyItemRemoved(index) }
     }
 
     /** Inserts [row] at [index] (a merge's provisional tankoubon). */
     fun addAt(index: Int, row: Archive) {
-        val at = index.coerceIn(0, shown.items.size)
+        catchUp()
+        val at = index.coerceIn(0, loadedRows.size)
         viewModel.editList { it.insertAt(at, row) }
-        shown.edit(viewModel.listState.value.pages.rows) { notifyItemInserted(at) }
+        shown.edit(loadedRows) { notifyItemInserted(at) }
     }
 
     /** Replaces row [index] in place: a change (crossfade), not a remove + insert. */
     fun replaceAt(index: Int, row: Archive) {
-        if (index !in shown.items.indices) return
+        catchUp()
+        if (index !in loadedRows.indices) return
         viewModel.editList { it.replaceAt(index, row) }
-        shown.edit(viewModel.listState.value.pages.rows) { notifyItemChanged(index) }
+        shown.edit(loadedRows) { notifyItemChanged(index) }
+    }
+
+    /** Removes the row of [arcid], if the list holds it (a deletion). */
+    fun removeRow(arcid: String) {
+        catchUp()
+        val index = loadedRows.indexOfFirst { it.arcid == arcid }
+        if (index >= 0) removeAt(index)
+    }
+
+    /** Changes the row of [arcid] in place, if the list holds it (a rating saved elsewhere). */
+    fun updateRow(arcid: String, change: (Archive) -> Archive): Boolean {
+        catchUp()
+        val index = loadedRows.indexOfFirst { it.arcid == arcid }
+        if (index < 0) return false
+        replaceAt(index, change(loadedRows[index]))
+        return true
     }
 
     private class RowDiff(private val old: List<Archive>, private val new: List<Archive>) : DiffUtil.Callback() {

@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
  * Uses the natural LANraragi identifier [arcid] (String) rather than
  * the legacy hashed gid (Long).
  *
- * Implements [Parcelable] for Android IPC (ContentHelper, Intent extras)
+ * Implements [Parcelable] for Android IPC (Intent extras)
  * and `@Serializable` so the entire archive can be JSON-encoded into a
  * single column when the W2026-04 audit's L1 (three-table unification)
  * lands. The JSON form is forward-compatible: adding new fields here

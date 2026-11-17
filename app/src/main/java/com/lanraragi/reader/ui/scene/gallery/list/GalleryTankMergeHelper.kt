@@ -152,7 +152,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         if (!groupMode) return
         val joined = event.joined.firstOrNull()
         if (joined == null) {
-            if (event.left.isNotEmpty()) scene.mHelper?.firstRefresh()
+            if (event.left.isNotEmpty()) scene.mHelper?.refresh()
             return
         }
         // Only a row of THIS list can merge; an archive edited from elsewhere

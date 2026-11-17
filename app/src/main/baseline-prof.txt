@@ -12751,8 +12751,6 @@ HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$d
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$dataHelper$1;->exitMultiSelect()V
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$dataHelper$1;->getHostContext()Landroid/content/Context;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$dataHelper$1;->getString(I)Ljava/lang/String;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$dataHelper$1;->notifyAdapterItemRangeInserted(II)V
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$dataHelper$1;->onSearchLoaded(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListViewModel$SearchParams;)V
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$dataHelper$1;->showActionFab()V
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$dataHelper$1;->showSearchBar()V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$drawerHelper$1;

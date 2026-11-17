@@ -43,7 +43,7 @@ class PageOffsetTrackerTest {
 
     @Test
     fun recordLoaded_nullNextOffset_leavesChainUntouched() {
-        // null = no more rows; ContentLayout won't request the next page, and
+        // null = no more rows; the list won't request the next page, and
         // a later retry of the same page must not be disturbed.
         tracker.recordLoaded(page = 0, nextOffset = 20)
         tracker.recordLoaded(page = 1, nextOffset = null)

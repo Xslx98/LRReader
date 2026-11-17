@@ -119,13 +119,15 @@ class GalleryListViewModel : ViewModel() {
     /** A failure of a load that kept the rows on screen: the scene toasts it. */
     val listNotice: SharedFlow<String> = _listNotice.asSharedFlow()
 
-    private val _searchLanded = MutableSharedFlow<SearchParams>(extraBufferCapacity = 4)
+    private val _searchLanded = MutableStateFlow<SearchParams?>(null)
 
     /**
-     * The `/api/search` inputs of a load that landed for the list on screen
-     * (a superseded load's never reach it): the reading context follows them.
+     * The `/api/search` inputs of the last load that landed for the list on
+     * screen (a superseded load's never do): the reading context follows
+     * them. A value, not an event, so a load landing while the list is
+     * covered still reaches the scene when it shows again.
      */
-    val searchLanded: SharedFlow<SearchParams> = _searchLanded.asSharedFlow()
+    val searchLanded: StateFlow<SearchParams?> = _searchLanded.asStateFlow()
 
     private var lastTask = 0
 
@@ -158,7 +160,7 @@ class GalleryListViewModel : ViewModel() {
         when (load) {
             is GalleryListLoad.Page -> {
                 if (!current) return false
-                load.issued?.let { _searchLanded.tryEmit(it) }
+                load.issued?.let { _searchLanded.value = it }
                 _listState.update { GalleryListState.pageLoaded(it, task, load.rows, load.pageCount, load.emptyText) }
             }
             is GalleryListLoad.TankCovers -> editList { pages ->

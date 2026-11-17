@@ -237,19 +237,15 @@ class GalleryListViewModelLoadTest {
     fun `the first load lands as the list's content and reports its search`() {
         server.enqueue(MockResponse().setBody(searchJson(count = 20, total = 100)))
         val vm = GalleryListViewModel()
-        val landed = CopyOnWriteArrayList<GalleryListViewModel.SearchParams>()
-        val scope = CoroutineScope(Dispatchers.Unconfined)
-        scope.launch { vm.searchLanded.collect { landed += it } }
 
         vm.loadListIfIdle(archiveQuery)
         awaitUntil(message = "no content: ${vm.listState.value}") { vm.listState.value is GalleryListState.Content }
 
         assertEquals(20, vm.listState.value.pages.rows.size)
         assertTrue(vm.listState.value.pages.canLoadMore)
-        assertEquals("artist:foo", landed.single().filter)
+        assertEquals("a value: a covered list still reads it later", "artist:foo", vm.searchLanded.value?.filter)
         vm.loadListIfIdle(archiveQuery)
         assertEquals("a second first load is a no-op", 1, server.requestCount)
-        scope.cancel()
     }
 
     @Test
