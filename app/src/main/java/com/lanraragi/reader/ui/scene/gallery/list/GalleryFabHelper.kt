@@ -26,9 +26,8 @@ internal class GalleryFabHelper(
 
     override fun onClickPrimaryFab(view: FabLayout, fab: FloatingActionButton?) {
         if (createTank()) return
-        if ((stateHelper()?.state
-                ?: GalleryStateHelper.STATE_NORMAL) == GalleryStateHelper.STATE_NORMAL
-        ) {
+        // The FAB menu opens only over the list, not while searching.
+        if (stateHelper()?.rendered == SearchChrome.Normal) {
             view.toggle()
         }
     }

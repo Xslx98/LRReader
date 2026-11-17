@@ -22,7 +22,6 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
         fun getSearchLayout(): SearchLayout?
         fun getUrlBuilder(): ListUrlBuilder?
         fun getContentHelper(): GalleryListDataHelper?
-        fun getStateHelper(): GalleryStateHelper?
         fun getRecyclerView(): RecyclerView?
         fun onUpdateUrlBuilder()
         fun showTip(message: String, length: Int)
@@ -31,14 +30,20 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
 
         /** Tank mode: the normal-state right icon opens the sort menu. @return handled */
         fun onTankSortClick(): Boolean = false
+
+        /** The search chrome now (GalleryListViewModel.searchChrome). */
+        fun chrome(): SearchChrome
+
+        /** Moves the search chrome to [chrome]. */
+        fun setChrome(chrome: SearchChrome)
     }
 
     // SearchBar.Helper callbacks
 
     fun onClickTitle() {
-        val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
-        if (currentState == GalleryStateHelper.STATE_NORMAL) {
-            callback.getStateHelper()?.setState(GalleryStateHelper.STATE_SIMPLE_SEARCH)
+        val currentState = callback.chrome()
+        if (currentState == SearchChrome.Normal) {
+            callback.setChrome(SearchChrome.Simple)
         }
     }
 
@@ -47,7 +52,7 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
         if (searchBar.getState() == SearchBar.STATE_NORMAL) {
             callback.toggleDrawer(Gravity.LEFT)
         } else {
-            callback.getStateHelper()?.setState(GalleryStateHelper.STATE_NORMAL)
+            callback.setChrome(SearchChrome.Normal)
         }
     }
 
@@ -55,16 +60,16 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
         val searchBar = callback.getSearchBar() ?: return
         if (searchBar.getState() == SearchBar.STATE_NORMAL) {
             if (callback.onTankSortClick()) return
-            callback.getStateHelper()?.setState(GalleryStateHelper.STATE_SEARCH)
+            callback.setChrome(SearchChrome.Advanced)
         } else {
             searchBar.setText("")
         }
     }
 
     fun onSearchEditTextClick() {
-        val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
-        if (currentState == GalleryStateHelper.STATE_SEARCH) {
-            callback.getStateHelper()?.setState(GalleryStateHelper.STATE_SEARCH_SHOW_LIST)
+        val currentState = callback.chrome()
+        if (currentState == SearchChrome.Advanced) {
+            callback.setChrome(SearchChrome.AdvancedList)
         }
     }
 
@@ -74,10 +79,10 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
         val searchLayout = callback.getSearchLayout() ?: return
 
         val cleanQuery = query.replace("\r", "").replace("\n", "")
-        val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
+        val currentState = callback.chrome()
 
-        if (currentState == GalleryStateHelper.STATE_SEARCH ||
-            currentState == GalleryStateHelper.STATE_SEARCH_SHOW_LIST
+        if (currentState == SearchChrome.Advanced ||
+            currentState == SearchChrome.AdvancedList
         ) {
             try {
                 searchLayout.formatListUrlBuilder(urlBuilder, cleanQuery)
@@ -90,13 +95,13 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
         }
         callback.onUpdateUrlBuilder()
         helper.refresh()
-        callback.getStateHelper()?.setState(GalleryStateHelper.STATE_NORMAL)
+        callback.setChrome(SearchChrome.Normal)
     }
 
     fun onSearchFabClick() {
-        val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
+        val currentState = callback.chrome()
         val searchBar = callback.getSearchBar() ?: return
-        if (GalleryStateHelper.STATE_NORMAL != currentState) {
+        if (SearchChrome.Normal != currentState) {
             searchBar.applySearch(false)
             callback.hideSoftInput()
         }
@@ -105,15 +110,15 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
     // SearchBarMover.Helper queries
 
     fun isValidView(recyclerView: RecyclerView): Boolean {
-        val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
-        return (currentState == GalleryStateHelper.STATE_NORMAL && recyclerView === callback.getRecyclerView()) ||
-                (currentState == GalleryStateHelper.STATE_SEARCH && recyclerView === callback.getSearchLayout())
+        val currentState = callback.chrome()
+        return (currentState == SearchChrome.Normal && recyclerView === callback.getRecyclerView()) ||
+                (currentState == SearchChrome.Advanced && recyclerView === callback.getSearchLayout())
     }
 
     fun getValidRecyclerView(): RecyclerView? {
-        val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
-        return if (currentState == GalleryStateHelper.STATE_NORMAL ||
-            currentState == GalleryStateHelper.STATE_SIMPLE_SEARCH
+        val currentState = callback.chrome()
+        return if (currentState == SearchChrome.Normal ||
+            currentState == SearchChrome.Simple
         ) {
             callback.getRecyclerView()
         } else {
@@ -122,9 +127,9 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
     }
 
     fun forceShowSearchBar(): Boolean {
-        val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
-        return currentState == GalleryStateHelper.STATE_SIMPLE_SEARCH ||
-                currentState == GalleryStateHelper.STATE_SEARCH_SHOW_LIST
+        val currentState = callback.chrome()
+        return currentState == SearchChrome.Simple ||
+                currentState == SearchChrome.AdvancedList
     }
 
     /**
@@ -132,26 +137,12 @@ internal class GalleryListSearchHelper(private val callback: Callback) {
      * @return true if the back press was consumed by search state logic
      */
     /** Whether [handleSearchBackPress] would consume a back now. */
-    fun isSearchBackPending(): Boolean = when (callback.getStateHelper()?.state) {
-        GalleryStateHelper.STATE_SIMPLE_SEARCH,
-        GalleryStateHelper.STATE_SEARCH,
-        GalleryStateHelper.STATE_SEARCH_SHOW_LIST -> true
-        else -> false
-    }
+    fun isSearchBackPending(): Boolean = callback.chrome().back() != null
 
     fun handleSearchBackPress(): Boolean {
-        val currentState = callback.getStateHelper()?.state ?: GalleryStateHelper.STATE_NORMAL
-        return when (currentState) {
-            GalleryStateHelper.STATE_SIMPLE_SEARCH, GalleryStateHelper.STATE_SEARCH -> {
-                callback.getStateHelper()?.setState(GalleryStateHelper.STATE_NORMAL)
-                true
-            }
-            GalleryStateHelper.STATE_SEARCH_SHOW_LIST -> {
-                callback.getStateHelper()?.setState(GalleryStateHelper.STATE_SEARCH)
-                true
-            }
-            else -> false
-        }
+        val back = callback.chrome().back() ?: return false
+        callback.setChrome(back)
+        return true
     }
 
     companion object {

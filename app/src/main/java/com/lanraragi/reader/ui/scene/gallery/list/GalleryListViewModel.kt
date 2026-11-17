@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.gallery.list
 
 import android.os.Parcelable
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.archive.ArchiveUploadService
@@ -59,7 +60,24 @@ import kotlinx.parcelize.Parcelize
  * update adapter items. (Favourite changes are deliberately not observed:
  * list rows render no favourite state.)
  */
-class GalleryListViewModel : ViewModel() {
+class GalleryListViewModel(
+    private val saved: SavedStateHandle = SavedStateHandle(),
+) : ViewModel() {
+
+    // -------------------------------------------------------------------------
+    // Search chrome
+    // -------------------------------------------------------------------------
+
+    /**
+     * What the search chrome shows (see [SearchChrome]); saved with the
+     * screen, so a rotation or a process-death restore comes back to it.
+     */
+    val searchChrome: StateFlow<SearchChrome> = saved.getStateFlow(KEY_SEARCH_CHROME, SearchChrome.Normal)
+
+    /** Moves the search chrome to [chrome]; the scene renders the change. */
+    fun setSearchChrome(chrome: SearchChrome) {
+        saved[KEY_SEARCH_CHROME] = chrome
+    }
 
     // -------------------------------------------------------------------------
     // Service accessors (read-through to ServiceRegistry so the Scene does not
@@ -621,6 +639,7 @@ class GalleryListViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "GalleryListViewModel"
+        private const val KEY_SEARCH_CHROME = "search_chrome"
 
         /** Max archives processed in parallel by [runBatch]. */
         private const val BATCH_CONCURRENCY = 4

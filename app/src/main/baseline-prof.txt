@@ -12769,7 +12769,6 @@ PLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$ite
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$listSearchHelper$1;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$listSearchHelper$1;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListScene;)V
 PLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$listSearchHelper$1;->getRecyclerView()Landroidx/recyclerview/widget/RecyclerView;
-HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$listSearchHelper$1;->getStateHelper()Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryStateHelper;
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$searchBarHelper$5;
 HSPLcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$searchBarHelper$5;-><init>(Ljava/lang/Object;)V
 Lcom/lanraragi/reader/ui/scene/gallery/list/GalleryListHelperFactory$create$searchBarHelper$6;

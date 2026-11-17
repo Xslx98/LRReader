@@ -123,7 +123,6 @@ open class GalleryListScene : BaseScene(),
     internal val shownSearch = ShownSearchState()
     private var mLastServerConfigVersion = ServerSession.serverConfigVersion
     private var mNavCheckedId = 0
-    private var mRestoredState = GalleryStateHelper.STATE_NORMAL
 
     internal lateinit var downloadManager: DownloadManager
         private set
@@ -299,7 +298,7 @@ open class GalleryListScene : BaseScene(),
         handleArgs(args)
         onUpdateUrlBuilder()
         mHelper?.refresh()
-        stateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
+        viewModel.setSearchChrome(SearchChrome.Normal)
         searchBarMover?.showSearchBar()
     }
 
@@ -336,7 +335,6 @@ open class GalleryListScene : BaseScene(),
     @Suppress("DEPRECATION")
     private fun onRestore(savedInstanceState: Bundle) {
         mUrlBuilder = savedInstanceState.getParcelable(KEY_LIST_URL_BUILDER)
-        mRestoredState = savedInstanceState.getInt(KEY_STATE)
         shownSearch.restore(savedInstanceState)
     }
 
@@ -344,7 +342,6 @@ open class GalleryListScene : BaseScene(),
         super.onSaveInstanceState(outState)
 
         outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder)
-        outState.putInt(KEY_STATE, stateHelper?.state ?: GalleryStateHelper.STATE_NORMAL)
         shownSearch.save(outState)
     }
 
@@ -423,6 +420,9 @@ open class GalleryListScene : BaseScene(),
         bindListWidgets(context, contentLayout, refreshLayout, fastScroller)
         searchLayout = ViewUtils.requireView(mainLayout, R.id.search_layout) as SearchLayout
         searchBar = ViewUtils.requireView(mainLayout, R.id.search_bar) as SearchBar
+        // Its state is a rendering of viewModel.searchChrome (saved there); its
+        // own copy is not saved. The query text, in its EditText, still is.
+        searchBar.isSaveEnabled = false
         fabLayout = ViewUtils.requireView(mainLayout, R.id.fab_layout) as FabLayout
         floatingActionButton = ViewUtils.requireView(fabLayout, R.id.tag_filter) as FloatingActionButton
 
@@ -481,9 +481,10 @@ open class GalleryListScene : BaseScene(),
         onUpdateUrlBuilder()
 
         // Restore state
-        stateHelper?.setState(GalleryStateHelper.STATE_NORMAL, false)
-        stateHelper?.setState(mRestoredState, false)
-        mRestoredState = GalleryStateHelper.STATE_NORMAL
+        // The chrome the ViewModel holds (saved with the screen), without animation;
+        // later changes animate.
+        stateHelper?.render(viewModel.searchChrome.value, false)
+        collectFlow(viewLifecycleOwner, viewModel.searchChrome) { stateHelper?.render(it, true) }
 
         // The ViewModel keeps the list across a rotation; only a new (or a
         // process-death restored) screen loads.
@@ -588,10 +589,6 @@ open class GalleryListScene : BaseScene(),
 
     // Expose drawPager for BookmarksDraw
     val drawPager get() = mDrawerHelper?.drawPager
-
-    fun setState(state: Int) {
-        stateHelper?.setState(state)
-    }
 
     @SuppressLint("RtlHardcoded", "NonConstantResourceId")
     override fun onCreateDrawerView(
@@ -740,14 +737,7 @@ open class GalleryListScene : BaseScene(),
         const val ACTION_LIST_URL_BUILDER = "action_list_url_builder"
 
         const val KEY_LIST_URL_BUILDER = "list_url_builder"
-        const val KEY_STATE = "state"
         private const val HTTP_LOCKED = 423
-
-        // Keep for backward compat with references
-        const val STATE_NORMAL = GalleryStateHelper.STATE_NORMAL
-        const val STATE_SIMPLE_SEARCH = GalleryStateHelper.STATE_SIMPLE_SEARCH
-        const val STATE_SEARCH = GalleryStateHelper.STATE_SEARCH
-        const val STATE_SEARCH_SHOW_LIST = GalleryStateHelper.STATE_SEARCH_SHOW_LIST
 
         @JvmStatic
         fun startScene(scene: com.lanraragi.framework.scene.SceneFragment, lub: ListUrlBuilder) {
