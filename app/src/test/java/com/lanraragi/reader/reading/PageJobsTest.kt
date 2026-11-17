@@ -1,5 +1,7 @@
 package com.lanraragi.reader.reading
 
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -10,9 +12,9 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Audit 2026-10-06 N6: in-flight bookkeeping shared by LRRGalleryProvider and
  * TankGalleryProvider (Tank lacked the rebind double-check and per-request
- * tokens).
+ * tokens), plus the per-page mutexes and calls (plan 2026-11 PR 4.3).
  */
-class PageRequestTrackerTest {
+class PageJobsTest {
 
     /**
      * Map that runs [onCollision] once, right after a putIfAbsent finds an
@@ -36,7 +38,7 @@ class PageRequestTrackerTest {
     @Test
     fun `rebind racing a finishing cancelled job takes the page over`() {
         val map = CollisionHookMap()
-        val tracker = PageRequestTracker(map)
+        val tracker = PageJobs(map)
         val first = tracker.begin(5)
         assertNotNull(first)
 
@@ -55,7 +57,7 @@ class PageRequestTrackerTest {
 
     @Test
     fun `old job's finish does not clear a force-requested newer job`() {
-        val tracker = PageRequestTracker()
+        val tracker = PageJobs()
         val old = tracker.begin(2)!!
         tracker.forget(2)
         val newer = tracker.begin(2)
@@ -68,7 +70,7 @@ class PageRequestTrackerTest {
 
     @Test
     fun `rebind during a cancelled job is re-dispatched by its finish`() {
-        val tracker = PageRequestTracker()
+        val tracker = PageJobs()
         val token = tracker.begin(1)!!
         assertNull(tracker.begin(1))
         assertTrue(tracker.finish(1, token, cancelled = true, stopped = false))
@@ -76,8 +78,8 @@ class PageRequestTrackerTest {
     }
 
     @Test
-    fun `rebind during a finished job needs no re-dispatch`() {
-        val tracker = PageRequestTracker()
+    fun `rebind during a job that published its page or its failure needs no re-dispatch`() {
+        val tracker = PageJobs()
         val token = tracker.begin(1)!!
         assertNull(tracker.begin(1))
         assertFalse(tracker.finish(1, token, cancelled = false, stopped = false))
@@ -88,7 +90,7 @@ class PageRequestTrackerTest {
 
     @Test
     fun `no re-dispatch after stop`() {
-        val tracker = PageRequestTracker()
+        val tracker = PageJobs()
         val token = tracker.begin(4)!!
         assertNull(tracker.begin(4))
         assertFalse(tracker.finish(4, token, cancelled = true, stopped = true))
@@ -96,7 +98,7 @@ class PageRequestTrackerTest {
 
     @Test
     fun `abandon frees the page and clear drops everything`() {
-        val tracker = PageRequestTracker()
+        val tracker = PageJobs()
         val token = tracker.begin(0)!!
         tracker.abandon(0, token)
         val again = tracker.begin(0)
@@ -105,5 +107,40 @@ class PageRequestTrackerTest {
         tracker.clear()
         assertNotNull(tracker.begin(0))
         assertNotNull(tracker.begin(7))
+    }
+
+    @Test
+    fun `cancelCall severs only that page's download, clear severs every one`() {
+        val client = OkHttpClient()
+        val jobs = PageJobs()
+        val one = client.newCall(Request.Builder().url("http://127.0.0.1:9/1").build())
+        val two = client.newCall(Request.Builder().url("http://127.0.0.1:9/2").build())
+        jobs.track(1, one)
+        jobs.track(2, two)
+
+        jobs.cancelCall(1)
+        assertTrue(one.isCanceled())
+        assertFalse(two.isCanceled())
+
+        jobs.clear()
+        assertTrue(two.isCanceled())
+    }
+
+    @Test
+    fun `an untracked download is not severed`() {
+        val jobs = PageJobs()
+        val call = OkHttpClient().newCall(Request.Builder().url("http://127.0.0.1:9/1").build())
+        jobs.track(1, call)
+        jobs.untrack(1)
+
+        jobs.clear()
+        assertFalse(call.isCanceled())
+    }
+
+    @Test
+    fun `one mutex per page`() {
+        val jobs = PageJobs()
+        assertTrue(jobs.mutex(3) === jobs.mutex(3))
+        assertFalse(jobs.mutex(3) === jobs.mutex(4))
     }
 }

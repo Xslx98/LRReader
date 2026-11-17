@@ -61,11 +61,6 @@ class GalleryDetailViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "GalleryDetailVM"
-        const val STATE_INIT = -1
-        const val STATE_NORMAL = 0
-        const val STATE_REFRESH = 1
-        const val STATE_REFRESH_HEADER = 2
-        const val STATE_FAILED = 3
         private const val HTTP_BAD_REQUEST = 400
         private const val HTTP_NOT_FOUND = 404
 
@@ -157,10 +152,30 @@ class GalleryDetailViewModel : ViewModel() {
     // Loading state
     // -------------------------------------------------------------------------
 
-    private val _state = MutableStateFlow(STATE_INIT)
+    private val _state = MutableStateFlow<DetailState>(DetailState.Init)
 
-    /** Current UI state: STATE_INIT, STATE_NORMAL, STATE_REFRESH, STATE_REFRESH_HEADER, or STATE_FAILED. */
-    val state: StateFlow<Int> = _state.asStateFlow()
+    /** What the page shows; every transition happens in this class. */
+    val state: StateFlow<DetailState> = _state.asStateFlow()
+
+    /**
+     * Opens the page once per ViewModel: a re-created view (rotation, the
+     * scene re-attached) keeps the state and any request in flight. Shows
+     * the detail at once when it is in memory or cached, else requests it.
+     */
+    fun open(categoryInfoSuffix: String, categoryCountSuffix: String) {
+        if (_state.value != DetailState.Init) return
+        when {
+            !tryLoadFromCache() -> _state.value = DetailState.Failed(null)
+            _archiveDetail.value != null -> _state.value = DetailState.Shown()
+            !requestGalleryDetail(categoryInfoSuffix, categoryCountSuffix) -> _state.value = DetailState.Failed(null)
+        }
+    }
+
+    /** Fetches the detail again unless a fetch already runs (refresh menu, banner retry, error tip). */
+    fun refresh(categoryInfoSuffix: String, categoryCountSuffix: String) {
+        if (_state.value.isLoading) return
+        requestGalleryDetail(categoryInfoSuffix, categoryCountSuffix)
+    }
 
     // -------------------------------------------------------------------------
     // Setters
@@ -260,10 +275,6 @@ class GalleryDetailViewModel : ViewModel() {
                 }
             }
         }
-    }
-
-    fun setState(state: Int) {
-        _state.value = state
     }
 
     // -------------------------------------------------------------------------
@@ -468,40 +479,6 @@ class GalleryDetailViewModel : ViewModel() {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Detail request events (one-shot)
-    // -------------------------------------------------------------------------
-
-    internal val detailRequestEvents = DetailRequestEvents()
-
-    /**
-     * Emitted when a gallery detail fetch fails AND there is no usable
-     * fallback content to render — the Scene shows the full-screen
-     * `mTip` error pane. Kept for a late subscriber ([DetailRequestEvents]).
-     */
-    val detailError: SharedFlow<Exception> = detailRequestEvents.failed
-
-    /**
-     * Emitted when a gallery detail fetch fails BUT we already have
-     * displayable data (LRU detail cache hit, or a degraded detail
-     * seeded from the navigation [archive] argument). The Scene leaves
-     * the main content visible and surfaces a non-blocking banner so
-     * the page stays useful when the source server is offline / orphan
-     * / has deleted the archive.
-     */
-    val detailErrorBanner: SharedFlow<Exception> = detailRequestEvents.failedWithContent
-
-    /**
-     * Emitted every time a fresh detail-page response lands successfully.
-     * Independent of [archiveDetail] — that StateFlow deduplicates by
-     * value, so a refresh that returns identical content would not re-fire
-     * `collect`. Observers that drive REFRESH→NORMAL state transitions
-     * (the spinner) must use this event flow instead. Kept for a late
-     * subscriber: the request can finish before the view's collectors
-     * subscribe ([DetailRequestEvents]).
-     */
-    val detailLoaded: SharedFlow<ArchiveDetail> = detailRequestEvents.loaded
-
     private val _ratingError = MutableSharedFlow<Exception>(extraBufferCapacity = 1)
 
     /**
@@ -607,8 +584,10 @@ class GalleryDetailViewModel : ViewModel() {
     /**
      * Fetches archive metadata from LANraragi and queries categories for
      * favorite status. On success, updates [_archiveDetail],
-     * [_currentRating] and [_favoriteState]; emits to [detailLoaded].
-     * On failure, emits to [detailError] or [detailErrorBanner].
+     * [_currentRating] and [_favoriteState], then [state] turns
+     * [DetailState.Shown]. On failure, see [emitDetailFailure]. While it
+     * runs, [state] is [DetailState.LoadingBelowHeader] when the navigation
+     * archive can stand in for the header, else [DetailState.Loading].
      *
      * Subsequent calls cancel the in-flight job — the user should always
      * see "last-write-wins" behaviour even when tapping refresh
@@ -635,7 +614,11 @@ class GalleryDetailViewModel : ViewModel() {
         // Cancel any previous in-flight fetch so its late response cannot
         // overwrite the freshly issued one's result.
         requestJob?.cancel()
-        detailRequestEvents.clear()
+        _state.value = if (_archive.value != null && _archiveDetail.value == null) {
+            DetailState.LoadingBelowHeader
+        } else {
+            DetailState.Loading
+        }
         requestJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Resolve inside the coroutine: ProfileLookupCache may be
@@ -693,12 +676,9 @@ class GalleryDetailViewModel : ViewModel() {
 
                 _archiveDetail.value = ad
                 _currentRating.value = ad.archive.rating
-                // Fire detailLoaded *after* the StateFlow write so any
-                // observer that snapshots archiveDetail.value sees the
-                // fresh content. Distinct from archiveDetail itself —
-                // refresh-with-no-change still fires this event so the
-                // REFRESH→NORMAL spinner transition can complete.
-                detailRequestEvents.loaded(ad)
+                rowSyncPending = true
+                // After the detail write, so the shown page reads the fresh content.
+                _state.value = DetailState.Shown(load = ++loads)
 
                 loadArchiveTankoubons()
 
@@ -768,11 +748,44 @@ class GalleryDetailViewModel : ViewModel() {
                 }
             }
         }
-        if (_archiveDetail.value != null) {
-            detailRequestEvents.failedWithContent(e)
+        _state.value = if (_archiveDetail.value != null) {
+            DetailState.Shown(sourceError = e, load = loads)
         } else {
-            detailRequestEvents.failed(e)
+            DetailState.Failed(e)
         }
+    }
+
+    /** Fetches that succeeded; see [DetailState.Shown.load]. */
+    @Volatile
+    private var loads = 0
+
+    /** A fetch succeeded and [syncDownloadRow] has not run for it yet. */
+    @Volatile
+    private var rowSyncPending = false
+
+    /**
+     * A fresh detail is shown: re-read the download state, and refresh the
+     * download row's thumb when the server's changed. The same arcid on
+     * another server is another server's row (#94). The download state
+     * itself is the scheduler's and is not copied back (audit 2026-10-06b
+     * STAB-01); the row goes through the ordered download write queue.
+     * Main thread (the download rows are main-thread owned).
+     *
+     * @return the row's thumb was stale: load the cover from the network
+     */
+    fun syncDownloadRow(): Boolean {
+        // Once per fetch that succeeded: never for a cache hit, the stand-in
+        // detail of a failed fetch, or a re-created view.
+        if (!rowSyncPending) return false
+        rowSyncPending = false
+        val ad = _archiveDetail.value ?: return false
+        refreshDownloadState()
+        if (downloadState.value == DownloadState.INVALID) return false
+        val di = downloadManager.getDownloadInfo(ad.archive.arcid)
+            ?.takeIf { it.serverProfileId == getSourceProfileId() }
+        if (di == null || di.thumb == null || di.thumb == ad.archive.thumbnailUrl) return false
+        updateDownloadRowFromDetail(ad.archive)
+        return true
     }
 
     // -------------------------------------------------------------------------

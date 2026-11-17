@@ -18,14 +18,19 @@ package com.lanraragi.reader.ui.scene.download
 import android.view.Gravity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.drawable.AddDeleteDrawable
+import com.lanraragi.reader.ui.list.SelectionModel
+import com.lanraragi.reader.ui.list.SelectionState
 import com.lanraragi.reader.widget.drawer.DrawerLayout
 import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.reader.ui.scene.DragSelectTouchListener
 import com.lanraragi.framework.widget.FabLayout
 
 /**
- * Manages custom choice/selection mode, FAB expand/collapse, and drawer
- * locking state for [DownloadsScene]. Extracted in W16-1.
+ * Multi-select on [DownloadsScene], driven by the screen's [SelectionModel]
+ * (rows keyed by arcid; tank cards by their TANK_ id): the FAB, drawer
+ * locking and the list's checked look follow the model. The model lives in
+ * the ViewModel, so a Room update, a page switch or a rotation keeps every
+ * check on its own row.
  */
 internal class DownloadSelectionHelper(private val callback: Callback) {
 
@@ -34,17 +39,54 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
         val mFabLayout: FabLayout?
         val actionFabDrawable: AddDeleteDrawable?
         val longClickListener: EasyRecyclerView.OnItemLongClickListener
+        val selection: SelectionModel
+
+        /** The arcid of the row at adapter [position] (a page position), or null. */
+        fun keyAt(position: Int): String?
         fun setDrawerLockMode(lockMode: Int, gravity: Int)
     }
 
-    /** [EasyRecyclerView.CustomChoiceListener] that bridges into this helper. */
-    val choiceListener: EasyRecyclerView.CustomChoiceListener = ChoiceListenerImpl()
+    private val model: SelectionModel get() = callback.selection
 
     private var dragSelect: DragSelectTouchListener? = null
 
+    /** The mode the chrome was last told about. */
+    private var shownActive = false
+
+    val isActive: Boolean get() = model.isActive
+
+    /** The selected arcids, in the order they were picked. */
+    val checkedKeys: Set<String> get() = model.checked
+
+    /** Binds the model to [rv]; a selection already on shows at once. */
+    fun attach(rv: EasyRecyclerView) {
+        rv.checkedProvider = { position -> callback.keyAt(position)?.let(model::isSelected) == true }
+        model.onChanged = ::render
+        render(model.state)
+    }
+
+    /** Stops drawing and reporting; the selection itself stays in the model. */
+    fun detach() {
+        dragSelect?.cancel()
+        model.onChanged = null
+        callback.mRecyclerView?.checkedProvider = null
+    }
+
     /** Enables drag-to-select on [rv]; every download row (tank cards included) is selectable. */
     fun attachDragSelect(rv: EasyRecyclerView) {
-        val listener = DragSelectTouchListener(rv, DragSelectTouchListener.forEasyRecyclerView(rv) { true })
+        val listener = DragSelectTouchListener(rv, object : DragSelectTouchListener.Selection {
+            override fun isActive(): Boolean = model.isActive
+            override fun checkedPositions(): Set<Int> {
+                val checked = model.checked
+                if (checked.isEmpty()) return emptySet()
+                val count = rv.adapter?.itemCount ?: 0
+                return (0 until count).filterTo(LinkedHashSet()) { callback.keyAt(it)?.let(checked::contains) == true }
+            }
+            override fun setChecked(position: Int, checked: Boolean) {
+                callback.keyAt(position)?.let { model.setSelected(it, checked) }
+            }
+            override fun canSelect(position: Int): Boolean = true
+        })
         rv.addOnItemTouchListener(listener)
         dragSelect = listener
     }
@@ -62,56 +104,63 @@ internal class DownloadSelectionHelper(private val callback: Callback) {
         }
     }
 
+    /** The primary FAB enters the mode with nothing picked, or leaves it. */
     fun onClickPrimaryFab(view: FabLayout, @Suppress("UNUSED_PARAMETER") fab: FloatingActionButton?) {
-        val recyclerView = callback.mRecyclerView
-        if (recyclerView != null && recyclerView.isInCustomChoice) {
-            recyclerView.outOfCustomChoiceMode()
+        if (callback.mRecyclerView == null) {
+            view.toggle()
             return
         }
-        if (recyclerView != null && !recyclerView.isInCustomChoice) {
-            recyclerView.intoCustomChoiceMode()
-            return
-        }
-        view.toggle()
+        if (model.isActive) model.exit() else model.enter()
     }
 
     fun onItemLongClick(position: Int): Boolean {
-        val recyclerView = callback.mRecyclerView ?: return false
         // Tank cards enter multi-select like any row (spec 2026-09-21 §4);
         // batch ops expand them into member rows.
-        if (!recyclerView.isInCustomChoice) {
-            recyclerView.intoCustomChoiceMode()
-        }
-        recyclerView.toggleItemChecked(position)
+        val key = callback.keyAt(position) ?: return false
+        model.toggle(key)
         // The finger is still down: the same touch stream becomes a drag.
         dragSelect?.startDrag(position)
         return true
     }
 
-    private inner class ChoiceListenerImpl : EasyRecyclerView.CustomChoiceListener {
-        override fun onIntoCustomChoice(view: EasyRecyclerView) {
-            callback.mRecyclerView?.let {
-                it.setOnItemLongClickListener(null)
-                it.isLongClickable = false
-            }
-            callback.mFabLayout?.isExpanded = true
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
-        }
+    /** Click entry point: toggles the row while the mode is on. @return consumed */
+    fun toggleChecked(position: Int): Boolean {
+        if (!model.isActive) return false
+        callback.keyAt(position)?.let(model::toggle)
+        return true
+    }
 
-        override fun onOutOfCustomChoice(view: EasyRecyclerView) {
-            dragSelect?.cancel()
-            callback.mRecyclerView?.setOnItemLongClickListener(callback.longClickListener)
-            callback.mFabLayout?.isExpanded = false
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
-            callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
-        }
+    /** Selects [keys] (select all on the page shown). */
+    fun selectAll(keys: Collection<String>) = model.selectAll(keys)
 
-        override fun onItemCheckedStateChanged(view: EasyRecyclerView, position: Int, id: Long, checked: Boolean) {
-            if (view.checkedItemCount == 0) {
-                view.outOfCustomChoiceMode()
+    /** Drops the checks of rows the list no longer holds. */
+    fun retainAll(keys: Collection<String>) = model.retainAll(keys)
+
+    fun exit() {
+        dragSelect?.cancel()
+        model.exit()
+    }
+
+    private fun render(state: SelectionState) {
+        val active = state is SelectionState.Selecting
+        if (active != shownActive) {
+            shownActive = active
+            val rv = callback.mRecyclerView
+            if (active) {
+                rv?.setOnItemLongClickListener(null)
+                rv?.isLongClickable = false
+                callback.mFabLayout?.isExpanded = true
+                callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT)
+                callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT)
+            } else {
+                dragSelect?.cancel()
+                rv?.setOnItemLongClickListener(callback.longClickListener)
+                callback.mFabLayout?.isExpanded = false
+                callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT)
+                callback.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT)
             }
         }
+        callback.mRecyclerView?.refreshChecked()
     }
 
     companion object {

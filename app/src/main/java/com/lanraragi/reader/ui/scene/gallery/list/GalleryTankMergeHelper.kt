@@ -112,8 +112,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
                     // removal and move has finished, and with the first visible
                     // rows gone it would also anchor the inserted row above the fold.
                     plan.removals.filter { it != replaceAt }.forEach { if (it < helper.size()) helper.removeAt(it) }
-                    helper.data[replaceAt] = provisional
-                    scene.adapter?.notifyItemChanged(replaceAt)
+                    helper.replaceAt(replaceAt, provisional)
                     return
                 }
                 plan.removals.forEach { if (it < helper.size()) helper.removeAt(it) }
@@ -153,7 +152,7 @@ class GalleryTankMergeHelper(private val scene: GalleryListScene) {
         if (!groupMode) return
         val joined = event.joined.firstOrNull()
         if (joined == null) {
-            if (event.left.isNotEmpty()) scene.mHelper?.firstRefresh()
+            if (event.left.isNotEmpty()) scene.mHelper?.refresh()
             return
         }
         // Only a row of THIS list can merge; an archive edited from elsewhere

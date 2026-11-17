@@ -63,6 +63,35 @@ class PageLoadLoopTest {
 
     private val failed = DecodeResult.Failed(IllegalStateException("decoder rejected the bytes"))
 
+    /** Fetch and decode act on the file chosen at the start of the attempt, even if the answer changes meanwhile. */
+    @Test
+    fun fetchAndDecodeAgreeOnOneFilePerAttempt() = runBlocking {
+        val first = File(downloadDir, "0001.png")
+        val later = File(cacheDir, "page_0")
+        var calls = 0
+        var fetched: File? = null
+        var decoded: File? = null
+        val result = PageLoadLoop(
+            pageFile = { if (calls++ == 0) first else later },
+            fetch = { f ->
+                fetched = f
+                f.writeBytes(PageFixtures.damagedPng)
+            },
+            decode = { f ->
+                decoded = f
+                DecodeResult.Ok("page")
+            },
+            ownedByDownload = { it.parentFile != cacheDir },
+            handOverDamaged = { false },
+            retryDelay = {},
+        ).run()
+
+        assertEquals(PageLoadResult.Loaded("page"), result)
+        assertEquals(first, fetched)
+        assertEquals(first, decoded)
+        assertEquals("asked once", 1, calls)
+    }
+
     @Test
     fun avifBelowApi31_failsAsUnsupported_keptAndNotRefetched() = runBlocking {
         val file = File(cacheDir, "page_0")

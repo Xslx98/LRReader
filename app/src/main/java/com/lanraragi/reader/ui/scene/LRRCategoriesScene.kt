@@ -11,16 +11,18 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.lanraragi.reader.ui.list.ListDiffBinder
+import com.lanraragi.reader.ui.list.ListScreenState
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.scene.LRRCategoriesViewModel.CategoriesUiEvent
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.domain.Category
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
+import com.lanraragi.reader.widget.StateListLayout
 import com.lanraragi.framework.scene.Announcer
 
 /**
@@ -34,23 +36,15 @@ import com.lanraragi.framework.scene.Announcer
 class LRRCategoriesScene : BaseScene() {
 
     private var mRecyclerView: RecyclerView? = null
-    private var mProgress: View? = null
-    private var mErrorView: View? = null
-    private var mErrorIcon: ImageView? = null
-    private var mErrorTitle: TextView? = null
-    private var mErrorMessage: TextView? = null
-    private var mErrorRetry: TextView? = null
+    private var mStateList: StateListLayout? = null
     private var mToolbar: MaterialToolbar? = null
 
-    private val mCategories: MutableList<Category> = mutableListOf()
+    // What the adapter shows; the categories observer is its single dispatch
+    // path (every CRUD op re-fetches). See ListDiffBinder.
+    private val mCategories = ListDiffBinder<Category> { old, new -> LRRCategoryDiffCallback(old, new) }
     private var mAdapter: CategoryAdapter? = null
 
     private lateinit var viewModel: LRRCategoriesViewModel
-
-    // Snapshot of the list last dispatched to the adapter. Read/written ONLY by
-    // the categories observer (the single dispatch path — every CRUD op re-fetches).
-    // See docs/diffutil-root-cause-analysis.md for the snapshot ownership rule.
-    private var mLastSnapshot: List<Category> = emptyList()
 
     override fun getNavCheckedItem(): Int = R.id.nav_favourite
 
@@ -64,13 +58,10 @@ class LRRCategoriesScene : BaseScene() {
         viewModel = ViewModelProvider(this)[LRRCategoriesViewModel::class.java]
 
         mToolbar = view.findViewById(R.id.toolbar)
-        mProgress = view.findViewById(R.id.progress)
-        mErrorView = view.findViewById(R.id.error_view)
-        mErrorIcon = view.findViewById(R.id.error_icon)
-        mErrorTitle = view.findViewById(R.id.error_title)
-        mErrorMessage = view.findViewById(R.id.error_message)
-        mErrorRetry = view.findViewById(R.id.error_retry)
-        mRecyclerView = view.findViewById(R.id.recycler_view)
+        mStateList = view.findViewById<StateListLayout>(R.id.state_list).apply {
+            onRetry = { viewModel.loadCategories() }
+        }
+        mRecyclerView = view.findViewById(R.id.state_content)
 
         mToolbar?.apply {
             setTitle(R.string.lrr_categories_title)
@@ -87,48 +78,17 @@ class LRRCategoriesScene : BaseScene() {
             }
         }
 
-        mAdapter = CategoryAdapter()
+        mAdapter = CategoryAdapter().also { mCategories.adapter = it }
         mRecyclerView?.apply {
             layoutManager = LinearLayoutManager(context)
             setHasFixedSize(true)
             adapter = mAdapter
         }
 
-        // Observe category list from ViewModel
-        collectFlow(viewLifecycleOwner, viewModel.categories) { newList ->
-            val adapter = mAdapter
-            if (adapter != null) {
-                val diff = DiffUtil.calculateDiff(
-                    LRRCategoryDiffCallback(mLastSnapshot, newList)
-                )
-                mCategories.clear()
-                mCategories.addAll(newList)
-                mLastSnapshot = ArrayList(newList)
-                diff.dispatchUpdatesTo(adapter)
-            } else {
-                mCategories.clear()
-                mCategories.addAll(newList)
-                mLastSnapshot = ArrayList(newList)
-            }
-            if (mCategories.isEmpty() && !viewModel.isLoading.value) {
-                showEmpty(getString(R.string.lrr_categories_empty))
-            } else if (mCategories.isNotEmpty()) {
-                showList()
-            }
-        }
-
-        // Observe loading state. When the load finishes we must re-evaluate empty vs list
-        // here, not only in the categories collector: a server with zero categories emits
-        // emptyList() which StateFlow dedupes against the initial emptyList(), so the
-        // categories collector never re-runs and the spinner would otherwise spin forever.
-        collectFlow(viewLifecycleOwner, viewModel.isLoading) { loading ->
-            if (loading) {
-                showProgress()
-            } else if (mCategories.isEmpty()) {
-                showEmpty(getString(R.string.lrr_categories_empty))
-            } else {
-                showList()
-            }
+        // The screen's state: what the list shows, or loading / empty / the error.
+        collectFlow(viewLifecycleOwner, viewModel.state) { state ->
+            mCategories.submit(state.items)
+            mStateList?.render(state)
         }
 
         // Observe one-shot UI events (success/error toasts)
@@ -136,12 +96,7 @@ class LRRCategoriesScene : BaseScene() {
             val ctx = ehContext ?: return@collectFlow
             when (event) {
                 is CategoriesUiEvent.ShowError -> {
-                    // If the list is empty, show the error view; otherwise just toast
-                    if (mCategories.isEmpty()) {
-                        showError(event.message)
-                    } else {
-                        Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
-                    }
+                    Toast.makeText(ctx, event.message, Toast.LENGTH_SHORT).show()
                 }
                 is CategoriesUiEvent.ShowSuccess -> {
                     Toast.makeText(ctx, event.messageResId, Toast.LENGTH_SHORT).show()
@@ -149,7 +104,12 @@ class LRRCategoriesScene : BaseScene() {
             }
         }
 
-        viewModel.loadCategories()
+        // A rotation keeps the ViewModel and its state (an error stays with its
+        // retry); a new view otherwise (first open, coming back to this
+        // screen, a restore after process death) loads.
+        if (savedInstanceState == null || viewModel.state.value is ListScreenState.Loading) {
+            viewModel.loadCategories()
+        }
 
         return view
     }
@@ -157,16 +117,11 @@ class LRRCategoriesScene : BaseScene() {
     override fun onDestroyView() {
         super.onDestroyView()
         mRecyclerView = null
-        mProgress = null
-        mErrorView = null
-        mErrorIcon = null
-        mErrorTitle = null
-        mErrorMessage = null
-        mErrorRetry = null
+        mStateList = null
         mToolbar = null
         mAdapter = null
-        // Reset snapshot so the next view recreation starts from a clean baseline.
-        mLastSnapshot = emptyList()
+        // Dispatch nowhere until the next view; its adapter shows the same items.
+        mCategories.adapter = null
     }
 
     // ==================== CRUD Operations ====================
@@ -277,50 +232,6 @@ class LRRCategoriesScene : BaseScene() {
             .show()
     }
 
-    // ==================== View Helpers ====================
-
-    private fun showProgress() {
-        mProgress?.visibility = View.VISIBLE
-        mRecyclerView?.visibility = View.GONE
-        mErrorView?.visibility = View.GONE
-    }
-
-    private fun showList() {
-        mProgress?.visibility = View.GONE
-        mRecyclerView?.visibility = View.VISIBLE
-        mErrorView?.visibility = View.GONE
-    }
-
-    private fun showError(message: String) {
-        mProgress?.visibility = View.GONE
-        mRecyclerView?.visibility = View.GONE
-        mErrorView?.apply {
-            visibility = View.VISIBLE
-            mErrorIcon?.visibility = View.VISIBLE
-            mErrorTitle?.setText(R.string.lrr_error_title)
-            mErrorMessage?.apply {
-                visibility = View.VISIBLE
-                text = message
-            }
-            mErrorRetry?.apply {
-                visibility = View.VISIBLE
-                setOnClickListener { viewModel.loadCategories() }
-            }
-        }
-    }
-
-    private fun showEmpty(message: String) {
-        mProgress?.visibility = View.GONE
-        mRecyclerView?.visibility = View.GONE
-        mErrorView?.apply {
-            visibility = View.VISIBLE
-            mErrorIcon?.visibility = View.GONE
-            mErrorTitle?.text = message
-            mErrorMessage?.visibility = View.GONE
-            mErrorRetry?.visibility = View.GONE
-        }
-    }
-
     private fun onCategoryClick(category: Category) {
         val args = Bundle().apply {
             putString(GalleryListScene.KEY_ACTION, GalleryListScene.ACTION_LIST_URL_BUILDER)
@@ -344,7 +255,7 @@ class LRRCategoriesScene : BaseScene() {
         }
 
         override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
-            val cat = mCategories[position]
+            val cat = mCategories.items[position]
 
             // Name (with pin indicator)
             if (cat.isPinned()) {
@@ -377,7 +288,7 @@ class LRRCategoriesScene : BaseScene() {
             }
         }
 
-        override fun getItemCount(): Int = mCategories.size
+        override fun getItemCount(): Int = mCategories.items.size
     }
 
     private class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

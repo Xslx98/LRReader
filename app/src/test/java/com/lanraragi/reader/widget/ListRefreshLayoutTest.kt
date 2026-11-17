@@ -3,11 +3,14 @@ package com.lanraragi.reader.widget
 import android.view.ContextThemeWrapper
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
 import com.lanraragi.reader.R
+import com.lanraragi.reader.widget.list.EasyRecyclerView
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -32,10 +35,12 @@ class ListRefreshLayoutTest {
     @Before
     fun setUp() {
         val ctx = ContextThemeWrapper(ApplicationProvider.getApplicationContext(), R.style.AppTheme)
-        // As in the app: widget_content_layout inflates the list inside it.
-        val content = ContentLayout(ctx)
-        layout = content.refreshLayout
-        list = content.recyclerView
+        // As in the gallery list's layout: the list inside the refresh layout inside a frame.
+        val content = FrameLayout(ctx)
+        layout = ListRefreshLayout(ctx)
+        list = EasyRecyclerView(ctx)
+        layout.addView(list, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        content.addView(layout, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         list.layoutManager = LinearLayoutManager(ctx)
         val exactly = View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY)
         content.measure(exactly, exactly)

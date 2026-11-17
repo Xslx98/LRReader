@@ -135,6 +135,29 @@ class GalleryDetailViewModelTest {
         assertEquals(FavoriteState(isFavorited = true, name = "Seven's"), sameServer.favoriteState.value)
     }
 
+    @Test
+    fun opening_aCachedDetail_showsItWithoutARequest() {
+        val detailCache = LruCache<String, ArchiveDetail>(4)
+        ServiceRegistry.initializeForTest(coroutine = null, data = detailCacheOnly(detailCache))
+        detailCache.put(GalleryDetailViewModel.detailCacheKey(0L, "cached"), archiveDetail("cached"))
+        val vm = GalleryDetailViewModel()
+        vm.setArchive(archive("cached"))
+
+        vm.open("", "")
+
+        assertEquals(DetailState.Shown(), vm.state.value)
+        assertEquals("title-cached", vm.archiveDetail.value?.archive?.title)
+        // Not a fetch: the download row is left alone.
+        assertEquals(false, vm.syncDownloadRow())
+    }
+
+    @Test
+    fun opening_withNoArchiveId_fails() {
+        val vm = GalleryDetailViewModel()
+        vm.open("", "")
+        assertEquals(DetailState.Failed(null), vm.state.value)
+    }
+
     /** Only [IDataModule.archiveDetailCache] is live; everything else is unreachable here. */
     private fun detailCacheOnly(cache: LruCache<String, ArchiveDetail>): IDataModule = object : IDataModule {
         override val favouriteStatusRouter get() = throw UnsupportedOperationException()

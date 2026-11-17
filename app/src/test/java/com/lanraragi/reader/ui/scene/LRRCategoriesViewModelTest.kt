@@ -11,6 +11,7 @@ import com.lanraragi.reader.awaitUntil
 import com.lanraragi.reader.collectInto
 import com.lanraragi.reader.server.SecureCredentialStore
 import com.lanraragi.reader.domain.Category
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -79,7 +80,7 @@ class LRRCategoriesViewModelTest {
         // class installed, and a fake there that throws an Error from
         // quickSearchRepository (read by the default category-name sync after
         // every successful load) escapes the view model's catch and leaves
-        // isLoading true for good.
+        // the state Loading for good.
         ServiceRegistry.initializeForTest(
             network = testNetworkModule,
             data = stubDataModule(),
@@ -111,9 +112,9 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitUntil { vm.categories.value.size == 2 }
-        assertEquals("Favorites", vm.categories.value[0].name)
-        assertEquals("Dynamic", vm.categories.value[1].name)
+        awaitUntil { vm.state.value.items.size == 2 }
+        assertEquals("Favorites", vm.state.value.items[0].name)
+        assertEquals("Dynamic", vm.state.value.items[1].name)
     }
 
     @Test
@@ -141,10 +142,10 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitUntil { vm.categories.value.size == 2 }
-        assertTrue("First item should be pinned", vm.categories.value[0].isPinned())
-        assertFalse("Second item should not be pinned", vm.categories.value[1].isPinned())
-        assertEquals("Pinned", vm.categories.value[0].name)
+        awaitUntil { vm.state.value.items.size == 2 }
+        assertTrue("First item should be pinned", vm.state.value.items[0].isPinned())
+        assertFalse("Second item should not be pinned", vm.state.value.items[1].isPinned())
+        assertEquals("Pinned", vm.state.value.items[0].name)
     }
 
     @Test
@@ -158,26 +159,27 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitUntil { !vm.isLoading.value }
-        assertEquals("Should skip empty/null names", 1, vm.categories.value.size)
-        assertEquals("Valid", vm.categories.value[0].name)
+        awaitUntil { vm.state.value !is ListScreenState.Loading }
+        assertEquals("Should skip empty/null names", 1, vm.state.value.items.size)
+        assertEquals("Valid", vm.state.value.items[0].name)
     }
 
     @Test
-    fun loadCategories_setsLoadingState() {
+    fun loadCategories_startsLoading_andAnEmptyAnswerIsEmpty() {
         server.enqueue(MockResponse().setBody("[]"))
 
         val vm = LRRCategoriesViewModel()
-        assertFalse("Should not be loading initially", vm.isLoading.value)
+        assertEquals(ListScreenState.Loading, vm.state.value)
 
         vm.loadCategories()
-        assertTrue("Should be loading after loadCategories call", vm.isLoading.value)
+        awaitUntil { vm.state.value !is ListScreenState.Loading }
 
-        awaitUntil { !vm.isLoading.value }
+        assertEquals(ListScreenState.Empty, vm.state.value)
     }
 
+    /** A first load that fails is the screen's error state (kept across rotation), not a toast. */
     @Test
-    fun loadCategories_error_emitsShowErrorEvent() {
+    fun loadCategories_error_isTheStateWithNothingRetained() {
         // Use 401 (4xx) so retryOnFailure fast-fails without retrying
         server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
 
@@ -186,10 +188,30 @@ class LRRCategoriesViewModelTest {
 
         vm.loadCategories()
 
-        awaitUntil { !vm.isLoading.value }
-        awaitUntil { events.isNotEmpty() }
-        assertTrue("Should have emitted an error event",
-            events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowError })
+        awaitUntil { vm.state.value !is ListScreenState.Loading }
+        val state = vm.state.value
+        assertTrue("error state: $state", state is ListScreenState.Error && state.retained.isEmpty())
+        assertTrue("no toast for an error the screen shows", events.isEmpty())
+    }
+
+    /** A failed reload while categories are shown keeps them and reports the failure as a toast. */
+    @Test
+    fun loadCategories_failedReload_keepsTheCategories_andToasts() {
+        server.enqueue(MockResponse().setBody(
+            """[{"id":"SET_aaaaaaaaaa","name":"Kept","archives":[],"pinned":"0","search":""}]"""
+        ))
+        server.enqueue(MockResponse().setResponseCode(401).setBody("Unauthorized"))
+        val vm = LRRCategoriesViewModel()
+        val events = vm.uiEvent.collectInto(eventScope)
+        vm.loadCategories()
+        awaitUntil { vm.state.value is ListScreenState.Content }
+
+        vm.loadCategories()
+        assertTrue("a reload keeps showing them", vm.state.value is ListScreenState.Content)
+        awaitUntil { vm.state.value is ListScreenState.Error }
+
+        assertEquals(listOf("Kept"), vm.state.value.items.map { it.name })
+        awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowError } }
     }
 
     @Test
@@ -199,8 +221,8 @@ class LRRCategoriesViewModelTest {
         val vm = LRRCategoriesViewModel()
         vm.loadCategories()
 
-        awaitUntil { !vm.isLoading.value }
-        assertTrue("Categories should be empty", vm.categories.value.isEmpty())
+        awaitUntil { vm.state.value !is ListScreenState.Loading }
+        assertTrue("Categories should be empty", vm.state.value.items.isEmpty())
     }
 
     // ── createCategory ─────────────────────────────────────────────
@@ -219,15 +241,15 @@ class LRRCategoriesViewModelTest {
 
         vm.createCategory("NewCat", null, false)
 
-        awaitUntil { vm.categories.value.isNotEmpty() }
+        awaitUntil { vm.state.value.items.isNotEmpty() }
         // The ShowSuccess event is delivered to the collector asynchronously
         // (on eventScope), so the categories reload completing does not imply
         // the event has landed in [events] yet — poll the event itself too.
         awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
-        assertEquals(1, vm.categories.value.size)
-        assertEquals("NewCat", vm.categories.value[0].name)
+        assertEquals(1, vm.state.value.items.size)
+        assertEquals("NewCat", vm.state.value.items[0].name)
     }
 
     // ── editCategory ─────────────────────────────────────────────
@@ -244,12 +266,12 @@ class LRRCategoriesViewModelTest {
 
         vm.editCategory("SET_aaaaaaaaaa", "Edited", null, true)
 
-        awaitUntil { vm.categories.value.isNotEmpty() }
+        awaitUntil { vm.state.value.items.isNotEmpty() }
         // Same async event delivery as in the createCategory test above.
         awaitUntil { events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess } }
         assertTrue("Should emit ShowSuccess",
             events.any { it is LRRCategoriesViewModel.CategoriesUiEvent.ShowSuccess })
-        assertEquals("Edited", vm.categories.value[0].name)
+        assertEquals("Edited", vm.state.value.items[0].name)
     }
 
     // ── deleteCategory ─────────────────────────────────────────────

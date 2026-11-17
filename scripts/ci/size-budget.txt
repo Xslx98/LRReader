@@ -34,12 +34,32 @@
 # (#126, legacy-DB merge runs once) alone grew it by 432 B. The plan's
 # phases 2 and 5 delete code, so all budgets are re-seeded to the measured
 # arm64 release when the plan's last PR lands. Only these two move.
+# 2026-11-16 (owner-approved for phase 3 of the same plan): apk.file +32768 B
+# (5242448 -> 5275216, two 16 KB zip-alignment steps of the native library)
+# and dex.method_refs +256 (25640 -> 25896). PR 3.3 (#135) moved apk.file
+# across one alignment step (CI: 5336447 vs the 5321084 limit) with 42
+# method refs of headroom left. Re-seeded with the others when the plan ends.
+# 2026-11-16 (owner-approved for phases 4 and 5 of the same plan, raised as
+# needed): apk.download +8192 B (2511062 -> 2519254). PR 4.3 (#140, page jobs,
+# shared damaged pages, local-page probe) put CI at 2548913 vs the 2548727
+# limit after 4.1/4.2 used the rest. Re-seeded with the others when the plan ends.
+# 2026-11-16 (same approval, phase 5): res +8192 B (1350000 -> 1358192). PR 5.1
+# (StateListLayout's slot ids and attr) put res at 1370275 vs the 1370249 limit;
+# res had not moved since the 2.4 re-seed. Re-seeded with the others at the end.
+# 2026-11-17 (same approval, phase 5): dex +8192 B (3795760 -> 3803952). PR 5.4b
+# slice 2 (downloads multi-select on SelectionModel) put the local arm64 release
+# at 3852800 vs the 3852696 limit. Re-seeded with the others at the end.
+# 2026-11-17 (plan end, as promised above): re-seeded from the arm64 release
+# CI measured on the state unification plan's last PR (#152, run 44111827832),
+# rounded up by < 0.3 %: apk.file 5337119, apk.download 2552067, dex 3852564,
+# res 1370765, dex.method_refs 26139. lib (local 6296 B), assets and other
+# keep their budgets. The phase raises above are folded into these figures.
 tolerance.percent 1.5
-apk.file        5242448
-apk.download    2511062
-dex             3795760
+apk.file        5345000
+apk.download    2556000
+dex             3860000
 lib                6400
-res             1350000
+res             1374000
 assets            14000
 other              3600
-dex.method_refs   25640
+dex.method_refs   26200

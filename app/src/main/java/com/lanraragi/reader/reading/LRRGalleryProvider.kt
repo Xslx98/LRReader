@@ -13,7 +13,6 @@ import com.lanraragi.reader.client.api.LrrFileListCache
 import com.lanraragi.reader.client.api.resolvePageUrl
 import com.lanraragi.reader.server.resolveSourceBaseUrl
 import com.lanraragi.reader.download.DownloadPageRepair
-import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.framework.lib.image.Image
 import com.lanraragi.reader.storage.StorageFile
 import kotlinx.coroutines.CancellationException
@@ -36,7 +35,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
@@ -61,16 +59,6 @@ class LRRGalleryProvider(
     private val downloadDir: File? = null,
 ) : GalleryProvider2() {
 
-    /**
-     * Immutable snapshot of provider state. All three fields are read/written atomically
-     * via [stateRef] to eliminate multi-field race conditions (STAB-2).
-     */
-    private data class ProviderState(
-        val paths: Array<String>? = null,
-        val count: Int = GalleryProvider.STATE_WAIT,
-        val stopped: Boolean = false
-    )
-
     private val context: Context = context.applicationContext
 
     /**
@@ -94,8 +82,8 @@ class LRRGalleryProvider(
     private var serverUrl: String = ""
     private val serverUrlDeferred = CompletableDeferred<String?>()
 
-    // Atomic provider state -- replaces individual @Volatile fields for pagePaths/pageCount/stopped
-    private val stateRef = AtomicReference(ProviderState())
+    // The archive's page paths, published before markReady (the page count lives in [lifecycle]).
+    private val pagePaths = AtomicReference<Array<String>?>(null)
 
     // Provider-scoped so PRELOAD_PARALLELISM is a true global cap: several
     // pages bind near-simultaneously in scroll mode, and a per-invocation
@@ -106,25 +94,15 @@ class LRRGalleryProvider(
     // Header-only size reads of pages on disk, for two-page pairing.
     private val aspectProbe = PageAspectProbe(::hasPageAspect, ::recordPageBounds)
     private val openPageOnDisk: (Int) -> FileInputStream? = { index ->
-        getCacheFile(index).takeIf { it.length() > ReaderPageCache.MIN_IMAGE_SIZE }?.let(::FileInputStream)
+        getCacheFile(index).takeIf(LocalPage::probe)?.let(::FileInputStream)
     }
-    private val probeActive: () -> Boolean = { !stateRef.get().stopped }
+    private val probeActive: () -> Boolean = { !isStopped }
 
-    /** Serialized + conflated server progress sync (app-scoped, survives stop()). */
-    private val progressSyncer = ReadingProgressSyncer(
-        ServiceRegistry.coroutineModule.ioScope
-    ) { page0 ->
-        val url = serverUrlDeferred.await()
-        if (url != null) {
-            val client = ServiceRegistry.networkModule.okHttpClient
-            ArchiveProgressOutbox.tracked(url, arcId, page0) {
-                LRRArchiveApi.updateProgress(client, url, arcId, page0 + 1)
-            }
-        }
-    }
+    override val diagName: String get() = "lrr"
 
-    @Volatile
-    private var errorMessage: String? = null
+    override val progressTarget: ProgressTarget get() = ProgressTarget.Archive(arcId)
+
+    override suspend fun progressServerUrl(): String? = serverUrlDeferred.await()
 
     // Cache directory for downloaded pages
     private lateinit var cacheDir: File
@@ -143,25 +121,14 @@ class LRRGalleryProvider(
     @Volatile
     private var providerScope: CoroutineScope? = null
 
-    // Track start page for reading progress. Written from the IO-scope
-    // metadata reconcile and putStartPage (GL/main threads), read by
-    // getStartPage on the GL thread — volatile for cross-thread visibility.
-    @Volatile
-    private var startPageValue: Int = loadReadingProgress(this.context, arcId, progressProfileId)
-
-    /** See DirGalleryProvider.userNavigated — same guard for the online reader. */
-    @Volatile
-    private var userNavigated = false
-
-    /** See DirGalleryProvider.startPageBaseline — snapshot taken in start(). */
-    @Volatile
-    private var startPageBaseline = 0
-
+    init {
+        // The local save seeds the start page; the server's answer reconciles it in start().
+        val saved = loadReadingProgress(this.context, arcId, progressProfileId)
+        updateRestore { it.copy(startPage = saved) }
+    }
 
     override fun start() {
         super.start()
-        userNavigated = openedOnOtherPage(startPageValue)
-        startPageBaseline = startPageValue
 
         // Resolve the archive's source-profile base URL once, app-scoped so a
         // stop() that cancels providerScope can't strand the progress syncer
@@ -230,8 +197,7 @@ class LRRGalleryProvider(
                 // instead of an indefinite spinner.
                 val resolvedUrl = serverUrlDeferred.await()
                 if (resolvedUrl == null) {
-                    errorMessage = GetText.getString(R.string.lrr_error_load_pages_failed)
-                    stateRef.updateAndGet { it.copy(count = GalleryProvider.STATE_ERROR) }
+                    markFailed(GetText.getString(R.string.lrr_error_load_pages_failed))
                     notifyDataChanged()
                     return@launch
                 }
@@ -312,20 +278,19 @@ class LRRGalleryProvider(
                     // file-list fetch failed (handled inside the async); surface
                     // a STATE_ERROR so GalleryActivity shows the inline error
                     // view instead of an indefinite spinner.
-                    errorMessage = GetText.getString(R.string.lrr_error_load_pages_failed)
-                    stateRef.updateAndGet { it.copy(count = GalleryProvider.STATE_ERROR) }
+                    markFailed(GetText.getString(R.string.lrr_error_load_pages_failed))
                     notifyDataChanged()
                     return@launch
                 }
                 if (pages.isEmpty()) {
                     // An archive with no pages: say so, instead of letting the
                     // start-page clamp throw into the generic "failed" error.
-                    errorMessage = GetText.getString(R.string.error_empty)
-                    stateRef.updateAndGet { it.copy(count = GalleryProvider.STATE_ERROR) }
+                    markFailed(GetText.getString(R.string.error_empty))
                     notifyDataChanged()
                     return@launch
                 }
-                stateRef.set(ProviderState(paths = pages, count = pages.size))
+                pagePaths.set(pages)
+                markReady(pages.size)
                 Log.d(TAG, "Extracted ${pages.size} pages for $arcId")
 
                 // Publish the warm decoded slot for the known local start page
@@ -338,9 +303,7 @@ class LRRGalleryProvider(
                 // the case where server progress resolves to a different page:
                 // consumeDecodedPage is index-matched and leaves a non-matching
                 // slot intact, so at most one of the two consumes hits.
-                val warmStartPage = (
-                    if (initialPageOverride >= 0) initialPageOverride else startPageValue
-                    ).coerceIn(0, pages.size - 1)
+                val warmStartPage = restore.entryPage.coerceIn(0, pages.size - 1)
                 val warmedStart = ReaderPageCache.consumeDecodedPage(
                     arcId, warmStartPage, awaitInflightWarmMs = WARM_AWAIT_MS
                 )
@@ -357,8 +320,9 @@ class LRRGalleryProvider(
                     ChapterStore.of(context).update(progressProfileId, arcId, it.toc)
                     publishChapters(ReaderChapterList(ChapterIndex.fromToc(it.toc, pages.size)))
                 }
-                var serverPage = startPageValue
-                Log.i(TAG, "[PROGRESS] Local SP page=$startPageValue for arcid=$arcId")
+                val localPage = restore.startPage
+                var serverPage = localPage
+                Log.i(TAG, "[PROGRESS] Local SP page=$localPage for arcid=$arcId")
 
                 if (metadata != null) {
                     Log.i(
@@ -368,15 +332,15 @@ class LRRGalleryProvider(
                     )
                     val localTs = loadReadingTimestamp(context, arcId, progressProfileId)
                     val resolved = ReadingProgressReconciler.resolve(
-                        startPageValue, localTs, metadata.progress, metadata.lastreadtime
+                        localPage, localTs, metadata.progress, metadata.lastreadtime
                     )
                     Log.i(
                         TAG,
-                        "[PROGRESS] resolved page=$resolved (localPage0=$startPageValue/$localTs" +
+                        "[PROGRESS] resolved page=$resolved (localPage0=$localPage/$localTs" +
                             " serverProgress1=${metadata.progress}/${metadata.lastreadtime})"
                     )
-                    if (resolved != startPageValue) {
-                        startPageValue = resolved
+                    // Saved only when taken: once the user navigated, their page is the position.
+                    if (resolved != localPage && updateRestore { it.reconciled(resolved) }.startPage == resolved) {
                         saveReadingProgress(context, arcId, resolved, progressProfileId)
                     }
                     serverPage = resolved
@@ -391,7 +355,7 @@ class LRRGalleryProvider(
                 DiagLog.i(
                     DIAG_TAG,
                     "lrr open ${arcId.take(8)} server=${metadata?.progress}@${metadata?.lastreadtime}" +
-                        " resolved=$finalPage fraction=$finalFraction navigated=$userNavigated",
+                        " resolved=$finalPage fraction=$finalFraction navigated=${restore.userNavigated}",
                 )
 
                 // Try the cross-session decoded slot (filled by the
@@ -414,16 +378,16 @@ class LRRGalleryProvider(
                 // setCurrentPageScrollFraction() both post to the GL
                 // method queue, which is drained in order — no delay
                 // needed.
-                if (!userNavigated && (finalPage > 0 || finalFraction > 0f)) {
+                if (restore.resolve(finalPage, finalFraction) != null) {
                     val gv = awaitGalleryView()
                     Log.i(TAG, "[PROGRESS] GalleryView ref=${if (gv != null) "OK" else "NULL"}")
                     if (gv == null) DiagLog.i(DIAG_TAG, "lrr jump dropped: no view")
                     if (gv != null) {
                         providerScope?.launch {
-                            if (stateRef.get().stopped) return@launch
+                            if (isStopped) return@launch
                             val gvRef = galleryView ?: return@launch
                             withContext(Dispatchers.Main) {
-                                if (!stateRef.get().stopped && !userNavigated) {
+                                if (!isStopped && !restore.userNavigated) {
                                     // Defensive: an empty page list would make
                                     // coerceIn throw (max < min). Mirror
                                     // DirGalleryProvider's guard.
@@ -446,15 +410,16 @@ class LRRGalleryProvider(
                                         Log.i(TAG, "[PROGRESS] setCurrentPage($target) called")
                                     }
                                 } else {
-                                    DiagLog.i(DIAG_TAG, "lrr jump dropped: navigated=$userNavigated")
+                                    DiagLog.i(DIAG_TAG, "lrr jump dropped: navigated=${restore.userNavigated}")
                                     Log.w(TAG, "[PROGRESS] skip jump (stopped or user navigated)")
                                 }
                             }
                         }
                     }
                 } else {
-                    DiagLog.i(DIAG_TAG, "lrr no jump: navigated=$userNavigated")
-                    if (userNavigated) Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
+                    val navigated = restore.userNavigated
+                    DiagLog.i(DIAG_TAG, "lrr no jump: navigated=$navigated")
+                    if (navigated) Log.i(TAG, "[PROGRESS] restore skipped: user navigated")
                 }
 
                 // Start preloading from resolved page
@@ -464,8 +429,7 @@ class LRRGalleryProvider(
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to extract archive: ${e.message}", e)
-                errorMessage = "Failed to load pages: ${e.message}"
-                stateRef.updateAndGet { it.copy(count = GalleryProvider.STATE_ERROR) }
+                markFailed("Failed to load pages: ${e.message}")
                 notifyDataChanged()
             }
         }
@@ -473,10 +437,7 @@ class LRRGalleryProvider(
 
     override fun stop() {
         super.stop()
-        stateRef.updateAndGet { it.copy(stopped = true) }
         pageClient = null
-        // Safe to clear: stopped flag prevents new requests from entering onRequest()
-        requests.clear()
 
         // Evict old archive caches on the application-scoped IO scope so the
         // cleanup still runs after the provider's own scope is cancelled below.
@@ -485,43 +446,20 @@ class LRRGalleryProvider(
         }
 
         // Cancel all in-flight provider jobs (start extraction, onRequest
-        // downloads, preloads, putStartPage progress sync).
+        // downloads, preloads, onPageRead progress sync).
         providerScope?.cancel()
         providerScope = null
 
-        // Coroutine cancellation can't interrupt blocking execute()/body reads —
-        // sever the sockets so in-flight page streams end now. A request that
+        // Coroutine cancellation can't interrupt blocking execute()/body reads:
+        // sever the sockets so in-flight page streams end now, and forget the
+        // jobs (the stopped lifecycle keeps new requests out). A request that
         // slips past the stopped check before registration runs to completion
         // harmlessly (its failure path is silenced by the stopped flag).
-        inflightCalls.values.forEach { runCatching { it.cancel() } }
-        inflightCalls.clear()
+        jobs.clear()
     }
-
-    override fun getStartPage(): Int = startPageValue
 
     override fun writeLocalProgress(page: Int) {
         saveReadingProgress(context, arcId, page, progressProfileId)
-    }
-
-    override fun putStartPage(page: Int) {
-        if (page != startPageBaseline && !userNavigated) {
-            if (hasUserInteracted) {
-                DiagLog.i(DIAG_TAG, "lrr navigated page=$page baseline=$startPageBaseline")
-                userNavigated = true
-            } else {
-                DiagLog.i(DIAG_TAG, "lrr index $page without user input (baseline=$startPageBaseline)")
-            }
-        }
-        startPageValue = page
-
-        // Persist locally for instant restore on next open (deferred, see
-        // GalleryProvider2.saveLocalProgressSoon)
-        saveLocalProgressSoon(page)
-
-        // Sync progress to LANraragi server (1-indexed), serialized and
-        // conflated so the last page of a fast-flip burst — not an
-        // arbitrary racing PUT — is what the server ends up with.
-        progressSyncer.submit(page)
     }
 
     /**
@@ -550,8 +488,6 @@ class LRRGalleryProvider(
             }
         }
     }
-
-    override fun size(): Int = stateRef.get().count
 
     override fun getImageFilename(index: Int): String {
         return String.format(
@@ -590,8 +526,7 @@ class LRRGalleryProvider(
     }
 
     override fun onRequest(index: Int) {
-        val state = stateRef.get()
-        val paths = state.paths
+        val paths = pagePaths.get()
         if (paths == null || index < 0 || index >= paths.size) {
             notifyPageFailed(index, "Page not available")
             return
@@ -602,8 +537,7 @@ class LRRGalleryProvider(
         // (scroll-away then scroll-back races onCancelRequest against the
         // job's finally), its quiet PageCancelledException path would
         // otherwise leave this rebound page on an infinite spinner.
-        val token = requests.begin(index)
-        if (token == null) return
+        val token = jobs.begin(index) ?: return
 
         notifyPageWait(index)
 
@@ -612,7 +546,7 @@ class LRRGalleryProvider(
         val scope = providerScope
         if (scope == null) {
             // stop() was called after onRequest arrived — skip silently
-            requests.abandon(index, token)
+            jobs.abandon(index, token)
             return
         }
         scope.launch {
@@ -632,9 +566,8 @@ class LRRGalleryProvider(
                 notifyPageFailed(index, e.message)
             } finally {
                 // A rebind landed while this job was in flight and the job
-                // ended on the quiet cancelled path: re-request, or the page
-                // spins forever.
-                if (requests.finish(index, token, cancelled, stateRef.get().stopped)) {
+                // ended quietly: re-request, or the page spins forever.
+                if (jobs.finish(index, token, cancelled, isStopped)) {
                     onRequest(index)
                 }
             }
@@ -649,42 +582,26 @@ class LRRGalleryProvider(
         if (cached.parentFile == cacheDir && cached.exists()) {
             cached.delete()
         }
-        requests.forget(index)
+        jobs.forget(index)
         onRequest(index)
     }
 
     override fun onCancelRequest(index: Int) {
         // Sever the in-flight HTTP call; the blocked read throws IOException,
         // which downloadPageToCache converts to PageCancelledException (quiet).
-        inflightCalls[index]?.cancel()
+        jobs.cancelCall(index)
     }
-
-    override fun getError(): String = errorMessage ?: "Unknown error"
 
     // ==================== Internal ====================
 
     private fun getCacheFile(index: Int): File =
-        resolvePageFile(store, cacheDir, index, stateRef.get().paths?.getOrNull(index))
+        resolvePageFile(store, cacheDir, index, pagePaths.get()?.getOrNull(index))
 
-    // Per-page download mutexes (same-page exclusion across the user-request
-    // and preload paths). Replaces mod-32 striped Java monitors: a stripe
-    // collision serialized UNRELATED pages — a user-visible page could park,
-    // uncancellably and pinning an IO thread, behind a preload's full network
-    // download. Mutex.withLock keeps the wait suspending and cancellable.
-    // Bounded by the archive's page count, entries live for the provider.
-    private val pageMutexes = ConcurrentHashMap<Int, Mutex>()
-
-    private fun pageMutex(index: Int): Mutex = pageMutexes.computeIfAbsent(index) { Mutex() }
-
-    // In-flight page requests (per-job tokens) and rebinds that arrived while
-    // a job was running; see PageRequestTracker.
-    private val requests = PageRequestTracker()
-
-    // In-flight page HTTP calls, keyed by page index. Coroutine cancellation
-    // cannot interrupt the blocking execute()/body read inside
-    // ReaderPageCache.downloadToFile, so stop()/onCancelRequest sever these
-    // sockets explicitly (NET-3).
-    private val inflightCalls = ConcurrentHashMap<Int, Call>()
+    // Page jobs: per-request tokens, rebinds that arrived while a job ran,
+    // the per-page fetch mutex (same-page exclusion across the user-request
+    // and preload paths, suspending and cancellable) and the in-flight HTTP
+    // calls that stop()/onCancelRequest sever (NET-3). See PageJobs.
+    private val jobs = PageJobs()
 
     /**
      * Download a page to cache if not already cached.
@@ -694,28 +611,23 @@ class LRRGalleryProvider(
     @Throws(IOException::class)
     private suspend fun downloadPageToCache(
         index: Int,
-        progressCallback: ReaderPageCache.ProgressCallback? = null
+        cacheFile: File = getCacheFile(index),
+        progressCallback: ReaderPageCache.ProgressCallback? = null,
     ) {
-        val cacheFile = getCacheFile(index)
-        if (cacheFile.exists() && cacheFile.length() > ReaderPageCache.MIN_IMAGE_SIZE) {
+        if (LocalPage.probe(cacheFile)) {
             return // Already cached and sufficiently large
         }
 
-        pageMutex(index).withLock {
-            if (stateRef.get().stopped) return
-            if (cacheFile.exists() && cacheFile.length() > ReaderPageCache.MIN_IMAGE_SIZE) {
+        jobs.mutex(index).withLock {
+            if (isStopped) return
+            if (LocalPage.probe(cacheFile)) {
                 return
             }
 
-            val state = stateRef.get()
-            val paths = state.paths
-                ?: throw IOException("Page paths not loaded yet")
-            if (index >= paths.size) {
-                throw IOException("Page index $index out of bounds (size=${paths.size})")
-            }
+            val pagePath = pagePathOf(index)
             if (store?.adoptWarmCachedPage(index, cacheFile) == true) return
 
-            val pageUrl = resolvePageUrl(serverUrl, paths[index])
+            val pageUrl = resolvePageUrl(serverUrl, pagePath)
             val currentPageClient = pageClient
                 ?: ServiceRegistry.networkModule.okHttpClient
 
@@ -725,19 +637,23 @@ class LRRGalleryProvider(
                     currentPageClient, pageUrl, cacheFile, index, progressCallback,
                     onCallCreated = { c ->
                         call = c
-                        inflightCalls[index] = c
+                        jobs.track(index, c)
                     },
                     durable = store?.durableWriteFor(cacheFile),
                 )
             } catch (e: IOException) {
-                if (call?.isCanceled() == true || stateRef.get().stopped) {
-                    throw PageCancelledException(e)
-                }
-                throw e
+                throw if (call?.isCanceled() == true || isStopped) PageCancelledException(e) else e
             } finally {
-                inflightCalls.remove(index)
+                jobs.untrack(index)
             }
         }
+    }
+
+    /** The server path of page [index]; throws while the page list is unknown or out of range. */
+    @Throws(IOException::class)
+    private fun pagePathOf(index: Int): String {
+        val paths = pagePaths.get() ?: throw IOException("Page paths not loaded yet")
+        return paths.getOrNull(index) ?: throw IOException("Page index $index out of bounds (size=${paths.size})")
     }
 
     @Throws(IOException::class)
@@ -748,7 +664,7 @@ class LRRGalleryProvider(
         // (audit 2026-10-06d PERF-01). See PageLoadLoop.
         val result = PageLoadLoop(
             pageFile = { getCacheFile(index) },
-            fetch = { downloadPageToCache(index) { idx, percent -> notifyPagePercent(idx, percent) } },
+            fetch = { file -> downloadPageToCache(index, file) { idx, percent -> notifyPagePercent(idx, percent) } },
             // Decode routed through the bounded decoderDispatcher so a burst
             // of concurrent page requests doesn't blow past the global cap on
             // simultaneous BitmapFactory work.
@@ -782,20 +698,20 @@ class LRRGalleryProvider(
      * read for two-page pairing ([PageAspectProbe]).
      */
     private fun preloadPages(currentIndex: Int) {
-        val paths = stateRef.get().paths ?: return
+        val paths = pagePaths.get() ?: return
         val count = pagesAhead(PRELOAD_COUNT)
         providerScope?.launch {
             for (i in 1..count) {
-                if (stateRef.get().stopped) break
+                if (isStopped) break
                 val preloadIndex = currentIndex + i
                 if (preloadIndex >= paths.size) break
                 val cached = getCacheFile(preloadIndex)
-                if (cached.exists() && cached.length() > ReaderPageCache.MIN_IMAGE_SIZE) continue
+                if (LocalPage.probe(cached)) continue
 
                 launch {
                     preloadSemaphore.acquire()
                     try {
-                        if (!stateRef.get().stopped) {
+                        if (!isStopped) {
                             downloadPageToCache(preloadIndex)
                             aspectProbe.probe(preloadIndex, openPageOnDisk)
                             Log.d(TAG, "Preloaded page $preloadIndex")

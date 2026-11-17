@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.download
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.SavedStateHandle
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.download.search.DownloadSearchCallback
@@ -29,9 +30,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.util.concurrent.CompletableFuture
 import com.lanraragi.reader.download.DownloadDirCache
+import com.lanraragi.reader.ui.list.SelectionModel
+import com.lanraragi.reader.R
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -55,9 +59,14 @@ sealed interface DownloadUiEvent {
  * @param computeDispatcher runs the O(N) grouping and label filter of every
  *   downloads-list emission off the main thread (audit C17).
  */
-class DownloadsViewModel(
+class DownloadsViewModel @JvmOverloads constructor(
+    // First, so the ViewModel factory finds the (SavedStateHandle) constructor.
+    saved: SavedStateHandle = SavedStateHandle(),
     private val computeDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel(), DownloadInfoListener {
+
+    /** The list's multi-select, by arcid (tank cards by TANK_ id); saved with the screen. */
+    val selection = SelectionModel(saved)
 
     /**
      * The app's [DownloadManager] singleton. Exposed so [DownloadsScene]
@@ -140,10 +149,11 @@ class DownloadsViewModel(
                     val filtered = withContext(computeDispatcher) {
                         grouped.display.filter { it.label == label }
                     }
-                    // The active search applies to every emission, or the next
-                    // table change would republish the whole label list.
-                    _downloadList.value = applySearch(filtered)
+                    // The active search and order apply to every emission, or
+                    // the next table change would republish the whole label list.
+                    listLoaded = true
                     _backList.value = filtered
+                    show(filtered)
                 }
         }
     }
@@ -216,6 +226,22 @@ class DownloadsViewModel(
 
     private val _downloadList = MutableStateFlow<List<DownloadInfo>>(emptyList())
 
+    /**
+     * Room has published the list at least once. Until then [downloadList]
+     * holds its empty start value, which says nothing about which rows exist
+     * (a restored selection must not be pruned against it).
+     */
+    private var listLoaded = false
+
+    /**
+     * Drops the checks of rows that left [list], the list just shown. Not
+     * before Room's first emission: a selection restored after process death
+     * would be wiped against the empty start value.
+     */
+    fun retainSelection(list: List<DownloadInfo>) {
+        if (listLoaded) selection.retainAll(list.map { it.arcid })
+    }
+
     /** The current (possibly filtered/sorted) list of downloads for the active label. */
     val downloadList: StateFlow<List<DownloadInfo>> = _downloadList.asStateFlow()
 
@@ -229,15 +255,10 @@ class DownloadsViewModel(
     // the search key, possibly synchronously)
     // -------------------------------------------------------------------------
 
-    private val _searching = MutableStateFlow(false)
+    private val _filter = MutableStateFlow(DownloadsFilter())
 
-    /** Whether a search/filter operation is currently active. */
-    val searching: StateFlow<Boolean> = _searching.asStateFlow()
-
-    private val _searchKey = MutableStateFlow<String?>(null)
-
-    /** The current search query text. */
-    val searchKey: StateFlow<String?> = _searchKey.asStateFlow()
+    /** The list's search and filter pass; see [DownloadsFilter]. */
+    val filter: StateFlow<DownloadsFilter> = _filter.asStateFlow()
 
     init {
         downloadManager.addDownloadInfoListener(this)
@@ -311,97 +332,78 @@ class DownloadsViewModel(
     }
 
     // -------------------------------------------------------------------------
-    // Search
-    // -------------------------------------------------------------------------
-
-    /**
-     * Sets the search key and marks search as active.
-     */
-    fun setSearchKey(key: String?) {
-        _searchKey.value = key
-    }
-
-    fun setSearching(isSearching: Boolean) {
-        _searching.value = isSearching
-    }
-
-    // -------------------------------------------------------------------------
-    // Filter loading state
-    // -------------------------------------------------------------------------
-
-    private val _filterLoading = MutableStateFlow(false)
-
-    /** Whether a filter/sort/search operation is in progress. */
-    val filterLoading: StateFlow<Boolean> = _filterLoading.asStateFlow()
-
-    // -------------------------------------------------------------------------
-    // One-shot events for filter/search completion
-    // -------------------------------------------------------------------------
-
-    private val _filterSearchDone = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-
-    /** Emitted when a filter/sort or search operation completes; Scene should update. */
-    val filterSearchDone: SharedFlow<Unit> = _filterSearchDone.asSharedFlow()
-
-    // -------------------------------------------------------------------------
     // Filter / sort / search operations (moved from DownloadFilterHelper)
     // -------------------------------------------------------------------------
 
-    /** Internal callback that routes results back to ViewModel state flows. */
-    private val filterCallback = object : DownloadSearchCallback {
-        override fun onDownloadSearchSuccess(mList: List<DownloadInfo>) {
-            _downloadList.value = mList
-            _filterLoading.value = false
-            _searching.value = false
-            _filterSearchDone.tryEmit(Unit)
-        }
+    /** The latest list shown or pass started; an older pass's result is dropped. */
+    private var pass = 0
 
-        override fun onDownloadListHandleSuccess(mList: List<DownloadInfo>) {
-            _downloadList.value = mList
-            _filterLoading.value = false
-            _filterSearchDone.tryEmit(Unit)
-        }
+    /** A filter or sort pass finished (main thread): show its list; the list collector redraws. */
+    private fun passCallback(id: Int) = object : DownloadSearchCallback {
+        override fun onDownloadSearchSuccess(mList: List<DownloadInfo>) = publishPass(id, mList)
+        override fun onDownloadListHandleSuccess(mList: List<DownloadInfo>) = publishPass(id, mList)
+        override fun onDownloadSearchFailed(mList: List<DownloadInfo>) = publishPass(id, mList)
+    }
 
-        override fun onDownloadSearchFailed(mList: List<DownloadInfo>) {
-            _downloadList.value = mList
-            _filterLoading.value = false
-            _searching.value = false
-            _filterSearchDone.tryEmit(Unit)
-        }
+    private fun publishPass(id: Int, list: List<DownloadInfo>) {
+        if (id != pass) return
+        _downloadList.value = list
+        _filter.update { it.copy(applying = false) }
     }
 
     /**
-     * Execute a filter-and-sort operation for the given menu item [id].
+     * Shows [labelList] (the current label's rows) through the search and
+     * the order. Without an order it shows at once; with one the list
+     * shown stays until the order pass lands (sizes are read on IO).
+     */
+    private fun show(labelList: List<DownloadInfo>) {
+        val searched = applySearch(labelList)
+        val order = _filter.value.order
+        if (order == null) {
+            pass++
+            _downloadList.value = searched
+            return
+        }
+        // Filter/sort the searched list, so a filter narrows the search rather than replacing it.
+        val executor = DownloadListInfosExecutor(searched, downloadManager)
+        executor.setDownloadSearchingListener(passCallback(++pass))
+        executor.executeFilterAndSort(order)
+    }
+
+    /**
+     * Applies the state filter or sort of menu item [id] and keeps it for
+     * every later list, until "All" or "Default" clears it.
      */
     fun gotoFilterAndSort(id: Int) {
-        _filterLoading.value = true
-        // Filter/sort the searched list, so a filter narrows the search rather than replacing it.
-        val executor = DownloadListInfosExecutor(applySearch(_backList.value), downloadManager)
-        executor.setDownloadSearchingListener(filterCallback)
-        executor.executeFilterAndSort(id)
+        val order = id.takeUnless { it == R.id.all || it == R.id.sort_by_default }
+        _filter.update { it.copy(order = order, applying = order != null) }
+        show(_backList.value)
     }
 
     private fun applySearch(list: List<DownloadInfo>): List<DownloadInfo> {
-        val key = _searchKey.value
-        return if (key.isNullOrBlank()) list else list.filter { DownloadSearchMatcher.matches(it, key) }
+        val key = _filter.value.query ?: return list
+        return list.filter { DownloadSearchMatcher.matches(it, key) }
     }
 
     /**
-     * Apply [searchKey] to the current label's list (not the previous result,
-     * which a new key must be able to widen). Filtering runs here, on the
-     * caller's thread: a background pass could land after the collector had
-     * already published a newer label's list and overwrite it.
+     * Searches the current label's list for [query] (not the previous result,
+     * which a new query must be able to widen); a blank query shows the whole
+     * label. The search runs here, on the caller's thread; an order pass after
+     * it is tagged, so an older pass landing later is dropped.
      */
-    fun startSearching(searchKey: String) {
-        _searchKey.value = searchKey
-        filterCallback.onDownloadSearchSuccess(applySearch(_backList.value))
+    fun search(query: String?) {
+        _filter.update { it.copy(query = query?.takeIf { q -> q.isNotBlank() }) }
+        show(_backList.value)
     }
 
-    /** Drop the search when the Downloads page goes away; the label list shows again. */
+    /**
+     * Drop the search and the order when the Downloads page goes away; the
+     * label list shows again. A pass still running is forgotten too, so it
+     * cannot keep the label drawer locked.
+     */
     fun clearSearch() {
-        _searchKey.value = null
-        _searching.value = false
-        _downloadList.value = _backList.value
+        _filter.value = DownloadsFilter()
+        show(_backList.value)
     }
 
     // -------------------------------------------------------------------------

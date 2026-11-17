@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.lanraragi.framework.util.attrColor
+import com.lanraragi.reader.ui.list.ListDiffBinder
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.ui.collectFlowWhileCreated
@@ -24,6 +25,7 @@ import com.lanraragi.reader.client.api.LRRUrlHelper
 import com.lanraragi.reader.client.api.friendlyError
 import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.ui.scene.gallery.list.GalleryListScene
+import com.lanraragi.reader.widget.StateListLayout
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.framework.scene.StageActivity
 
@@ -42,18 +44,12 @@ class ServerListScene : BaseScene() {
     private lateinit var dialogHelper: ServerListDialogHelper
 
     private var mRecyclerView: RecyclerView? = null
-    private var mEmptyText: TextView? = null
+    private var mStateList: StateListLayout? = null
     private var mAdapter: ServerAdapter? = null
     private var mReauthDialogShown = false
 
-    // Local copy for adapter binding; kept in sync with ViewModel's profiles.
-    private var mProfiles: List<ServerProfile> = emptyList()
-
-    // Snapshot of the list last dispatched to the adapter. Kept in sync with
-    // mProfiles after EVERY notify*() call (full reload via DiffUtil, single
-    // remove via notifyItemRemoved, single change via notifyItemChanged).
-    // See docs/diffutil-root-cause-analysis.md for the snapshot ownership rule.
-    private var mLastSnapshot: List<ServerProfile> = emptyList()
+    // What the adapter shows, fed only by the profiles observer. See ListDiffBinder.
+    private val mProfiles = ListDiffBinder<ServerProfile> { old, new -> ServerProfileDiffCallback(old, new) }
 
     override fun needShowLeftDrawer(): Boolean = true
 
@@ -76,12 +72,14 @@ class ServerListScene : BaseScene() {
         val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.setNavigationOnClickListener { onBackPressed() }
 
-        mRecyclerView = view.findViewById(R.id.recycler_view)
-        mEmptyText = view.findViewById(R.id.empty_text)
+        mStateList = view.findViewById<StateListLayout>(R.id.state_list).apply {
+            onRetry = { viewModel.loadProfiles() }
+        }
+        mRecyclerView = view.findViewById(R.id.state_content)
         val fab = view.findViewById<FloatingActionButton>(R.id.fab_add)
 
         mRecyclerView?.layoutManager = LinearLayoutManager(getEHContext())
-        mAdapter = ServerAdapter()
+        mAdapter = ServerAdapter().also { mProfiles.adapter = it }
         mRecyclerView?.adapter = mAdapter
 
         fab.setOnClickListener { dialogHelper.showAddDialog() }
@@ -118,20 +116,9 @@ class ServerListScene : BaseScene() {
         // collectors stacked one set per re-attach — applyProfileSwitch
         // (cache clear + reload + navigation) ran once per accumulated
         // collector for a single ProfileActivated event.
-        collectFlow(viewLifecycleOwner, viewModel.profiles) { profiles ->
-            val adapter = mAdapter
-            if (adapter != null) {
-                val diff = DiffUtil.calculateDiff(
-                    ServerProfileDiffCallback(mLastSnapshot, profiles)
-                )
-                mProfiles = profiles
-                mLastSnapshot = ArrayList(profiles)
-                diff.dispatchUpdatesTo(adapter)
-            } else {
-                mProfiles = profiles
-                mLastSnapshot = ArrayList(profiles)
-            }
-            mEmptyText?.visibility = if (mProfiles.isEmpty()) View.VISIBLE else View.GONE
+        collectFlow(viewLifecycleOwner, viewModel.state) { state ->
+            mProfiles.submit(state.items)
+            mStateList?.render(state)
         }
 
         // Observe one-shot UI events. These are buffered channel events that drive
@@ -280,7 +267,7 @@ class ServerListScene : BaseScene() {
         }
 
         override fun onBindViewHolder(holder: ServerViewHolder, position: Int) {
-            val profile = mProfiles[position]
+            val profile = mProfiles.items[position]
             holder.name.text = profile.name
             holder.url.text = profile.url
             holder.unencrypted.visibility =
@@ -318,7 +305,7 @@ class ServerListScene : BaseScene() {
             }
         }
 
-        override fun getItemCount(): Int = mProfiles.size
+        override fun getItemCount(): Int = mProfiles.items.size
     }
 
     private class ServerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -359,9 +346,9 @@ class ServerListScene : BaseScene() {
     override fun onDestroyView() {
         super.onDestroyView()
         mRecyclerView = null
-        mEmptyText = null
+        mStateList = null
         mAdapter = null
-        mLastSnapshot = emptyList()
+        mProfiles.adapter = null
         dialogHelper.clearDialogRefs()
     }
 }

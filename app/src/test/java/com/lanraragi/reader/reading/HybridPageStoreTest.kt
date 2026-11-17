@@ -61,6 +61,19 @@ class HybridPageStoreTest {
         assertEquals(1, repairs)
     }
 
+    /** The standalone reader and a tank member source of one archive each build a store on its dir. */
+    @Test
+    fun storesOnOneDownloadDir_agreeOnADamagedPage() {
+        setUp()
+        val other = HybridPageStore(downloadDir, warmDir, DurablePageWrite(usableBytes = { Long.MAX_VALUE }, syncFile = {}))
+        val page = File(downloadDir, "0004.png").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+
+        assertTrue(store.handOverDamagedPage(3, page))
+
+        assertNull("the other store reads page 3 from the reader cache too", other.pageFile(3, "arc/003.png"))
+        assertFalse("and does not hand it over a second time", other.handOverDamagedPage(3, page))
+    }
+
     @Test
     fun handOverDamagedPage_refusesAReaderCachePage() {
         setUp()
@@ -124,15 +137,16 @@ class HybridPageStoreTest {
     }
 
     @Test
-    fun isPresent_requiresMoreThanMinImageSize() {
+    fun localPageProbe_requiresAFileLongerThanAStub() {
         setUp()
         val min = ReaderPageCache.MIN_IMAGE_SIZE.toInt()
         val small = File(downloadDir, "0001.jpg").apply { writeBytes(ByteArray(min)) }
         // A tiny blank page is still a page (was rejected by the old 1 KB floor).
         val big = File(downloadDir, "0002.jpg").apply { writeBytes(ByteArray(min + 1)) }
-        assertFalse(HybridPageStore.isPresent(File(downloadDir, "missing.jpg")))
-        assertFalse(HybridPageStore.isPresent(small))
-        assertTrue(HybridPageStore.isPresent(big))
+        assertFalse(LocalPage.probe(File(downloadDir, "missing.jpg")))
+        assertFalse(LocalPage.probe(small))
+        assertTrue(LocalPage.probe(big))
+        assertFalse("a directory is no page", LocalPage.probe(tmp.newFolder("0003.jpg")))
     }
 
     private fun jpegBytes(): ByteArray =

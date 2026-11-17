@@ -4,12 +4,9 @@ import com.lanraragi.reader.ui.Haptics
 import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.ViewGroup
-import androidx.core.util.size
 import androidx.recyclerview.widget.RecyclerView
-import com.lanraragi.reader.widget.list.EasyRecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -209,24 +206,5 @@ class DragSelectTouchListener(
         private const val HOT_ZONE_FRACTION = 0.12f
         private const val HOT_ZONE_MIN_DP = 48f
         private const val MAX_SPEED_DP_PER_FRAME = 24f
-
-        /**
-         * [Selection] over an [EasyRecyclerView] in custom choice mode; the
-         * three multi-select lists all speak this dialect.
-         */
-        fun forEasyRecyclerView(rv: EasyRecyclerView, canSelect: (Int) -> Boolean): Selection =
-            object : Selection {
-                override fun isActive(): Boolean = rv.isInCustomChoice
-                override fun checkedPositions(): Set<Int> {
-                    val states = rv.checkedItemPositions ?: return emptySet()
-                    val out = LinkedHashSet<Int>(min(states.size, 64))
-                    for (i in 0 until states.size) if (states.valueAt(i)) out += states.keyAt(i)
-                    return out
-                }
-                override fun setChecked(position: Int, checked: Boolean) {
-                    if (rv.isItemChecked(position) != checked) rv.setItemChecked(position, checked)
-                }
-                override fun canSelect(position: Int): Boolean = canSelect(position)
-            }
     }
 }

@@ -9,6 +9,8 @@ import com.lanraragi.reader.dao.ServerProfile
 import com.lanraragi.reader.server.ServerCertificate
 import com.lanraragi.reader.server.ServerProfileService
 import com.lanraragi.reader.server.ServerIdentity
+import com.lanraragi.reader.client.api.friendlyError
+import com.lanraragi.reader.ui.list.ListScreenState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -16,8 +18,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
 
 /**
  * ViewModel for [ServerListScene]. Lists the server profiles and reports
@@ -38,10 +42,10 @@ class ServerListViewModel(
     // State
     // -------------------------------------------------------------------------
 
-    private val _profiles = MutableStateFlow<List<ServerProfile>>(emptyList())
+    private val _state = MutableStateFlow<ListScreenState<ServerProfile>>(ListScreenState.Loading)
 
-    /** Current list of server profiles, sorted with active profiles first. */
-    val profiles: StateFlow<List<ServerProfile>> = _profiles.asStateFlow()
+    /** What the screen shows: the server profiles (active first), or loading / empty / the load's error. */
+    val state: StateFlow<ListScreenState<ServerProfile>> = _state.asStateFlow()
 
     // -------------------------------------------------------------------------
     // One-shot events
@@ -94,18 +98,28 @@ class ServerListViewModel(
     // Profile loading
     // -------------------------------------------------------------------------
 
+    /**
+     * Loads the profiles into the [state]. A reload over shown profiles (every
+     * return to this screen) keeps them; a failure keeps them too, and with
+     * none shown it is the screen's error (it used to leave an empty list).
+     */
     fun loadProfiles() {
+        _state.update { ListScreenState.reduce(it, ListScreenState.Event.Load) }
         viewModelScope.launch {
-            try {
+            val event = try {
                 val result = withContext(Dispatchers.IO) {
                     ArrayList(profileRepository.getAllProfiles()).also { list ->
                         list.sortWith(compareByDescending { it.isActive })
                     }
                 }
-                _profiles.value = result
+                ListScreenState.Event.Loaded(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load profiles", e)
+                ListScreenState.Event.Failed(friendlyError(ServiceRegistry.appModule.getContext(), e))
             }
+            _state.update { ListScreenState.reduce(it, event) }
         }
     }
 

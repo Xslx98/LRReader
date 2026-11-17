@@ -46,6 +46,10 @@ class GalleryPageView(
     @set:JvmName("setIndex")
     internal var index = INVALID_INDEX
 
+    /** What the cell shows; changed only by [render] and [reset]. */
+    var state: PageCellState = PageCellState.Wait
+        private set
+
     init {
         // Add image
         imageView = ImageView()
@@ -82,12 +86,15 @@ class GalleryPageView(
         lp = GLLinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         lp.gravity = Gravity.CENTER_HORIZONTAL
         info.addComponent(progressView, lp)
+
+        // A fresh cell shows nothing but the info panel: no error text to take taps.
+        clearError()
     }
 
     // The height of the actual image may be smaller than minHeight.
     // Set min height as 0 when the image is visible.
     // For PageLayoutManager, min height is useless.
-    override fun getSuggestedMinimumHeight(): Int = if (imageView.visibility == VISIBLE) 0 else minHeight
+    override fun getSuggestedMinimumHeight(): Int = if (state == PageCellState.Loaded) 0 else minHeight
 
     // The half of a two-page spread this page is shown in (SpreadViewport.LEFT
     // or RIGHT), or INFO_CENTRED for a page of its own. The page view spans
@@ -114,12 +121,45 @@ class GalleryPageView(
         }
     }
 
-    fun showImage() {
+    /**
+     * Shows [state] for page number [page] (1-indexed). [image] is the
+     * texture of a [PageCellState.Loaded] page and ignored otherwise; an
+     * error message needs the [galleryView] to draw its text.
+     */
+    internal fun render(state: PageCellState, page: Int, image: ImageTexture? = null, galleryView: GalleryView? = null) {
+        this.state = state
+        if (state == PageCellState.Loaded) showImage() else showInfo()
+        setImage(if (state == PageCellState.Loaded) image else null)
+        setPage(page)
+        when (state) {
+            PageCellState.Wait -> {
+                progressView.visibility = VISIBLE
+                progressView.isIndeterminate = true
+            }
+            is PageCellState.Progress -> {
+                progressView.visibility = VISIBLE
+                progressView.isIndeterminate = false
+                progressView.setProgress(state.fraction)
+            }
+            PageCellState.Loaded, is PageCellState.Error -> progressView.visibility = GONE
+        }
+        val message = (state as? PageCellState.Error)?.message
+        if (message != null && galleryView != null) setError(message, galleryView) else clearError()
+    }
+
+    /** The cell leaves its page (unbind): no image, no error, waiting. */
+    internal fun reset() {
+        state = PageCellState.Wait
+        setImage(null)
+        clearError()
+    }
+
+    private fun showImage() {
         imageView.visibility = VISIBLE
         info.visibility = GONE
     }
 
-    fun showInfo() {
+    private fun showInfo() {
         // For image valid rect
         imageView.visibility = INVISIBLE
         info.visibility = VISIBLE
@@ -133,31 +173,16 @@ class GalleryPageView(
         }
     }
 
-    fun setImage(imageTexture: ImageTexture?) {
+    private fun setImage(imageTexture: ImageTexture?) {
         unbindImage()
         if (imageTexture != null) {
             imageView.imageTexture = imageTexture
         }
     }
 
-    fun setPage(page: Int) {
+    private fun setPage(page: Int) {
         pageText.visibility = VISIBLE
         pageText.setText(page.toString())
-    }
-
-    fun setProgress(progress: Float) {
-        when (progress) {
-            PROGRESS_GONE -> progressView.visibility = GONE
-            PROGRESS_INDETERMINATE -> {
-                progressView.visibility = VISIBLE
-                progressView.isIndeterminate = true
-            }
-            else -> {
-                progressView.visibility = VISIBLE
-                progressView.isIndeterminate = false
-                progressView.setProgress(progress)
-            }
-        }
     }
 
     private fun unbindError() {
@@ -170,12 +195,12 @@ class GalleryPageView(
         }
     }
 
-    fun clearError() {
+    private fun clearError() {
         unbindError()
         errorView.visibility = GONE
     }
 
-    fun setError(error: String, galleryView: GalleryView) {
+    private fun setError(error: String, galleryView: GalleryView) {
         unbindError()
         errorView.visibility = VISIBLE
         galleryView.bindErrorView(errorView, error)
@@ -183,11 +208,12 @@ class GalleryPageView(
 
     @get:JvmName("isLoaded")
     internal val isLoaded: Boolean
-        get() = imageView.visibility == VISIBLE
+        get() = state == PageCellState.Loaded
 
+    /** Error text is on screen (a failure with a message). */
     @get:JvmName("isError")
     internal val isError: Boolean
-        get() = errorView.visibility == VISIBLE
+        get() = (state as? PageCellState.Error)?.message != null
 
     @JvmName("isUnderInfo")
     internal fun isUnderInfo(x: Float, y: Float): Boolean = info.bounds().contains(x.toInt(), y.toInt())
@@ -196,8 +222,5 @@ class GalleryPageView(
         const val INVALID_INDEX = -1
 
         internal const val INFO_CENTRED = -1
-
-        const val PROGRESS_GONE = -1.0f
-        const val PROGRESS_INDETERMINATE = -2.0f
     }
 }

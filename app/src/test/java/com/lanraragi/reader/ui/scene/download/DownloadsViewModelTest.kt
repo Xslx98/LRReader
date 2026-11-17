@@ -28,6 +28,9 @@ import kotlinx.coroutines.cancel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import androidx.lifecycle.SavedStateHandle
+import com.lanraragi.reader.ui.list.SelectionModel
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -421,6 +424,28 @@ class DownloadsViewModelTest {
     }
 
     @Test
+    fun `a restored selection is not pruned before Room's first list`() = runBlocking {
+        val infoA = DownloadInfo().apply {
+            arcid = "a"; title = "A"; label = null; state = DownloadState.NONE; time = 1L
+        }
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(infoA)
+        val saved = SavedStateHandle()
+        SelectionModel(saved).apply { toggle("a"); toggle("gone") }
+
+        val compute = StandardTestDispatcher()
+        val restored = DownloadsViewModel(saved, compute)
+        // The empty start value says nothing about which rows exist.
+        restored.retainSelection(restored.downloadList.value)
+        assertEquals(setOf("a", "gone"), restored.selection.checked)
+
+        compute.scheduler.advanceUntilIdle()
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        assertEquals(listOf("a"), restored.downloadList.value.map { it.arcid })
+        restored.retainSelection(restored.downloadList.value)
+        assertEquals(setOf("a"), restored.selection.checked)
+    }
+
+    @Test
     fun `downloadList filters by currentLabel`() = runBlocking {
         val dm = vm.downloadManager
         // Add one default-label and one "L1"-label info
@@ -468,10 +493,10 @@ class DownloadsViewModelTest {
         repo.putDownloadInfo(row("miss", "other", 2L))
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
 
-        vm.setSearchKey("artist:wanted")
         vm.updateForLabel()
-        vm.startSearching("artist:wanted")
+        vm.search("artist:wanted")
         awaitUntil { vm.downloadList.value.map { it.arcid } == listOf("hit") }
+        assertEquals(DownloadsFilter(query = "artist:wanted"), vm.filter.value)
 
         // Any later change to the downloads table re-emits the list; wait until
         // that emission has reached the ViewModel before asserting.
@@ -479,6 +504,11 @@ class DownloadsViewModelTest {
         awaitUntil { vm.backList.value.any { it.arcid == "miss" && it.time == 3L } }
 
         assertEquals(listOf("hit"), vm.downloadList.value.map { it.arcid })
+
+        // A blank search shows the whole label again.
+        vm.search("  ")
+        assertEquals(DownloadsFilter(), vm.filter.value)
+        assertEquals(setOf("hit", "miss"), vm.downloadList.value.map { it.arcid }.toSet())
     }
 
     @Test
@@ -493,12 +523,44 @@ class DownloadsViewModelTest {
         repo.putDownloadInfo(row("miss-done", "other", DownloadState.FINISH))
         awaitUntil { vm.backList.value.size == 3 }
 
-        vm.setSearchKey("artist:wanted")
-        vm.startSearching("artist:wanted")
+        vm.search("artist:wanted")
         vm.gotoFilterAndSort(com.lanraragi.reader.R.id.download_done)
-        awaitUntil { !vm.filterLoading.value }
+        assertTrue("the pass spins the list", vm.filter.value.applying)
+        awaitUntil { !vm.filter.value.applying }
 
         assertEquals(listOf("hit-done"), vm.downloadList.value.map { it.arcid })
+
+        // Leaving the page drops the search and any pass still running.
+        vm.gotoFilterAndSort(com.lanraragi.reader.R.id.download_done)
+        vm.clearSearch()
+        assertEquals(DownloadsFilter(), vm.filter.value)
+        assertEquals(3, vm.downloadList.value.size)
+    }
+
+    @Test
+    fun `a state filter stays on for every later list until All clears it`() = runBlocking {
+        val repo = ServiceRegistry.dataModule.downloadDbRepository
+        fun row(id: String, state: DownloadState, time: Long) = DownloadInfo().apply {
+            arcid = id; title = "Title $id"; label = null; this.state = state; this.time = time
+        }
+        repo.putDownloadInfo(row("done", DownloadState.FINISH, 1L))
+        repo.putDownloadInfo(row("idle", DownloadState.NONE, 2L))
+        awaitUntil { vm.backList.value.size == 2 }
+
+        vm.gotoFilterAndSort(com.lanraragi.reader.R.id.download_done)
+        awaitUntil { !vm.filter.value.applying }
+        assertEquals(listOf("done"), vm.downloadList.value.map { it.arcid })
+        assertEquals(com.lanraragi.reader.R.id.download_done, vm.filter.value.order)
+
+        // The table changes: the new list goes through the same filter.
+        repo.putDownloadInfo(row("done-2", DownloadState.FINISH, 3L))
+        repo.putDownloadInfo(row("idle-2", DownloadState.NONE, 4L))
+        awaitUntil { vm.backList.value.size == 4 && vm.downloadList.value.size == 2 }
+        assertEquals(setOf("done", "done-2"), vm.downloadList.value.map { it.arcid }.toSet())
+
+        vm.gotoFilterAndSort(com.lanraragi.reader.R.id.all)
+        assertEquals(DownloadsFilter(), vm.filter.value)
+        assertEquals(4, vm.downloadList.value.size)
     }
 
     @Test

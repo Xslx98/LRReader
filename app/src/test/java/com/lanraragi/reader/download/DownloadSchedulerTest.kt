@@ -483,7 +483,7 @@ class DownloadSchedulerTest {
         scheduler.activeTasks.add(info)
         info.state = DownloadState.DOWNLOAD
         // Simulate a network pause having recorded this arcid.
-        DownloadResumeBanner.markPaused(info.arcid, info.title)
+        DownloadResumeBanner.mark(info.arcid, DownloadResumeBanner.Reason.PAUSED)
 
         scheduler.stopDownload(info.arcid)
 

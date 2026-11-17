@@ -131,8 +131,8 @@ class QuickSearchViewModelTest {
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
 
-        awaitUntil { vm.quickSearches.value.size == 2 }
-        assertEquals(2, vm.quickSearches.value.size)
+        awaitUntil { vm.state.value.items.size == 2 }
+        assertEquals(2, vm.state.value.items.size)
     }
 
     // ── deleteQuickSearch ──────────────────────────────────────────
@@ -144,14 +144,14 @@ class QuickSearchViewModelTest {
 
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
-        awaitUntil { vm.quickSearches.value.size == 2 }
+        awaitUntil { vm.state.value.items.size == 2 }
 
         val events = vm.uiEvent.collectInto(eventScope)
 
         vm.deleteQuickSearch(qs2)
-        awaitUntil { vm.quickSearches.value.size == 1 }
+        awaitUntil { vm.state.value.items.size == 1 }
 
-        assertEquals("Keep", vm.quickSearches.value[0].name)
+        assertEquals("Keep", vm.state.value.items[0].name)
         awaitUntil { events.isNotEmpty() }
         assertTrue("Should emit Deleted event",
             events.any { it is QuickSearchViewModel.QuickSearchUiEvent.Deleted })
@@ -164,7 +164,7 @@ class QuickSearchViewModelTest {
         val store = ViewModelStore()
         val vm = scoped(store)
         vm.loadQuickSearches()
-        awaitUntil { vm.quickSearches.value.size == 2 }
+        awaitUntil { vm.state.value.items.size == 2 }
 
         holdRoom = true
         vm.moveQuickSearch(0, 1)
@@ -195,13 +195,13 @@ class QuickSearchViewModelTest {
 
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
-        awaitUntil { vm.quickSearches.value.size == 3 }
+        awaitUntil { vm.state.value.items.size == 3 }
 
         // Move item from position 0 to position 2
         vm.moveQuickSearch(0, 2)
 
         // In-memory list is updated synchronously
-        val names = vm.quickSearches.value.map { it.name }
+        val names = vm.state.value.items.map { it.name }
         assertEquals(listOf("B", "C", "A"), names)
     }
 
@@ -212,11 +212,11 @@ class QuickSearchViewModelTest {
 
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
-        awaitUntil { vm.quickSearches.value.size == 2 }
+        awaitUntil { vm.state.value.items.size == 2 }
 
-        val before = vm.quickSearches.value.map { it.name }
+        val before = vm.state.value.items.map { it.name }
         vm.moveQuickSearch(0, 0)
-        val after = vm.quickSearches.value.map { it.name }
+        val after = vm.state.value.items.map { it.name }
 
         assertEquals("List should not change for same-position move", before, after)
     }
@@ -227,11 +227,11 @@ class QuickSearchViewModelTest {
 
         val vm = QuickSearchViewModel()
         vm.loadQuickSearches()
-        awaitUntil { vm.quickSearches.value.size == 1 }
+        awaitUntil { vm.state.value.items.size == 1 }
 
-        val sizeBefore = vm.quickSearches.value.size
+        val sizeBefore = vm.state.value.items.size
         vm.moveQuickSearch(0, 5) // out of bounds
-        val sizeAfter = vm.quickSearches.value.size
+        val sizeAfter = vm.state.value.items.size
 
         assertEquals("List should not change for out-of-bounds move", sizeBefore, sizeAfter)
     }

@@ -33,8 +33,6 @@ class PagerNavigationTest(private val layoutMode: Int) {
     private class FakeAdapter : GalleryView.Adapter() {
         val bound = mutableSetOf<GalleryPageView>()
         override fun onBind(view: GalleryPageView, index: Int) {
-            // A page view starts out showing its error text, which takes taps.
-            view.clearError()
             bound += view
         }
         override fun onUnbind(view: GalleryPageView, index: Int) {

@@ -52,37 +52,57 @@ object DownloadResumeBanner {
         data class SystemLimited(val arcids: List<String>, val count: Int) : Snapshot
     }
 
-    private val paused = LinkedHashMap<String, String>()   // arcid -> title
-    private val timedOut = LinkedHashMap<String, String>() // arcid -> title
-    private val storageFull = LinkedHashMap<String, String>() // arcid -> title
-    private val systemLimited = LinkedHashMap<String, String>() // arcid -> title
+    /** Why a download is on the banner, for the downloads kept in memory. */
+    enum class Reason {
+        /** Paused waiting for the network. */
+        PAUSED,
 
-    @Synchronized
-    fun markPaused(arcid: String, title: String?) {
-        timedOut.remove(arcid)
-        paused[arcid] = title ?: arcid
+        /** Gave up after the network wait (or the system's time budget). */
+        TIMED_OUT,
+
+        /** Paused because the disk filled up (audit C21). */
+        STORAGE_FULL,
+
+        /** Paused because the system refused the foreground service (audit C34). */
+        SYSTEM_LIMITED,
     }
+
+    /**
+     * The one record of the in-memory banner: each arcid has at most one
+     * reason, the latest. Interrupted downloads (A47) are the exception and
+     * live in [interruptedStore], since they must survive the process.
+     */
+    private val reasons = LinkedHashMap<String, Reason>()
+
+    /**
+     * [arcid] is on the banner for [reason], replacing any earlier reason,
+     * except that a network pause or time-out never hides a storage-full or
+     * system-limit entry: those ask the user to act first.
+     */
+    @Synchronized
+    fun mark(arcid: String, reason: Reason) {
+        val current = reasons[arcid]
+        if (reason.isNetwork && current != null && !current.isNetwork) return
+        reasons.remove(arcid) // re-insert at the end: newest last
+        reasons[arcid] = reason
+    }
+
+    private val Reason.isNetwork: Boolean get() = this == Reason.PAUSED || this == Reason.TIMED_OUT
 
     fun markResumed(arcid: String) = markResumed(listOf(arcid))
 
     /**
      * Clears every banner entry of [arcids] with at most one store write, so a
      * start/stop/delete loop over many rows does not rewrite the prefs file
-     * once per row (audit 2026-10-13 STAB-05).
+     * once per row (audit 2026-10-13 STAB-05). This is the "clear the banner
+     * for this arcid" call used by network-resume AND by stop/delete paths:
+     * deleting a download that already gave up must not leave a ghost
+     * "N downloads timed out" Snackbar on the next foreground.
      */
     @Synchronized
     fun markResumed(arcids: Collection<String>) {
         if (arcids.isEmpty()) return
-        for (arcid in arcids) {
-            paused.remove(arcid)
-            // Also drop any timed-out entry: this is the "clear the banner for this
-            // arcid" call used by network-resume AND by stop/delete paths. Without
-            // clearing timedOut too, deleting a download that already gave up left a
-            // ghost "N downloads timed out" Snackbar on the next foreground.
-            timedOut.remove(arcid)
-            storageFull.remove(arcid)
-            systemLimited.remove(arcid)
-        }
+        for (arcid in arcids) reasons.remove(arcid)
         val interrupted = interruptedStore.load()
         if (arcids.any { it in interrupted }) interruptedStore.saveAfterRemoval(interrupted - arcids.toSet())
     }
@@ -94,28 +114,6 @@ object DownloadResumeBanner {
         interruptedStore.save(interruptedStore.load() + arcids)
     }
 
-    /** Record a download paused because the disk is full (audit C21). */
-    @Synchronized
-    fun markStorageFull(arcid: String, title: String?) {
-        paused.remove(arcid)
-        timedOut.remove(arcid)
-        storageFull[arcid] = title ?: arcid
-    }
-
-    /** Record a download paused because the system refused the foreground service (audit C34). */
-    @Synchronized
-    fun markSystemLimited(arcid: String, title: String?) {
-        paused.remove(arcid)
-        timedOut.remove(arcid)
-        systemLimited[arcid] = title ?: arcid
-    }
-
-    @Synchronized
-    fun markTimedOut(arcid: String, title: String?) {
-        paused.remove(arcid)
-        timedOut[arcid] = title ?: arcid
-    }
-
     /**
      * Read the current state and clear it (one-shot). Precedence: StorageFull (the
      * user must act first), then SystemLimited, then TimedOut, then Interrupted, then Paused. Interrupted downloads not shown this time are
@@ -124,10 +122,15 @@ object DownloadResumeBanner {
     @Synchronized
     fun consume(): Snapshot {
         val interrupted = interruptedStore.load()
+        fun with(reason: Reason) = reasons.filterValues { it == reason }.keys.toList()
+        val storageFull = with(Reason.STORAGE_FULL)
+        val systemLimited = with(Reason.SYSTEM_LIMITED)
+        val timedOut = with(Reason.TIMED_OUT)
+        val paused = with(Reason.PAUSED)
         val snapshot = when {
-            storageFull.isNotEmpty() -> Snapshot.StorageFull(storageFull.keys.toList(), storageFull.size)
-            systemLimited.isNotEmpty() -> Snapshot.SystemLimited(systemLimited.keys.toList(), systemLimited.size)
-            timedOut.isNotEmpty() -> Snapshot.TimedOut(timedOut.keys.toList(), timedOut.size)
+            storageFull.isNotEmpty() -> Snapshot.StorageFull(storageFull, storageFull.size)
+            systemLimited.isNotEmpty() -> Snapshot.SystemLimited(systemLimited, systemLimited.size)
+            timedOut.isNotEmpty() -> Snapshot.TimedOut(timedOut, timedOut.size)
             interrupted.isNotEmpty() -> {
                 interruptedStore.save(emptySet())
                 Snapshot.Interrupted(interrupted.toList(), interrupted.size)
@@ -135,19 +138,13 @@ object DownloadResumeBanner {
             paused.isNotEmpty() -> Snapshot.Paused(paused.size)
             else -> Snapshot.None
         }
-        paused.clear()
-        timedOut.clear()
-        storageFull.clear()
-        systemLimited.clear()
+        reasons.clear()
         return snapshot
     }
 
     @Synchronized
     fun clear() {
-        paused.clear()
-        timedOut.clear()
-        storageFull.clear()
-        systemLimited.clear()
+        reasons.clear()
         interruptedStore.save(emptySet())
     }
 }

@@ -3,6 +3,8 @@ package com.lanraragi.reader.ui.scene.download
 import androidx.lifecycle.LifecycleOwner
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.ui.collectFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * The Downloads page's view-scoped collectors: load errors, the structural
@@ -26,8 +28,12 @@ class DownloadsEvents(
         // filtered). Transient progress flows separately via progressMap
         // below. DiffUtil compares structural fields only.
         collectFlow(owner, viewModel.downloadList) { list ->
-            if (!scene.hasAdapter || scene.searching) return@collectFlow
+            if (!scene.hasAdapter) return@collectFlow
             scene.listDispatcher.dispatchDiffUpdate(ArrayList(list))
+            // The selection is by arcid: rows that left the list take their
+            // checks with them, every other check stays on its row. After the
+            // diff, so a redraw maps the shown rows to their new positions.
+            viewModel.retainSelection(list)
             scene.updateTitle()
             scene.updatePaginationIndicator()
             scene.updateView()
@@ -40,7 +46,7 @@ class DownloadsEvents(
         // repaint — no DiffUtil, no full rebind. Fixes the progress-freeze
         // bug introduced by the earlier mutating-combine approach.
         collectFlow(owner, viewModel.progressMap) { progressMap ->
-            if (!scene.hasAdapter || scene.searching) return@collectFlow
+            if (!scene.hasAdapter) return@collectFlow
             scene.listDispatcher.dispatchProgressChanges(progressMap)
         }
 
@@ -51,20 +57,11 @@ class DownloadsEvents(
             scene.listDispatcher.dispatchSourceBadges()
         }
 
-        // Observe filter loading state
-        collectFlow(owner, viewModel.filterLoading) { loading ->
-            scene.showFilterLoading(loading)
-        }
-
-        // Observe filter/sort/search completion
-        collectFlow(owner, viewModel.filterSearchDone) {
-            if (!scene.isAdded) return@collectFlow
-            scene.updateAdapter()
-            // The downloadList collector skips updates while searching, so the
-            // count in the title and the empty view must be refreshed here.
-            scene.updateTitle()
-            scene.updatePaginationIndicator()
-            scene.updateView()
+        // A filter or sort pass spins the list. Its result, like a search's,
+        // arrives through downloadList above, diffed into the same adapter
+        // (so drag-and-drop stays on).
+        collectFlow(owner, viewModel.filter.map { it.applying }.distinctUntilChanged()) { applying ->
+            scene.showFilterLoading(applying)
         }
 
         // Rows, their state and progress come from the downloadList and

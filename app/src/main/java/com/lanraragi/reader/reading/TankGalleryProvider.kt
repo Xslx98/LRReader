@@ -6,7 +6,6 @@ import com.lanraragi.reader.BuildConfig
 import com.lanraragi.reader.GetText
 import com.lanraragi.reader.R
 import com.lanraragi.reader.ServiceRegistry
-import com.lanraragi.framework.lib.glgallery.GalleryProvider
 import com.lanraragi.reader.storage.StorageFile
 import com.lanraragi.reader.client.api.LRRHttpException
 import com.lanraragi.reader.client.api.LRRTankoubonApi
@@ -74,22 +73,14 @@ class TankGalleryProvider(
     }
 
     @Volatile
-    private var stopped = false
-
-    @Volatile
     private var providerScope: CoroutineScope? = null
-
-    @Volatile
-    private var errorMessage: String? = null
-
-    @Volatile
-    private var errorState = false
 
     private val serverUrlDeferred = CompletableDeferred<String?>()
 
-    // In-flight page requests (per-job tokens) and rebinds that arrived while
-    // a job was running; see PageRequestTracker (audit 2026-10-06 N6).
-    private val requests = PageRequestTracker()
+    // In-flight page jobs (per-job tokens) and rebinds that arrived while a
+    // job was running; see PageJobs (audit 2026-10-06 N6). Member sources
+    // keep their own downloads' mutexes and calls.
+    private val jobs = PageJobs()
 
     /** Global cap on concurrent prefetch downloads (mirrors LRRGalleryProvider). */
     private val prefetchSemaphore = Semaphore(PREFETCH_PARALLELISM)
@@ -102,22 +93,19 @@ class TankGalleryProvider(
     private val openPageOnDisk: (Int) -> InputStream? = { global0 ->
         pageMap.locate(global0)?.let { (member, local) -> slotAt(member)?.source?.openPageOnDisk(local) }
     }
-    private val probeActive: () -> Boolean = { !stopped }
+    private val probeActive: () -> Boolean = { !isStopped }
 
-    /** Global 0-indexed start page: see [TankProgress] (server first, unsynced local page wins). */
-    @Volatile
-    private var startPageValue: Int = TankProgress.start0(appContext, seed.tankId, seed.serverProgress)
-
-    /** Serialized + conflated tank global progress sync (app-scoped, survives stop()). */
-    private val progressSyncer = ReadingProgressSyncer(
-        ServiceRegistry.coroutineModule.ioScope
-    ) sync@{ page0 ->
-        val url = serverUrlDeferred.await() ?: return@sync
-        LRRTankoubonApi.updateTankProgress(
-            ServiceRegistry.networkModule.okHttpClient, url, seed.tankId, page0 + 1
-        )
-        TankProgress.markSynced(appContext, seed.tankId, page0)
+    init {
+        // Global 0-indexed start page: see [TankProgress] (server first, unsynced local page wins).
+        val start0 = TankProgress.start0(appContext, seed.tankId, seed.serverProgress)
+        updateRestore { it.copy(startPage = start0) }
     }
+
+    override val diagName: String get() = "tank"
+
+    override val progressTarget: ProgressTarget get() = ProgressTarget.Tank(appContext, seed.tankId)
+
+    override suspend fun progressServerUrl(): String? = serverUrlDeferred.await()
 
     private val chapterStore = ChapterStore.of(appContext)
     private val chapterProfileId = LocalReadingProgress.sourceProfile(seed.profileId)
@@ -149,11 +137,10 @@ class TankGalleryProvider(
     override fun start() {
         super.start()
         // A page saved while offline never reached the server: push it now.
-        TankProgress.pendingPage0(appContext, seed.tankId).takeIf { it >= 0 }?.let(progressSyncer::submit)
+        TankProgress.pendingPage0(appContext, seed.tankId).takeIf { it >= 0 }?.let(::resendProgress)
 
         if (seed.tankId.isEmpty() || seed.members.isEmpty()) {
-            errorState = true
-            errorMessage = GetText.getString(R.string.error_empty)
+            markFailed(GetText.getString(R.string.error_empty))
             notifyDataChanged()
             return
         }
@@ -185,6 +172,7 @@ class TankGalleryProvider(
         // Metadata offsets make the size known RIGHT NOW — publish it so the
         // reader lays out instantly; the entry member's real file list warms
         // in the background and corrects the map if needed.
+        markReady(pageMap.total)
         notifyDataChanged()
         scope.launch {
             if (pageMap.total <= 0) {
@@ -199,14 +187,13 @@ class TankGalleryProvider(
                 // the member right after each dropped one.
                 val snapshot = synchronized(slotsLock) { slots.toList() }
                 for (slot in snapshot) {
-                    if (stopped) break
+                    if (isStopped) break
                     val index = indexOfSlot(slot)
                     if (index < 0) continue
                     suspendRunCatching { countedSourceFor(index) }
                 }
             } else {
-                val entry = (if (initialPageOverride >= 0) initialPageOverride else startPageValue)
-                    .coerceIn(0, pageMap.total - 1)
+                val entry = restore.entryPage.coerceIn(0, pageMap.total - 1)
                 pageMap.locate(entry)?.let { (member, _) ->
                     suspendRunCatching { countedSourceFor(member) }
                 }
@@ -216,8 +203,7 @@ class TankGalleryProvider(
 
     override fun stop() {
         super.stop()
-        stopped = true
-        requests.clear()
+        jobs.clear()
         providerScope?.cancel()
         providerScope = null
         synchronized(slotsLock) { slots.forEach { it.source?.cancelAll() } }
@@ -226,46 +212,35 @@ class TankGalleryProvider(
         }
     }
 
-    override fun size(): Int = if (errorState) GalleryProvider.STATE_ERROR else pageMap.total
-
     /** Each member starts its own spreads: its cover stands alone and no pair spans two members. */
     override fun isPairBreak(index: Int): Boolean = pageMap.isMemberStart(index)
 
-    override fun getError(): String = errorMessage ?: "Unknown error"
-
     // ==================== Progress (tank-only) ====================
-
-    override fun getStartPage(): Int = startPageValue
 
     override fun writeLocalProgress(page: Int) {
         saveReadingProgress(appContext, seed.tankId, page)
     }
 
-    override fun putStartPage(page: Int) {
-        startPageValue = page
-        saveLocalProgressSoon(page)
-        TankProgress.markPending(appContext, seed.tankId, page)
-        progressSyncer.submit(page)
-    }
-
     // ==================== Requests ====================
 
     override fun onRequest(index: Int) {
-        if (stopped) return
+        if (isStopped) return
         if (pageMap.locate(index) == null) {
             notifyPageFailed(index, GetText.getString(R.string.error_out_of_range))
             return
         }
         // Already in flight: the tracker records the rebind so a cancelled
         // job re-requests the page instead of leaving it spinning.
-        val token = requests.begin(index)
-        if (token == null) return
+        val token = jobs.begin(index) ?: return
         notifyPageWait(index)
         val scope = providerScope
         if (scope == null) {
-            requests.abandon(index, token)
+            jobs.abandon(index, token)
             return
         }
+        // A failure published under an older page map belongs to the page
+        // that index meant then: the rebind after the remap must ask again.
+        val generation = pageGeneration
         scope.launch {
             var cancelled = false
             try {
@@ -282,7 +257,7 @@ class TankGalleryProvider(
                 Log.w(TAG, "Failed to serve tank page $index: ${e.message}")
                 notifyPageFailed(index, friendlyPageError(e))
             } finally {
-                if (requests.finish(index, token, cancelled, stopped)) {
+                if (jobs.finish(index, token, cancelled || pageGeneration != generation, isStopped)) {
                     onRequest(index)
                 }
             }
@@ -290,7 +265,7 @@ class TankGalleryProvider(
     }
 
     override fun onForceRequest(index: Int) {
-        requests.forget(index)
+        jobs.forget(index)
         onRequest(index)
     }
 
@@ -328,7 +303,7 @@ class TankGalleryProvider(
         val image = source.obtainImage(located.second) { pct ->
             notifyPagePercent(global0, pct)
         }
-        if (stopped) {
+        if (isStopped) {
             image?.recycle()
             return
         }
@@ -339,9 +314,9 @@ class TankGalleryProvider(
                 throw TankPageCancelledException(IOException("remapped"))
             }
             prefetchAround(global0)
-        } else {
-            notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
+            return
         }
+        notifyPageFailed(global0, GetText.getString(R.string.error_decoding_failed))
     }
 
     /**
@@ -360,12 +335,12 @@ class TankGalleryProvider(
             val targets =
                 (global0 + 1..global0 + forward) + (global0 - PREFETCH_BACKWARD until global0)
             for (target in targets) {
-                if (stopped) break
+                if (isStopped) break
                 val (member, local) = pageMap.locate(target) ?: continue
                 if (hasCache(target)) continue
                 launch {
                     prefetchSemaphore.withPermit {
-                        if (stopped) return@withPermit
+                        if (isStopped) return@withPermit
                         try {
                             countedSourceFor(member).prefetchPage(local)
                             probe.probe(target, openPageOnDisk)
@@ -433,6 +408,8 @@ class TankGalleryProvider(
                     if (index >= 0) {
                         oldTotal = pageMap.total
                         changed = pageMap.correct(index, realCount)
+                        // Under the lock: two remaps publish their counts in the order they changed the map.
+                        if (changed) markReady(pageMap.total)
                     }
                     slot.counted = true
                 }
@@ -469,6 +446,7 @@ class TankGalleryProvider(
             oldTotal = pageMap.total
             pageMap.removeMember(index)
             slots.removeAt(index)
+            markReady(pageMap.total)
         }
         slot.source?.cancelAll()
         if (BuildConfig.DEBUG) {
@@ -485,7 +463,8 @@ class TankGalleryProvider(
      * After any page-map remap: drop every cached image at or beyond the
      * FIRST index whose mapping may have shifted (conservatively: all of
      * them — remaps are rare, correctness beats cache warmth) and
-     * re-notify the GL layer so layout picks up the new size.
+     * re-notify the GL layer so layout picks up the new size (published
+     * by the remap itself, under [slotsLock]).
      */
     private fun onMapRemapped(oldTotal: Int) {
         // Learnt page sizes are keyed by the old global indices too. Forget

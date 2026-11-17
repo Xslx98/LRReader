@@ -24,6 +24,7 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.content.ContextCompat
 import android.os.Bundle
 import android.text.TextUtils
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,9 +52,10 @@ import com.lanraragi.framework.util.isLightTheme
 import com.lanraragi.framework.drawable.AddDeleteDrawable
 import com.lanraragi.framework.drawable.DrawerArrowDrawable
 import com.lanraragi.reader.widget.list.EasyRecyclerView
+import com.lanraragi.reader.widget.list.HandlerDrawable
+import com.lanraragi.reader.widget.list.FastScroller
 import com.lanraragi.reader.R
 import com.lanraragi.reader.archive.LRRUtils
-
 import com.lanraragi.reader.domain.Archive
 import com.lanraragi.reader.archive.ListUrlBuilder
 import com.lanraragi.reader.dao.QuickSearch
@@ -66,12 +68,13 @@ import com.lanraragi.reader.widget.SearchLayout
 import com.lanraragi.reader.widget.SkeletonView
 import com.lanraragi.framework.util.AssertUtils
 import com.lanraragi.framework.util.ViewUtils
+import com.lanraragi.framework.util.attrColor
 import com.lanraragi.reader.widget.ListRefreshLayout
 import com.lanraragi.reader.widget.Ripples
 import com.lanraragi.framework.scene.Announcer
 import com.lanraragi.reader.ui.collectFlow
 import com.lanraragi.reader.widget.ViewTransition
-import com.lanraragi.reader.widget.ContentLayout
+import com.lanraragi.reader.widget.StateListLayout
 import com.lanraragi.framework.widget.FabLayout
 import com.lanraragi.framework.widget.SearchBarMover
 import com.lanraragi.reader.server.ServerSession
@@ -116,13 +119,10 @@ open class GalleryListScene : BaseScene(),
 
     private var mHideActionFabSlop = 0
 
-    private var mHasFirstRefresh = false
-
     /** The query this scene's rows came from (C01); saved with the scene's state. */
     internal val shownSearch = ShownSearchState()
     private var mLastServerConfigVersion = ServerSession.serverConfigVersion
     private var mNavCheckedId = 0
-    private var mRestoredState = GalleryStateHelper.STATE_NORMAL
 
     internal lateinit var downloadManager: DownloadManager
         private set
@@ -298,7 +298,7 @@ open class GalleryListScene : BaseScene(),
         handleArgs(args)
         onUpdateUrlBuilder()
         mHelper?.refresh()
-        stateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
+        viewModel.setSearchChrome(SearchChrome.Normal)
         searchBarMover?.showSearchBar()
     }
 
@@ -334,23 +334,14 @@ open class GalleryListScene : BaseScene(),
 
     @Suppress("DEPRECATION")
     private fun onRestore(savedInstanceState: Bundle) {
-        mHasFirstRefresh = savedInstanceState.getBoolean(KEY_HAS_FIRST_REFRESH)
         mUrlBuilder = savedInstanceState.getParcelable(KEY_LIST_URL_BUILDER)
-        mRestoredState = savedInstanceState.getInt(KEY_STATE)
         shownSearch.restore(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        val hasFirstRefresh = if (mHelper != null && 1 == mHelper?.shownViewIndex) {
-            false
-        } else {
-            mHasFirstRefresh
-        }
-        outState.putBoolean(KEY_HAS_FIRST_REFRESH, hasFirstRefresh)
         outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder)
-        outState.putInt(KEY_STATE, stateHelper?.state ?: GalleryStateHelper.STATE_NORMAL)
         shownSearch.save(outState)
     }
 
@@ -363,9 +354,14 @@ open class GalleryListScene : BaseScene(),
 
     fun onUpdateUrlBuilder() {
         // The query is changing (search / tag / bookmark / filter / new args):
-        // the list is about to reload and adapter positions become meaningless,
-        // so any in-flight multi-select must not survive it.
+        // the list is about to show other results, so an in-flight
+        // multi-select must not survive it.
         multiSelectHelper?.exit()
+        showUrlBuilder()
+    }
+
+    /** Shows the query in the search bar, the title and the drawer's checked item. */
+    private fun showUrlBuilder() {
         val builder = mUrlBuilder
         val resources = resources2
         if (resources == null || builder == null || !::searchLayout.isInitialized) {
@@ -422,12 +418,16 @@ open class GalleryListScene : BaseScene(),
 
         val mainLayout = ViewUtils.requireView(view, R.id.main_layout)
         rootLayout = mainLayout as ViewGroup
-        val contentLayout = ViewUtils.requireView(mainLayout, R.id.content_layout) as ContentLayout
-        recyclerView = contentLayout.recyclerView
-        val fastScroller = contentLayout.fastScroller
-        val refreshLayout: ListRefreshLayout = contentLayout.refreshLayout
+        val contentLayout = ViewUtils.requireView(mainLayout, R.id.content_layout) as StateListLayout
+        recyclerView = ViewUtils.requireView(contentLayout, R.id.recycler_view) as EasyRecyclerView
+        val fastScroller = ViewUtils.requireView(contentLayout, R.id.fast_scroller) as FastScroller
+        val refreshLayout = ViewUtils.requireView(contentLayout, R.id.refresh_layout) as ListRefreshLayout
+        bindListWidgets(context, contentLayout, refreshLayout, fastScroller)
         searchLayout = ViewUtils.requireView(mainLayout, R.id.search_layout) as SearchLayout
         searchBar = ViewUtils.requireView(mainLayout, R.id.search_bar) as SearchBar
+        // Its state is a rendering of viewModel.searchChrome (saved there); its
+        // own copy is not saved. The query text, in its EditText, still is.
+        searchBar.isSaveEnabled = false
         fabLayout = ViewUtils.requireView(mainLayout, R.id.fab_layout) as FabLayout
         floatingActionButton = ViewUtils.requireView(fabLayout, R.id.tag_filter) as FloatingActionButton
 
@@ -441,16 +441,19 @@ open class GalleryListScene : BaseScene(),
         // Initialize helpers
         initHelpers(context)
 
-        filterHelper?.updateFilterIcon(filterHelper?.filterTagList?.size ?: 0)
+        // The filter is saved with the screen; show what came back.
+        filterHelper?.updateFilterIcon()
 
-        // First load shows a skeleton of the list instead of the spinner.
+        // Loads that hide the rows show a skeleton of the list instead of a spinner.
         loadingSkeleton = SkeletonView(context).also {
             it.setPadding(0, paddingTopSB, 0, 0)
-            contentLayout.setLoadingView(it)
+            (ViewUtils.requireView(contentLayout, R.id.state_progress) as ViewGroup).addView(
+                it,
+                ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
+            )
         }
         shapeLoadingSkeleton()
-        contentLayout.setHelper(mHelper)
-        contentLayout.fastScroller.setOnDragHandlerListener(searchBarHelper)
+        fastScroller.setOnDragHandlerListener(searchBarHelper)
 
         mAdapterImpl = GalleryListAdapter(
             inflater, resources,
@@ -464,7 +467,13 @@ open class GalleryListScene : BaseScene(),
         recyclerView.setClipToPadding(false)
         recyclerView.setOnItemClickListener(this)
         recyclerView.setOnItemLongClickListener(this)
-        mAdapterImpl?.let { GalleryListSelection.bind(this, it, mainLayout) }
+        mAdapterImpl?.let { adapter ->
+            // Rows arrive from the ViewModel: keep a restored scroll position until they are there.
+            adapter.stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+            mHelper?.attach(contentLayout, refreshLayout, recyclerView, adapter)
+            GalleryListSelection.bind(this, adapter, mainLayout)
+        }
+        observeList()
         recyclerView.addOnScrollListener(mOnScrollListener)
         fastScroller.setPadding(
             fastScroller.paddingLeft, fastScroller.paddingTop + paddingTopSB,
@@ -475,17 +484,18 @@ open class GalleryListScene : BaseScene(),
 
         GalleryListChrome.bind(this, context, mainLayout, paddingTopSB, paddingBottomFab)
 
-        onUpdateUrlBuilder()
+        // The query is the same one (a new view of it): the selection stays.
+        showUrlBuilder()
 
         // Restore state
-        stateHelper?.setState(GalleryStateHelper.STATE_NORMAL, false)
-        stateHelper?.setState(mRestoredState, false)
-        mRestoredState = GalleryStateHelper.STATE_NORMAL
+        // The chrome the ViewModel holds (saved with the screen), without animation;
+        // later changes animate.
+        stateHelper?.render(viewModel.searchChrome.value, false)
+        collectFlow(viewLifecycleOwner, viewModel.searchChrome) { stateHelper?.render(it, true) }
 
-        if (!mHasFirstRefresh) {
-            mHasFirstRefresh = true
-            mHelper?.firstRefresh()
-        }
+        // The ViewModel keeps the list across a rotation; only a new (or a
+        // process-death restored) screen loads.
+        mHelper?.firstRefresh()
 
         return view
     }
@@ -544,12 +554,7 @@ open class GalleryListScene : BaseScene(),
         loadingSkeleton = null
         searchBarMover?.cancelAnimation()
         searchBarMover = null
-        val helper = mHelper
-        if (helper != null) {
-            if (1 == helper.shownViewIndex) {
-                mHasFirstRefresh = false
-            }
-        }
+        mHelper?.detach()
         if (::recyclerView.isInitialized) {
             recyclerView.stopScroll()
         }
@@ -565,6 +570,7 @@ open class GalleryListScene : BaseScene(),
         rightDrawable = null
         actionFabDrawable = null
         tankSortDrawable = null
+        multiSelectHelper?.detach()
         multiSelectHelper = null
         batchOpsHelper = null
         uploadHelper = null
@@ -591,10 +597,6 @@ open class GalleryListScene : BaseScene(),
 
     // Expose drawPager for BookmarksDraw
     val drawPager get() = mDrawerHelper?.drawPager
-
-    fun setState(state: Int) {
-        stateHelper?.setState(state)
-    }
 
     @SuppressLint("RtlHardcoded", "NonConstantResourceId")
     override fun onCreateDrawerView(
@@ -672,6 +674,54 @@ open class GalleryListScene : BaseScene(),
         tankMerge.cancelTankMerge()
     }
 
+    /** The list's refresh layout, fast scroller and empty tip. */
+    private fun bindListWidgets(
+        context: Context,
+        list: StateListLayout,
+        refreshLayout: ListRefreshLayout,
+        fastScroller: FastScroller,
+    ) {
+        fastScroller.attachToRecyclerView(recyclerView)
+        fastScroller.setHandlerDrawable(HandlerDrawable().apply { setColor(context.attrColor(R.attr.widgetColorThemeAccent)) })
+        refreshLayout.setColorSchemeResources(
+            R.color.loading_indicator_red,
+            R.color.loading_indicator_purple,
+            R.color.loading_indicator_blue,
+            R.color.loading_indicator_cyan,
+            R.color.loading_indicator_green,
+            R.color.loading_indicator_yellow,
+        )
+        // An empty answer: the sad pandroid; a tap loads again.
+        (ViewUtils.requireView(list, R.id.state_empty) as TextView).apply {
+            val drawable = ContextCompat.getDrawable(context, R.drawable.big_sad_pandroid)
+            drawable?.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+            setCompoundDrawables(null, drawable, null, null)
+            setOnClickListener { mHelper?.refresh() }
+        }
+    }
+
+    /** The list state, its failure notices and the searches that landed, while the view is up. */
+    private fun observeList() {
+        collectFlow(viewLifecycleOwner, viewModel.listState) { state ->
+            mHelper?.render(state)
+            // Checks of rows the list no longer holds go: a selection restored
+            // after process death keeps only what the first load brought back
+            // (none if it failed). Loads that start the list over have
+            // already ended the mode (GalleryListDataHelper.load).
+            if (state !is GalleryListState.Loading && state !is GalleryListState.Idle) {
+                multiSelectHelper?.retainAll(state.pages.rows.map { it.arcid })
+            }
+        }
+        collectFlow(viewLifecycleOwner, viewModel.listNotice) { mHelper?.showNotice(it) }
+        collectFlow(viewLifecycleOwner, viewModel.searchLanded) { params ->
+            if (params == null) return@collectFlow
+            shownSearch.onLoaded(params)
+            // Time-to-fully-drawn = first list page landed. Idempotent: the
+            // framework reports once per activity.
+            activity?.reportFullyDrawn()
+        }
+    }
+
     private inner class GalleryListAdapter(
         inflater: LayoutInflater,
         resources: Resources, recyclerView: RecyclerView, type: Int
@@ -704,15 +754,7 @@ open class GalleryListScene : BaseScene(),
         const val ACTION_LIST_URL_BUILDER = "action_list_url_builder"
 
         const val KEY_LIST_URL_BUILDER = "list_url_builder"
-        const val KEY_HAS_FIRST_REFRESH = "has_first_refresh"
-        const val KEY_STATE = "state"
         private const val HTTP_LOCKED = 423
-
-        // Keep for backward compat with references
-        const val STATE_NORMAL = GalleryStateHelper.STATE_NORMAL
-        const val STATE_SIMPLE_SEARCH = GalleryStateHelper.STATE_SIMPLE_SEARCH
-        const val STATE_SEARCH = GalleryStateHelper.STATE_SEARCH
-        const val STATE_SEARCH_SHOW_LIST = GalleryStateHelper.STATE_SEARCH_SHOW_LIST
 
         @JvmStatic
         fun startScene(scene: com.lanraragi.framework.scene.SceneFragment, lub: ListUrlBuilder) {
