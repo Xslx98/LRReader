@@ -538,6 +538,32 @@ class DownloadsViewModelTest {
     }
 
     @Test
+    fun `a state filter stays on for every later list until All clears it`() = runBlocking {
+        val repo = ServiceRegistry.dataModule.downloadDbRepository
+        fun row(id: String, state: DownloadState, time: Long) = DownloadInfo().apply {
+            arcid = id; title = "Title $id"; label = null; this.state = state; this.time = time
+        }
+        repo.putDownloadInfo(row("done", DownloadState.FINISH, 1L))
+        repo.putDownloadInfo(row("idle", DownloadState.NONE, 2L))
+        awaitUntil { vm.backList.value.size == 2 }
+
+        vm.gotoFilterAndSort(com.lanraragi.reader.R.id.download_done)
+        awaitUntil { !vm.filter.value.applying }
+        assertEquals(listOf("done"), vm.downloadList.value.map { it.arcid })
+        assertEquals(com.lanraragi.reader.R.id.download_done, vm.filter.value.order)
+
+        // The table changes: the new list goes through the same filter.
+        repo.putDownloadInfo(row("done-2", DownloadState.FINISH, 3L))
+        repo.putDownloadInfo(row("idle-2", DownloadState.NONE, 4L))
+        awaitUntil { vm.backList.value.size == 4 && vm.downloadList.value.size == 2 }
+        assertEquals(setOf("done", "done-2"), vm.downloadList.value.map { it.arcid }.toSet())
+
+        vm.gotoFilterAndSort(com.lanraragi.reader.R.id.all)
+        assertEquals(DownloadsFilter(), vm.filter.value)
+        assertEquals(4, vm.downloadList.value.size)
+    }
+
+    @Test
     fun `progressMap re-emits every tracker update`() = runBlocking {
         val dm = vm.downloadManager
         val seen = mutableListOf<Long>()
