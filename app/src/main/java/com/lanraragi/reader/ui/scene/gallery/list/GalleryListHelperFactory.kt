@@ -95,7 +95,7 @@ internal object GalleryListHelperFactory {
                 scene.filterHelper?.updateFilterIcon(scene.filterHelper?.filterTagList?.size ?: 0)
             }
             override fun onUpdateUrlBuilder() = scene.onUpdateUrlBuilder()
-            override fun setState(state: Int) { scene.stateHelper?.setState(state) }
+            override fun setChrome(chrome: SearchChrome) = scene.viewModel.setSearchChrome(chrome)
             override fun onItemClick(view: View?, gi: Archive?): Boolean =
                 scene.itemActionHelper?.onItemClick(view, gi) ?: false
             override fun onItemLongClick(position: Int): Boolean =
@@ -125,7 +125,8 @@ internal object GalleryListHelperFactory {
             override fun getSearchLayout(): SearchLayout? = scene.searchLayout
             override fun getUrlBuilder(): ListUrlBuilder? = scene.mUrlBuilder
             override fun getContentHelper(): GalleryListDataHelper? = scene.mHelper
-            override fun getStateHelper(): GalleryStateHelper? = scene.stateHelper
+            override fun chrome(): SearchChrome = scene.viewModel.searchChrome.value
+            override fun setChrome(chrome: SearchChrome) = scene.viewModel.setSearchChrome(chrome)
             override fun getRecyclerView(): RecyclerView? = scene.recyclerView
             override fun onUpdateUrlBuilder() = scene.onUpdateUrlBuilder()
             override fun showTip(message: String, length: Int) = scene.showTip(message, length)

@@ -39,7 +39,8 @@ class GalleryTagChipHelper(private val callback: Callback) {
         fun buildFilterSearch(tagName: String): String
         fun updateFilterDisplay()
         fun onUpdateUrlBuilder()
-        fun setState(state: Int)
+        /** Moves the search chrome to [chrome]. */
+        fun setChrome(chrome: SearchChrome)
         fun onItemClick(view: View?, gi: Archive?): Boolean
         fun onItemLongClick(position: Int): Boolean
         fun getBaseScene(): BaseScene
@@ -175,7 +176,7 @@ class GalleryTagChipHelper(private val callback: Callback) {
         urlBuilder.pageIndex = 0
         callback.onUpdateUrlBuilder()
         helper.refresh()
-        callback.setState(GalleryStateHelper.STATE_NORMAL)
+        callback.setChrome(SearchChrome.Normal)
     }
 
     fun onTagLongClick(tagName: String): Boolean {

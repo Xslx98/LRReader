@@ -101,7 +101,7 @@ class GalleryListInteractions(private val scene: GalleryListScene) {
             urlBuilder.pageIndex = 0
             scene.onUpdateUrlBuilder()
             scene.mHelper?.refresh()
-            scene.stateHelper?.setState(GalleryStateHelper.STATE_NORMAL)
+            scene.viewModel.setSearchChrome(SearchChrome.Normal)
             return
         }
 
