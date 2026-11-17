@@ -90,6 +90,7 @@ class SecurityScene : SolidScene(),
     private var mPatternView: LockPatternView? = null
     private lateinit var mFingerprintIcon: ImageView
     private var mLockoutText: TextView? = null
+    private var mVerifyingText: TextView? = null
 
     private var mBiometricPrompt: BiometricPrompt? = null
 
@@ -204,6 +205,15 @@ class SecurityScene : SolidScene(),
         // Find or create a lockout message view. The layout may not have this view,
         // so we look for it by id and only use it if present.
         mLockoutText = view.findViewById(R.id.lockout_text)
+        mVerifyingText = view.findViewById(R.id.verifying_text)
+
+        // A pattern check runs off the main thread: the drawn pattern stays,
+        // input waits for the answer.
+        collectFlow(viewLifecycleOwner, viewModel.verifying) { verifying ->
+            val lockView = mPatternView ?: return@collectFlow
+            if (verifying) lockView.disableInput() else lockView.enableInput()
+            mVerifyingText?.visibility = if (verifying) View.VISIBLE else View.GONE
+        }
 
         // Observe ViewModel events
         collectFlow(viewLifecycleOwner, viewModel.uiEvent) { event ->
@@ -315,6 +325,7 @@ class SecurityScene : SolidScene(),
         mPatternView = null
         mBiometricPrompt = null
         mLockoutText = null
+        mVerifyingText = null
         mHandler.removeCallbacks(mLockoutUpdateRunnable)
     }
 
