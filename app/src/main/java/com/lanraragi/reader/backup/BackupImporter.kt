@@ -60,10 +60,14 @@ class BackupImporter(
             restoreQuickSearches(backup.quickSearches)
             restoreSearchHistory(backup.searchHistory, ids)
             restoreAggregates(backup.dailyAggregates, ids)
+            // Last inside the transaction: a restored profile never exists
+            // without its "no key yet" entry, or a process death right after
+            // the commit made the boot check ask for keys that were never
+            // there. A rolled-back restore leaves only entries for ids no row
+            // has (the next profile with such an id writes its own key).
+            markProfilesKeyless(addedIds)
             Triple(archives.copy(profilesAdded = addedIds.size), ids, addedIds)
         }
-        // After the commit: a rolled-back restore leaves no key entries behind.
-        markProfilesKeyless(addedIds)
         // Entries from backups made before progress was kept per server belong to its active one.
         val legacyOwner = backup.profiles.firstOrNull { it.isActive }?.id?.let { ids[it] }
         mergeReadingProgress(backup.readingProgress, ids, legacyOwner)

@@ -130,6 +130,29 @@ class BackupRoundTripTest {
         assertEquals(3, dstProgress.getInt("$restored:old", 0))
     }
 
+    /**
+     * A restored profile is marked "no key yet" in the restore's own
+     * transaction: a process death right after the commit must not leave a
+     * profile without that entry (the boot check would then ask for a key).
+     */
+    @Test
+    fun restored_profiles_are_marked_keyless_inside_the_transaction() {
+        seedSource()
+        val backup = BackupCodec.read(ByteArrayInputStream(backupBytes()))
+        val marks = mutableListOf<Pair<Long, Boolean>>()
+        val importer = BackupImporter(
+            target, dstSettings, dstProgress,
+            relinker = DownloadRelinker { emptyList() },
+            currentRootUri = { null },
+            markKeyless = { id -> marks += id to target.inTransaction() },
+        )
+
+        runBlocking { importer.restore(backup) }
+
+        val restored = runBlocking { target.miscDao().getAllServerProfiles().single().id }
+        assertEquals(listOf(restored to true), marks)
+    }
+
     @Test
     fun restoring_merges_with_local_data_and_is_idempotent() {
         seedSource()

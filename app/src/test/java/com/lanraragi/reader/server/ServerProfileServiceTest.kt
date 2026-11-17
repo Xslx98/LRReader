@@ -34,6 +34,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -119,6 +120,22 @@ class ServerProfileServiceTest {
         assertEquals(active.id, ServerSession.getActiveProfileId())
         assertEquals(url, ServerSession.getServerUrl())
         assertEquals("new-key", ServerSession.getApiKey())
+    }
+
+    /** Entering a key while the re-enter-keys prompt is up clears it, as an edit already did. */
+    @Test
+    fun onboardingAndAdding_clearTheReauthPrompt_onceEveryProfileHasAKey() = runBlocking {
+        ServerSession.markReauthIfProfilesUnprotected(listOf(99L))
+        assertTrue(ServerSession.isNeedsReauthentication())
+
+        server.enqueue(MockResponse().setBody(SERVER_INFO))
+        service.connectAndActivate(url, "k1", allowCleartext = false)
+        assertFalse("the onboarded profile has its key", ServerSession.isNeedsReauthentication())
+
+        ServerSession.markReauthIfProfilesUnprotected(listOf(98L))
+        server.enqueue(MockResponse().setBody(SERVER_INFO))
+        service.connectAndAdd("Second", url.replace("127.0.0.1", "localhost"), "k2", allowCleartext = false)
+        assertFalse("the added profile has its key", ServerSession.isNeedsReauthentication())
     }
 
     @Test

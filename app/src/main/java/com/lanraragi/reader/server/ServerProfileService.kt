@@ -107,6 +107,7 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
                 row.copy(id = profileRepository.insertActive(row, storeKey))
             }
             awaitActive(committed)
+            ServerSession.markReauthIfProfilesUnprotected(profileRepository.getAllProfiles().map { it.id })
         } catch (e: LRRSecureStorageUnavailableException) {
             Log.e(TAG, "Secure storage unavailable on connect success", e)
             return Outcome.SecureStorageUnavailable
@@ -343,6 +344,8 @@ class ServerProfileService(private val scope: CoroutineScope? = null) {
         val profileRepository = ServiceRegistry.dataModule.profileRepository
         val added = try {
             val id = profileRepository.insertActive(row) { ServerSession.setApiKeyForProfile(it, finalKey) }
+            // A key was entered: the re-enter-keys prompt may no longer apply.
+            ServerSession.markReauthIfProfilesUnprotected(profileRepository.getAllProfiles().map { it.id })
             row.copy(id = id, isActive = true).also { awaitActive(it) }
         } catch (e: CancellationException) {
             throw e
