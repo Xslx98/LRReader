@@ -12187,7 +12187,6 @@ PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailActionHandler$onClick$1$int
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailActionHandler$onClick$1$intent$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailScene;Lcom/lanraragi/reader/ui/scene/gallery/detail/GalleryDetailViewModel;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions;->bindEditTagsButton(Landroid/widget/ImageButton;)V
-PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions;->bindPluginTagsButton(Landroid/widget/ImageButton;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions$$ExternalSyntheticLambda0;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions$$ExternalSyntheticLambda3;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/detail/DetailEditActions;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/DetailHeaderBinder;->$r8$lambda$HFCYnLO0vcLnbAh7VViFFBjNDig(Lcom/lanraragi/reader/ui/scene/gallery/detail/DetailHeaderBinder;)V
@@ -12498,11 +12497,6 @@ PLcom/lanraragi/reader/ui/scene/gallery/detail/PageThumbnailsViewModel$requestPa
 PLcom/lanraragi/reader/ui/scene/gallery/detail/PageThumbnailsViewModel$start$1;-><init>(Lcom/lanraragi/reader/ui/scene/gallery/detail/PageThumbnailsViewModel;JLjava/lang/String;Lkotlin/coroutines/Continuation;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/PageThumbnailsViewModel$start$1;->create(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Lkotlin/coroutines/Continuation;
 PLcom/lanraragi/reader/ui/scene/gallery/detail/PageThumbnailsViewModel$start$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;
-Lcom/lanraragi/reader/ui/scene/gallery/detail/PluginTagScene;
-PLcom/lanraragi/reader/ui/scene/gallery/detail/PluginTagScene;-><clinit>()V
-PLcom/lanraragi/reader/ui/scene/gallery/detail/PluginTagScene$Companion;-><init>()V
-PLcom/lanraragi/reader/ui/scene/gallery/detail/PluginTagScene$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-PLcom/lanraragi/reader/ui/scene/gallery/detail/PluginTagScene$Companion;->resultKey(Ljava/lang/String;)Ljava/lang/String;
 PLcom/lanraragi/reader/ui/scene/gallery/detail/PrefetchScrollListener;->$r8$lambda$-t3SQHb4569KuSQKkObnXCt-F3E(Lcom/lanraragi/reader/ui/scene/gallery/detail/PrefetchScrollListener;Landroidx/recyclerview/widget/RecyclerView;)V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/PrefetchScrollListener;-><clinit>()V
 PLcom/lanraragi/reader/ui/scene/gallery/detail/PrefetchScrollListener;-><init>(IILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V

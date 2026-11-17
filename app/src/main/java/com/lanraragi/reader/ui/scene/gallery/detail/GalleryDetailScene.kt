@@ -150,11 +150,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
         pageThumbsViewModel =
             ViewModelProvider(this)[PageThumbnailsViewModel::class.java]
         pageThumbs = DetailPageThumbs(this, viewModel, pageThumbsViewModel)
-        // A fragment result, not a scene result: scene requests do not survive a
-        // rotation on the plugin screen. Delivered once this scene is started again.
-        parentFragmentManager.setFragmentResultListener(PluginTagScene.resultKey(tag), this) { _, _ ->
-            requestRefresh()
-        }
 
         if (savedInstanceState == null) {
             firstView = true
@@ -300,7 +295,6 @@ class GalleryDetailScene : BaseScene(), View.OnClickListener,
 
         mEditTagsBtn = ViewUtils.requireView(tags, R.id.edit_tags_btn) as? android.widget.ImageButton
         mEditActions.bindEditTagsButton(mEditTagsBtn)
-        mEditActions.bindPluginTagsButton(ViewUtils.requireView(tags, R.id.plugin_tags_btn) as? android.widget.ImageButton)
 
         mProgress = ViewUtils.requireView(mainView, R.id.progress)
 
