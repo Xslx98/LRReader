@@ -35,6 +35,7 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.CompletableFuture
 import com.lanraragi.reader.download.DownloadDirCache
 import com.lanraragi.reader.ui.list.SelectionModel
+import com.lanraragi.reader.R
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -148,11 +149,11 @@ class DownloadsViewModel @JvmOverloads constructor(
                     val filtered = withContext(computeDispatcher) {
                         grouped.display.filter { it.label == label }
                     }
-                    // The active search applies to every emission, or the next
-                    // table change would republish the whole label list.
+                    // The active search and order apply to every emission, or
+                    // the next table change would republish the whole label list.
                     listLoaded = true
-                    _downloadList.value = applySearch(filtered)
                     _backList.value = filtered
+                    show(filtered)
                 }
         }
     }
@@ -334,7 +335,7 @@ class DownloadsViewModel @JvmOverloads constructor(
     // Filter / sort / search operations (moved from DownloadFilterHelper)
     // -------------------------------------------------------------------------
 
-    /** The latest filter or sort pass; an older one's result, or one cleared meanwhile, is dropped. */
+    /** The latest list shown or pass started; an older pass's result is dropped. */
     private var pass = 0
 
     /** A filter or sort pass finished (main thread): show its list; the list collector redraws. */
@@ -345,20 +346,38 @@ class DownloadsViewModel @JvmOverloads constructor(
     }
 
     private fun publishPass(id: Int, list: List<DownloadInfo>) {
-        if (id != pass || !_filter.value.applying) return
+        if (id != pass) return
         _downloadList.value = list
         _filter.update { it.copy(applying = false) }
     }
 
     /**
-     * Execute a filter-and-sort operation for the given menu item [id].
+     * Shows [labelList] (the current label's rows) through the search and
+     * the order. Without an order it shows at once; with one the list
+     * shown stays until the order pass lands (sizes are read on IO).
+     */
+    private fun show(labelList: List<DownloadInfo>) {
+        val searched = applySearch(labelList)
+        val order = _filter.value.order
+        if (order == null) {
+            pass++
+            _downloadList.value = searched
+            return
+        }
+        // Filter/sort the searched list, so a filter narrows the search rather than replacing it.
+        val executor = DownloadListInfosExecutor(searched, downloadManager)
+        executor.setDownloadSearchingListener(passCallback(++pass))
+        executor.executeFilterAndSort(order)
+    }
+
+    /**
+     * Applies the state filter or sort of menu item [id] and keeps it for
+     * every later list, until "All" or "Default" clears it.
      */
     fun gotoFilterAndSort(id: Int) {
-        _filter.update { it.copy(applying = true) }
-        // Filter/sort the searched list, so a filter narrows the search rather than replacing it.
-        val executor = DownloadListInfosExecutor(applySearch(_backList.value), downloadManager)
-        executor.setDownloadSearchingListener(passCallback(++pass))
-        executor.executeFilterAndSort(id)
+        val order = id.takeUnless { it == R.id.all || it == R.id.sort_by_default }
+        _filter.update { it.copy(order = order, applying = order != null) }
+        show(_backList.value)
     }
 
     private fun applySearch(list: List<DownloadInfo>): List<DownloadInfo> {
@@ -369,23 +388,22 @@ class DownloadsViewModel @JvmOverloads constructor(
     /**
      * Searches the current label's list for [query] (not the previous result,
      * which a new query must be able to widen); a blank query shows the whole
-     * label. Filtering runs here, on the caller's thread: a background pass
-     * could land after the collector had already published a newer label's
-     * list and overwrite it.
+     * label. The search runs here, on the caller's thread; an order pass after
+     * it is tagged, so an older pass landing later is dropped.
      */
     fun search(query: String?) {
         _filter.update { it.copy(query = query?.takeIf { q -> q.isNotBlank() }) }
-        _downloadList.value = applySearch(_backList.value)
+        show(_backList.value)
     }
 
     /**
-     * Drop the search when the Downloads page goes away; the label list shows
-     * again. A pass still running is forgotten too, so it cannot keep the
-     * label drawer locked.
+     * Drop the search and the order when the Downloads page goes away; the
+     * label list shows again. A pass still running is forgotten too, so it
+     * cannot keep the label drawer locked.
      */
     fun clearSearch() {
         _filter.value = DownloadsFilter()
-        _downloadList.value = _backList.value
+        show(_backList.value)
     }
 
     // -------------------------------------------------------------------------
