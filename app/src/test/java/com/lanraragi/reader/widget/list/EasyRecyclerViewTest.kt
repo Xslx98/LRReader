@@ -2,7 +2,6 @@ package com.lanraragi.reader.widget.list
 
 import android.app.Activity
 import android.os.Looper
-import android.os.Parcel
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
@@ -12,7 +11,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -30,7 +28,6 @@ import java.time.Duration
 class EasyRecyclerViewTest {
 
     private lateinit var list: EasyRecyclerView
-    private val events = mutableListOf<String>()
 
     private class Rows(private val count: Int) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         override fun getItemCount() = count
@@ -50,14 +47,6 @@ class EasyRecyclerViewTest {
         list.adapter = Rows(20)
         activity.setContentView(FrameLayout(activity).apply { addView(list, 1000, 1000) })
         idle()
-        list.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        list.setCustomCheckedListener(object : EasyRecyclerView.CustomChoiceListener {
-            override fun onIntoCustomChoice(view: EasyRecyclerView) { events += "into" }
-            override fun onOutOfCustomChoice(view: EasyRecyclerView) { events += "out" }
-            override fun onItemCheckedStateChanged(view: EasyRecyclerView, position: Int, id: Long, checked: Boolean) {
-                events += "$position/$id=$checked"
-            }
-        })
     }
 
     private fun idle(ms: Long = 0) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(ms))
@@ -70,51 +59,25 @@ class EasyRecyclerViewTest {
         ev.recycle()
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun checkingOutsideTheChoiceMode_throws() {
-        list.setItemChecked(1, true)
-    }
-
     @Test
-    fun theCustomChoiceMode_tracksChecksAndUnchecksEverythingOnTheWayOut() {
-        list.intoCustomChoiceMode()
-        assertTrue(list.isInCustomChoice)
-        list.setItemChecked(1, true)
-        list.toggleItemChecked(3)
-        list.toggleItemChecked(3)
-        list.toggleItemChecked(4)
-        assertEquals(2, list.checkedItemCount)
-        assertTrue(list.isItemChecked(1))
-        assertFalse(list.isItemChecked(3))
+    fun rowsAreDrawnCheckedFromTheProvider() {
+        val checked = mutableSetOf(1, 4)
+        list.checkedProvider = { it in checked }
+        assertTrue(row(1).isActivated)
         assertTrue(row(4).isActivated)
         assertFalse(row(3).isActivated)
 
-        list.outOfCustomChoiceMode()
-        assertFalse(list.isInCustomChoice)
-        assertEquals(0, list.checkedItemCount)
+        checked -= 4
+        checked += 3
+        list.refreshChecked()
         assertFalse(row(4).isActivated)
-        assertEquals(
-            listOf("into", "1/101=true", "3/103=true", "3/103=false", "4/104=true", "1/101=false", "4/104=false", "out"),
-            events
-        )
-    }
+        assertTrue(row(3).isActivated)
 
-    @Test
-    fun checkAll_checksEveryItemOnce() {
-        list.intoCustomChoiceMode()
-        list.setItemChecked(2, true)
-        list.checkAll()
-        assertEquals(20, list.checkedItemCount)
-        assertTrue(list.checkedItemPositions!!.get(19))
-    }
-
-    @Test
-    fun withoutAChoiceMode_nothingIsChecked() {
-        list.setChoiceMode(EasyRecyclerView.CHOICE_MODE_NONE)
-        assertNull(list.checkedItemPositions)
-        assertFalse(list.isItemChecked(0))
-        list.intoCustomChoiceMode()
-        assertFalse(list.isInCustomChoice)
+        // A row scrolled in is drawn as it attaches.
+        checked += 19
+        list.scrollToPosition(19)
+        idle()
+        assertTrue(row(19).isActivated)
     }
 
     @Test
@@ -160,27 +123,5 @@ class EasyRecyclerViewTest {
         touch(MotionEvent.ACTION_UP, 450f, down)
         idle(1000)
         assertEquals(-1, clicked)
-    }
-
-    @Test
-    fun savedState_keepsTheChoiceMode() {
-        list.intoCustomChoiceMode()
-        list.setItemChecked(1, true)
-        list.setItemChecked(6, true)
-        val parcel = Parcel.obtain()
-        list.onSaveInstanceState().writeToParcel(parcel, 0)
-        parcel.setDataPosition(0)
-        val restored = EasyRecyclerView.SavedState.CREATOR.createFromParcel(parcel)
-        parcel.recycle()
-
-        setUp()
-        events.clear()
-        list.onRestoreInstanceState(restored)
-        // The listener hears about the restored mode (audit 2026-11-15 B4).
-        assertEquals(listOf("into"), events)
-        assertTrue(list.isInCustomChoice)
-        assertEquals(2, list.checkedItemCount)
-        assertTrue(list.isItemChecked(6))
-        assertTrue(row(6).isActivated)
     }
 }
