@@ -28,6 +28,10 @@ class DownloadsEvents(
         collectFlow(owner, viewModel.downloadList) { list ->
             if (!scene.hasAdapter || scene.searching) return@collectFlow
             scene.listDispatcher.dispatchDiffUpdate(ArrayList(list))
+            // The selection is by arcid: rows that left the list take their
+            // checks with them, every other check stays on its row. After the
+            // diff, so a redraw maps the shown rows to their new positions.
+            viewModel.retainSelection(list)
             scene.updateTitle()
             scene.updatePaginationIndicator()
             scene.updateView()

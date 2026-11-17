@@ -26,6 +26,23 @@ class SelectionModelTest {
     }
 
     @Test
+    fun `entering with nothing picked stays on until a picked row is dropped`() {
+        val saved = SavedStateHandle()
+        val model = SelectionModel(saved)
+
+        model.enter()
+        assertEquals(SelectionState.Selecting(emptySet()), model.state)
+        assertEquals(SelectionState.Selecting(emptySet()), SelectionModel(saved).state)
+        model.retainAll(listOf("a"))
+        assertTrue(model.isActive)
+
+        model.toggle("a")
+        model.toggle("a")
+        assertEquals(SelectionState.None, model.state)
+        assertEquals(SelectionState.None, SelectionModel(saved).state)
+    }
+
+    @Test
     fun `select all adds every given row while selecting, and nothing otherwise`() {
         val model = SelectionModel()
         model.selectAll(listOf("a", "b"))

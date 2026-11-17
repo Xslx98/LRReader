@@ -16,7 +16,11 @@ sealed interface SelectionState {
     /** Not selecting. */
     data object None : SelectionState
 
-    /** Multi-select is on; [checked] (never empty) are the selected rows, in the order they were picked. */
+    /**
+     * Multi-select is on; [checked] are the selected rows, in the order they
+     * were picked. Empty only when the mode was entered with nothing picked
+     * ([SelectionModel.enter]).
+     */
     data class Selecting(val checked: Set<String>) : SelectionState
 }
 
@@ -58,6 +62,11 @@ class SelectionModel(
         update(if (selected) now + rowKey else now - rowKey)
     }
 
+    /** Turns the mode on with nothing picked yet (a screen with an explicit "select" button). */
+    fun enter() {
+        if (!isActive) update(emptySet(), stayOn = true)
+    }
+
     /** Selects every key of [rowKeys] (select all); keeps the order of the earlier picks first. */
     fun selectAll(rowKeys: Collection<String>) {
         if (!isActive) return
@@ -68,14 +77,15 @@ class SelectionModel(
     fun retainAll(rowKeys: Collection<String>) {
         if (!isActive) return
         val present = rowKeys.toHashSet()
-        update(checked.filterTo(LinkedHashSet()) { it in present })
+        val kept = checked.filterTo(LinkedHashSet()) { it in present }
+        if (kept.size != count) update(kept)
     }
 
     /** Leaves the mode. */
     fun exit() = update(emptySet())
 
-    private fun update(keys: Set<String>) {
-        val next = if (keys.isEmpty()) SelectionState.None else SelectionState.Selecting(LinkedHashSet(keys))
+    private fun update(keys: Set<String>, stayOn: Boolean = false) {
+        val next = if (keys.isEmpty() && !stayOn) SelectionState.None else SelectionState.Selecting(LinkedHashSet(keys))
         if (next == state) return
         state = next
         // A selection too large for the saved-state bundle is not kept (the
@@ -85,8 +95,9 @@ class SelectionModel(
     }
 
     private fun restored(): SelectionState {
+        // null = not selecting; an empty list = on with nothing picked.
         val keys = saved?.get<ArrayList<String>>(key)
-        return if (keys.isNullOrEmpty()) SelectionState.None else SelectionState.Selecting(LinkedHashSet(keys))
+        return if (keys == null) SelectionState.None else SelectionState.Selecting(LinkedHashSet(keys))
     }
 
     companion object {

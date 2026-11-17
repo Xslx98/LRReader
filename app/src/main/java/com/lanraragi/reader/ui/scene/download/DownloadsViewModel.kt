@@ -2,6 +2,7 @@ package com.lanraragi.reader.ui.scene.download
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.SavedStateHandle
 import com.lanraragi.reader.ServiceRegistry
 import com.lanraragi.reader.settings.DownloadSettings
 import com.lanraragi.reader.download.search.DownloadSearchCallback
@@ -32,6 +33,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import java.util.concurrent.CompletableFuture
 import com.lanraragi.reader.download.DownloadDirCache
+import com.lanraragi.reader.ui.list.SelectionModel
 
 /**
  * Sealed interface representing all download-related UI events forwarded from
@@ -55,9 +57,14 @@ sealed interface DownloadUiEvent {
  * @param computeDispatcher runs the O(N) grouping and label filter of every
  *   downloads-list emission off the main thread (audit C17).
  */
-class DownloadsViewModel(
+class DownloadsViewModel @JvmOverloads constructor(
+    // First, so the ViewModel factory finds the (SavedStateHandle) constructor.
+    saved: SavedStateHandle = SavedStateHandle(),
     private val computeDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel(), DownloadInfoListener {
+
+    /** The list's multi-select, by arcid (tank cards by TANK_ id); saved with the screen. */
+    val selection = SelectionModel(saved)
 
     /**
      * The app's [DownloadManager] singleton. Exposed so [DownloadsScene]
@@ -142,6 +149,7 @@ class DownloadsViewModel(
                     }
                     // The active search applies to every emission, or the next
                     // table change would republish the whole label list.
+                    listLoaded = true
                     _downloadList.value = applySearch(filtered)
                     _backList.value = filtered
                 }
@@ -215,6 +223,22 @@ class DownloadsViewModel(
     // -------------------------------------------------------------------------
 
     private val _downloadList = MutableStateFlow<List<DownloadInfo>>(emptyList())
+
+    /**
+     * Room has published the list at least once. Until then [downloadList]
+     * holds its empty start value, which says nothing about which rows exist
+     * (a restored selection must not be pruned against it).
+     */
+    private var listLoaded = false
+
+    /**
+     * Drops the checks of rows that left [list], the list just shown. Not
+     * before Room's first emission: a selection restored after process death
+     * would be wiped against the empty start value.
+     */
+    fun retainSelection(list: List<DownloadInfo>) {
+        if (listLoaded) selection.retainAll(list.map { it.arcid })
+    }
 
     /** The current (possibly filtered/sorted) list of downloads for the active label. */
     val downloadList: StateFlow<List<DownloadInfo>> = _downloadList.asStateFlow()

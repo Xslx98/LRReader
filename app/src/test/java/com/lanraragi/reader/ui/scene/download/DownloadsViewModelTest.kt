@@ -28,6 +28,9 @@ import kotlinx.coroutines.cancel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import androidx.lifecycle.SavedStateHandle
+import com.lanraragi.reader.ui.list.SelectionModel
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -418,6 +421,28 @@ class DownloadsViewModelTest {
             computeVm.downloadManager.removeDownloadInfoListener(computeVm)
             computeVm.viewModelScope.cancel()
         }
+    }
+
+    @Test
+    fun `a restored selection is not pruned before Room's first list`() = runBlocking {
+        val infoA = DownloadInfo().apply {
+            arcid = "a"; title = "A"; label = null; state = DownloadState.NONE; time = 1L
+        }
+        ServiceRegistry.dataModule.downloadDbRepository.putDownloadInfo(infoA)
+        val saved = SavedStateHandle()
+        SelectionModel(saved).apply { toggle("a"); toggle("gone") }
+
+        val compute = StandardTestDispatcher()
+        val restored = DownloadsViewModel(saved, compute)
+        // The empty start value says nothing about which rows exist.
+        restored.retainSelection(restored.downloadList.value)
+        assertEquals(setOf("a", "gone"), restored.selection.checked)
+
+        compute.scheduler.advanceUntilIdle()
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        assertEquals(listOf("a"), restored.downloadList.value.map { it.arcid })
+        restored.retainSelection(restored.downloadList.value)
+        assertEquals(setOf("a"), restored.selection.checked)
     }
 
     @Test
