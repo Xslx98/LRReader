@@ -339,33 +339,50 @@ object AppLockCredentials {
     }
 
     /**
-     * Whether an app lock is set, FAILING CLOSED: true whenever a lock
-     * cannot be ruled out (audit 2026-10-06c SEC-01). Reads the plain mirror
-     * ([lockEnabledHint]). Without it — first launch after upgrading from a
+     * The app lock's state, FAILING CLOSED: [LockState.Unknown] (locked)
+     * whenever a lock cannot be ruled out (audit 2026-10-06c SEC-01). Reads
+     * the plain mirror ([lockEnabledHint]), so it needs no keystore work on
+     * the launch path. Without it — first launch after upgrading from a
      * version that never wrote it (<= v1.26), when the store is slow or
      * cannot be opened — it decides from what is readable without the
      * keystore (see [patternEvidenceWithoutKeystore]) and writes the mirror.
      * Only a legacy store that is still to be migrated cannot be read that
      * way: the store gets its bounded chance to open (which writes the
-     * mirror), and if it does not, the answer is "locked". The lock screen
+     * mirror), and if it does not, the answer is Unknown. The lock screen
      * then offers its retry and, once the store failed, its reset, and lets
      * the user in as soon as the store opens without a pattern.
      *
-     * False is therefore always a definite answer, which AppLockGate
-     * may keep for the whole foreground session.
+     * [LockState.None] is therefore always a definite answer, which
+     * AppLockGate may keep for the whole foreground session. Whether a
+     * pattern is keystore-bound is read from its plain flag, without waiting.
      */
     @JvmStatic
-    fun isLockSetOrUnknown(): Boolean {
+    fun lockState(): LockState {
+        // The oldest versions' plaintext pattern locks until the boot step
+        // hashes it; checked first so no mirror is ever written as "unlocked" for it.
+        if (hasLegacyPlaintextPattern()) return LockState.Pattern(keystoreBound = false)
         val hint = lockEnabledHint()
-        if (hint != null) return hint
-        val evidence = patternEvidenceWithoutKeystore()
-        if (evidence != null) {
-            rememberLockState(evidence)
-            return evidence
+        val locked: Boolean? = hint ?: patternEvidenceWithoutKeystore()?.also { rememberLockState(it) }
+            ?: run {
+                store.awaitInit()
+                lockEnabledHint()
+            }
+        return when (locked) {
+            false -> LockState.None
+            true -> LockState.Pattern(
+                keystoreBound = store.fastPlainPrefs()?.getBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) == true
+            )
+            null -> LockState.Unknown
         }
-        store.awaitInit()
-        return lockEnabledHint() ?: true
     }
+
+    /** Settings key of the oldest versions' plaintext pattern (only migrated and removed now). */
+    internal const val KEY_LEGACY_PLAINTEXT_PATTERN = "security"
+
+    internal fun legacyPlaintextPattern(): String =
+        com.lanraragi.reader.Settings.getString(KEY_LEGACY_PLAINTEXT_PATTERN, "").orEmpty()
+
+    internal fun hasLegacyPlaintextPattern(): Boolean = legacyPlaintextPattern().isNotEmpty()
 
     /**
      * Whether a pattern is stored, from plaintext only: true / false, or null
@@ -422,7 +439,7 @@ object AppLockCredentials {
     fun canOfferCredentialReset(): Boolean =
         store.secureStorageState() == SecureStorageState.UNAVAILABLE &&
             store.countStoreFailureShown() >= SecureCredentialStore.RESET_OFFER_MIN_FAILED_LAUNCHES &&
-            !isLockSetOrUnknown()
+            !lockState().isLocked
 
     /**
      * Whether the lock screen's "store unavailable" prompt may offer the
@@ -438,8 +455,8 @@ object AppLockCredentials {
     /**
      * Whether an app lock is set, from what is readable without the
      * keystore: true / false, or null when that cannot be told (a legacy
-     * store not yet migrated and no mirror). Unlike [isLockSetOrUnknown]
-     * it does not fail closed; for wording only, never for gating.
+     * store not yet migrated and no mirror). Unlike [lockState] it does not
+     * fail closed or wait; for wording only, never for gating.
      */
     @JvmStatic
     fun lockStateWithoutKeystore(): Boolean? = lockEnabledHint() ?: patternEvidenceWithoutKeystore()
