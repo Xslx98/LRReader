@@ -12075,13 +12075,11 @@ HSPLcom/lanraragi/reader/ui/scene/LegacyLockRemovedNotice;-><clinit>()V
 HSPLcom/lanraragi/reader/ui/scene/LegacyLockRemovedNotice;-><init>()V
 HSPLcom/lanraragi/reader/ui/scene/LegacyLockRemovedNotice;->showIfPending(Landroid/app/Activity;)V
 Lcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;
-HSPLcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;-><init>(Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+HSPLcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;-><init>(Lcom/lanraragi/reader/ui/list/SelectionModel;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+HSPLcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;->attach(Lcom/lanraragi/reader/widget/list/EasyRecyclerView;)V
 HSPLcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;->attachDragSelect(Lcom/lanraragi/reader/widget/list/EasyRecyclerView;Lkotlin/jvm/functions/Function1;)V
 HSPLcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;->exit()V
-HSPLcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;->getChoiceListener()Lcom/lanraragi/reader/widget/list/EasyRecyclerView$CustomChoiceListener;
 HSPLcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;->isActive()Z
-Lcom/lanraragi/reader/ui/scene/ListMultiSelectHelper$ChoiceListenerImpl;
-HSPLcom/lanraragi/reader/ui/scene/ListMultiSelectHelper$ChoiceListenerImpl;-><init>(Lcom/lanraragi/reader/ui/scene/ListMultiSelectHelper;)V
 Lcom/lanraragi/reader/ui/scene/SecurityScene;
 Lcom/lanraragi/reader/ui/scene/ServerConfigScene;
 HSPLcom/lanraragi/reader/ui/scene/ServerConfigScene;->$r8$lambda$rZ7sJWGiJWQQsOT1ifHH4vIMEnE(Lcom/lanraragi/reader/ui/scene/ServerConfigScene;Ljava/lang/Boolean;)V

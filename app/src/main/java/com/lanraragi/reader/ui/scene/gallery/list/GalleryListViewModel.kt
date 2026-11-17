@@ -17,6 +17,7 @@ import com.lanraragi.reader.server.ServerConnection
 import com.lanraragi.reader.server.ServerConnections
 import com.lanraragi.reader.tankoubon.TankRepository
 import com.lanraragi.reader.ui.TankMembershipSyncFactory
+import com.lanraragi.reader.ui.list.SelectionModel
 import com.lanraragi.reader.download.DownloadRequests
 import com.lanraragi.reader.download.DownloadManager
 import com.lanraragi.reader.client.api.friendlyError
@@ -78,6 +79,9 @@ class GalleryListViewModel(
     fun setSearchChrome(chrome: SearchChrome) {
         saved[KEY_SEARCH_CHROME] = chrome
     }
+
+    /** The list's multi-select, by arcid; saved with the screen like [searchChrome]. */
+    val selection = SelectionModel(saved)
 
     // -------------------------------------------------------------------------
     // Service accessors (read-through to ServiceRegistry so the Scene does not

@@ -3,7 +3,6 @@ package com.lanraragi.reader.ui.scene.gallery.list
 import com.lanraragi.reader.archive.BatchOp
 import android.app.Activity
 import android.view.View
-import com.lanraragi.reader.widget.list.EasyRecyclerView
 import com.lanraragi.framework.util.ViewUtils
 import com.lanraragi.reader.R
 import com.lanraragi.reader.server.ServerSession
@@ -49,13 +48,16 @@ object GalleryListSelection {
             override val downloadManager: DownloadManager
                 get() = scene.downloadManager
 
-            override fun selectedArchives(): List<Archive> =
-                scene.multiSelectHelper?.checkedPositions()
-                    ?.mapNotNull { scene.mHelper?.getDataAtEx(it) }
-                    .orEmpty()
-                    // select-all can still visually check tank rows; they must
-                    // never reach a batch op
-                    .filter { isSelectable(scene, it) }
+            override fun selectedArchives(): List<Archive> {
+                val checked = scene.multiSelectHelper?.checkedKeys.orEmpty()
+                if (checked.isEmpty()) return emptyList()
+                // In list order, once per arcid (a page can repeat a row
+                // further back than the append de-dup looks); a row that is
+                // not selectable here never reaches a batch op.
+                return scene.mHelper?.data.orEmpty()
+                    .filter { it.arcid in checked && isSelectable(scene, it) }
+                    .distinctBy { it.arcid }
+            }
 
             override fun activeProfileId(): Long = ServerSession.getActiveProfileId()
             override fun isSelectionActive(): Boolean = scene.multiSelectHelper?.isActive == true
@@ -81,17 +83,18 @@ object GalleryListSelection {
             override fun isTankMode(): Boolean = scene.isTankMode
         })
         val multiSelect = ListMultiSelectHelper(
+            model = scene.viewModel.selection,
             recyclerView = { if (scene.isListViewCreated) scene.recyclerView else null },
+            keyAt = { position -> scene.mHelper?.getDataAtEx(position)?.arcid },
+            selectableKeys = {
+                scene.mHelper?.data.orEmpty().filter { isSelectable(scene, it) }.map { it.arcid }
+            },
             longClickListener = { scene },
             onModeChanged = { active -> scene.batchOpsHelper?.onModeChanged(active) },
             onCheckedChanged = { count -> scene.batchOpsHelper?.onCheckedChanged(count) },
         )
         scene.multiSelectHelper = multiSelect
-        // intoCustomChoiceMode() is a no-op unless the custom choice mode is
-        // configured, and it dispatches to the listener without a null check —
-        // both calls below are required before the mode can be entered.
-        recyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM)
-        recyclerView.setCustomCheckedListener(multiSelect.choiceListener)
+        multiSelect.attach(recyclerView)
         // Unselectable rows are passed over by a drag, never checked.
         multiSelect.attachDragSelect(recyclerView) { position ->
             scene.mHelper?.getDataAtEx(position)?.let { isSelectable(scene, it) } ?: false

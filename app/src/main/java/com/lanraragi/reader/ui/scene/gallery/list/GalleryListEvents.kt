@@ -140,10 +140,8 @@ class GalleryListEvents(private val scene: GalleryListScene) {
     }
 
     private fun removeArchiveLocally(arcid: String) {
-        // Removal left-shifts every later adapter position but the checked
-        // SparseArray does not remap — an in-flight multi-select must not
-        // survive it (same rationale as the getPageData refresh funnel).
-        scene.multiSelectHelper?.exit()
+        // The selection is by arcid: only the removed row's check goes.
+        scene.multiSelectHelper?.forget(arcid)
         scene.mHelper?.removeRow(arcid)
     }
 }
