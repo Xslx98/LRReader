@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.util.concurrent.CompletableFuture
 import com.lanraragi.reader.download.DownloadDirCache
@@ -253,15 +254,10 @@ class DownloadsViewModel @JvmOverloads constructor(
     // the search key, possibly synchronously)
     // -------------------------------------------------------------------------
 
-    private val _searching = MutableStateFlow(false)
+    private val _filter = MutableStateFlow(DownloadsFilter())
 
-    /** Whether a search/filter operation is currently active. */
-    val searching: StateFlow<Boolean> = _searching.asStateFlow()
-
-    private val _searchKey = MutableStateFlow<String?>(null)
-
-    /** The current search query text. */
-    val searchKey: StateFlow<String?> = _searchKey.asStateFlow()
+    /** The list's search and filter pass; see [DownloadsFilter]. */
+    val filter: StateFlow<DownloadsFilter> = _filter.asStateFlow()
 
     init {
         downloadManager.addDownloadInfoListener(this)
@@ -335,96 +331,60 @@ class DownloadsViewModel @JvmOverloads constructor(
     }
 
     // -------------------------------------------------------------------------
-    // Search
-    // -------------------------------------------------------------------------
-
-    /**
-     * Sets the search key and marks search as active.
-     */
-    fun setSearchKey(key: String?) {
-        _searchKey.value = key
-    }
-
-    fun setSearching(isSearching: Boolean) {
-        _searching.value = isSearching
-    }
-
-    // -------------------------------------------------------------------------
-    // Filter loading state
-    // -------------------------------------------------------------------------
-
-    private val _filterLoading = MutableStateFlow(false)
-
-    /** Whether a filter/sort/search operation is in progress. */
-    val filterLoading: StateFlow<Boolean> = _filterLoading.asStateFlow()
-
-    // -------------------------------------------------------------------------
-    // One-shot events for filter/search completion
-    // -------------------------------------------------------------------------
-
-    private val _filterSearchDone = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-
-    /** Emitted when a filter/sort or search operation completes; Scene should update. */
-    val filterSearchDone: SharedFlow<Unit> = _filterSearchDone.asSharedFlow()
-
-    // -------------------------------------------------------------------------
     // Filter / sort / search operations (moved from DownloadFilterHelper)
     // -------------------------------------------------------------------------
 
-    /** Internal callback that routes results back to ViewModel state flows. */
-    private val filterCallback = object : DownloadSearchCallback {
-        override fun onDownloadSearchSuccess(mList: List<DownloadInfo>) {
-            _downloadList.value = mList
-            _filterLoading.value = false
-            _searching.value = false
-            _filterSearchDone.tryEmit(Unit)
-        }
+    /** The latest filter or sort pass; an older one's result, or one cleared meanwhile, is dropped. */
+    private var pass = 0
 
-        override fun onDownloadListHandleSuccess(mList: List<DownloadInfo>) {
-            _downloadList.value = mList
-            _filterLoading.value = false
-            _filterSearchDone.tryEmit(Unit)
-        }
+    /** A filter or sort pass finished (main thread): show its list; the list collector redraws. */
+    private fun passCallback(id: Int) = object : DownloadSearchCallback {
+        override fun onDownloadSearchSuccess(mList: List<DownloadInfo>) = publishPass(id, mList)
+        override fun onDownloadListHandleSuccess(mList: List<DownloadInfo>) = publishPass(id, mList)
+        override fun onDownloadSearchFailed(mList: List<DownloadInfo>) = publishPass(id, mList)
+    }
 
-        override fun onDownloadSearchFailed(mList: List<DownloadInfo>) {
-            _downloadList.value = mList
-            _filterLoading.value = false
-            _searching.value = false
-            _filterSearchDone.tryEmit(Unit)
-        }
+    private fun publishPass(id: Int, list: List<DownloadInfo>) {
+        if (id != pass || !_filter.value.applying) return
+        _downloadList.value = list
+        _filter.update { it.copy(applying = false) }
     }
 
     /**
      * Execute a filter-and-sort operation for the given menu item [id].
      */
     fun gotoFilterAndSort(id: Int) {
-        _filterLoading.value = true
+        _filter.update { it.copy(applying = true) }
         // Filter/sort the searched list, so a filter narrows the search rather than replacing it.
         val executor = DownloadListInfosExecutor(applySearch(_backList.value), downloadManager)
-        executor.setDownloadSearchingListener(filterCallback)
+        executor.setDownloadSearchingListener(passCallback(++pass))
         executor.executeFilterAndSort(id)
     }
 
     private fun applySearch(list: List<DownloadInfo>): List<DownloadInfo> {
-        val key = _searchKey.value
-        return if (key.isNullOrBlank()) list else list.filter { DownloadSearchMatcher.matches(it, key) }
+        val key = _filter.value.query ?: return list
+        return list.filter { DownloadSearchMatcher.matches(it, key) }
     }
 
     /**
-     * Apply [searchKey] to the current label's list (not the previous result,
-     * which a new key must be able to widen). Filtering runs here, on the
-     * caller's thread: a background pass could land after the collector had
-     * already published a newer label's list and overwrite it.
+     * Searches the current label's list for [query] (not the previous result,
+     * which a new query must be able to widen); a blank query shows the whole
+     * label. Filtering runs here, on the caller's thread: a background pass
+     * could land after the collector had already published a newer label's
+     * list and overwrite it.
      */
-    fun startSearching(searchKey: String) {
-        _searchKey.value = searchKey
-        filterCallback.onDownloadSearchSuccess(applySearch(_backList.value))
+    fun search(query: String?) {
+        _filter.update { it.copy(query = query?.takeIf { q -> q.isNotBlank() }) }
+        _downloadList.value = applySearch(_backList.value)
     }
 
-    /** Drop the search when the Downloads page goes away; the label list shows again. */
+    /**
+     * Drop the search when the Downloads page goes away; the label list shows
+     * again. A pass still running is forgotten too, so it cannot keep the
+     * label drawer locked.
+     */
     fun clearSearch() {
-        _searchKey.value = null
-        _searching.value = false
+        _filter.value = DownloadsFilter()
         _downloadList.value = _backList.value
     }
 

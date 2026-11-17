@@ -25,11 +25,34 @@ class DownloadListDispatcher(
      */
     private var lastProgressMap: Map<String, ProgressSnapshot> = emptyMap()
 
-    /** Dispatches the change from the last snapshot to [newList] to the adapter (see [DownloadListDiff]). */
+    /**
+     * Dispatches the change from the last snapshot to [newList] to the adapter
+     * (see [DownloadListDiff]). A paginated list rebinds instead: the adapter
+     * holds one page, and full-list positions would notify the wrong rows or
+     * past its end.
+     */
     fun dispatchDiffUpdate(newList: MutableList<DownloadInfo>) {
         val old = lastSnapshot
         lastSnapshot = newList
-        adapter()?.let { DownloadListDiff.dispatch(old, newList, AdapterListUpdateCallback(it)) }
+        val adapter = adapter() ?: return
+        dispatchTo(adapter, old, newList, paged = viewModel.isPaginated(old.size) || viewModel.isPaginated(newList.size))
+    }
+
+    companion object {
+        /** Notifies [adapter] of [old] -> [new]; a [paged] adapter holds one page and rebinds. */
+        @android.annotation.SuppressLint("NotifyDataSetChanged")
+        internal fun dispatchTo(
+            adapter: RecyclerView.Adapter<*>,
+            old: List<DownloadInfo>,
+            new: List<DownloadInfo>,
+            paged: Boolean,
+        ) {
+            if (paged) {
+                adapter.notifyDataSetChanged()
+            } else {
+                DownloadListDiff.dispatch(old, new, AdapterListUpdateCallback(adapter))
+            }
+        }
     }
 
     /**
