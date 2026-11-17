@@ -76,9 +76,27 @@ class FingerprintUnlockTest {
     }
 
     @Test
+    fun thePatternIsCheckedOffTheMainThread_andAPatternMeanwhileIsIgnored() = runTest(UnconfinedTestDispatcher()) {
+        AppLockCredentials.setPattern("0147")
+        val check = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler)
+        val vm = SecurityViewModel(check)
+        val received = events(vm)
+
+        vm.onPatternDetected("0147")
+        assertTrue("the check runs on its own dispatcher", vm.verifying.value)
+        assertEquals(emptyList<SecurityUiEvent>(), received)
+        vm.onPatternDetected("9999")
+
+        check.scheduler.advanceUntilIdle()
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        assertFalse(vm.verifying.value)
+        assertEquals(listOf<SecurityUiEvent>(SecurityUiEvent.PatternVerified), received)
+    }
+
+    @Test
     fun boundKeyCipherUnlocks() = runTest(UnconfinedTestDispatcher()) {
         bindPattern()
-        val vm = SecurityViewModel()
+        val vm = SecurityViewModel(kotlinx.coroutines.Dispatchers.Unconfined)
         val received = events(vm)
 
         val start = vm.startFingerprintUnlock()
@@ -91,7 +109,7 @@ class FingerprintUnlockTest {
     @Test
     fun promptSuccessWithoutAWorkingCipherDoesNotUnlock() = runTest(UnconfinedTestDispatcher()) {
         bindPattern()
-        val vm = SecurityViewModel()
+        val vm = SecurityViewModel(kotlinx.coroutines.Dispatchers.Unconfined)
         val received = events(vm)
 
         // No CryptoObject at all (the old bare prompt).
@@ -112,7 +130,7 @@ class FingerprintUnlockTest {
     fun invalidatedKeyTurnsFingerprintOffAndKeepsThePattern() = runTest(UnconfinedTestDispatcher()) {
         bindPattern()
         SecureCredentialStore.patternKeyLoader = { throw KeyPermanentlyInvalidatedException() }
-        val vm = SecurityViewModel()
+        val vm = SecurityViewModel(kotlinx.coroutines.Dispatchers.Unconfined)
         val received = events(vm)
 
         assertEquals(FingerprintStart.TurnedOff(R.string.security_fingerprint_changed), vm.startFingerprintUnlock())

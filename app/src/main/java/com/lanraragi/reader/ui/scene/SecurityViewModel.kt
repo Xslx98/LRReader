@@ -4,6 +4,7 @@ import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.lanraragi.reader.R
 import com.lanraragi.reader.settings.SecuritySettings
 import com.lanraragi.reader.security.AppLockCredentials
@@ -14,6 +15,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.crypto.Cipher
 
 /**
@@ -24,7 +29,33 @@ import javax.crypto.Cipher
  * and View references.
  * The ViewModel owns verification logic and lockout state.
  */
-class SecurityViewModel : ViewModel() {
+class SecurityViewModel @JvmOverloads constructor(
+    /** Runs the pattern checks: PBKDF2 at 200,000 iterations takes a visible moment on a phone. */
+    private val verifyDispatcher: CoroutineDispatcher = Dispatchers.Default,
+) : ViewModel() {
+
+    private val _verifying = MutableStateFlow(false)
+
+    /**
+     * A pattern check runs. The lock screen takes no new pattern meanwhile;
+     * the check used to run on the main thread and froze the screen until
+     * it answered, right or wrong.
+     */
+    val verifying: StateFlow<Boolean> = _verifying.asStateFlow()
+
+    /** Runs [check] on [verifyDispatcher], then [then] with its answer on the main thread. */
+    private fun verifyOffMain(check: () -> Boolean, then: (Boolean) -> Unit) {
+        if (_verifying.value) return
+        _verifying.value = true
+        viewModelScope.launch {
+            val ok = try {
+                withContext(verifyDispatcher) { check() }
+            } finally {
+                _verifying.value = false
+            }
+            then(ok)
+        }
+    }
 
     companion object {
         private const val TAG = "SecurityViewModel"
@@ -157,10 +188,8 @@ class SecurityViewModel : ViewModel() {
             _uiEvent.tryEmit(SecurityUiEvent.NeedBiometricVerification(patternString))
         } else {
             // PBKDF2-only: verify directly
-            if (SecuritySettings.verifyPattern(patternString)) {
-                _uiEvent.tryEmit(SecurityUiEvent.PatternVerified)
-            } else {
-                onVerificationFailed()
+            verifyOffMain({ SecuritySettings.verifyPattern(patternString) }) { ok ->
+                if (ok) _uiEvent.tryEmit(SecurityUiEvent.PatternVerified) else onVerificationFailed()
             }
         }
     }
@@ -170,10 +199,12 @@ class SecurityViewModel : ViewModel() {
      * The Scene calls this with the result from BiometricPrompt.
      */
     fun onBiometricVerificationResult(patternString: String, cipher: Cipher?) {
-        if (cipher != null && AppLockCredentials.verifyPatternWithCipher(patternString, cipher)) {
-            _uiEvent.tryEmit(SecurityUiEvent.PatternVerified)
-        } else {
+        if (cipher == null) {
             onVerificationFailed()
+            return
+        }
+        verifyOffMain({ AppLockCredentials.verifyPatternWithCipher(patternString, cipher) }) { ok ->
+            if (ok) _uiEvent.tryEmit(SecurityUiEvent.PatternVerified) else onVerificationFailed()
         }
     }
 
@@ -188,7 +219,11 @@ class SecurityViewModel : ViewModel() {
             _uiEvent.tryEmit(SecurityUiEvent.PatternUnverifiable)
             return
         }
-        if (SecuritySettings.verifyPattern(patternString)) {
+        verifyOffMain({ SecuritySettings.verifyPattern(patternString) }) { ok ->
+            if (!ok) {
+                onVerificationFailed()
+                return@verifyOffMain
+            }
             AppLockCredentials.unbindPatternFromKeystore()
             // Already off when the lock screen switched it off on resume
             // (startFingerprintUnlock) and told the user: do not tell twice.
@@ -197,8 +232,6 @@ class SecurityViewModel : ViewModel() {
             _uiEvent.tryEmit(
                 if (wasOn) SecurityUiEvent.VerifiedAfterFingerprintChange else SecurityUiEvent.PatternVerified
             )
-        } else {
-            onVerificationFailed()
         }
     }
 

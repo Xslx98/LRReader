@@ -49,6 +49,16 @@
                 android:visibility="gone" />
 
             <TextView
+                android:id="@+id/verifying_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:text="@string/pattern_verifying"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/lockout_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
