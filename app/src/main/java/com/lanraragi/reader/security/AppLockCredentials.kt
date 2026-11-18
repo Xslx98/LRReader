@@ -1,6 +1,7 @@
 package com.lanraragi.reader.security
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -17,6 +18,7 @@ import com.lanraragi.reader.server.CredentialStoreLayout.KEY_LOCK_ENABLED
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_ENCRYPTED
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_FAIL_COUNT
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_HASH_V2
+import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_HASH_V3
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_IV
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_KEYSTORE_BOUND
 import com.lanraragi.reader.server.CredentialStoreLayout.KEY_PATTERN_LOCKOUT_UNTIL_LEGACY
@@ -51,6 +53,9 @@ object AppLockCredentials {
     private const val TAG = "AppLockCredentials"
     private const val PBKDF2_ITERATIONS_V1 = 100_000  // Legacy, kept for migration
     private const val PBKDF2_ITERATIONS = 200_000
+
+    /** The fast verifier's stretch; the keystore HMAC over it is what resists brute force. */
+    private const val PBKDF2_ITERATIONS_V3 = 10_000
     private const val PBKDF2_KEY_BITS = 256
     private const val AES_GCM_TAG_BITS = 128
     private const val LOCKOUT_THRESHOLD_FIRST = 5
@@ -208,13 +213,14 @@ object AppLockCredentials {
 
     /**
      * Whether the pattern can be checked without the keystore key, i.e. a
-     * plain PBKDF2 hash is stored. False only for keystore-bound patterns
+     * plain verifier (fast or PBKDF2) is stored. False only for keystore-bound patterns
      * saved before that hash was kept.
      */
     @JvmStatic
     fun canVerifyWithoutKeystore(): Boolean {
         store.awaitInit()
-        return store.prefs?.contains(KEY_PATTERN_HASH_V2) == true
+        val prefs = store.prefs ?: return false
+        return prefs.contains(KEY_PATTERN_HASH_V2) || prefs.contains(KEY_PATTERN_HASH_V3)
     }
 
     /**
@@ -309,7 +315,7 @@ object AppLockCredentials {
         val encryptedStr = prefs.getString(KEY_PATTERN_ENCRYPTED, null) ?: return false
         return try {
             val decrypted = authenticatedCipher.doFinal(Base64.decode(encryptedStr, Base64.NO_WRAP))
-            val plainStr = prefs.getString(KEY_PATTERN_HASH_V2, null)
+            val plainStr = prefs.getString(KEY_PATTERN_HASH_V2, null) ?: prefs.getString(KEY_PATTERN_HASH_V3, null)
             plainStr == null || MessageDigest.isEqual(decrypted, Base64.decode(plainStr, Base64.NO_WRAP))
         } catch (e: Exception) {
             Log.e(TAG, "Fingerprint cipher did not decrypt the pattern blob", e)
@@ -491,6 +497,7 @@ object AppLockCredentials {
     fun resetAppLockAndCredentials(context: Context) {
         store.wipe(context)
         deletePatternKeystoreKey()
+        PatternMacKey.delete()
         store.fastPlainPrefs()?.edit(commit = true) {
             putBoolean(KEY_LOCK_ENABLED, false)
             remove(KEY_CONFIGURED_HINT)
@@ -506,10 +513,10 @@ object AppLockCredentials {
     }
 
     /**
-     * Hash [pattern] with PBKDF2WithHmacSHA256 (200K iterations) and persist to encrypted prefs.
+     * Store [pattern] as the fast verifier ([KEY_PATTERN_HASH_V3]: the
+     * keystore HMAC of a 10,000-round PBKDF2), or, when the keystore cannot
+     * make the HMAC key, as the 200,000-round PBKDF2 hash ([KEY_PATTERN_HASH_V2]).
      * Pass null or empty string to clear the pattern.
-     *
-     * For PBKDF2-only mode (no biometrics), stores the hash directly.
      */
     @JvmStatic
     @Throws(LRRSecureStorageUnavailableException::class)
@@ -518,6 +525,7 @@ object AppLockCredentials {
         if (pattern.isNullOrEmpty()) {
             prefs.edit {
                 remove(KEY_PATTERN_HASH_V2)
+                remove(KEY_PATTERN_HASH_V3)
                 remove(KEY_PATTERN_SALT)
                 remove(KEY_PATTERN_ENCRYPTED)
                 remove(KEY_PATTERN_IV)
@@ -527,18 +535,15 @@ object AppLockCredentials {
                 putBoolean(KEY_LOCK_ENABLED, false)
             }
             deletePatternKeystoreKey()
+            PatternMacKey.delete()
             resetFailures()
             return
         }
-        val salt = ByteArray(16)
-        SecureRandom().nextBytes(salt)
-        val patChars = pattern.toCharArray()
-        val spec = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
+        val salt = newSalt()
         try {
-            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-            val hash = factory.generateSecret(spec).encoded
+            val verifier = newVerifier(pattern, salt)
             prefs.edit {
-                putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(hash, Base64.NO_WRAP))
+                putVerifier(verifier)
                 putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
                 remove(KEY_PATTERN_ENCRYPTED)
                 remove(KEY_PATTERN_IV)
@@ -547,17 +552,14 @@ object AppLockCredentials {
                 putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false)
                 putBoolean(KEY_LOCK_ENABLED, true)
             }
-        } catch (e: Exception) {
+        } catch (e: GeneralSecurityException) {
             throw RuntimeException("PBKDF2WithHmacSHA256 not available on this device", e)
-        } finally {
-            spec.clearPassword()
-            patChars.fill('\u0000')
         }
     }
 
     /**
-     * Hash [pattern] with PBKDF2, then encrypt the hash with the [authenticatedCipher]
-     * (which was unlocked via BiometricPrompt). Stores the encrypted hash + IV.
+     * Store [pattern] as in [setPattern], and the verifier once more encrypted
+     * with the [authenticatedCipher] (which was unlocked via BiometricPrompt).
      *
      * @param pattern the raw pattern string
      * @param authenticatedCipher a Cipher obtained from BiometricPrompt's CryptoObject
@@ -570,24 +572,20 @@ object AppLockCredentials {
             setPattern(null)
             return
         }
-        val salt = ByteArray(16)
-        SecureRandom().nextBytes(salt)
-        val patChars = pattern.toCharArray()
-        val spec = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
+        val salt = newSalt()
         try {
-            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-            val hash = factory.generateSecret(spec).encoded
-            // Encrypt the PBKDF2 hash with the KeyStore-backed AES-GCM cipher
-            val encrypted = authenticatedCipher.doFinal(hash)
+            val verifier = newVerifier(pattern, salt)
+            // Encrypt the verifier with the KeyStore-backed AES-GCM cipher
+            val encrypted = authenticatedCipher.doFinal(verifier.bytes)
             val iv = authenticatedCipher.iv
             prefs.edit {
                 putString(KEY_PATTERN_ENCRYPTED, Base64.encodeToString(encrypted, Base64.NO_WRAP))
                 putString(KEY_PATTERN_IV, Base64.encodeToString(iv, Base64.NO_WRAP))
                 putString(KEY_PATTERN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
-                // Keep the plain PBKDF2 hash too: the keystore key is
+                // Keep the plain verifier too: the keystore key is
                 // invalidated whenever a new fingerprint is enrolled, and
-                // without this hash the pattern could never be verified again.
-                putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(hash, Base64.NO_WRAP))
+                // without it the pattern could never be verified again.
+                putVerifier(verifier)
             }
             store.plainPrefs?.edit {
                 putBoolean(KEY_PATTERN_KEYSTORE_BOUND, true)
@@ -595,21 +593,87 @@ object AppLockCredentials {
             }
         } catch (e: Exception) {
             throw RuntimeException("Failed to encrypt pattern hash with KeyStore cipher", e)
+        }
+    }
+
+    /** A stored pattern verifier: the fast keystore one ([fast]) or the plain 200,000-round hash. */
+    private class Verifier(val bytes: ByteArray, val fast: Boolean)
+
+    private fun newSalt(): ByteArray = ByteArray(16).also { SecureRandom().nextBytes(it) }
+
+    private fun SharedPreferences.Editor.putVerifier(verifier: Verifier) {
+        val encoded = Base64.encodeToString(verifier.bytes, Base64.NO_WRAP)
+        if (verifier.fast) {
+            putString(KEY_PATTERN_HASH_V3, encoded)
+            remove(KEY_PATTERN_HASH_V2)
+        } else {
+            putString(KEY_PATTERN_HASH_V2, encoded)
+            remove(KEY_PATTERN_HASH_V3)
+        }
+    }
+
+    /** The fast verifier, or the plain hash when the keystore cannot make the HMAC key. */
+    @Throws(GeneralSecurityException::class)
+    private fun newVerifier(pattern: String, salt: ByteArray): Verifier {
+        val fast = try {
+            fastVerifier(pattern, salt, createKey = true)
+        } catch (e: GeneralSecurityException) {
+            Log.w(TAG, "No keystore HMAC key; storing the plain PBKDF2 hash", e)
+            null
+        }
+        return if (fast != null) {
+            Verifier(fast, fast = true)
+        } else {
+            Verifier(pbkdf2(pattern, salt, PBKDF2_ITERATIONS), fast = false)
+        }
+    }
+
+    /** [KEY_PATTERN_HASH_V3] of [pattern]; null when the HMAC key does not exist (and [createKey] is false). */
+    @Throws(GeneralSecurityException::class)
+    private fun fastVerifier(pattern: String, salt: ByteArray, createKey: Boolean): ByteArray? {
+        val stretched = pbkdf2(pattern, salt, PBKDF2_ITERATIONS_V3)
+        try {
+            return PatternMacKey.mac(stretched, createKey)
+        } finally {
+            stretched.fill(0)
+        }
+    }
+
+    @Throws(GeneralSecurityException::class)
+    private fun pbkdf2(pattern: String, salt: ByteArray, iterations: Int): ByteArray {
+        val chars = pattern.toCharArray()
+        val spec = PBEKeySpec(chars, salt, iterations, PBKDF2_KEY_BITS)
+        try {
+            return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
         } finally {
             spec.clearPassword()
-            patChars.fill('\u0000')
+            chars.fill('\u0000')
         }
     }
 
     /**
-     * Verify [input] against the stored PBKDF2 hash using a timing-safe comparison.
+     * Whether the stored pattern can no longer be checked at all: it is the
+     * fast verifier and its keystore HMAC key is gone. Only resetting the app
+     * lock helps then; a keystore error is not that (false).
+     */
+    @JvmStatic
+    fun isPatternVerifierLost(): Boolean {
+        store.awaitInit()
+        val prefs = store.prefs ?: return false
+        return prefs.contains(KEY_PATTERN_HASH_V3) && !PatternMacKey.exists()
+    }
+
+    /**
+     * Verify [input] against the stored verifier using a timing-safe comparison.
      * Only works for non-KeyStore-bound patterns. For KeyStore-bound patterns,
      * use [verifyPatternWithCipher].
      *
-     * Checks lockout state first; on failure, records the attempt.
+     * Checks lockout state first; on failure, records the attempt. A lost
+     * HMAC key ([isPatternVerifierLost]) answers false without recording one.
      *
-     * Transparent migration: if the stored hash was created with 100K iterations (V1),
-     * the hash is verified against V1 parameters and then re-hashed with 200K iterations.
+     * Transparent migration: a pattern stored as the plain PBKDF2 hash (200K,
+     * or the older 100K iterations) is stored as the fast verifier once it
+     * matched, unless a fingerprint-bound copy of that hash exists.
      *
      * @return true if input matches the stored pattern.
      */
@@ -618,71 +682,57 @@ object AppLockCredentials {
         store.awaitInit()
         if (isLockedOut()) return false
         val prefs = store.prefs ?: return false
-        val saltStr = prefs.getString(KEY_PATTERN_SALT, null) ?: return false
-        val hashStr = prefs.getString(KEY_PATTERN_HASH_V2, null) ?: return false
-        val salt = Base64.decode(saltStr, Base64.NO_WRAP)
-        val expected = Base64.decode(hashStr, Base64.NO_WRAP)
-        val patChars = (input ?: "").toCharArray()
-        try {
-            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-
-            // Try current iteration count first
-            val specCurrent = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
-            try {
-                val actual = factory.generateSecret(specCurrent).encoded
-                if (MessageDigest.isEqual(actual, expected)) {
-                    resetFailures()
-                    return true
-                }
-            } finally {
-                specCurrent.clearPassword()
+        val salt = prefs.getString(KEY_PATTERN_SALT, null)?.let { Base64.decode(it, Base64.NO_WRAP) } ?: return false
+        val pattern = input.orEmpty()
+        val ok = try {
+            val fastStr = prefs.getString(KEY_PATTERN_HASH_V3, null)
+            if (fastStr != null) {
+                val actual = fastVerifier(pattern, salt, createKey = false) ?: return false
+                MessageDigest.isEqual(actual, Base64.decode(fastStr, Base64.NO_WRAP))
+            } else {
+                val hashStr = prefs.getString(KEY_PATTERN_HASH_V2, null) ?: return false
+                verifyPlainHash(prefs, pattern, salt, Base64.decode(hashStr, Base64.NO_WRAP))
             }
-
-            // Try legacy iteration count for transparent migration
-            val specLegacy = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS_V1, PBKDF2_KEY_BITS)
-            try {
-                val actual = factory.generateSecret(specLegacy).encoded
-                if (MessageDigest.isEqual(actual, expected)) {
-                    // Re-hash with current iteration count and save
-                    val specMigrate = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
-                    try {
-                        val newHash = factory.generateSecret(specMigrate).encoded
-                        prefs.edit {
-                            putString(
-                                KEY_PATTERN_HASH_V2,
-                                Base64.encodeToString(newHash, Base64.NO_WRAP)
-                            )
-                        }
-                    } finally {
-                        specMigrate.clearPassword()
-                    }
-                    resetFailures()
-                    return true
-                }
-            } finally {
-                specLegacy.clearPassword()
-            }
-
-            recordFailure()
-            return false
-        } catch (_: Exception) {
-            recordFailure()
-            return false
-        } finally {
-            patChars.fill('\u0000')
+        } catch (e: Exception) {
+            Log.w(TAG, "Pattern check failed", e)
+            false
         }
+        if (ok) resetFailures() else recordFailure()
+        return ok
     }
 
     /**
-     * Verify [input] against the stored KeyStore-encrypted PBKDF2 hash.
+     * Checks [pattern] against the plain PBKDF2 hash (200K, then the legacy
+     * 100K iterations) and, when it matches, stores it as the fast verifier
+     * (or at 200K, without the HMAC key). A fingerprint-bound copy of the
+     * hash keeps it as is: that copy cannot be re-encrypted without the
+     * biometric, and the fingerprint check compares against this hash.
+     */
+    @Throws(GeneralSecurityException::class)
+    private fun verifyPlainHash(prefs: SharedPreferences, pattern: String, salt: ByteArray, expected: ByteArray): Boolean {
+        val current = MessageDigest.isEqual(pbkdf2(pattern, salt, PBKDF2_ITERATIONS), expected)
+        if (!current && !MessageDigest.isEqual(pbkdf2(pattern, salt, PBKDF2_ITERATIONS_V1), expected)) return false
+        val bound = prefs.contains(KEY_PATTERN_ENCRYPTED)
+        if (bound && current) return true
+        val verifier = if (bound) {
+            Verifier(pbkdf2(pattern, salt, PBKDF2_ITERATIONS), fast = false)
+        } else {
+            newVerifier(pattern, salt)
+        }
+        prefs.edit { putVerifier(verifier) }
+        return true
+    }
+
+    /**
+     * Verify [input] against the stored KeyStore-encrypted verifier.
      * The [authenticatedCipher] must have been obtained from BiometricPrompt's CryptoObject.
      *
      * Checks lockout state first; on failure, records the attempt.
      *
-     * Transparent migration: if the stored hash was created with 100K iterations (V1),
-     * the hash is verified against V1 parameters and then re-hashed with 200K iterations.
-     * Note: the re-encrypted ciphertext uses the same AES-GCM cipher, so the KeyStore
-     * binding is preserved.
+     * A pattern stored as the plain hash stays so here (the encrypted copy
+     * cannot be renewed without another biometric prompt); a 100K-iteration
+     * hash moves to 200K in the plain field and the encrypted copy is
+     * dropped, as before. Setting the pattern again stores the fast verifier.
      *
      * @return true if input matches the stored pattern.
      */
@@ -694,69 +744,46 @@ object AppLockCredentials {
         val saltStr = prefs.getString(KEY_PATTERN_SALT, null) ?: return false
         val encryptedStr = prefs.getString(KEY_PATTERN_ENCRYPTED, null) ?: return false
         val salt = Base64.decode(saltStr, Base64.NO_WRAP)
-        val encrypted = Base64.decode(encryptedStr, Base64.NO_WRAP)
-        val patChars = (input ?: "").toCharArray()
-        try {
-            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-            // Decrypt the stored hash using the BiometricPrompt-authenticated cipher
-            val expected = authenticatedCipher.doFinal(encrypted)
-
-            // Try current iteration count first
-            val specCurrent = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
-            try {
-                val actual = factory.generateSecret(specCurrent).encoded
-                if (MessageDigest.isEqual(actual, expected)) {
-                    // Self-heal patterns saved before the plain hash was kept
-                    // alongside the encrypted one (see setPatternWithCipher).
-                    if (!prefs.contains(KEY_PATTERN_HASH_V2)) {
-                        prefs.edit { putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(actual, Base64.NO_WRAP)) }
-                    }
-                    resetFailures()
-                    return true
-                }
-            } finally {
-                specCurrent.clearPassword()
+        val pattern = input.orEmpty()
+        val ok = try {
+            // Decrypt the stored verifier using the BiometricPrompt-authenticated cipher
+            val expected = authenticatedCipher.doFinal(Base64.decode(encryptedStr, Base64.NO_WRAP))
+            if (prefs.contains(KEY_PATTERN_HASH_V3)) {
+                val actual = fastVerifier(pattern, salt, createKey = false) ?: return false
+                MessageDigest.isEqual(actual, expected)
+            } else {
+                verifyBoundPlainHash(prefs, pattern, salt, expected)
             }
-
-            // Try legacy iteration count for transparent migration
-            val specLegacy = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS_V1, PBKDF2_KEY_BITS)
-            try {
-                val actual = factory.generateSecret(specLegacy).encoded
-                if (MessageDigest.isEqual(actual, expected)) {
-                    // Re-hash with current iteration count — re-encryption with the same
-                    // cipher is not possible (GCM cipher is single-use), so we store the
-                    // new PBKDF2 hash directly in the unencrypted field and clear the
-                    // encrypted field. The next setPatternWithCipher call (e.g., on
-                    // pattern change) will re-encrypt with KeyStore.
-                    val specMigrate = PBEKeySpec(patChars, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_BITS)
-                    try {
-                        val newHash = factory.generateSecret(specMigrate).encoded
-                        prefs.edit {
-                            putString(
-                                KEY_PATTERN_HASH_V2,
-                                Base64.encodeToString(newHash, Base64.NO_WRAP)
-                            )
-                            remove(KEY_PATTERN_ENCRYPTED)
-                            remove(KEY_PATTERN_IV)
-                        }
-                        store.plainPrefs?.edit { putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) }
-                    } finally {
-                        specMigrate.clearPassword()
-                    }
-                    resetFailures()
-                    return true
-                }
-            } finally {
-                specLegacy.clearPassword()
-            }
-
-            recordFailure()
-            return false
-        } catch (_: Exception) {
-            recordFailure()
-            return false
-        } finally {
-            patChars.fill('\u0000')
+        } catch (e: Exception) {
+            Log.w(TAG, "Pattern check failed", e)
+            false
         }
+        if (ok) resetFailures() else recordFailure()
+        return ok
+    }
+
+    @Throws(GeneralSecurityException::class)
+    private fun verifyBoundPlainHash(prefs: SharedPreferences, pattern: String, salt: ByteArray, expected: ByteArray): Boolean {
+        val actual = pbkdf2(pattern, salt, PBKDF2_ITERATIONS)
+        if (MessageDigest.isEqual(actual, expected)) {
+            // Self-heal patterns saved before the plain hash was kept
+            // alongside the encrypted one (see setPatternWithCipher).
+            if (!prefs.contains(KEY_PATTERN_HASH_V2)) {
+                prefs.edit { putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(actual, Base64.NO_WRAP)) }
+            }
+            return true
+        }
+        if (!MessageDigest.isEqual(pbkdf2(pattern, salt, PBKDF2_ITERATIONS_V1), expected)) return false
+        // Legacy 100K: re-encryption with the same cipher is not possible (GCM
+        // cipher is single-use), so the new hash goes into the plain field and
+        // the encrypted one is cleared. The next setPatternWithCipher call
+        // (e.g., on pattern change) will re-encrypt with KeyStore.
+        prefs.edit {
+            putString(KEY_PATTERN_HASH_V2, Base64.encodeToString(actual, Base64.NO_WRAP))
+            remove(KEY_PATTERN_ENCRYPTED)
+            remove(KEY_PATTERN_IV)
+        }
+        store.plainPrefs?.edit { putBoolean(KEY_PATTERN_KEYSTORE_BOUND, false) }
+        return true
     }
 }

@@ -1,6 +1,7 @@
 package com.lanraragi.reader.ui.scene
 
 import android.security.keystore.KeyPermanentlyInvalidatedException
+import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
@@ -30,7 +31,7 @@ import javax.crypto.Cipher
  * The ViewModel owns verification logic and lockout state.
  */
 class SecurityViewModel @JvmOverloads constructor(
-    /** Runs the pattern checks: PBKDF2 at 200,000 iterations takes a visible moment on a phone. */
+    /** Runs the pattern checks off the main thread: a pattern still stored as the 200,000-round hash takes a moment. */
     private val verifyDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
@@ -44,15 +45,17 @@ class SecurityViewModel @JvmOverloads constructor(
     val verifying: StateFlow<Boolean> = _verifying.asStateFlow()
 
     /** Runs [check] on [verifyDispatcher], then [then] with its answer on the main thread. */
-    private fun verifyOffMain(check: () -> Boolean, then: (Boolean) -> Unit) {
+    private fun <T> verifyOffMain(check: () -> T, then: (T) -> Unit) {
         if (_verifying.value) return
         _verifying.value = true
         viewModelScope.launch {
+            val started = SystemClock.elapsedRealtime()
             val ok = try {
                 withContext(verifyDispatcher) { check() }
             } finally {
                 _verifying.value = false
             }
+            Log.d(TAG, "Pattern check took ${SystemClock.elapsedRealtime() - started} ms")
             then(ok)
         }
     }
@@ -107,6 +110,13 @@ class SecurityViewModel @JvmOverloads constructor(
          * resetting the app lock.
          */
         data object PatternUnverifiable : SecurityUiEvent
+
+        /**
+         * The pattern's verifier key (the keystore HMAC key) is gone, so the
+         * pattern can never be verified again. Scene should offer resetting
+         * the app lock.
+         */
+        data object PatternKeyLost : SecurityUiEvent
 
         /**
          * The fingerprint prompt reported success, but its cipher did not
@@ -188,9 +198,7 @@ class SecurityViewModel @JvmOverloads constructor(
             _uiEvent.tryEmit(SecurityUiEvent.NeedBiometricVerification(patternString))
         } else {
             // PBKDF2-only: verify directly
-            verifyOffMain({ SecuritySettings.verifyPattern(patternString) }) { ok ->
-                if (ok) _uiEvent.tryEmit(SecurityUiEvent.PatternVerified) else onVerificationFailed()
-            }
+            verifyOffMain({ checkPattern { SecuritySettings.verifyPattern(patternString) } }, ::onPatternChecked)
         }
     }
 
@@ -203,8 +211,26 @@ class SecurityViewModel @JvmOverloads constructor(
             onVerificationFailed()
             return
         }
-        verifyOffMain({ AppLockCredentials.verifyPatternWithCipher(patternString, cipher) }) { ok ->
-            if (ok) _uiEvent.tryEmit(SecurityUiEvent.PatternVerified) else onVerificationFailed()
+        verifyOffMain(
+            { checkPattern { AppLockCredentials.verifyPatternWithCipher(patternString, cipher) } },
+            ::onPatternChecked,
+        )
+    }
+
+    private enum class PatternCheck { MATCH, MISMATCH, UNVERIFIABLE }
+
+    /** [verify]'s answer; a false one is UNVERIFIABLE when the verifier's HMAC key is gone. */
+    private fun checkPattern(verify: () -> Boolean): PatternCheck = when {
+        verify() -> PatternCheck.MATCH
+        AppLockCredentials.isPatternVerifierLost() -> PatternCheck.UNVERIFIABLE
+        else -> PatternCheck.MISMATCH
+    }
+
+    private fun onPatternChecked(check: PatternCheck) {
+        when (check) {
+            PatternCheck.MATCH -> _uiEvent.tryEmit(SecurityUiEvent.PatternVerified)
+            PatternCheck.MISMATCH -> onVerificationFailed()
+            PatternCheck.UNVERIFIABLE -> _uiEvent.tryEmit(SecurityUiEvent.PatternKeyLost)
         }
     }
 
