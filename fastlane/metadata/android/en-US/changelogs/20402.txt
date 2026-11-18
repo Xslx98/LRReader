@@ -1,0 +1,4 @@
+2.4.2: instant unlock and steadier screens.
+- Pattern unlock answers at once (the first unlock after updating takes a moment).
+- Removed tagging with server plugins: the server offers no way to configure them from the app.
+Fixed: tag filter, download filter/sort and multi-select lost on rotation; old data overwriting new on start; download failure reasons lost after restart; pages failing silently now offer retry.
