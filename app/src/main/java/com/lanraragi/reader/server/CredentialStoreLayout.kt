@@ -30,6 +30,9 @@ internal object CredentialStoreLayout {
     /** KeyStore-bound AES-GCM wrapping of the pattern hash (fingerprint unlock). */
     const val KEYSTORE_ALIAS_PATTERN = "lrr_pattern_key"
 
+    /** HMAC key of the fast pattern verifier ([KEY_PATTERN_HASH_V3]); no user authentication. */
+    const val KEYSTORE_ALIAS_PATTERN_MAC = "lrr_pattern_mac_key"
+
     // ── Plain prefs: the store's own flags ──────────────────────────────
 
     /** The legacy store was copied (or there was none). */
@@ -74,7 +77,11 @@ internal object CredentialStoreLayout {
     // ── Secure store: the app-lock pattern ──────────────────────────────
 
     const val KEY_PATTERN_SALT = "pattern_salt"
+    /** PBKDF2-HMAC-SHA256 at 200,000 (once 100,000) rounds; replaced by [KEY_PATTERN_HASH_V3] on the next unlock. */
     const val KEY_PATTERN_HASH_V2 = "pattern_hash_v2"
+
+    /** HMAC under [KEYSTORE_ALIAS_PATTERN_MAC] of PBKDF2-HMAC-SHA256 at 10,000 rounds. */
+    const val KEY_PATTERN_HASH_V3 = "pattern_hash_v3"
 
     /** Pre-PBKDF2 SHA-256 pattern hash; only removed now. */
     const val KEY_PATTERN_HASH_V1 = "pattern_hash"
@@ -99,5 +106,6 @@ internal object CredentialStoreLayout {
 
     /** Whether [prefs] (the secure store, whose key names are plaintext) holds an app-lock pattern. */
     fun hasPatternIn(prefs: SharedPreferences): Boolean =
-        prefs.contains(KEY_PATTERN_HASH_V2) || prefs.contains(KEY_PATTERN_ENCRYPTED)
+        prefs.contains(KEY_PATTERN_HASH_V2) || prefs.contains(KEY_PATTERN_HASH_V3) ||
+            prefs.contains(KEY_PATTERN_ENCRYPTED)
 }

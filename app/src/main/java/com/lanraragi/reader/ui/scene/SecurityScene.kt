@@ -53,6 +53,9 @@ class SecurityScene : SolidScene(),
         private const val SUCCESS_DELAY_MILLIS = 100L
         private const val LOCKOUT_UPDATE_INTERVAL_MS = 1000L
 
+        /** A check answers in tens of milliseconds; the "checking" line shows only for a slow one. */
+        private const val VERIFYING_TEXT_DELAY_MS = 200L
+
 
         /**
          * If true, this scene was pushed by the foreground re-lock flow
@@ -91,6 +94,7 @@ class SecurityScene : SolidScene(),
     private lateinit var mFingerprintIcon: ImageView
     private var mLockoutText: TextView? = null
     private var mVerifyingText: TextView? = null
+    private val mShowVerifyingText = Runnable { mVerifyingText?.visibility = View.VISIBLE }
 
     private var mBiometricPrompt: BiometricPrompt? = null
 
@@ -208,11 +212,17 @@ class SecurityScene : SolidScene(),
         mVerifyingText = view.findViewById(R.id.verifying_text)
 
         // A pattern check runs off the main thread: the drawn pattern stays,
-        // input waits for the answer.
+        // input waits for the answer. Only a slow check (a pattern stored as
+        // the old 200,000-round hash) says so; a fast one would just flash.
         collectFlow(viewLifecycleOwner, viewModel.verifying) { verifying ->
             val lockView = mPatternView ?: return@collectFlow
             if (verifying) lockView.disableInput() else lockView.enableInput()
-            mVerifyingText?.visibility = if (verifying) View.VISIBLE else View.GONE
+            mHandler.removeCallbacks(mShowVerifyingText)
+            if (verifying) {
+                mHandler.postDelayed(mShowVerifyingText, VERIFYING_TEXT_DELAY_MS)
+            } else {
+                mVerifyingText?.visibility = View.GONE
+            }
         }
 
         // Observe ViewModel events
@@ -289,14 +299,14 @@ class SecurityScene : SolidScene(),
         builder.show()
     }
 
-    private fun showPatternUnverifiableDialog() {
+    private fun showPatternUnverifiableDialog(@StringRes message: Int = R.string.security_pattern_unverifiable_message) {
         mPatternView?.isEnabled = false
         val ctx = ehContext ?: return
         AlertDialog.Builder(ctx)
-            .setMessage(R.string.security_pattern_unverifiable_message)
+            .setMessage(message)
             .setCancelable(false)
             .setPositiveButton(R.string.security_reset_app_lock) { _, _ ->
-                confirmResetAppLock(onCancel = ::showPatternUnverifiableDialog)
+                confirmResetAppLock(onCancel = { showPatternUnverifiableDialog(message) })
             }
             .show()
     }
@@ -327,6 +337,7 @@ class SecurityScene : SolidScene(),
         mLockoutText = null
         mVerifyingText = null
         mHandler.removeCallbacks(mLockoutUpdateRunnable)
+        mHandler.removeCallbacks(mShowVerifyingText)
     }
 
     // -------------------------------------------------------------------------
@@ -385,6 +396,8 @@ class SecurityScene : SolidScene(),
             }
 
             is SecurityUiEvent.PatternUnverifiable -> showPatternUnverifiableDialog()
+
+            is SecurityUiEvent.PatternKeyLost -> showPatternUnverifiableDialog(R.string.security_pattern_key_lost_message)
 
             is SecurityUiEvent.FingerprintUnverified -> fingerprintError(true)
 
